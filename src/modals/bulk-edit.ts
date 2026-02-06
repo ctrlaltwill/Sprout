@@ -40,10 +40,19 @@ function groupsToInputString(groups: string[]): string {
 function coerceGroups(g: unknown): string[] {
   if (!g) return [];
   if (Array.isArray(g)) return g.map((x: unknown) => String(x)).filter(Boolean);
-  return String(g || "")
-    .split(/[,;]/)
-    .map((x) => x.trim())
-    .filter(Boolean);
+  if (typeof g === "string") {
+    return g
+      .split(/[,;]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  if (typeof g === "number" || typeof g === "boolean") {
+    return String(g)
+      .split(/[,;]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -445,7 +454,7 @@ export function openBulkEditModalForCards(
       // Apply updates to card records
       const updatedCards: CardRecord[] = [];
       for (const card of cards) {
-        const updated: CardRecord = JSON.parse(JSON.stringify(card));
+        const updated = JSON.parse(JSON.stringify(card)) as CardRecord;
 
         if (updates.title !== undefined) updated.title = updates.title;
 

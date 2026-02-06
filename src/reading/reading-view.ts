@@ -444,6 +444,8 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
       log.error('Error processing element', err);
     }
   }
+
+  await Promise.resolve();
 }
 
 /* =========================

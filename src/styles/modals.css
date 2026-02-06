@@ -73,6 +73,126 @@
   padding: 0;
 }
 
+/* ---- Card creator modal ---- */
+
+.sprout .sprout-card-creator-modal {
+  backdrop-filter: none !important;
+  padding: 20px !important;
+  gap: 0 !important;
+  max-width: 90% !important;
+  width: auto !important;
+  max-height: 90% !important;
+  box-sizing: border-box !important;
+  overflow: hidden auto !important;
+}
+
+.sprout .sprout-card-creator-content {
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.sprout .sprout-card-creator-root {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.sprout .sprout-card-creator-close {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+}
+
+.sprout .sprout-card-creator-body {
+  margin-top: 15px !important;
+}
+
+.sprout .sprout-card-creator-editor {
+  width: 80vw !important;
+  max-width: 450px !important;
+}
+
+.sprout .sprout-location-input {
+  min-height: 38px !important;
+  max-height: 38px !important;
+  height: 38px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  direction: rtl !important;
+  text-align: left !important;
+}
+
+.sprout .sprout-io-preview-image {
+  max-height: 300px !important;
+  object-fit: contain !important;
+}
+
+.sprout .sprout-card-creator-footer {
+  margin-top: 20px !important;
+  padding-bottom: 16px !important;
+}
+
+/* ---- Bulk edit modal (browser) ---- */
+
+.sprout .sprout-bulk-edit-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000000 !important;
+}
+
+.sprout .sprout-bulk-edit-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+.sprout .sprout-bulk-edit-panel {
+  padding: 20px !important;
+}
+
+.sprout .sprout-bulk-edit-footer {
+  margin-top: 20px !important;
+}
+
+.sprout .sprout-bulk-edit-save {
+  background: var(--foreground) !important;
+  color: var(--background) !important;
+  border-color: var(--foreground) !important;
+}
+
+.sprout .sprout-bulk-tag-box {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  overflow: auto !important;
+  padding: 6px 8px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  column-gap: 6px !important;
+  row-gap: 2px !important;
+  align-content: flex-start !important;
+}
+
+.sprout .sprout-bulk-popover {
+  position: absolute !important;
+  bottom: calc(100% + 6px) !important;
+  left: 0 !important;
+  right: auto !important;
+  z-index: 10000 !important;
+  width: 100% !important;
+  display: none !important;
+  pointer-events: auto !important;
+}
+
+.sprout .sprout-bulk-popover.is-open {
+  display: block !important;
+}
+
 /* ---- Close button ---- */
 
 .sprout .sprout-modals.modal .modal-close-button {
@@ -170,7 +290,17 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  color: var(--foreground);
+  opacity: 0.8;
+  cursor: pointer;
   max-width: 95vw !important;
+
+.sprout .sprout-zoom-close:hover,
+.sprout .sprout-zoom-close:focus,
+.sprout .sprout-zoom-close:focus-visible,
+.sprout .sprout-zoom-close:active {
+  opacity: 1;
+}
   max-height: 90vh !important;
   overflow: visible !important;
 }

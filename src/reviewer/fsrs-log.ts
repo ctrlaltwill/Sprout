@@ -30,8 +30,14 @@ function fsrsStateName(s: number | undefined): string {
   }
 }
 
+function safePrimitiveString(x: unknown, fallback = ""): string {
+  if (typeof x === "string") return x;
+  if (typeof x === "number" || typeof x === "boolean" || typeof x === "bigint") return String(x);
+  return fallback;
+}
+
 function normLower(x: unknown): string {
-  return String(x ?? "").trim().toLowerCase();
+  return safePrimitiveString(x).trim().toLowerCase();
 }
 
 function safeDueString(ms: unknown): string {
@@ -107,9 +113,12 @@ export function logFsrsIfNeeded(args: {
 
   const dueStr = safeDueString(nextDue);
 
+  const mcqChoice = safePrimitiveString(meta?.mcqChoice);
+  const mcqCorrect = safePrimitiveString(meta?.mcqCorrect);
+  const mcqPass = safePrimitiveString(meta?.mcqPass);
   const mcqBits =
     ct === "mcq"
-      ? ` | mcqChoice=${meta?.mcqChoice} | mcqCorrect=${meta?.mcqCorrect} | mcqPass=${meta?.mcqPass}`
+      ? ` | mcqChoice=${mcqChoice} | mcqCorrect=${mcqCorrect} | mcqPass=${mcqPass}`
       : "";
 
   const rNow =
@@ -158,8 +167,9 @@ export function logFsrsIfNeeded(args: {
 
   const prefix = isSkip ? "SKIP:" : "FSRS:";
 
+  const ratingStr = safePrimitiveString(args.rating, "");
   log.info(
-    `${prefix} card ${id} | type=${ct || "unknown"} | rating=${String(args.rating)}${uiBits} | ` +
+    `${prefix} card ${id} | type=${ct || "unknown"} | rating=${ratingStr}${uiBits} | ` +
       `${stateBits}${tBits} | ` +
       `R_now=${rNowStr} | R_target=${rTargetStr} | ` +
       `S=${sDays.toFixed(2)}d | ` +
@@ -204,9 +214,12 @@ export function logUndoIfNeeded(args: {
       `scheduledDays=${intOrDash(from?.scheduledDays)}→${intOrDash(to?.scheduledDays)}`
     : `note=session_only (practice); scheduling_unchanged`;
 
+  const undoMcqChoice = safePrimitiveString(args.meta?.mcqChoice);
+  const undoMcqCorrect = safePrimitiveString(args.meta?.mcqCorrect);
+  const undoMcqPass = safePrimitiveString(args.meta?.mcqPass);
   const mcqBits =
     ct === "mcq"
-      ? ` | mcqChoice=${args.meta?.mcqChoice} | mcqCorrect=${args.meta?.mcqCorrect} | mcqPass=${args.meta?.mcqPass}`
+      ? ` | mcqChoice=${undoMcqChoice} | mcqCorrect=${undoMcqCorrect} | mcqPass=${undoMcqPass}`
       : "";
 
   log.info(

@@ -112,7 +112,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   if (isEdit) {
     const parentId = String(editParentId || "");
-    const cardsMap = (plugin.store?.data?.cards || {}) as Record<string, CardRecord>;
+    const cardsMap = (plugin.store?.data?.cards || {});
     const parent = cardsMap[parentId];
     if (!parent || String(parent.type) !== "io") {
       new Notice(`${BRAND}: could not find IO parent to edit.`);

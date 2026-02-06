@@ -17,7 +17,7 @@
  */
 
 import type SproutPlugin from "../main";
-import type { CardRecord, CardState, QuarantineEntry } from "../core/store";
+import type { CardRecord, CardState } from "../core/store";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import {
@@ -77,7 +77,7 @@ export function computeBrowserRows(
   const now = Date.now();
   const sToday = startOfTodayMs();
   const eToday = endOfTodayMs();
-  const quarantine = (plugin.store.data.quarantine || {}) as Record<string, QuarantineEntry>;
+  const quarantine = (plugin.store.data.quarantine || {});
   const includeQuarantined = true;
 
   let baseCards: CardRecord[] = [];
@@ -221,7 +221,7 @@ export function browserSortValue(
 
 /** Apply an edited cell value back onto a card record (returns a deep clone). */
 export function applyValueToCard(card: CardRecord, col: ColKey, value: string): CardRecord {
-  const draft: CardRecord = JSON.parse(JSON.stringify(card));
+  const draft = JSON.parse(JSON.stringify(card)) as CardRecord;
   const v = value ?? "";
 
   if (col === "title") {

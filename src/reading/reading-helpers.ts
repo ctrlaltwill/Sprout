@@ -101,10 +101,20 @@ export function normalizeMathSignature(s: string): string {
   return out;
 }
 
-export function escapeHtml(text: string): string {
+function toSafeText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return String(value);
+  return "";
+}
+
+export function escapeHtml(text: unknown): string {
   if (text === undefined || text === null) return '';
-  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  return toSafeText(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 /**
@@ -116,7 +126,7 @@ export function processMarkdownFeatures(text: string): string {
   let result = String(text);
   
   // Convert wiki links [[Page]] or [[Page|Display]] to HTML links
-  result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match, target, display) => {
+  result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match: string, target: string, display?: string) => {
     const linkText = display || target;
     // Create a data attribute for Obsidian to handle the click
     return `<a href="#" class="internal-link" data-href="${escapeHtml(target)}">${escapeHtml(linkText)}</a>`;
@@ -451,7 +461,7 @@ export function saveField(fields: Record<string, string | string[]>, fieldName: 
 
 export function renderMathInElement(el: HTMLElement) {
   // Check if MathJax is available (Obsidian loads it)
-  const MathJax = window.MathJax;
+  const MathJax = (window as unknown as { MathJax?: { typesetPromise?: (els: HTMLElement[]) => Promise<unknown> } }).MathJax;
   if (MathJax && typeof MathJax.typesetPromise === 'function') {
     try {
       MathJax.typesetPromise([el]).catch((err: unknown) => {

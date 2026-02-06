@@ -138,12 +138,13 @@ export class SproutCardBrowserView extends ItemView {
   getDisplayText() { return "Flashcards"; }
   getIcon() { return "table-2"; }
 
-  async onOpen() { this.render(); }
+  async onOpen() { this.render(); await Promise.resolve(); }
 
   async onClose() {
     try { this._header?.dispose?.(); } catch (e) { log.swallow("dispose browser header", e); }
     this._header = null;
     this._disposeUiPopovers();
+    await Promise.resolve();
   }
 
   onRefresh() {
@@ -174,15 +175,8 @@ export class SproutCardBrowserView extends ItemView {
 
     const root = this._rootEl;
     if (root) {
-      if (this.plugin.isWideMode) {
-        root.style.setProperty("max-width", "none", "important");
-        root.style.setProperty("width", "100%", "important");
-      } else {
-        root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
-        root.style.setProperty("width", "100%", "important");
-      }
-      root.style.setProperty("margin-left", "auto", "important");
-      root.style.setProperty("margin-right", "auto", "important");
+      const maxWidth = this.plugin.isWideMode ? "none" : MAX_CONTENT_WIDTH_PX;
+      root.style.setProperty("--sprout-browser-max-width", maxWidth);
     }
 
     try { this._header?.updateWidthButtonLabel?.(); } catch (e) { log.swallow("update width button label", e); }
@@ -218,12 +212,13 @@ export class SproutCardBrowserView extends ItemView {
       this._selectionCountEl.textContent = count === 0 ? "No cards selected" : `${count.toLocaleString()} selected`;
       if (this._clearSelectionEl) {
         const active = count > 0;
-        this._clearSelectionEl.style.setProperty("display", active ? "" : "none", "important");
-        this._clearSelectionEl.style.setProperty("pointer-events", active ? "auto" : "none", "important");
+        this._clearSelectionEl.classList.toggle("sprout-is-hidden", !active);
+        this._clearSelectionEl.classList.toggle("sprout-pointer-auto", active);
+        this._clearSelectionEl.classList.toggle("sprout-pointer-none", !active);
       }
       if (this._clearSelectionPlaceholderEl) {
         const active = count === 0;
-        this._clearSelectionPlaceholderEl.style.setProperty("visibility", active ? "visible" : "hidden", "important");
+        this._clearSelectionPlaceholderEl.classList.toggle("sprout-is-invisible", !active);
       }
     }
     this._updateEditButtonState();
@@ -234,7 +229,7 @@ export class SproutCardBrowserView extends ItemView {
     if (!this._editButton) return;
     const enabled = this._selectedIds.size > 0;
     this._editButton.disabled = !enabled;
-    this._editButton.style.setProperty("opacity", enabled ? "1" : "0.6", "important");
+    this._editButton.classList.toggle("sprout-opacity-60", !enabled);
   }
 
   private _updateSuspendButtonState() {
@@ -243,7 +238,7 @@ export class SproutCardBrowserView extends ItemView {
     const actionable = ids.filter((id) => !this.plugin.store.isQuarantined(id));
     const enabled = actionable.length > 0;
     this._suspendButton.disabled = !enabled;
-    this._suspendButton.style.setProperty("opacity", enabled ? "1" : "0.6", "important");
+    this._suspendButton.classList.toggle("sprout-opacity-60", !enabled);
     clearNode(this._suspendButton);
     const allSuspended = enabled && actionable.every((id) => {
       const s = this.plugin.store.getState(id);
@@ -254,7 +249,7 @@ export class SproutCardBrowserView extends ItemView {
     const icon = document.createElement("span");
     icon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(icon, mode === "unsuspend" ? "circle-play" : "circle-pause");
-    icon.style.setProperty("transform", "scale(0.85)");
+    icon.classList.add("sprout-icon-scale-85");
     this._suspendButton.appendChild(icon);
     const text = document.createElement("span");
     text.textContent = mode === "unsuspend" ? "Unsuspend" : "Suspend";
@@ -293,7 +288,7 @@ export class SproutCardBrowserView extends ItemView {
     if (!this._resetFiltersButton) return;
     const active = this._filtersDirty;
     this._resetFiltersButton.disabled = !active;
-    this._resetFiltersButton.style.setProperty("opacity", active ? "1" : "0.6", "important");
+    this._resetFiltersButton.classList.toggle("sprout-opacity-60", !active);
   }
 
   private _resetFilters(refreshTable = true) {
@@ -321,11 +316,10 @@ export class SproutCardBrowserView extends ItemView {
 
     for (const col of this._allCols) {
       const show = this._visibleCols.has(col);
-      const display = show ? "" : "none";
       const colEl = this._colEls[col];
-      if (colEl) colEl.style.display = display;
+      if (colEl) colEl.classList.toggle("sprout-is-hidden", !show);
       table.querySelectorAll(`[data-col="${col}"]`).forEach((el) => {
-        (el as HTMLElement).style.display = display;
+        (el as HTMLElement).classList.toggle("sprout-is-hidden", !show);
       });
     }
   }
@@ -345,9 +339,9 @@ export class SproutCardBrowserView extends ItemView {
 
       const icon = this._headerSortIcons[k];
       if (icon) {
-        icon.style.display = isSorted ? "inline-flex" : "none";
-        icon.style.opacity = isSorted ? "1" : "0";
-        icon.style.transform = isSorted && !this.sortAsc ? "rotate(180deg)" : "rotate(0deg)";
+        icon.classList.add("sprout-browser-sort-icon");
+        icon.classList.toggle("sprout-is-hidden", !isSorted);
+        icon.classList.toggle("sprout-browser-sort-desc", isSorted && !this.sortAsc);
       }
     }
   }
@@ -582,10 +576,8 @@ export class SproutCardBrowserView extends ItemView {
     root.empty();
     this._rootEl = root;
 
-    root.classList.add("bc", "sprout-view-content", "sprout-browser-view", "flex", "flex-col");
+    root.classList.add("bc", "sprout-view-content", "sprout-browser-view", "sprout-browser-width", "flex", "flex-col");
     root.setAttribute("data-sprout-browser-root", "1");
-    root.style.minHeight = "0";
-    root.style.gap = "10px";
 
     this.containerEl.addClass("sprout");
     this.setTitle?.("Flashcards");

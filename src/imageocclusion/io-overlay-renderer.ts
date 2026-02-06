@@ -12,6 +12,15 @@ import interact from "interactjs";
 import type { IORect, IOTextBox } from "./io-types";
 import { textBgCss } from "./io-image-ops";
 
+type DragMoveEvent = {
+  dx: number;
+  dy: number;
+};
+
+type ResizeMoveEvent = {
+  deltaRect?: { left: number; top: number; width: number; height: number };
+};
+
 // ── Public callback interface ───────────────────────────────────────────────
 
 export interface OverlayCallbacks {
@@ -223,7 +232,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
           start: () => {
             cb.selectRect(rect.rectId);
           },
-          move: (event) => {
+          move: (event: DragMoveEvent) => {
             const r = getRectRef();
             if (!r) return;
             const dx = event.dx / scale;
@@ -250,7 +259,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
           start: () => {
             cb.selectRect(rect.rectId);
           },
-          move: (event) => {
+          move: (event: ResizeMoveEvent) => {
             const r = getRectRef();
             if (!r) return;
             const delta = event.deltaRect || { left: 0, top: 0, width: 0, height: 0 };
@@ -339,7 +348,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
           start: () => {
             cb.selectText(textBox.textId);
           },
-          move: (event) => {
+          move: (event: DragMoveEvent) => {
             const t = getTextRef();
             if (!t) return;
             const dx = event.dx / scale;
@@ -366,7 +375,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
           start: () => {
             cb.selectText(textBox.textId);
           },
-          move: (event) => {
+          move: (event: ResizeMoveEvent) => {
             const t = getTextRef();
             if (!t) return;
             const delta = event.deltaRect || { left: 0, top: 0, width: 0, height: 0 };

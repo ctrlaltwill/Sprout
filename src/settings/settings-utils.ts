@@ -91,7 +91,11 @@ export function fmtSettingValue(v: unknown): string {
   try {
     return JSON.stringify(v);
   } catch {
-    return String(v);
+    if (typeof v === "string") return v;
+    if (typeof v === "number") return Number.isFinite(v) ? String(v) : "—";
+    if (typeof v === "boolean") return v ? "true" : "false";
+    if (typeof v === "bigint") return v.toString();
+    return "[unserializable]";
   }
 }
 

@@ -132,7 +132,7 @@ export function canUndo(view: WidgetViewLike): boolean {
 
 export async function undoLastGrade(view: WidgetViewLike): Promise<void> {
   if (view.mode !== "session" || !view.session) return;
-  const u = view._undo as UndoFrame | null;
+  const u = view._undo;
   if (!u) return;
   if (u.sessionStamp !== view._sessionStamp) {
     view._undo = null;

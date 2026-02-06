@@ -12,6 +12,259 @@
   margin-left: 40px;
   margin-right: 40px;
   box-sizing: border-box;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.sprout .sprout-browser-view {
+  min-height: 0;
+  gap: 10px;
+}
+
+.sprout .sprout-browser-width {
+  width: 100% !important;
+  max-width: var(--sprout-browser-max-width, none) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.sprout .sprout-pointer-none {
+  pointer-events: none !important;
+}
+
+.sprout .sprout-is-invisible {
+  visibility: hidden !important;
+}
+
+.sprout .sprout-opacity-60 {
+  opacity: 0.6 !important;
+}
+
+.sprout .sprout-icon-scale-85 {
+  transform: scale(0.85) !important;
+}
+
+.sprout .sprout-browser-sort-icon {
+  display: inline-flex;
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sprout .sprout-browser-sort-desc {
+  transform: rotate(180deg);
+}
+
+.sprout .sprout-browser-row {
+  height: var(--sprout-row-height, auto) !important;
+}
+
+.sprout .sprout-browser-cell {
+  height: var(--sprout-row-height, auto) !important;
+  vertical-align: top !important;
+}
+
+.sprout .sprout-browser-cell-middle {
+  vertical-align: middle !important;
+}
+
+.sprout .sprout-browser-cell-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sprout .sprout-browser-checkbox {
+  accent-color: var(--text-normal) !important;
+}
+
+.sprout .sprout-browser-id-btn {
+  font-size: 10px !important;
+  padding: 2px 8px !important;
+  height: 24px !important;
+  line-height: 1 !important;
+}
+
+.sprout .sprout-browser-id-btn--suspended {
+  background-color: rgb(239, 68, 68) !important;
+  color: white !important;
+}
+
+.sprout .sprout-scale {
+  transform: scale(var(--sprout-scale, 1));
+  transform-origin: center;
+  display: inline-flex;
+}
+
+.sprout .sprout-browser-empty-message {
+  width: var(--sprout-empty-width, 100%) !important;
+  box-sizing: border-box !important;
+  position: absolute !important;
+  left: var(--sprout-empty-left, 0) !important;
+  top: var(--sprout-empty-top, 0) !important;
+  background: var(--background) !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+}
+
+.sprout .sprout-browser-textarea {
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  resize: none !important;
+}
+
+.sprout .sprout-browser-textarea--readonly {
+  overflow: hidden !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+
+.sprout .sprout-browser-textarea--editable {
+  overflow: auto !important;
+}
+
+.sprout .sprout-browser-io-cell {
+  cursor: pointer !important;
+}
+
+.sprout .sprout-browser-tag-cell {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.sprout .sprout-browser-tag-box {
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  overflow: auto !important;
+  padding: 6px 8px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  column-gap: 6px !important;
+  row-gap: 2px !important;
+  align-content: flex-start !important;
+}
+
+.sprout .sprout-browser-tag-empty {
+  display: inline-flex !important;
+  color: #fff !important;
+}
+
+.sprout .sprout-browser-tag-badge {
+  display: inline-flex !important;
+}
+
+.sprout .sprout-browser-search-wrap {
+  width: 100% !important;
+}
+
+.sprout .sprout-browser-search-input {
+  flex: 1 1 300px !important;
+  min-width: 300px !important;
+  width: 100% !important;
+  height: 36px !important;
+  box-sizing: border-box !important;
+  align-self: stretch !important;
+}
+
+.sprout .sprout-browser-table {
+  table-layout: fixed !important;
+  position: relative !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.sprout .sprout-browser-select-col {
+  width: 42px !important;
+}
+
+.sprout .sprout-browser-col {
+  width: var(--sprout-col-width, 120px) !important;
+}
+
+.sprout .sprout-browser-header-row {
+  vertical-align: middle !important;
+  width: 100% !important;
+}
+
+.sprout .sprout-browser-select-th {
+  vertical-align: middle !important;
+  width: 42px !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sprout .sprout-browser-select-all {
+  margin: 0 !important;
+  accent-color: var(--text-normal) !important;
+}
+
+.sprout .sprout-browser-th {
+  vertical-align: middle !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.sprout .sprout-browser-th-inner {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  min-height: 44px !important;
+  align-items: center !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+.sprout .sprout-browser-th-label {
+  vertical-align: middle !important;
+  display: inline-block !important;
+  align-self: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: keep-all !important;
+  pointer-events: auto !important;
+}
+
+.sprout .sprout-browser-th-icon {
+  pointer-events: none !important;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0 !important;
+  margin-left: 10px !important;
+}
+
+.sprout .sprout-browser-thead {
+  display: table-row-group !important;
+}
+
+.sprout .sprout-browser-tbody {
+  display: block !important;
+  overflow-y: auto !important;
+  max-height: none !important;
+  width: 100% !important;
+}
+
+.sprout .sprout-icon-scale-80 {
+  transform: scale(0.8) !important;
 }
 
 /* Browser table hover: hide border seams by matching hover color */

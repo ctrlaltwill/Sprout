@@ -68,6 +68,10 @@ function clonePlain<T>(x: T): T {
   return JSON.parse(JSON.stringify(x)) as T;
 }
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
 type BasecoatApi = {
   init?: (group: string) => void;
   initAll?: () => void;
@@ -242,12 +246,16 @@ export default class SproutPlugin extends Plugin {
         ParseErrorModal,
       };
 
-      const root = (await this.loadData()) || {};
-      this.settings = deepMerge(DEFAULT_SETTINGS, (root).settings || {});
+      const root = (await this.loadData()) as unknown;
+      const rootObj = isPlainObject(root) ? root : {};
+      const rootSettings = isPlainObject(rootObj.settings)
+        ? (rootObj.settings as Partial<SproutSettings>)
+        : {};
+      this.settings = deepMerge(DEFAULT_SETTINGS, rootSettings);
       this._normaliseSettingsInPlace();
 
       this.store = new JsonStore(this);
-      this.store.load(root);
+      this.store.load(rootObj);
 
       registerReadingViewPrettyCards(this);
 
@@ -523,7 +531,10 @@ export default class SproutPlugin extends Plugin {
         method: "GET",
         headers: { Accept: "application/vnd.github+json" },
       });
-      const count = Number(res?.json?.stargazers_count);
+      const json: unknown = res?.json;
+      const jsonObj = json && typeof json === "object" ? (json as Record<string, unknown>) : null;
+      const countRaw = jsonObj?.stargazers_count;
+      const count = Number(countRaw);
       if (Number.isFinite(count)) {
         s.home.githubStars.count = count;
         s.home.githubStars.fetchedAt = Date.now();

@@ -601,11 +601,13 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
               tick={{ fontSize: 11, textAnchor: "end" }}
               axisLine={{ stroke: "var(--border)" }}
               ticks={[xAxisConfig.min, xAxisConfig.max]}
-              tickFormatter={(value) => {
-                const absValue = Math.abs(value);
+              tickFormatter={(value: number) => {
+                const num = Number(value);
+                if (!Number.isFinite(num)) return "";
+                const absValue = Math.abs(num);
                 if (Math.abs(absValue - xAxisConfig.min) < 0.01) return xAxisConfig.minLabel;
                 if (Math.abs(absValue - xAxisConfig.max) < 0.01) return xAxisConfig.maxLabel;
-                const original = value * value;
+                const original = num * num;
                 if (original < 1) {
                   // Show hours as integer
                   const hours = Math.round(original * 24);

@@ -115,7 +115,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     // IMPORTANT inline sizing (requested): max-width 800px, width 90%
     try {
-      const inner = this.containerEl.querySelector(".modal") as HTMLElement | null;
+      const inner = this.containerEl.querySelector<HTMLElement>(".modal");
       if (inner) {
         inner.style.setProperty("width", "90%", "important");
         inner.style.setProperty("max-width", "800px", "important");
@@ -126,9 +126,9 @@ export class ImageOcclusionEditorModal extends Modal {
 
     try {
       this.containerEl.style.zIndex = "3000";
-      const bg = this.containerEl.querySelector(".modal-bg") as HTMLElement | null;
+      const bg = this.containerEl.querySelector<HTMLElement>(".modal-bg");
       if (bg) bg.style.zIndex = "2999";
-      const inner = this.containerEl.querySelector(".modal") as HTMLElement | null;
+      const inner = this.containerEl.querySelector<HTMLElement>(".modal");
       if (inner) inner.style.zIndex = "3000";
     } catch {
       // ignore
@@ -1060,8 +1060,8 @@ export class ImageOcclusionEditorModal extends Modal {
     for (const c of Object.values(cards)) {
       if (!c) continue;
       if (String(c.type) !== "io-child") continue;
-      if (String((c as CardRecord).parentId || "") !== String(this.parentId)) continue;
-      existingChildren.push(c as CardRecord);
+      if (String((c).parentId || "") !== String(this.parentId)) continue;
+      existingChildren.push(c);
     }
 
     const keepChildIds = new Set<string>();

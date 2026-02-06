@@ -18,7 +18,7 @@ import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
-import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS } from "../core/constants";
+import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_ANALYTICS } from "../core/constants";
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
 import { StagePieCard } from "./pie-charts";
@@ -114,6 +114,7 @@ export class SproutAnalyticsView extends ItemView {
         });
       }, 100);
     }
+    await Promise.resolve();
   }
 
   async onClose() {
@@ -154,6 +155,7 @@ export class SproutAnalyticsView extends ItemView {
     } catch (e) { log.swallow("unmount forgetting curve root", e); }
     this._forgettingCurveRoot = null;
     resetAOS();
+    await Promise.resolve();
   }
 
   onRefresh() {
@@ -167,15 +169,8 @@ export class SproutAnalyticsView extends ItemView {
     const root = this._rootEl;
     if (!root) return;
 
-    if (this.plugin.isWideMode) {
-      root.style.setProperty("max-width", "none", "important");
-      root.style.setProperty("width", "100%", "important");
-    } else {
-      root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
-      root.style.setProperty("width", "100%", "important");
-    }
-    root.style.setProperty("margin-left", "auto", "important");
-    root.style.setProperty("margin-right", "auto", "important");
+    const maxWidth = this.plugin.isWideMode ? "none" : MAX_CONTENT_WIDTH_PX;
+    root.style.setProperty("--sprout-analytics-max-width", maxWidth);
   }
 
   render() {
@@ -233,9 +228,14 @@ export class SproutAnalyticsView extends ItemView {
 
     this._rootEl = root;
 
-    root.classList.add("bc", "sprout-view-content", "sprout-analytics-root", "flex", "flex-col");
-    root.style.minHeight = "0";
-    root.style.gap = "12px";
+    root.classList.add(
+      "bc",
+      "sprout-view-content",
+      "sprout-analytics-root",
+      "sprout-analytics-width",
+      "flex",
+      "flex-col",
+    );
 
     this.containerEl.addClass("sprout");
     this.setTitle?.("Analytics");
@@ -386,15 +386,14 @@ export class SproutAnalyticsView extends ItemView {
 
     const makeBadge = (opts: { text: string; bg?: string; color?: string; border?: string; live?: boolean; className?: string }) => {
       const badge = document.createElement("span");
-      badge.className = `sprout-badge inline-flex items-center gap-1${opts.className ? ` ${opts.className}` : ""}`;
-      if (opts.bg) badge.style.backgroundColor = opts.bg;
-      else if (!opts.className) badge.style.backgroundColor = "var(--theme-accent)";
-      if (opts.color) badge.style.color = opts.color;
-      if (opts.border) badge.style.border = opts.border;
+      badge.className = `sprout-badge sprout-analytics-badge inline-flex items-center gap-1${opts.className ? ` ${opts.className}` : ""}`;
+      if (opts.bg) badge.style.setProperty("--sprout-badge-bg", opts.bg);
+      else if (!opts.className) badge.style.setProperty("--sprout-badge-bg", "var(--theme-accent)");
+      if (opts.color) badge.style.setProperty("--sprout-badge-color", opts.color);
+      if (opts.border) badge.style.setProperty("--sprout-badge-border", opts.border);
       if (opts.live) {
         const circle = document.createElement("span");
-        circle.className = "inline-block w-1.5 h-1.5 rounded-full bg-white";
-        circle.style.animation = "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite";
+        circle.className = "inline-block w-1.5 h-1.5 rounded-full bg-white sprout-analytics-live-pulse";
         badge.appendChild(circle);
       }
       badge.appendChild(document.createTextNode(opts.text));
@@ -411,7 +410,7 @@ export class SproutAnalyticsView extends ItemView {
 
     const buildTrendBadge = (trend: { value: number; text: string; dir: number }) => {
       const badge = document.createElement("span");
-      badge.className = "sprout-trend-badge";
+      badge.className = "sprout-trend-badge sprout-analytics-rotatable";
 
       const icon = document.createElement("span");
       icon.className = "inline-flex items-center justify-center";
@@ -441,10 +440,10 @@ export class SproutAnalyticsView extends ItemView {
         const currentVal = (trend.dir === 0 ? 0 : eased * Math.abs(target)) * (trend.dir >= 0 ? 1 : -1);
         valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(1)}%`;
         const angle = startAngle + (endAngle - startAngle) * eased;
-        (badge as HTMLElement).style.transform = `rotate(${angle}deg)`;
+        (badge as HTMLElement).style.setProperty("--sprout-rotate", `${angle}deg`);
         if (p < 1) requestAnimationFrame(animate);
         else {
-          (badge as HTMLElement).style.transform = "rotate(0deg)";
+          (badge as HTMLElement).style.setProperty("--sprout-rotate", "0deg");
           valueEl.textContent = trend.text;
         }
       };
@@ -483,8 +482,7 @@ export class SproutAnalyticsView extends ItemView {
       ? makeBadge({ text: "Live", live: true, className: "sprout-live-badge sprout-live-badge-orange" })
       : (() => {
           const badge = document.createElement("span");
-          badge.className = "sprout-trend-badge inline-flex items-center gap-1";
-          badge.style.padding = "0rem 0.5rem";
+          badge.className = "sprout-trend-badge inline-flex items-center gap-1 sprout-analytics-badge-compact";
           badge.textContent = "All time";
           return badge;
         })();
@@ -512,8 +510,7 @@ export class SproutAnalyticsView extends ItemView {
     body.appendChild(heroRow);
 
     const heatmapHost = document.createElement("div");
-    heatmapHost.className = "xl:col-span-2";
-    heatmapHost.style.minHeight = "200px";
+    heatmapHost.className = "xl:col-span-2 sprout-analytics-heatmap-host";
     applyAos(heatmapHost, heatmapDelay);
     heroRow.appendChild(heatmapHost);
 
@@ -530,8 +527,7 @@ export class SproutAnalyticsView extends ItemView {
 
     // 2x2 graphs grid
     const graphsGrid = document.createElement("div");
-    graphsGrid.className = "grid grid-cols-1 lg:grid-cols-2 gap-4";
-    graphsGrid.style.gridAutoRows = "1fr";
+    graphsGrid.className = "grid grid-cols-1 lg:grid-cols-2 gap-4 sprout-analytics-grid-rows";
     applyAos(graphsGrid, graphsGridDelay);
     body.appendChild(graphsGrid);
 
@@ -602,8 +598,7 @@ export class SproutAnalyticsView extends ItemView {
 
     // Stability Distribution + Placeholder
     const stabilityRow = document.createElement("div");
-    stabilityRow.className = "grid grid-cols-1 lg:grid-cols-2 gap-4";
-    stabilityRow.style.gridAutoRows = "1fr";
+    stabilityRow.className = "grid grid-cols-1 lg:grid-cols-2 gap-4 sprout-analytics-grid-rows";
     applyAos(stabilityRow, stabilityRowDelay);
     body.appendChild(stabilityRow);
 
@@ -636,9 +631,8 @@ export class SproutAnalyticsView extends ItemView {
 
     // Daily stats table card
     const statsCard = document.createElement("div");
-    statsCard.className = "card sprout-ana-card p-4 flex flex-col gap-3";
+    statsCard.className = "card sprout-ana-card p-4 flex flex-col gap-3 sprout-analytics-stats-card";
     applyAos(statsCard, statsCardDelay);
-    statsCard.style.marginTop = "10px";
     body.appendChild(statsCard);
 
     const statsTitle = document.createElement("div");
@@ -723,8 +717,7 @@ export class SproutAnalyticsView extends ItemView {
 
     // Bottom controls need summary declared before first renderTable() call.
     const bottom = document.createElement("div");
-    bottom.className = "bc flex flex-row flex-wrap items-center gap-2";
-    bottom.style.marginTop = "10px";
+    bottom.className = "bc flex flex-row flex-wrap items-center gap-2 sprout-analytics-bottom-row";
     statsCard.appendChild(bottom);
 
     const summaryWrap = document.createElement("div");
@@ -736,9 +729,7 @@ export class SproutAnalyticsView extends ItemView {
     bottom.appendChild(summaryWrap);
 
     const center = document.createElement("div");
-    center.className = "bc flex items-center justify-center";
-    center.style.marginLeft = "auto";
-    center.style.marginRight = "auto";
+    center.className = "bc flex items-center justify-center sprout-analytics-center";
     bottom.appendChild(center);
 
     const right = document.createElement("div");
@@ -781,27 +772,15 @@ export class SproutAnalyticsView extends ItemView {
 
     const exportBtn = document.createElement("button");
     exportBtn.type = "button";
-    exportBtn.className = "bc inline-flex items-center gap-1 font-semibold text-muted-foreground cursor-pointer";
-    exportBtn.style.setProperty("background", "transparent", "important");
-    exportBtn.style.setProperty("border", "none", "important");
-    exportBtn.style.setProperty("box-shadow", "none", "important");
-    exportBtn.style.setProperty("padding", "0", "important");
-    exportBtn.style.setProperty("color", "var(--text-muted)", "important");
-    exportBtn.style.setProperty("font-size", "12.25px", "important");
+    exportBtn.className = "bc inline-flex items-center gap-1 font-semibold text-muted-foreground cursor-pointer sprout-analytics-export-btn";
     const exportIcon = document.createElement("span");
     exportIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3";
     setIcon(exportIcon, "download");
-    exportIcon.style.setProperty("transform", "scale(0.9)", "important");
+    exportIcon.classList.add("sprout-icon-scale-90");
     const exportText = document.createElement("span");
     exportText.textContent = "Export as CSV";
     exportBtn.appendChild(exportIcon);
     exportBtn.appendChild(exportText);
-    exportBtn.addEventListener("mouseenter", () => {
-      exportBtn.style.setProperty("color", "var(--foreground)", "important");
-    });
-    exportBtn.addEventListener("mouseleave", () => {
-      exportBtn.style.setProperty("color", "var(--text-muted)", "important");
-    });
     exportBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -843,9 +822,7 @@ export class SproutAnalyticsView extends ItemView {
             if (!tr.isConnected) return;
             const style = getComputedStyle(tr);
             if (style.opacity === "0") {
-              tr.style.opacity = "1";
-              tr.style.transform = "none";
-              tr.style.transition = "none";
+              tr.classList.add("sprout-aos-fallback");
             }
           }, 350);
         }
@@ -890,15 +867,11 @@ export class SproutAnalyticsView extends ItemView {
     sproutWrapper.className = "sprout";
     rowsPopover.className = "bc";
     rowsPopover.setAttribute("aria-hidden", "true");
-    rowsPopover.style.setProperty("position", "fixed", "important");
-    rowsPopover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-    rowsPopover.style.setProperty("display", "none", "important");
-    rowsPopover.style.setProperty("pointer-events", "auto", "important");
+    rowsPopover.classList.add("sprout-popover-overlay");
     sproutWrapper.appendChild(rowsPopover);
 
     const rowsPanel = document.createElement("div");
-    rowsPanel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-    rowsPanel.style.setProperty("pointer-events", "auto", "important");
+    rowsPanel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
     rowsPopover.appendChild(rowsPanel);
 
     const rowsMenu = document.createElement("div");
@@ -912,7 +885,7 @@ export class SproutAnalyticsView extends ItemView {
     const closeRowsMenu = () => {
       rowsBtn.setAttribute("aria-expanded", "false");
       rowsPopover.setAttribute("aria-hidden", "true");
-      rowsPopover.style.setProperty("display", "none", "important");
+      rowsPopover.classList.remove("is-open");
       try {
         sproutWrapper.remove();
       } catch (e) { log.swallow("remove rows menu wrapper", e); }
@@ -926,9 +899,9 @@ export class SproutAnalyticsView extends ItemView {
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
       const panelRect = rowsPanel.getBoundingClientRect();
       const top = Math.max(margin, r.top - panelRect.height - 6);
-      rowsPopover.style.left = `${left}px`;
-      rowsPopover.style.top = `${top}px`;
-      rowsPopover.style.width = `${width}px`;
+      rowsPopover.style.setProperty("--sprout-popover-left", `${left}px`);
+      rowsPopover.style.setProperty("--sprout-popover-top", `${top}px`);
+      rowsPopover.style.setProperty("--sprout-popover-width", `${width}px`);
     };
 
     const buildRowsOptions = () => {
@@ -993,7 +966,7 @@ export class SproutAnalyticsView extends ItemView {
       buildRowsOptions();
       rowsBtn.setAttribute("aria-expanded", "true");
       rowsPopover.setAttribute("aria-hidden", "false");
-      rowsPopover.style.setProperty("display", "block", "important");
+      rowsPopover.classList.add("is-open");
       if (!sproutWrapper.parentElement) document.body.appendChild(sproutWrapper);
       requestAnimationFrame(() => placeRowsMenu());
 

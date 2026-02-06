@@ -13,6 +13,7 @@ import type SproutPlugin from "../main";
 import type { CardRecord } from "../types/card";
 import type { StoredIORect } from "./image-occlusion-types";
 import { resolveImageFile } from "./io-helpers";
+import type * as IoModule from "./image-occlusion-index";
 
 export function isIoParentCard(card: CardRecord): boolean {
   return card && card.type === "io";
@@ -29,7 +30,7 @@ export function renderImageOcclusionReviewInto(args: {
   card: CardRecord;
   sourcePath: string;
   reveal: boolean;
-  ioModule: typeof import("./image-occlusion-index");
+  ioModule: typeof IoModule;
   renderMarkdownInto: (el: HTMLElement, md: string, sp: string) => Promise<void>;
   enableWidgetModal?: boolean;
 }) {
@@ -39,11 +40,9 @@ export function renderImageOcclusionReviewInto(args: {
 
   // Clear container
   containerEl.innerHTML = "";
-  containerEl.style.position = "relative";
-  containerEl.style.display = "inline-block";
-  containerEl.style.maxWidth = "100%";
+  containerEl.classList.add("sprout-io-container");
   if (widgetMode) {
-    containerEl.style.overflow = "hidden";
+    containerEl.classList.add("sprout-io-container--clip");
   }
 
   // Get image reference
@@ -93,40 +92,21 @@ export function renderImageOcclusionReviewInto(args: {
 
   const host = widgetMode ? containerEl : document.createElement("div");
   if (!widgetMode) {
-    host.className = "bc";
-    host.style.position = "relative";
-    host.style.display = "inline-block";
-    host.style.borderRadius = "3px";
-    host.style.overflow = "hidden";
-    host.style.border = "1px solid var(--background-modifier-border)";
-    host.style.background = "var(--background-secondary)";
-    host.style.maxWidth = "100%";
+    host.className = "bc sprout-io-host-card";
   }
 
   const img = document.createElement("img");
   img.src = imageSrc;
   img.alt = card.title || "Image Occlusion";
-  img.style.display = "block";
-  img.style.maxWidth = "100%";
-  img.style.height = "auto";
+  img.classList.add("sprout-io-image");
   // Modal mode: larger image, zoom-out cursor, fit modal
   if (args.enableWidgetModal) {
-    img.style.maxWidth = "95vw";
-    img.style.maxHeight = "90vh";
-    img.style.cursor = "zoom-out";
-    img.style.display = "block";
-    img.style.margin = "0 auto";
-    img.style.objectFit = "contain";
-    img.style.width = "auto";
-    img.style.height = "auto";
+    img.classList.add("sprout-io-image-zoomed");
   } else {
-    img.style.maxHeight = "350px";
-    img.style.cursor = "zoom-in";
+    img.classList.add("sprout-io-image-inline");
   }
   if (widgetMode) {
-    img.style.setProperty("border", "none", "important");
-    img.style.setProperty("outline", "none", "important");
-    img.style.setProperty("box-shadow", "none", "important");
+    img.classList.add("sprout-io-image-widget");
   }
   host.appendChild(img);
 
@@ -139,24 +119,10 @@ export function renderImageOcclusionReviewInto(args: {
       // Open modal with expanded image and masks, as in widget.ts
       const modal = new (class extends Modal {
         onOpen() {
-          this.contentEl.style.padding = "16px";
-          this.contentEl.style.display = "flex";
-          this.contentEl.style.justifyContent = "center";
-          this.contentEl.style.alignItems = "center";
-          this.contentEl.style.cursor = "zoom-out";
-          this.contentEl.style.width = "100%";
-          this.contentEl.style.height = "100%";
-          const zoomHost = this.contentEl.createDiv({ cls: "bc" });
+          this.containerEl.addClass("sprout");
+          this.contentEl.classList.add("sprout-zoom-content", "sprout-io-zoom-out");
+          const zoomHost = this.contentEl.createDiv({ cls: "bc sprout-zoom-host sprout-io-zoom-out" });
           zoomHost.dataset.sproutIoWidget = "1";
-          zoomHost.style.position = "relative";
-          zoomHost.style.display = "flex";
-          zoomHost.style.alignItems = "center";
-          zoomHost.style.justifyContent = "center";
-          zoomHost.style.maxWidth = "95vw";
-          zoomHost.style.maxHeight = "90vh";
-          zoomHost.style.overflow = "visible";
-          zoomHost.style.cursor = "zoom-out";
-          zoomHost.style.boxSizing = "border-box";
           // Render with modal-specific sizing
           void renderImageOcclusionReviewInto({
             app,
@@ -195,11 +161,7 @@ export function renderImageOcclusionReviewInto(args: {
   const renderMasks = showAllMasks && card.type === "io-child" ? occlusions : masksToShow;
   if (!reveal && renderMasks.length > 0) {
     const overlay = document.createElement("div");
-    overlay.style.position = "absolute";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.pointerEvents = "none";
-    overlay.style.zIndex = "2";
+    overlay.classList.add("sprout-io-overlay");
     const hintSizeUpdaters: Array<() => void> = [];
 
 
@@ -211,21 +173,14 @@ export function renderImageOcclusionReviewInto(args: {
       // Calculate position relative to host
       const left = imgRect.left - hostRect.left;
       const top = imgRect.top - hostRect.top;
-      overlay.style.position = "absolute";
-      overlay.style.left = `${left}px`;
-      overlay.style.top = `${top}px`;
-      overlay.style.width = `${imgRect.width}px`;
-      overlay.style.height = `${imgRect.height}px`;
-      overlay.style.maxWidth = img.style.maxWidth;
-      overlay.style.maxHeight = img.style.maxHeight;
-      overlay.style.display = img.style.display;
-      overlay.style.margin = img.style.margin;
-      overlay.style.borderRadius = img.style.borderRadius;
-      overlay.style.overflow = "hidden";
-      overlay.style.pointerEvents = "none";
-      overlay.style.zIndex = "2";
-      overlay.style.right = "auto";
-      overlay.style.bottom = "auto";
+      const imgStyles = getComputedStyle(img);
+      overlay.style.setProperty("--sprout-io-left", `${left}px`);
+      overlay.style.setProperty("--sprout-io-top", `${top}px`);
+      overlay.style.setProperty("--sprout-io-width", `${imgRect.width}px`);
+      overlay.style.setProperty("--sprout-io-height", `${imgRect.height}px`);
+      overlay.style.setProperty("--sprout-io-max-width", imgStyles.maxWidth);
+      overlay.style.setProperty("--sprout-io-max-height", imgStyles.maxHeight);
+      overlay.style.setProperty("--sprout-io-radius", imgStyles.borderRadius);
     }
 
     // Add masks
@@ -246,46 +201,36 @@ export function renderImageOcclusionReviewInto(args: {
               : rectGroup === targetGroup;
 
       const mask = document.createElement("div");
-      mask.style.position = "absolute";
-      mask.style.left = `${Math.max(0, Math.min(1, x)) * 100}%`;
-      mask.style.top = `${Math.max(0, Math.min(1, y)) * 100}%`;
-      mask.style.width = `${Math.max(0, Math.min(1, w)) * 100}%`;
-      mask.style.height = `${Math.max(0, Math.min(1, h)) * 100}%`;
+      mask.classList.add("sprout-io-mask");
+      mask.style.setProperty("--sprout-io-x", `${Math.max(0, Math.min(1, x)) * 100}%`);
+      mask.style.setProperty("--sprout-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
+      mask.style.setProperty("--sprout-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
+      mask.style.setProperty("--sprout-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
       if (widgetMode) {
         if (isTarget) {
-          mask.style.background = "var(--theme-accent)";
-          mask.style.border = "2px solid var(--foreground)";
-          mask.style.display = "flex";
-          mask.style.alignItems = "center";
-          mask.style.justifyContent = "center";
+          mask.classList.add("sprout-io-mask-target");
           const hint = document.createElement("span");
           hint.textContent = "?";
-          hint.style.color = "#fff";
-          hint.style.fontWeight = "600";
-          hint.style.lineHeight = "1";
+          hint.classList.add("sprout-io-mask-hint");
           mask.appendChild(hint);
           hintSizeUpdaters.push(() => {
             const rect = mask.getBoundingClientRect();
             if (!rect.height) return;
             const size = Math.max(12, rect.height * 0.35);
-            hint.style.fontSize = `${size}px`;
+            hint.style.setProperty("--sprout-io-hint-size", `${size}px`);
           });
         } else {
-          mask.style.background = "var(--foreground)";
-          mask.style.border = "2px solid var(--foreground)";
+          mask.classList.add("sprout-io-mask-other");
         }
       } else {
-        mask.style.background = "var(--background)00";
-        mask.style.border = "none";
+        mask.classList.add("sprout-io-mask-hidden");
       }
       // Render true ovals for ellipse/circle masks
       if (rect.shape === "circle") {
-        mask.style.borderRadius = "50%";
+        mask.classList.add("sprout-io-mask-circle");
       } else {
-        mask.style.borderRadius = "3px";
+        mask.classList.add("sprout-io-mask-rect");
       }
-      mask.style.pointerEvents = "none";
-      mask.style.zIndex = "1";
 
       overlay.appendChild(mask);
     }
@@ -320,8 +265,8 @@ export function renderImageOcclusionReviewInto(args: {
   }
 
   if (widgetMode && enableWidgetModal) {
-    host.style.cursor = "zoom-in";
-    img.style.cursor = "zoom-in";
+    host.classList.add("sprout-io-zoom-in");
+    img.classList.add("sprout-io-zoom-in");
     host.onclick = (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -329,34 +274,15 @@ export function renderImageOcclusionReviewInto(args: {
       const modal = new (class extends Modal {
         onOpen() {
           this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
-          this.modalEl.addClass("bc", "sprout-modals");
-          this.modalEl.style.setProperty("background", "transparent", "important");
-          this.modalEl.style.setProperty("backdrop-filter", "none", "important");
-          this.modalEl.style.setProperty("border", "none", "important");
-          this.modalEl.style.setProperty("box-shadow", "none", "important");
-          this.modalEl.style.setProperty("padding", "0", "important");
-          this.modalEl.style.setProperty("max-width", "none", "important");
-          this.modalEl.style.setProperty("width", "auto", "important");
+          this.modalEl.addClass("bc", "sprout-modals", "sprout-zoom-overlay");
           this.modalEl.querySelector(".modal-header")?.remove();
           this.modalEl.querySelector(".modal-close-button")?.remove();
 
           this.contentEl.empty();
-          this.contentEl.style.setProperty("padding", "0", "important");
-          this.contentEl.style.setProperty("display", "flex", "important");
-          this.contentEl.style.setProperty("align-items", "center", "important");
-          this.contentEl.style.setProperty("justify-content", "center", "important");
-          this.contentEl.style.setProperty("width", "100%", "important");
-          this.contentEl.style.setProperty("height", "100%", "important");
+          this.contentEl.classList.add("sprout-zoom-content");
 
-          const zoomHost = this.contentEl.createDiv({ cls: "bc" });
+          const zoomHost = this.contentEl.createDiv({ cls: "bc sprout-zoom-host" });
           zoomHost.dataset.sproutIoWidget = "1";
-          zoomHost.style.setProperty("position", "relative", "important");
-          zoomHost.style.setProperty("display", "flex", "important");
-          zoomHost.style.setProperty("align-items", "center", "important");
-          zoomHost.style.setProperty("justify-content", "center", "important");
-          zoomHost.style.setProperty("max-width", "95vw", "important");
-          zoomHost.style.setProperty("max-height", "90vh", "important");
-          zoomHost.style.setProperty("overflow", "visible", "important");
 
           renderImageOcclusionReviewInto({
             app,
@@ -372,47 +298,14 @@ export function renderImageOcclusionReviewInto(args: {
           {
             const zoomImg = zoomHost.querySelector("img");
             if (zoomImg) {
-              zoomImg.style.setProperty("max-width", "95vw", "important");
-              zoomImg.style.setProperty("max-height", "90vh", "important");
-              zoomImg.style.setProperty("width", "auto", "important");
-              zoomImg.style.setProperty("height", "auto", "important");
-              zoomImg.style.setProperty("object-fit", "contain", "important");
-              zoomImg.style.setProperty("display", "block", "important");
+              zoomImg.classList.add("sprout-zoom-img", "sprout-io-image-zoomed");
             }
 
             const closeBtn = document.createElement("button");
             closeBtn.type = "button";
             closeBtn.setAttribute("data-tooltip", "Close");
-            closeBtn.style.position = "absolute";
-            closeBtn.style.top = "8px";
-            closeBtn.style.right = "8px";
-            closeBtn.style.zIndex = "5";
-            closeBtn.style.width = "24px";
-            closeBtn.style.height = "24px";
-            closeBtn.style.display = "flex";
-            closeBtn.style.alignItems = "center";
-            closeBtn.style.justifyContent = "center";
-            closeBtn.style.border = "none";
-            closeBtn.style.background = "transparent";
-            closeBtn.style.boxShadow = "none";
-            closeBtn.style.outline = "none";
-            closeBtn.style.padding = "0";
-            closeBtn.style.color = "var(--foreground)";
-            closeBtn.style.opacity = "0.8";
-            closeBtn.style.cursor = "pointer";
+            closeBtn.classList.add("sprout-zoom-close");
             setIcon(closeBtn, "x");
-            closeBtn.addEventListener("mouseenter", () => {
-              closeBtn.style.opacity = "1";
-            });
-            closeBtn.addEventListener("mouseleave", () => {
-              closeBtn.style.opacity = "0.8";
-            });
-            closeBtn.addEventListener("mousedown", () => {
-              closeBtn.style.opacity = "1";
-            });
-            closeBtn.addEventListener("mouseup", () => {
-              closeBtn.style.opacity = "1";
-            });
             closeBtn.addEventListener("click", (e) => {
               e.preventDefault();
               e.stopPropagation();

@@ -156,13 +156,7 @@ export function buildBrowserLayout(
   q.type = "text";
   q.placeholder = "Search flashcards";
   q.value = ctx.query;
-  q.className = "input h-9 px-3 text-sm";
-  q.style.flex = "1 1 300px";
-  q.style.minWidth = "300px";
-  q.style.width = "100%";
-  q.style.height = "36px";
-  q.style.boxSizing = "border-box";
-  q.style.alignSelf = "stretch";
+  q.className = "input h-9 px-3 text-sm sprout-browser-search-input";
   searchGroup.appendChild(q);
 
   q.addEventListener("input", () => {
@@ -289,7 +283,7 @@ export function buildBrowserLayout(
   const editIcon = document.createElement("span");
   editIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
   setIcon(editIcon, "edit-3");
-  editIcon.style.setProperty("transform", "scale(0.8)");
+  editIcon.classList.add("sprout-icon-scale-80");
   editBtn.appendChild(editIcon);
   const editText = document.createElement("span");
   editText.textContent = "Edit";
@@ -325,20 +319,11 @@ export function buildBrowserLayout(
   const tableWrap = document.createElement("div");
   tableWrap.className =
     "bc rounded-lg border border-border overflow-auto flex-1 min-h-0 sprout-browser-table-wrap";
-  tableWrap.style.flex = "1 1 0%";
-  tableWrap.style.minHeight = "0";
-  tableWrap.style.overflow = "auto";
-  tableWrap.style.maxWidth = "100%";
-  tableWrap.style.boxSizing = "border-box";
   applyAos(tableWrap, nextDelay());
   root.appendChild(tableWrap);
 
   const table = document.createElement("table");
-  table.className = `table w-full text-sm leading-snug`;
-  table.style.tableLayout = "fixed";
-  table.style.position = "relative";
-  table.style.maxWidth = "100%";
-  table.style.boxSizing = "border-box";
+  table.className = "table w-full text-sm leading-snug sprout-browser-table";
   tableWrap.appendChild(table);
 
   // Colgroup
@@ -347,7 +332,7 @@ export function buildBrowserLayout(
 
   const selectCol = document.createElement("col");
   selectCol.setAttribute("data-col", "select");
-  selectCol.style.width = "42px";
+  selectCol.className = "sprout-browser-select-col";
   colgroup.appendChild(selectCol);
 
   const colEls: Partial<Record<ColKey, HTMLTableColElement>> = {};
@@ -356,7 +341,8 @@ export function buildBrowserLayout(
   cols.forEach((k) => {
     const c = document.createElement("col");
     c.setAttribute("data-col", k);
-    c.style.width = `${ctx.colWidths[k] || 120}px`;
+    c.className = "sprout-browser-col";
+    c.style.setProperty("--sprout-col-width", `${ctx.colWidths[k] || 120}px`);
     colgroup.appendChild(c);
     colEls[k] = c;
   });
@@ -366,26 +352,17 @@ export function buildBrowserLayout(
   table.appendChild(thead);
 
   const hr = document.createElement("tr");
-  hr.style.verticalAlign = "middle";
-  hr.style.width = "100%";
+  hr.classList.add("sprout-browser-header-row");
   thead.appendChild(hr);
 
   // Select-all checkbox
   const selectTh = document.createElement("th");
-  selectTh.className = "text-sm font-medium text-muted-foreground select-none";
-  selectTh.style.verticalAlign = "middle";
-  selectTh.style.width = "42px";
-  selectTh.style.position = "relative";
-  selectTh.style.display = "flex";
-  selectTh.style.alignItems = "center";
-  selectTh.style.justifyContent = "center";
+  selectTh.className = "text-sm font-medium text-muted-foreground select-none sprout-browser-select-th";
   applyStickyThStyles(selectTh, 0);
 
   const selectAll = document.createElement("input");
   selectAll.type = "checkbox";
-  selectAll.className = "cursor-pointer";
-  selectAll.style.margin = "0";
-  selectAll.style.accentColor = "var(--text-normal)";
+  selectAll.className = "cursor-pointer sprout-browser-select-all";
   selectTh.appendChild(selectAll);
   hr.appendChild(selectTh);
 
@@ -395,48 +372,20 @@ export function buildBrowserLayout(
 
   const headCell = (label: string, key: SortKey) => {
     const th = document.createElement("th");
-    th.className = `text-sm font-medium text-muted-foreground select-none cursor-pointer ${ctx.cellWrapClass} sprout-browser-header-cell`;
+    th.className = `text-sm font-medium text-muted-foreground select-none cursor-pointer ${ctx.cellWrapClass} sprout-browser-header-cell sprout-browser-th`;
     th.setAttribute("data-col", key);
-    th.style.verticalAlign = "middle";
-    th.style.maxWidth = "100%";
-    th.style.overflow = "visible";
-    th.style.textOverflow = "clip";
-    th.style.whiteSpace = "normal";
-    th.style.boxSizing = "border-box";
-    th.style.position = "relative";
 
     applyStickyThStyles(th, 0);
 
     const inner = document.createElement("div");
-    inner.className = "items-center h-full";
-    inner.style.position = "absolute";
-    inner.style.left = "0";
-    inner.style.top = "0";
-    inner.style.right = "0";
-    inner.style.bottom = "0";
-    inner.style.minHeight = "44px";
-    inner.style.alignItems = "center";
-    inner.style.display = "flex";
-    inner.style.justifyContent = "space-between";
-    inner.style.height = "100%";
-    inner.style.pointerEvents = "none";
+    inner.className = "items-center h-full sprout-browser-th-inner";
 
     const lbl = document.createElement("span");
     lbl.textContent = label;
-    lbl.style.verticalAlign = "middle";
-    lbl.style.display = "inline-block";
-    lbl.style.alignSelf = "center";
-    lbl.style.justifyContent = "center";
-    lbl.style.width = "auto";
-    lbl.style.flex = "0 1 auto";
-    lbl.style.minWidth = "0";
-    lbl.style.whiteSpace = "normal";
-    lbl.style.overflowWrap = "anywhere";
-    lbl.style.wordBreak = "keep-all";
-    lbl.style.pointerEvents = "auto";
+    lbl.className = "sprout-browser-th-label";
 
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("class", "svg-icon lucide-chevron-down sprout-browser-header-icon");
+    icon.setAttribute("class", "svg-icon lucide-chevron-down sprout-browser-header-icon sprout-browser-th-icon");
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.setAttribute("width", "16");
     icon.setAttribute("height", "16");
@@ -445,11 +394,6 @@ export function buildBrowserLayout(
     icon.setAttribute("stroke-width", "2");
     icon.setAttribute("stroke-linecap", "round");
     icon.setAttribute("stroke-linejoin", "round");
-    icon.style.pointerEvents = "none";
-    icon.style.opacity = "0";
-    icon.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-    icon.style.flexShrink = "0";
-    icon.style.marginLeft = "10px";
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", "m6 9 6 6 6-6");
     icon.appendChild(path);
@@ -501,11 +445,8 @@ export function buildBrowserLayout(
 
   // Tbody (empty — refreshTable fills it)
   const tbody = document.createElement("tbody");
-  thead.style.display = "table-row-group";
-  tbody.style.display = "block";
-  tbody.style.overflowY = "auto";
-  tbody.style.maxHeight = "none";
-  tbody.style.width = "100%";
+  thead.classList.add("sprout-browser-thead");
+  tbody.classList.add("sprout-browser-tbody");
   table.appendChild(tbody);
 
   // ── Bottom controls ──
@@ -532,12 +473,12 @@ export function buildBrowserLayout(
   const clearIcon = document.createElement("span");
   clearIcon.className = "inline-flex items-center justify-center [&_svg]:size-3";
   setIcon(clearIcon, "x");
-  clearIcon.style.setProperty("transform", "scale(0.8)", "important");
+  clearIcon.classList.add("sprout-icon-scale-80");
   clearSelection.appendChild(clearIcon);
   const clearText = document.createElement("span");
   clearText.textContent = "Clear selection";
   clearSelection.appendChild(clearText);
-  clearSelection.style.setProperty("display", "none", "important");
+  clearSelection.classList.add("sprout-is-hidden");
   clearSelection.addEventListener("click", (ev) => {
     ev.preventDefault();
     ev.stopPropagation();

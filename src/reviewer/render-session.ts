@@ -219,7 +219,8 @@ function ensureMcqOrderMap(session: Session): Record<string, number[]> {
 function isPermutation(arr: unknown, n: number): boolean {
   if (!Array.isArray(arr) || arr.length !== n) return false;
   const seen = new Array<boolean>(n).fill(false);
-  for (const x of arr) {
+  for (const raw of arr) {
+    const x = Number(raw);
     if (!Number.isInteger(x) || x < 0 || x >= n) return false;
     if (seen[x]) return false;
     seen[x] = true;

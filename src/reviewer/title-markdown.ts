@@ -19,7 +19,7 @@ export function renderTitleMarkdownIfNeeded(args: {
   const { rootEl, session, card, renderMarkdownInto } = args;
   if (!session || !card) return;
 
-  const titleEl = rootEl.querySelector(".sprout-question-title") as HTMLElement | null;
+  const titleEl = rootEl.querySelector(".sprout-question-title");
   if (!titleEl) return;
 
   const titleText =

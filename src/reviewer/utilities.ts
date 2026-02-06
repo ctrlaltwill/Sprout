@@ -9,7 +9,7 @@
 
 export function deepClone<T>(v: T): T {
   if (typeof structuredClone === "function") return structuredClone(v);
-  return JSON.parse(JSON.stringify(v));
+  return JSON.parse(JSON.stringify(v)) as T;
 }
 
 export function clampInt(n: unknown, lo: number, hi: number): number {

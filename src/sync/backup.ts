@@ -88,7 +88,7 @@ export function extractStatesFromDataJsonObject(obj: unknown): Record<string, un
   if (!obj) return null;
   const o = obj as Record<string, unknown>;
   const root = isPlainObject(o.data) ? o.data : o;
-  const states = (root as Record<string, unknown>)?.states;
+  const states = (root)?.states;
   if (!isPlainObject(states)) return null;
   return states;
 }
@@ -274,7 +274,7 @@ function getStoreLikeRoot(obj: unknown): Record<string, unknown> | null {
   for (const c of candidates) {
     if (!isPlainObject(c)) continue;
 
-    const rec = c as Record<string, unknown>;
+    const rec = c;
     const hasCards = isPlainObject(rec.cards);
     const hasStates = isPlainObject(rec.states);
     const hasReviewLog = Array.isArray(rec.reviewLog);
@@ -298,7 +298,13 @@ function computeSchedulingStats(states: unknown, now: number) {
   for (const st of values) {
     if (!st || typeof st !== "object") continue;
     const entry = st as Record<string, unknown>;
-    const stage = String(entry.stage ?? "");
+    const stageRaw = entry.stage;
+    const stage =
+      typeof stageRaw === "string"
+        ? stageRaw
+        : typeof stageRaw === "number"
+          ? String(stageRaw)
+          : "";
     if (stage === "learning" || stage === "relearning") out.learning += 1;
     if (stage === "review") out.review += 1;
     const stability = Number(entry.stabilityDays ?? 0);
@@ -521,7 +527,13 @@ export async function restoreFromDataJsonBackup(
 
     return { ok: true, message: "Restore completed." };
   } catch (e: unknown) {
-    return { ok: false, message: `Restore failed: ${e instanceof Error ? e.message : String(e ?? "unknown error")}` };
+    const errMsg =
+      e instanceof Error
+        ? e.message
+        : typeof e === "string"
+          ? e
+          : "unknown error";
+    return { ok: false, message: `Restore failed: ${errMsg}` };
   }
 }
 

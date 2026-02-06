@@ -73,3 +73,36 @@
   opacity: 1;
   transform: translateX(0);
 }
+
+/* --- Header nav host (view-header-nav-buttons override) --- */
+.sprout .sprout-nav-host {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  overflow: visible !important;
+  min-width: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+/* --- Dropdown root (inline-flex container for the trigger) --- */
+.sprout .sprout-dropdown-root {
+  position: relative !important;
+  z-index: 10050 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* --- Actions host (view-actions override) --- */
+.sprout .sprout-actions-host {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  overflow: visible !important;
+}
+
+/* --- More-menu wrapper --- */
+.sprout .sprout-more-wrap {
+  position: relative !important;
+  overflow: visible !important;
+}

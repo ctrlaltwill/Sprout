@@ -14,7 +14,6 @@
  */
 
 import { setIcon } from "obsidian";
-import { POPOVER_Z_INDEX } from "../core/constants";
 import { log } from "../core/logger";
 import { type ColKey, type DropdownOption, clearNode } from "./browser-helpers";
 
@@ -38,8 +37,7 @@ export function makeDropdownMenu<T extends string>(
 
   const root = document.createElement("div");
   root.id = id;
-  root.className = "relative inline-flex";
-  root.style.setProperty("overflow", "visible", "important");
+  root.className = "relative inline-flex sprout-overflow-visible";
 
   const trigger = document.createElement("button");
   trigger.type = "button";
@@ -48,7 +46,7 @@ export function makeDropdownMenu<T extends string>(
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("data-tooltip", args.label);
-  trigger.style.setProperty("pointer-events", "auto", "important");
+  trigger.classList.add("sprout-pointer-auto");
   root.appendChild(trigger);
 
   const trigText = document.createElement("span");
@@ -71,15 +69,10 @@ export function makeDropdownMenu<T extends string>(
   const popover = document.createElement("div");
   popover.id = `${id}-popover`;
   popover.setAttribute("aria-hidden", "true");
-
-  popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-  popover.style.setProperty("display", "none", "important");
-  popover.style.setProperty("pointer-events", "auto", "important");
+  popover.classList.add("sprout-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-  panel.style.setProperty("pointer-events", "auto", "important");
+  panel.className = "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
   popover.appendChild(panel);
   sproutWrapper.appendChild(popover);
 
@@ -183,9 +176,9 @@ export function makeDropdownMenu<T extends string>(
       top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
     }
 
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-    popover.style.width = `${width}px`;
+    popover.style.setProperty("--sprout-popover-left", `${left}px`);
+    popover.style.setProperty("--sprout-popover-top", `${top}px`);
+    popover.style.setProperty("--sprout-popover-width", `${width}px`);
   };
 
   let cleanup: (() => void) | null = null;
@@ -193,7 +186,7 @@ export function makeDropdownMenu<T extends string>(
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");
     popover.setAttribute("aria-hidden", "true");
-    popover.style.setProperty("display", "none", "important");
+    popover.classList.remove("is-open");
 
     try {
       cleanup?.();
@@ -211,7 +204,7 @@ export function makeDropdownMenu<T extends string>(
 
     trigger.setAttribute("aria-expanded", "true");
     popover.setAttribute("aria-hidden", "false");
-    popover.style.setProperty("display", "block", "important");
+    popover.classList.add("is-open");
 
     document.body.appendChild(sproutWrapper);
 
@@ -301,8 +294,7 @@ export function makeColumnsDropdown(
 
   const root = document.createElement("div");
   root.id = id;
-  root.className = "relative inline-flex";
-  root.style.setProperty("overflow", "visible", "important");
+  root.className = "relative inline-flex sprout-overflow-visible";
 
   const trigger = document.createElement("button");
   trigger.type = "button";
@@ -332,15 +324,10 @@ export function makeColumnsDropdown(
   popover.id = `${id}-popover`;
   popover.className = "";
   popover.setAttribute("aria-hidden", "true");
-  popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-  popover.style.setProperty("display", "none", "important");
-  popover.style.setProperty("pointer-events", "auto", "important");
+  popover.classList.add("sprout-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0";
-  panel.style.setProperty("pointer-events", "auto", "important");
-  panel.style.setProperty("padding", "6px", "important");
+  panel.className = "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 sprout-pointer-auto sprout-columns-panel";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
@@ -431,9 +418,9 @@ export function makeColumnsDropdown(
     const panelRect = panel.getBoundingClientRect();
     const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - panelRect.height - margin));
 
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-    popover.style.width = `${width}px`;
+    popover.style.setProperty("--sprout-popover-left", `${left}px`);
+    popover.style.setProperty("--sprout-popover-top", `${top}px`);
+    popover.style.setProperty("--sprout-popover-width", `${width}px`);
   };
 
   let cleanup: (() => void) | null = null;
@@ -448,7 +435,7 @@ export function makeColumnsDropdown(
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");
     popover.setAttribute("aria-hidden", "true");
-    popover.style.setProperty("display", "none", "important");
+    popover.classList.remove("is-open");
 
     try {
       cleanup?.();
@@ -468,7 +455,7 @@ export function makeColumnsDropdown(
 
     trigger.setAttribute("aria-expanded", "true");
     popover.setAttribute("aria-hidden", "false");
-    popover.style.setProperty("display", "block", "important");
+    popover.classList.add("is-open");
 
     document.body.appendChild(sproutWrapper);
     requestAnimationFrame(() => place());

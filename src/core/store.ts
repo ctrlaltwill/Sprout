@@ -318,13 +318,25 @@ export class JsonStore {
           .filter((r) => r && typeof r === "object")
           .map((r) => {
             const rec = r as Record<string, unknown>;
+            const rectIdRaw = rec.rectId;
+            const groupKeyRaw = rec.groupKey;
             return {
-              rectId: String(rec.rectId ?? ""),
+              rectId:
+                typeof rectIdRaw === "string"
+                  ? rectIdRaw
+                  : typeof rectIdRaw === "number"
+                    ? String(rectIdRaw)
+                    : "",
               x: Number(rec.x) || 0,
               y: Number(rec.y) || 0,
               w: Number(rec.w) || 0,
               h: Number(rec.h) || 0,
-              groupKey: String(rec.groupKey ?? "1"),
+              groupKey:
+                typeof groupKeyRaw === "string"
+                  ? groupKeyRaw
+                  : typeof groupKeyRaw === "number"
+                    ? String(groupKeyRaw)
+                    : "1",
             };
           })
           .filter((r) => !!r.rectId);
@@ -418,7 +430,10 @@ export class JsonStore {
       if (s.stage === "new") s.fsrsState = State.New;
       else if (s.stage === "review") s.fsrsState = State.Review;
       else if (s.stage === "relearning") s.fsrsState = State.Relearning;
-      else s.fsrsState = (Number(s.lapses) ?? 0) > 0 ? State.Relearning : State.Learning;
+      else {
+        const lapsesNum = Number(s.lapses);
+        s.fsrsState = (Number.isFinite(lapsesNum) ? lapsesNum : 0) > 0 ? State.Relearning : State.Learning;
+      }
     }
 
     delete s.intervalDays;
@@ -483,10 +498,15 @@ import { log } from "./logger";
 
 export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<Record<string, unknown> | null> {
   try {
-    const root = await plugin.loadData();
-    if (root && root.store && root.store.states && typeof root.store.states === "object") {
-      return root.store.states;
-    }
+    const root = (await plugin.loadData()) as unknown;
+    if (!root || typeof root !== "object") return null;
+    const rootObj = root as Record<string, unknown>;
+    const store = rootObj.store;
+    if (!store || typeof store !== "object") return null;
+    const storeObj = store as Record<string, unknown>;
+    const states = storeObj.states;
+    if (!states || typeof states !== "object") return null;
+    return states as Record<string, unknown>;
   } catch (e) { log.swallow("load scheduling from data.json", e); }
   return null;
 }

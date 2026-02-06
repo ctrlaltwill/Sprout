@@ -6,7 +6,14 @@
 import { log } from "./logger";
 import { AOS_DURATION } from "./constants";
 
-let AOS: { init: (config: Record<string, unknown>) => void; refresh?: () => void; refreshHard?: () => void; default?: { init: (config: Record<string, unknown>) => void; refresh?: () => void; refreshHard?: () => void } } | null = null;
+type AOSModule = {
+  init: (config: Record<string, unknown>) => void;
+  refresh?: () => void;
+  refreshHard?: () => void;
+  default?: AOSModule;
+};
+
+let AOS: AOSModule | null = null;
 let AOS_INITIALIZED = false;
 
 // Suppress AOS querySelector errors (removable handler)
@@ -26,7 +33,7 @@ export function removeAosErrorHandler(): void {
 // Load AOS (CJS require needed for sync bundled module)
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  AOS = require("aos");
+  AOS = require("aos") as AOSModule;
   if (AOS?.default) AOS = AOS.default;
 } catch {
   log.warn("AOS not available");

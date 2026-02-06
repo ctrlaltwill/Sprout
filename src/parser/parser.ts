@@ -86,7 +86,7 @@ type CurrentFieldKey =
   | "info";
 
 function computeFenceMask(lines: string[]): boolean[] {
-  const inside = new Array(lines.length).fill(false);
+  const inside: boolean[] = new Array<boolean>(lines.length).fill(false);
   let inFence = false;
   let token: "```" | "~~~" | null = null;
 
@@ -244,7 +244,7 @@ function tryParseJsonArray(raw: string): { arr: unknown[] | null; error: string 
   if (!t) return { arr: null, error: null };
 
   try {
-    const v = JSON.parse(t);
+    const v: unknown = JSON.parse(t);
     if (!Array.isArray(v)) return { arr: null, error: "IO occlusions must be a JSON array." };
     return { arr: v, error: null };
   } catch (e: unknown) {
@@ -258,7 +258,7 @@ export function parseCardsFromText(
   ignoreFences = true,
 ): { cards: ParsedCard[] } {
   const lines = text.split(/\r?\n/);
-  const fenceMask = ignoreFences ? computeFenceMask(lines) : new Array(lines.length).fill(false);
+  const fenceMask = ignoreFences ? computeFenceMask(lines) : new Array<boolean>(lines.length).fill(false);
 
   const cards: ParsedCard[] = [];
 

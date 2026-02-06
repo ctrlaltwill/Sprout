@@ -119,6 +119,121 @@
   transform: rotate(-30deg);
 }
 
+/* ---- Image Occlusion review ---- */
+
+.sprout .sprout-io-container {
+  position: relative !important;
+  display: inline-block !important;
+  max-width: 100% !important;
+}
+
+.sprout .sprout-io-container--clip {
+  overflow: hidden !important;
+}
+
+.sprout .sprout-io-host-card {
+  position: relative !important;
+  display: inline-block !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  background: var(--background-secondary) !important;
+  max-width: 100% !important;
+}
+
+.sprout .sprout-io-image {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.sprout .sprout-io-image-zoomed {
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  cursor: zoom-out !important;
+  display: block !important;
+  margin: 0 auto !important;
+  object-fit: contain !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.sprout .sprout-io-image-inline {
+  max-height: 350px !important;
+  cursor: zoom-in !important;
+}
+
+.sprout .sprout-io-image-widget {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.sprout .sprout-io-zoom-in {
+  cursor: zoom-in !important;
+}
+
+.sprout .sprout-io-zoom-out {
+  cursor: zoom-out !important;
+}
+
+.sprout .sprout-io-overlay {
+  position: absolute !important;
+  left: var(--sprout-io-left, 0);
+  top: var(--sprout-io-top, 0);
+  width: var(--sprout-io-width, 0);
+  height: var(--sprout-io-height, 0);
+  max-width: var(--sprout-io-max-width, none);
+  max-height: var(--sprout-io-max-height, none);
+  border-radius: var(--sprout-io-radius, 0);
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.sprout .sprout-io-mask {
+  position: absolute !important;
+  left: var(--sprout-io-x, 0);
+  top: var(--sprout-io-y, 0);
+  width: var(--sprout-io-w, 0);
+  height: var(--sprout-io-h, 0);
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.sprout .sprout-io-mask-target {
+  background: var(--theme-accent) !important;
+  border: 2px solid var(--foreground) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sprout .sprout-io-mask-other {
+  background: var(--foreground) !important;
+  border: 2px solid var(--foreground) !important;
+}
+
+.sprout .sprout-io-mask-hidden {
+  background: var(--background)00 !important;
+  border: none !important;
+}
+
+.sprout .sprout-io-mask-circle {
+  border-radius: 50% !important;
+}
+
+.sprout .sprout-io-mask-rect {
+  border-radius: 3px !important;
+}
+
+.sprout .sprout-io-mask-hint {
+  color: #fff !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  font-size: var(--sprout-io-hint-size, 12px) !important;
+}
+
 .theme-dark .sprout .sprout-bmc {
   color: #111214 !important;
   background: #ffffff !important;

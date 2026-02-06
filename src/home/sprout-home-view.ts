@@ -80,6 +80,7 @@ export class SproutHomeView extends ItemView {
         });
       }, 100);
     }
+    await Promise.resolve();
   }
 
   async onClose() {
@@ -100,6 +101,7 @@ export class SproutHomeView extends ItemView {
     } catch (e) { log.swallow("unmount heatmap root", e); }
     this._heatmapRoot = null;
     resetAOS();
+    await Promise.resolve();
   }
 
   onRefresh() {
@@ -374,7 +376,6 @@ export class SproutHomeView extends ItemView {
     let totalOverdue = 0;
     let totalDueToday = 0;
     let totalDue = 0;
-    let dueTomorrow = 0;
     const startOfTodayMs = new Date(nowMs).setHours(0, 0, 0, 0);
     const tomorrowMs = nowMs + MS_DAY;
     for (const card of cards) {
@@ -397,7 +398,7 @@ export class SproutHomeView extends ItemView {
         if (!path) continue;
         dueCounts.set(path, (dueCounts.get(path) ?? 0) + 1);
       } else if (due <= tomorrowMs) {
-        dueTomorrow += 1;
+        // due tomorrow (currently unused)
       }
     }
 

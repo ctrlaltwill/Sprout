@@ -25,6 +25,76 @@
   flex-direction: column;
 }
 
+.sprout .sprout-analytics-root {
+  min-height: 0;
+  gap: 12px;
+}
+
+.sprout .sprout-analytics-width {
+  width: 100% !important;
+  max-width: var(--sprout-analytics-max-width, none) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.sprout .sprout-analytics-badge {
+  background-color: var(--sprout-badge-bg, transparent) !important;
+  color: var(--sprout-badge-color, inherit) !important;
+  border: var(--sprout-badge-border, none) !important;
+}
+
+.sprout .sprout-analytics-badge-compact {
+  padding: 0rem 0.5rem !important;
+}
+
+.sprout .sprout-analytics-live-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+.sprout .sprout-analytics-rotatable {
+  transform: rotate(var(--sprout-rotate, 0deg)) !important;
+}
+
+.sprout .sprout-analytics-heatmap-host {
+  min-height: 200px !important;
+}
+
+.sprout .sprout-analytics-grid-rows {
+  grid-auto-rows: 1fr !important;
+}
+
+.sprout .sprout-analytics-stats-card {
+  margin-top: 10px !important;
+}
+
+.sprout .sprout-analytics-bottom-row {
+  margin-top: 10px !important;
+}
+
+.sprout .sprout-analytics-center {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.sprout .sprout-analytics-export-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: var(--text-muted) !important;
+  font-size: 12.25px !important;
+}
+
+.sprout .sprout-analytics-export-btn:hover,
+.sprout .sprout-analytics-export-btn:focus,
+.sprout .sprout-analytics-export-btn:focus-visible {
+  color: var(--foreground) !important;
+}
+
+.sprout .sprout-icon-scale-90 {
+  transform: scale(0.9) !important;
+}
+
 /* ---- Recharts axis + ticks ---- */
 
 .sprout .sprout-analytics-root .recharts-cartesian-axis-line,

@@ -13,7 +13,7 @@
 
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND, POPOVER_Z_INDEX } from "../core/constants";
+import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import type { CardType } from "../card-editor/card-editor";
 import { syncOneFile } from "../sync/sync-engine";
@@ -145,20 +145,8 @@ export class CardCreatorModal extends Modal {
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "sprout-modals");
-    this.modalEl.style.setProperty("backdrop-filter", "none", "important");
-    this.modalEl.style.setProperty("padding", "20px", "important");
-    this.modalEl.style.setProperty("gap", "0", "important");
-    this.modalEl.style.setProperty("max-width", "90%", "important");
-    this.modalEl.style.setProperty("width", "auto", "important");
-    this.modalEl.style.setProperty("max-height", "90%", "important");
-    this.modalEl.style.setProperty("box-sizing", "border-box", "important");
-    this.modalEl.style.setProperty("overflow", "hidden auto", "important");
-    this.contentEl.addClass("bc");
-    this.contentEl.style.setProperty("padding", "0", "important");
-    this.contentEl.style.setProperty("box-sizing", "border-box", "important");
-    this.contentEl.style.setProperty("display", "flex", "important");
-    this.contentEl.style.setProperty("flex-direction", "column", "important");
+    this.modalEl.addClass("bc", "sprout-modals", "sprout-card-creator-modal");
+    this.contentEl.addClass("bc", "sprout-card-creator-content");
     this.modalEl.querySelector(".modal-header")?.remove();
     this.modalEl.querySelector(".modal-close-button")?.remove();
 
@@ -170,9 +158,7 @@ export class CardCreatorModal extends Modal {
     const path = String(file?.path || "");
 
     const modalRoot = contentEl;
-    modalRoot.style.setProperty("display", "flex", "important");
-    modalRoot.style.setProperty("flex-direction", "column", "important");
-    modalRoot.style.setProperty("gap", "16px", "important");
+    modalRoot.classList.add("sprout-card-creator-root");
 
     // ── Header ──────────────────────────────────────────────────────────────
     const headerRow = modalRoot.createDiv({ cls: "bc flex items-center justify-between gap-3 mb-1" });
@@ -181,21 +167,16 @@ export class CardCreatorModal extends Modal {
       cls: "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",
       attr: { type: "button", "data-tooltip": "Close" },
     });
-    headerClose.style.setProperty("border", "none", "important");
-    headerClose.style.setProperty("background", "transparent", "important");
-    headerClose.style.setProperty("box-shadow", "none", "important");
-    headerClose.style.setProperty("padding", "0", "important");
-    headerClose.style.setProperty("cursor", "pointer", "important");
+    headerClose.classList.add("sprout-card-creator-close");
     const headerCloseIcon = headerClose.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(headerCloseIcon, "x");
     headerClose.onclick = () => this.close();
 
-    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-3" });
-    body.style.marginTop = "15px";
+    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-3 sprout-card-creator-body" });
 
     // ── Type selector (dropdown + popover menu) ─────────────────────────────
     const typeField = body.createDiv({ cls: "bc flex flex-col gap-1" });
-    typeField.style.display = "none";
+    typeField.classList.add("sprout-is-hidden");
     const typeId = `sprout-type-${Math.floor(Math.random() * 1e9)}`;
 
     const typeLabel = typeField.createEl("label", { cls: "bc text-sm font-medium", attr: { for: typeId } });
@@ -251,15 +232,11 @@ export class CardCreatorModal extends Modal {
     typeSproutWrapper.className = "sprout";
     typePopover.className = "bc";
     typePopover.setAttribute("aria-hidden", "true");
-    typePopover.style.setProperty("position", "fixed", "important");
-    typePopover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-    typePopover.style.setProperty("display", "none", "important");
-    typePopover.style.setProperty("pointer-events", "auto", "important");
+    typePopover.classList.add("sprout-popover-overlay");
     typeSproutWrapper.appendChild(typePopover);
 
     const typePanel = document.createElement("div");
-    typePanel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-    typePanel.style.setProperty("pointer-events", "auto", "important");
+    typePanel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
     typePopover.appendChild(typePanel);
 
     const typeMenu = document.createElement("div");
@@ -277,14 +254,14 @@ export class CardCreatorModal extends Modal {
     updateTypeMenuLabel = () => {
       typeMenuBtnText.textContent = typeLabelFor(currentType);
       const show = isTypeMenuOption(currentType);
-      typeMenuRow.style.display = show ? "" : "none";
+      typeMenuRow.classList.toggle("sprout-is-hidden", !show);
     };
     updateTypeMenuLabel();
 
     const closeTypeMenu = () => {
       typeMenuBtn.setAttribute("aria-expanded", "false");
       typePopover.setAttribute("aria-hidden", "true");
-      typePopover.style.setProperty("display", "none", "important");
+      typePopover.classList.remove("is-open");
       try {
         typeSproutWrapper.remove();
       } catch (e) { log.swallow("remove type menu wrapper", e); }
@@ -298,9 +275,9 @@ export class CardCreatorModal extends Modal {
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
       const panelRect = typePanel.getBoundingClientRect();
       const top = Math.max(margin, r.top - panelRect.height - 6);
-      typePopover.style.left = `${left}px`;
-      typePopover.style.top = `${top}px`;
-      typePopover.style.width = `${width}px`;
+      typePopover.style.setProperty("--sprout-popover-left", `${left}px`);
+      typePopover.style.setProperty("--sprout-popover-top", `${top}px`);
+      typePopover.style.setProperty("--sprout-popover-width", `${width}px`);
     };
 
     const buildTypeMenu = () => {
@@ -362,7 +339,7 @@ export class CardCreatorModal extends Modal {
       buildTypeMenu();
       typeMenuBtn.setAttribute("aria-expanded", "true");
       typePopover.setAttribute("aria-hidden", "false");
-      typePopover.style.setProperty("display", "block", "important");
+      typePopover.classList.add("is-open");
       if (!typeSproutWrapper.parentElement) document.body.appendChild(typeSproutWrapper);
       requestAnimationFrame(() => placeTypeMenu());
 
@@ -389,9 +366,7 @@ export class CardCreatorModal extends Modal {
     });
 
     // ── Card editor area ────────────────────────────────────────────────────
-    const editorContainer = body.createDiv({ cls: "bc flex flex-col gap-3" });
-    editorContainer.style.width = "80vw";
-    editorContainer.style.maxWidth = "450px";
+    const editorContainer = body.createDiv({ cls: "bc flex flex-col gap-3 sprout-card-creator-editor" });
 
     const renderCardEditor = () => {
       editorContainer.empty();
@@ -425,14 +400,7 @@ export class CardCreatorModal extends Modal {
           input.value = displayPath;
           input.placeholder = "Folder / Note";
           input.title = displayPath;
-          input.style.minHeight = "38px";
-          input.style.maxHeight = "38px";
-          input.style.height = "38px";
-          input.style.whiteSpace = "nowrap";
-          input.style.overflow = "hidden";
-          input.style.textOverflow = "ellipsis";
-          input.style.direction = "rtl";
-          input.style.textAlign = "left";
+          input.classList.add("sprout-location-input");
           wrapper.appendChild(label);
           wrapper.appendChild(input);
 
@@ -494,12 +462,11 @@ export class CardCreatorModal extends Modal {
     });
 
     const ioImagePreview = ioPasteZone.createDiv({ cls: "bc hidden" });
-    ioImagePreview.style.display = "none";
+    ioImagePreview.classList.add("sprout-is-hidden");
 
     const ioImageContainer = ioImagePreview.createDiv({ cls: "bc flex flex-col gap-2" });
     const ioImgElement = ioImageContainer.createEl("img", { cls: "bc w-full rounded-lg border border-border" });
-    ioImgElement.style.maxHeight = "300px";
-    ioImgElement.style.objectFit = "contain";
+    ioImgElement.classList.add("sprout-io-preview-image");
 
     const ioImageInfo = ioImageContainer.createDiv({ cls: "bc text-xs text-muted-foreground" });
     const ioImageName = ioImageContainer.createDiv({ cls: "bc text-xs font-medium" });
@@ -517,11 +484,11 @@ export class CardCreatorModal extends Modal {
         ioImgElement.src = URL.createObjectURL(new Blob([ioImageData.data], { type: ioImageData.mime }));
         ioImageInfo.textContent = `${ioImageData.mime} • ${(ioImageData.data.byteLength / 1024).toFixed(1)} KB`;
         ioImageName.textContent = "Ready to save and edit occlusions";
-        ioImagePreview.style.display = "";
-        ioPastePrompt.style.display = "none";
+        ioImagePreview.classList.remove("sprout-is-hidden");
+        ioPastePrompt.classList.add("sprout-is-hidden");
       } else {
-        ioImagePreview.style.display = "none";
-        ioPastePrompt.style.display = "";
+        ioImagePreview.classList.add("sprout-is-hidden");
+        ioPastePrompt.classList.remove("sprout-is-hidden");
         ioImgElement.src = "";
       }
     };
@@ -609,9 +576,7 @@ export class CardCreatorModal extends Modal {
     };
 
     // ── Footer buttons ──────────────────────────────────────────────────────
-    const footer = modalRoot.createDiv({ cls: "bc flex flex-col" });
-    footer.style.marginTop = "20px";
-    footer.style.paddingBottom = "16px";
+    const footer = modalRoot.createDiv({ cls: "bc flex flex-col sprout-card-creator-footer" });
     const footerRow = footer.createDiv({ cls: "bc flex items-center justify-end gap-4" });
 
     const cancelBtn = footerRow.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
@@ -678,8 +643,18 @@ export class CardCreatorModal extends Modal {
         } else if (type === "mcq") {
           if (!requireNonEmpty(questionVal, "Multiple Choice requires a stem")) return;
           const mcqValues = cardEditor.getMcqOptions?.();
-          const correct = String(mcqValues?.correct || "").trim();
-          const wrongs = (mcqValues?.wrongs || []).map((x: unknown) => String(x || "").trim()).filter(Boolean);
+          const correct = typeof mcqValues?.correct === "string"
+            ? mcqValues.correct.trim()
+            : typeof mcqValues?.correct === "number"
+              ? String(mcqValues.correct).trim()
+              : "";
+          const wrongs = (mcqValues?.wrongs || [])
+            .map((x: unknown) => {
+              if (typeof x === "string") return x.trim();
+              if (typeof x === "number") return String(x).trim();
+              return "";
+            })
+            .filter(Boolean);
           if (!requireNonEmpty(correct, "Multiple Choice requires a correct option")) return;
           if (wrongs.length < 1) {
             new Notice(`${BRAND}: Multiple Choice requires at least one wrong option`);

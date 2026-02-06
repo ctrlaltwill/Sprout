@@ -303,7 +303,7 @@ export class CardEditModal extends Modal {
 
       const row = contentEl.createDiv({ cls: "sprout-edit-mcq-option-row" });
 
-      const lab = row.createEl("div", { text: `Option ${idx + 1}`, cls: "sprout-muted sprout-edit-mcq-option-label" });
+      row.createEl("div", { text: `Option ${idx + 1}`, cls: "sprout-muted sprout-edit-mcq-option-label" });
 
       const input = row.createEl("input");
       input.type = "text";

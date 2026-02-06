@@ -85,6 +85,7 @@ export class SproutWidgetView extends ItemView {
     }
 
     this.render();
+    await Promise.resolve();
   }
 
   onRefresh() {
@@ -139,6 +140,7 @@ export class SproutWidgetView extends ItemView {
       ioModule: IO,
       renderMarkdownInto: (el2, md, sp) => this.renderMarkdownInto(el2, md, sp),
     });
+    await Promise.resolve();
   }
 
   /* ---------------------------------------------------------------- */

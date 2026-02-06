@@ -139,6 +139,8 @@ declare module "obsidian" {
 // ---------------------------------------------------------------------------
 // Global window augmentations for Obsidian environment
 // ---------------------------------------------------------------------------
+import type { App } from "obsidian";
+
 interface BasecoatApi {
   start?(): void;
   [key: string]: unknown;
@@ -146,7 +148,7 @@ interface BasecoatApi {
 
 interface SproutGlobals {
   /** Obsidian app instance, available globally at runtime. */
-  app?: import("obsidian").App;
+  app?: App;
   /** Basecoat UI framework (optional). */
   basecoat?: BasecoatApi;
   /** MathJax renderer (optional). */

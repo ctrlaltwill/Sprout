@@ -47,7 +47,6 @@ import {
 } from "./more-menu";
 import { logFsrsIfNeeded, logUndoIfNeeded } from "./fsrs-log";
 import { renderTitleMarkdownIfNeeded } from "./title-markdown";
-import { keybox, makePlainButton, appendKeyboxRight } from "./ui";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "./markdown-block";
 
 import type { CardState } from "../core/store";
@@ -328,7 +327,7 @@ export class SproutReviewerView extends ItemView {
   private buildPracticeQueue(scope: Scope, excludeIds?: Set<string>): CardRecord[] {
     const now = Date.now();
 
-    const cardsObj = (this.plugin.store.data?.cards || {}) as Record<string, CardRecord>;
+    const cardsObj = (this.plugin.store.data?.cards || {});
     const cards = Object.values(cardsObj);
 
     const out: CardRecord[] = [];
@@ -534,6 +533,7 @@ export class SproutReviewerView extends ItemView {
       ioModule: IO,
       renderMarkdownInto: (el2, md, sp) => this.renderMarkdownInto(el2, md, sp),
     });
+    await Promise.resolve();
   }
 
   async onOpen() {
@@ -577,6 +577,7 @@ export class SproutReviewerView extends ItemView {
     }
 
     this.render();
+    await Promise.resolve();
   }
 
   async onClose() {
@@ -584,6 +585,7 @@ export class SproutReviewerView extends ItemView {
     this.clearCountdown();
     closeMoreMenuImpl(this);
     this.clearUndo();
+    await Promise.resolve();
   }
 
   onRefresh() {

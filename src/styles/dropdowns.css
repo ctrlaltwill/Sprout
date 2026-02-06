@@ -151,7 +151,8 @@
 /* Replaces inline: position:fixed; z-index:999999; display:none;
    pointer-events:auto across 10+ files */
 
-.sprout .sprout-popover-overlay {
+.sprout .sprout-popover-overlay,
+.sprout.sprout-popover-overlay {
   position: fixed !important;
   z-index: 999999 !important;
   display: none !important;
@@ -161,8 +162,17 @@
   width: var(--sprout-popover-width, auto);
 }
 
-.sprout .sprout-popover-overlay.is-open {
+.sprout .sprout-popover-overlay.is-open,
+.sprout.sprout-popover-overlay.is-open {
   display: block !important;
+}
+
+.sprout .sprout-overflow-visible {
+  overflow: visible !important;
+}
+
+.sprout .sprout-columns-panel {
+  padding: 6px !important;
 }
 
 /* ---- Chart filter popover panel ---- */

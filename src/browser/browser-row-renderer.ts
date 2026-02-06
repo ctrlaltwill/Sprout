@@ -16,8 +16,7 @@
 import { Notice, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import type { QuarantineEntry } from "../types/store";
-import { BRAND, POPOVER_Z_INDEX } from "../core/constants";
+import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import { coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
@@ -93,31 +92,25 @@ export function buildPageTableBody(
   const tbody = document.createElement("tbody");
   tbody.className = "";
 
-  const quarantine = (ctx.plugin.store.data.quarantine || {}) as Record<string, QuarantineEntry>;
+  const quarantine = (ctx.plugin.store.data.quarantine || {});
   const pageRowCount = pageRows.length;
 
   for (const [rowIndex, { card, state, dueMs }] of pageRows.entries()) {
     const isQuarantined = !!quarantine[String(card.id)];
     const tr = document.createElement("tr");
-    tr.className = "";
-    tr.style.height = `${ctx.rowHeightPx}px`;
+    tr.className = "sprout-browser-row";
+    tr.style.setProperty("--sprout-row-height", `${ctx.rowHeightPx}px`);
 
     // ── Checkbox cell ──
     const selTd = document.createElement("td");
-    selTd.className = `text-center ${ctx.cellWrapClass}`;
-    selTd.style.height = `${ctx.rowHeightPx}px`;
-    selTd.style.verticalAlign = "middle";
-    selTd.style.display = "flex";
-    selTd.style.alignItems = "center";
-    selTd.style.justifyContent = "center";
+    selTd.className = `text-center ${ctx.cellWrapClass} sprout-browser-cell sprout-browser-cell-middle sprout-browser-cell-center`;
     forceCellClip(selTd);
     forceWrapStyles(selTd);
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.setAttribute("data-card-id", String(card.id));
-    checkbox.className = "cursor-pointer";
-    checkbox.style.accentColor = "var(--text-normal)";
+    checkbox.className = "cursor-pointer sprout-browser-checkbox";
     checkbox.checked = ctx.selectedIds.has(String(card.id));
     checkbox.addEventListener("change", (ev) => {
       ev.stopPropagation();
@@ -153,11 +146,9 @@ export function buildPageTableBody(
     // ── Muted text cell helper ──
     const tdMuted = (txt: string, col: ColKey, title?: string) => {
       const td = document.createElement("td");
-      td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground`;
+      td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground sprout-browser-cell`;
       td.textContent = txt;
       if (title) td.setAttribute("data-tooltip", title);
-      td.style.height = `${ctx.rowHeightPx}px`;
-      td.style.verticalAlign = "top";
       forceWrapStyles(td);
       forceCellClip(td);
       setColAttr(td, col);
@@ -166,9 +157,7 @@ export function buildPageTableBody(
 
     // ── ID cell ──
     const idTd = document.createElement("td");
-    idTd.className = `align-top ${ctx.cellWrapClass}`;
-    idTd.style.height = `${ctx.rowHeightPx}px`;
-    idTd.style.verticalAlign = "top";
+    idTd.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
     forceCellClip(idTd);
     forceWrapStyles(idTd);
     setColAttr(idTd, "id");
@@ -183,15 +172,11 @@ export function buildPageTableBody(
     idBtn.className = buttonClass + " h-6 px-2 py-0.5 rounded-full inline-flex items-center gap-1 leading-none text-sm";
 
     if (isSuspended) {
-      idBtn.style.setProperty("background-color", "rgb(239, 68, 68)", "important");
-      idBtn.style.setProperty("color", "white", "important");
+      idBtn.classList.add("sprout-browser-id-btn--suspended");
     }
 
     idBtn.setAttribute("data-tooltip", `Open card ^sprout-${card.id}`);
-    idBtn.style.setProperty("font-size", "10px", "important");
-    idBtn.style.setProperty("padding", "2px 8px", "important");
-    idBtn.style.setProperty("height", "24px", "important");
-    idBtn.style.setProperty("line-height", "1", "important");
+    idBtn.classList.add("sprout-browser-id-btn");
 
     const idValue = document.createElement("span");
     idValue.textContent = String(card.id);
@@ -206,9 +191,8 @@ export function buildPageTableBody(
     setIcon(linkIcon, iconName);
     try {
       const scale = isSuspended || isQuarantined ? 0.7 : 0.75;
-      linkIcon.style.transform = `scale(${scale})`;
-      linkIcon.style.transformOrigin = "center";
-      linkIcon.style.display = "inline-flex";
+      linkIcon.classList.add("sprout-scale");
+      linkIcon.style.setProperty("--sprout-scale", String(scale));
     } catch (e) { log.swallow("scale link icon", e); }
     idBtn.appendChild(linkIcon);
 
@@ -228,9 +212,7 @@ export function buildPageTableBody(
     const stage = isQuarantined ? "quarantined" : String(state?.stage || "new");
     if (stage === "suspended") {
       const td = document.createElement("td");
-      td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground`;
-      td.style.height = `${ctx.rowHeightPx}px`;
-      td.style.verticalAlign = "top";
+      td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground sprout-browser-cell`;
       forceWrapStyles(td);
       forceCellClip(td);
       setColAttr(td, "stage");
@@ -335,19 +317,9 @@ export function renderEmptyState(
 
   if (!wrap) return { cleanup: null };
 
-  wrap.style.setProperty("overflow", "auto", "important");
-
   const msg = document.createElement("div");
   msg.className =
     "sprout-browser-empty-message flex items-center justify-center text-center text-muted-foreground text-base py-8 px-4 w-full";
-  msg.style.width = "100%";
-  msg.style.boxSizing = "border-box";
-  msg.style.position = "absolute";
-  msg.style.left = "0";
-  msg.style.top = "0";
-  msg.style.background = "var(--background)";
-  msg.style.zIndex = "2";
-  msg.style.pointerEvents = "none";
   msg.textContent = total === 0 ? "No cards match your filters." : "No rows on this page.";
   wrap.appendChild(msg);
 
@@ -357,9 +329,9 @@ export function renderEmptyState(
     const availableHeight = Math.max(0, wrap.clientHeight - headerHeight);
     const top =
       wrap.scrollTop + headerHeight + Math.max(0, (availableHeight - msgRect.height) / 2);
-    msg.style.left = `${wrap.scrollLeft}px`;
-    msg.style.top = `${Math.round(top)}px`;
-    msg.style.width = `${wrap.clientWidth}px`;
+    msg.style.setProperty("--sprout-empty-left", `${wrap.scrollLeft}px`);
+    msg.style.setProperty("--sprout-empty-top", `${Math.round(top)}px`);
+    msg.style.setProperty("--sprout-empty-width", `${wrap.clientWidth}px`);
   };
 
   const onScroll = () => place();
@@ -381,11 +353,6 @@ export function renderEmptyState(
 export function clearEmptyState(rootEl: HTMLElement | null): void {
   const prev = rootEl?.querySelector(".sprout-browser-empty-message");
   if (prev) prev.remove();
-
-  const wrap = rootEl?.querySelector(
-    ".bc.rounded-lg.border.border-border.overflow-auto",
-  ) as HTMLElement | null;
-  if (wrap) wrap.style.setProperty("overflow", "auto", "important");
 }
 
 // ── Private cell builders ─────────────────────────────────
@@ -398,11 +365,9 @@ function makeReadOnlyFieldCell(
 ): HTMLTableCellElement {
   if (col === "due") {
     const td = document.createElement("td");
-    td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground`;
+    td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground sprout-browser-cell`;
     td.textContent = value;
     if (title) td.setAttribute("data-tooltip", title);
-    td.style.height = `${ctx.rowHeightPx}px`;
-    td.style.verticalAlign = "top";
     forceWrapStyles(td);
     forceCellClip(td);
     setColAttr(td, col);
@@ -410,28 +375,19 @@ function makeReadOnlyFieldCell(
   }
 
   const td = document.createElement("td");
-  td.className = `align-top ${ctx.cellWrapClass}`;
-  td.style.height = `${ctx.rowHeightPx}px`;
-  td.style.verticalAlign = "top";
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
   forceCellClip(td);
   forceWrapStyles(td);
   setColAttr(td, col);
 
   const ta = document.createElement("textarea");
-  ta.className = `textarea w-full ${ctx.readonlyTextClass}`;
+  ta.className = `textarea w-full ${ctx.readonlyTextClass} sprout-browser-textarea sprout-browser-textarea--readonly`;
   ta.value = value;
   ta.readOnly = true;
   if (title) ta.setAttribute("data-tooltip", title);
 
   const h = `${ctx.editorHeightPx}px`;
-  ta.style.height = h;
-  ta.style.minHeight = h;
-  ta.style.maxHeight = h;
-  ta.style.resize = "none";
-  ta.style.setProperty("overflow", "hidden", "important");
-  ta.style.setProperty("white-space", "pre-wrap", "important");
-  ta.style.setProperty("overflow-wrap", "anywhere", "important");
-  ta.style.setProperty("word-break", "break-word", "important");
+  ta.style.setProperty("--sprout-editor-height", h);
 
   td.appendChild(ta);
   return td;
@@ -459,10 +415,8 @@ function makeEditorCell(
 
   if (col === "answer" && card.type === "cloze") {
     const td = document.createElement("td");
-    td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground`;
+    td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground sprout-browser-cell`;
     td.textContent = CLOZE_ANSWER_HELP;
-    td.style.height = `${ctx.rowHeightPx}px`;
-    td.style.verticalAlign = "top";
     forceWrapStyles(td);
     forceCellClip(td);
     setColAttr(td, col);
@@ -474,9 +428,7 @@ function makeEditorCell(
   }
 
   const td = document.createElement("td");
-  td.className = "align-top";
-  td.style.height = `${ctx.rowHeightPx}px`;
-  td.style.verticalAlign = "top";
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
   forceCellClip(td);
   setColAttr(td, col);
 
@@ -492,15 +444,11 @@ function makeEditorCell(
             : "";
 
   const ta = document.createElement("textarea");
-  ta.className = `textarea w-full ${ctx.cellTextClass}`;
+  ta.className = `textarea w-full ${ctx.cellTextClass} sprout-browser-textarea sprout-browser-textarea--editable`;
   ta.value = initial;
 
   const h = `${ctx.editorHeightPx}px`;
-  ta.style.height = h;
-  ta.style.minHeight = h;
-  ta.style.maxHeight = h;
-  ta.style.resize = "none";
-  ta.style.overflow = "auto";
+  ta.style.setProperty("--sprout-editor-height", h);
 
   const key = `${card.id}:${col}`;
   let baseline = initial;
@@ -545,10 +493,7 @@ function makeIoCell(
   ctx: RowRendererContext,
 ): HTMLTableCellElement {
   const td = document.createElement("td");
-  td.className = `align-top ${ctx.cellWrapClass}`;
-  td.style.height = `${ctx.rowHeightPx}px`;
-  td.style.verticalAlign = "top";
-  td.style.cursor = "pointer";
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell sprout-browser-io-cell`;
   forceWrapStyles(td);
   forceCellClip(td);
   setColAttr(td, col);
@@ -608,12 +553,8 @@ function makeGroupsEditorCell(
 
   const wrap = ctx.tableWrapEl;
   const td = document.createElement("td");
-  td.className = "align-top";
-  td.style.height = `${ctx.rowHeightPx}px`;
-  td.style.verticalAlign = "top";
+  td.className = "align-top sprout-browser-cell sprout-browser-tag-cell";
   forceCellClip(td);
-  td.style.setProperty("overflow", "visible", "important");
-  td.style.position = "relative";
   setColAttr(td, "groups");
 
   const key = `${card.id}:groups`;
@@ -623,18 +564,8 @@ function makeGroupsEditorCell(
     .filter(Boolean);
 
   const tagBox = document.createElement("div");
-  tagBox.className = `textarea w-full ${ctx.cellTextClass}`;
-  tagBox.style.height = `${ctx.editorHeightPx}px`;
-  tagBox.style.minHeight = `${ctx.editorHeightPx}px`;
-  tagBox.style.maxHeight = `${ctx.editorHeightPx}px`;
-  tagBox.style.overflow = "auto";
-  tagBox.style.padding = "6px 8px";
-  tagBox.style.boxSizing = "border-box";
-  tagBox.style.display = "flex";
-  tagBox.style.flexWrap = "wrap";
-  tagBox.style.columnGap = "6px";
-  tagBox.style.rowGap = "2px";
-  tagBox.style.alignContent = "flex-start";
+  tagBox.className = `textarea w-full ${ctx.cellTextClass} sprout-browser-tag-box`;
+  tagBox.style.setProperty("--sprout-editor-height", `${ctx.editorHeightPx}px`);
   td.appendChild(tagBox);
 
   const renderBadges = () => {
@@ -642,18 +573,15 @@ function makeGroupsEditorCell(
     if (selected.length === 0) {
       const empty = document.createElement("span");
       empty.className =
-        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6";
+        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder sprout-badge-inline sprout-browser-tag-empty";
       empty.textContent = "No groups";
-      empty.style.display = "inline-flex";
-      empty.style.color = "#fff";
       tagBox.appendChild(empty);
       return;
     }
     for (const tag of selected) {
       const badge = document.createElement("span");
       badge.className =
-        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6";
-      badge.style.display = "inline-flex";
+        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-inline sprout-browser-tag-badge";
 
       const txt = document.createElement("span");
       txt.textContent = formatGroupDisplay(tag);
@@ -703,22 +631,16 @@ function makeGroupsEditorCell(
 
   // ── Popover ──
   const popover = document.createElement("div");
-  popover.className = "sprout";
+  popover.className = "sprout sprout-popover-overlay";
   popover.setAttribute("aria-hidden", "true");
-  popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-  popover.style.setProperty("display", "none", "important");
-  popover.style.setProperty("pointer-events", "auto", "important");
 
   const panel = document.createElement("div");
   panel.className =
-    "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0";
-  panel.style.setProperty("pointer-events", "auto", "important");
+    "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 sprout-pointer-auto";
   popover.appendChild(panel);
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0";
-  searchWrap.style.width = "100%";
+  searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 sprout-browser-search-wrap";
   panel.appendChild(searchWrap);
 
   const searchIcon = document.createElement("span");
@@ -730,12 +652,7 @@ function makeGroupsEditorCell(
 
   const search = document.createElement("input");
   search.type = "text";
-  search.className = "bg-transparent text-sm flex-1 h-9";
-  search.style.minWidth = "0";
-  search.style.width = "100%";
-  search.style.border = "none";
-  search.style.boxShadow = "none";
-  search.style.outline = "none";
+  search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full sprout-search-naked";
   search.placeholder = "Search or add group";
   searchWrap.appendChild(search);
 
@@ -793,10 +710,9 @@ function makeGroupsEditorCell(
     const downTop = tagRect.bottom + gap;
     const upTop = tagRect.top - popHeight - gap;
     const dropUp = shouldDropUp;
-    popover.style.left = `${left}px`;
-    popover.style.width = `${width}px`;
-    popover.style.bottom = "auto";
-    popover.style.top = `${dropUp ? upTop : downTop}px`;
+    popover.style.setProperty("--sprout-popover-left", `${left}px`);
+    popover.style.setProperty("--sprout-popover-width", `${width}px`);
+    popover.style.setProperty("--sprout-popover-top", `${dropUp ? upTop : downTop}px`);
   };
 
   const renderList = () => {
@@ -870,14 +786,15 @@ function makeGroupsEditorCell(
     if (raw && !exact) addRow(`Add "${rawDisplay || rawTitle}"`, rawTitle || raw, true);
 
     if (allOptions.length === 0 && !raw && selected.length === 0) {
-      list.style.maxHeight = "none";
-      list.style.overflow = "visible";
+      list.classList.add("sprout-list-unbounded");
       const empty = document.createElement("div");
       empty.className = "px-2 py-2 text-sm text-muted-foreground whitespace-normal break-words";
       empty.textContent = "Type a keyword above to save this flashcard to a group.";
       list.appendChild(empty);
       return;
     }
+
+    list.classList.remove("sprout-list-unbounded");
 
     for (const opt of options) addRow(formatGroupDisplay(opt), opt);
 
@@ -889,7 +806,7 @@ function makeGroupsEditorCell(
 
   const close = () => {
     popover.setAttribute("aria-hidden", "true");
-    popover.style.display = "none";
+    popover.classList.remove("is-open");
     try { cleanup?.(); } catch (e) { log.swallow("popover cleanup", e); }
     cleanup = null;
     try { popover.remove(); } catch (e) { log.swallow("remove popover", e); }
@@ -899,7 +816,7 @@ function makeGroupsEditorCell(
 
   const open = () => {
     popover.setAttribute("aria-hidden", "false");
-    popover.style.display = "block";
+    popover.classList.add("is-open");
     document.body.appendChild(popover);
     requestAnimationFrame(() => place());
     requestAnimationFrame(() => place());

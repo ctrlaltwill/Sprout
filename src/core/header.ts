@@ -14,7 +14,7 @@
  */
 
 import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
-import { MAX_CONTENT_WIDTH, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
+import { MAX_CONTENT_WIDTH, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
 import { log } from "./logger";
 
 export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics";
@@ -125,7 +125,7 @@ export class SproutHeader {
     const availableWidth = header?.clientWidth ?? this.deps.containerEl?.clientWidth ?? 0;
     const hide =
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
-    this.widthBtnEl.style.display = hide ? "none" : "";
+    this.widthBtnEl.classList.toggle("sprout-is-hidden", hide);
     this.widthBtnEl.setAttribute("data-tooltip", isWide ? "Collapse table" : "Expand table");
 
     const text = isWide ? "Collapse" : "Expand";
@@ -194,6 +194,7 @@ export class SproutHeader {
 
     if (this.topNavPopoverEl) {
       try {
+        this.topNavPopoverEl.classList.remove("is-open");
         this.topNavPopoverEl.remove();
       } catch (e) { log.swallow("closeTopNavPopover: remove popover element", e); }
     }
@@ -211,13 +212,11 @@ export class SproutHeader {
     sproutWrapper.className = "sprout";
     const root = document.createElement("div");
     root.className = "dropdown-menu";
-    root.style.setProperty("position", "fixed", "important");
-    root.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
+    root.classList.add("sprout-popover-overlay");
     sproutWrapper.appendChild(root);
 
     const panel = document.createElement("div");
-    panel.className = "min-w-56 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-    panel.style.setProperty("pointer-events", "auto", "important");
+    panel.className = "min-w-56 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
     root.appendChild(panel);
 
     const menu = document.createElement("div");
@@ -298,6 +297,7 @@ export class SproutHeader {
 
     document.body.appendChild(sproutWrapper);
     this.topNavPopoverEl = root;
+    root.classList.add("is-open");
 
     const place = () => {
       const r = trigger.getBoundingClientRect();
@@ -305,8 +305,8 @@ export class SproutHeader {
       const width = 260;
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
       const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
-      root.style.left = `${left}px`;
-      root.style.top = `${top}px`;
+      root.style.setProperty("--sprout-popover-left", `${left}px`);
+      root.style.setProperty("--sprout-popover-top", `${top}px`);
     };
 
     place();
@@ -346,21 +346,12 @@ export class SproutHeader {
 
     clearNode(navHost);
 
-    navHost.style.setProperty("display", "flex", "important");
-    navHost.style.setProperty("align-items", "center", "important");
-    navHost.style.setProperty("justify-content", "flex-start", "important");
-    navHost.style.setProperty("gap", "6px", "important");
-    navHost.style.setProperty("overflow", "visible", "important");
-    navHost.style.setProperty("min-width", "0", "important");
-    navHost.style.setProperty("flex", "0 0 auto", "important");
+    navHost.classList.add("sprout-nav-host");
 
     const root = document.createElement("div");
     root.id = this.headerNavId;
     root.className = "dropdown-menu";
-    root.style.setProperty("position", "relative", "important");
-    root.style.setProperty("z-index", "10050", "important");
-    root.style.setProperty("display", "inline-flex", "important");
-    root.style.setProperty("align-items", "center", "important");
+    root.classList.add("sprout-dropdown-root");
     const sproutWrapper = document.createElement("div");
     sproutWrapper.className = "sprout";
     sproutWrapper.appendChild(root);
@@ -409,6 +400,7 @@ export class SproutHeader {
 
     if (this.morePopoverEl) {
       try {
+        this.morePopoverEl.classList.remove("is-open");
         this.morePopoverEl.remove();
       } catch (e) { log.swallow("closeMorePopover: remove popover element", e); }
     }
@@ -425,13 +417,11 @@ export class SproutHeader {
     sproutWrapper.className = "sprout";
     const root = document.createElement("div");
     root.className = "dropdown-menu";
-    root.style.setProperty("position", "fixed", "important");
-    root.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
+    root.classList.add("sprout-popover-overlay");
     sproutWrapper.appendChild(root);
 
     const panel = document.createElement("div");
-    panel.className = "min-w-56 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-    panel.style.setProperty("pointer-events", "auto", "important");
+    panel.className = "min-w-56 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
     root.appendChild(panel);
 
     const menu = document.createElement("div");
@@ -490,6 +480,7 @@ export class SproutHeader {
 
     document.body.appendChild(sproutWrapper);
     this.morePopoverEl = root;
+    root.classList.add("is-open");
 
     const place = () => {
       const r = trigger.getBoundingClientRect();
@@ -502,8 +493,8 @@ export class SproutHeader {
       const left = Math.max(margin, Math.min(r.right - popW, window.innerWidth - popW - margin));
       const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
 
-      root.style.left = `${left}px`;
-      root.style.top = `${top}px`;
+      root.style.setProperty("--sprout-popover-left", `${left}px`);
+      root.style.setProperty("--sprout-popover-top", `${top}px`);
     };
 
     // Place after layout to ensure correct width measurement
@@ -553,10 +544,7 @@ export class SproutHeader {
     clearNode(actionsHost);
 
     actionsHost.classList.add("bc", "sprout-view-actions");
-    actionsHost.style.setProperty("display", "flex", "important");
-    actionsHost.style.setProperty("align-items", "center", "important");
-    actionsHost.style.setProperty("gap", "6px", "important");
-    actionsHost.style.setProperty("overflow", "visible", "important");
+    actionsHost.classList.add("sprout-actions-host");
 
     // Collapse/Expand
     const widthBtn = document.createElement("button");
@@ -630,8 +618,7 @@ export class SproutHeader {
     const moreWrap = document.createElement("div");
     moreWrap.id = this.moreId;
     moreWrap.className = "dropdown-menu";
-    moreWrap.style.setProperty("position", "relative", "important");
-    moreWrap.style.setProperty("overflow", "visible", "important");
+    moreWrap.classList.add("sprout-more-wrap");
     actionsHost.appendChild(moreWrap);
 
     const moreBtn = document.createElement("button");

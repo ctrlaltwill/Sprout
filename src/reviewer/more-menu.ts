@@ -114,7 +114,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     document.removeEventListener("keydown", onDocKeydown, true);
   };
 
-  const firstItem = popover.querySelector("[role='menuitem']") as HTMLElement | null;
+  const firstItem = popover.querySelector<HTMLElement>("[role='menuitem']");
   firstItem?.focus();
 }
 
@@ -216,7 +216,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
   // Create the popover and append to document.body for global positioning
   const popover = document.createElement("div");
   popover.id = popoverId;
-  popover.className = "bc";
+  popover.className = "bc sprout";
   popover.setAttribute("aria-hidden", "true");
   popover.classList.add("sprout-popover-overlay");
   document.body.appendChild(popover);

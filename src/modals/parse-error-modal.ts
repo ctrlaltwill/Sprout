@@ -150,12 +150,26 @@ export class ParseErrorModal extends Modal {
     const rec = candidates.length ? candidates[0] : null;
     if (rec && typeof rec === "object") {
       const r = rec as Record<string, unknown>;
-      const path = String(r.sourceNotePath || r.notePath || "");
+      const path =
+        typeof r.sourceNotePath === "string"
+          ? r.sourceNotePath
+          : typeof r.notePath === "string"
+            ? r.notePath
+            : "";
       const startLine = Number(r.sourceStartLine ?? 0);
+      const reasonText =
+        typeof r.reason === "string"
+          ? r.reason
+          : Array.isArray(r.reason)
+            ? (r.reason as unknown[])
+                .map((x) => (typeof x === "string" ? x : typeof x === "number" ? String(x) : ""))
+                .filter(Boolean)
+                .join(";")
+            : "";
       const errsRaw =
         r.errors ??
-        (r.reason
-          ? String(r.reason)
+        (reasonText
+          ? reasonText
               .split(";")
               .map((s: string) => s.trim())
           : []);

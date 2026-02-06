@@ -637,7 +637,13 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
   const availableTypes = React.useMemo(() => ["all", "basic", "cloze-child", "io-child", "mcq"], []);
 
   const getEventDeck = React.useCallback((ev: Record<string, unknown>) => {
-    const deck = String(ev?.sourceNotePath ?? ev?.deckPath ?? ev?.deck ?? "");
+    const raw = ev?.sourceNotePath ?? ev?.deckPath ?? ev?.deck;
+    const deck =
+      typeof raw === "string"
+        ? raw
+        : typeof raw === "number"
+          ? String(raw)
+          : "";
     return deck.trim();
   }, []);
 
@@ -720,7 +726,14 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
     const counts = new Map<string, number>();
     for (const type of availableTypes) counts.set(type, 0);
     for (const ev of recentEvents) {
-      const t = normalizeEventType(String(ev.cardType || "unknown"));
+      const rawType = ev.cardType;
+      const t = normalizeEventType(
+        typeof rawType === "string"
+          ? rawType
+          : typeof rawType === "number"
+            ? String(rawType)
+            : "unknown",
+      );
       if (!t) continue;
       counts.set(t, (counts.get(t) ?? 0) + 1);
     }
@@ -736,7 +749,14 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
   const counts = React.useMemo(() => {
     const out: Record<string, number> = { again: 0, hard: 0, good: 0, easy: 0 };
     for (const ev of recentEvents) {
-      const t = normalizeEventType(String(ev.cardType || ""));
+      const rawType = ev.cardType;
+      const t = normalizeEventType(
+        typeof rawType === "string"
+          ? rawType
+          : typeof rawType === "number"
+            ? String(rawType)
+            : "",
+      );
       if (selectedType !== "all" && t !== selectedType) continue;
       if (selectedDecks.length) {
         const deck = getEventDeck(ev);
@@ -747,7 +767,13 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
         const hasGroup = selectedGroups.some((group) => groups.includes(group));
         if (!hasGroup) continue;
       }
-      const result = String(ev.result || "");
+      const rawResult = ev.result;
+      const result =
+        typeof rawResult === "string"
+          ? rawResult
+          : typeof rawResult === "number"
+            ? String(rawResult)
+            : "";
       if (result in out) out[result] += 1;
     }
     return out;

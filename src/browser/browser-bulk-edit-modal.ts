@@ -52,20 +52,14 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   sproutWrapper.className = "sprout sprout-modal-container sprout-modal-dim";
 
   const overlay = document.createElement("div");
-  overlay.className = "fixed inset-0 flex items-center justify-center";
-  overlay.style.setProperty("position", "fixed", "important");
-  overlay.style.setProperty("inset", "0", "important");
-  overlay.style.setProperty("z-index", "1000000", "important");
+  overlay.className = "fixed inset-0 flex items-center justify-center sprout-bulk-edit-overlay";
 
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-bg";
-  backdrop.style.setProperty("position", "absolute", "important");
-  backdrop.style.setProperty("inset", "0", "important");
+  backdrop.className = "modal-bg sprout-bulk-edit-backdrop";
   overlay.appendChild(backdrop);
 
   const panel = document.createElement("div");
-  panel.className = "sprout-modal rounded-lg border border-border bg-popover text-popover-foreground";
-  panel.style.padding = "20px";
+  panel.className = "sprout-modal rounded-lg border border-border bg-popover text-popover-foreground sprout-bulk-edit-panel";
   overlay.appendChild(panel);
   sproutWrapper.appendChild(overlay);
 
@@ -77,12 +71,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   header.appendChild(heading);
   const close = document.createElement("button");
   close.type = "button";
-  close.className = "inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground";
-  close.style.setProperty("border", "none", "important");
-  close.style.setProperty("background", "transparent", "important");
-  close.style.setProperty("box-shadow", "none", "important");
-  close.style.setProperty("padding", "0", "important");
-  close.style.setProperty("cursor", "pointer", "important");
+  close.className = "inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground sprout-card-creator-close";
   close.setAttribute("data-tooltip", "Close");
   const closeIcon = document.createElement("span");
   closeIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
@@ -198,24 +187,10 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     hiddenInput.value = initialValue;
 
     const container = document.createElement("div");
-    container.className = "relative";
-    container.style.display = "flex";
-    container.style.flexDirection = "column";
-    container.style.gap = "4px";
+    container.className = "relative sprout-group-picker";
 
     const tagBox = document.createElement("div");
-    tagBox.className = `textarea w-full ${ctx.cellTextClass}`;
-    tagBox.style.height = "38px";
-    tagBox.style.minHeight = "38px";
-    tagBox.style.maxHeight = "38px";
-    tagBox.style.overflow = "auto";
-    tagBox.style.padding = "6px 8px";
-    tagBox.style.boxSizing = "border-box";
-    tagBox.style.display = "flex";
-    tagBox.style.flexWrap = "wrap";
-    tagBox.style.columnGap = "6px";
-    tagBox.style.rowGap = "2px";
-    tagBox.style.alignContent = "flex-start";
+    tagBox.className = `textarea w-full ${ctx.cellTextClass} sprout-bulk-tag-box`;
     container.appendChild(tagBox);
 
     let overwriteNotice: HTMLDivElement | null = null;
@@ -224,7 +199,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       overwriteNotice.className = "text-xs text-muted-foreground";
       overwriteNotice.textContent =
         "Typing here will overwrite this field for every selected card; leave it blank to keep existing values.";
-      overwriteNotice.style.display = "none";
+      overwriteNotice.classList.add("sprout-is-hidden");
       container.appendChild(overwriteNotice);
     }
 
@@ -246,8 +221,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     list.className = "flex flex-col max-h-60 overflow-auto p-1";
 
     const searchWrap = document.createElement("div");
-    searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0";
-    searchWrap.style.width = "100%";
+    searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 sprout-browser-search-wrap";
 
     const searchIconEl = document.createElement("span");
     searchIconEl.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
@@ -257,30 +231,17 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
     const search = document.createElement("input");
     search.type = "text";
-    search.className = "bg-transparent text-sm flex-1 h-9";
-    search.style.minWidth = "0";
-    search.style.width = "100%";
-    search.style.border = "none";
-    search.style.boxShadow = "none";
-    search.style.outline = "none";
+    search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full sprout-search-naked";
     search.placeholder = "Search or add group";
     searchWrap.appendChild(search);
 
     const panelEl = document.createElement("div");
-    panelEl.className = "rounded-lg border border-border bg-popover text-popover-foreground p-0 flex flex-col";
-    panelEl.style.pointerEvents = "auto";
+    panelEl.className = "rounded-lg border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
     panelEl.appendChild(searchWrap);
     panelEl.appendChild(list);
 
     const popover = document.createElement("div");
-    popover.style.position = "absolute";
-    popover.style.bottom = "calc(100% + 6px)";
-    popover.style.left = "0";
-    popover.style.right = "auto";
-    popover.style.zIndex = "10000";
-    popover.style.width = "100%";
-    popover.style.display = "none";
-    popover.style.pointerEvents = "auto";
+    popover.className = "sprout-bulk-popover";
     popover.setAttribute("aria-hidden", "true");
     popover.appendChild(panelEl);
     container.appendChild(popover);
@@ -302,7 +263,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
     const updateOverwriteNotice = () => {
       const value = groupsToInput(selected).trim();
-      if (overwriteNotice) overwriteNotice.style.display = cardsCount > 1 && value ? "" : "none";
+      if (overwriteNotice) overwriteNotice.classList.toggle("sprout-is-hidden", !(cardsCount > 1 && value));
     };
 
     const commit = () => {

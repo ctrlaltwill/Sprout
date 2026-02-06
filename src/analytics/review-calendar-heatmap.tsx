@@ -264,7 +264,7 @@ export function ReviewCalendarHeatmap(props: {
     return todayIndex - Math.max(1, durationDays) + 1;
   }, [durationDays, todayIndex, formatter]);
 
-  const cells = React.useMemo(() => {
+  const cells = React.useMemo<HeatCell[]>(() => {
     const endIndex = todayIndex;
     const totalDays = Math.max(1, endIndex - rangeStartIndex + 1);
     const dayMap = new Map<number, { count: number; totalMs: number }>();
@@ -308,7 +308,7 @@ export function ReviewCalendarHeatmap(props: {
       lastWeekday = (lastWeekday + 6) % 7;
       // The last cell in the grid should be at col=lastWeekday, row=rows-1
       // Fill backwards from there
-      const grid = Array(rows * cols).fill(null);
+      const grid: Array<HeatCell | null> = new Array<HeatCell | null>(rows * cols).fill(null);
       for (let i = 0; i < 30; i++) {
         // Position from the end
         const gridPos = rows * cols - 1 - ((30 - 1 - i) + (cols - 1 - lastWeekday));

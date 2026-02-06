@@ -19,7 +19,6 @@
 import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
 import type SproutPlugin from "../main";
-import type { CardRecord } from "../core/store";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
 import { normaliseGroupKey } from "../imageocclusion/mask-tool";
@@ -327,7 +326,7 @@ export class ImageOcclusionCreatorModal extends Modal {
 
     // ── Prefill when editing an existing IO card ────────────────────────────
     if (editing && this.editParentId) {
-      const cardsMap = (this.plugin.store?.data?.cards || {}) as Record<string, CardRecord>;
+      const cardsMap = (this.plugin.store?.data?.cards || {});
       const parent = cardsMap[String(this.editParentId)];
       if (parent && String(parent.type) === "io") {
         if (this.titleInput) this.titleInput.value = String(parent.title || "Image Occlusion");
@@ -339,15 +338,24 @@ export class ImageOcclusionCreatorModal extends Modal {
         this.editImageRef = imageRef || null;
 
         const rects = Array.isArray(def?.rects) ? def.rects : [];
-        this.rects = rects.map((r: Record<string, unknown>) => ({
-          rectId: String(r.rectId || `rect-${Date.now()}-${Math.random().toString(36).slice(2)}`),
-          normX: Number(r.x ?? 0) || 0,
-          normY: Number(r.y ?? 0) || 0,
-          normW: Number(r.w ?? 0) || 0,
-          normH: Number(r.h ?? 0) || 0,
-          groupKey: normaliseGroupKey(r.groupKey as string | null | undefined),
-          shape: r.shape === "circle" ? "circle" : "rect",
-        }));
+        this.rects = rects.map((r: Record<string, unknown>) => {
+          const rectIdRaw = r.rectId;
+          const rectId =
+            typeof rectIdRaw === "string"
+              ? rectIdRaw
+              : typeof rectIdRaw === "number"
+                ? String(rectIdRaw)
+                : `rect-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          return {
+            rectId,
+            normX: Number(r.x ?? 0) || 0,
+            normY: Number(r.y ?? 0) || 0,
+            normW: Number(r.w ?? 0) || 0,
+            normH: Number(r.h ?? 0) || 0,
+            groupKey: normaliseGroupKey(r.groupKey as string | null | undefined),
+            shape: r.shape === "circle" ? "circle" : "rect",
+          };
+        });
 
         const maxGroup = this.rects.reduce((acc, r) => {
           const n = Number(String(r.groupKey).replace(/[^0-9]/g, ""));
