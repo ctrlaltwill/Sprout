@@ -13,8 +13,8 @@ export const VIEW_TYPE_HOME = "sprout-home";
 export const BRAND = "Sprout";
 
 // Single source of truth for settings + defaults:
-export type { SproutSettings } from "./defaultSettings";
-export { DEFAULT_SETTINGS } from "./defaultSettings";
+export type { SproutSettings } from "./default-settings";
+export { DEFAULT_SETTINGS } from "./default-settings";
 
 export function deepMerge<T>(target: T, src: Partial<T>): T {
   const out: any = Array.isArray(target) ? (target as any[]).slice() : { ...(target as any) };

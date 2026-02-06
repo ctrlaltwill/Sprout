@@ -7,7 +7,7 @@
  * so they can be tested in isolation.
  */
 
-import type { Scope } from "../reviewer/Types";
+import type { Scope } from "../reviewer/types";
 
 // ─── Constants ───────────────────────────────────────────────────────
 

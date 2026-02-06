@@ -8,7 +8,7 @@ import type { CardRecord } from "./card";
 import type { CardState } from "./scheduler";
 import type { ReviewLogEntry } from "./review";
 import type { AnalyticsData } from "./analytics";
-import type { IOMap } from "../imageocclusion/ImageOcclusionTypes";
+import type { IOMap } from "../imageocclusion/image-occlusion-types";
 
 /**
  * A card that failed parsing and has been quarantined.

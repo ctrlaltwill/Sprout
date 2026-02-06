@@ -28,18 +28,18 @@ import {
 import { registerReadingViewPrettyCards } from "./reading/reading-view";
 
 import { JsonStore } from "./core/store";
-import { SproutReviewerView } from "./reviewer/ReviewView";
-import { SproutWidgetView } from "./widget/SproutWidgetView";
-import { SproutCardBrowserView } from "./browser/SproutCardBrowserView";
-import { SproutAnalyticsView } from "./analytics/AnalyticsView";
-import { SproutHomeView } from "./home/SproutHomeView";
-import { SproutSettingsTab } from "./settings/SproutSettingsTab";
+import { SproutReviewerView } from "./reviewer/review-view";
+import { SproutWidgetView } from "./widget/sprout-widget-view";
+import { SproutCardBrowserView } from "./browser/sprout-card-browser-view";
+import { SproutAnalyticsView } from "./analytics/analytics-view";
+import { SproutHomeView } from "./home/sprout-home-view";
+import { SproutSettingsTab } from "./settings/sprout-settings-tab";
 import { formatSyncNotice, syncQuestionBank } from "./sync/sync-engine";
-import { CardCreatorModal } from "./modals/CardCreatorModal";
-import { ImageOcclusionCreatorModal } from "./modals/ImageOcclusionCreatorModal";
-import { ParseErrorModal } from "./modals/ParseErrorModal";
+import { CardCreatorModal } from "./modals/card-creator-modal";
+import { ImageOcclusionCreatorModal } from "./modals/image-occlusion-creator-modal";
+import { ParseErrorModal } from "./modals/parse-error-modal";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
-import { ImageOcclusionEditor } from "./imageocclusion/ImageOcclusionEditor";
+import { ImageOcclusionEditor } from "./imageocclusion/image-occlusion-editor";
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));

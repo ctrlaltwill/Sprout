@@ -7,10 +7,10 @@
  */
 
 import type { CardRecord } from "../core/store";
-import { normaliseGroupPath } from "../indexes/groupIndex";
-import { fmtGroups, coerceGroups } from "../indexes/groupFormat";
-import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/Fields";
-import { stageLabel } from "../reviewer/Labels";
+import { normaliseGroupPath } from "../indexes/group-index";
+import { fmtGroups, coerceGroups } from "../indexes/group-format";
+import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
+import { stageLabel } from "../reviewer/labels";
 
 // ─── Filter / column types ──────────────────────────────────────────
 

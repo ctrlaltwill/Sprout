@@ -12,7 +12,7 @@
 import type { Plugin, MarkdownPostProcessorContext, Component } from "obsidian";
 import { MarkdownRenderer, Notice, setIcon, TFile } from "obsidian";
 import { openBulkEditModalForCards } from "../modals/bulk-edit";
-import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/MarkdownBlock";
+import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import type { CardRecord } from "../core/store";
 
 import {

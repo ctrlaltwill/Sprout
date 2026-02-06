@@ -2,7 +2,7 @@
 import { Notice, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/Fields";
+import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 
 export type ColKey =
   | "id"

@@ -25,8 +25,8 @@ import {
   buildAnswerOrOptionsFor,
   escapePipes,
   parseMcqOptionsFromCell,
-} from "../reviewer/Fields";
-import { stageLabel } from "../reviewer/Labels";
+} from "../reviewer/fields";
+import { stageLabel } from "../reviewer/labels";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
 
 import {

@@ -4,15 +4,15 @@
  * Re-exports the public API of the image-occlusion module.
  */
 
-export * from "./ImageOcclusionTypes";
-export * from "./ImageGeometry";
-export * from "./ImageTransform";
-export * from "./MaskTool";
-export { ImageOcclusionEditorModal } from "./ImageMaskRenderer";
-export { ImageOcclusionEditor } from "./ImageOcclusionEditor";
+export * from "./image-occlusion-types";
+export * from "./image-geometry";
+export * from "./image-transform";
+export * from "./mask-tool";
+export { ImageOcclusionEditorModal } from "./image-mask-renderer";
+export { ImageOcclusionEditor } from "./image-occlusion-editor";
 export {
   isIoParentCard,
   isIoRevealableType,
   renderImageOcclusionReviewInto,
-} from "./ImageOcclusionReviewRender";
+} from "./image-occlusion-review-render";
 export * from "./io-helpers";
