@@ -1,7 +1,6 @@
 # Sprout - Flashcards & Spaced Repetition
 
 [![Release](https://img.shields.io/github/v/release/ctrlaltwill/Sprout?display_name=tag)](https://github.com/ctrlaltwill/Sprout/releases)
-[![Dependencies](https://img.shields.io/librariesio/github/ctrlaltwill/Sprout)](https://libraries.io/github/ctrlaltwill/Sprout)
 [![License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/blob/main/LICENSE)
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
 
