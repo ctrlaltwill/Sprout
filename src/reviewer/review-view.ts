@@ -17,7 +17,7 @@ import {
 
 import { AOS_DURATION, BRAND, MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_REVIEWER } from "../core/constants";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import { gradeFromRating } from "../scheduler/scheduler";
 import { syncOneFile } from "../sync/sync-engine";
 import { ParseErrorModal } from "../modals/parse-error-modal";
@@ -1111,8 +1111,7 @@ export class SproutReviewerView extends ItemView {
 
   isActiveLeaf(): boolean {
     const ws = this.app.workspace;
-    const activeView = ws?.getActiveViewOfType?.(VIEW_TYPE_REVIEWER) ?? null;
-    const activeLeaf = (activeView as unknown as { leaf?: WorkspaceLeaf }).leaf ?? null;
+    const activeLeaf = ws?.activeLeaf ?? ws?.getMostRecentLeaf?.() ?? null;
     return !!activeLeaf && activeLeaf === this.leaf;
   }
 
@@ -1197,7 +1196,8 @@ export class SproutReviewerView extends ItemView {
     if (k === "m") {
       ev.preventDefault();
       ev.stopPropagation();
-      const trigger = this.contentEl.querySelector(
+      const trigger = queryFirst(
+        this.contentEl,
         'button[data-sprout-action="reviewer-more-trigger"]',
       );
       if (trigger) {
@@ -1383,24 +1383,7 @@ export class SproutReviewerView extends ItemView {
       return null;
     };
 
-    const direct =
-      pick((card).info) ??
-      pick((card).information) ??
-      pick((card).i) ??
-      pick((card).I);
-    if (direct) return direct;
-
-    const fields = (card).fields;
-    if (fields && typeof fields === "object") {
-      const fromFields =
-        pick((fields).info) ??
-        pick((fields).information) ??
-        pick((fields).i) ??
-        pick((fields).I);
-      if (fromFields) return fromFields;
-    }
-
-    return null;
+    return pick(card.info);
   }
 
   private hasInfoField(card: CardRecord): boolean {
@@ -1411,7 +1394,7 @@ export class SproutReviewerView extends ItemView {
     const root = this.contentEl;
     
     // Preserve the study session header when in session mode
-    const studySessionHeader = root.querySelector("[data-study-session-header]");
+    const studySessionHeader = queryFirst(root, "[data-study-session-header]");
     const headerWillPersist = !!studySessionHeader && this.mode === "session" && !!this.session;
     
     root.empty();

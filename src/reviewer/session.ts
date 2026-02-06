@@ -59,11 +59,6 @@ function ioChildKeyFromId(id: string): string | null {
 function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
   if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
-  // Defensive: check non-standard fields that may appear on legacy records
-  const rec = card as Record<string, unknown>;
-  if (typeof rec.ioGroupKey === "string" && (rec.ioGroupKey).trim()) return true;
-  if (typeof rec.key === "string" && (rec.key).trim()) return true;
-
   const id = String(card.id ?? "");
   return !!ioChildKeyFromId(id);
 }

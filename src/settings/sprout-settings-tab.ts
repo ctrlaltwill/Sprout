@@ -19,6 +19,7 @@ import {
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
 import { log } from "../core/logger";
+import { queryFirst } from "../core/ui";
 import { VIEW_TYPE_WIDGET } from "../core/constants";
 import {
   listDataJsonBackups,
@@ -169,7 +170,7 @@ export class SproutSettingsTab extends PluginSettingTab {
    * plus a "Create backup now" button.
    */
   private renderBackupsSection(wrapper: HTMLElement) {
-    wrapper.createEl("h3", { text: "Backups" });
+    new Setting(wrapper).setName("Backups").setHeading();
 
     {
       const createItem = wrapper.createDiv({ cls: "setting-item" });
@@ -521,12 +522,12 @@ export class SproutSettingsTab extends PluginSettingTab {
     const wrapper = containerEl.createDiv({ cls: "sprout-settings-wrapper sprout-settings" });
 
     // Sprout Settings title above user details
-    wrapper.createEl("h1", { text: "Sprout Settings" });
+    new Setting(wrapper).setName("Sprout Settings").setHeading();
 
     // ----------------------------
     // User details
     // ----------------------------
-    wrapper.createEl("h2", { text: "User details" });
+    new Setting(wrapper).setName("User details").setHeading();
 
     // User name field
     new Setting(wrapper)
@@ -571,12 +572,12 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
     // Add Sprout Settings title at the top
-    wrapper.createEl("h1", { text: "Sprout Settings" });
+    new Setting(wrapper).setName("Sprout Settings").setHeading();
 
     // ----------------------------
     // General
     // ----------------------------
-    wrapper.createEl("h3", { text: "General" });
+    new Setting(wrapper).setName("General").setHeading();
 
     new Setting(wrapper)
       .setName("Reset settings")
@@ -638,9 +639,12 @@ export class SproutSettingsTab extends PluginSettingTab {
           const leaves = ws.getLeavesOfType("markdown");
           for (const leaf of leaves) {
             // Find the markdown content area inside the leaf
-            const content = leaf.view?.containerEl?.querySelector(
-              ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section"
-            );
+            const content = leaf.view?.containerEl
+              ? queryFirst(
+                  leaf.view.containerEl,
+                  ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
+                )
+              : null;
             if (content) {
               log.debug("Dispatching sprout:prettify-cards-refresh to", content);
               try {
@@ -668,7 +672,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Image Occlusion
     // ----------------------------
-    wrapper.createEl("h3", { text: "Image Occlusion" });
+    new Setting(wrapper).setName("Image Occlusion").setHeading();
 
     new Setting(wrapper)
       .setName("Default IO attachment folder")
@@ -846,7 +850,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Card Attachments
     // ----------------------------
-    wrapper.createEl("h3", { text: "Card Attachments" });
+    new Setting(wrapper).setName("Card Attachments").setHeading();
 
     new Setting(wrapper)
       .setName("Card attachment folder")
@@ -1008,7 +1012,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Study (Reviewer)
     // ----------------------------
-    wrapper.createEl("h3", { text: "Study" });
+    new Setting(wrapper).setName("Study").setHeading();
 
     new Setting(wrapper)
       .setName("Daily new limit")
@@ -1154,7 +1158,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Widget
     // ----------------------------
-    wrapper.createEl("h3", { text: "Widget" });
+    new Setting(wrapper).setName("Widget").setHeading();
 
     new Setting(wrapper)
       .setName("Treat folder notes as decks")
@@ -1179,7 +1183,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Scheduling
     // ----------------------------
-    wrapper.createEl("h3", { text: "Scheduling" });
+    new Setting(wrapper).setName("Scheduling").setHeading();
 
     const sched = this.plugin.settings.scheduler;
 
@@ -1392,7 +1396,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Indexing
     // ----------------------------
-    wrapper.createEl("h3", { text: "Indexing" });
+    new Setting(wrapper).setName("Indexing").setHeading();
 
     new Setting(wrapper)
       .setName("Ignore fenced code blocks")
@@ -1412,7 +1416,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Danger zone
     // ----------------------------
-    wrapper.createEl("h3", { text: "Danger zone" });
+    new Setting(wrapper).setName("Danger zone").setHeading();
 
     new Setting(wrapper)
       .setName("Delete all flashcards")
@@ -1439,7 +1443,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Quarantine
     // ----------------------------
-    wrapper.createEl("h3", { text: "Quarantined cards" });
+    new Setting(wrapper).setName("Quarantined cards").setHeading();
 
     {
       const item = wrapper.createDiv({ cls: "setting-item" });

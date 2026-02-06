@@ -76,8 +76,6 @@ export function ioChildKeyFromId(id: string): string | null {
 export function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
   if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
-  if (typeof card.ioGroupKey === "string" && card.ioGroupKey.trim()) return true;
-  if (typeof card.key === "string" && card.key.trim()) return true;
   const id = String(card.id ?? "");
   return !!ioChildKeyFromId(id);
 }

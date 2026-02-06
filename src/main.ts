@@ -41,6 +41,7 @@ import { registerReadingViewPrettyCards, teardownReadingView } from "./reading/r
 import { removeAosErrorHandler } from "./core/aos-loader";
 
 import { JsonStore } from "./core/store";
+import { queryFirst } from "./core/ui";
 import { SproutReviewerView } from "./reviewer/review-view";
 import { SproutWidgetView } from "./widget/sprout-widget-view";
 import { SproutCardBrowserView } from "./browser/sprout-card-browser-view";
@@ -154,11 +155,9 @@ export default class SproutPlugin extends Plugin {
 
   private _isActiveHiddenViewType(): boolean {
     const ws = this.app.workspace;
-    if (typeof ws?.getActiveViewOfType !== "function") return false;
-    for (const type of this._hideStatusBarViewTypes) {
-      if (ws.getActiveViewOfType(type)) return true;
-    }
-    return false;
+    const activeLeaf = ws?.activeLeaf ?? ws?.getMostRecentLeaf?.() ?? null;
+    const viewType = activeLeaf?.view?.getViewType?.();
+    return viewType ? this._hideStatusBarViewTypes.has(viewType) : false;
   }
 
   private _updateStatusBarVisibility(leaf: WorkspaceLeaf | null) {
@@ -447,7 +446,7 @@ export default class SproutPlugin extends Plugin {
             let externalLinkItem: Element | null = null;
 
             for (const item of menuItems) {
-              const titleEl = item.querySelector(".menu-item-title");
+              const titleEl = queryFirst(item, ".menu-item-title");
               if (titleEl && titleEl.textContent?.includes("Add external link")) {
                 externalLinkItem = item;
                 break;

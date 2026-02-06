@@ -119,16 +119,7 @@ function extractInfoField(card: CardRecord): string | null {
     return null;
   };
 
-  const direct = pick(card.info) ?? pick(card.information) ?? pick(card.i) ?? pick(card.I);
-  if (direct) return direct;
-
-  const fields = card.fields;
-  if (fields && typeof fields === "object") {
-    const fromFields = pick(fields.info) ?? pick(fields.information) ?? pick(fields.i) ?? pick(fields.I);
-    if (fromFields) return fromFields;
-  }
-
-  return null;
+  return pick(card.info);
 }
 
 // --- Basecoat scoping --------------------------------------------------------
@@ -191,14 +182,9 @@ function ioChildKeyFromId(id: string): string | null {
 
 function getIoGroupKey(card: CardRecord): string | null {
   if (!card) return null;
-  const direct =
-    typeof card.groupKey === "string" && card.groupKey.trim()
-      ? card.groupKey.trim()
-      : typeof card.ioGroupKey === "string" && card.ioGroupKey.trim()
-        ? card.ioGroupKey.trim()
-        : typeof card.key === "string" && card.key.trim()
-          ? card.key.trim()
-          : null;
+  const direct = typeof card.groupKey === "string" && card.groupKey.trim()
+    ? card.groupKey.trim()
+    : null;
   if (direct) return direct;
 
   const id = String(card.id ?? "");
@@ -1070,9 +1056,9 @@ export function renderSessionMode(args: Args) {
   // Provide open note handler globally for menu
   window.sproutOpenCurrentCardNote = () => {
     if (!card) return;
-    const filePath = card.sourceNotePath || card.location || card.sourcePath;
+    const filePath = card.sourceNotePath;
     if (!filePath) return;
-    const anchor = card.anchor || card.blockId || card.id;
+    const anchor = String(card.id ?? "").trim();
     const anchorStr = anchor ? `#^${anchor}` : "";
     const app = window.app;
     if (app && app.workspace && typeof app.workspace.openLinkText === 'function') {

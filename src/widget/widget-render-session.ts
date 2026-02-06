@@ -552,7 +552,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
       if (!c) return;
       const filePath = c.sourceNotePath || view.activeFile?.path;
       if (!filePath) return;
-      const anchor = c.anchor || c.blockId || c.id;
+      const anchor = String(c.id ?? "").trim();
       const anchorStr = anchor ? `#^${anchor}` : "";
       void view.app.workspace.openLinkText(filePath + anchorStr, filePath, true);
     },

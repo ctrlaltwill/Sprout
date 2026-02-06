@@ -302,6 +302,54 @@ export class JsonStore {
       delete anyS.ease;
     }
 
+    // Card record hygiene: normalize legacy fields into current schema.
+    const cardMap = this.data.cards;
+    if (cardMap && typeof cardMap === "object") {
+      const pickString = (v: unknown): string | null => {
+        if (typeof v !== "string") return null;
+        const s = v.trim();
+        return s ? s : null;
+      };
+
+      const pickInfoFromFields = (fields: Record<string, unknown>): string | null =>
+        pickString(fields.info) ??
+        pickString(fields.information) ??
+        pickString(fields.i) ??
+        pickString(fields.I);
+
+      for (const [cardKey, rawCard] of Object.entries(cardMap)) {
+        if (!rawCard || typeof rawCard !== "object") {
+          delete cardMap[cardKey];
+          continue;
+        }
+
+        const card = rawCard as Record<string, unknown>;
+        const cardId = pickString(card.id) ?? pickString(card.anchor) ?? pickString(card.blockId) ?? pickString(cardKey);
+        if (cardId) card.id = cardId;
+
+        if (!pickString(card.sourceNotePath)) {
+          const legacyPath = pickString(card.location) ?? pickString(card.sourcePath);
+          if (legacyPath) card.sourceNotePath = legacyPath;
+        }
+
+        if (!pickString(card.groupKey)) {
+          const legacyGroup = pickString(card.ioGroupKey) ?? pickString(card.key);
+          if (legacyGroup) card.groupKey = legacyGroup;
+        }
+
+        if (!pickString(card.info)) {
+          const legacyInfo =
+            pickString(card.information) ??
+            pickString(card.i) ??
+            pickString(card.I) ??
+            (card.fields && typeof card.fields === "object"
+              ? pickInfoFromFields(card.fields as Record<string, unknown>)
+              : null);
+          if (legacyInfo) card.info = legacyInfo;
+        }
+      }
+    }
+
     // IO schema hygiene
     const ioMap = this.data.io;
     if (ioMap && typeof ioMap === "object") {

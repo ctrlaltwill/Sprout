@@ -13,7 +13,7 @@
  *  - ConfirmDeleteBackupModal        — modal confirming permanent deletion of a backup file on disk
  */
 
-import { type App, Modal, Notice } from "obsidian";
+import { type App, Modal, Notice, Setting } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
 import type { DataJsonBackupStats } from "../sync/backup";
@@ -40,7 +40,7 @@ export class ConfirmResetSchedulingModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Reset scheduling for all cards?" });
+    new Setting(contentEl).setName("Reset scheduling for all cards?").setHeading();
     contentEl.createEl("p", {
       text: "This resets all cards to New and clears scheduling fields. This cannot be undone. Consider creating a backup first.",
     });
@@ -90,7 +90,7 @@ export class ConfirmResetAnalyticsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Reset all analytics data?" });
+    new Setting(contentEl).setName("Reset all analytics data?").setHeading();
     contentEl.createEl("p", {
       text: "This clears all review history, heatmaps, statistics, and analytics events. Scheduling data (due dates, intervals) will be preserved. This cannot be undone. Consider creating a backup first.",
     });
@@ -143,7 +143,7 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Delete ALL Sprout flashcards in this vault?" });
+    new Setting(contentEl).setName("Delete ALL Sprout flashcards in this vault?").setHeading();
 
     const p = contentEl.createEl("p");
     p.setText(
@@ -201,7 +201,7 @@ export class ConfirmResetDefaultsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Reset Sprout settings to defaults?" });
+    new Setting(contentEl).setName("Reset Sprout settings to defaults?").setHeading();
     contentEl.createEl("p", {
       text: "This resets Sprout settings back to their defaults. It does not delete cards or change scheduling. This cannot be undone.",
     });
@@ -268,7 +268,7 @@ export class BackupCompareModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Backup comparison" });
+    new Setting(contentEl).setName("Backup comparison").setHeading();
 
     contentEl.createEl("p", {
       text: `File: ${this.backup.name}`,
@@ -370,7 +370,7 @@ export class ConfirmRestoreBackupModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Restore from backup?" });
+    new Setting(contentEl).setName("Restore from backup?").setHeading();
 
     contentEl.createEl("p", {
       text: `This will overwrite your current Sprout database with: ${this.backup.name}`,
@@ -470,7 +470,7 @@ export class ConfirmDeleteBackupModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h3", { text: "Delete backup?" });
+    new Setting(contentEl).setName("Delete backup?").setHeading();
     contentEl.createEl("p", { text: `This will permanently delete: ${this.backup.name}` });
 
     const row = contentEl.createDiv();
