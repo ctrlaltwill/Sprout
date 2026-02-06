@@ -1,6 +1,18 @@
+/**
+ * @file src/imageocclusion/image-transform.ts
+ * @summary Provides helper functions for manipulating the stage transform (pan, zoom, coordinate conversion) used in the Image Occlusion canvas editor. Converts between client (screen) and stage (image) coordinate spaces, applies CSS transforms to the stage element, and computes zoom-at-point transforms with clamping.
+ *
+ * @exports
+ *   - StageTransform — re-exported type describing scale and translation state
+ *   - applyStageTransform — applies a scale+translate CSS transform to a stage element
+ *   - clientToStage — converts client (screen) coordinates to stage (image) coordinates
+ *   - zoomAt — computes a new StageTransform after zooming at a given client-space point
+ */
+
 // ImageTransform.ts - image stage transform helpers
 
-export type StageTransform = { scale: number; tx: number; ty: number };
+import type { StageTransform } from "./io-types";
+export type { StageTransform };
 
 /**
  * Applies a transform (scale, translate) to a stage element.

@@ -1,18 +1,67 @@
 /**
- * browser/browser-helpers.ts
- * ──────────────────────────
- * Types, constants, and standalone helper functions used by
- * SproutCardBrowserView.  All exported items are pure
- * (no Obsidian view state) so they can be tested in isolation.
+ * @file src/browser/browser-helpers.ts
+ * @summary Shared types, constants, and pure helper functions used across all
+ * Flashcard Browser modules. Includes filter/column type aliases, default column
+ * widths, placeholder strings, DOM utilities (clearNode, forceWrapStyles,
+ * forceCellClip, applyStickyThStyles), date/display formatters, group-path
+ * utilities, pipe-delimited card-block builder, Image Occlusion HTML renderers,
+ * and full-text search helpers. All exports are stateless and testable in
+ * isolation.
+ *
+ * @exports
+ *   - TypeFilter — type alias for card-type filter values
+ *   - StageFilter — type alias for card-stage filter values
+ *   - DueFilter — type alias for due-date filter values
+ *   - ColKey — type alias for table column key identifiers
+ *   - SortKey — type alias for sortable column keys (same as ColKey)
+ *   - ParsedSearch — type for parsed search query results
+ *   - DropdownOption — generic type for dropdown menu option items
+ *   - DropdownMenuController — type for dropdown menu controller instances
+ *   - DEFAULT_COL_WIDTHS — default pixel widths for each table column
+ *   - PLACEHOLDER_TITLE — placeholder text for the title field
+ *   - PLACEHOLDER_CLOZE — placeholder text for the cloze field
+ *   - PLACEHOLDER_QUESTION — placeholder text for the question field
+ *   - PLACEHOLDER_ANSWER — placeholder text for the answer field
+ *   - PLACEHOLDER_INFO — placeholder text for the info field
+ *   - CLOZE_ANSWER_HELP — help text shown in the answer column for cloze cards
+ *   - clearNode — removes all child nodes from an element
+ *   - forceWrapStyles — sets inline styles to override nowrap defaults on table cells
+ *   - forceCellClip — clips overflow for fixed-row-height table cells
+ *   - applyStickyThStyles — applies sticky positioning and styling to table header cells
+ *   - fmtDue — formats a due-date timestamp for display
+ *   - fmtLocation — formats a source note path for display
+ *   - titleCaseToken — title-cases a single word token
+ *   - titleCaseSegment — title-cases a path segment preserving separators
+ *   - titleCaseGroupPath — title-cases an entire slash-delimited group path
+ *   - normalizeGroupPathInput — normalises a group path by trimming and collapsing empty segments
+ *   - formatGroupDisplay — formats a group path for display with spaced slashes
+ *   - expandGroupAncestors — expands a group path to all ancestor paths
+ *   - parseGroupsInput — parses a comma-delimited string into normalised group path array
+ *   - groupsToInput — converts a group array back to a comma-delimited input string
+ *   - escapePipeText — escapes pipe characters for pipe-delimited card block syntax
+ *   - pushPipeField — pushes a key-value field to a pipe-delimited card block
+ *   - buildCardBlockPipeMarkdown — builds the full pipe-markdown block for writing a card to a note
+ *   - startOfTodayMs — returns midnight of today in milliseconds since epoch
+ *   - endOfTodayMs — returns 23:59:59.999 of today in milliseconds since epoch
+ *   - typeLabelBrowser — returns a human-readable label for a card type
+ *   - escapeHtml — escapes HTML special characters
+ *   - stripWikiImageSyntax — parses wikilink image syntax into linkpath and display reference
+ *   - tryResolveToResourceSrc — attempts to resolve a link/path to a vault resource URL
+ *   - getIoResolvedImage — gets a resolved image URL and display reference for IO cards
+ *   - extractOcclusionLabels — extracts occlusion labels from a card's mask data for badge rendering
+ *   - renderOcclusionBadgesHtml — renders occlusion badge chips as an HTML string
+ *   - buildIoImgHtml — builds HTML for an IO image preview without occlusions
+ *   - buildIoOccludedHtml — builds HTML for an IO image preview with occlusion overlays
+ *   - searchText — builds a searchable text blob from all card fields
+ *   - parseSearchQuery — parses a search query string extracting group and type filters
  */
 
 import type { CardRecord } from "../core/store";
-import type { App } from "obsidian";
+import type { App, TFile } from "obsidian";
 import { log } from "../core/logger";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
-import { stageLabel } from "../reviewer/labels";
 
 // ─── Filter / column types ──────────────────────────────────────────
 
@@ -197,10 +246,10 @@ export function parseGroupsInput(raw: string): string[] {
 }
 
 /** Convert an array of groups back to a comma-delimited input string. */
-export function groupsToInput(groups: any): string {
+export function groupsToInput(groups: unknown): string {
   if (!Array.isArray(groups)) return "";
   return groups
-    .map((g) => titleCaseGroupPath(String(g).trim()))
+    .map((g: unknown) => titleCaseGroupPath(String(g).trim()))
     .filter(Boolean)
     .join(", ");
 }
@@ -336,7 +385,7 @@ export function stripWikiImageSyntax(raw: string): { linkpath: string; displayRe
 }
 
 /** Attempt to resolve a link/path to a vault resource URL. */
-export function tryResolveToResourceSrc(app: any, linkpathOrPath: string, fromNotePath: string): string | null {
+export function tryResolveToResourceSrc(app: App, linkpathOrPath: string, fromNotePath: string): string | null {
   const p = String(linkpathOrPath ?? "").trim();
   if (!p) return null;
 
@@ -356,7 +405,7 @@ export function tryResolveToResourceSrc(app: any, linkpathOrPath: string, fromNo
   try {
     const af = app?.vault?.getAbstractFileByPath?.(p);
     if (af && (af).path && app?.vault?.getResourcePath) {
-      const src = app.vault.getResourcePath(af);
+      const src = app.vault.getResourcePath(af as TFile);
       if (typeof src === "string" && src) return src;
     }
   } catch (e) { log.swallow("resolve vault path to resource", e); }
@@ -387,11 +436,12 @@ export function getIoResolvedImage(app: App, card: CardRecord): { src: string | 
  * Extract small occlusion labels from a card's mask data
  * (for badge rendering in the IO preview).
  */
-export function extractOcclusionLabels(card: CardRecord, max = 8): string[] {
+export function extractOcclusionLabels(card: CardRecord | Record<string, unknown>, max = 8): string[] {
   const out: string[] = [];
 
   const push = (v: unknown) => {
-    const s = String(v ?? "").trim();
+    if (v == null) return;
+    const s = (typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : "").trim();
     if (!s) return;
     out.push(s);
   };
@@ -404,9 +454,10 @@ export function extractOcclusionLabels(card: CardRecord, max = 8): string[] {
       : [];
 
   for (const r of list) {
-    push((r).groupKey);
-    push((r).key);
-    push((r).label);
+    const item = r as Record<string, unknown>;
+    push(item.groupKey);
+    push(item.key);
+    push(item.label);
     if (out.length >= max) break;
   }
 
@@ -421,7 +472,7 @@ export function extractOcclusionLabels(card: CardRecord, max = 8): string[] {
 }
 
 /** Render small occlusion badge chips as an HTML string. */
-export function renderOcclusionBadgesHtml(card: CardRecord): string {
+export function renderOcclusionBadgesHtml(card: CardRecord | Record<string, unknown>): string {
   const labels = extractOcclusionLabels(card, 10);
   if (!labels.length) return "";
 
@@ -436,7 +487,7 @@ export function renderOcclusionBadgesHtml(card: CardRecord): string {
 }
 
 /** Build HTML for an IO image preview (no occlusions). */
-export function buildIoImgHtml(resolvedSrc: string, displayRef: string, title: string): string {
+export function buildIoImgHtml(resolvedSrc: string, _displayRef: string, title: string): string {
   const safeSrc = escapeHtml(resolvedSrc);
   const safeTitle = escapeHtml(title);
 
@@ -454,34 +505,34 @@ export function buildIoImgHtml(resolvedSrc: string, displayRef: string, title: s
 /** Build HTML for an IO image preview with occlusion overlays. */
 export function buildIoOccludedHtml(
   resolvedSrc: string,
-  displayRef: string,
-  occlusions: any[] | null,
+  _displayRef: string,
+  occlusions: unknown[] | null,
   title: string,
-  cardForLabels?: any,
+  cardForLabels?: CardRecord | { rects: unknown[] },
 ): string {
   const safeSrc = escapeHtml(resolvedSrc);
   const safeTitle = escapeHtml(title);
-  const safeDisplay = escapeHtml(displayRef);
 
   const rects = Array.isArray(occlusions) ? occlusions : [];
   const overlays = rects
     .map((r) => {
-      const x = Number.isFinite((r).x)
-        ? Number((r).x)
-        : Number.isFinite((r).x1)
-          ? Number((r).x1)
+      const rect = r as Record<string, unknown>;
+      const x = Number.isFinite(rect.x)
+        ? Number(rect.x)
+        : Number.isFinite(rect.x1)
+          ? Number(rect.x1)
           : 0;
-      const y = Number.isFinite((r).y)
-        ? Number((r).y)
-        : Number.isFinite((r).y1)
-          ? Number((r).y1)
+      const y = Number.isFinite(rect.y)
+        ? Number(rect.y)
+        : Number.isFinite(rect.y1)
+          ? Number(rect.y1)
           : 0;
 
-      let w = Number.isFinite((r).w) ? Number((r).w) : null;
-      let h = Number.isFinite((r).h) ? Number((r).h) : null;
+      let w = Number.isFinite(rect.w) ? Number(rect.w) : null;
+      let h = Number.isFinite(rect.h) ? Number(rect.h) : null;
 
-      if (w == null && Number.isFinite((r).x2)) w = Number((r).x2) - x;
-      if (h == null && Number.isFinite((r).y2)) h = Number((r).y2) - y;
+      if (w == null && Number.isFinite(rect.x2)) w = Number(rect.x2) - x;
+      if (h == null && Number.isFinite(rect.y2)) h = Number(rect.y2) - y;
 
       w = w == null ? 0 : w;
       h = h == null ? 0 : h;

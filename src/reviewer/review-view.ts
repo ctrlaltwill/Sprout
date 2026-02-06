@@ -1,5 +1,10 @@
-// src/reviewer.ts
-// NOTE: This is the top-level file, so ui import MUST be "./ui" (not "../ui").
+/**
+ * @file src/reviewer/review-view.ts
+ * @summary The main reviewer view class for Sprout. Extends Obsidian's ItemView to provide the full study experience including deck browsing, session management, card grading (FSRS-based), undo, skip, bury/suspend, practice mode, image occlusion, MCQ randomisation, Markdown rendering, and keyboard navigation.
+ *
+ * @exports
+ *   - SproutReviewerView — ItemView subclass that manages the reviewer's lifecycle, state, rendering, and user interactions
+ */
 
 import {
   ItemView,
@@ -19,6 +24,7 @@ import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import type SproutPlugin from "../main";
 
 import type { Scope, Session, Rating } from "./types";
+import type { CardRecord } from "../types/card";
 import { buildSession, getNextDueInScope } from "./session";
 import { formatCountdown } from "./timers";
 import { renderClozeFront } from "./question-cloze";
@@ -38,7 +44,6 @@ import {
 } from "./question-mcq";
 import {
   closeMoreMenu as closeMoreMenuImpl,
-  toggleMoreMenu as toggleMoreMenuImpl,
 } from "./more-menu";
 import { logFsrsIfNeeded, logUndoIfNeeded } from "./fsrs-log";
 import { renderTitleMarkdownIfNeeded } from "./title-markdown";
@@ -71,7 +76,7 @@ type UndoFrame = {
   cardType: string;
   rating: Rating;
   at: number;
-  meta: any;
+  meta: Record<string, unknown> | null;
 
   sessionIndex: number;
   showAnswer: boolean;
@@ -101,7 +106,6 @@ export class SproutReviewerView extends ItemView {
   private _sessionStamp = 0;
   private _undo: UndoFrame | null = null;
   private _firstSessionRender = true;
-  private _sessionStartTime = 0;
 
   // time-to-answer proxy
   private _timing: { stamp: number; cardId: string; startedAt: number } = {
@@ -195,7 +199,7 @@ export class SproutReviewerView extends ItemView {
     this._timing = { stamp: 0, cardId: "", startedAt: 0 };
   }
 
-  private noteCardPresented(card: any) {
+  private noteCardPresented(card: CardRecord) {
     if (!this.session) return;
 
     const stamp = this.getSessionStamp();
@@ -299,7 +303,7 @@ export class SproutReviewerView extends ItemView {
         id: u.id,
         cardType: u.cardType,
         ratingUndone: u.rating,
-        meta: u.meta ?? null,
+        meta: u.meta ?? undefined,
         storeReverted: u.storeMutated,
         fromState,
         toState,
@@ -318,16 +322,16 @@ export class SproutReviewerView extends ItemView {
   // -----------------------------
 
   private isPracticeSession(): boolean {
-    return !!(this.session && this.session!.practice);
+    return !!(this.session && this.session.practice);
   }
 
-  private buildPracticeQueue(scope: Scope, excludeIds?: Set<string>): any[] {
+  private buildPracticeQueue(scope: Scope, excludeIds?: Set<string>): CardRecord[] {
     const now = Date.now();
 
-    const cardsObj = (this.plugin.store.data?.cards || {}) as Record<string, any>;
+    const cardsObj = (this.plugin.store.data?.cards || {}) as Record<string, CardRecord>;
     const cards = Object.values(cardsObj);
 
-    const out: any[] = [];
+    const out: CardRecord[] = [];
 
     for (const c of cards) {
       if (isIoParentCard(c)) continue;
@@ -336,7 +340,7 @@ export class SproutReviewerView extends ItemView {
       if (!id) continue;
       if (excludeIds?.has(id)) continue;
 
-      const st: any = this.plugin.store.getState(id);
+      const st = this.plugin.store.getState(id);
       if (!st) continue;
 
       if (String(st.stage || "") === "suspended") continue;
@@ -419,9 +423,6 @@ export class SproutReviewerView extends ItemView {
     this.mode = "session";
     this.session = s;
     this._firstSessionRender = true;
-    this._sessionStartTime = Date.now();
-    this._firstSessionRender = true;
-    this._sessionStartTime = Date.now();
 
     initMcqOrderState(this.session);
     initSkipState(this.session);
@@ -456,7 +457,7 @@ export class SproutReviewerView extends ItemView {
     this.render();
   }
 
-  private doSkipCurrentCard(meta?: any) {
+  private doSkipCurrentCard(meta?: Record<string, unknown>) {
     if (!this.session) return;
 
     const card = this.currentCard();
@@ -494,25 +495,7 @@ export class SproutReviewerView extends ItemView {
     void skipCurrentCard(this);
   }
 
-  private stripBurySuspendFromMoreMenuIfPractice() {
-    if (!this.isPracticeSession()) return;
 
-    const root = this.contentEl;
-
-    const menu =
-      (root.querySelector('[data-sprout-action="more-menu"]')) ||
-      (root.querySelector(".sprout-more-menu")) ||
-      null;
-
-    const scopeEl = menu || root;
-
-    const buttons = Array.from(scopeEl.querySelectorAll("button"));
-    for (const b of buttons) {
-      const left = (b.querySelector(".sprout-btn-left"))?.textContent?.trim();
-      const txt = (left || b.textContent || "").trim().toLowerCase();
-      if (txt === "bury" || txt === "suspend") b.remove();
-    }
-  }
 
   // -----------------------------
   // Markdown + IO rendering hooks
@@ -537,7 +520,7 @@ export class SproutReviewerView extends ItemView {
 
   async renderImageOcclusionInto(
     containerEl: HTMLElement,
-    card: any,
+    card: CardRecord,
     sourcePath: string,
     reveal: boolean,
   ) {
@@ -800,15 +783,16 @@ export class SproutReviewerView extends ItemView {
         }
 
         this.render();
-      } catch (e: any) {
+      } catch (e: unknown) {
         log.error(e);
-        new Notice(`${BRAND}: edit failed (${String(e?.message || e)})`);
+        const msg = e instanceof Error ? e.message : String(e);
+        new Notice(`${BRAND}: edit failed (${msg})`);
       }
     });
   }
 
   // --- FSRS grading
-  async gradeCurrentRating(rating: Rating, meta: any) {
+  async gradeCurrentRating(rating: Rating, meta: Record<string, unknown> | null) {
     const card = this.currentCard();
     if (!card || !this.session) return;
 
@@ -863,7 +847,7 @@ export class SproutReviewerView extends ItemView {
             mode: "practice",
             msToAnswer,
             scope: this.session.scope,
-            meta: meta || null,
+            meta: meta || undefined,
           });
           await store.persist();
         }
@@ -931,7 +915,7 @@ export class SproutReviewerView extends ItemView {
           prevDue,
           nextDue,
           scope: this.session.scope,
-          meta: meta || null,
+          meta: meta || undefined,
         });
       }
 
@@ -949,7 +933,7 @@ export class SproutReviewerView extends ItemView {
         rating,
         metrics,
         nextDue,
-        meta: meta || null,
+        meta: meta || undefined,
       });
     } catch (e) {
       this.clearUndo();
@@ -1021,7 +1005,7 @@ export class SproutReviewerView extends ItemView {
     const pass = choiceIdx === card.correctIndex;
 
     const four = isFourButtonMode(this.plugin);
-    const rating: any = pass ? (four ? "easy" : "good") : "again";
+    const rating: Rating = pass ? (four ? "easy" : "good") : "again";
 
     const st = this.plugin.store.getState(id);
     if (!st && !this.isPracticeSession()) {
@@ -1095,7 +1079,7 @@ export class SproutReviewerView extends ItemView {
     this.session = this.buildSession(scope);
 
     if (this.session) {
-      this.session.queue = (this.session.queue || []).filter((c: any) => !isIoParentCard(c));
+      this.session.queue = (this.session.queue || []).filter((c) => !isIoParentCard(c));
       this.session.stats.total = this.session.queue.length;
       this.session.index = clampInt(
         this.session.index ?? 0,
@@ -1103,11 +1087,11 @@ export class SproutReviewerView extends ItemView {
         Math.max(0, this.session.queue.length),
       );
 
-      this.session!._bcStamp = ++this._sessionStamp;
+      this.session._bcStamp = ++this._sessionStamp;
 
       initMcqOrderState(this.session);
       initSkipState(this.session);
-      this.session!.practice = false;
+      this.session.practice = false;
     }
 
     this.showAnswer = false;
@@ -1353,7 +1337,7 @@ export class SproutReviewerView extends ItemView {
         }
 
         if (!graded) {
-          let rating: any;
+          let rating: Rating;
           if (!four) {
             rating = ev.key === "1" ? "again" : "good";
           } else {
@@ -1389,47 +1373,10 @@ export class SproutReviewerView extends ItemView {
     this.plugin.refreshAllViews();
   }
 
-  private renderHeaderActions() {
-    const actionsEl =
-      (this.containerEl.querySelector(":scope > .view-header .view-actions")) ??
-      (this.containerEl.querySelector(".view-header .view-actions"));
-
-    if (actionsEl) actionsEl.replaceChildren();
-
-    const moreEl = this.addAction("more-vertical", "More options", () => {
-      toggleMoreMenuImpl(this);
-    });
-
-    this._moreBtnEl = moreEl;
-
-    const syncEl = this.addAction("refresh-cw", "Sync Flashcards", () => {
-      void this.plugin.syncBank();
-    });
-
-    const widthEl = this.addAction(this._wideIcon(), this._wideLabel(), () => {
-      this.plugin.isWideMode = !this.plugin.isWideMode;
-      this._applyReviewerWidthMode();
-    });
-
-    widthEl.dataset.bcAction = "toggle-browser-width";
-    this._widthToggleActionEl = widthEl;
-
-    if (actionsEl) {
-      const dir = window.getComputedStyle(actionsEl).flexDirection;
-      if (dir === "row-reverse") {
-        actionsEl.replaceChildren(moreEl, syncEl, widthEl);
-      } else {
-        actionsEl.replaceChildren(widthEl, syncEl, moreEl);
-      }
-    }
-
-    this._applyReviewerWidthMode();
-  }
-
-  private extractInfoField(card: any): string | null {
+  private extractInfoField(card: CardRecord | null): string | null {
     if (!card) return null;
 
-    const pick = (v: any): string | null => {
+    const pick = (v: unknown): string | null => {
       if (typeof v === "string" && v.trim()) return v.trim();
       if (Array.isArray(v)) {
         const s = v.filter((x) => typeof x === "string").join("\n").trim();
@@ -1458,7 +1405,7 @@ export class SproutReviewerView extends ItemView {
     return null;
   }
 
-  private hasInfoField(card: any): boolean {
+  private hasInfoField(card: CardRecord): boolean {
     return !!this.extractInfoField(card);
   }
 
@@ -1532,7 +1479,7 @@ export class SproutReviewerView extends ItemView {
     const activeCard = this.currentCard();
     if (activeCard) this.noteCardPresented(activeCard);
 
-    const infoPresent = this.hasInfoField(activeCard);
+    const infoPresent = activeCard ? this.hasInfoField(activeCard) : false;
     const showInfo =
       !!this.plugin.settings.reviewer.showInfoByDefault || (this.showAnswer && infoPresent);
 
@@ -1551,11 +1498,11 @@ export class SproutReviewerView extends ItemView {
       backToDecks: () => this.backToDecks(),
       nextCard: (userInitiated: boolean) => this.nextCard(userInitiated),
 
-      gradeCurrentRating: (rating: Rating, meta: any) => this.gradeCurrentRating(rating, meta),
+      gradeCurrentRating: (rating: Rating, meta: Record<string, unknown> | null) => this.gradeCurrentRating(rating, meta),
       answerMcq: (idx: number) => this.answerMcq(idx),
 
       enableSkipButton: isSkipEnabled(this.plugin),
-      skipCurrentCard: (meta?: any) => this.doSkipCurrentCard(meta),
+      skipCurrentCard: (meta?: Record<string, unknown>) => this.doSkipCurrentCard(meta),
 
       canBurySuspend: !practiceMode && !!activeCard && !this.session.graded[String(activeCard?.id ?? "")],
       buryCurrentCard: () => void this.buryCurrentCard(),
@@ -1581,7 +1528,7 @@ export class SproutReviewerView extends ItemView {
 
       renderImageOcclusionInto: (
         containerEl: HTMLElement,
-        card2: any,
+        card2: CardRecord,
         sourcePath2: string,
         reveal2: boolean,
       ) => this.renderImageOcclusionInto(containerEl, card2, sourcePath2, reveal2),
@@ -1602,7 +1549,7 @@ export class SproutReviewerView extends ItemView {
       renderTitleMarkdownIfNeeded({
         rootEl: this.contentEl,
         session: this.session!,
-        card: this.currentCard(),
+        card: this.currentCard()!,
         renderMarkdownInto: (el2, md, sp) => this.renderMarkdownInto(el2, md, sp),
       }),
     );

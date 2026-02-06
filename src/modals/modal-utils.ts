@@ -1,26 +1,50 @@
 /**
- * modals/modal-utils.ts
- * ---------------------------------------------------------------------------
- * Shared utility functions and internal types used by the various modal
- * classes (CardCreatorModal, ImageOcclusionCreatorModal, ParseErrorModal)
- * and the bulk-edit overlay.
+ * @file src/modals/modal-utils.ts
+ * @summary Shared utility functions and internal types used by the modal classes (CardCreatorModal, ImageOcclusionCreatorModal, ParseErrorModal) and the bulk-edit overlay. Provides UI helpers (danger callouts, visibility toggles, modal title setters), text formatting (due dates, group paths, pipe escaping), platform detection, and a reusable card-editor factory for modal contexts.
  *
- * Nothing in this file is part of the public API — consumer code should
- * import from the barrel at `src/modals.ts` (or the specific modal file).
- * ---------------------------------------------------------------------------
+ * @exports
+ *  - mkDangerCallout          — creates a styled danger/warning callout element
+ *  - isStringArray            — type guard for string[]
+ *  - nextFrame                — promise that resolves on the next animation frame
+ *  - normaliseVaultPath       — normalises a vault-relative file path
+ *  - normaliseFolderPath      — normalises a vault-relative folder path
+ *  - isDesktop                — returns true on Obsidian desktop (non-mobile)
+ *  - setDisabledUnder         — toggles disabled state for inputs under a container
+ *  - parkBehind               — moves an element behind another in z-order
+ *  - setVisible               — shows or hides an element via display style
+ *  - typeLabelBrowser         — human-readable label for a card type
+ *  - fmtDue                   — formats a due date relative to now
+ *  - fmtLocation              — formats a card's vault file location string
+ *  - titleCaseGroupPath       — title-cases each segment of a group path
+ *  - parseGroupsInput         — parses a raw groups string into normalised paths
+ *  - groupsToInput            — serialises group paths back to an editable string
+ *  - ModalCardFieldKey        — type alias for field keys in modal card editors
+ *  - ModalCardEditorConfig    — interface for modal card-editor configuration
+ *  - ModalCardEditorResult    — interface for the value returned by createModalCardEditor
+ *  - createModalCardEditor    — builds the card-editing form for a modal
+ *  - focusFirstField          — focuses the first editable field in a card editor
+ *  - escapePipeText           — escapes pipe characters in card field text
+ *  - PipeKey                  — type alias for card field pipe keys (Q, A, T, etc.)
+ *  - formatPipeField          — formats a field value with its pipe-key prefix
+ *  - CardRef                  — type alias for a reference to a card in a file
+ *  - ClipboardImage           — type alias for an image extracted from the clipboard
+ *  - extFromMime              — derives a file extension from a MIME type
+ *  - ensureParentFolder       — ensures the parent folder for a path exists in the vault
+ *  - writeBinaryToVault       — writes binary data to a file in the vault
+ *  - bestEffortAttachmentPath — resolves the best vault path for a pasted attachment
+ *  - setModalTitle            — sets and styles a modal's title bar
+ *  - hasClozeToken            — checks whether text contains a cloze deletion marker
+ *  - createModalMcqSection    — builds the MCQ options UI section for a modal
  */
 
-import { type Modal, Notice, Platform, TFile, setIcon, type App } from "obsidian";
+import { type Modal, Platform, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import {
-  createGroupPickerField as createGroupPickerFieldImpl,
   type CardType,
   createCardEditor,
 } from "../card-editor/card-editor";
 import type { CardRecord } from "../core/store";
 import type { CardRecordType } from "../types/card";
-import { generateUniqueId } from "../core/ids";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // DOM helpers
@@ -41,7 +65,7 @@ export function mkDangerCallout(parent: HTMLElement, text: string) {
 }
 
 /** Type-guard: is the value a `string[]`? */
-export function isStringArray(x: any): x is string[] {
+export function isStringArray(x: unknown): x is string[] {
   return Array.isArray(x) && x.every((v) => typeof v === "string");
 }
 
@@ -211,10 +235,10 @@ export function parseGroupsInput(raw: string): string[] {
 }
 
 /** Format an array of groups back into a comma-separated input string. */
-export function groupsToInput(groups: any): string {
+export function groupsToInput(groups: unknown): string {
   if (!Array.isArray(groups)) return "";
   return groups
-    .map((g) => titleCaseGroupPath(String(g).trim()))
+    .map((g: unknown) => titleCaseGroupPath(String(g).trim()))
     .filter(Boolean)
     .join(", ");
 }
@@ -345,27 +369,6 @@ export type CardRef = {
 
 export type ClipboardImage = { mime: string; data: ArrayBuffer };
 
-/** Try to read an image from the system clipboard. Returns `null` on failure. */
-export async function readClipboardImage(): Promise<ClipboardImage | null> {
-  try {
-    if (!navigator?.clipboard?.read) return null;
-
-    const items = await navigator.clipboard.read();
-    for (const item of items) {
-      const types: string[] = Array.isArray(item?.types) ? item.types : [];
-      const imgType = types.find((t) => typeof t === "string" && t.startsWith("image/"));
-      if (!imgType) continue;
-
-      const blob: Blob = await item.getType(imgType);
-      const data = await blob.arrayBuffer();
-      return { mime: imgType, data };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 /** Map an image MIME type to a file extension. */
 export function extFromMime(mime: string): string {
   const m = String(mime || "").toLowerCase();
@@ -450,75 +453,6 @@ export function bestEffortAttachmentPath(plugin: SproutPlugin, active: TFile, ba
   const parent = active.parent?.path ? String(active.parent.path) : "";
   const fallback = parent ? `${parent}/${baseName}` : baseName;
   return normaliseVaultPath(fallback);
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// ID reservation (so IO can use ^sprout-ID immediately, before sync)
-// ──────────────────────────────────────────────────────────────────────────────
-
-/** Collect all `^sprout-NNNNNNNNN` anchor IDs from a text string. */
-export function collectAnchorIdsFromText(text: string): Set<string> {
-  const out = new Set<string>();
-  const re = /\^sprout-(\d{9})\b/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text))) {
-    if (m[1]) out.add(m[1]);
-  }
-  return out;
-}
-
-/**
- * Generate a new unique Sprout card ID that doesn't collide with any
- * existing IDs in the store or in the note's anchor references.
- */
-export async function reserveNewBcId(plugin: SproutPlugin, file: TFile): Promise<string> {
-  const store = plugin.store;
-  const used = new Set<string>();
-
-  try {
-    for (const k of Object.keys(store?.data?.cards || {})) used.add(String(k));
-    for (const k of Object.keys(store?.data?.quarantine || {})) used.add(String(k));
-    for (const k of Object.keys((store?.data as Record<string, unknown>)?.cardById ?? {})) used.add(String(k));
-  } catch {
-    // ignore
-  }
-
-  try {
-    const txt = await plugin.app.vault.read(file);
-    for (const id of collectAnchorIdsFromText(txt)) used.add(id);
-  } catch {
-    // ignore
-  }
-
-  const id = String(generateUniqueId(used)).trim();
-  return id;
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// IO markdown helpers
-// ──────────────────────────────────────────────────────────────────────────────
-
-/**
- * Build the markdown block for an IO card (pipe-format lines).
- * The `^sprout-ID` anchor is added by sync, not here.
- */
-export function buildIoMarkdownWithAnchor(params: {
-  id: string;
-  title?: string;
-  groups?: string;
-  ioEmbed: string;
-  occlusionsJson?: string | null;
-  maskMode?: "solo" | "all" | null;
-  info?: string;
-}): string[] {
-  const out: string[] = [];
-  if (params.title?.trim()) out.push(...formatPipeField("T", params.title.trim()));
-  if (params.groups?.trim()) out.push(...formatPipeField("G", params.groups.trim()));
-  out.push(...formatPipeField("IO", params.ioEmbed));
-  // O (occlusions) and C (maskMode) are stored in store.io only, not in markdown
-  if (params.info?.trim()) out.push(...formatPipeField("I", params.info.trim()));
-  out.push("");
-  return out;
 }
 
 /** Set a modal's title text (cross-version compatibility). */

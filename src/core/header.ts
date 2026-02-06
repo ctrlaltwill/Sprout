@@ -1,4 +1,18 @@
-// src/core/header.ts
+/**
+ * @file src/core/header.ts
+ * @summary Shared header bar component used by all top-level Sprout views (Home, Study,
+ * Flashcards, Analytics). Renders a dropdown navigation switcher, expand/collapse width
+ * toggle, sync button, and a "More" popover with split-pane and settings actions. Manages
+ * popover lifecycle, keyboard navigation, Obsidian theme synchronisation, and
+ * ResizeObserver-based responsive visibility of the width toggle.
+ *
+ * @exports
+ *   - SproutHeaderPage — type alias for the four navigation page identifiers
+ *   - SproutHeaderMenuItem — type for items rendered in the More popover menu
+ *   - SproutHeader — class that installs and manages the header bar DOM
+ *   - createViewHeader — factory function that wires a SproutHeader to any ItemView
+ */
+
 import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
 import { MAX_CONTENT_WIDTH, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
 import { log } from "./logger";
@@ -49,7 +63,6 @@ export class SproutHeader {
   private moreId: string;
   private moreTriggerEl: HTMLButtonElement | null = null;
   private morePopoverEl: HTMLElement | null = null;
-  private morePanelEl: HTMLElement | null = null;
   private moreCleanup: (() => void) | null = null;
 
   private widthBtnEl: HTMLButtonElement | null = null;
@@ -58,6 +71,7 @@ export class SproutHeader {
   private widthResizeObserver: ResizeObserver | null = null;
 
   private syncBtnIconEl: HTMLElement | null = null;
+  private themeObserver: MutationObserver | null = null;
   // Theme button and mode removed; now syncs with Obsidian
 
   constructor(deps: Deps) {
@@ -77,7 +91,10 @@ export class SproutHeader {
       this.widthResizeObserver?.disconnect();
     } catch (e) { log.swallow("dispose: widthResizeObserver disconnect", e); }
     this.widthResizeObserver = null;
-    // Theme cleanup not needed; handled by syncThemeWithObsidian
+    try {
+      this.themeObserver?.disconnect();
+    } catch (e) { log.swallow("dispose: themeObserver disconnect", e); }
+    this.themeObserver = null;
   }
 
   install(active: SproutHeaderPage) {
@@ -140,8 +157,9 @@ export class SproutHeader {
     };
     updateTheme();
     // Listen for Obsidian theme changes
-    const obsidianObserver = new MutationObserver(updateTheme);
-    obsidianObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    this.themeObserver?.disconnect();
+    this.themeObserver = new MutationObserver(updateTheme);
+    this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
   }
 
   // ---------------------------
@@ -302,21 +320,11 @@ export class SproutHeader {
       this.closeTopNavPopover();
     };
 
-    const onDocKeydown = (ev: KeyboardEvent) => {
-      if (ev.key !== "Escape") return;
-      ev.preventDefault();
-      ev.stopPropagation();
-      this.closeTopNavPopover();
-      (trigger).focus();
-    };
-
     window.addEventListener("resize", onResizeOrScroll, true);
     window.addEventListener("scroll", onResizeOrScroll, true);
 
     const tid = window.setTimeout(() => {
       document.addEventListener("pointerdown", onDocPointerDown, true);
-      // ESC handler removed - ESC should only close modals, not switch tabs
-      // document.addEventListener("keydown", onDocKeydown, true);
     }, 0);
 
     this.topNavCleanup = () => {
@@ -324,17 +332,15 @@ export class SproutHeader {
       window.removeEventListener("resize", onResizeOrScroll, true);
       window.removeEventListener("scroll", onResizeOrScroll, true);
       document.removeEventListener("pointerdown", onDocPointerDown, true);
-      // ESC handler no longer attached
-      // document.removeEventListener("keydown", onDocKeydown, true);
     };
   }
 
   private installHeaderDropdownNav(active: SproutHeaderPage) {
     const navHost =
-      (this.deps.containerEl.querySelector(
+      (this.deps.containerEl.querySelector<HTMLElement>(
         ":scope > .view-header .view-header-left .view-header-nav-buttons",
-      ) as HTMLElement | null) ??
-      (this.deps.containerEl.querySelector(".view-header .view-header-left .view-header-nav-buttons") as HTMLElement | null);
+      )) ??
+      (this.deps.containerEl.querySelector<HTMLElement>(".view-header .view-header-left .view-header-nav-buttons"));
 
     if (!navHost) return;
 
@@ -407,7 +413,6 @@ export class SproutHeader {
       } catch (e) { log.swallow("closeMorePopover: remove popover element", e); }
     }
     this.morePopoverEl = null;
-    this.morePanelEl = null;
 
     if (this.moreTriggerEl) this.moreTriggerEl.setAttribute("aria-expanded", "false");
   }
@@ -485,7 +490,6 @@ export class SproutHeader {
 
     document.body.appendChild(sproutWrapper);
     this.morePopoverEl = root;
-    this.morePanelEl = panel;
 
     const place = () => {
       const r = trigger.getBoundingClientRect();
@@ -539,10 +543,10 @@ export class SproutHeader {
     };
   }
 
-  private installHeaderActionsButtonGroup(active: SproutHeaderPage) {
+  private installHeaderActionsButtonGroup(_active: SproutHeaderPage) {
     const actionsHost =
-      (this.deps.containerEl.querySelector(":scope > .view-header .view-actions") as HTMLElement | null) ??
-      (this.deps.containerEl.querySelector(".view-header .view-actions") as HTMLElement | null);
+      (this.deps.containerEl.querySelector<HTMLElement>(":scope > .view-header .view-actions")) ??
+      (this.deps.containerEl.querySelector<HTMLElement>(".view-header .view-actions"));
 
     if (!actionsHost) return;
 

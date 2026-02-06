@@ -1,10 +1,20 @@
-// src/types/analytics.ts
-// ---------------------------------------------------------------------------
-// Analytics event types — structures recorded when a user reviews cards
-// or completes a study session. Fed into charts, heatmaps, and KPIs.
-// ---------------------------------------------------------------------------
+/**
+ * @file src/types/analytics.ts
+ * @summary Analytics event type definitions. Structures recorded when a user reviews cards
+ * or completes a study session, consumed by charts, heatmaps, and KPI displays. Includes
+ * per-card review events, session-level events, a discriminated union of all event types,
+ * and the top-level AnalyticsData storage shape.
+ *
+ * @exports
+ *   - AnalyticsMode — type for scheduled vs practice review mode
+ *   - AnalyticsReviewEvent — type for a single card-review analytics event
+ *   - AnalyticsSessionEvent — type for a study-session analytics event
+ *   - AnalyticsEvent — discriminated union of all analytics event types
+ *   - AnalyticsData — top-level analytics storage structure (version, seq, events)
+ */
 
 import type { ReviewResult } from "./review";
+import type { Scope } from "../reviewer/types";
 
 /** Whether a review happened in scheduled mode or free-practice mode. */
 export type AnalyticsMode = "scheduled" | "practice";
@@ -34,10 +44,10 @@ export type AnalyticsReviewEvent = {
   nextDue?: number;
 
   /** Optional scope captured at review time (deck/note) for later filtering. */
-  scope?: any;
+  scope?: Scope;
 
   /** Freeform metadata (MCQ choice details, pass/fail etc.). */
-  meta?: any;
+  meta?: Record<string, unknown>;
 };
 
 /**
@@ -48,7 +58,7 @@ export type AnalyticsSessionEvent = {
   kind: "session";
   eventId: string;
   at: number;
-  scope?: any;
+  scope?: Scope;
   startedAt?: number;
   endedAt?: number;
   durationMs?: number;

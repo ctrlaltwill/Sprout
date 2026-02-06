@@ -1,0 +1,220 @@
+/* ============================================================================
+   BUTTONS — Icon-outline, icon-ghost, outline, button groups.
+   Light + dark theme variants.
+   ========================================================================== */
+
+/* ---- Icon outline buttons ---- */
+
+.sprout .btn-icon-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  border-radius: var(--radius) !important;
+  padding: 0.375rem !important;
+  min-width: 32px;
+  min-height: 32px;
+  max-height: 33px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sprout .sprout-view-actions .btn-icon-outline {
+  height: 33px !important;
+  min-height: 33px !important;
+  border-radius: 6px !important;
+}
+.sprout .sprout-view-actions .btn-outline,
+.sprout .sprout-view-actions .btn-icon-outline {
+  height: 33px !important;
+  min-height: 33px !important;
+  align-items: center;
+}
+.sprout .view-header-nav-buttons .btn-outline,
+.sprout .sprout-header .view-header-nav-buttons .btn-outline {
+  height: 33px !important;
+  min-height: 33px !important;
+  align-items: center;
+}
+.sprout .btn-icon-outline:hover,
+.sprout .btn-icon-outline:focus-visible {
+  background: var(--color-base-25) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-30) !important
+}
+.sprout .btn-icon-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+.theme-dark .sprout .btn-icon-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  max-height: 33px;
+}
+.theme-dark .sprout .btn-icon-outline:hover,
+.theme-dark .sprout .btn-icon-outline:focus-visible {
+  background: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-35) !important;
+}
+.theme-dark .sprout .btn-icon-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+/* ---- Ghost icon buttons (no background / border) ---- */
+
+.sprout .btn-icon-ghost {
+  background: transparent !important;
+  color: var(--foreground) !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sprout .btn-icon-ghost:hover,
+.sprout .btn-icon-ghost:focus-visible {
+  color: var(--text-normal) !important;
+  opacity: 0.8;
+}
+.sprout .btn-icon-ghost:active {
+  opacity: 0.6;
+}
+
+/* ---- Outline buttons ---- */
+
+.sprout .btn-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  max-height: 33px;
+}
+
+.sprout .btn-outline:hover,
+.sprout .btn-outline:focus-visible {
+  background: var(--color-base-25) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-30) !important;
+}
+
+.sprout .btn-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+/* ---- Button groups ---- */
+
+.sprout .button-group {
+  display: inline-flex;
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+  background: var(--background) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.sprout .button-group .btn-outline {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--border) !important;
+  max-height: 33px;
+}
+.sprout .button-group .btn-outline:last-child {
+  border-right: none !important;
+}
+
+.sprout .button-group .btn-icon-outline {
+    border: none !important;
+    border-radius: 0px !important;
+}
+
+/* ---- Dark theme outline buttons & button groups ---- */
+
+.theme-dark .sprout .btn-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  max-height: 33px;
+}
+.theme-dark .sprout .btn-outline:hover,
+.theme-dark .sprout .btn-outline:focus-visible {
+  background: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-35) !important;
+}
+.theme-dark .sprout .btn-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+.theme-dark .sprout .button-group {
+  background: var(--background) !important;
+  border: 1px solid var(--border) !important;
+}
+.theme-dark .sprout .button-group .btn-outline {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--border) !important;
+}
+.theme-dark .sprout .button-group .btn-outline:last-child {
+  border-right: none !important;
+}
+
+/* ---- Global Obsidian button padding reset ---- */
+
+body:not(.is-mobile) button:not(.ant-btn):not(.ant-switch):not(.excalidraw button) {
+  padding: 7px 15px !important;
+}
+
+/* ---- Pagination current-page button ---- */
+
+button[aria-current="page"] {
+    outline: none !important;
+    color: var(--foreground);
+    border-radius: 0;
+    background-color: var(--border);
+    box-shadow: none !important;
+}
+
+.sprout button[aria-current=page] {
+  border-radius: 6px !important;
+  border: 0.5px solid var(--border) !important;
+}
+
+/* ---- Expand/collapse button min width ---- */
+
+.btn-outline[data-sprout-expand-collapse] {
+  min-width: 110px !important;
+}
+
+/* ---- Unstyled button reset ---- */
+/* Replaces inline: background:transparent; border:none; box-shadow:none;
+   outline:none; padding:0; cursor:pointer across 9+ files */
+
+.sprout .sprout-btn-unstyled {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.sprout .sprout-btn-unstyled:focus {
+  outline: none;
+  box-shadow: none;
+}

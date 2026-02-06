@@ -1,20 +1,16 @@
 /**
- * widget/widget-session-actions.ts
- * ─────────────────────────────────
- * Session-level actions for the Sprout sidebar widget: grading, undo,
- * bury, suspend, MCQ answering, next-card navigation, and inline editing.
+ * @file src/widget/widget-session-actions.ts
+ * @summary Session-level actions for the Sprout sidebar widget: grading, undo, bury, suspend, MCQ answering, next-card navigation, and inline editing. Every function receives the view instance as its first argument so the module stays decoupled from the class definition, avoiding circular imports.
  *
- * Every function receives the view instance as its first argument so the
- * module stays decoupled from the class definition (avoiding circular
- * imports).
- *
- * Exports:
- *  - gradeCurrentRating
- *  - canUndo / undoLastGrade
- *  - buryCurrentCard / suspendCurrentCard
- *  - answerMcq
- *  - nextCard
- *  - openEditModalForCurrentCard
+ * @exports
+ *  - gradeCurrentRating          — grades the current card with a specific FSRS rating
+ *  - canUndo                     — returns whether the last grade can be undone
+ *  - undoLastGrade               — reverts the most recent grade and restores the previous card state
+ *  - buryCurrentCard             — buries the current card until the next day
+ *  - suspendCurrentCard          — suspends the current card indefinitely
+ *  - answerMcq                   — processes an MCQ option selection and auto-grades if correct/wrong
+ *  - nextCard                    — advances to the next card in the review queue
+ *  - openEditModalForCurrentCard — opens the bulk-edit modal pre-filled with the current card's data
  */
 
 import { TFile, Notice } from "obsidian";
@@ -25,19 +21,20 @@ import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "../reviewer/markdown-block";
 import { syncOneFile } from "../sync/sync-engine";
 
-import type { UndoFrame } from "./widget-helpers";
-import { isClozeLike } from "./widget-helpers";
+import type { UndoFrame, WidgetViewLike, ReviewMeta } from "./widget-helpers";
+import type { CardRecord } from "../types/card";
+import type SproutPlugin from "../main";
 
 /* ------------------------------------------------------------------ */
 /*  Internal helpers                                                   */
 /* ------------------------------------------------------------------ */
 
-function currentCard(view: any): any | null {
+function currentCard(view: WidgetViewLike): CardRecord | null {
   if (!view.session) return null;
   return view.session.queue[view.session.index] || null;
 }
 
-function computeMsToAnswer(view: any, now: number, id: string): number | undefined {
+function computeMsToAnswer(view: WidgetViewLike, now: number, id: string): number | undefined {
   if (!view._timing) return undefined;
   if (view._timing.cardId !== id) return undefined;
   if (!view._timing.startedAt) return undefined;
@@ -54,9 +51,9 @@ function computeMsToAnswer(view: any, now: number, id: string): number | undefin
 /* ------------------------------------------------------------------ */
 
 export async function gradeCurrentRating(
-  view: any,
+  view: WidgetViewLike,
   rating: "again" | "hard" | "good" | "easy",
-  meta: any,
+  meta: ReviewMeta | null,
 ): Promise<void> {
   const card = currentCard(view);
   if (!card || !view.session) return;
@@ -124,7 +121,7 @@ export async function gradeCurrentRating(
 /*  Undo                                                               */
 /* ------------------------------------------------------------------ */
 
-export function canUndo(view: any): boolean {
+export function canUndo(view: WidgetViewLike): boolean {
   if (view.mode !== "session" || !view.session) return false;
   if (view.session.mode === "practice") return false;
   const u = view._undo;
@@ -133,7 +130,7 @@ export function canUndo(view: any): boolean {
   return !!view.session.graded?.[u.id];
 }
 
-export async function undoLastGrade(view: any): Promise<void> {
+export async function undoLastGrade(view: WidgetViewLike): Promise<void> {
   if (view.mode !== "session" || !view.session) return;
   const u = view._undo as UndoFrame | null;
   if (!u) return;
@@ -163,7 +160,7 @@ export async function undoLastGrade(view: any): Promise<void> {
     if (typeof store.truncateAnalyticsEvents === "function") {
       store.truncateAnalyticsEvents(u.analyticsLenBefore);
     } else {
-      const a: any = store.data?.analytics;
+      const a = store.data?.analytics;
       if (a && Array.isArray(a.events)) a.events.length = Math.max(0, Math.floor(u.analyticsLenBefore));
     }
 
@@ -187,7 +184,7 @@ export async function undoLastGrade(view: any): Promise<void> {
 /*  Bury / Suspend                                                     */
 /* ------------------------------------------------------------------ */
 
-export async function buryCurrentCard(view: any): Promise<void> {
+export async function buryCurrentCard(view: WidgetViewLike): Promise<void> {
   if (view.mode !== "session" || !view.session) return;
   if (view.session.mode === "practice") return;
   const card = currentCard(view);
@@ -210,7 +207,7 @@ export async function buryCurrentCard(view: any): Promise<void> {
   await nextCard(view);
 }
 
-export async function suspendCurrentCard(view: any): Promise<void> {
+export async function suspendCurrentCard(view: WidgetViewLike): Promise<void> {
   if (view.mode !== "session" || !view.session) return;
   if (view.session.mode === "practice") return;
   const card = currentCard(view);
@@ -237,7 +234,7 @@ export async function suspendCurrentCard(view: any): Promise<void> {
 /*  MCQ answering                                                      */
 /* ------------------------------------------------------------------ */
 
-export async function answerMcq(view: any, choiceIdx: number): Promise<void> {
+export async function answerMcq(view: WidgetViewLike, choiceIdx: number): Promise<void> {
   const card = currentCard(view);
   if (!card || card.type !== "mcq" || !view.session) return;
 
@@ -250,7 +247,7 @@ export async function answerMcq(view: any, choiceIdx: number): Promise<void> {
     view.session.graded[id] = {
       rating: pass ? "good" : "again",
       at: Date.now(),
-      meta: { mcqChoice: choiceIdx, mcqCorrect: card.correctIndex, practice: true },
+      meta: { mcqChoice: choiceIdx, mcqCorrect: card.correctIndex ?? undefined, practice: true },
     };
     view.session.stats.done = Object.keys(view.session.graded).length;
     view.showAnswer = true;
@@ -261,7 +258,7 @@ export async function answerMcq(view: any, choiceIdx: number): Promise<void> {
   // MCQ maps to Good / Again internally.
   await gradeCurrentRating(view, pass ? "good" : "again", {
     mcqChoice: choiceIdx,
-    mcqCorrect: card.correctIndex,
+    mcqCorrect: card.correctIndex ?? undefined,
   });
   view.render();
 }
@@ -270,7 +267,7 @@ export async function answerMcq(view: any, choiceIdx: number): Promise<void> {
 /*  Next card                                                          */
 /* ------------------------------------------------------------------ */
 
-export async function nextCard(view: any): Promise<void> {
+export async function nextCard(view: WidgetViewLike): Promise<void> {
   if (!view.session) return;
 
   const card = currentCard(view);
@@ -321,7 +318,7 @@ export async function nextCard(view: any): Promise<void> {
 /*  Inline card editing                                                */
 /* ------------------------------------------------------------------ */
 
-export function openEditModalForCurrentCard(view: any): void {
+export function openEditModalForCurrentCard(view: WidgetViewLike): void {
   const card = currentCard(view);
   if (!card || !view.session) return;
 
@@ -348,7 +345,7 @@ export function openEditModalForCurrentCard(view: any): void {
     targetCard = parentCard;
   }
 
-  void openBulkEditModalForCards(view.plugin, [targetCard], async (updatedCards: any[]) => {
+  void openBulkEditModalForCards(view.plugin as unknown as SproutPlugin, [targetCard], async (updatedCards: CardRecord[]) => {
     if (!updatedCards.length) return;
 
     try {
@@ -375,7 +372,7 @@ export function openEditModalForCurrentCard(view: any): void {
       await view.app.vault.modify(file, lines.join("\n"));
 
       // Sync the file to update store
-      const res = await syncOneFile(view.plugin, file);
+      const res = await syncOneFile(view.plugin as unknown as SproutPlugin, file);
 
       if (res.quarantinedCount > 0) {
         new Notice(`Saved changes to flashcard (but ${res.quarantinedCount} card(s) quarantined).`);
@@ -390,8 +387,9 @@ export function openEditModalForCurrentCard(view: any): void {
       }
 
       view.render();
-    } catch (e: any) {
-      new Notice(`Error saving card: ${e.message || String(e)}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      new Notice(`Error saving card: ${msg}`);
     }
   });
 }

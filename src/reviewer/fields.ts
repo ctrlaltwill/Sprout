@@ -1,4 +1,16 @@
-// src/reviewer/cardFields.ts
+/**
+ * @file src/reviewer/fields.ts
+ * @summary Utilities for parsing, validating, and serialising card field content. Handles MCQ option parsing (with pipe and bold-correct conventions), cloze text validation, and building question/answer strings from card records.
+ *
+ * @exports
+ *   - escapePipes — Escapes pipe and backslash characters in a string for safe pipe-delimited output
+ *   - splitUnescapedPipes — Splits a string on unescaped pipe characters, respecting backslash escapes
+ *   - parseMcqOptionsFromCell — Parses raw MCQ option text into an options array and correct-answer index
+ *   - validateClozeText — Validates that cloze text is non-empty and contains at least one {{cN::...}} token
+ *   - buildQuestionFor — Returns the question/stem/cloze text for a card based on its type
+ *   - buildAnswerOrOptionsFor — Returns the answer or serialised MCQ options string for a card
+ */
+
 import type { CardRecord } from "../core/store";
 
 export function escapePipes(s: string): string {

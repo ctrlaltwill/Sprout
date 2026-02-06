@@ -1,7 +1,20 @@
+/**
+ * @file src/analytics/pie-charts.tsx
+ * @summary Donut-style pie chart components for the analytics dashboard. Includes
+ * a stage-distribution pie showing card counts by learning stage (New, Learning,
+ * Review, Relearning, Suspended) and an answer-buttons pie showing the proportion
+ * of Again/Hard/Good/Easy responses over a configurable time window. Both charts
+ * support filtering by card type, deck, and group tags via popover controls.
+ *
+ * @exports
+ *   - StagePieCard — React component rendering a donut chart of card stage distribution with filter controls
+ *   - AnswerButtonsPieCard — React component rendering a donut chart of answer button usage over time
+ */
+
 import * as React from "react";
 import { Cell, Label, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
-import { endTruncateStyle, startTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { startTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
 
 type PieDatum = { name: string; value: number };
 
@@ -57,7 +70,7 @@ function normalizeEventType(raw: string) {
   return t;
 }
 
-function PieTooltip(props: { active?: boolean; payload?: any[] }) {
+function PieTooltip(props: { active?: boolean; payload?: Array<{ name?: string; value?: number }> }) {
   if (!props.active || !props.payload || !props.payload.length) return null;
   const item = props.payload[0] as { name?: string; value?: number } | undefined;
   if (!item) return null;
@@ -229,29 +242,8 @@ function PieCard(props: {
   );
 }
 
-function FilterIcon() {
-  return (
-    <svg
-      className="bc"
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 5h18" />
-      <path d="M7 12h10" />
-      <path d="M10 19h4" />
-    </svg>
-  );
-}
-
 export function StagePieCard(props: {
-  cards: Array<{ id: string; type?: string; sourceNotePath?: string; groups?: string[] | null }>;
+  cards: Array<{ id: string; type?: string; sourceNotePath?: string; groups?: string[] | null; clozeChildren?: number[] | null }>;
   states: Record<string, { stage?: string }>;
   enableAnimations?: boolean;
 }) {
@@ -631,7 +623,7 @@ export function StagePieCard(props: {
   );
 }
 
-export function AnswerButtonsPieCard(props: { events: any[]; nowMs: number }) {
+export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[]; nowMs: number }) {
   const [open, setOpen] = React.useState(false);
   const [selectedType, setSelectedType] = React.useState<string>("all");
   const [deckQuery, setDeckQuery] = React.useState("");
@@ -644,14 +636,14 @@ export function AnswerButtonsPieCard(props: { events: any[]; nowMs: number }) {
 
   const availableTypes = React.useMemo(() => ["all", "basic", "cloze-child", "io-child", "mcq"], []);
 
-  const getEventDeck = React.useCallback((ev: any) => {
+  const getEventDeck = React.useCallback((ev: Record<string, unknown>) => {
     const deck = String(ev?.sourceNotePath ?? ev?.deckPath ?? ev?.deck ?? "");
     return deck.trim();
   }, []);
 
-  const getEventGroups = React.useCallback((ev: any) => {
-    if (Array.isArray(ev?.groups)) return ev.groups.filter(Boolean);
-    if (Array.isArray(ev?.tags)) return ev.tags.filter(Boolean);
+  const getEventGroups = React.useCallback((ev: Record<string, unknown>) => {
+    if (Array.isArray(ev?.groups)) return (ev.groups as unknown[]).filter(Boolean);
+    if (Array.isArray(ev?.tags)) return (ev.tags as unknown[]).filter(Boolean);
     return [];
   }, []);
 
@@ -728,7 +720,7 @@ export function AnswerButtonsPieCard(props: { events: any[]; nowMs: number }) {
     const counts = new Map<string, number>();
     for (const type of availableTypes) counts.set(type, 0);
     for (const ev of recentEvents) {
-      const t = normalizeEventType(ev.cardType || "unknown");
+      const t = normalizeEventType(String(ev.cardType || "unknown"));
       if (!t) continue;
       counts.set(t, (counts.get(t) ?? 0) + 1);
     }
@@ -744,7 +736,7 @@ export function AnswerButtonsPieCard(props: { events: any[]; nowMs: number }) {
   const counts = React.useMemo(() => {
     const out: Record<string, number> = { again: 0, hard: 0, good: 0, easy: 0 };
     for (const ev of recentEvents) {
-      const t = normalizeEventType(ev.cardType || "");
+      const t = normalizeEventType(String(ev.cardType || ""));
       if (selectedType !== "all" && t !== selectedType) continue;
       if (selectedDecks.length) {
         const deck = getEventDeck(ev);

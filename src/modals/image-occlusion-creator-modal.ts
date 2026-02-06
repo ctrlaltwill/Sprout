@@ -19,6 +19,7 @@
 import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../core/store";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
 import { normaliseGroupKey } from "../imageocclusion/mask-tool";
@@ -43,11 +44,9 @@ import {
 
 import type { IORect, StageTransform, IOTextBox, IOHistoryEntry } from "../imageocclusion/io-types";
 import {
-  loadImageElement,
   rotateImageData,
   cropImageData,
   burnTextBoxesIntoImageData,
-  drawTextOnImageData,
   clampTextBgOpacity,
   textBgCss,
 } from "../imageocclusion/io-image-ops";
@@ -95,8 +94,6 @@ export class ImageOcclusionCreatorModal extends Modal {
   private btnUndo?: HTMLButtonElement;
   private btnRedo?: HTMLButtonElement;
   private btnCrop?: HTMLButtonElement;
-  private btnRotateLeft?: HTMLButtonElement;
-  private btnRotateRight?: HTMLButtonElement;
   private btnText?: HTMLButtonElement;
   private imageLimitDialog?: HTMLDialogElement;
   private t: StageTransform = { scale: 1, tx: 0, ty: 0 };
@@ -130,11 +127,6 @@ export class ImageOcclusionCreatorModal extends Modal {
   private textDrawing = false;
   private textStart: { x: number; y: number } | null = null;
   private textPreviewEl: HTMLElement | null = null;
-
-  // Zoom slider (may be set dynamically)
-  private zoomSlider?: HTMLInputElement;
-  private zoomMin = 0.1;
-  private zoomMax = 8;
 
   constructor(app: App, plugin: SproutPlugin) {
     super(app);
@@ -234,8 +226,8 @@ export class ImageOcclusionCreatorModal extends Modal {
             this.ioImageData = { mime: file.type, data };
             await this.loadImageToCanvas();
             this.updatePlaceholderVisibility();
-          } catch (e: any) {
-            new Notice(`${BRAND}: Failed to load image (${String(e?.message || e)})`);
+          } catch (e: unknown) {
+            new Notice(`${BRAND}: Failed to load image (${e instanceof Error ? e.message : String(e)})`);
           }
         })();
       },
@@ -250,8 +242,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.btnRectTool = toolbarRefs.btnRectTool;
     this.btnCircleTool = toolbarRefs.btnCircleTool;
     this.btnCrop = toolbarRefs.btnCrop;
-    this.btnRotateLeft = toolbarRefs.btnRotateLeft;
-    this.btnRotateRight = toolbarRefs.btnRotateRight;
 
     // Set initial tool highlight
     this.setTool(this.currentTool);
@@ -292,8 +282,8 @@ export class ImageOcclusionCreatorModal extends Modal {
           this.ioImageData = { mime: item.type, data };
           await this.loadImageToCanvas();
           this.updatePlaceholderVisibility();
-        } catch (e: any) {
-          new Notice(`${BRAND}: Failed to load pasted image (${String(e?.message || e)})`);
+        } catch (e: unknown) {
+          new Notice(`${BRAND}: Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
         }
         return;
       }
@@ -337,7 +327,7 @@ export class ImageOcclusionCreatorModal extends Modal {
 
     // ── Prefill when editing an existing IO card ────────────────────────────
     if (editing && this.editParentId) {
-      const cardsMap = (this.plugin.store?.data?.cards || {}) as Record<string, any>;
+      const cardsMap = (this.plugin.store?.data?.cards || {}) as Record<string, CardRecord>;
       const parent = cardsMap[String(this.editParentId)];
       if (parent && String(parent.type) === "io") {
         if (this.titleInput) this.titleInput.value = String(parent.title || "Image Occlusion");
@@ -349,13 +339,13 @@ export class ImageOcclusionCreatorModal extends Modal {
         this.editImageRef = imageRef || null;
 
         const rects = Array.isArray(def?.rects) ? def.rects : [];
-        this.rects = rects.map((r: any) => ({
+        this.rects = rects.map((r: Record<string, unknown>) => ({
           rectId: String(r.rectId || `rect-${Date.now()}-${Math.random().toString(36).slice(2)}`),
           normX: Number(r.x ?? 0) || 0,
           normY: Number(r.y ?? 0) || 0,
           normW: Number(r.w ?? 0) || 0,
           normH: Number(r.h ?? 0) || 0,
-          groupKey: normaliseGroupKey(r.groupKey),
+          groupKey: normaliseGroupKey(r.groupKey as string | null | undefined),
           shape: r.shape === "circle" ? "circle" : "rect",
         }));
 
@@ -403,9 +393,9 @@ export class ImageOcclusionCreatorModal extends Modal {
           maskMode,
         );
         if (shouldClose) this.close();
-      } catch (e: any) {
+      } catch (e: unknown) {
         log.error("add failed", e);
-        new Notice(`${BRAND}: add failed (${String(e?.message || e)})`);
+        new Notice(`${BRAND}: add failed (${e instanceof Error ? e.message : String(e)})`);
       }
     };
 
@@ -601,8 +591,8 @@ export class ImageOcclusionCreatorModal extends Modal {
       const mime = mimeFromExt(file.extension || "");
       this.ioImageData = { mime, data };
       await this.loadImageToCanvas();
-    } catch (e: any) {
-      new Notice(`${BRAND}: Failed to load IO image (${String(e?.message || e)})`);
+    } catch (e: unknown) {
+      new Notice(`${BRAND}: Failed to load IO image (${e instanceof Error ? e.message : String(e)})`);
     }
   }
 
@@ -825,29 +815,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     );
   }
 
-  // ── Zoom helpers ──────────────────────────────────────────────────────────
-
-  private setZoomScale(target: number) {
-    if (!this.viewportEl) return;
-    const clamped = this.clampZoomValue(target);
-    if (Math.abs(clamped - this.t.scale) < 0.001) {
-      this.syncZoomSlider();
-      return;
-    }
-    const factor = clamped / this.t.scale;
-    this.doZoom(factor);
-  }
-
-  private clampZoomValue(value: number) {
-    return Math.max(this.zoomMin, Math.min(this.zoomMax, value));
-  }
-
-  private syncZoomSlider() {
-    if (!this.zoomSlider) return;
-    const current = this.clampZoomValue(this.t.scale);
-    this.zoomSlider.value = current.toFixed(2);
-  }
-
   // ── Text background helpers (delegated to io-image-ops.ts) ─────────────
 
   private syncTextBgOpacityInput() {
@@ -998,20 +965,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     }
     this.saveHistory();
     this.renderRects();
-  }
-
-  // ── Text rendering on image (delegated to io-image-ops.ts) ─────────────
-
-  private async drawTextOnImage(text: string, stageX: number, stageY: number, fontSize: number) {
-    if (!this.ioImageData) return;
-    const result = await drawTextOnImageData(this.ioImageData, text, stageX, stageY, fontSize, this.textColor);
-    if (!result) {
-      new Notice(`${BRAND}: failed to load image for text.`);
-      return;
-    }
-    this.ioImageData = result;
-    this.saveHistory();
-    await this.loadImageToCanvas();
   }
 
   /** Burn all text annotation boxes into the image pixel data. */
@@ -1227,13 +1180,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     setBtnState(this.btnRedo, canRedo);
   }
 
-  // ── Image utilities (delegated to io-image-ops.ts) ─────────────────────
-
-  private async loadImageElementFromData() {
-    if (!this.ioImageData) return null;
-    return loadImageElement(this.ioImageData);
-  }
-
   /** Rotate the image 90° clockwise or counter-clockwise. */
   private async rotateImage(direction: "cw" | "ccw") {
     if (!this.ioImageData) {
@@ -1252,16 +1198,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.selectedTextId = null;
     this.saveHistory();
     await this.loadImageToCanvas();
-  }
-
-  private async cropToSelection() {
-    if (!this.selectedRectId) {
-      new Notice(`${BRAND}: select a shape to crop.`);
-      return;
-    }
-    const selected = this.rects.find((r) => r.rectId === this.selectedRectId);
-    if (!selected) return;
-    await this.cropToRect(selected.normX * this.stageW, selected.normY * this.stageH, selected.normW * this.stageW, selected.normH * this.stageH);
   }
 
   /** Crop the image to the specified stage-coordinate rectangle. */

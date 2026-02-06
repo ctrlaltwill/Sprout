@@ -1,11 +1,26 @@
 /**
- * src/settings/settings-utils.ts
- * ──────────────────────────────
- * Pure utility functions and regex constants used by `SproutSettingsTab`
- * for parsing, formatting, vault path handling, and card-block detection.
+ * @file src/settings/settings-utils.ts
+ * @summary Pure utility functions and regex constants used by SproutSettingsTab for parsing, formatting, vault path handling, and card-block detection. None of these depend on Obsidian UI classes so they are safe to import from anywhere in the codebase.
  *
- * None of these depend on Obsidian UI classes (Setting, Modal, etc.) so
- * they're safe to import from anywhere.
+ * @exports
+ *  - ANCHOR_LINE_RE            — regex matching a ^sprout anchor line
+ *  - CARD_START_RE             — regex matching a card-start line (Q|MCQ|CQ|IO pipe)
+ *  - FIELD_LINE_RE             — regex matching a field line (A|T|O|I|G pipe)
+ *  - parsePositiveNumberListCsv — parses a CSV string into an array of positive numbers
+ *  - clamp                     — clamps a number to a min/max range
+ *  - toNonNegInt               — coerces a value to a non-negative integer
+ *  - fmtSettingValue           — formats a setting value for display in the UI
+ *  - isAnchorLine              — tests whether a line matches the anchor-line regex
+ *  - isCardStartLine           — tests whether a line matches the card-start regex
+ *  - isFieldLine               — tests whether a line matches the field-line regex
+ *  - looksLikeCardBlock        — heuristic check for whether a text block looks like a card
+ *  - clonePlain                — deep-clones a plain object via JSON round-trip
+ *  - normaliseVaultPath        — normalises a vault-relative file path
+ *  - normaliseFolderPath       — normalises a vault-relative folder path
+ *  - listVaultFolders          — lists all folders in the vault
+ *  - fuzzyFolderMatches        — returns folders matching a fuzzy query
+ *  - listDeckPaths             — lists all deck paths from the group index
+ *  - fuzzyPathMatches          — returns deck paths matching a fuzzy query
  */
 
 import { type App, TFolder } from "obsidian";
@@ -57,7 +72,7 @@ export function clamp(n: number, lo: number, hi: number) {
  * Coerces a value to a non-negative integer, falling back to `fallback`
  * if the value is not a finite number.
  */
-export function toNonNegInt(v: any, fallback: number): number {
+export function toNonNegInt(v: unknown, fallback: number): number {
   const n = Number(v);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(0, Math.floor(n));
@@ -67,7 +82,7 @@ export function toNonNegInt(v: any, fallback: number): number {
  * Formats a setting value for display in Notices.
  * Handles booleans, numbers, strings, arrays, and nullish values.
  */
-export function fmtSettingValue(v: any): string {
+export function fmtSettingValue(v: unknown): string {
   if (typeof v === "boolean") return v ? "On" : "Off";
   if (typeof v === "number") return Number.isFinite(v) ? String(v) : "—";
   if (typeof v === "string") return v;

@@ -1,3 +1,15 @@
+/**
+ * @file src/core/ui.ts
+ * @summary Lightweight DOM helper utilities used across Sprout views. Provides shorthand
+ * functions for creating elements, icon buttons, and toggle buttons without pulling in
+ * a full UI framework.
+ *
+ * @exports
+ *   - el — create an HTMLElement with optional class and text content
+ *   - iconButton — create a styled button with a Lucide icon and label
+ *   - smallToggleButton — create a compact +/− toggle button
+ */
+
 import { setIcon } from "obsidian";
 
 export function el(tag: string, cls?: string, text?: string): HTMLElement {

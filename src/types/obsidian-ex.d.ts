@@ -1,11 +1,13 @@
-// src/types/obsidian-ex.d.ts
-// ---------------------------------------------------------------------------
-// Ambient augmentations for Obsidian's *internal* (undocumented) APIs that
-// the plugin relies on. Keeps the rest of the codebase free of `as any`.
-//
-// Only add members you actually use — this is NOT a full mirror of Obsidian
-// internals.  When upstream typings gain a member, remove it from here.
-// ---------------------------------------------------------------------------
+/**
+ * @file src/types/obsidian-ex.d.ts
+ * @summary Ambient module augmentations for Obsidian's undocumented internal APIs that
+ * Sprout relies on (App.setting, App.commands, Vault.adapter, MenuItem.setSubmenu,
+ * Workspace.getActiveLeaf, WorkspaceLeaf.setViewState, MarkdownView.getMode, etc.).
+ * Also declares global window augmentations for Basecoat, MathJax, and the Sprout
+ * debug log handle. Only members actually used by the plugin are typed here.
+ *
+ * @exports None — ambient declarations only (module augmentation)
+ */
 
 import "obsidian";
 
@@ -158,10 +160,11 @@ interface SproutGlobals {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface Window extends SproutGlobals {}
 
   /** Sprout debug log handle, attached at init. */
-  // eslint-disable-next-line no-var
+   
   var __sproutLog: unknown;
 
   /** structuredClone polyfill awareness — present in modern runtimes. */

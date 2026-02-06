@@ -1,17 +1,25 @@
-// src/reviewer/titleMarkdown.ts
-import type { Session } from "./image-occlusion-types";
+/**
+ * @file src/reviewer/title-markdown.ts
+ * @summary Renders Markdown content (such as Obsidian image embeds and shorthand image links) within a card's title element during review, unwrapping extraneous paragraph wrappers for clean inline display.
+ *
+ * @exports
+ *   - renderTitleMarkdownIfNeeded — Detects embedded images in a card title and renders them via the Markdown pipeline
+ */
+
+import type { Session } from "./types";
+import type { CardRecord } from "../types/card";
 import { log } from "../core/logger";
 
 export function renderTitleMarkdownIfNeeded(args: {
   rootEl: HTMLElement;
   session: Session;
-  card: any;
-  renderMarkdownInto: (containerEl: HTMLElement, md: string, sourcePath: string) => any;
+  card: CardRecord;
+  renderMarkdownInto: (containerEl: HTMLElement, md: string, sourcePath: string) => Promise<void>;
 }) {
   const { rootEl, session, card, renderMarkdownInto } = args;
   if (!session || !card) return;
 
-  const titleEl = rootEl.querySelector(".sprout-question-title");
+  const titleEl = rootEl.querySelector(".sprout-question-title") as HTMLElement | null;
   if (!titleEl) return;
 
   const titleText =

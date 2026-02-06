@@ -1,0 +1,272 @@
+/* ============================================================================
+   MODALS — Backdrop, panel, header/content, close button, card editor modal,
+   IO modal, modal content overflow.
+   ========================================================================== */
+
+/* ---- Backdrop ---- */
+
+.sprout .sprout-modal-container .modal-bg {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  backdrop-filter: blur(2px) !important;
+}
+.sprout-modal-dim .modal-bg {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* ---- Panel ---- */
+
+.sprout .sprout-modals.modal {
+  padding: 0;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: none !important;
+  overflow: hidden;
+
+  /* keep it feeling like Basecoat dialog sizing */
+  max-width: min(560px, 92vw);
+}
+
+/* ---- Header + content spacing ---- */
+
+.sprout .sprout-modals.modal .modal-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+}
+
+.sprout .sprout-modals.modal .modal-content {
+  padding: 14px 16px 16px;
+  max-height: min(72vh, 720px);
+  overflow: auto;
+}
+
+/* Dark mode modal text: force readable foreground */
+.theme-dark .sprout .sprout-modal,
+.theme-dark .sprout .sprout-modals.modal,
+.theme-dark .sprout .sprout-modals.modal .modal-content,
+.theme-dark .sprout .sprout-card-editor-modal-root {
+  color: var(--foreground) !important;
+}
+
+/* ---- Card editor modal ---- */
+
+.sprout .sprout-card-editor-modal-root {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(640px, 100%) !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  padding: 20px !important;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: none !important;
+  box-sizing: border-box;
+}
+
+.sprout .sprout-card-editor-modal-root .fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- Close button ---- */
+
+.sprout .sprout-modals.modal .modal-close-button {
+  top: 10px;
+  right: 10px;
+
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.sprout .sprout-modals.modal .modal-close-button:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .sprout .sprout-modals.modal .modal-close-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Optional: tighten default modal title spacing if Obsidian inserts one */
+.sprout .sprout-modals.modal .modal-title {
+  margin: 0;
+}
+
+/* ---- Generic modal containers ---- */
+
+.sprout-modal-container {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+}
+
+.sprout-modal, .sprout-modals {
+  background-color: rgb(var(--background) / 0.25);
+  backdrop-filter: blur(8px);
+  padding: 40px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: var(--shadow-s);
+}
+
+/* ---- Modal content overflow ---- */
+
+/* Ensure modal-content includes padding in width to prevent horizontal scrollbar */
+.modal-content {
+  box-sizing: border-box !important;
+}
+/* Ensure child modal-content never exceeds parent width (including padding) */
+.sprout-modals > .modal-content {
+  box-sizing: border-box !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  overflow-x: auto !important;
+}
+/* Set max-width of child modal inside IO Modal to 650px */
+.sprout-io-creator .modal-content {
+  max-width: 650px !important;
+}
+
+/* Allow tooltips to overflow outside the modal */
+[data-tooltip] {
+  overflow: visible !important;
+  z-index: 10001;
+}
+.modal-content, .modal-content * {
+  overflow: visible !important;
+}
+
+/* ---- Image zoom modal ---- */
+/* Replaces inline styles on zoom overlay across image-occlusion-review-render.ts */
+
+.sprout .sprout-zoom-overlay {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: none !important;
+  width: auto !important;
+}
+
+.sprout .sprout-zoom-content {
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.sprout .sprout-zoom-host {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  overflow: visible !important;
+}
+
+.sprout .sprout-zoom-img {
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+.sprout .sprout-zoom-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding: 0;
+  color: var(--foreground);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.sprout .sprout-zoom-close:hover {
+  opacity: 1;
+}
+
+/* ---- Confirm modals (settings) ---- */
+
+.sprout-confirm-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sprout-confirm-row-lg {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sprout-btn-danger {
+  background: var(--background-modifier-error);
+  color: var(--text-on-accent);
+}
+
+.sprout-confirm-box {
+  margin-top: 10px;
+}
+
+.sprout-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sprout-compare-th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-weight: 600;
+}
+
+.sprout-compare-td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.sprout-confirm-meta {
+  margin-top: 10px;
+}
+
+.sprout-confirm-muted {
+  margin-top: 10px;
+  color: var(--text-muted);
+}
+
+.sprout-confirm-summary {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+}
+
+.sprout-confirm-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}

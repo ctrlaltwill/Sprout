@@ -1,5 +1,13 @@
-// src/reviewer/stats.ts
+/**
+ * @file src/reviewer/stats.ts
+ * @summary Computes aggregate card stage counts across the entire store for use in the reviewer's deck browser and analytics badges. Excludes IO parent and cloze parent cards from totals.
+ *
+ * @exports
+ *   - getStageCountsAll — Returns an object with counts of new, learning, review, relearning, and suspended cards
+ */
+
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../types/card";
 
 function ioChildKeyFromId(id: string): string | null {
   const m = String(id ?? "").match(/::io::(.+)$/);
@@ -8,7 +16,7 @@ function ioChildKeyFromId(id: string): string | null {
   return k ? k : null;
 }
 
-function cardHasIoChildKey(card: any): boolean {
+function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
   if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
   if (typeof card.ioGroupKey === "string" && card.ioGroupKey.trim()) return true;
@@ -17,14 +25,14 @@ function cardHasIoChildKey(card: any): boolean {
   return !!ioChildKeyFromId(id);
 }
 
-function isIoParentCard(card: any): boolean {
+function isIoParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
   if (t === "io") return !cardHasIoChildKey(card);
   return false;
 }
 
-function isClozeParentCard(card: any): boolean {
+function isClozeParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t !== "cloze") return false;
   const children = (card)?.clozeChildren;

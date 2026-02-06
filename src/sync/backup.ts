@@ -1,19 +1,37 @@
 /**
- * src/sync/backup.ts
- * ──────────────────
- * Backup management for the Sprout data store (data.json).
+ * @file src/sync/backup.ts
+ * @summary Backup management for the Sprout data store (data.json). Provides CRUD operations for listing, creating, restoring, and deleting backup snapshots, routine backup scheduling invoked by the sync engine, and low-level adapter/filesystem utilities shared with the sync engine.
  *
- * Provides:
- *  - Types:     DataJsonBackupEntry, DataJsonBackupStats
- *  - CRUD:      listDataJsonBackups, getDataJsonBackupStats,
- *               createDataJsonBackupNow, restoreFromDataJsonBackup
- *  - Routine:   ensureRoutineBackupIfNeeded (called by sync engine)
- *  - Helpers:   Low-level adapter/filesystem utilities (also used by
- *               the sync engine via re-export)
+ * @exports
+ *  - isPlainObject                 — type guard that checks if a value is a plain object
+ *  - countObjectKeys               — returns the number of own enumerable keys on an object
+ *  - joinPath                      — joins path segments with forward slashes
+ *  - likelySproutStateKey          — heuristic check for whether a key looks like a Sprout card state key
+ *  - extractStatesFromDataJsonObject — extracts card-state entries from a parsed data.json object
+ *  - tryReadJson                   — safely reads and parses a JSON file from the vault adapter
+ *  - safeListFolders               — lists subfolders with error handling for missing paths
+ *  - safeListFiles                 — lists files in a folder with error handling
+ *  - safeStatMtime                 — returns a file's mtime or null on error
+ *  - getPluginId                   — returns the plugin's ID from the manifest
+ *  - DataJsonBackupEntry           — type describing a single backup file entry (path, timestamp, size)
+ *  - DataJsonBackupStats           — type describing aggregate backup statistics
+ *  - listDataJsonBackups           — lists all available data.json backup files
+ *  - getDataJsonBackupStats        — computes summary statistics for existing backups
+ *  - createDataJsonBackupNow       — creates a new backup of the current data.json immediately
+ *  - restoreFromDataJsonBackup     — restores the data store from a chosen backup file
+ *  - ensureRoutineBackupIfNeeded   — creates a routine backup if enough time has elapsed since the last one
  */
 
 import type SproutPlugin from "../main";
+import type { DataAdapter } from "obsidian";
 import { MS_DAY } from "../core/constants";
+
+/**
+ * Minimal adapter-like interface for low-level vault filesystem access.
+ * Matches the subset of Obsidian's DataAdapter that backup/sync helpers
+ * actually touch, allowing feature-detection for optional methods.
+ */
+type AdapterLike = Partial<Pick<DataAdapter, "read" | "write" | "exists" | "remove" | "rename" | "list" | "stat">>;
 
 // ────────────────────────────────────────────
 // Module-level constants & mutable state
@@ -37,12 +55,12 @@ let lastRoutineBackupCheck = 0;
 // ────────────────────────────────────────────
 
 /** Returns `true` if `v` is a non-null, non-array plain object. */
-export function isPlainObject(v: any): v is Record<string, any> {
+export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v);
 }
 
 /** Safely counts the number of own keys on a plain object. */
-export function countObjectKeys(v: any): number {
+export function countObjectKeys(v: unknown): number {
   return isPlainObject(v) ? Object.keys(v).length : 0;
 }
 
@@ -66,10 +84,11 @@ export function likelySproutStateKey(k: string): boolean {
  * Tries to extract a `states` object from a parsed data.json structure.
  * Supports both `{ states: {...} }` and `{ data: { states: {...} } }`.
  */
-export function extractStatesFromDataJsonObject(obj: any): Record<string, any> | null {
+export function extractStatesFromDataJsonObject(obj: unknown): Record<string, unknown> | null {
   if (!obj) return null;
-  const root = isPlainObject(obj.data) ? obj.data : obj;
-  const states = (root)?.states;
+  const o = obj as Record<string, unknown>;
+  const root = isPlainObject(o.data) ? o.data : o;
+  const states = (root as Record<string, unknown>)?.states;
   if (!isPlainObject(states)) return null;
   return states;
 }
@@ -82,14 +101,14 @@ export function extractStatesFromDataJsonObject(obj: any): Record<string, any> |
  * Attempts to read and parse a JSON file from the vault adapter.
  * Returns `null` on any failure (missing file, bad JSON, etc.).
  */
-export async function tryReadJson(adapter: any, path: string): Promise<any | null> {
+export async function tryReadJson(adapter: AdapterLike | null, path: string): Promise<unknown> {
   try {
     if (!adapter) return null;
-    if (typeof adapter.exists === "function") {
+    if (adapter.exists) {
       const exists = await adapter.exists(path);
       if (!exists) return null;
     }
-    if (typeof adapter.read !== "function") return null;
+    if (!adapter.read) return null;
     const text = await adapter.read(path);
     if (!text || !String(text).trim()) return null;
     try {
@@ -103,18 +122,19 @@ export async function tryReadJson(adapter: any, path: string): Promise<any | nul
 }
 
 /** Lists sub-folders inside `path` using the vault adapter. */
-export async function safeListFolders(adapter: any, path: string): Promise<string[]> {
+export async function safeListFolders(adapter: AdapterLike | null, path: string): Promise<string[]> {
   try {
     if (!adapter) return [];
-    if (typeof adapter.list === "function") {
+    if (adapter.list) {
       const res = await adapter.list(path);
       const folders = Array.isArray(res?.folders) ? res.folders : [];
-      return folders.map((p: string) => String(p)).filter(Boolean);
+      return folders.map((p) => String(p)).filter(Boolean);
     }
-    if (typeof adapter.readdir === "function") {
-      const res = await adapter.readdir(path);
+    const readdir = (adapter as unknown as Record<string, unknown>).readdir as ((p: string) => Promise<{ folders?: string[] }>) | undefined;
+    if (readdir) {
+      const res = await readdir(path);
       const folders = Array.isArray(res?.folders) ? res.folders : [];
-      return folders.map((p: string) => String(p)).filter(Boolean);
+      return folders.map((p) => String(p)).filter(Boolean);
     }
   } catch {
     // ignore
@@ -123,18 +143,19 @@ export async function safeListFolders(adapter: any, path: string): Promise<strin
 }
 
 /** Lists files inside `path` using the vault adapter. */
-export async function safeListFiles(adapter: any, path: string): Promise<string[]> {
+export async function safeListFiles(adapter: AdapterLike | null, path: string): Promise<string[]> {
   try {
     if (!adapter) return [];
-    if (typeof adapter.list === "function") {
+    if (adapter.list) {
       const res = await adapter.list(path);
       const files = Array.isArray(res?.files) ? res.files : [];
-      return files.map((p: string) => String(p)).filter(Boolean);
+      return files.map((p) => String(p)).filter(Boolean);
     }
-    if (typeof adapter.readdir === "function") {
-      const res = await adapter.readdir(path);
+    const readdir = (adapter as unknown as Record<string, unknown>).readdir as ((p: string) => Promise<{ files?: string[] }>) | undefined;
+    if (readdir) {
+      const res = await readdir(path);
       const files = Array.isArray(res?.files) ? res.files : [];
-      return files.map((p: string) => String(p)).filter(Boolean);
+      return files.map((p) => String(p)).filter(Boolean);
     }
   } catch {
     // ignore
@@ -143,11 +164,11 @@ export async function safeListFiles(adapter: any, path: string): Promise<string[
 }
 
 /** Returns the mtime of a file (0 on failure). */
-export async function safeStatMtime(adapter: any, path: string): Promise<number> {
+export async function safeStatMtime(adapter: AdapterLike | null, path: string): Promise<number> {
   try {
-    if (adapter && typeof adapter.stat === "function") {
+    if (adapter?.stat) {
       const st = await adapter.stat(path);
-      const m = Number((st)?.mtime ?? 0);
+      const m = Number(st?.mtime ?? 0);
       return Number.isFinite(m) ? m : 0;
     }
   } catch {
@@ -157,11 +178,11 @@ export async function safeStatMtime(adapter: any, path: string): Promise<number>
 }
 
 /** Returns the size of a file in bytes (0 on failure). */
-async function safeStatSize(adapter: any, path: string): Promise<number> {
+async function safeStatSize(adapter: AdapterLike | null, path: string): Promise<number> {
   try {
-    if (adapter && typeof adapter.stat === "function") {
+    if (adapter?.stat) {
       const st = await adapter.stat(path);
-      const s = Number((st)?.size ?? 0);
+      const s = Number(st?.size ?? 0);
       return Number.isFinite(s) ? s : 0;
     }
   } catch {
@@ -171,15 +192,16 @@ async function safeStatSize(adapter: any, path: string): Promise<number> {
 }
 
 /** Deletes a file using the adapter's `remove()` or `trash()`. */
-async function safeRemoveFile(adapter: any, path: string): Promise<boolean> {
+async function safeRemoveFile(adapter: AdapterLike | null, path: string): Promise<boolean> {
   try {
     if (!adapter || !path) return false;
-    if (typeof adapter.remove === "function") {
+    if (adapter.remove) {
       await adapter.remove(path);
       return true;
     }
-    if (typeof adapter.trash === "function") {
-      await adapter.trash(path);
+    const trash = (adapter as unknown as Record<string, unknown>).trash as ((p: string) => Promise<void>) | undefined;
+    if (trash) {
+      await trash(path);
       return true;
     }
   } catch {
@@ -245,10 +267,10 @@ export function getPluginId(plugin: SproutPlugin): string | null {
  * Looks for `{ cards, states, reviewLog, quarantine }` either at
  * top level or nested under `.data`, `.store`, or `.db`.
  */
-function getStoreLikeRoot(obj: any): any | null {
+function getStoreLikeRoot(obj: unknown): Record<string, unknown> | null {
   if (!obj || typeof obj !== "object") return null;
-
-  const candidates = [obj?.data, obj?.store, obj?.db, obj] as unknown[];
+  const o = obj as Record<string, unknown>;
+  const candidates = [o?.data, o?.store, o?.db, obj] as unknown[];
   for (const c of candidates) {
     if (!isPlainObject(c)) continue;
 
@@ -268,19 +290,20 @@ function getStoreLikeRoot(obj: any): any | null {
  * Computes scheduling summary stats from a `states` object.
  * Returns counts for states, due, learning, review, and mature cards.
  */
-function computeSchedulingStats(states: any, now: number) {
+function computeSchedulingStats(states: unknown, now: number) {
   const out = { states: 0, due: 0, learning: 0, review: 0, mature: 0 };
   if (!isPlainObject(states)) return out;
   const values = Object.values(states);
   out.states = values.length;
   for (const st of values) {
     if (!st || typeof st !== "object") continue;
-    const stage = String((st).stage ?? "");
+    const entry = st as Record<string, unknown>;
+    const stage = String(entry.stage ?? "");
     if (stage === "learning" || stage === "relearning") out.learning += 1;
     if (stage === "review") out.review += 1;
-    const stability = Number((st).stabilityDays ?? 0);
+    const stability = Number(entry.stabilityDays ?? 0);
     if (stage === "review" && Number.isFinite(stability) && stability >= 30) out.mature += 1;
-    const due = Number((st).due ?? 0);
+    const due = Number(entry.due ?? 0);
     if (stage !== "suspended" && Number.isFinite(due) && due > 0 && due <= now) out.due += 1;
   }
   return out;
@@ -301,7 +324,7 @@ function clonePlain<T>(x: T): T {
  * Mutates in-place to preserve existing object references (important
  * for `plugin.store.data`).
  */
-function replaceObjectContents(target: any, source: any) {
+function replaceObjectContents(target: Record<string, unknown>, source: Record<string, unknown>) {
   if (!target || typeof target !== "object") return;
   for (const k of Object.keys(target)) delete target[k];
   for (const k of Object.keys(source || {})) target[k] = source[k];
@@ -378,11 +401,11 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
   const root = getStoreLikeRoot(obj);
   if (!root) return null;
 
-  const cards = (root).cards;
-  const states = (root).states;
-  const reviewLog = (root).reviewLog;
-  const quarantine = (root).quarantine;
-  const io = (root).io;
+  const cards = root.cards;
+  const states = root.states;
+  const reviewLog = root.reviewLog;
+  const quarantine = root.quarantine;
+  const io = root.io;
 
   const cardCount = countObjectKeys(cards);
   const stateKeys = isPlainObject(states) ? Object.keys(states) : [];
@@ -403,7 +426,7 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
 
   return {
     ...entry,
-    version: Number((root).version ?? 0) || 0,
+    version: Number(root.version ?? 0) || 0,
     cards: cardCount,
     states: stateCount,
     due: sched.due,
@@ -483,22 +506,22 @@ export async function restoreFromDataJsonBackup(
     const snapshot = clonePlain(root);
 
     // Ensure required keys exist (avoid undefined holes)
-    (snapshot).cards ??= {};
-    (snapshot).states ??= {};
-    (snapshot).reviewLog ??= [];
-    (snapshot).quarantine ??= {};
-    (snapshot).io ??= (snapshot).io ?? {};
-    (snapshot).version = Math.max(Number((snapshot).version ?? 0) || 0, 1);
+    snapshot.cards ??= {};
+    snapshot.states ??= {};
+    snapshot.reviewLog ??= [];
+    snapshot.quarantine ??= {};
+    snapshot.io ??= snapshot.io ?? {};
+    snapshot.version = Math.max(Number(snapshot.version ?? 0) || 0, 1);
 
     // Mutate-in-place to preserve references to plugin.store.data
-    replaceObjectContents(plugin.store.data, snapshot);
+    replaceObjectContents(plugin.store.data as unknown as Record<string, unknown>, snapshot);
 
     // Persist through the store
     await plugin.store.persist();
 
     return { ok: true, message: "Restore completed." };
-  } catch (e: any) {
-    return { ok: false, message: `Restore failed: ${String(e?.message ?? e ?? "unknown error")}` };
+  } catch (e: unknown) {
+    return { ok: false, message: `Restore failed: ${e instanceof Error ? e.message : String(e ?? "unknown error")}` };
   }
 }
 

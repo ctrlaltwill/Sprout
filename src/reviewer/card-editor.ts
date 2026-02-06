@@ -1,7 +1,16 @@
-// src/reviewer/editor.ts
+/**
+ * @file src/reviewer/card-editor.ts
+ * @summary Provides the in-reviewer card editing modal and the logic to persist card edits back to the source Markdown note. Supports editing basic, cloze, and MCQ card types with field-aware block rewriting using pipe-delimited format.
+ *
+ * @exports
+ *   - CardEditPayload — Type describing the editable fields of a card (title, Q/A, cloze text, MCQ stem/options, info)
+ *   - CardEditModal — Modal class that renders a quick-edit form for a flashcard and invokes a save callback
+ *   - saveCardEdits — Async function that writes edited card fields back to the source Markdown file and re-syncs
+ */
 
 import { Modal, Notice, TFile, type App } from "obsidian";
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../core/store";
 import { syncOneFile } from "../sync/sync-engine";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
@@ -106,7 +115,6 @@ function setTaggedSection(
 
   let tagIdx = -1;
   let usedTag = tagCandidates[0];
-  let isPipeFormat = true; // Default to pipe format for new fields
 
   for (let i = 0; i < block.length; i++) {
     const line = (block[i] || "").trim();
@@ -117,7 +125,6 @@ function setTaggedSection(
       if (tagResPipe[k].test(block[i] || "")) {
         tagIdx = i;
         usedTag = tagCandidates[k];
-        isPipeFormat = true;
         break;
       }
     }
@@ -128,7 +135,6 @@ function setTaggedSection(
       if (tagResColon[k].test(block[i] || "")) {
         tagIdx = i;
         usedTag = tagCandidates[k];
-        isPipeFormat = false;
         break;
       }
     }
@@ -206,20 +212,6 @@ function setTaggedSection(
   return [...block.slice(0, tagIdx), ...replacement, ...block.slice(end)];
 }
 
-function formatMcqOptionsPipe(options: string[], correctIndex: number): string {
-  const out = options
-    .map((opt, i) => {
-      const t = (opt || "").trim();
-      if (!t) return "";
-      if (i === correctIndex) return `**${t}**`;
-      return t;
-    })
-    .filter(Boolean);
-
-  // Requested: pipe-separated, with the ticked one bold
-  return out.join(" | ");
-}
-
 function mkSectionTitle(parent: HTMLElement, text: string) {
   const row = parent.createDiv({ cls: "sprout-edit-section-title" });
   row.createEl("div", { text, cls: "sprout-muted" });
@@ -227,12 +219,12 @@ function mkSectionTitle(parent: HTMLElement, text: string) {
 }
 
 export class CardEditModal extends Modal {
-  private card: any;
+  private card: CardRecord;
   private onSave: (payload: CardEditPayload) => void | Promise<void>;
 
   constructor(
     app: App,
-    card: any,
+    card: CardRecord,
     onSave: (payload: CardEditPayload) => void | Promise<void>,
   ) {
     super(app);
@@ -242,7 +234,7 @@ export class CardEditModal extends Modal {
 
   onOpen() {
     // Always wrap modalEl in a .sprout div for correct CSS scoping
-    let sproutWrapper = document.createElement("div");
+    let sproutWrapper: HTMLElement = document.createElement("div");
     sproutWrapper.className = "sprout";
     // Defensive: if modalEl is already in a .sprout wrapper, reuse it
     if (this.modalEl.parentElement && this.modalEl.parentElement.classList.contains("sprout")) {
@@ -274,7 +266,7 @@ export class CardEditModal extends Modal {
       const input = contentEl.createEl("input");
       input.type = "text";
       input.value = value || "";
-      input.style.width = "100%";
+      input.classList.add("sprout-edit-input-full");
       return input;
     };
 
@@ -282,7 +274,7 @@ export class CardEditModal extends Modal {
       const ta = contentEl.createEl("textarea");
       ta.value = value || "";
       ta.rows = rows;
-      ta.style.width = "100%";
+      ta.classList.add("sprout-edit-textarea-full");
       return ta;
     };
 
@@ -310,18 +302,13 @@ export class CardEditModal extends Modal {
       const idx = optionRows.length;
 
       const row = contentEl.createDiv({ cls: "sprout-edit-mcq-option-row" });
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.gap = "8px";
 
-      const lab = row.createEl("div", { text: `Option ${idx + 1}`, cls: "sprout-muted" });
-      lab.style.minWidth = "70px";
+      const lab = row.createEl("div", { text: `Option ${idx + 1}`, cls: "sprout-muted sprout-edit-mcq-option-label" });
 
       const input = row.createEl("input");
       input.type = "text";
       input.value = initialValue || "";
-      input.style.flex = "1";
-      input.style.width = "100%";
+      input.classList.add("sprout-edit-mcq-option-input");
 
       const radio = row.createEl("input");
       radio.type = "radio";
@@ -429,9 +416,6 @@ export class CardEditModal extends Modal {
 
     // + button row
     const addRow = contentEl.createDiv({ cls: "sprout-edit-mcq-add-row" });
-    addRow.style.display = "flex";
-    addRow.style.justifyContent = "flex-end";
-    addRow.style.marginTop = "6px";
 
     const plusBtn = addRow.createEl("button", { text: "+" });
     plusBtn.type = "button";
@@ -485,11 +469,7 @@ export class CardEditModal extends Modal {
   ) {
     const { contentEl } = this;
 
-    const btnRow = contentEl.createDiv();
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "8px";
-    btnRow.style.justifyContent = "flex-end";
-    btnRow.style.marginTop = "12px";
+    const btnRow = contentEl.createDiv({ cls: "sprout-edit-btn-row" });
 
     const cancel = btnRow.createEl("button", { text: "Cancel" });
     cancel.type = "button";
@@ -518,9 +498,9 @@ export class CardEditModal extends Modal {
 
         await this.onSave(payload);
         this.close();
-      } catch (e: any) {
+      } catch (e: unknown) {
         log.error("edit failed", e);
-        new Notice(`${BRAND}: edit failed (${String(e?.message || e)})`);
+        new Notice(`${BRAND}: edit failed (${e instanceof Error ? e.message : String(e)})`);
       }
     };
   }
@@ -529,7 +509,7 @@ export class CardEditModal extends Modal {
 
 export async function saveCardEdits(
   plugin: SproutPlugin,
-  card: any,
+  card: CardRecord,
   payload: CardEditPayload,
 ): Promise<void> {
   const id = String((card).id || "");

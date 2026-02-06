@@ -1,8 +1,14 @@
 /**
- * browser/browser-resize.ts
- * ─────────────────────────
- * Extracted column-resize handle logic for the Flashcard Browser table.
- * Originally part of SproutCardBrowserView.makeResizableTh.
+ * @file src/browser/browser-resize.ts
+ * @summary Column drag-to-resize handle logic for the Flashcard Browser table.
+ * Adds an invisible drag handle on the right edge of each <th> that allows the
+ * user to click-and-drag to resize columns, clamped between configurable min/max
+ * widths. Temporarily suppresses header click events after a resize to prevent
+ * accidental sort toggles.
+ *
+ * @exports
+ *   - ResizeContext — interface providing column width state, DOM references, and min/max constraints
+ *   - makeResizableTh — attaches a drag-to-resize handle to a table header cell
  */
 
 import type { ColKey } from "./browser-helpers";

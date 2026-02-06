@@ -1,4 +1,14 @@
-// src/reviewer/uiBits.ts
+/**
+ * @file src/reviewer/ui.ts
+ * @summary Small UI utility functions for the reviewer, providing keyboard-shortcut badge elements and plain button construction.
+ *
+ * @exports
+ *   - keySymbol — Converts a key label to its symbol representation (e.g. "Enter" → "⏎")
+ *   - keybox — Creates a styled keyboard-shortcut badge element
+ *   - appendKeyboxRight — Appends a right-aligned keyboard badge to a button element
+ *   - makePlainButton — Creates a plain button element with a label and click handler
+ */
+
 import { el } from "../core/ui";
 
 export function keySymbol(label: string): string {

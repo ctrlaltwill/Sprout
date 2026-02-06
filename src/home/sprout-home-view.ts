@@ -1,11 +1,9 @@
 /**
- * home/SproutHomeView.ts
- * ──────────────────────
- * The Sprout Home tab — a dashboard showing study streak, due-card
- * stats, pinned & recent decks, a review heatmap, and about/changelog info.
+ * @file src/home/sprout-home-view.ts
+ * @summary The Sprout Home tab — an Obsidian ItemView that renders the plugin's dashboard with study-streak tracking, due-card statistics, pinned and recent decks, a review calendar heatmap, and about/changelog information.
  *
- * Renamed from BootCampHomeView → SproutHomeView as part of the
- * "no Boot Camp naming" refactor.
+ * @exports
+ *  - SproutHomeView — Obsidian ItemView subclass implementing the Home dashboard tab
  */
 
 import { ItemView, Notice, setIcon, type WorkspaceLeaf } from "obsidian";
@@ -15,6 +13,8 @@ import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../core/store";
+import type { Scope } from "../reviewer/types";
 import { ReviewCalendarHeatmap } from "../analytics/review-calendar-heatmap";
 import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 
@@ -224,7 +224,7 @@ export class SproutHomeView extends ItemView {
         nameInput.style.width = `${Math.min(next, 240)}px`;
       };
 
-      const setGreetingText = (name: string, firstOpen: boolean) => {
+      const setGreetingText = (_name: string, firstOpen: boolean) => {
         const hour = new Date(nowMs).getHours();
         const variants = firstOpen
           ? ["Welcome to Sprout, {name}"]
@@ -340,17 +340,17 @@ export class SproutHomeView extends ItemView {
     // Refresh GitHub stars (respects 6-hour cache unless forced)
     void this.plugin.refreshGithubStars(false);
 
-    const cardsById = new Map<string, any>();
+    const cardsById = new Map<string, CardRecord>();
     for (const card of cards) {
       if (card?.id) cardsById.set(String(card.id), card);
     }
 
-    const reviewEvents = events.filter((ev: any) => ev && ev.kind === "review");
-    const sessionEvents = events.filter((ev: any) => ev && ev.kind === "session");
-    reviewEvents.sort((a: any, b: any) => Number(b.at) - Number(a.at));
-    sessionEvents.sort((a: any, b: any) => Number(b.at) - Number(a.at));
+    const reviewEvents = events.filter((ev) => ev && ev.kind === "review");
+    const sessionEvents = events.filter((ev) => ev && ev.kind === "session");
+    reviewEvents.sort((a, b) => Number(b.at) - Number(a.at));
+    sessionEvents.sort((a, b) => Number(b.at) - Number(a.at));
 
-    const recentDecks: Array<{ scope: any; lastAt: number; label: string }> = [];
+    const recentDecks: Array<{ scope: Scope; lastAt: number; label: string }> = [];
     const seenDecks = new Set<string>();
     for (const ev of sessionEvents) {
       const scope = ev?.scope;
@@ -376,7 +376,6 @@ export class SproutHomeView extends ItemView {
     let totalDue = 0;
     let dueTomorrow = 0;
     const startOfTodayMs = new Date(nowMs).setHours(0, 0, 0, 0);
-    const endOfTodayMs = new Date(nowMs).setHours(23, 59, 59, 999);
     const tomorrowMs = nowMs + MS_DAY;
     for (const card of cards) {
       const id = String(card?.id ?? "");
@@ -411,7 +410,7 @@ export class SproutHomeView extends ItemView {
       return sum;
     };
 
-    const getDueForScope = (scope: any) => {
+    const getDueForScope = (scope: Scope) => {
       if (!scope || typeof scope !== "object") return 0;
       const type = String(scope.type || "");
       if (type === "vault") return totalDue;
@@ -458,7 +457,7 @@ export class SproutHomeView extends ItemView {
     }
     const atRisk = !dayMap.get(todayIndex)?.count && (dayMap.get(todayIndex - 1)?.count ?? 0) > 0;
 
-    const openStudyForScope = async (scope: any) => {
+    const openStudyForScope = async (scope: Scope) => {
       try {
         await this.plugin.openReviewerTab();
         const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER)[0];
@@ -477,19 +476,11 @@ export class SproutHomeView extends ItemView {
       await openStudyForScope(scopeFromDeckPath(path));
     };
 
-    const openAnalytics = async () => {
-      try {
-        await this.plugin.openAnalyticsTab();
-      } catch {
-        new Notice("Unable to open Analytics.");
-      }
-    };
-
     const makeDeckSection = (label: string, iconName?: string) => {
       const section = document.createElement("div");
       section.className = "flex flex-col gap-3 p-3 rounded-lg border border-border bg-background";
       const headingRow = section.createDiv({ cls: "sprout-section-heading-row flex items-center justify-between gap-2" });
-      const heading = headingRow.createDiv({ cls: "font-semibold", text: label });
+      headingRow.createDiv({ cls: "font-semibold", text: label });
       if (iconName) {
         const iconWrapper = headingRow.createEl("span", { cls: "sprout-icon-20" });
         if (iconName === "pin") {
@@ -647,7 +638,7 @@ export class SproutHomeView extends ItemView {
       streakHeader.appendChild(keepBadge);
     }
     streakCard.createDiv({ cls: "text-2xl font-semibold", text: `${currentStreak} day${currentStreak === 1 ? "" : "s"}` });
-    const streakNoteEl = streakCard.createDiv({ cls: "text-xs text-muted-foreground", text: (activeDays === 0 ? "No reviews yet" : (atRisk ? `Ends in ${formatCountdownToMidnight(nowMs)} — study today.` : (includesToday ? "Keep it going!" : "Streak active."))) });
+    streakCard.createDiv({ cls: "text-xs text-muted-foreground", text: (activeDays === 0 ? "No reviews yet" : (atRisk ? `Ends in ${formatCountdownToMidnight(nowMs)} — study today.` : (includesToday ? "Keep it going!" : "Streak active."))) });
 
     if (atRisk) {
       this._streakTimer = window.setInterval(() => {
@@ -1024,7 +1015,7 @@ export class SproutHomeView extends ItemView {
       // Add smooth transition for spin
       starIcon.style.transition = "transform 0.3s cubic-bezier(.4,2,.6,1)";
       let spinning = false;
-      starsLink.addEventListener("click", (e) => {
+      starsLink.addEventListener("click", (_e) => {
         if (spinning) return;
         spinning = true;
         // Spin backwards (opposite direction), twice as fast
@@ -1066,7 +1057,7 @@ export class SproutHomeView extends ItemView {
       // Add smooth transition for rotation
       bmcIcon.style.transition = "transform 0.4s cubic-bezier(.4,2,.6,1)";
       let bmcTipped = false;
-      bmcLink.addEventListener("click", (e) => {
+      bmcLink.addEventListener("click", (_e) => {
         if (!bmcTipped) {
           bmcTipped = true;
           bmcIcon.style.transform = "rotate(-60deg)";

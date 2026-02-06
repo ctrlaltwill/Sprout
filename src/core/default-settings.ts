@@ -1,9 +1,14 @@
-// src/defaultSettings.ts
-// ---------------------------------------------------------------------------
-// Default plugin settings — provides the SproutSettings type (re-exported
-// from types/settings.ts) and the DEFAULT_SETTINGS constant used to seed a
-// fresh installation or reset to factory defaults.
-// ---------------------------------------------------------------------------
+/**
+ * @file src/core/default-settings.ts
+ * @summary Provides the factory-default values for every Sprout plugin setting. Re-exports
+ * the SproutSettings type from src/types/settings.ts so downstream code can import both
+ * the type and the defaults from one location. Used to seed fresh installations and to
+ * reset settings to factory defaults.
+ *
+ * @exports
+ *   - SproutSettings (re-exported type) — full plugin settings shape
+ *   - DEFAULT_SETTINGS — constant object with factory-default values for all settings
+ */
 
 // Re-export the type so existing `import { SproutSettings } from "./default-settings"` still works
 export type { SproutSettings } from "../types/settings";

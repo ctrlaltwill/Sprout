@@ -1,3 +1,16 @@
+/**
+ * @file src/analytics/chart-axis-utils.ts
+ * @summary Shared utility functions for computing axis tick positions and
+ * formatting axis labels across multiple Recharts-based analytics charts.
+ * Provides consistent Y-axis rounding and X-axis tick placement (start, mid,
+ * end, today) as well as a "Today" label formatter.
+ *
+ * @exports
+ *   - createYAxisTicks — computes evenly-spaced Y-axis tick values rounded to the nearest 100
+ *   - createXAxisTicks — computes X-axis tick positions including start, midpoint, end, and today
+ *   - formatAxisLabel — formats a day-index into a human-readable label, returning "Today" for the current day
+ */
+
 export function createYAxisTicks(maxValue: number): number[] {
   const positiveMax = Math.max(0, maxValue);
   const finalMax = Math.max(100, Math.ceil(positiveMax / 100) * 100);

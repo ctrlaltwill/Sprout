@@ -1,8 +1,14 @@
 /**
- * browser/browser-bulk-edit-modal.ts
- * ───────────────────────────────────
- * Extracted bulk-edit overlay for the Flashcard Browser.
- * Originally part of SproutCardBrowserView._openBulkEditModal.
+ * @file src/browser/browser-bulk-edit-modal.ts
+ * @summary Full-screen bulk-edit overlay for the Flashcard Browser. Displays a
+ * modal form allowing the user to edit one or more selected cards at once,
+ * including title, question, answer/options (with MCQ support), extra info, and
+ * a group tag-picker with search, add, and remove capabilities. Supports cloze
+ * keyboard shortcuts and writes changes back to source markdown files.
+ *
+ * @exports
+ *   - BulkEditContext — interface providing callbacks and state the modal needs from its host
+ *   - openBulkEditModal — creates and displays the bulk-edit overlay for a set of selected cards
  */
 
 import { Notice, setIcon } from "obsidian";
@@ -227,8 +233,8 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
     const optionSet = new Set<string>();
     for (const g of (ctx.getAllCards() || [])
-      .flatMap((c: any) => (Array.isArray(c?.groups) ? c.groups : []))
-      .map((g: any) => titleCaseGroupPath(String(g).trim()))
+      .flatMap((c) => (Array.isArray(c?.groups) ? c.groups : []))
+      .map((g) => titleCaseGroupPath(String(g).trim()))
       .filter(Boolean)) {
       for (const tag of expandGroupAncestors(g)) optionSet.add(tag);
     }
@@ -843,8 +849,8 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
         await ctx.writeCardToMarkdown(updated);
       }
       overlay.remove();
-    } catch (err: any) {
-      new Notice(`${BRAND}: ${err?.message || String(err)}`);
+    } catch (err: unknown) {
+      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
     }
   })(); });
   footer.appendChild(cancel);

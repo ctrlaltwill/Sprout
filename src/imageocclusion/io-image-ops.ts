@@ -1,15 +1,16 @@
 /**
- * imageocclusion/io-image-ops.ts
- * ---------------------------------------------------------------------------
- * Pure image-manipulation functions for the Image Occlusion creator modal.
+ * @file src/imageocclusion/io-image-ops.ts
+ * @summary Pure image-manipulation functions for the Image Occlusion creator modal. Provides image loading from clipboard data, 90° rotation with rect/text-box coordinate remapping, cropping with rect/text-box clipping, text-box burning into image pixels, single-text rendering, and colour/background CSS helpers.
  *
- *  • loadImageElement      – decode a ClipboardImage into an HTMLImageElement
- *  • rotateImageData       – rotate 90° CW/CCW, remap rects & text boxes
- *  • cropImageData         – crop to a stage-coordinate rectangle
- *  • burnTextBoxesIntoImageData – render text annotations into the image
- *  • drawTextOnImageData   – render a single text string onto the image
- *  • hexToRgb / textBgCss / clampTextBgOpacity – colour helpers
- * ---------------------------------------------------------------------------
+ * @exports
+ *   - clampTextBgOpacity — clamps a background opacity value to the 0–1 range
+ *   - hexToRgb — parses a hex colour string into an {r, g, b} object
+ *   - textBgCss — builds an rgba() CSS string from a hex colour and opacity
+ *   - loadImageElement — decodes a ClipboardImage into an HTMLImageElement
+ *   - rotateImageData — rotates image data 90° CW/CCW and remaps rects and text boxes
+ *   - cropImageData — crops image data to a rectangle and clips rects and text boxes
+ *   - burnTextBoxesIntoImageData — renders text-box annotations permanently into the image
+ *   - drawTextOnImageData — renders a single text string onto the image at given coordinates
  */
 
 import type { ClipboardImage, IORect, IOTextBox } from "./io-types";

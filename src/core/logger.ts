@@ -1,25 +1,15 @@
 /* eslint-disable no-console -- This IS the logging abstraction layer */
 /**
- * src/core/logger.ts
- * ──────────────────
- * Centralised logger for Sprout.  Every message is prefixed with
- * `[Sprout]` so it's easy to filter in DevTools.
+ * @file src/core/logger.ts
+ * @summary Centralised logging abstraction for Sprout. Every message is prefixed with
+ * "[Sprout]" for easy DevTools filtering. Supports four severity levels (debug, info,
+ * warn, error) plus a "silent" mode, and a `swallow` helper for previously-empty catch
+ * blocks that logs at debug level. The log level can be changed at runtime via
+ * `window.__sproutLog.setLevel("debug")`.
  *
- * Usage:
- *   import { log } from "../core/logger";
- *
- *   log.debug("something happened", value);
- *   log.warn("unexpected state", ctx);
- *   log.error("failed to save", err);
- *
- * In production the `debug` channel is silenced by default.
- * Call `log.setLevel("debug")` at runtime (e.g. from the console)
- * to turn it on, or `log.setLevel("warn")` to only see warnings+errors.
- *
- * The `swallow` helper is designed for catch blocks that were previously
- * empty — it logs at debug level so errors aren't lost silently:
- *
- *   try { … } catch (e) { log.swallow("dispose header", e); }
+ * @exports
+ *   - LogLevel — type union of log severity levels
+ *   - log — singleton logger object with debug/info/warn/error/swallow methods
  */
 
 const PREFIX = "[Sprout]";

@@ -1,0 +1,133 @@
+/* ============================================================================
+   BROWSER — Table hover, pagination, search-input alignment,
+   header cells, browser-specific popovers, bulk edit toolbar.
+   ========================================================================== */
+
+/* ---- Browser table ---- */
+
+/* Browser table should align with other content */
+.sprout .sprout-browser-table-wrap {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 40px;
+  margin-right: 40px;
+  box-sizing: border-box;
+}
+
+/* Browser table hover: hide border seams by matching hover color */
+.sprout .sprout-browser-view .table tbody tr:hover {
+  background-color: var(--color-background) !important;
+}
+.sprout .sprout-browser-view .table tbody tr:hover,
+.sprout .sprout-browser-view .table tbody tr:hover td {
+  border-color: var(--color-background) !important;
+  border-bottom-color: var(--color-background) !important;
+}
+
+/* ---- Pagination + row buttons ---- */
+
+.sprout .sprout-browser-view nav[role="navigation"] .btn,
+.sprout .sprout-browser-view nav[role="navigation"] .btn-outline,
+.sprout .sprout-browser-view [data-tooltip="Rows per page"] {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
+/* ---- Search input alignment ---- */
+
+.sprout [data-sprout-browser-root="1"] .flex.items-start {
+  align-items: stretch !important;
+}
+.sprout [data-sprout-browser-root="1"] .input.h-9,
+.sprout [data-sprout-browser-root="1"] input.h-9 {
+  height: 36px !important;
+  min-height: 36px !important;
+  align-self: stretch !important;
+}
+.sprout [data-sprout-browser-root="1"] .btn-outline.h-9 {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
+/* ---- Table header ---- */
+
+.sprout .table thead tr:hover {
+    background-color: transparent !important;
+    color: var(--text-color);
+}
+
+/* .sprout .table thead tr — padding removed: invalid declaration */
+
+/* Deck browser table header uses muted text */
+.sprout .sprout-browser-view .table thead th,
+.sprout .sprout-browser-view .table thead th span {
+  color: var(--text-muted) !important;
+}
+
+/* Browser table header: selected/ordered column uses --foreground */
+.sprout-browser-header-active {
+  color: var(--foreground) !important;
+}
+
+/* Place chevron beside the word, not floated right */
+.sprout-browser-header-cell .sprout-browser-header-icon {
+  margin-left: 10px !important;
+  margin-right: 0 !important;
+  position: static !important;
+  opacity: 1 !important;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.sprout-browser-header-cell .items-center {
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+}
+
+/* ---- Browser popover menu hover/focus/active overrides ---- */
+
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:hover,
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:focus,
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:active,
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:focus-visible {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.theme-dark :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:hover,
+.theme-dark :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:focus,
+.theme-dark :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:active,
+.theme-dark :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-0)
+  :is([role="menuitemcheckbox"], [role="menuitemradio"], [role="menuitem"]).group:focus-visible {
+  background-color: #23272e !important;
+  color: var(--accent-foreground, #fff) !important;
+}
+
+/* ---- IO toolbar ---- */
+
+/* Sprout IO Toolbar: Remove padding and border */
+[role="toolbar"][data-sprout-toolbar="1"] {
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Make Hide All and Hide One buttons black */
+.btn-outline[data-tooltip="Hide All"],
+.btn-outline[data-tooltip="Hide One"] {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+/* IO widget overflow */
+.bc-io-host[data-sprout-io-widget="1"] {
+  overflow: hidden !important;
+}

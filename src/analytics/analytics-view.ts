@@ -1,4 +1,17 @@
-// src/analytics/AnalyticsView.ts
+/**
+ * @file src/analytics/analytics-view.ts
+ * @summary Obsidian ItemView subclass that powers the "Analytics" tab. It
+ * aggregates card states, review logs, and analytics events from the plugin
+ * store, computes KPI statistics (streaks, daily cards, daily time, trends),
+ * and renders a full-page dashboard composed of React-based chart components
+ * (heatmap, pie charts, future-due forecast, new-cards bar chart, stacked
+ * answer-buttons chart, stability distribution, and forgetting curves). Also
+ * manages AOS scroll animations and wide-mode layout toggling.
+ *
+ * @exports
+ *   - SproutAnalyticsView — Obsidian ItemView class implementing the analytics dashboard
+ */
+
 import { ItemView, type WorkspaceLeaf, setIcon } from "obsidian";
 import * as React from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
@@ -7,6 +20,7 @@ import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS } from "../core/constants";
 import type SproutPlugin from "../main";
+import type { CardState } from "../types/scheduler";
 import { StagePieCard } from "./pie-charts";
 import { FutureDueChart } from "./future-due-chart";
 import { NewCardsPerDayChart } from "./new-cards-per-day-chart";
@@ -35,7 +49,7 @@ function localDayIndex(ts: number, timeZone: string) {
   return Math.floor(Date.UTC(year, month - 1, day) / MS_DAY);
 }
 
-function computeDueForecast(states: Record<string, any>, now: number) {
+function computeDueForecast(states: Record<string, CardState>, now: number) {
   const byDays: Record<number, number> = { 1: 0, 7: 0, 30: 0, 90: 0 };
   const thresholds = [1, 7, 30, 90];
 
@@ -54,167 +68,6 @@ function computeDueForecast(states: Record<string, any>, now: number) {
   return { byDays };
 }
 
-function computeAnswerButtonCounts(events: any[], now: number) {
-  const cutoff = now - 30 * MS_DAY;
-  const counts: Record<string, number> = { again: 0, hard: 0, good: 0, easy: 0 };
-
-  for (const ev of events || []) {
-    if (!ev || typeof ev !== "object") continue;
-    if (ev.kind !== "review") continue;
-
-    const at = Number(ev.at);
-    if (!Number.isFinite(at) || at < cutoff) continue;
-
-    const result = String(ev.result || "");
-    if (result in counts) counts[result] += 1;
-  }
-
-  return counts;
-}
-
-type HeatmapDatum = { date: string; value: number };
-
-function toDateKey(ts: number) {
-  return new Date(ts).toISOString().slice(0, 10);
-}
-
-function buildHeatmapData(events: any[], states: Record<string, any>, now: number, days: number): HeatmapDatum[] {
-  const map = new Map<string, number>();
-  const hasStudy = (events || []).some((e) => e && e.kind === "review");
-
-  if (hasStudy) {
-    for (const ev of events || []) {
-      if (!ev || ev.kind !== "review") continue;
-      const at = Number(ev.at);
-      if (!Number.isFinite(at)) continue;
-      const key = toDateKey(at);
-      map.set(key, (map.get(key) || 0) + 1);
-    }
-  } else {
-    for (const st of Object.values(states || {})) {
-      if (!st || typeof st !== "object") continue;
-      if ((st).stage === "suspended") continue;
-      const due = Number((st).due);
-      if (!Number.isFinite(due)) continue;
-      const key = toDateKey(due);
-      map.set(key, (map.get(key) || 0) + 1);
-    }
-  }
-
-  const out: HeatmapDatum[] = [];
-  for (let i = days - 1; i >= 0; i -= 1) {
-    const ts = now - i * MS_DAY;
-    const key = toDateKey(ts);
-    out.push({ date: key, value: map.get(key) || 0 });
-  }
-  return out;
-}
-
-function buildHeatmapGrid(data: HeatmapDatum[], weekStartsOn: number) {
-  const parsed = data.map((d) => ({ ...d, dateObj: new Date(`${d.date}T00:00:00`) }));
-  const start = parsed[0]?.dateObj ? new Date(parsed[0].dateObj) : new Date();
-  const end = parsed[parsed.length - 1]?.dateObj ? new Date(parsed[parsed.length - 1].dateObj) : new Date();
-
-  const startDay = start.getDay();
-  const padStart = (startDay - weekStartsOn + 7) % 7;
-  const first = new Date(start);
-  first.setDate(first.getDate() - padStart);
-
-  const totalDays = Math.ceil((end.getTime() - first.getTime()) / MS_DAY) + 1;
-  const weeks = Math.ceil(totalDays / 7);
-
-  const valueMap = new Map(parsed.map((d) => [d.date, d.value]));
-  const cells: Array<{ date: Date; value: number; isPadding: boolean }> = [];
-
-  for (let i = 0; i < weeks * 7; i += 1) {
-    const d = new Date(first);
-    d.setDate(first.getDate() + i);
-    const key = toDateKey(d.getTime());
-    const value = valueMap.get(key) ?? 0;
-    const isPadding = d < start || d > end;
-    cells.push({ date: d, value, isPadding });
-  }
-
-  return { cells, weeks };
-}
-
-function heatColor(value: number, max: number) {
-  if (value <= 0) return "var(--background-modifier-border)";
-  const pct = Math.max(20, Math.min(85, Math.round((value / Math.max(1, max)) * 85)));
-  return `color-mix(in srgb, var(--interactive-accent) ${pct}%, transparent)`;
-}
-
-function HeatmapCalendar(props: { title: string; data: HeatmapDatum[]; weekStartsOn?: number; axisLabels?: boolean }) {
-  const weekStartsOn = Number.isFinite(props.weekStartsOn) ? Number(props.weekStartsOn) : 1;
-  const max = Math.max(1, ...props.data.map((d) => d.value));
-  const grid = buildHeatmapGrid(props.data, weekStartsOn);
-
-  const monthLabels: React.ReactNode[] = [];
-  if (props.axisLabels) {
-    const seen = new Set<string>();
-    for (const cell of grid.cells) {
-      if (cell.isPadding) continue;
-      const label = cell.date.toLocaleString(undefined, { month: "short" });
-      const key = `${label}-${cell.date.getMonth()}-${cell.date.getFullYear()}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      monthLabels.push(
-        React.createElement(
-          "div",
-          { key, className: "bc text-xs text-muted-foreground", style: { gridColumn: "span 4" } },
-          label,
-        ),
-      );
-    }
-  }
-
-  const cells = grid.cells.map((cell, i) =>
-    React.createElement("div", {
-      key: `${cell.date.toISOString()}-${i}`,
-      className: "bc",
-      title: `${cell.date.toLocaleDateString()}: ${cell.value}`,
-      style: {
-        width: "12px",
-        height: "12px",
-        borderRadius: "3px",
-        opacity: cell.isPadding ? "0.25" : "1",
-        backgroundColor: heatColor(cell.value, max),
-      },
-    }),
-  );
-
-  return React.createElement(
-    "div",
-    { className: "bc card sprout-ana-card p-4" },
-    React.createElement(
-      "div",
-      { className: "bc flex items-center justify-between" },
-      React.createElement("div", { className: "bc font-semibold" }, props.title),
-      React.createElement("div", { className: "bc text-xs text-muted-foreground" }, `Last ${props.data.length} days`),
-    ),
-    props.axisLabels
-      ? React.createElement(
-          "div",
-          { className: "bc mt-3 grid gap-2", style: { gridTemplateColumns: "repeat(12, minmax(0, 1fr))" } },
-          monthLabels,
-        )
-      : null,
-    React.createElement(
-      "div",
-      {
-        className: "bc mt-3",
-        style: {
-          display: "grid",
-          gridAutoFlow: "column",
-          gridTemplateRows: "repeat(7, 1fr)",
-          gap: "4px",
-        },
-      },
-      cells,
-    ),
-  );
-}
-
 export class SproutAnalyticsView extends ItemView {
   plugin: SproutPlugin;
 
@@ -229,9 +82,6 @@ export class SproutAnalyticsView extends ItemView {
   private _stackedButtonsRoot: ReactRoot | null = null;
   private _stabilityDistributionRoot: ReactRoot | null = null;
   private _forgettingCurveRoot: ReactRoot | null = null;
-
-  private _constrainedMaxWidth = "1100px";
-  private _constrainedWidth = "94%";
 
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
@@ -668,7 +518,7 @@ export class SproutAnalyticsView extends ItemView {
     heroRow.appendChild(heatmapHost);
 
     this._heatmapRoot = createRoot(heatmapHost);
-    const reviewEvents = events.filter((ev: any) => ev && ev.kind === "review");
+    const reviewEvents = events.filter((ev) => ev && ev.kind === "review");
     this._heatmapRoot.render(
       React.createElement(ReviewCalendarHeatmap, {
         revlog: reviewEvents,
@@ -698,7 +548,7 @@ export class SproutAnalyticsView extends ItemView {
     graphsGrid.appendChild(futureDueHost);
     this._futureDueRoot = createRoot(futureDueHost);
 
-    const futureCards = cards.map((c: any) => {
+    const futureCards = cards.map((c) => {
       const st = states?.[String(c.id)] ?? {};
       return {
         id: String(c.id),
@@ -763,7 +613,7 @@ export class SproutAnalyticsView extends ItemView {
     this._stabilityDistributionRoot = createRoot(stabilityDistributionHost);
     this._stabilityDistributionRoot.render(
       React.createElement(StabilityDistributionChart, {
-        cards,
+        cards: cards.map(c => ({ ...c, groups: c.groups ?? undefined })),
         states,
         enableAnimations: animationsEnabled,
       }),
@@ -820,7 +670,7 @@ export class SproutAnalyticsView extends ItemView {
       const row = ratingsByDay.get(idx) ?? { again: 0, hard: 0, good: 0, easy: 0 };
       const r = String(ev.result || "");
       if (r === "again" || r === "hard" || r === "good" || r === "easy") {
-        row[r as keyof typeof row] += 1;
+        row[r] += 1;
       }
       ratingsByDay.set(idx, row);
     }

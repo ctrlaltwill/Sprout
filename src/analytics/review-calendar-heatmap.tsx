@@ -1,3 +1,15 @@
+/**
+ * @file src/analytics/review-calendar-heatmap.tsx
+ * @summary GitHub-style calendar heatmap that visualises daily review activity.
+ * Each cell represents a day coloured by quantile-based intensity. Supports
+ * configurable durations (7, 30, 90, 365 days, or year-to-date), timezone-aware
+ * day bucketing, hover tooltips with review count and time spent, and a filter
+ * popover for duration selection.
+ *
+ * @exports
+ *   - ReviewCalendarHeatmap — React component rendering an SVG calendar heatmap of daily review counts
+ */
+
 import * as React from "react";
 import { useAnalyticsPopoverZIndex } from "./filter-styles";
 
@@ -151,11 +163,6 @@ function localDayIndex(ts: number, formatter: Intl.DateTimeFormat) {
   return Math.floor(utc / MS_DAY);
 }
 
-function formatDateLabel(dayIndex: number, timeZone: string) {
-  const date = new Date(dayIndex * MS_DAY);
-  return date.toLocaleDateString(undefined, { timeZone, month: "short", day: "numeric" });
-}
-
 function formatDateTitle(dayIndex: number, timeZone: string) {
   const date = new Date(dayIndex * MS_DAY);
   return date.toLocaleDateString(undefined, {
@@ -211,7 +218,6 @@ export function ReviewCalendarHeatmap(props: {
     x: number;
     y: number;
   } | null>(null);
-  const cardRef = React.useRef<HTMLDivElement | null>(null);
   const chartWrapRef = React.useRef<HTMLDivElement | null>(null);
   const dropdownWrapRef = React.useRef<HTMLDivElement | null>(null);
   const popoverRef = React.useRef<HTMLDivElement | null>(null);
@@ -293,7 +299,6 @@ export function ReviewCalendarHeatmap(props: {
       return out;
     } else if (durationDays === 30) {
       // 30 days: calendar grid (7 columns, 5 rows), align most recent day to correct weekday
-      const out: HeatCell[] = [];
       const cols = 7;
       const rows = Math.ceil(30 / 7);
       // Find the weekday (0=Sunday, 1=Monday, ...) of the most recent day

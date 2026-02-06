@@ -1,17 +1,16 @@
 /**
- * widget/widget-render-summary.ts
- * ────────────────────────────────
- * Renders the "summary" mode of the Sprout sidebar widget – the screen
- * the user sees before starting a study session.
+ * @file src/widget/widget-render-summary.ts
+ * @summary Renders the "summary" mode of the Sprout sidebar widget — the screen the user sees before starting a study session. Extracted from SproutWidgetView.renderSummary to keep the main view file lean. Displays card counts, due-card statistics, and the "Start Studying" button.
  *
- * Extracted from `SproutWidgetView.renderSummary` to keep the main
- * view file lean.
+ * @exports
+ *  - renderWidgetSummary — builds and mounts the summary-mode DOM into the widget container
  */
 
 import { MS_DAY } from "../core/constants";
 import { el } from "../core/ui";
 
 import { toTitleCase } from "./widget-helpers";
+import type { WidgetViewLike } from "./widget-helpers";
 import { makeTextButton, applyWidgetActionButtonStyles } from "./widget-buttons";
 import { isFolderNote, getCardsInActiveScope, computeCounts, folderNotesAsDecksEnabled } from "./widget-scope";
 
@@ -26,7 +25,7 @@ import { isFolderNote, getCardsInActiveScope, computeCounts, folderNotesAsDecksE
  *               circular imports)
  * @param root – container element to render into
  */
-export function renderWidgetSummary(view: any, root: HTMLElement): void {
+export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): void {
   const wrap = el("div", "bc bg-background");
   wrap.classList.add("sprout-widget", "sprout");
 
@@ -37,11 +36,7 @@ export function renderWidgetSummary(view: any, root: HTMLElement): void {
   const counts = computeCounts(cards, view.plugin.store);
 
   // Header: study title with open button
-  const header = el("div", "bc flex items-center justify-between px-4 py-3 gap-2");
-  header.style.setProperty("border", "none", "important");
-  header.style.setProperty("border-radius", "0", "important");
-  header.style.setProperty("margin", "0 20px", "important");
-  header.style.setProperty("padding", "15px 0 10px 0", "important");
+  const header = el("div", "bc flex items-center justify-between px-4 py-3 gap-2 sprout-widget-summary-header");
 
   // Create title (not a button)
   const isFolder = isFolderNote(f);
@@ -50,17 +45,12 @@ export function renderWidgetSummary(view: any, root: HTMLElement): void {
 
   const summaryLabelWrap = el("div", "bc flex flex-col items-start");
   const summaryScope = `${titleCased} ${isFolder ? "Folder" : "Note"}`;
-  const summaryTitle = el("div", "bc text-xs", `Study ${summaryScope}`);
-  summaryTitle.style.setProperty("color", "var(--foreground)", "important");
-  summaryTitle.style.setProperty("font-weight", "600", "important");
+  const summaryTitle = el("div", "bc text-xs sprout-widget-summary-title", `Study ${summaryScope}`);
   summaryLabelWrap.appendChild(summaryTitle);
 
   const remainingCount = counts.total;
   const remainingLabel = `${remainingCount} Flashcard${remainingCount === 1 ? "" : "s"}`;
-  const remainingLine = el("div", "bc text-xs", remainingLabel);
-  remainingLine.style.setProperty("color", "var(--foreground)", "important");
-  remainingLine.style.setProperty("font-weight", "400", "important");
-  remainingLine.style.setProperty("margin-top", "3px", "important");
+  const remainingLine = el("div", "bc text-xs sprout-widget-remaining-line", remainingLabel);
   summaryLabelWrap.appendChild(remainingLine);
 
   header.appendChild(summaryLabelWrap);
@@ -77,11 +67,7 @@ export function renderWidgetSummary(view: any, root: HTMLElement): void {
   }
 
   if (!cards.length) {
-    const body = el("div", "bc px-4 py-6");
-    body.style.setProperty("border-radius", "0", "important");
-    body.style.setProperty("margin", "0 10px", "important");
-    body.style.setProperty("padding", "15px 5px", "important");
-    body.style.setProperty("text-align", "center", "important");
+    const body = el("div", "bc px-4 py-6 sprout-widget-empty-body");
     const folderDecksEnabled = folderNotesAsDecksEnabled(view.plugin.settings);
 
     let msg = "No flashcards found in this note.";
@@ -99,19 +85,9 @@ export function renderWidgetSummary(view: any, root: HTMLElement): void {
   }
 
   // Teaser card: summary + next up preview
-  const teaser = el("div", "bc card px-4 py-4 space-y-3");
-  teaser.style.setProperty("margin", "10px auto 20px", "important");
-  teaser.style.setProperty("gap", "0", "important");
-  teaser.style.setProperty("border-radius", "var(--input-radius)", "important");
-  teaser.style.setProperty("border", "var(--border-width) solid var(--background-modifier-border)", "important");
-  teaser.style.setProperty("padding", "20px", "important");
-  teaser.style.setProperty("max-width", "90%", "important");
-  teaser.style.setProperty("box-shadow", "none", "important");
+  const teaser = el("div", "bc card px-4 py-4 space-y-3 sprout-widget-teaser");
 
-  const teaserTitle = el("div", "bc text-xs font-semibold", `${titleCased} ${isFolder ? "Folder" : "Note"}`);
-  teaserTitle.style.setProperty("color", "var(--foreground)", "important");
-  teaserTitle.style.setProperty("font-size", "11px", "important");
-  teaserTitle.style.setProperty("margin-bottom", "0", "important");
+  const teaserTitle = el("div", "bc text-xs font-semibold sprout-widget-teaser-title", `${titleCased} ${isFolder ? "Folder" : "Note"}`);
   teaser.appendChild(teaserTitle);
 
   const previewSession = view.buildSessionForActiveNote();
@@ -135,16 +111,11 @@ export function renderWidgetSummary(view: any, root: HTMLElement): void {
   const estTotalMs = queueCount * roundedAvgMs;
   const estMinutes = queueCount > 0 ? Math.max(1, Math.round(estTotalMs / 60_000)) : 0;
   const dueLabel = queueCount > 0 ? `${queueCount} Cards Due` : "No Cards Due";
-  const countsLine = el("div", "bc text-xs", `${dueLabel}  •  ${counts.total} Cards Total`);
-  countsLine.style.setProperty("color", "var(--foreground)", "important");
-  countsLine.style.setProperty("opacity", "0.7", "important");
-  countsLine.style.setProperty("margin-top", "10.5px", "important");
+  const countsLine = el("div", "bc text-xs sprout-widget-counts-line", `${dueLabel}  •  ${counts.total} Cards Total`);
   teaser.appendChild(countsLine);
 
   if (queueCount > 0) {
-    const timeLine = el("div", "bc text-xs", `Estimated Time: ${estMinutes} min`);
-    timeLine.style.setProperty("color", "var(--foreground)", "important");
-    timeLine.style.setProperty("opacity", "0.7", "important");
+    const timeLine = el("div", "bc text-xs sprout-widget-info-line", `Estimated Time: ${estMinutes} min`);
     teaser.appendChild(timeLine);
   } else {
     const practiceLine = el(
@@ -152,20 +123,14 @@ export function renderWidgetSummary(view: any, root: HTMLElement): void {
       "bc text-xs",
       "Would you like to start a practice session? This won't count towards card scheduling and you cannot bury cards or undo answers in this mode.",
     );
-    practiceLine.style.setProperty("color", "var(--foreground)", "important");
-    practiceLine.style.setProperty("opacity", "0.7", "important");
+    practiceLine.classList.add("sprout-widget-info-line");
     teaser.appendChild(practiceLine);
   }
 
   wrap.appendChild(teaser);
 
   // Footer: Study button
-  const footer = el("div", "bc px-4 py-3 flex gap-2");
-  footer.style.setProperty("border", "none", "important");
-  footer.style.setProperty("border-radius", "0", "important");
-  footer.style.setProperty("max-width", "90%", "important");
-  footer.style.setProperty("margin", "10px auto", "important");
-  footer.style.setProperty("padding", "0 0 15px 0", "important");
+  const footer = el("div", "bc px-4 py-3 flex gap-2 sprout-widget-summary-footer");
   const studyLabel = queueCount > 0 ? "Start Studying" : "Start A Practice Session";
   const studyBtn = makeTextButton({
     label: studyLabel,

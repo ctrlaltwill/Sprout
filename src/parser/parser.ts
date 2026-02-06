@@ -1,19 +1,22 @@
-// src/parser/parser.ts
-// Key principle: ^sprout-######### is the ONLY identifier.
-// Parser responsibilities:
-//  - Recognise cards by structure (Q/MCQ/CQ/IO + fields)
-//  - If a ^sprout-######### anchor is associated with the card's block, attach it as card.id
-//  - If no anchor is present, leave card.id = null (sync will assign + insert one)
+/**
+ * @file src/parser/parser.ts
+ * @summary Parses raw markdown text into structured flashcard representations. Recognises cards by their pipe-delimited structure (Q/MCQ/CQ/IO + fields), attaches existing ^sprout anchor IDs when present, and leaves card.id null for the sync engine to assign. Supports basic, cloze, MCQ, and image-occlusion card types with title, answer, extra-info, group, and option fields.
+ *
+ * @exports
+ *  - McqOption          — type describing a single MCQ option (text + isCorrect flag)
+ *  - ParsedCard         — type describing a card extracted from markdown (id, type, fields, raw text)
+ *  - parseCardsFromText — parses a markdown string into an array of ParsedCard objects
+ */
 
 const ANCHOR_RE = /^\^sprout-(\d{9})$/;
 
 // New (pipe) format
 const CARD_START_PIPE_RE = /^(Q|MCQ|CQ|IO)\s*\|\s*(.*)$/;
-const FIELD_PIPE_RE = /^(T|A|O|I|G)\s*\|\s*(.*)$/;
+const FIELD_PIPE_RE = /^(T|A|O|I|G|C)\s*\|\s*(.*)$/;
 const TITLE_OUTSIDE_PIPE_RE = /^T\s*\|\s*(.*)$/;
 
 // Any header marker (used to decide whether a line is a “continuation” in legacy mode)
-const ANY_HEADER_RE = /^(?:\^sprout-\d{9}|(?:Q|MCQ|CQ|IO|T|A|O|I|G)\s*\|)\s*/;
+const ANY_HEADER_RE = /^(?:\^sprout-\d{9}|(?:Q|MCQ|CQ|IO|T|A|O|I|G|C)\s*\|)\s*/;
 
 type CardType = "basic" | "mcq" | "cloze" | "io";
 
@@ -57,7 +60,7 @@ export type ParsedCard = {
 
   // IO: optional occlusions JSON + mask mode
   ioOcclusionsRaw: string | null; // raw JSON text from O | ... |
-  occlusions: any[] | null; // parsed array, if valid
+  occlusions: unknown[] | null; // parsed array, if valid
   maskMode: "solo" | "all" | null; // from C | solo/all |
 
   // shared
@@ -138,37 +141,6 @@ function unescapePipeText(s: string): string {
   return s.replace(/\\\\/g, "\\").replace(/\\\|/g, "|");
 }
 
-function splitUnescapedPipes(s: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let escape = false;
-
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-
-    if (escape) {
-      cur += ch;
-      escape = false;
-      continue;
-    }
-
-    if (ch === "\\") {
-      escape = true;
-      continue;
-    }
-
-    if (ch === "|") {
-      out.push(cur);
-      cur = "";
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  out.push(cur);
-  return out;
-}
 
 function normaliseGroupPathLocal(raw: string): string | null {
   let t = String(raw ?? "").trim();
@@ -202,107 +174,6 @@ function parseGroups(raw: string | null): string[] | null {
   const uniq = Array.from(new Set(parts));
   uniq.sort((a, b) => a.localeCompare(b));
   return uniq.length ? uniq : null;
-}
-
-function parseLegacyMcqOptionsLine(optionsRaw: string): {
-  options: McqOption[];
-  correctIndex: number;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  const raw = optionsRaw.replace(/\r?\n/g, " ").trim();
-
-  const parts = raw.includes("|")
-    ? splitUnescapedPipes(raw)
-        .map((x) => x.trim())
-        .filter(Boolean)
-    : raw
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
-
-  if (parts.length < 2) {
-    errors.push("MCQ requires at least 2 options in O: line (separate options with |).");
-  }
-
-  let correctIndex = -1;
-
-  const optionsText = parts.map((p, idx) => {
-    const m = p.match(/^\*\*(.+)\*\*$/);
-    if (m) {
-      if (correctIndex !== -1) errors.push("MCQ has more than one bold (correct) option.");
-      correctIndex = idx;
-      return m[1].trim();
-    }
-    return p;
-  });
-
-  if (correctIndex === -1) {
-    errors.push("MCQ requires exactly one correct option wrapped in ** **.");
-  }
-
-  const options: McqOption[] = optionsText.map((t, idx) => ({
-    text: t,
-    isCorrect: idx === correctIndex,
-  }));
-
-  if (correctIndex !== -1 && options.length >= 1) {
-    const wrongs = options.filter((o) => !o.isCorrect).length;
-    if (wrongs < 1) errors.push("MCQ requires at least one wrong option.");
-  }
-
-  return { options, correctIndex, errors };
-}
-
-function parseMarkedMcqOptions(rawMarked: string): {
-  options: McqOption[];
-  correctIndex: number;
-  errors: string[];
-} {
-  const errors: string[] = [];
-  const lines = rawMarked.split(/\r?\n/);
-
-  const out: McqOption[] = [];
-  let cur: McqOption | null = null;
-
-  const startNew = (kind: "W" | "C", text: string) => {
-    const t = String(text ?? "").trim();
-    const opt: McqOption = { text: t, isCorrect: kind === "C" };
-    out.push(opt);
-    cur = opt;
-  };
-
-  for (const ln of lines) {
-    const s = String(ln ?? "");
-    const m = s.match(/^\s*([WC])\s*:\s*(.*)$/);
-    if (m) {
-      const kind = (m[1] as "W" | "C") ?? "W";
-      startNew(kind, m[2] ?? "");
-    } else {
-      if (!cur) continue;
-      cur.text = (cur.text ? cur.text + "\n" : "") + s;
-    }
-  }
-
-  for (const o of out) o.text = String(o.text ?? "").trim();
-
-  const nonEmpty = out.filter((o) => o.text.length > 0);
-  if (nonEmpty.length !== out.length) errors.push("MCQ contains an empty option (O/A line).");
-
-  const options = nonEmpty;
-
-  if (options.length < 2) errors.push("MCQ requires at least 2 options (>=1 wrong, exactly 1 correct).");
-
-  const corrects = options.filter((o) => o.isCorrect).length;
-  const wrongs = options.filter((o) => !o.isCorrect).length;
-
-  if (corrects !== 1) errors.push("MCQ must have exactly one correct option (A | ... |).");
-  if (wrongs < 1) errors.push("MCQ must have at least one wrong option (O | ... |).");
-
-  const correctIndex = options.findIndex((o) => o.isCorrect);
-
-  return { options, correctIndex, errors };
 }
 
 function validateClozeText(text: string): string[] {
@@ -368,7 +239,7 @@ function makeEmptyCard(
   };
 }
 
-function tryParseJsonArray(raw: string): { arr: any[] | null; error: string | null } {
+function tryParseJsonArray(raw: string): { arr: unknown[] | null; error: string | null } {
   const t = String(raw ?? "").trim();
   if (!t) return { arr: null, error: null };
 
@@ -376,8 +247,8 @@ function tryParseJsonArray(raw: string): { arr: any[] | null; error: string | nu
     const v = JSON.parse(t);
     if (!Array.isArray(v)) return { arr: null, error: "IO occlusions must be a JSON array." };
     return { arr: v, error: null };
-  } catch (e: any) {
-    return { arr: null, error: `IO occlusions JSON is invalid (${String(e?.message || e)}).` };
+  } catch (e: unknown) {
+    return { arr: null, error: `IO occlusions JSON is invalid (${e instanceof Error ? e.message : String(e)}).` };
   }
 }
 
@@ -401,7 +272,7 @@ export function parseCardsFromText(
   let current: ParsedCard | null = null;
 
   let currentField: CurrentFieldKey | null = null;
-  let pipeField: CurrentFieldKey | null = null;
+  let pipeField: CurrentFieldKey | "mcqOption" | null = null;
 
 
   const flush = () => {
@@ -428,7 +299,7 @@ export function parseCardsFromText(
         "info",
       ] as const
     ).forEach((k) => {
-      if (current[k]) current[k] = normaliseMultiline(current[k] as string);
+      if (current && current[k]) current[k] = normaliseMultiline(current[k]);
     });
 
     if (!current.id && pendingId) {
@@ -473,7 +344,7 @@ export function parseCardsFromText(
     } else if (current.type === "cloze") {
       if (!current.clozeText) current.errors.push("Missing CQ:");
       if (current.clozeText) {
-        validateClozeText(current.clozeText).forEach((e) => current.errors.push(e));
+        validateClozeText(current.clozeText).forEach((e) => current!.errors.push(e));
       }
     } else if (current.type === "io") {
       const src = String(current.ioSrc ?? "").trim();
@@ -507,12 +378,6 @@ export function parseCardsFromText(
 
   const appendToField = (card: ParsedCard, key: CurrentFieldKey, chunk: string) => {
     card[key] = (card[key] ? card[key] + "\n" : "") + chunk;
-  };
-
-  const appendMarkedMcqLine = (card: ParsedCard, kind: "W" | "C", chunk: string) => {
-    const t = String(chunk ?? "").trimEnd();
-    const line = `${kind}: ${t}`;
-    card.mcqMarkedRaw = (card.mcqMarkedRaw ? card.mcqMarkedRaw + "\n" : "") + line;
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -660,7 +525,7 @@ export function parseCardsFromText(
     // 9) Field inside card (pipe)
     const fp = current ? line.match(FIELD_PIPE_RE) : null;
     if (fp && current) {
-      const key = fp[1] as "T" | "A" | "O" | "I" | "G" | "L";
+      const key = fp[1] as "T" | "A" | "O" | "I" | "G" | "C" | "L";
       const restRaw = fp[2] ?? "";
       const { text: rawText, closed } = stripClosingPipe(restRaw);
       const chunk = unescapePipeText(rawText);
@@ -782,7 +647,8 @@ export function parseCardsFromText(
 
     // 10) Legacy continuation lines
     if (current && currentField && !ANY_HEADER_RE.test(line)) {
-      current[currentField] = (current[currentField] ? current[currentField] + "\n" : "") + line;
+      const prev = current[currentField];
+      (current as Record<string, unknown>)[currentField] = (prev ? String(prev) + "\n" : "") + line;
       continue;
     }
 

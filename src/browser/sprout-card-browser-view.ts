@@ -1,26 +1,22 @@
 /**
- * browser/SproutCardBrowserView.ts
- * ─────────────────────────────────
- * The Flashcard Browser view — a spreadsheet-style table for searching,
- * filtering, editing, and bulk-managing all cards in the vault.
+ * @file src/browser/sprout-card-browser-view.ts
+ * @summary The Flashcard Browser view — an Obsidian ItemView providing a
+ * spreadsheet-style table for searching, filtering, inline-editing, and
+ * bulk-managing all flashcards in the vault. Orchestrates lifecycle, selection
+ * management, sort state, pagination, column visibility, and delegates heavy
+ * rendering to sibling modules (browser-card-data, browser-row-renderer,
+ * browser-toolbar, browser-dropdowns, browser-pagination, browser-resize,
+ * browser-bulk-edit-modal, browser-helpers).
  *
- * Heavy rendering, data logic, and toolbar construction have been
- * extracted into sibling modules:
- *   • browser-card-data.ts    – filtering, sorting, field read/write
- *   • browser-row-renderer.ts – <tbody> row/cell construction
- *   • browser-toolbar.ts      – toolbar, table header, bottom controls
- *   • browser-dropdowns.ts    – filter dropdown factories
- *   • browser-pagination.ts   – page buttons
- *   • browser-resize.ts       – column drag-resize handles
- *   • browser-bulk-edit-modal.ts – bulk-edit overlay
- *   • browser-helpers.ts      – types, constants, DOM helpers
+ * @exports
+ *   - SproutCardBrowserView — ItemView subclass that renders and manages the Flashcard Browser
  */
 
 // src/browser.ts
 import { ItemView, Notice, TFile, type WorkspaceLeaf, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import { BRAND, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../core/constants";
-import type { CardRecord, CardState } from "../core/store";
+import type { CardRecord } from "../core/store";
 import { syncOneFile } from "../sync/sync-engine";
 import { unsuspendCard, suspendCard } from "../scheduler/scheduler";
 import { ImageOcclusionCreatorModal } from "../modals/image-occlusion-creator-modal";
@@ -40,7 +36,7 @@ import {
   readCardField,
   validateCardBeforeWrite,
 } from "./browser-card-data";
-import type { BrowserRow } from "./browser-card-data";
+
 import {
   buildPageTableBody,
   renderEmptyState,
@@ -99,7 +95,6 @@ export class SproutCardBrowserView extends ItemView {
   private _headerEls: Partial<Record<SortKey, HTMLTableCellElement>> = {};
   private _headerSortIcons: Partial<Record<SortKey, SVGSVGElement>> = {};
   private _colEls: Partial<Record<ColKey, HTMLTableColElement>> = {};
-  private _colCount = 10;
   private _allCols: ColKey[] = ["id", "type", "stage", "due", "title", "question", "answer", "info", "location", "groups"];
   private _visibleCols = new Set<ColKey>(this._allCols);
 
@@ -117,7 +112,6 @@ export class SproutCardBrowserView extends ItemView {
   private _clearSelectionEl: HTMLElement | null = null;
   private _clearSelectionPlaceholderEl: HTMLElement | null = null;
   private _searchInputEl: HTMLInputElement | null = null;
-  private _unsuspending = new Set<string>();
   private _resetFiltersButton: HTMLButtonElement | null = null;
   private _filtersDirty = false;
   private _typeFilterMenu: DropdownMenuController<TypeFilter> | null = null;
@@ -126,13 +120,9 @@ export class SproutCardBrowserView extends ItemView {
 
   private _pagerHostEl: HTMLElement | null = null;
   private _tableWrapEl: HTMLElement | null = null;
-  private _lastScrollLeft = 0;
-  private _lastScrollTop = 0;
   private _emptyStateCleanup: (() => void) | null = null;
 
   private _rootEl: HTMLElement | null = null;
-  private _shouldShowAos = true;
-
   // ✅ shared view header renderer
   private _header: SproutHeader | null = null;
 
@@ -158,7 +148,6 @@ export class SproutCardBrowserView extends ItemView {
 
   onRefresh() {
     if (this._tableBody) {
-      this._captureScrollPosition();
       this.refreshTable();
       return;
     }
@@ -323,14 +312,6 @@ export class SproutCardBrowserView extends ItemView {
     if (refreshTable) this.refreshTable();
   }
 
-  // ── Scroll capture ──────────────────────────────────────
-
-  private _captureScrollPosition() {
-    if (!this._tableWrapEl) return;
-    this._lastScrollLeft = this._tableWrapEl.scrollLeft;
-    this._lastScrollTop = this._tableWrapEl.scrollTop;
-  }
-
   // ── Column visibility ───────────────────────────────────
 
   private _applyColumnVisibility() {
@@ -388,7 +369,6 @@ export class SproutCardBrowserView extends ItemView {
   }
 
   private async writeCardToMarkdown(card: CardRecord) {
-    this._captureScrollPosition();
     const file = this.app.vault.getAbstractFileByPath(card.sourceNotePath);
     if (!(file instanceof TFile)) throw new Error(`Source note not found: ${card.sourceNotePath}`);
 
@@ -434,8 +414,8 @@ export class SproutCardBrowserView extends ItemView {
       ImageOcclusionCreatorModal.openForParent(this.plugin, parentId, {
         onClose: () => { this.onRefresh(); },
       });
-    } catch (e: any) {
-      new Notice(`${BRAND}: Failed to open IO editor (${String(e?.message || e)})`);
+    } catch (e: unknown) {
+      new Notice(`${BRAND}: Failed to open IO editor (${e instanceof Error ? e.message : String(e)})`);
     }
   }
 
@@ -486,8 +466,8 @@ export class SproutCardBrowserView extends ItemView {
       await this.plugin.store.persist();
       new Notice(`${mode === "unsuspend" ? "Unsuspended" : "Suspended"} ${count} card${count === 1 ? "" : "s"}`);
       this.refreshTable();
-    } catch (err: any) {
-      new Notice(`${BRAND}: ${err?.message || String(err)}`);
+    } catch (err: unknown) {
+      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -598,11 +578,6 @@ export class SproutCardBrowserView extends ItemView {
   render() {
     this._disposeUiPopovers();
 
-    if (this._tableWrapEl) {
-      this._lastScrollLeft = this._tableWrapEl.scrollLeft;
-      this._lastScrollTop = this._tableWrapEl.scrollTop;
-    }
-
     const root = this.contentEl;
     root.empty();
     this._rootEl = root;
@@ -621,7 +596,6 @@ export class SproutCardBrowserView extends ItemView {
         view: this,
         plugin: this.plugin,
         onToggleWide: () => this._applyWidthMode(),
-        beforeSync: () => this._captureScrollPosition(),
       });
     }
     this._header.install("flashcards");
@@ -697,7 +671,6 @@ export class SproutCardBrowserView extends ItemView {
     });
 
     // Reset column tracking
-    this._colCount = this._allCols.length;
     for (const c of this._allCols) this._visibleCols.add(c);
     for (const c of Array.from(this._visibleCols)) {
       if (!this._allCols.includes(c)) this._visibleCols.delete(c);
@@ -713,6 +686,5 @@ export class SproutCardBrowserView extends ItemView {
     if (animationsEnabled) {
       window.requestAnimationFrame(() => { refreshAOS(); });
     }
-    this._shouldShowAos = false;
   }
 }

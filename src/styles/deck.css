@@ -1,0 +1,124 @@
+/* ============================================================================
+   DECK — Disclosure chevrons, group-select popover, search, expand icons.
+   ========================================================================== */
+
+/* ---- Disclosure chevrons ---- */
+
+.sprout .sprout-deck-disclosure {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+
+  width: 20px;
+  height: 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.sprout .sprout-deck-disclosure:hover {
+  color: var(--text-normal);
+}
+
+.sprout .sprout-deck-disclosure:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.45);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sprout .sprout-deck-disclosure svg {
+  width: 12.8px;
+  height: 12.8px;
+  transition: transform 140ms ease;
+  transform-origin: 50% 50%;
+}
+
+/* No rotation for plus/minus disclosure */
+.sprout .sprout-deck-disclosure[data-open="true"] svg {
+  transform: none;
+}
+
+/* ---- Group select popover ---- */
+
+.sprout .sprout-group-select-popover {
+  z-index: 10000;
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+  pointer-events: auto;
+}
+
+.sprout .sprout-group-select-header {
+  padding: 8px 10px;
+  background: var(--background) !important;
+  pointer-events: auto;
+}
+
+.sprout .sprout-group-search-input {
+  width: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  outline: none;
+  box-shadow: none;
+  pointer-events: auto;
+}
+
+.sprout .sprout-group-search-input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.25);
+}
+
+.sprout .sprout-deck-expand-icon svg {
+  width: 12.8px;
+  height: 12.8px;
+}
+
+/* Deck Browser: scale down plus/minus icons by 20% */
+.sprout .sprout-deck-expand-icon svg,
+.sprout .sprout-deck-disclosure svg {
+  width: 12.8px !important;
+  height: 12.8px !important;
+}
+
+.sprout .sprout-deck-control-icon svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Group select popover: clip inner borders to rounded corners */
+.sprout .sprout-group-select-popover {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Ensure group select popover is never transparent */
+.sprout-group-select-popover {
+  background: var(--background, #fff) !important;
+  background-color: var(--background, #fff) !important;
+}
+
+/* ---- RenderDeck table padding + rounded row edges on hover ---- */
+
+.sprout .sprout-deck-table-wrap {
+  padding: 8px !important;
+}
+
+.sprout .sprout-deck-table tbody tr:hover td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.sprout .sprout-deck-table tbody tr:hover td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}

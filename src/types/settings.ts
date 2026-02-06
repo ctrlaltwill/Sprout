@@ -1,9 +1,13 @@
-// src/types/settings.ts
-// ---------------------------------------------------------------------------
-// Plugin settings type — the shape of user-configurable preferences.
-// The DEFAULT_SETTINGS object lives in defaultSettings.ts; only the
-// *type* is defined here so it can be imported without pulling in values.
-// ---------------------------------------------------------------------------
+/**
+ * @file src/types/settings.ts
+ * @summary Plugin settings type definition. Describes the full shape of user-configurable
+ * preferences grouped by feature area (reviewer, widget, scheduler, indexing,
+ * imageOcclusion, cardAttachments, home, appearance). Only the type is defined here;
+ * the DEFAULT_SETTINGS constant lives in src/core/default-settings.ts.
+ *
+ * @exports
+ *   - SproutSettings — type describing the complete plugin settings structure
+ */
 
 /**
  * Full settings structure for the Sprout plugin.

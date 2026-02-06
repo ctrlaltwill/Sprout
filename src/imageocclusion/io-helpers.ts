@@ -1,12 +1,19 @@
 /**
- * imageocclusion/io-helpers.ts
- * ---------------------------------------------------------------------------
- * Shared utility functions for all Image Occlusion code.
+ * @file src/imageocclusion/io-helpers.ts
+ * @summary Shared utility functions for all Image Occlusion code. Provides vault-path normalisation, embed-syntax stripping, image file resolution via the metadata cache, MIME type mapping, DOM helper utilities, unique ID generation, anchor ID collection from note text, new card ID reservation, and the IO markdown block builder.
  *
- * Owns vault-path helpers, image-resolution, IO-specific ID reservation,
- * and the IO markdown builder.  General-purpose modal utilities remain in
- * `modals/modal-utils.ts`.
- * ---------------------------------------------------------------------------
+ * @exports
+ *   - normaliseVaultPath — normalises a vault-relative path (forward slashes, no leading slash)
+ *   - stripEmbedSyntax — strips ![[…]] embed syntax and optional |size suffix from a string
+ *   - resolveImageFile — resolves an IO image reference to a vault TFile
+ *   - mimeFromExt — maps a file extension to its MIME type
+ *   - isEditableTarget — checks if a DOM element is an editable form control
+ *   - emptyEl — empties an HTML element using Obsidian's .empty() or innerHTML
+ *   - uid — generates a unique ID with an optional prefix
+ *   - collectAnchorIdsFromText — collects all ^sprout-NNNNNNNNN anchor IDs from text
+ *   - reserveNewBcId — generates a new unique Sprout card ID avoiding collisions
+ *   - buildIoMarkdownWithAnchor — builds the markdown block lines for an IO card
+ *   - IoEditorOpenOpts — type for options accepted by the IO editor modal
  */
 
 import { type App, TFile } from "obsidian";
@@ -81,7 +88,7 @@ export function isEditableTarget(el: EventTarget | null): boolean {
 
 /** Empty an element using Obsidian's `.empty()` or `innerHTML`. */
 export function emptyEl(el: HTMLElement) {
-  if (typeof (el as HTMLElement & { empty?: () => void }).empty === "function") (el as HTMLElement & { empty?: () => void }).empty!();
+  if (typeof (el as HTMLElement & { empty?: () => void }).empty === "function") (el as HTMLElement & { empty?: () => void }).empty();
   else el.innerHTML = "";
 }
 

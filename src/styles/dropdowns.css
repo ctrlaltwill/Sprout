@@ -1,0 +1,232 @@
+/* ============================================================================
+   DROPDOWNS — Floating popover containers, menu items, filter panels,
+   combobox / search popover, Basecoat accent tokens.
+   ========================================================================== */
+
+/* ---- Basecoat accent tokens passthrough ---- */
+
+/* Boot Camp: force Basecoat accent tokens on all Basecoat-scoped nodes */
+:where(.bc) {
+  --color-accent: var(--accent) !important;
+  --color-accent-foreground: var(--accent-foreground) !important;
+}
+
+/* Obsidian dark mode class */
+:where(.theme-dark .bc) {
+  --color-accent: var(--accent) !important;
+  --color-accent-foreground: var(--accent-foreground) !important;
+}
+
+/* ---- Dropdown menu basics ---- */
+
+.dropdown-menu hr {margin: 0; border-radius: 6px;
+    overflow: hidden;}
+
+.sprout .dropdown-menu {
+  background-color: var(--background) !important;}
+
+/* ---- Dropdown menu hover/focus: light + dark ---- */
+
+.sprout.dropdown-menu .bg-popover {
+  background-color: #fff;
+  color: var(--popover-fg, var(--foreground));
+  border-radius: 6px;
+}
+
+/* Menu item hover/focus: light theme - very light grey */
+.sprout.dropdown-menu .group:hover,
+.sprout.dropdown-menu .group:focus {
+  background-color: #f3f3f3;
+  color: var(--accent-foreground, #111);
+}
+
+/* Menu item hover/focus: dark theme */
+.theme-dark .sprout.dropdown-menu .group:hover,
+.theme-dark .sprout.dropdown-menu .group:focus {
+  background-color: #23272e;
+  color: var(--accent-foreground, #fff);
+}
+
+/* Dark theme popover background */
+.theme-dark .sprout.dropdown-menu .bg-popover {
+  background-color: var(--popover-bg, var(--background));
+}
+
+/* ---- Unified Basecoat dropdowns + filter panels ---- */
+
+/* Floating popover containers */
+:where(
+  .dropdown-menu > .min-w-56,
+  .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1
+) {
+  background-color: var(--bg-popover, var(--color-popover, var(--color-background))) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color, var(--border-border, var(--border))) !important;
+  padding: 6px !important;
+}
+
+/* Menu items: role=menuitem + role=menuitemradio */
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group {
+  color: var(--text-color) !important;
+  margin: 1px 0 !important;
+  outline: none !important;
+}
+
+/* Hover / focus / active */
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:hover,
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:active,
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:focus,
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:focus-visible {
+  background-color: var(--color-background) !important;
+  color: var(--text-color) !important;
+}
+
+/* Selected / current states */
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  [role="menuitemradio"].group[aria-checked="true"],
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  [role="menuitem"].group[aria-current="true"],
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  [role="menuitem"].group[aria-selected="true"] {
+  background-color: var(--color-background) !important;
+  color: var(--text-color) !important;
+}
+
+/* Radio dot matches text color */
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  [role="menuitemradio"].group .bg-foreground {
+  background-color: currentColor !important;
+}
+
+/* Icons inside menu items: override muted + inherit color */
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group > span[aria-hidden="true"] {
+  color: currentColor !important;
+  opacity: 0.9;
+}
+
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:hover > span[aria-hidden="true"],
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:focus > span[aria-hidden="true"],
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:focus-visible > span[aria-hidden="true"] {
+  opacity: 1;
+}
+
+/* Ensure SVG strokes inherit everywhere */
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  svg {
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+/* Collapsible section headers in the filter panel (role=button) */
+:where(.bc.p-1, .p-1) [role="button"] {
+  color: var(--text-color) !important;
+  margin: 1px 0 !important;
+  border-radius: 6px;
+}
+
+:where(.bc.p-1, .p-1) [role="button"]:hover,
+:where(.bc.p-1, .p-1) [role="button"]:active,
+:where(.bc.p-1, .p-1) [role="button"]:focus,
+:where(.bc.p-1, .p-1) [role="button"]:focus-visible {
+  background-color: var(--color-background) !important;
+  color: var(--text-color) !important;
+  outline: none !important;
+}
+
+/* Decks / Groups subtitles (non-clickable headings) */
+:where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.px-2.py-1 {
+  color: var(--text-color) !important;
+}
+
+/* ---- Popover scaffold ---- */
+/* Replaces inline: position:fixed; z-index:999999; display:none;
+   pointer-events:auto across 10+ files */
+
+.sprout .sprout-popover-overlay {
+  position: fixed !important;
+  z-index: 999999 !important;
+  display: none !important;
+  pointer-events: auto !important;
+  left: var(--sprout-popover-left, auto);
+  top: var(--sprout-popover-top, auto);
+  width: var(--sprout-popover-width, auto);
+}
+
+.sprout .sprout-popover-overlay.is-open {
+  display: block !important;
+}
+
+/* ---- Chart filter popover panel ---- */
+/* Replaces inline: position:absolute; top:calc(100%+6px); z-index:1000;
+   min-width:250px across 7 analytics files */
+
+.sprout .sprout-chart-filter-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 1000;
+  min-width: 250px;
+}
+
+/* "Reset filters" (clickable text row) */
+:where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
+  color: var(--text-color) !important;
+  border-radius: 6px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+:where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:hover,
+:where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:focus,
+:where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:focus-visible {
+  background-color: var(--color-background) !important;
+  outline: none !important;
+}
+
+/* ---- Combobox / search popover ---- */
+
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground):not(.p-1) {
+  background-color: var(--background) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color, var(--border-border, var(--border))) !important;
+}
+
+/* Options in the listbox */
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  [role="option"].group {
+  color: var(--text-color) !important;
+  margin: 1px 0 !important;
+  outline: none !important;
+}
+
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  [role="option"].group:hover,
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  [role="option"].group:active,
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  [role="option"].group:focus,
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  [role="option"].group:focus-visible {
+  background-color: var(--color-background) !important;
+  color: var(--text-color) !important;
+}
+
+/* If option text uses text-muted-foreground, force it to match */
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  [role="option"] .text-muted-foreground {
+  color: var(--text-color) !important;
+}
+
+/* Combobox header icon inherits text color */
+:where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+  .text-muted-foreground svg {
+  stroke: currentColor !important;
+}

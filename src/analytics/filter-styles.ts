@@ -1,3 +1,16 @@
+/**
+ * @file src/analytics/filter-styles.ts
+ * @summary Shared CSS-in-JS style objects and a React hook used by analytics chart
+ * components. Provides truncation styles for filter labels and a hook that manages
+ * z-index elevation on popover open/close so chart filter dropdowns render above
+ * sibling cards in the analytics grid.
+ *
+ * @exports
+ *   - endTruncateStyle — CSSProperties object for end-truncated (RTL ellipsis) text
+ *   - startTruncateStyle — CSSProperties object for start-truncated (RTL) text
+ *   - useAnalyticsPopoverZIndex — React hook that toggles a data attribute on ancestor cards/grids when a popover is open
+ */
+
 import * as React from "react";
 import type { CSSProperties } from "react";
 

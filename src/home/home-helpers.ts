@@ -1,10 +1,15 @@
 /**
- * home/home-helpers.ts
- * ────────────────────
- * Pure helper functions and constants used by the Sprout Home view.
+ * @file src/home/home-helpers.ts
+ * @summary Pure helper functions and constants used by the Sprout Home view. All functions are side-effect-free with no Obsidian dependencies, covering date/time formatting, scope construction from deck paths, and deck-label formatting for the dashboard UI.
  *
- * These are all side-effect-free and have no Obsidian dependencies,
- * so they can be tested in isolation.
+ * @exports
+ *  - MS_DAY                    — re-exported constant for milliseconds in one day
+ *  - localDayIndex             — returns a zero-based day index anchored to local midnight
+ *  - formatTimeAgo             — formats a timestamp as a human-readable "time ago" string
+ *  - formatCountdownToMidnight — formats the remaining time until local midnight
+ *  - scopeFromDeckPath         — constructs a Scope object from a deck path string
+ *  - formatDeckLabel           — formats a deck path into a short display label
+ *  - formatPinnedDeckLabel     — formats a pinned deck path into a display label with folder context
  */
 
 import type { Scope } from "../reviewer/types";

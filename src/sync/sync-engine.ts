@@ -1,21 +1,11 @@
 /**
- * src/sync/sync-engine.ts
- * ───────────────────────
- * Core sync engine for Sprout flashcards.
+ * @file src/sync/sync-engine.ts
+ * @summary Core sync engine for Sprout flashcards. Synchronises parsed card data from markdown files with the in-memory store and data.json on disk. Handles markdown prefix stripping, scheduling-state safety, recovery from lost scheduling data, card-signature diffing, anchor ID insertion and orphan removal, IO/cloze child management, and MCQ option conversion.
  *
- * Provides:
- *  - formatSyncNotice   – human-readable summary of sync results
- *  - syncOneFile         – syncs a single markdown file with the DB
- *  - syncQuestionBank    – full vault-wide sync (all markdown files)
- *
- * Internal helpers cover:
- *  - Markdown prefix stripping (list / blockquote / indent)
- *  - Scheduling state safety (create-only wrappers)
- *  - Recovery from lost scheduling data (disk snapshots)
- *  - Card signature diffing (detect content changes)
- *  - Anchor ID insertion / orphan removal
- *  - IO / Cloze child management + orphan cleanup
- *  - MCQ option conversion (parser → store legacy fields)
+ * @exports
+ *  - formatSyncNotice  — formats a human-readable notice string summarising sync results
+ *  - syncOneFile       — syncs a single markdown file's cards with the question bank
+ *  - syncQuestionBank  — runs a full vault-wide sync across all markdown files
  */
 
 import { TFile } from "obsidian";
@@ -23,6 +13,7 @@ import { parseCardsFromText, type ParsedCard } from "../parser/parser";
 import { generateUniqueId } from "../core/ids";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../types/card";
+import type { CardState } from "../types/scheduler";
 import { loadSchedulingFromDataJson } from "../core/store";
 import { log } from "../core/logger";
 
@@ -57,7 +48,7 @@ type SyncNoticeOptions = {
 };
 
 /** Scheduling state keyed by card ID. */
-type StateMap = Record<string, any>;
+type StateMap = Record<string, unknown>;
 
 /** A pending text edit to be applied to a note's line array. */
 type TextEdit = {
@@ -168,7 +159,7 @@ function upsertStateIfPresent(plugin: SproutPlugin, snapshot: StateMap | null | 
   if (!snapshot) return false;
   const st = snapshot[id];
   if (!st || typeof st !== "object") return false;
-  plugin.store.upsertState({ ...st, id });
+  plugin.store.upsertState({ ...(st as Record<string, unknown>), id } as CardState);
   return true;
 }
 
@@ -242,36 +233,6 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
 }
 
 /**
- * Takes a timestamped backup of the current data.json on disk.
- *
- * NOTE: Sync no longer calls this automatically. Backups are managed
- * from Settings → Backups.
- */
-async function backupCurrentPluginDataJson(plugin: SproutPlugin): Promise<void> {
-  const adapter = plugin.app?.vault?.adapter;
-  const pluginId: string | null = String(plugin.manifest?.id ?? "").trim() || null;
-  if (!adapter || !pluginId) return;
-
-  const dataPath = joinPath(".obsidian/plugins", pluginId, "data.json");
-  try {
-    if (typeof adapter.exists !== "function" || typeof adapter.read !== "function" || typeof adapter.write !== "function") return;
-    const exists = await adapter.exists(dataPath);
-    if (!exists) return;
-
-    const text = await adapter.read(dataPath);
-    if (!text || !String(text).trim()) return;
-
-    if (String(text).trim() === "{}") return;
-
-    const ts = new Date().toISOString().replace(/[:.]/g, "-");
-    const backupPath = joinPath(".obsidian/plugins", pluginId, `data.json.bak-${ts}`);
-    await adapter.write(backupPath, String(text));
-  } catch {
-    // ignore
-  }
-}
-
-/**
  * Decides if the current run should use "recovery mode":
  * store has zero scheduling, but parsed cards exist in markdown.
  */
@@ -290,10 +251,10 @@ function isLikelyRecoveryScenario(plugin: SproutPlugin, parsedCardCount: number)
  * Produces a deterministic JSON string representing a card's content.
  * Used to detect whether a card's content has changed since last sync.
  */
-function cardSignature(rec: any): string {
+function cardSignature(rec: CardRecord | null): string {
   if (!rec) return "";
 
-  const base: any = {
+  const base: Record<string, unknown> = {
     type: rec.type,
     title: rec.title || "",
     info: rec.info || "",
@@ -312,9 +273,10 @@ function cardSignature(rec: any): string {
     base.clozeText = rec.clozeText || "";
     base.clozeChildren = Array.isArray(rec.clozeChildren) ? rec.clozeChildren : [];
   } else if (rec.type === "io") {
+    const legacy = rec as unknown as Record<string, unknown>;
     base.imageRef = rec.imageRef ?? rec.ioSrc ?? rec.src ?? "";
-    base.occlusions = rec.occlusions ?? rec.rects ?? rec.masks ?? [];
-    base.maskMode = rec.maskMode ?? rec.mode ?? null;
+    base.occlusions = (legacy.occlusions ?? legacy.rects ?? legacy.masks ?? []) as string[];
+    base.maskMode = rec.maskMode ?? (legacy.mode as typeof rec.maskMode) ?? null;
   } else if (rec.type === "io-child") {
     base.parentId = rec.parentId || "";
     base.groupKey = rec.groupKey || "";
@@ -348,7 +310,8 @@ function purgeDeprecatedTypes(plugin: SproutPlugin) {
   }
   const quarantine = plugin.store.data.quarantine || {};
   for (const [id, rec] of Object.entries(quarantine)) {
-    const t = String((rec as Record<string, unknown>)?.type ?? "").toLowerCase();
+    const rawType = (rec as Record<string, unknown>)?.type;
+    const t = (typeof rawType === "string" ? rawType : "").toLowerCase();
     if (t === "lq" || t === "fq") delete quarantine[id];
   }
 }
@@ -513,8 +476,11 @@ function deleteIoChildren(plugin: SproutPlugin, parentId: string): number {
   for (const id of Object.keys(plugin.store.data.quarantine || {})) {
     const q = plugin.store.data.quarantine[id];
     if (!q) continue;
-    if (String((q as Record<string, unknown>).type || "") !== "io-child") continue;
-    if (String((q as Record<string, unknown>).parentId || "") !== String(parentId || "")) continue;
+    const qRec = q as Record<string, unknown>;
+    const qType = typeof qRec.type === "string" ? qRec.type : "";
+    const qParentId = typeof qRec.parentId === "string" ? qRec.parentId : "";
+    if (qType !== "io-child") continue;
+    if (qParentId !== String(parentId || "")) continue;
 
     delete plugin.store.data.quarantine[id];
     if (plugin.store.data.states) delete (plugin.store.data.states)[id];
@@ -591,8 +557,11 @@ function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number {
   for (const id of Object.keys(plugin.store.data.quarantine || {})) {
     const q = plugin.store.data.quarantine[id];
     if (!q) continue;
-    if (String((q as Record<string, unknown>).type || "") !== "cloze-child") continue;
-    if (String((q as Record<string, unknown>).parentId || "") !== String(parentId || "")) continue;
+    const qRec = q as Record<string, unknown>;
+    const qType = typeof qRec.type === "string" ? qRec.type : "";
+    const qParentId = typeof qRec.parentId === "string" ? qRec.parentId : "";
+    if (qType !== "cloze-child") continue;
+    if (qParentId !== String(parentId || "")) continue;
 
     delete plugin.store.data.quarantine[id];
     if (plugin.store.data.states) delete (plugin.store.data.states)[id];
@@ -820,7 +789,7 @@ function normalizeIoImageRef(raw: string | null | undefined): string | null {
 
 /** Extracts IO-specific fields from a parsed card. */
 function ioFieldsFromParsed(c: ParsedCard): { imageRef: string | null; occlusions: unknown[] | null; maskMode: "solo" | "all" | null } {
-  const legacy: any = c;
+  const legacy = c as unknown as Record<string, unknown>;
   const rawImageRef =
     typeof legacy?.imageRef === "string"
       ? legacy.imageRef

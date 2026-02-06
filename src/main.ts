@@ -1,5 +1,15 @@
-// src/main.ts
-// Basecoat CSS + JS bundle (registers components and exposes window.basecoat)
+/**
+ * @file src/main.ts
+ * @summary Entry point for the Sprout Obsidian plugin. Extends the Obsidian Plugin class
+ * to register views (Reviewer, Widget, Browser, Analytics, Home), commands, ribbon icons,
+ * editor context-menu items, settings, and the Basecoat UI runtime. Handles plugin lifecycle
+ * (load/unload), settings normalisation, data persistence, sync orchestration, GitHub star
+ * fetching, and scheduling/analytics reset utilities.
+ *
+ * @exports
+ *   - SproutPlugin (default) — main plugin class extending Obsidian's Plugin
+ */
+
 import "basecoat-css/all";
 
 import {
@@ -7,6 +17,7 @@ import {
   Notice,
   TFile,
   type ItemView,
+  type MenuItem,
   MarkdownView,
   type Menu,
   type WorkspaceLeaf,
@@ -26,7 +37,8 @@ import {
 } from "./core/constants";
 
 import { log } from "./core/logger";
-import { registerReadingViewPrettyCards } from "./reading/reading-view";
+import { registerReadingViewPrettyCards, teardownReadingView } from "./reading/reading-view";
+import { removeAosErrorHandler } from "./core/aos-loader";
 
 import { JsonStore } from "./core/store";
 import { SproutReviewerView } from "./reviewer/review-view";
@@ -45,7 +57,7 @@ function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function cleanPositiveNumberArray(v: any, fallback: number[]): number[] {
+function cleanPositiveNumberArray(v: unknown, fallback: number[]): number[] {
   const arr = Array.isArray(v) ? v : [];
   const out = arr.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
   return out.length ? out : fallback;
@@ -75,9 +87,12 @@ function getBasecoatApi(): BasecoatApi | null {
 export default class SproutPlugin extends Plugin {
   settings!: SproutSettings;
   store!: JsonStore;
-  _bc: any;
+  _bc: unknown;
 
   private _basecoatStarted = false;
+
+  // Save mutex to prevent concurrent read-modify-write races
+  private _saving: Promise<void> | null = null;
 
   // Shared wide mode state across all views
   isWideMode = false;
@@ -304,11 +319,23 @@ export default class SproutPlugin extends Plugin {
   }
 
   onunload() {
-    try {
-      void this.saveAll();
-    } catch (e) { log.swallow("save all on unload", e); }
+    // Best-effort save: await pending save, then fire one last save.
+    // Obsidian calls onunload synchronously so we can't truly await,
+    // but we kick it off so the microtask completes before the process exits.
+    const pending = this._saving ?? Promise.resolve();
+    void pending
+      .then(() => this._doSave())
+      .catch((e) => log.swallow("save all on unload", e));
+
+    this._bc = null;
     this._destroyRibbonIcons();
     document.body.classList.remove("sprout-hide-status-bar");
+
+    // Tear down reading-view observers + window listeners
+    teardownReadingView();
+
+    // Remove global AOS error suppression handler
+    removeAosErrorHandler();
 
     // ✅ stop Basecoat observer on unload (helps plugin reload / dev)
     this._stopBasecoatRuntime();
@@ -357,7 +384,7 @@ export default class SproutPlugin extends Plugin {
 
   private _registerEditorContextMenu() {
     this.registerEvent(
-      this.app.workspace.on("editor-menu", (menu: Menu, _editor: any, view: any) => {
+      this.app.workspace.on("editor-menu", (menu: Menu, _editor, view) => {
         if (!(view instanceof MarkdownView)) return;
 
         const mode = view.getMode();
@@ -374,16 +401,16 @@ export default class SproutPlugin extends Plugin {
           // Create submenu
           const submenu = item.setSubmenu?.();
           if (submenu) {
-            submenu.addItem((subItem: any) => {
+            submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Basic").setIcon("file-text").onClick(() => this.openAddFlashcardModal("basic"));
             });
-            submenu.addItem((subItem: any) => {
+            submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Cloze").setIcon("file-minus").onClick(() => this.openAddFlashcardModal("cloze"));
             });
-            submenu.addItem((subItem: any) => {
+            submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Multiple Choice").setIcon("list").onClick(() => this.openAddFlashcardModal("mcq"));
             });
-            submenu.addItem((subItem: any) => {
+            submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Image Occlusion").setIcon("image").onClick(() => this.openAddFlashcardModal("io"));
             });
           }
@@ -455,7 +482,14 @@ export default class SproutPlugin extends Plugin {
   }
 
   async saveAll() {
-    const root: any = (await this.loadData()) || {};
+    // Queue through mutex to prevent concurrent read-modify-write races
+    while (this._saving) await this._saving;
+    this._saving = this._doSave();
+    try { await this._saving; } finally { this._saving = null; }
+  }
+
+  private async _doSave() {
+    const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
     root.settings = this.settings;
     root.store = this.store.data;
     await this.saveData(root);
@@ -518,29 +552,30 @@ export default class SproutPlugin extends Plugin {
     return this.resetSettingsToDefaults();
   }
 
-  private _isCardStateLike(v: any): v is CardState {
+  private _isCardStateLike(v: unknown): v is CardState {
     if (!v || typeof v !== "object") return false;
+    const o = v as Record<string, unknown>;
 
     const stageOk =
-      v.stage === "new" ||
-      v.stage === "learning" ||
-      v.stage === "review" ||
-      v.stage === "relearning" ||
-      v.stage === "suspended";
+      o.stage === "new" ||
+      o.stage === "learning" ||
+      o.stage === "review" ||
+      o.stage === "relearning" ||
+      o.stage === "suspended";
 
     if (!stageOk) return false;
 
     const numsOk =
-      typeof v.due === "number" &&
-      typeof v.scheduledDays === "number" &&
-      typeof v.reps === "number" &&
-      typeof v.lapses === "number" &&
-      typeof v.learningStepIndex === "number";
+      typeof o.due === "number" &&
+      typeof o.scheduledDays === "number" &&
+      typeof o.reps === "number" &&
+      typeof o.lapses === "number" &&
+      typeof o.learningStepIndex === "number";
 
     return numsOk;
   }
 
-  private _resetCardStateMapInPlace(map: Record<string, any>, now: number): number {
+  private _resetCardStateMapInPlace(map: Record<string, unknown>, now: number): number {
     let count = 0;
 
     for (const [id, raw] of Object.entries(map)) {
@@ -554,7 +589,7 @@ export default class SproutPlugin extends Plugin {
     return count;
   }
 
-  private _looksLikeCardStateMap(node: any): node is Record<string, any> {
+  private _looksLikeCardStateMap(node: unknown): node is Record<string, unknown> {
     if (!node || typeof node !== "object") return false;
     if (Array.isArray(node)) return false;
 
@@ -568,8 +603,8 @@ export default class SproutPlugin extends Plugin {
     const now = Date.now();
     let total = 0;
 
-    const visited = new Set<any>();
-    const walk = (node: any) => {
+    const visited = new Set<object>();
+    const walk = (node: unknown) => {
       if (!node || typeof node !== "object") return;
       if (visited.has(node)) return;
       visited.add(node);
@@ -687,43 +722,13 @@ export default class SproutPlugin extends Plugin {
       return;
     }
 
-    let leaf = this.app.workspace.getRightLeaf(false) ?? this.app.workspace.getRightLeaf(true);
+    // Always create a new leaf in the right sidebar to avoid hijacking another plugin's leaf
+    let leaf = this.app.workspace.getRightLeaf(true);
     if (!leaf) leaf = this.app.workspace.getLeaf("tab");
     if (!leaf) return;
 
     await leaf.setViewState({ type: VIEW_TYPE_WIDGET, active: true, state: {} });
     void this.app.workspace.revealLeaf(leaf);
-  }
-
-  private _openSproutSettings() {
-    try {
-      if (this.app.setting) {
-        if (typeof this.app.setting.open === "function") this.app.setting.open();
-      } else if (this.app.commands?.executeCommandById) {
-        try {
-          this.app.commands.executeCommandById("app:open-settings");
-        } catch (e) { log.swallow("execute open-settings command", e); }
-      }
-
-      const setting = this.app.setting;
-      const id = this.manifest?.id;
-
-      if (setting && id) {
-        if (typeof setting.openTabById === "function") {
-          setting.openTabById(id);
-          return;
-        }
-        if (typeof setting.openTab === "function") {
-          try {
-            setting.openTab(id);
-            return;
-          } catch (e) { log.swallow("open settings tab by id", e); }
-        }
-      }
-    } catch (e) {
-      log.error(`failed to open settings`, e);
-      new Notice(`${BRAND}: Unable to open settings automatically. Open Settings → Community plugins → ${BRAND}.`);
-    }
   }
 
   // --------------------------------

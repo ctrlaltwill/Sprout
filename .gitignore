@@ -1,12 +1,8 @@
 node_modules/
 .DS_Store
-
-# Unzipped release folder (sprout-latest.zip IS committed)
+.vscode/
+sprout-latest.zip
 sprout-latest/
-
-# Build artifacts (dist/ IS committed for Obsidian BRAT / manual install)
-# If you don't want to commit built files, uncomment the next line:
-# dist/
 
 # Temp files
 *.tmp.css

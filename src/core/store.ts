@@ -1,15 +1,33 @@
-// src/core/store.ts
-// ---------------------------------------------------------------------------
-// Persistent data store — wraps all card/state/analytics data and exposes
-// mutation methods used by sync, the reviewer, and the widget.
-//
-// Type definitions have been extracted to src/types/ for reuse across the
-// codebase. This file re-exports them so existing imports keep working.
-// ---------------------------------------------------------------------------
+/**
+ * @file src/core/store.ts
+ * @summary Persistent JSON data store for the Sprout plugin. Wraps all card records, scheduling
+ * states, review logs, image-occlusion definitions, and analytics events. Provides mutation
+ * methods used by sync, the reviewer, and the widget, along with data migration logic and
+ * backup/restore utilities. Re-exports shared type definitions from src/types/ for
+ * backward-compatible imports.
+ *
+ * @exports
+ *   - CardRecord (re-exported type) — persistent record for a single flashcard
+ *   - ReviewResult (re-exported type) — grading outcome union
+ *   - ReviewLogEntry (re-exported type) — single review log entry
+ *   - AnalyticsMode (re-exported type) — scheduled vs practice mode
+ *   - AnalyticsReviewEvent (re-exported type) — per-card review analytics event
+ *   - AnalyticsSessionEvent (re-exported type) — study session analytics event
+ *   - AnalyticsEvent (re-exported type) — discriminated union of analytics events
+ *   - AnalyticsData (re-exported type) — top-level analytics storage
+ *   - CardStage (re-exported type) — card lifecycle stage
+ *   - CardState (re-exported type) — mutable scheduling state for a card
+ *   - QuarantineEntry (re-exported type) — quarantined card entry
+ *   - StoreData (re-exported type) — root persisted data structure
+ *   - defaultStore — factory function returning a fresh StoreData object
+ *   - JsonStore — class that wraps StoreData with mutation, persistence, and analytics methods
+ *   - loadSchedulingFromDataJson — helper to load scheduling states from data.json
+ *   - restoreSchedulingFromBackup — helper to restore scheduling from backup.json
+ */
 
 import type SproutPlugin from "../main";
 import { State } from "ts-fsrs";
-import { TFile, TFolder, Notice } from "obsidian";
+import { TFile, type TFolder, Notice } from "obsidian";
 
 // ── Re-export shared types (backward-compatible) ────────────────────────────
 export type { CardRecord } from "../types/card";
@@ -31,7 +49,6 @@ import type {
   AnalyticsReviewEvent,
   AnalyticsSessionEvent,
   AnalyticsEvent,
-  AnalyticsData,
 } from "../types/analytics";
 import type { CardState } from "../types/scheduler";
 import type { StoreData } from "../types/store";
@@ -205,8 +222,8 @@ export class JsonStore {
     this.bumpRevision();
   }
 
-  load(rootData: any) {
-    if (rootData && rootData.store) this.data = rootData.store;
+  load(rootData: unknown) {
+    if (rootData && (rootData as Record<string, unknown>).store) this.data = (rootData as Record<string, unknown>).store as typeof this.data;
     else this.data = defaultStore();
 
     // Backwards-compatible defaults
@@ -225,7 +242,7 @@ export class JsonStore {
     for (const s of Object.values(this.data.states)) {
       if (!s || typeof s !== "object") continue;
 
-      const anyS: any = s;
+      const anyS = s as Record<string, unknown>;
 
       if (!Number.isFinite(anyS.due)) anyS.due = 0;
       if (!Number.isFinite(anyS.reps)) anyS.reps = 0;
@@ -243,7 +260,7 @@ export class JsonStore {
 
       if (anyS.stage === "suspended") {
         if (anyS.fsrsState === undefined) anyS.fsrsState = State.New;
-        if (!Number.isFinite(anyS.scheduledDays) || anyS.scheduledDays < 0) anyS.scheduledDays = 0;
+      if (!Number.isFinite(anyS.scheduledDays) || Number(anyS.scheduledDays) < 0) anyS.scheduledDays = 0;
 
         delete anyS.intervalDays;
         delete anyS.ease;
@@ -254,7 +271,7 @@ export class JsonStore {
         if (anyS.stage === "new") anyS.fsrsState = State.New;
         else if (anyS.stage === "review") anyS.fsrsState = State.Review;
         else if (anyS.stage === "relearning") anyS.fsrsState = State.Relearning;
-        else anyS.fsrsState = (anyS.lapses ?? 0) > 0 ? State.Relearning : State.Learning;
+        else anyS.fsrsState = (Number(anyS.lapses) || 0) > 0 ? State.Relearning : State.Learning;
       }
 
       if (anyS.fsrsState === State.New) {
@@ -270,9 +287,9 @@ export class JsonStore {
         anyS.stage = "learning";
       }
 
-      if (!Number.isFinite(anyS.scheduledDays) || anyS.scheduledDays < 0) {
+      if (!Number.isFinite(anyS.scheduledDays) || Number(anyS.scheduledDays) < 0) {
         const legacyInterval = anyS.intervalDays;
-        if (Number.isFinite(legacyInterval) && legacyInterval >= 0) {
+        if (Number.isFinite(legacyInterval) && Number(legacyInterval) >= 0) {
           anyS.scheduledDays = Math.max(0, Math.floor(Number(legacyInterval)));
         } else {
           anyS.scheduledDays = 0;
@@ -289,7 +306,7 @@ export class JsonStore {
     const ioMap = this.data.io;
     if (ioMap && typeof ioMap === "object") {
       for (const [pid, def] of Object.entries(ioMap)) {
-        const d: any = def;
+        const d = def as Record<string, unknown>;
         if (!d || typeof d !== "object") {
           delete ioMap[pid];
           continue;
@@ -297,17 +314,20 @@ export class JsonStore {
         if (typeof d.imageRef !== "string") d.imageRef = "";
         if (d.maskMode !== "solo" && d.maskMode !== "all") d.maskMode = "solo";
         if (!Array.isArray(d.rects)) d.rects = [];
-        d.rects = d.rects
-          .filter((r: any) => r && typeof r === "object")
-          .map((r: any) => ({
-            rectId: String(r.rectId ?? ""),
-            x: Number(r.x) || 0,
-            y: Number(r.y) || 0,
-            w: Number(r.w) || 0,
-            h: Number(r.h) || 0,
-            groupKey: String(r.groupKey ?? "1"),
-          }))
-          .filter((r: any) => !!r.rectId);
+        d.rects = (d.rects as unknown[])
+          .filter((r) => r && typeof r === "object")
+          .map((r) => {
+            const rec = r as Record<string, unknown>;
+            return {
+              rectId: String(rec.rectId ?? ""),
+              x: Number(rec.x) || 0,
+              y: Number(rec.y) || 0,
+              w: Number(rec.w) || 0,
+              h: Number(rec.h) || 0,
+              groupKey: String(rec.groupKey ?? "1"),
+            };
+          })
+          .filter((r) => !!r.rectId);
       }
     } else {
       this.data.io = {};
@@ -319,11 +339,8 @@ export class JsonStore {
   }
 
   async persist() {
-    const root = (await this.plugin.loadData()) || {};
-    root.settings = this.plugin.settings;
-    root.store = this.data;
-    await this.plugin.saveData(root);
-
+    // Route through plugin.saveAll() which has a mutex to prevent concurrent read-modify-write races
+    await this.plugin.saveAll();
     this.bumpRevision();
   }
 
@@ -391,7 +408,7 @@ export class JsonStore {
       created = true;
     }
 
-    const s: any = this.data.states[id];
+    const s = this.data.states[id] as Record<string, unknown>;
 
     const legacyInterval = s.intervalDays;
 
@@ -401,7 +418,7 @@ export class JsonStore {
       if (s.stage === "new") s.fsrsState = State.New;
       else if (s.stage === "review") s.fsrsState = State.Review;
       else if (s.stage === "relearning") s.fsrsState = State.Relearning;
-      else s.fsrsState = (s.lapses ?? 0) > 0 ? State.Relearning : State.Learning;
+      else s.fsrsState = (Number(s.lapses) ?? 0) > 0 ? State.Relearning : State.Learning;
     }
 
     delete s.intervalDays;
@@ -414,8 +431,8 @@ export class JsonStore {
       s.stabilityDays = undefined;
       s.scheduledDays = 0;
     } else if (s.stage !== "suspended") {
-      if (!Number.isFinite(s.scheduledDays) || s.scheduledDays < 0) {
-        if (Number.isFinite(legacyInterval) && legacyInterval >= 0) {
+      if (!Number.isFinite(s.scheduledDays) || Number(s.scheduledDays) < 0) {
+        if (Number.isFinite(legacyInterval) && Number(legacyInterval) >= 0) {
           s.scheduledDays = Math.max(0, Math.floor(Number(legacyInterval)));
         } else {
           s.scheduledDays = 0;
@@ -424,7 +441,7 @@ export class JsonStore {
         s.scheduledDays = Math.max(0, Math.floor(Number(s.scheduledDays)));
       }
     } else {
-      if (!Number.isFinite(s.scheduledDays) || s.scheduledDays < 0) s.scheduledDays = 0;
+      if (!Number.isFinite(s.scheduledDays) || Number(s.scheduledDays) < 0) s.scheduledDays = 0;
     }
 
     if (!Number.isFinite(s.due)) s.due = now;
@@ -437,7 +454,7 @@ export class JsonStore {
   }
 
   // Helper: get backup directory (relative to vault root)
-  getBackupDir(plugin: SproutPlugin): string {
+  getBackupDir(_plugin: SproutPlugin): string {
     return ".sprout-backups";
   }
 
@@ -464,7 +481,7 @@ export class JsonStore {
 // Helper: load scheduling data from the plugin's persistent store (data.json)
 import { log } from "./logger";
 
-export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<Record<string, any> | null> {
+export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<Record<string, unknown> | null> {
   try {
     const root = await plugin.loadData();
     if (root && root.store && root.store.states && typeof root.store.states === "object") {
@@ -478,13 +495,14 @@ export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<
 export async function restoreSchedulingFromBackup(plugin: SproutPlugin): Promise<boolean> {
   // Restore from backup.json in the plugin folder, vault-relative path
   const filePath = `plugins/${plugin.manifest.id}/backup.json`;
-  let data: any = {};
+  let data: unknown = {};
   try {
     const raw = await plugin.app.vault.adapter.read(filePath);
     data = JSON.parse(raw);
   } catch (e) { log.swallow("read backup.json", e); }
-  if (!data.states || typeof data.states !== "object") return false;
-  plugin.store.data.states = data.states;
+  const obj = data as Record<string, unknown>;
+  if (!obj.states || typeof obj.states !== "object") return false;
+  plugin.store.data.states = obj.states as typeof plugin.store.data.states;
   await plugin.store.persist();
   new Notice("Sprout: Scheduling restored from backup.");
   return true;

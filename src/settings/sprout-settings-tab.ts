@@ -1,15 +1,9 @@
 /**
- * src/settings/SproutSettingsTab.ts
- * ────────────────────────────────────
- * The Obsidian `PluginSettingTab` for Sprout.
+ * @file src/settings/sprout-settings-tab.ts
+ * @summary The Obsidian PluginSettingTab for Sprout. Renders the entire Settings panel including user details, general options, image-occlusion settings, card attachments, study/reviewer tweaks, widget options, FSRS scheduling presets, indexing, backups, quarantine list, and the danger zone (delete-all / reset). Confirmation dialogs are in confirm-modals.ts and pure helpers in settings-utils.ts.
  *
- * Renders the entire Settings panel: user details, general options,
- * image-occlusion settings, card attachments, study/reviewer tweaks,
- * widget options, FSRS scheduling presets, indexing, backups,
- * quarantine list, and the "danger zone" (delete-all / reset).
- *
- * All confirmation dialogs live in ./confirm-modals.ts.
- * All pure helpers live in ./settings-utils.ts.
+ * @exports
+ *  - SproutSettingsTab — Obsidian PluginSettingTab subclass that renders and manages all Sprout plugin settings
  */
 
 import {
@@ -20,6 +14,7 @@ import {
   Notice,
   setIcon,
   MarkdownView,
+  type DropdownComponent,
 } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
@@ -95,12 +90,12 @@ export class SproutSettingsTab extends PluginSettingTab {
   private refreshAllWidgetViews() {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET);
     for (const leaf of leaves) {
-      const v: any = leaf.view;
+      const v = leaf.view as unknown as { resetToSummaryAndRender?: () => void; onRefresh?: () => void; render?: () => void };
       try {
         if (typeof v?.resetToSummaryAndRender === "function") v.resetToSummaryAndRender();
         else if (typeof v?.onRefresh === "function") v.onRefresh();
         else if (typeof v?.render === "function") v.render();
-      } catch {
+      } catch (e) {
         log.error("failed to refresh widget view", e);
       }
     }
@@ -110,7 +105,7 @@ export class SproutSettingsTab extends PluginSettingTab {
   private refreshReviewerViewsIfPossible() {
     try {
       this.plugin.refreshAllViews();
-    } catch {
+    } catch (e) {
       log.warn("failed to refresh open views", e);
     }
   }
@@ -166,12 +161,6 @@ export class SproutSettingsTab extends PluginSettingTab {
     return out;
   }
 
-  /** Format a signed delta string (e.g. "+3" or "−2"). */
-  private fmtDelta(n: number): string {
-    if (n === 0) return "0";
-    return n > 0 ? `+${n}` : String(n);
-  }
-
   // ── Backups section ───────────────────────
 
   /**
@@ -194,23 +183,14 @@ export class SproutSettingsTab extends PluginSettingTab {
       const btnCreate = createControl.createEl("button", { text: "Create backup now" });
 
       const tableItem = wrapper.createDiv({ cls: "setting-item" });
-      const tableControl = tableItem.createDiv({ cls: "setting-item-control" });
-      tableControl.style.display = "flex";
-      tableControl.style.flexDirection = "column";
-      tableControl.style.alignItems = "stretch";
-      tableControl.style.width = "100%";
+      const tableControl = tableItem.createDiv({ cls: "setting-item-control sprout-settings-backup-control" });
 
-      const tableWrap = tableControl.createDiv();
-      tableWrap.style.border = "1px solid var(--background-modifier-border)";
-      tableWrap.style.borderRadius = "10px";
-      tableWrap.style.padding = "10px";
-      tableWrap.style.overflow = "hidden";
+      const tableWrap = tableControl.createDiv({ cls: "sprout-settings-table-wrap" });
 
       /** Show a placeholder message inside the table wrapper. */
       const renderEmpty = (msg: string) => {
         tableWrap.empty();
-        const p = tableWrap.createDiv({ text: msg });
-        p.style.color = "var(--text-muted)";
+        tableWrap.createDiv({ text: msg, cls: "sprout-settings-text-muted" });
       };
 
       const current = this.getCurrentDbStats();
@@ -271,90 +251,38 @@ export class SproutSettingsTab extends PluginSettingTab {
         }
 
         /* ── header row ── */
-        const headerRow = tableWrap.createDiv();
-        headerRow.style.display = "grid";
-        headerRow.style.gridTemplateColumns = "minmax(140px, 1fr) minmax(130px, 0.8fr) minmax(220px, 1.8fr) minmax(140px, 0.8fr)";
-        headerRow.style.gap = "8px";
-        headerRow.style.fontSize = "12px";
-        headerRow.style.color = "var(--text-muted)";
-        headerRow.style.borderBottom = "1px solid var(--background-modifier-border)";
-        headerRow.style.padding = "6px 4px 8px 4px";
+        const headerRow = tableWrap.createDiv({ cls: "sprout-settings-grid-row sprout-settings-grid-row--header" });
         ["Backup", "Date", "Scheduling data", "Actions"].forEach((label) => {
-          const h = headerRow.createDiv({ text: label });
-          h.style.fontWeight = "600";
-          h.style.textAlign = "left";
+          headerRow.createDiv({ text: label, cls: "sprout-settings-cell-header" });
         });
 
         /* ── "current data" row ── */
-        const currentRow = tableWrap.createDiv();
-        currentRow.style.display = "grid";
-        currentRow.style.gridTemplateColumns = "minmax(140px, 1fr) minmax(130px, 0.8fr) minmax(220px, 1.8fr) minmax(140px, 0.8fr)";
-        currentRow.style.gap = "8px";
-        currentRow.style.padding = "6px 4px 10px 4px";
-        currentRow.style.borderBottom = "1px solid var(--background-modifier-border)";
-        currentRow.style.alignItems = "center";
+        const currentRow = tableWrap.createDiv({ cls: "sprout-settings-grid-row sprout-settings-grid-row--current" });
 
-        const currentLabel = currentRow.createDiv({ text: "Current data" });
-        currentLabel.style.fontSize = "13px";
-        currentLabel.style.textAlign = "left";
-
-        const currentDate = currentRow.createDiv({ text: "Now" });
-        currentDate.style.fontSize = "12px";
-        currentDate.style.textAlign = "left";
-
-        const currentSched = currentRow.createDiv({ text: summaryLabel(current) });
-        currentSched.style.fontSize = "12px";
-        currentSched.style.textAlign = "left";
-
-        const currentActions = currentRow.createDiv({ text: "—" });
-        currentActions.style.fontSize = "12px";
-        currentActions.style.textAlign = "left";
+        currentRow.createDiv({ text: "Current data", cls: "sprout-settings-cell-label" });
+        currentRow.createDiv({ text: "Now", cls: "sprout-settings-cell-value" });
+        currentRow.createDiv({ text: summaryLabel(current), cls: "sprout-settings-cell-value" });
+        currentRow.createDiv({ text: "—", cls: "sprout-settings-cell-value" });
 
         /* ── backup rows ── */
-        const listWrap = tableWrap.createDiv();
-        listWrap.style.transition = "max-height 0.2s ease";
-        listWrap.style.overflow = "hidden";
-        listWrap.style.maxHeight = expanded ? "720px" : "240px";
+        const listWrap = tableWrap.createDiv({ cls: `sprout-settings-backup-list${expanded ? " sprout-settings-backup-list--expanded" : ""}` });
 
         const visible = expanded ? filtered : filtered.slice(0, 3);
         for (const r of visible) {
           const s = r.stats;
-          const row = listWrap.createDiv();
-          row.style.display = "grid";
-          row.style.gridTemplateColumns = "minmax(140px, 1fr) minmax(130px, 0.8fr) minmax(220px, 1.8fr) minmax(140px, 0.8fr)";
-          row.style.gap = "8px";
-          row.style.padding = "8px 4px";
-          row.style.borderBottom = "1px solid var(--background-modifier-border)";
-          row.style.alignItems = "center";
+          const row = listWrap.createDiv({ cls: "sprout-settings-grid-row sprout-settings-grid-row--list" });
 
           const labelCell = row.createDiv();
-          const labelText = labelCell.createDiv({ text: describeBackup(s.name) });
-          labelText.style.fontSize = "13px";
-          labelText.style.textAlign = "left";
+          labelCell.createDiv({ text: describeBackup(s.name), cls: "sprout-settings-cell-label" });
 
-          const dateCell = row.createDiv({ text: formatBackupDate(s.mtime) });
-          dateCell.style.fontSize = "12px";
-          dateCell.style.textAlign = "left";
+          row.createDiv({ text: formatBackupDate(s.mtime), cls: "sprout-settings-cell-value" });
 
-          const schedulingCell = row.createDiv({ text: summaryLabel(s) });
-          schedulingCell.style.fontSize = "12px";
-          schedulingCell.style.color = s.states > 0 ? "var(--text-normal)" : "var(--text-muted)";
-          schedulingCell.style.textAlign = "left";
+          row.createDiv({ text: summaryLabel(s), cls: `sprout-settings-cell-value${s.states > 0 ? " sprout-settings-cell-value--active" : ""}` });
 
-          const actions = row.createDiv();
-          actions.style.display = "flex";
-          actions.style.gap = "4px";
-          actions.style.flexWrap = "wrap";
-          actions.style.justifyContent = "flex-start";
+          const actions = row.createDiv({ cls: "sprout-settings-actions-wrap" });
 
           /* Restore button */
-          const btnRestore = actions.createEl("button");
-          btnRestore.className = "btn-icon-ghost";
-          btnRestore.style.background = "transparent";
-          btnRestore.style.border = "none";
-          btnRestore.style.boxShadow = "none";
-          btnRestore.style.outline = "none";
-          btnRestore.style.setProperty("padding", "0px", "important");
+          const btnRestore = actions.createEl("button", { cls: "sprout-settings-icon-btn" });
           btnRestore.setAttribute("data-tooltip", "Restore this backup and replace current scheduling data.");
           setIcon(btnRestore, "archive-restore");
           btnRestore.onclick = () => {
@@ -367,16 +295,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           };
 
           /* Delete button */
-          const btnDelete = actions.createEl("button");
-          btnDelete.className = "btn-icon-ghost";
-          btnDelete.style.background = "transparent";
-          btnDelete.style.border = "none";
-          btnDelete.style.boxShadow = "none";
-          btnDelete.style.outline = "none";
-          btnDelete.style.setProperty("padding", "0px", "important");
+          const btnDelete = actions.createEl("button", { cls: "sprout-settings-icon-btn sprout-settings-icon-btn--danger" });
           btnDelete.setAttribute("data-tooltip", "Delete this backup from disk.");
           setIcon(btnDelete, "trash-2");
-          btnDelete.style.color = "var(--text-error)";
           btnDelete.onclick = () => {
             new ConfirmDeleteBackupModal(this.app, this.plugin, s, () => {
               void scan();
@@ -386,16 +307,8 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         /* ── "See more / fewer" toggle ── */
         if (filtered.length > 3) {
-          const more = tableWrap.createDiv();
-          more.style.display = "flex";
-          more.style.justifyContent = "flex-end";
-          more.style.marginTop = "6px";
-          const btnMore = more.createEl("button", { text: expanded ? "See fewer" : "See more" });
-          btnMore.style.background = "transparent";
-          btnMore.style.border = "none";
-          btnMore.style.color = "var(--text-normal)";
-          btnMore.style.padding = "0";
-          btnMore.style.boxShadow = "none";
+          const more = tableWrap.createDiv({ cls: "sprout-settings-see-more-wrap" });
+          const btnMore = more.createEl("button", { text: expanded ? "See fewer" : "See more", cls: "sprout-settings-see-more-btn" });
           btnMore.onclick = () => {
             expanded = !expanded;
             renderTable(cachedRows);
@@ -416,7 +329,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           }
           cachedRows = rows;
           renderTable(rows);
-        } catch {
+        } catch (e) {
           log.error(e);
           renderEmpty("Failed to scan backups (see console).");
         }
@@ -431,7 +344,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           }
           new Notice("Sprout – Settings Updated\nBackup created");
           await scan();
-        } catch {
+        } catch (e) {
           log.error(e);
           new Notice("Sprout: failed to create backup (see console).");
         }
@@ -680,7 +593,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
               this.display();
               this.queueSettingsNotice("settings.resetDefaults", "Settings reset to defaults", 0);
-            } catch {
+            } catch (e) {
               this.plugin.settings = before;
               log.error(e);
               new Notice(
@@ -696,7 +609,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setDesc("Enable fade-up animations when pages load. Disable for a more immediate interface.")
       .addToggle((t) =>
         t.setValue(this.plugin.settings?.appearance?.enableAnimations ?? true).onChange(async (v) => {
-          if (!this.plugin.settings.appearance) this.plugin.settings.appearance = { enableAnimations: true };
+          if (!this.plugin.settings.appearance) this.plugin.settings.appearance = { enableAnimations: true, prettifyCards: "accent" };
           this.plugin.settings.appearance.enableAnimations = v;
           await this.plugin.saveAll();
           this.plugin.refreshAllViews();
@@ -723,9 +636,6 @@ export class SproutSettingsTab extends PluginSettingTab {
           // Force reload of all markdown reading views (note tabs)
           const ws = this.plugin.app.workspace;
           const leaves = ws.getLeavesOfType("markdown");
-          // Use ws.getActiveLeaf() if available, else ws.activeLeaf
-          const getActiveLeaf = typeof ws.getActiveLeaf === "function" ? ws.getActiveLeaf.bind(ws) : () => ws.activeLeaf;
-          const activeLeaf = getActiveLeaf();
           for (const leaf of leaves) {
             // Find the markdown content area inside the leaf
             const content = leaf.view?.containerEl?.querySelector(
@@ -737,8 +647,8 @@ export class SproutSettingsTab extends PluginSettingTab {
                 content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
               } catch (e) { log.swallow("dispatch prettify-cards-refresh", e); }
               if (content instanceof HTMLElement) {
-                content.style.opacity = "0.99";
-                setTimeout(() => { content.style.opacity = ""; }, 50);
+                content.classList.add("sprout-settings-opacity-flicker");
+                setTimeout(() => { content.classList.remove("sprout-settings-opacity-flicker"); }, 50);
               }
             }
 
@@ -748,7 +658,7 @@ export class SproutSettingsTab extends PluginSettingTab {
                 view.previewMode?.rerender?.();
               } catch (e) { log.swallow("rerender preview", e); }
               try {
-                view.previewMode?.onLoadFile?.(view.file!);
+                (view.previewMode as unknown as { onLoadFile?: (f: unknown) => void })?.onLoadFile?.(view.file!);
               } catch (e) { log.swallow("reload preview file", e); }
             }
           }
@@ -1274,14 +1184,14 @@ export class SproutSettingsTab extends PluginSettingTab {
     const sched = this.plugin.settings.scheduler;
 
     /** Rounds a number to 2 decimal places. */
-    const round2 = (n: any) => {
+    const round2 = (n: unknown) => {
       const x = Number(n);
       if (!Number.isFinite(x)) return NaN;
       return Number(x.toFixed(2));
     };
 
     /** Compares two numeric arrays for equality. */
-    const arraysEqualNumbers = (a: any, b: any) => {
+    const arraysEqualNumbers = (a: unknown, b: unknown) => {
       if (!Array.isArray(a) || !Array.isArray(b)) return false;
       if (a.length !== b.length) return false;
       for (let i = 0; i < a.length; i++) {
@@ -1324,14 +1234,14 @@ export class SproutSettingsTab extends PluginSettingTab {
       return "custom";
     };
 
-    let presetDropdown: any = null;
+    let presetDropdown: DropdownComponent | null = null;
     let isSyncingPreset = false;
 
     /** Programmatically syncs the preset dropdown to match current values. */
     const syncPresetDropdown = () => {
       if (!presetDropdown) return;
       const desired = detectPresetKey();
-      const current = presetDropdown.getValue?.() ?? presetDropdown.value;
+      const current = presetDropdown.getValue();
       if (current === desired) return;
 
       isSyncingPreset = true;

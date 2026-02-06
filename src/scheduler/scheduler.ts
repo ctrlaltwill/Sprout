@@ -1,17 +1,26 @@
-// src/scheduler/scheduler.ts
-// ---------------------------------------------------------------------------
-// FSRS spaced-repetition scheduler — wraps ts-fsrs to provide grading,
-// card-state transitions (bury / suspend / unsuspend / reset), and
-// queue-shuffling utilities that prevent sibling cards appearing back-to-back.
-//
-// Type definitions (CardState, SchedulerSettings, etc.) live in
-// src/types/scheduler.ts; this file re-exports them for convenience.
-// ---------------------------------------------------------------------------
+/**
+ * @file src/scheduler/scheduler.ts
+ * @summary FSRS spaced-repetition scheduler that wraps ts-fsrs to provide grading, card-state transitions (bury, suspend, unsuspend, reset), and queue-shuffling utilities that prevent sibling cards from appearing back-to-back. Re-exports core scheduling types from src/types/scheduler.ts for convenience.
+ *
+ * @exports
+ *  - CardState                       — re-exported type representing a card's scheduling state
+ *  - SchedulerSettings               — re-exported type for FSRS scheduler configuration
+ *  - ReviewRating                    — re-exported type for review rating values
+ *  - GradeResult                     — re-exported type for the result of a grade operation
+ *  - shuffleCardsWithinTimeWindow    — shuffles cards whose due times fall within the same window
+ *  - shuffleCardsWithParentAwareness — shuffles cards while keeping siblings separated
+ *  - gradeFromRating                 — grades a card with a specific FSRS rating (Again/Hard/Good/Easy)
+ *  - gradeFromPassFail               — grades a card with a binary pass/fail result
+ *  - buryCard                        — buries a card until the next day
+ *  - suspendCard                     — suspends a card indefinitely
+ *  - unsuspendCard                   — restores a suspended card to its previous state
+ *  - resetCardScheduling             — resets a card's scheduling state back to New
+ */
 
 // Re-export types so existing `from "./scheduler"` imports still resolve
 export type { CardState, SchedulerSettings, ReviewRating, GradeResult } from "../types/scheduler";
 import type { CardState } from "../types/scheduler";
-import type { SchedulerSettings, GradeResult } from "../types/scheduler";
+import type { SchedulerSettings, GradeResult, ReviewRating } from "../types/scheduler";
 
 import {
   fsrs,
@@ -22,8 +31,10 @@ import {
   dateDiffInDays,
   forgetting_curve,
   type Card as FsrsCard,
+  type Grade,
 } from "ts-fsrs";
 import { MS_DAY } from "../core/constants";
+import { log } from "../core/logger";
 
 // --------------------
 // Small utilities
@@ -254,7 +265,14 @@ function buildFsrsParams(cfg: SchedulerSettings): FsrsParams {
 function inferFsrsState(s: CardState): State {
   if (s.fsrsState !== undefined) return s.fsrsState;
 
-  if (s.stage === "suspended") return State.New;
+  if (s.stage === "suspended") {
+    // Suspended cards without fsrsState lose their scheduling history.
+    // Log a warning when there is evidence of prior reviews.
+    if ((s.reps ?? 0) > 0 || (s.lapses ?? 0) > 0) {
+      log.warn(`inferFsrsState: suspended card (reps=${s.reps}, lapses=${s.lapses}) fell back to State.New — scheduling history may be lost`);
+    }
+    return State.New;
+  }
   if (s.stage === "new") return State.New;
   if (s.stage === "review") return State.Review;
 
@@ -370,7 +388,7 @@ function fromFsrsCard(prev: CardState, card: FsrsCard): CardState {
 // Public API
 // --------------------
 
-function mapRating(r: ReviewRating): Rating {
+function mapRating(r: ReviewRating): Grade {
   switch (r) {
     case "again":
       return Rating.Again;

@@ -1,13 +1,16 @@
 /**
- * browser/browser-toolbar.ts
- * ──────────────────────────
- * Builds the toolbar UI (search, filter dropdowns, action buttons),
- * the table header (colgroup + thead), and the bottom controls
- * (summary, selection indicator, page-size picker, pagination host)
- * for the Flashcard Browser.
+ * @file src/browser/browser-toolbar.ts
+ * @summary Builds the complete Flashcard Browser layout: the toolbar (search
+ * input, filter dropdowns, action buttons), the table structure (colgroup,
+ * thead with sortable/resizable headers, empty tbody), and the bottom controls
+ * (summary text, selection indicator, page-size picker, pagination host).
+ * Extracted from SproutCardBrowserView.render() to keep the view class focused
+ * on lifecycle and orchestration.
  *
- * Extracted from SproutCardBrowserView.render() to keep the view
- * class focused on lifecycle / orchestration.
+ * @exports
+ *   - ToolbarContext — interface describing all state and callbacks the layout builder needs from the view
+ *   - ToolbarRefs — interface containing DOM element references returned to the view after layout creation
+ *   - buildBrowserLayout — builds the full Browser UI into a root element and returns ToolbarRefs
  */
 
 import { setIcon } from "obsidian";
@@ -21,11 +24,9 @@ import type {
   TypeFilter,
   StageFilter,
   DueFilter,
-  DropdownOption,
   DropdownMenuController,
 } from "./browser-helpers";
 import {
-  DEFAULT_COL_WIDTHS,
   applyStickyThStyles,
 } from "./browser-helpers";
 import { makeDropdownMenu, makeColumnsDropdown } from "./browser-dropdowns";

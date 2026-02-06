@@ -1,11 +1,19 @@
-// src/reviewer/imageZoom.ts
-import { Modal } from "obsidian";
+/**
+ * @file src/reviewer/zoom.ts
+ * @summary Provides a full-screen image zoom modal for the reviewer. When a user clicks a zoomable image during review, this modal displays it at near-viewport size with proper aspect ratio.
+ *
+ * @exports
+ *   - SproutImageZoomModal — Modal class that displays a single image at full viewport size
+ *   - openSproutImageZoom — Convenience function that opens the zoom modal for a given image source URL
+ */
+
+import { Modal, type App } from "obsidian";
 
 export class SproutImageZoomModal extends Modal {
   private src: string;
   private alt: string;
 
-  constructor(app: any, src: string, alt: string) {
+  constructor(app: App, src: string, alt: string) {
     super(app);
     this.src = src;
     this.alt = alt || "Image";
@@ -47,7 +55,7 @@ export class SproutImageZoomModal extends Modal {
   }
 }
 
-export function openSproutImageZoom(app: any, src: string, alt: string) {
+export function openSproutImageZoom(app: App, src: string, alt: string) {
   if (!src) return;
   new SproutImageZoomModal(app, src, alt || "Image").open();
 }

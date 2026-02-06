@@ -1,3 +1,12 @@
+/**
+ * @file src/reviewer/study-session-header.ts
+ * @summary Creates and manages the persistent "Study Session" header with an auto-starting timer displayed at the top of the session view. The header is created once per session and survives across card re-renders, providing play/pause controls and elapsed-time display.
+ *
+ * @exports
+ *   - TimerState — Interface describing the timer's running state, elapsed seconds, and interval handle
+ *   - renderStudySessionHeader — Creates or retrieves the persistent study session header with timer controls
+ */
+
 import { setIcon } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
 

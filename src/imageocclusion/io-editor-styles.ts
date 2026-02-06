@@ -1,9 +1,9 @@
 /**
- * imageocclusion/io-editor-styles.ts
- * ---------------------------------------------------------------------------
- * Scoped CSS styles for the Image Occlusion creator modal editor.
- * Extracted from ImageOcclusionCreatorModal.onOpen() for readability.
- * ---------------------------------------------------------------------------
+ * @file src/imageocclusion/io-editor-styles.ts
+ * @summary Scoped CSS styles for the Image Occlusion creator modal editor. Contains all toolbar, button, input, slider, colour picker, and text-icon styling as a single exported template-literal string constant, extracted from the modal's onOpen() for readability.
+ *
+ * @exports
+ *   - IO_EDITOR_STYLES — CSS string constant with all scoped styles for the IO editor UI
  */
 
 export const IO_EDITOR_STYLES = `

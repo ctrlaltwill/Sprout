@@ -1,0 +1,334 @@
+/* ============================================================================
+   WIDGET — Widget root transparency, buttons, badges, cloze styling,
+   popover menu.
+   ========================================================================== */
+
+/* Widget popover root should be transparent so rounded menu doesn't bleed */
+.sprout[id^="bc-widget-menu-"][id$="-popover"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.sprout-widget.sprout {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+/* Widget: remove all box-shadows (cards + buttons + any child) */
+.sprout .sprout-widget,
+.sprout .sprout-widget * {
+  box-shadow: none !important;
+}
+
+/* ---- Widget buttons ---- */
+
+.sprout-widget-hover-darken {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.sprout-widget-hover-darken:hover,
+.sprout-widget-hover-darken:focus {
+  background-color: var(--color-base-25) !important;
+  border-color: var(--color-base-30) !important;
+}
+
+.sprout .sprout-widget button,
+.sprout .sprout-widget button.bc,
+.sprout .sprout-widget .btn,
+.sprout .sprout-widget .btn-outline,
+.sprout .sprout-widget .btn-primary,
+.sprout .sprout-widget .btn-destructive,
+.sprout .sprout-widget .sprout-widget-back-btn,
+.sprout .sprout-widget .sprout-widget-action-btn {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.sprout .sprout-widget .sprout-widget-action-btn {
+  font-size: 11px !important;
+}
+
+.sprout .sprout-widget .sprout-widget-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.sprout .sprout-widget button:hover,
+.sprout .sprout-widget button.bc:hover,
+.sprout .sprout-widget .btn:hover,
+.sprout .sprout-widget .btn-outline:hover,
+.sprout .sprout-widget .btn-primary:hover,
+.sprout .sprout-widget .btn-destructive:hover,
+.sprout .sprout-widget .sprout-widget-back-btn:hover,
+.sprout .sprout-widget .sprout-widget-action-btn:hover,
+.sprout .sprout-widget button:focus-visible,
+.sprout .sprout-widget button.bc:focus-visible,
+.sprout .sprout-widget .btn:focus-visible,
+.sprout .sprout-widget .btn-outline:focus-visible,
+.sprout .sprout-widget .btn-primary:focus-visible,
+.sprout .sprout-widget .btn-destructive:focus-visible,
+.sprout .sprout-widget .sprout-widget-back-btn:focus-visible,
+.sprout .sprout-widget .sprout-widget-action-btn:focus-visible {
+  background-color: var(--color-base-25) !important;
+  border-color: var(--color-base-30) !important;
+  box-shadow: none !important;
+}
+
+.sprout .sprout-widget button:active,
+.sprout .sprout-widget button.bc:active,
+.sprout .sprout-widget .btn:active,
+.sprout .sprout-widget .btn-outline:active,
+.sprout .sprout-widget .btn-primary:active,
+.sprout .sprout-widget .btn-destructive:active,
+.sprout .sprout-widget .sprout-widget-back-btn:active,
+.sprout .sprout-widget .sprout-widget-action-btn:active,
+.sprout .sprout-widget button:focus,
+.sprout .sprout-widget button.bc:focus,
+.sprout .sprout-widget .btn:focus,
+.sprout .sprout-widget .btn-outline:focus,
+.sprout .sprout-widget .btn-primary:focus,
+.sprout .sprout-widget .btn-destructive:focus,
+.sprout .sprout-widget .sprout-widget-back-btn:focus,
+.sprout .sprout-widget .sprout-widget-action-btn:focus {
+  background-color: var(--muted) !important;
+  border-color: var(--muted) !important;
+  box-shadow: none !important;
+}
+
+/* Force Sprout custom buttons to override global button rules */
+.sprout :is(button.sprout-card-edit-btn, .sprout-widget button, .sprout-widget .btn, .sprout-widget .btn-outline) {
+  box-shadow: none !important;
+  outline: none !important;
+  background-color: var(--background) !important;
+  border-radius: var(--button-radius) !important;
+}
+
+.sprout :is(.sprout-widget button, .sprout-widget .btn, .sprout-widget .btn-outline) {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* ---- Widget cloze styling ---- */
+
+/* Widget-only cloze reveal styling */
+.sprout .sprout-widget-cloze .sprout-cloze-revealed {
+  background-color: var(--theme-accent);
+  color: #fff;
+  border-radius: 3px;
+  margin: 0px 2px 0px 0px;
+  padding: 0.5px 5px;
+  font-weight: 500;
+}
+
+/* Widget-only cloze blanks: fixed width */
+.sprout .sprout-widget-cloze .sprout-cloze-blank {
+  width: 30px !important;
+}
+
+/* ---- Widget text ---- */
+/* Replaces inline: fontSize:11px; lineHeight:1.75; color:var(--foreground)
+   across widget-render-session.ts (~15 usages) */
+
+.sprout .sprout-widget-text {
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--foreground) !important;
+}
+
+/* Widget section spacing (replaces applySectionStyles inline helper) */
+.sprout .sprout-widget-section {
+  padding: 6px 0 !important;
+  margin: 0 !important;
+}
+
+/* Widget divider (replaces makeDivider inline helper) */
+.sprout .sprout-widget-divider {
+  border-top: 1px solid var(--foreground) !important;
+  opacity: 0.3;
+  margin: 6px 0 !important;
+}
+
+/* Widget card body (replaces body inline styles) */
+.sprout .sprout-widget-card-body {
+  margin: 10px auto 20px auto !important;
+  gap: 0 !important;
+  border-radius: var(--input-radius) !important;
+  border: var(--border-width) solid var(--background-modifier-border) !important;
+  padding: 20px !important;
+  max-width: 90% !important;
+  box-shadow: none !important;
+}
+
+/* Widget header (replaces header inline styles) */
+.sprout .sprout-widget-header {
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 20px !important;
+  padding: 15px 0 10px 0 !important;
+}
+
+/* Widget footer (replaces footer inline styles) */
+.sprout .sprout-widget-footer {
+  border: none !important;
+  max-width: 90% !important;
+  margin: 10px auto !important;
+  padding: 0 0 15px 0 !important;
+}
+
+/* Widget progress bar (replaces progress bar inline styles) */
+.sprout .sprout-widget-progress {
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 auto !important;
+  max-width: 200px !important;
+  width: 80% !important;
+}
+
+.sprout .sprout-widget-progress-track {
+  height: 1.5px !important;
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent) !important;
+}
+
+/* Widget info block (extra info text, dimmed) */
+.sprout .sprout-widget-info {
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--foreground) !important;
+  opacity: 0.6 !important;
+}
+
+/* Info block paragraph reset */
+.sprout .sprout-widget-info p {
+  margin: 0 !important;
+  margin-block: 0 !important;
+}
+
+/* Widget studying label (header title line) */
+.sprout .sprout-widget-study-label {
+  color: var(--foreground) !important;
+  font-weight: 600 !important;
+}
+
+/* Widget remaining count line */
+.sprout .sprout-widget-remaining-label {
+  color: var(--foreground) !important;
+  font-weight: 400 !important;
+  margin-top: 3px !important;
+}
+
+/* Widget IO container */
+.sprout .sprout-widget-io-container {
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 6px 0 !important;
+}
+
+/* MCQ option bottom spacing */
+.sprout .sprout-widget-mcq-option {
+  margin-bottom: 8px !important;
+}
+
+/* MCQ option text span */
+.sprout .sprout-widget-mcq-text {
+  line-height: 1.75;
+  display: block;
+}
+
+/* MCQ multi-line paragraph */
+.sprout .sprout-widget-mcq-line {
+  line-height: 1.75;
+  margin-bottom: 2px;
+}
+
+/* Widget progress fill — dynamic width via CSS custom property */
+.sprout .sprout-widget-progress-fill {
+  background-color: var(--theme-accent) !important;
+  width: var(--sprout-progress, 0%);
+}
+
+/* ---- Widget badges ---- */
+
+.sprout .sprout-widget-badge {
+  border: 1px solid var(--theme-accent) !important;
+  color: var(--theme-accent) !important;
+  background-color: color-mix(in srgb, var(--theme-accent) 12%, transparent) !important;
+  border-radius: 999px !important;
+  padding: 3px 10px !important;
+  font-size: 11px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* ---- Widget summary-mode ---- */
+
+.sprout-widget-summary-header {
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 20px !important;
+  padding: 15px 0 10px 0 !important;
+}
+
+.sprout-widget-summary-title {
+  color: var(--foreground) !important;
+  font-weight: 600 !important;
+}
+
+.sprout-widget-remaining-line {
+  color: var(--foreground) !important;
+  font-weight: 400 !important;
+  margin-top: 3px !important;
+}
+
+.sprout-widget-empty-body {
+  border-radius: 0 !important;
+  margin: 0 10px !important;
+  padding: 15px 5px !important;
+  text-align: center !important;
+}
+
+.sprout-widget-teaser {
+  margin: 10px auto 20px !important;
+  gap: 0 !important;
+  border-radius: var(--input-radius) !important;
+  border: var(--border-width) solid var(--background-modifier-border) !important;
+  padding: 20px !important;
+  max-width: 90% !important;
+  box-shadow: none !important;
+}
+
+.sprout-widget-teaser-title {
+  color: var(--foreground) !important;
+  font-size: 11px !important;
+  margin-bottom: 0 !important;
+}
+
+.sprout-widget-info-line {
+  color: var(--foreground) !important;
+  opacity: 0.7 !important;
+}
+
+.sprout-widget-counts-line {
+  color: var(--foreground) !important;
+  opacity: 0.7 !important;
+  margin-top: 10.5px !important;
+}
+
+.sprout-widget-summary-footer {
+  border: none !important;
+  border-radius: 0 !important;
+  max-width: 90% !important;
+  margin: 10px auto !important;
+  padding: 0 0 15px 0 !important;
+}

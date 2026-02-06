@@ -1,4 +1,13 @@
-// src/deck/deck-tree.ts
+/**
+ * @file src/deck/deck-tree.ts
+ * @summary Builds a hierarchical deck tree from the flat group paths stored on card records. Each node in the tree carries aggregate counts (total, new, learning, review, relearning) and child references, enabling the Home view and other consumers to render nested deck structures.
+ *
+ * @exports
+ *  - DeckCounts    — type describing per-state card counts for a single deck node
+ *  - DeckNode      — type representing a node in the deck tree (name, counts, children)
+ *  - buildDeckTree — constructs a DeckNode tree from an iterable of card records
+ */
+
 import type { CardRecord, CardState } from "../core/store";
 import { State } from "ts-fsrs";
 

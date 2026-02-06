@@ -1,3 +1,14 @@
+/**
+ * @file src/analytics/stacked-review-buttons-chart.tsx
+ * @summary Stacked bar chart showing daily counts of Again, Hard, Good, and Easy
+ * answer-button presses over a configurable window (7, 30, or 90 days). Each day
+ * is a stacked bar coloured by response type. Supports filtering by card type,
+ * deck, and group tags, with timezone-aware day bucketing.
+ *
+ * @exports
+ *   - StackedReviewButtonsChart — React component rendering a stacked bar chart of daily answer button counts with filter controls
+ */
+
 import * as React from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
@@ -268,7 +279,7 @@ function formatDayTitle(dayIndex: number, timeZone: string) {
   return date.toLocaleDateString(undefined, { timeZone, weekday: "short", month: "short", day: "numeric" });
 }
 
-function TooltipContent(props: { active?: boolean; payload?: any[] }) {
+function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: unknown }> }) {
   if (!props.active || !props.payload || !props.payload.length) return null;
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;

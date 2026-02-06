@@ -1,18 +1,16 @@
 /**
- * widget/widget-buttons.ts
- * ────────────────────────
- * Standalone UI factory functions for the Sprout sidebar widget.
+ * @file src/widget/widget-buttons.ts
+ * @summary Standalone UI factory functions for the Sprout sidebar widget. Provides reusable button builders (icon-only and text variants), styling helpers for action buttons and hover states, and the "More" dropdown menu attachment logic.
  *
- * Exports:
- *  - makeIconButton      – icon-only button with tooltip
- *  - makeTextButton      – text button with optional kbd hint
- *  - applyWidgetActionButtonStyles – adds the standard action class
- *  - applyWidgetHoverDarken        – adds hover colour transitions
- *  - attachWidgetMoreMenu          – creates the "More" dropdown menu
+ * @exports
+ *  - applyWidgetHoverDarken       — adds hover colour-darken transitions to an element
+ *  - makeIconButton               — creates an icon-only button with a tooltip
+ *  - makeTextButton               — creates a text button with an optional keyboard-hint badge
+ *  - applyWidgetActionButtonStyles — applies the standard action-button class and styles
+ *  - attachWidgetMoreMenu         — creates and attaches the "More" dropdown menu to a container
  */
 
 import { setIcon } from "obsidian";
-import { POPOVER_Z_INDEX } from "../core/constants";
 import { log } from "../core/logger";
 
 /* ------------------------------------------------------------------ */
@@ -25,25 +23,7 @@ import { log } from "../core/logger";
  * on mouseleave/blur.
  */
 export function applyWidgetHoverDarken(btn: HTMLButtonElement) {
-  const baseBg = "var(--background)";
-  const baseBorder = "var(--border)";
-  const hoverBg = "var(--color-base-25)";
-  const hoverBorder = "var(--color-base-30)";
-
-  const setBase = () => {
-    btn.style.setProperty("background-color", baseBg, "important");
-    btn.style.setProperty("border-color", baseBorder, "important");
-  };
-
-  const setHover = () => {
-    btn.style.setProperty("background-color", hoverBg, "important");
-    btn.style.setProperty("border-color", hoverBorder, "important");
-  };
-
-  btn.addEventListener("mouseenter", setHover);
-  btn.addEventListener("mouseleave", setBase);
-  btn.addEventListener("focus", setHover);
-  btn.addEventListener("blur", setBase);
+  btn.classList.add("sprout-widget-hover-darken");
 }
 
 /* ------------------------------------------------------------------ */
@@ -166,14 +146,10 @@ export function attachWidgetMoreMenu(opts: {
   popover.id = `${id}-popover`;
   popover.className = "bc sprout";
   popover.setAttribute("aria-hidden", "true");
-  popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-  popover.style.setProperty("display", "none", "important");
-  popover.style.setProperty("pointer-events", "auto", "important");
+  popover.classList.add("sprout-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "bc sprout rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-  panel.style.setProperty("pointer-events", "auto", "important");
+  panel.className = "bc sprout rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
@@ -189,8 +165,7 @@ export function attachWidgetMoreMenu(opts: {
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
     if (disabled) {
-      item.style.opacity = "0.5";
-      item.style.cursor = "not-allowed";
+      item.classList.add("sprout-menu-item--disabled");
       item.setAttribute("aria-disabled", "true");
     }
 
@@ -261,15 +236,15 @@ export function attachWidgetMoreMenu(opts: {
       top = Math.max(margin, r.top - panelRect.height - 6);
     }
 
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-    popover.style.width = `${width}px`;
+    popover.style.setProperty("--sprout-popover-left", `${left}px`);
+    popover.style.setProperty("--sprout-popover-top", `${top}px`);
+    popover.style.setProperty("--sprout-popover-width", `${width}px`);
   };
 
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");
     popover.setAttribute("aria-hidden", "true");
-    popover.style.setProperty("display", "none", "important");
+    popover.classList.remove("is-open");
 
     try {
       cleanup?.();
@@ -284,7 +259,7 @@ export function attachWidgetMoreMenu(opts: {
   const open = () => {
     trigger.setAttribute("aria-expanded", "true");
     popover.setAttribute("aria-hidden", "false");
-    popover.style.setProperty("display", "block", "important");
+    popover.classList.add("is-open");
 
     document.body.appendChild(popover);
     requestAnimationFrame(() => place());

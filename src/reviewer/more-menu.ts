@@ -1,5 +1,13 @@
-// src/reviewer/moreMenu.ts
-import { POPOVER_Z_INDEX } from "../core/constants";
+/**
+ * @file src/reviewer/more-menu.ts
+ * @summary Implements the "More" dropdown menu for the reviewer, providing actions such as bury, suspend, undo, open note, and edit. Handles menu creation, positioning, toggling, keyboard/pointer interactions, and cleanup.
+ *
+ * @exports
+ *   - closeMoreMenu — Closes the "More" popover menu and cleans up event listeners
+ *   - toggleMoreMenu — Toggles the "More" popover menu open or closed with positioning logic
+ *   - injectMoreMenu — Injects the "More" button and its popover menu into the current card's action row
+ */
+
 import { log } from "../core/logger";
 import type { SproutReviewerView } from "./review-view";
 
@@ -12,7 +20,7 @@ export function closeMoreMenu(view: SproutReviewerView) {
   const popover = view._moreMenuEl;
   if (popover) {
     popover.setAttribute("aria-hidden", "true");
-    popover.style.setProperty("display", "none", "important");
+    popover.classList.remove("is-open");
     try {
       popover.remove();
     } catch (e) { log.swallow("moreMenu popover.remove", e); }
@@ -46,7 +54,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
   const panel = popover.querySelector(".sprout-more-panel");
 
   const place = () => {
-    const btn = view._moreBtnEl as HTMLElement | null;
+    const btn = view._moreBtnEl;
     if (!btn || !panel) return;
     const r = btn.getBoundingClientRect();
     const margin = 8;
@@ -64,13 +72,13 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
       top = Math.max(margin, r.top - panelRect.height - 6);
     }
 
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-    popover.style.width = `${width}px`;
+    popover.style.setProperty("--sprout-popover-left", `${left}px`);
+    popover.style.setProperty("--sprout-popover-top", `${top}px`);
+    popover.style.setProperty("--sprout-popover-width", `${width}px`);
   };
 
   popover.setAttribute("aria-hidden", "false");
-  popover.style.setProperty("display", "block", "important");
+  popover.classList.add("is-open");
 
   document.body.appendChild(popover);
 
@@ -106,8 +114,8 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     document.removeEventListener("keydown", onDocKeydown, true);
   };
 
-  const firstItem = popover.querySelector("[role='menuitem']");
-  firstItem?.focus?.();
+  const firstItem = popover.querySelector("[role='menuitem']") as HTMLElement | null;
+  firstItem?.focus();
 }
 
 export function injectMoreMenu(view: SproutReviewerView) {
@@ -136,8 +144,8 @@ export function injectMoreMenu(view: SproutReviewerView) {
     )
     .forEach((n) => n.remove());
 
-  const flash = (root.querySelector(".sprout-flashcard")) ?? root;
-  const rows = Array.from(flash.querySelectorAll(".sprout-row"));
+  const flash = (root.querySelector(".sprout-flashcard") as HTMLElement) ?? root;
+  const rows = Array.from(flash.querySelectorAll<HTMLElement>(".sprout-row"));
   if (!rows.length) return;
 
   const rowHasBtn = (row: HTMLElement, label: string) => {
@@ -156,8 +164,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
 
   const disp = getComputedStyle(targetRow).display;
   if (disp !== "flex") {
-    targetRow.style.display = "flex";
-    targetRow.style.alignItems = "center";
+    targetRow.classList.add("flex", "items-center");
   }
 
   view._moreWrap = null;
@@ -171,9 +178,8 @@ export function injectMoreMenu(view: SproutReviewerView) {
 
   // Instead of rendering the menu inside the card row, render the popover at the document body root for correct positioning
   const wrap = document.createElement("div");
-  wrap.className = "sprout bc relative inline-flex";
+  wrap.className = "sprout bc relative inline-flex overflow-visible";
   wrap.dataset.bcAction = "more-wrap";
-  wrap.style.setProperty("overflow", "visible", "important");
 
   const moreBtn = document.createElement("button");
   moreBtn.type = "button";
@@ -212,16 +218,12 @@ export function injectMoreMenu(view: SproutReviewerView) {
   popover.id = popoverId;
   popover.className = "bc";
   popover.setAttribute("aria-hidden", "true");
-  popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-  popover.style.setProperty("display", "none", "important");
-  popover.style.setProperty("pointer-events", "auto", "important");
+  popover.classList.add("sprout-popover-overlay");
   document.body.appendChild(popover);
 
   const panel = document.createElement("div");
   panel.className =
-    "bc sprout-more-panel rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-  panel.style.setProperty("pointer-events", "auto", "important");
+    "bc sprout-more-panel rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
@@ -242,12 +244,8 @@ export function injectMoreMenu(view: SproutReviewerView) {
     item.tabIndex = disabled ? -1 : 0;
 
     item.className = disabled
-      ? "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm select-none opacity-50 cursor-not-allowed"
+      ? "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm select-none opacity-50 cursor-not-allowed pointer-events-none"
       : "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
-
-    if (disabled) {
-      item.style.setProperty("pointer-events", "none", "important");
-    }
 
     const label_span = document.createElement("span");
     label_span.className = "bc";

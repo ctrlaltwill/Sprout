@@ -1,11 +1,9 @@
 /**
- * widget/widget-render-session.ts
- * ────────────────────────────────
- * Renders the "session" mode of the Sprout sidebar widget – the screen
- * the user sees while studying flashcards one at a time.
+ * @file src/widget/widget-render-session.ts
+ * @summary Renders the "session" mode of the Sprout sidebar widget — the screen the user sees while studying flashcards one at a time. Extracted from SproutWidgetView.renderSession to keep the main view file lean. Builds the card front/back DOM, wires grading buttons and keyboard shortcuts, and handles answer reveal transitions.
  *
- * Extracted from `SproutWidgetView.renderSession` to keep the main
- * view file lean.
+ * @exports
+ *  - renderWidgetSession — builds and mounts the session-mode DOM into the widget container
  */
 
 import { setIcon } from "obsidian";
@@ -14,6 +12,9 @@ import { el } from "../core/ui";
 import { renderClozeFront } from "../reviewer/question-cloze";
 
 import { isClozeLike } from "./widget-helpers";
+import type { WidgetViewLike, ReviewMeta } from "./widget-helpers";
+import type { CardRecord } from "../types/card";
+import type { ReviewRating } from "../types/scheduler";
 import {
   makeTextButton,
   applyWidgetActionButtonStyles,
@@ -34,17 +35,13 @@ import { isFolderNote } from "./widget-scope";
  *               circular imports)
  * @param root – container element to render into
  */
-export function renderWidgetSession(view: any, root: HTMLElement): void {
+export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): void {
   if (!view.session) return;
   const wrap = el("div", "bc bg-background");
   wrap.classList.add("sprout-widget", "sprout");
 
   // ---- Header -------------------------------------------------------
-  const header = el("div", "bc flex items-center justify-between px-4 py-3 gap-2");
-  header.style.setProperty("border", "none", "important");
-  header.style.setProperty("border-radius", "0", "important");
-  header.style.setProperty("margin", "0 20px", "important");
-  header.style.setProperty("padding", "15px 0 10px 0", "important");
+  const header = el("div", "bc flex items-center justify-between px-4 py-3 gap-2 sprout-widget-header");
 
   const backBtn = document.createElement("button");
   backBtn.type = "button";
@@ -58,22 +55,16 @@ export function renderWidgetSession(view: any, root: HTMLElement): void {
     view.backToSummary();
   });
 
-  const studyingWrap = el("div", "bc flex flex-col items-start");
+  const studyingWrap = el("div", "bc flex flex-col items-start mr-auto");
   const studyingScope = `${view.session?.scopeName || "Note"} ${isFolderNote(view.activeFile) ? "Folder" : "Note"}`;
-  const studyingTitle = el("div", "bc text-xs", `Studying ${studyingScope}`);
-  studyingTitle.style.setProperty("color", "var(--foreground)", "important");
-  studyingTitle.style.setProperty("font-weight", "600", "important");
+  const studyingTitle = el("div", "bc text-xs sprout-widget-study-label", `Studying ${studyingScope}`);
 
   const remainingCount = Math.max(0, (view.session?.stats.total || 0) - (view.session?.stats.done || 0));
   const remainingLabel = `${remainingCount} Card${remainingCount === 1 ? "" : "s"} Remaining`;
-  const remainingLine = el("div", "bc text-xs", remainingLabel);
-  remainingLine.style.setProperty("color", "var(--foreground)", "important");
-  remainingLine.style.setProperty("font-weight", "400", "important");
-  remainingLine.style.setProperty("margin-top", "3px", "important");
+  const remainingLine = el("div", "bc text-xs sprout-widget-remaining-label", remainingLabel);
 
   studyingWrap.appendChild(studyingTitle);
   studyingWrap.appendChild(remainingLine);
-  studyingWrap.style.setProperty("margin-right", "auto", "important");
   header.appendChild(studyingWrap);
   header.appendChild(backBtn);
   wrap.appendChild(header);
@@ -107,25 +98,14 @@ export function renderWidgetSession(view: any, root: HTMLElement): void {
   const graded = view.session?.graded[id] || null;
 
   // ---- Body: card content -------------------------------------------
-  const body = el("div", "bc card px-4 py-4 flex-1 overflow-y-auto");
-  body.style.setProperty("margin", "10px auto 20px auto", "important");
-  body.style.setProperty("gap", "0", "important");
-  body.style.setProperty("border-radius", "var(--input-radius)", "important");
-  body.style.setProperty("border", "var(--border-width) solid var(--background-modifier-border)", "important");
-  body.style.setProperty("padding", "20px 20px 20px 20px", "important");
-  body.style.setProperty("max-width", "90%", "important");
-  body.style.setProperty("box-shadow", "none", "important");
+  const body = el("div", "bc card px-4 py-4 flex-1 overflow-y-auto sprout-widget-card-body");
 
   const applySectionStyles = (e: HTMLElement) => {
-    e.style.setProperty("padding", "6px 0", "important");
-    e.style.setProperty("margin", "0", "important");
+    e.classList.add("sprout-widget-section");
   };
 
   const makeDivider = () => {
-    const hr = el("div", "bc");
-    hr.style.setProperty("border-top", "1px solid var(--foreground)", "important");
-    hr.style.setProperty("opacity", "0.3", "important");
-    hr.style.setProperty("margin", "6px 0", "important");
+    const hr = el("div", "bc sprout-widget-divider");
     return hr;
   };
 
@@ -135,12 +115,8 @@ export function renderWidgetSession(view: any, root: HTMLElement): void {
     (card.type === "mcq" ? "MCQ" : isClozeLike(card) ? "Cloze" : card.type === "io" ? "Image" : "Basic");
   cardTitle = cardTitle.replace(/\s*[•·-]\s*c\d+\b/gi, "").trim();
 
-  const titleEl = el("div", "bc text-xs font-semibold");
+  const titleEl = el("div", "bc text-xs font-semibold sprout-widget-text");
   titleEl.innerHTML = processMarkdownFeatures(cardTitle);
-  titleEl.style.setProperty("color", "var(--foreground)", "important");
-  titleEl.style.setProperty("font-size", "11px", "important");
-  titleEl.style.setProperty("margin-bottom", "0", "important");
-  titleEl.style.setProperty("line-height", "1.75", "important");
   applySectionStyles(titleEl);
   body.appendChild(titleEl);
 
@@ -162,11 +138,7 @@ export function renderWidgetSession(view: any, root: HTMLElement): void {
   wrap.appendChild(body);
 
   // ---- Footer: controls ---------------------------------------------
-  const footer = el("div", "bc px-4 py-3 space-y-2 border-t border-border");
-  footer.style.setProperty("border", "none", "important");
-  footer.style.setProperty("max-width", "90%", "important");
-  footer.style.setProperty("margin", "10px auto", "important");
-  footer.style.setProperty("padding", "0 0 15px 0", "important");
+  const footer = el("div", "bc px-4 py-3 space-y-2 border-t border-border sprout-widget-footer");
 
   if (view.session.mode === "practice") {
     renderPracticeFooter(view, footer, card, ioLike);
@@ -190,10 +162,10 @@ export function renderWidgetSession(view: any, root: HTMLElement): void {
 /* ================================================================== */
 
 function renderBasicCard(
-  view: any,
+  view: WidgetViewLike,
   body: HTMLElement,
-  card: any,
-  graded: any,
+  card: CardRecord,
+  graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
   makeDivider: () => HTMLElement,
@@ -212,9 +184,7 @@ function renderBasicCard(
     qP.innerHTML = processMarkdownFeatures(qText.replace(/\n/g, "<br>"));
     qEl.appendChild(qP);
   }
-  qEl.style.lineHeight = "1.75";
-  qEl.style.fontSize = "11px";
-  qEl.style.setProperty("color", "var(--foreground)", "important");
+  qEl.classList.add("sprout-widget-text");
   applySectionStyles(qEl);
   body.appendChild(qEl);
 
@@ -234,9 +204,7 @@ function renderBasicCard(
       aP.innerHTML = processMarkdownFeatures(aText.replace(/\n/g, "<br>"));
       aEl.appendChild(aP);
     }
-    aEl.style.lineHeight = "1.75";
-    aEl.style.fontSize = "11px";
-    aEl.style.setProperty("color", "var(--foreground)", "important");
+    aEl.classList.add("sprout-widget-text");
     applySectionStyles(aEl);
     body.appendChild(aEl);
 
@@ -247,10 +215,10 @@ function renderBasicCard(
 }
 
 function renderClozeCard(
-  view: any,
+  view: WidgetViewLike,
   body: HTMLElement,
-  card: any,
-  graded: any,
+  card: CardRecord,
+  graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
   makeDivider: () => HTMLElement,
@@ -260,11 +228,7 @@ function renderClozeCard(
   const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : undefined;
 
   if (text.includes("$") || text.includes("[[")) {
-    const clozeEl = el("div", "bc sprout-widget-cloze");
-    clozeEl.style.lineHeight = "1.75";
-    clozeEl.style.fontSize = "11px";
-    clozeEl.style.setProperty("color", "var(--foreground)", "important");
-    clozeEl.style.setProperty("width", "100%", "important");
+    const clozeEl = el("div", "bc sprout-widget-cloze sprout-widget-text w-full");
     applySectionStyles(clozeEl);
 
     const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
@@ -287,11 +251,7 @@ function renderClozeCard(
     body.appendChild(clozeEl);
   } else {
     const clozeEl = renderClozeFront(text, reveal, targetIndex);
-    clozeEl.className = "bc sprout-widget-cloze";
-    clozeEl.style.lineHeight = "1.75";
-    clozeEl.style.fontSize = "11px";
-    clozeEl.style.setProperty("color", "var(--foreground)", "important");
-    clozeEl.style.setProperty("width", "100%", "important");
+    clozeEl.className = "bc sprout-widget-cloze sprout-widget-text w-full";
     applySectionStyles(clozeEl);
     body.appendChild(clozeEl);
   }
@@ -303,19 +263,16 @@ function renderClozeCard(
 }
 
 function renderMcqCard(
-  view: any,
+  view: WidgetViewLike,
   body: HTMLElement,
-  card: any,
-  graded: any,
+  card: CardRecord,
+  graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
   makeDivider: () => HTMLElement,
 ) {
-  const stemEl = el("div", "bc");
+  const stemEl = el("div", "bc sprout-widget-text");
   stemEl.innerHTML = processMarkdownFeatures(card.stem || "");
-  stemEl.style.lineHeight = "1.75";
-  stemEl.style.fontSize = "11px";
-  stemEl.style.setProperty("color", "var(--foreground)", "important");
   applySectionStyles(stemEl);
   body.appendChild(stemEl);
 
@@ -324,7 +281,7 @@ function renderMcqCard(
 
   // Randomise MCQ options if setting enabled
   const randomize = !!(view.plugin.settings.reviewer?.randomizeMcqOptions);
-  const order = opts.map((_: any, i: number) => i);
+  const order = opts.map((_: string, i: number) => i);
   if (randomize) {
     for (let i = order.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -333,32 +290,23 @@ function renderMcqCard(
     opts = order.map((i: number) => opts[i]);
   }
 
-  const optsContainer = el("div", "bc flex flex-col gap-2");
-  optsContainer.style.setProperty("padding", "6px 0", "important");
-  optsContainer.style.setProperty("margin", "0", "important");
+  const optsContainer = el("div", "bc flex flex-col gap-2 sprout-widget-section");
 
-  opts.forEach((opt: any, idx: number) => {
-    const text = typeof opt === "string" ? opt : opt && typeof opt.text === "string" ? opt.text : "";
-    const d = el("div", "bc px-3 py-2 rounded border border-border cursor-pointer hover:bg-secondary");
-    d.style.lineHeight = "1.75";
-    d.style.fontSize = "11px";
-    d.style.setProperty("color", "var(--foreground)", "important");
-    d.style.setProperty("margin-bottom", "8px", "important");
+  opts.forEach((opt: string, idx: number) => {
+    const text = typeof opt === "string" ? opt : opt && typeof (opt as Record<string, unknown>).text === "string" ? (opt as Record<string, unknown>).text as string : "";
+    const d = el("div", "bc px-3 py-2 rounded border border-border cursor-pointer hover:bg-secondary sprout-widget-text sprout-widget-mcq-option");
 
     const left = el("span", "bc inline-flex items-center gap-2 min-w-0");
     const key = el("kbd", "bc kbd");
     key.textContent = String(idx + 1);
     left.appendChild(key);
 
-    const textEl = el("span", "bc min-w-0 whitespace-pre-wrap break-words");
-    textEl.style.lineHeight = "1.75";
-    textEl.style.display = "block";
+    const textEl = el("span", "bc min-w-0 whitespace-pre-wrap break-words sprout-widget-mcq-text");
     if (text && text.includes("\n")) {
       text.split(/\n+/).forEach((line: string) => {
         const p = document.createElement("div");
         p.innerHTML = processMarkdownFeatures(line);
-        p.style.lineHeight = "1.75";
-        p.style.marginBottom = "2px";
+        p.classList.add("sprout-widget-mcq-line");
         textEl.appendChild(p);
       });
     } else {
@@ -386,19 +334,16 @@ function renderMcqCard(
 }
 
 function renderIoCard(
-  view: any,
+  view: WidgetViewLike,
   body: HTMLElement,
-  card: any,
-  graded: any,
+  card: CardRecord,
+  graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   makeDivider: () => HTMLElement,
   applySectionStyles: (e: HTMLElement) => void,
 ) {
   const reveal = view.showAnswer || !!graded;
-  const ioContainer = el("div", "bc rounded border border-border bg-muted overflow-auto");
-  ioContainer.style.setProperty("width", "100%", "important");
-  ioContainer.style.setProperty("padding", "0", "important");
-  ioContainer.style.setProperty("margin", "6px 0", "important");
+  const ioContainer = el("div", "bc rounded border border-border bg-muted overflow-auto sprout-widget-io-container");
   ioContainer.dataset.sproutIoWidget = "1";
   body.appendChild(ioContainer);
 
@@ -420,17 +365,11 @@ function renderInfoBlock(
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
 ) {
-  const infoEl = el("div", "bc");
+  const infoEl = el("div", "bc sprout-widget-info");
   const infoP = document.createElement("p");
   infoP.className = "bc whitespace-pre-wrap break-words";
-  infoP.style.setProperty("margin", "0", "important");
-  infoP.style.setProperty("margin-block", "0", "important");
   infoP.innerHTML = processMarkdownFeatures(infoText.replace(/\n/g, "<br>"));
   infoEl.appendChild(infoP);
-  infoEl.style.lineHeight = "1.75";
-  infoEl.style.fontSize = "11px";
-  infoEl.style.setProperty("color", "var(--foreground)", "important");
-  infoEl.style.setProperty("opacity", "0.6", "important");
   applySectionStyles(infoEl);
   body.appendChild(infoEl);
 }
@@ -439,7 +378,7 @@ function renderInfoBlock(
 /*  Footer renderers                                                   */
 /* ================================================================== */
 
-function renderPracticeFooter(view: any, footer: HTMLElement, card: any, ioLike: boolean) {
+function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, ioLike: boolean) {
   if ((card.type === "basic" || isClozeLike(card) || ioLike) && !view.showAnswer) {
     const revealBtn = makeTextButton({
       label: "Show Answer",
@@ -465,7 +404,7 @@ function renderPracticeFooter(view: any, footer: HTMLElement, card: any, ioLike:
   }
 }
 
-function renderScheduledFooter(view: any, footer: HTMLElement, card: any, graded: any, ioLike: boolean) {
+function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null, ioLike: boolean) {
   // Reveal button (for basic/cloze when hidden)
   if ((card.type === "basic" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
     const revealBtn = makeTextButton({
@@ -573,7 +512,7 @@ function renderScheduledFooter(view: any, footer: HTMLElement, card: any, graded
   }
 }
 
-function renderActionRow(view: any, footer: HTMLElement, graded: any) {
+function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null) {
   const actionRow = el("div", "bc flex gap-2");
 
   const editBtn = makeTextButton({
@@ -600,10 +539,10 @@ function renderActionRow(view: any, footer: HTMLElement, graded: any) {
   applyWidgetActionButtonStyles(moreBtn);
   actionRow.appendChild(moreBtn);
 
-  const canBurySuspend = view.session.mode !== "practice" && !graded;
+  const canBurySuspend = view.session!.mode !== "practice" && !graded;
   const moreMenu = attachWidgetMoreMenu({
     trigger: moreBtn,
-    canUndo: view.session.mode !== "practice" && view.canUndo(),
+    canUndo: view.session!.mode !== "practice" && view.canUndo(),
     onUndo: () => void view.undoLastGrade(),
     canBurySuspend,
     onBury: () => void view.buryCurrentCard(),
@@ -623,26 +562,14 @@ function renderActionRow(view: any, footer: HTMLElement, graded: any) {
   footer.appendChild(actionRow);
 }
 
-function renderProgressBar(view: any, wrap: HTMLElement) {
-  const progressBar = el("div", "bc px-4 py-2 border-b border-border");
-  progressBar.style.setProperty("border", "none", "important");
-  progressBar.style.setProperty("border-radius", "0", "important");
-  progressBar.style.setProperty("margin", "0 auto", "important");
-  progressBar.style.setProperty("max-width", "200px", "important");
-  progressBar.style.setProperty("width", "80%", "important");
+function renderProgressBar(view: WidgetViewLike, wrap: HTMLElement) {
+  const progressBar = el("div", "bc px-4 py-2 border-b border-border sprout-widget-progress");
 
   const progressPercent = ((view.session!.index + 1) / view.session!.stats.total) * 100;
-  const barBg = el("div", "bc w-full rounded-full overflow-hidden");
-  barBg.style.setProperty("height", "1.5px", "important");
-  barBg.style.setProperty(
-    "background-color",
-    "color-mix(in srgb, var(--foreground) 10%, transparent)",
-    "important",
-  );
+  const barBg = el("div", "bc w-full rounded-full overflow-hidden sprout-widget-progress-track");
 
-  const barFill = el("div", "bc h-full transition-all");
-  barFill.style.setProperty("background-color", "var(--theme-accent)", "important");
-  barFill.style.width = `${progressPercent}%`;
+  const barFill = el("div", "bc h-full transition-all sprout-widget-progress-fill");
+  barFill.style.setProperty("--sprout-progress", `${progressPercent}%`);
   barBg.appendChild(barFill);
   progressBar.appendChild(barBg);
   wrap.appendChild(progressBar);

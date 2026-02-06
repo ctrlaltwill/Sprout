@@ -1,10 +1,11 @@
 /**
- * imageocclusion/io-save.ts
- * ---------------------------------------------------------------------------
- * IO-card save logic extracted from ImageOcclusionCreatorModal.onOpen().
+ * @file src/imageocclusion/io-save.ts
+ * @summary IO-card save logic for both creating new and editing existing Image Occlusion cards. Handles image writing to the vault, parent and child card upserts in the store, group-to-child mapping, stale child retirement, markdown block generation and insertion/update in the source note, and cursor-based or append-based text insertion.
  *
- * Handles both the "edit existing IO card" and "create new IO card" branches.
- * ---------------------------------------------------------------------------
+ * @exports
+ *   - insertTextAtCursorOrAppend — inserts text at the editor cursor or appends to the file
+ *   - IoSaveParams — interface describing all parameters needed to save an IO card
+ *   - saveIoCard — persists an IO card (new or edit) to the store, writes the image, and updates markdown
  */
 
 import { Notice, MarkdownView, TFile, type App } from "obsidian";
@@ -16,7 +17,6 @@ import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
 import {
   normaliseVaultPath,
-  collectAnchorIdsFromText,
   reserveNewBcId,
   buildIoMarkdownWithAnchor,
 } from "./io-helpers";
@@ -108,20 +108,20 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
         .filter(Boolean)
     : null;
 
-  // Burn text boxes into the image before saving
-  if (hasTextBoxes) {
-    await burnTextBoxes();
-  }
-
   // ── Edit existing IO card ─────────────────────────────────────────────────
 
   if (isEdit) {
     const parentId = String(editParentId || "");
-    const cardsMap = (plugin.store?.data?.cards || {}) as Record<string, any>;
+    const cardsMap = (plugin.store?.data?.cards || {}) as Record<string, CardRecord>;
     const parent = cardsMap[parentId];
     if (!parent || String(parent.type) !== "io") {
       new Notice(`${BRAND}: could not find IO parent to edit.`);
       return false;
+    }
+
+    // Burn text boxes into the image before saving
+    if (hasTextBoxes) {
+      await burnTextBoxes();
     }
 
     const ioMap = plugin.store.data.io || {};
@@ -136,16 +136,16 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       if (!imagePath) {
         const baseName = `sprout-io-${parentId}.${ext}`;
         const srcFile = app.vault.getAbstractFileByPath(String(parent.sourceNotePath || ""));
-        if (srcFile instanceof TFile) imagePath = await bestEffortAttachmentPath(plugin, srcFile, baseName);
+        if (srcFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, srcFile, baseName);
         else {
           const activeFile = app.workspace.getActiveFile();
-          if (activeFile instanceof TFile) imagePath = await bestEffortAttachmentPath(plugin, activeFile, baseName);
+          if (activeFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, activeFile, baseName);
         }
       }
       try {
         await writeBinaryToVault(app, imagePath, ioImageData.data);
-      } catch (e: any) {
-        new Notice(`${BRAND}: failed to save image (${String(e?.message || e)})`);
+      } catch (e: unknown) {
+        new Notice(`${BRAND}: failed to save image (${e instanceof Error ? e.message : String(e)})`);
         return false;
       }
     }
@@ -199,7 +199,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       groupToRectIds.set(g, arr);
     }
 
-    const cards = (plugin.store.data.cards || {}) as Record<string, CardRecord>;
+    const cards = (plugin.store.data.cards || {});
     const keepChildIds = new Set<string>();
     const titleBase = parentRec.title || "Image Occlusion";
 
@@ -274,7 +274,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
         lines.splice(start, end - start, ...ioBlock);
         await app.vault.modify(file, lines.join("\n"));
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       log.warn("Failed to update IO markdown", e);
     }
 
@@ -309,12 +309,12 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   const id = await reserveNewBcId(plugin, active);
   const ext = extFromMime(ioImageData.mime);
   const baseName = `sprout-io-${id}.${ext}`;
-  const vaultPath = await bestEffortAttachmentPath(plugin, active, baseName);
+  const vaultPath = bestEffortAttachmentPath(plugin, active, baseName);
 
   try {
     await writeBinaryToVault(app, vaultPath, ioImageData.data);
-  } catch (e: any) {
-    new Notice(`${BRAND}: failed to save image (${String(e?.message || e)})`);
+  } catch (e: unknown) {
+    new Notice(`${BRAND}: failed to save image (${e instanceof Error ? e.message : String(e)})`);
     return false;
   }
 
@@ -370,7 +370,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     groupToRectIds.set(g, arr);
   }
 
-  const cards = (plugin.store.data.cards || {}) as Record<string, CardRecord>;
+  const cards = (plugin.store.data.cards || {});
   const keepChildIds = new Set<string>();
   const titleBase = parentRec.title || "Image Occlusion";
 
@@ -428,7 +428,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   const occlusionsJson =
     normRects.length > 0
       ? JSON.stringify(
-          normRects.map((r: any) => ({
+          normRects.map((r) => ({
             rectId: r.rectId,
             x: r.x,
             y: r.y,
@@ -452,7 +452,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   try {
     await insertTextAtCursorOrAppend(app, active, ioBlock.join("\n"), true);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.warn("Failed to insert IO markdown, but card saved to store", e);
   }
 

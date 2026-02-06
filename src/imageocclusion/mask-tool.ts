@@ -1,5 +1,16 @@
-// src/imageocclusion/MaskTool.ts
-// Helper utilities for Image Occlusion mask/child ID generation
+/**
+ * @file src/imageocclusion/mask-tool.ts
+ * @summary Utility functions for Image Occlusion mask and child-card ID generation. Handles group key normalisation, deterministic child ID construction from parent + group, auto-incrementing group keys for new masks, unique rect ID generation, and mask-mode type guarding.
+ *
+ * @exports
+ *   - normaliseGroupKey — normalises a raw group key string, defaulting to "1"
+ *   - stableIoChildId — generates a deterministic child ID from a parent ID and group key
+ *   - nextAutoGroupKey — returns the next auto-incremented group key given existing rects
+ *   - makeRectId — generates a unique random rect ID
+ *   - isMaskMode — type guard checking if a value is a valid IOMaskMode ("solo" | "all")
+ */
+
+import type { StoredIORect } from "./image-occlusion-types";
 
 /**
  * Normalises a group key to a stable string identifier.
@@ -24,11 +35,11 @@ export function stableIoChildId(parentId: string, groupKey: string): string {
  * Returns the next auto-incremented group key given existing rects.
  * Used for creating new masks with unique group identifiers.
  */
-export function nextAutoGroupKey(rects: any[]): string {
+export function nextAutoGroupKey(rects: StoredIORect[]): string {
   if (!Array.isArray(rects) || rects.length === 0) return "1";
   
   const nums = rects
-    .map((r: any) => {
+    .map((r) => {
       const k = normaliseGroupKey(r?.groupKey);
       const n = parseInt(k, 10);
       return Number.isFinite(n) && n > 0 ? n : 0;
@@ -49,6 +60,6 @@ export function makeRectId(): string {
 /**
  * Type guard for IOMaskMode.
  */
-export function isMaskMode(val: any): val is "solo" | "all" {
+export function isMaskMode(val: unknown): val is "solo" | "all" {
   return val === "solo" || val === "all";
 }

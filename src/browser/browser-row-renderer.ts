@@ -1,23 +1,25 @@
 /**
- * browser/browser-row-renderer.ts
- * ────────────────────────────────
- * Builds the `<tbody>` for the Flashcard Browser table, including:
- *   • read-only field cells (type, stage, due, id badge)
- *   • editable textarea cells (title, question, answer, info)
- *   • the groups tag-editor popover
- *   • checkbox + shift-select logic per row
- *   • empty-state message
+ * @file src/browser/browser-row-renderer.ts
+ * @summary Builds the <tbody> for the Flashcard Browser table, constructing one
+ * <tr> per card with read-only cells (type, stage, due, ID badge), editable
+ * textarea cells (title, question, answer, info), a groups tag-editor popover,
+ * checkbox/shift-select logic per row, and an empty-state overlay. Extracted
+ * from SproutCardBrowserView to keep the view class focused on orchestration.
  *
- * Extracted from SproutCardBrowserView.refreshTable() to keep the
- * view class focused on high-level orchestration.
+ * @exports
+ *   - RowRendererContext — interface describing the callbacks and state the row renderer needs from its host view
+ *   - buildPageTableBody — builds a <tbody> element containing one <tr> per row for the current page
+ *   - renderEmptyState — shows a centred "No cards match" overlay inside the table scroll container
+ *   - clearEmptyState — removes any existing empty-state overlay from the root element
  */
 
 import { Notice, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import type { QuarantineEntry } from "../types/store";
 import { BRAND, POPOVER_Z_INDEX } from "../core/constants";
 import { log } from "../core/logger";
-import { fmtGroups, coerceGroups } from "../indexes/group-format";
+import { coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { stageLabel } from "../reviewer/labels";
 
@@ -91,7 +93,7 @@ export function buildPageTableBody(
   const tbody = document.createElement("tbody");
   tbody.className = "";
 
-  const quarantine = (ctx.plugin.store.data.quarantine || {}) as Record<string, any>;
+  const quarantine = (ctx.plugin.store.data.quarantine || {}) as Record<string, QuarantineEntry>;
   const pageRowCount = pageRows.length;
 
   for (const [rowIndex, { card, state, dueMs }] of pageRows.entries()) {
@@ -524,8 +526,8 @@ function makeEditorCell(
         const updated = ctx.applyValueToCard(card, col, nextVal);
         await ctx.writeCardToMarkdown(updated);
         baseline = nextVal;
-      } catch (err: any) {
-        new Notice(`${BRAND}: ${err?.message || String(err)}`);
+      } catch (err: unknown) {
+        new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
         ta.value = baseline;
       } finally {
         ctx.saving.delete(key);
@@ -564,9 +566,9 @@ function makeIoCell(
     const rects = Array.isArray(def?.rects) ? def.rects : ((cardRec.occlusions ?? cardRec.rects ?? null) as unknown[] | null);
     let maskedRects = rects;
     if (card.type === "io-child" && Array.isArray(rects)) {
-      const rectIds = Array.isArray(card.rectIds) ? card.rectIds.map((r: any) => String(r)) : [];
+      const rectIds = Array.isArray(card.rectIds) ? card.rectIds.map((r: unknown) => String(r)) : [];
       maskedRects = rectIds.length
-        ? rects.filter((r: Record<string, unknown>) => rectIds.includes(String(r.rectId)))
+        ? rects.filter((r) => rectIds.includes(String((r as Record<string, unknown>).rectId)))
         : rects;
     }
     const labelsCard = Array.isArray(maskedRects) ? { rects: maskedRects } : card;
@@ -597,7 +599,7 @@ function makeGroupsEditorCell(
   isQuarantined: boolean,
   rowIndex: number,
   pageRowCount: number,
-  pageRows: BrowserRow[],
+  _pageRows: BrowserRow[],
   ctx: RowRendererContext,
 ): HTMLTableCellElement {
   if (isQuarantined) {
@@ -617,7 +619,7 @@ function makeGroupsEditorCell(
   const key = `${card.id}:groups`;
   let baseline = groupsToInput(card.groups);
   let selected = coerceGroups(card.groups)
-    .map((g: any) => titleCaseGroupPath(String(g).trim()))
+    .map((g) => titleCaseGroupPath(String(g).trim()))
     .filter(Boolean);
 
   const tagBox = document.createElement("div");
@@ -690,8 +692,8 @@ function makeGroupsEditorCell(
       await ctx.writeCardToMarkdown(updated);
       ctx.plugin.store.upsertCard(updated);
       baseline = nextVal;
-    } catch (err: any) {
-      new Notice(`${BRAND}: ${err?.message || String(err)}`);
+    } catch (err: unknown) {
+      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
       selected = parseGroupsInput(baseline);
       renderBadges();
     } finally {
@@ -745,8 +747,8 @@ function makeGroupsEditorCell(
 
   const optionSet = new Set<string>();
   for (const g of (ctx.plugin.store.getAllCards() || [])
-    .flatMap((c: any) => (Array.isArray(c?.groups) ? c.groups : []))
-    .map((g: any) => titleCaseGroupPath(String(g).trim()))
+    .flatMap((c) => (Array.isArray(c?.groups) ? c.groups : []))
+    .map((g) => titleCaseGroupPath(String(g).trim()))
     .filter(Boolean)) {
     for (const tag of expandGroupAncestors(g)) optionSet.add(tag);
   }

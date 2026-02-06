@@ -1,3 +1,15 @@
+/**
+ * @file src/analytics/future-due-chart.tsx
+ * @summary Composed bar-and-area chart that projects the number of cards due
+ * each day over a configurable horizon (7, 30, or 90 days). Bars are stacked by
+ * card stage (new, learning, relearning, review) and a smoothed area line
+ * visualises the cumulative backlog including overdue cards. Supports filtering
+ * by card type, deck, and group tags.
+ *
+ * @exports
+ *   - FutureDueChart — React component rendering a study forecast composed chart with filter controls
+ */
+
 import * as React from "react";
 import { Area, Bar, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
@@ -60,6 +72,7 @@ type FutureDueCard = {
   type?: string | null;
   sourceNotePath?: string | null;
   groups?: string[] | null;
+  clozeChildren?: number[] | null;
 };
 
 type Datum = {
@@ -205,7 +218,7 @@ function smoothSeries(values: number[], window: number) {
   });
 }
 
-function TooltipContent(props: { active?: boolean; payload?: any[]; label?: string }) {
+function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: unknown }>; label?: string }) {
   if (!props.active || !props.payload || !props.payload.length) return null;
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;

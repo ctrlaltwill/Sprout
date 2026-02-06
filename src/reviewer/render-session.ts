@@ -1,7 +1,12 @@
-// src/reviewer/renderSession.ts
-import { setIcon } from "obsidian";
+/**
+ * @file src/reviewer/render-session.ts
+ * @summary Renders the active study-session view including the flashcard UI, grading buttons, MCQ option display, cloze blanks, image-occlusion cards, info panels, skip/undo controls, and the session header. This is the primary rendering entry point for the session mode of the reviewer.
+ *
+ * @exports
+ *   - renderSessionMode — Builds and mounts the full session-mode DOM (card, buttons, header, menus) into the given container
+ */
+
 import { refreshAOS } from "../core/aos-loader";
-import { POPOVER_Z_INDEX } from "../core/constants";
 import { log } from "../core/logger";
 import { renderStudySessionHeader } from "./study-session-header";
 import type { Scope, Session, Rating } from "./types";
@@ -20,20 +25,20 @@ type Args = {
   showAnswer: boolean;
   setShowAnswer: (v: boolean) => void;
 
-  currentCard: () => any;
+  currentCard: () => CardRecord | null;
 
   // navigation
   backToDecks: () => void;
   nextCard: (userInitiated: boolean) => Promise<void> | void;
 
   // grading
-  gradeCurrentRating: (rating: Rating, meta: any) => Promise<void>;
+  gradeCurrentRating: (rating: Rating, meta: Record<string, unknown> | null) => Promise<void>;
   answerMcq: (choiceIdx: number) => Promise<void>;
 
   // skip (session-only postpone; no scheduling changes)
   enableSkipButton?: boolean;
   skipEnabled?: boolean;
-  skipCurrentCard: (meta?: any) => void;
+  skipCurrentCard: (meta?: Record<string, unknown>) => void;
 
   // bury / suspend
   canBurySuspend?: boolean;
@@ -65,7 +70,7 @@ type Args = {
   // ✅ IO rendering hook (provided by reviewer.ts)
   renderImageOcclusionInto?: (
     containerEl: HTMLElement,
-    card: any,
+    card: CardRecord,
     sourcePath: string,
     reveal: boolean,
   ) => Promise<void>;
@@ -93,7 +98,7 @@ function formatBreadcrumbs(s: string): string {
     .trim();
 }
 
-function formatNotePathForHeader(raw: any): string {
+function formatNotePathForHeader(raw: string): string {
   let s = String(raw ?? "").trim();
   if (!s) return "Note";
   s = s.replace(/\\/g, "/").replace(/^\.\//, "");
@@ -101,10 +106,10 @@ function formatNotePathForHeader(raw: any): string {
   return formatBreadcrumbs(s);
 }
 
-function extractInfoField(card: any): string | null {
+function extractInfoField(card: CardRecord): string | null {
   if (!card) return null;
 
-  const pick = (v: any): string | null => {
+  const pick = (v: unknown): string | null => {
     if (typeof v === "string" && v.trim()) return v.trim();
     if (Array.isArray(v)) {
       const s = v.filter((x) => typeof x === "string").join("\n").trim();
@@ -125,28 +130,6 @@ function extractInfoField(card: any): string | null {
   return null;
 }
 
-function clozeToMarkdown(raw: string, reveal: boolean, targetIndex?: number | null): string {
-  const s = String(raw ?? "");
-  const re = /\{\{c(\d+)::([\s\S]*?)(?:::([\s\S]*?))?\}\}/g;
-
-  return s.replace(re, (_m, n, answer, hint) => {
-    const idx = Number(n);
-    const isTarget = typeof targetIndex === "number" ? idx === targetIndex : true;
-    const a = String(answer ?? "");
-    const h = String(hint ?? "");
-
-    if (!isTarget) return a;
-
-    if (reveal) {
-      if (!a.includes("\n")) return `==${a}==`;
-      return a;
-    }
-
-    if (h.trim()) return `____ _(${h.trim()})_`;
-    return `____`;
-  });
-}
-
 // --- Basecoat scoping --------------------------------------------------------
 
 /**
@@ -160,14 +143,6 @@ function h(tag: string, className?: string, text?: string) {
   node.className = className && className.trim() ? `bc ${className}` : "bc";
   if (typeof text === "string") node.textContent = text;
   return node;
-}
-
-function hr() {
-  // Use <hr> so Basecoat defaults can apply (scoped via `.bc`).
-  const r = document.createElement("hr");
-  r.className = "bc";
-  r.style.setProperty("margin", "0", "important");
-  return r;
 }
 
 function makeKbd(label: string) {
@@ -204,31 +179,6 @@ function makeTextButton(opts: {
   return btn;
 }
 
-function makeIconButton(opts: {
-  icon: string;
-  label: string;
-  title?: string;
-  className: string;
-  onClick: () => void;
-}) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = opts.className.split(/\s+/).includes("bc") ? opts.className : `bc ${opts.className}`;
-  btn.setAttribute("data-tooltip", opts.label);
-  if (opts.title) btn.title = opts.title;
-
-  // Basecoat icon buttons expect an SVG child; setIcon will inject it.
-  setIcon(btn, opts.icon);
-
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    opts.onClick();
-  });
-
-  return btn;
-}
-
 // --- IO helpers --------------------------------------------------------------
 
 function ioChildKeyFromId(id: string): string | null {
@@ -238,7 +188,7 @@ function ioChildKeyFromId(id: string): string | null {
   return k ? k : null;
 }
 
-function getIoGroupKey(card: any): string | null {
+function getIoGroupKey(card: CardRecord): string | null {
   if (!card) return null;
   const direct =
     typeof card.groupKey === "string" && card.groupKey.trim()
@@ -286,7 +236,7 @@ function shuffleInPlace(a: number[]) {
   }
 }
 
-function getMcqDisplayOrder(session: Session, card: any, enabled: boolean): number[] {
+function getMcqDisplayOrder(session: Session, card: CardRecord, enabled: boolean): number[] {
   const opts = card?.options || [];
   const n = Array.isArray(opts) ? opts.length : 0;
   const identity = Array.from({ length: n }, (_, i) => i);
@@ -324,69 +274,6 @@ function getMcqDisplayOrder(session: Session, card: any, enabled: boolean): numb
   return next;
 }
 
-// --- Breadcrumbs -------------------------------------------------------------
-
-function makeBreadcrumbs(parts: Array<{ label: string; onClick?: () => void }>) {
-  const ol = document.createElement("ol");
-  ol.className =
-    "bc text-muted-foreground flex flex-wrap items-center gap-1.5 break-words text-sm sm:gap-2.5";
-
-  const addSep = () => {
-    const li = document.createElement("li");
-    li.className = "bc";
-    li.setAttribute("aria-hidden", "true");
-
-    const sep = document.createElement("span");
-    sep.className = "bc inline-flex items-center justify-center [&_svg]:size-3.5";
-    setIcon(sep, "chevron-right");
-    li.appendChild(sep);
-    ol.appendChild(li);
-  };
-
-  parts.forEach((p, idx) => {
-    if (idx > 0) addSep();
-
-    const li = document.createElement("li");
-    li.className = "bc inline-flex items-center";
-    ol.appendChild(li);
-
-    if (typeof p.onClick === "function") {
-      // First item (Decks) should be an <a> tag
-      const isFirstItem = idx === 0;
-      if (isFirstItem) {
-        const link = document.createElement("a");
-        link.href = "#";
-        link.className = "bc font-bold hover:text-foreground transition-colors cursor-pointer";
-        link.textContent = p.label;
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          p.onClick?.();
-        });
-        li.appendChild(link);
-      } else {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "bc hover:text-foreground transition-colors";
-        btn.textContent = p.label;
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          p.onClick?.();
-        });
-        li.appendChild(btn);
-      }
-    } else {
-      const span = document.createElement("span");
-      span.className = "bc text-foreground";
-      span.textContent = p.label;
-      li.appendChild(span);
-    }
-  });
-
-  return ol;
-}
-
 // --- Dropdown menu (optional header actions) ---------------------------------
 
 function makeHeaderMenu(opts: {
@@ -422,14 +309,10 @@ function makeHeaderMenu(opts: {
   popover.id = `${id}-popover`;
   popover.className = "bc sprout";
   popover.setAttribute("aria-hidden", "true");
-  popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
-  popover.style.setProperty("display", "none", "important");
-  popover.style.setProperty("pointer-events", "auto", "important");
+  popover.classList.add("sprout-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "bc sprout rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1";
-  panel.style.setProperty("pointer-events", "auto", "important");
+  panel.className = "bc sprout rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
@@ -446,8 +329,7 @@ function makeHeaderMenu(opts: {
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
     if (disabled) {
-      item.style.opacity = "0.5";
-      item.style.cursor = "not-allowed";
+      item.classList.add("sprout-menu-item--disabled");
       item.setAttribute("aria-disabled", "true");
     }
 
@@ -492,13 +374,6 @@ function makeHeaderMenu(opts: {
     menu.appendChild(item);
   };
 
-  const addSeparator = () => {
-    const sep = document.createElement("hr");
-    sep.setAttribute("role", "separator");
-    sep.className = "bc h-px bg-border my-2";
-    menu.appendChild(sep);
-  };
-
   // Open Note button
   if (window.sproutOpenCurrentCardNote) {
     addItem("Open", "O", window.sproutOpenCurrentCardNote, false);
@@ -528,15 +403,15 @@ function makeHeaderMenu(opts: {
       top = Math.max(margin, r.top - panelRect.height - 6);
     }
 
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-    popover.style.width = `${width}px`;
+    popover.style.setProperty("--sprout-popover-left", `${left}px`);
+    popover.style.setProperty("--sprout-popover-top", `${top}px`);
+    popover.style.setProperty("--sprout-popover-width", `${width}px`);
   };
 
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");
     popover.setAttribute("aria-hidden", "true");
-    popover.style.setProperty("display", "none", "important");
+    popover.classList.remove("is-open");
 
     try {
       cleanup?.();
@@ -551,7 +426,7 @@ function makeHeaderMenu(opts: {
   const open = () => {
     trigger.setAttribute("aria-expanded", "true");
     popover.setAttribute("aria-hidden", "false");
-    popover.style.setProperty("display", "block", "important");
+    popover.classList.add("is-open");
 
     document.body.appendChild(popover);
     requestAnimationFrame(() => place());
@@ -625,13 +500,9 @@ export function renderSessionMode(args: Args) {
   const wrap = document.createElement("div");
   wrap.className = "bc card w-full";
   // Optional: keep a plugin hook class for any small overrides you still want.
-  wrap.classList.add("bc-session-card", "sprout-session-card");
-  wrap.style.margin = "0";
+  wrap.classList.add("bc-session-card", "sprout-session-card", "m-0");
   const resetAosState = () => {
-    wrap.classList.remove("aos-init", "aos-animate");
-    wrap.style.removeProperty("opacity");
-    wrap.style.removeProperty("transform");
-    wrap.style.removeProperty("transition");
+    wrap.classList.remove("aos-init", "aos-animate", "sprout-aos-fallback");
   };
 
   // Always render the card, but only apply AOS for front side (not revealed)
@@ -651,9 +522,7 @@ export function renderSessionMode(args: Args) {
     if (!wrap) return;
     const style = getComputedStyle(wrap);
     if (style.opacity === "0") {
-      wrap.style.opacity = "1";
-      wrap.style.transform = "none";
-      wrap.style.transition = "none";
+      wrap.classList.add("sprout-aos-fallback");
     }
   }, 350);
 
@@ -667,17 +536,6 @@ export function renderSessionMode(args: Args) {
   quitBtn.type = "button";
   quitBtn.className = "bc btn-icon sprout-quit-btn";
   quitBtn.setAttribute("data-tooltip", "Quit study session");
-  quitBtn.style.position = "absolute";
-  quitBtn.style.top = "16px";
-  quitBtn.style.right = "16px";
-  quitBtn.style.padding = "8px";
-  quitBtn.style.zIndex = "10";
-  quitBtn.style.background = "none";
-  quitBtn.style.border = "none";
-  quitBtn.style.outline = "none";
-  quitBtn.style.boxShadow = "none";
-  quitBtn.style.borderRadius = "6px";
-  quitBtn.style.cursor = "pointer";
   quitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
   quitBtn.addEventListener("click", () => args.backToDecks());
 
@@ -703,8 +561,7 @@ export function renderSessionMode(args: Args) {
     header.appendChild(locationRow);
 
     const locationEl = document.createElement("div");
-    locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center";
-    locationEl.style.fontStyle = "italic";
+    locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
     locationEl.textContent = location || "Home";
     locationRow.appendChild(locationEl);
     // Always append quit button to header row for correct positioning
@@ -771,8 +628,7 @@ export function renderSessionMode(args: Args) {
         onClick: () => args.startPractice?.(),
         kbd: "↵",
       });
-      startBtn.style.setProperty("background-color", "rgb(0, 0, 0)", "important");
-      startBtn.style.setProperty("color", "white", "important");
+      startBtn.classList.add("sprout-btn-start-practice");
       footerCenter.appendChild(startBtn);
     }
 
@@ -804,8 +660,7 @@ export function renderSessionMode(args: Args) {
   header.appendChild(locationRow);
 
   const locationEl = document.createElement("div");
-  locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center";
-  locationEl.style.fontStyle = "italic";
+  locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
   locationEl.textContent = location || "Note";
   locationRow.appendChild(locationEl);
   locationRow.appendChild(quitBtn);
@@ -866,7 +721,7 @@ export function renderSessionMode(args: Args) {
         }
 
         if (app?.workspace?.openLinkText) {
-          app.workspace.openLinkText(href, srcPath || "", true);
+          void app.workspace.openLinkText(href, srcPath || "", true);
         } else {
           window.open(href, "_blank", "noopener");
         }
@@ -879,9 +734,7 @@ export function renderSessionMode(args: Args) {
 
   const renderMdBlock = (cls: string, md: string) => {
     const block = document.createElement("div");
-    block.className = `bc ${cls} whitespace-pre-wrap break-words`;
-    block.style.setProperty("font-size", "14px", "important");
-    block.style.setProperty("line-height", "1.75", "important");
+    block.className = `bc ${cls} whitespace-pre-wrap break-words sprout-md-block`;
     void args.renderMarkdownInto(block, md ?? "", sourcePath).then(() => setupLinkHandlers(block, sourcePath));
     return block;
   };
@@ -901,9 +754,7 @@ export function renderSessionMode(args: Args) {
 
     section.appendChild(mutedLabel(reveal ? "Answer" : "Question"));
     const clozContainer = document.createElement("div");
-    clozContainer.className = "bc bc-cloze whitespace-pre-wrap break-words";
-    clozContainer.style.setProperty("font-size", "14px", "important");
-    clozContainer.style.setProperty("line-height", "1.75", "important");
+    clozContainer.className = "bc bc-cloze whitespace-pre-wrap break-words sprout-md-block";
     const clozeContent = args.renderClozeFront(text, reveal, targetIndex);
     if (reveal) {
       const span = document.createElement("span");
@@ -921,24 +772,24 @@ export function renderSessionMode(args: Args) {
     section.appendChild(mutedLabel(reveal ? "Answer" : "Options"));
 
     // Only show MCQ options, not info, as answer options
-    const opts = (card.options || []).filter((opt: any) => !opt.isCorrect || (opt.isCorrect && (card.a || "").trim() === opt.text.trim()));
+    const opts = (card.options || [] as Array<{ text: string; isCorrect: boolean } | string>).filter((opt) => {
+      if (typeof opt === "string") return true;
+      return !opt.isCorrect || (opt.isCorrect && (card.a || "").trim() === opt.text.trim());
+    });
     const chosenOrigIdx = (graded?.meta as Record<string, unknown> | undefined)?.mcqChoice;
     const order = getMcqDisplayOrder(args.session, card, !!args.randomizeMcqOptions);
 
     const optionList = document.createElement("div");
-    optionList.className = "bc flex flex-col gap-2";
-    // Add extra spacing between the "Options" subtitle and the options list
-    optionList.style.marginTop = "10px";
+    optionList.className = "bc flex flex-col gap-2 sprout-mcq-options";
     section.appendChild(optionList);
 
     order.forEach((origIdx: number, displayIdx: number) => {
       const opt = opts[origIdx] ?? {};
-      const text = typeof opt === "string" ? opt : (opt && typeof opt.text === "string" ? opt.text : "");
+      const text = typeof opt === "string" ? opt : (opt && typeof (opt as Record<string, unknown>).text === "string" ? (opt as Record<string, unknown>).text as string : "");
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "bc btn-outline w-full justify-start text-left h-auto py-2";
-      btn.style.marginBottom = "8px";
+      btn.className = "bc btn-outline w-full justify-start text-left h-auto py-2 mb-2";
 
       // Apply correctness styles on back of card (revealed).
       // Show green border on the correct option, red border on all non-correct options.
@@ -949,19 +800,11 @@ export function renderSessionMode(args: Args) {
         const isChosenWrong = isChosen && chosenOrigIdx !== card.correctIndex;
 
         if (isCorrect) {
-          btn.classList.add("bc-mcq-correct");
-          btn.style.setProperty("border-color", "rgb(34, 197, 94)", "important"); // green
-          btn.style.setProperty("background-color", "rgb(220, 252, 231)", "important"); // light green
-          btn.style.borderWidth = "2px";
-          btn.style.borderStyle = "solid";
+          btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
         }
 
         if (isChosenWrong) {
-          btn.classList.add("bc-mcq-wrong");
-          btn.style.setProperty("border-color", "rgb(239, 68, 68)", "important"); // red
-          btn.style.setProperty("background-color", "rgb(254, 226, 226)", "important"); // light red
-          btn.style.borderWidth = "2px";
-          btn.style.borderStyle = "solid";
+          btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
         }
       }
 
@@ -975,10 +818,7 @@ export function renderSessionMode(args: Args) {
 
       // Render option text with markdown support for wiki links and LaTeX
       const textEl = document.createElement("span");
-      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words";
-      textEl.style.lineHeight = "1.75";
-      textEl.style.display = "block";
-      textEl.style.setProperty("font-size", "14px", "important");
+      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words sprout-mcq-option-text";
       
       // Use markdown rendering if text contains wiki links or LaTeX
       if (text && (text.includes('[[') || text.includes('$'))) {
@@ -987,8 +827,7 @@ export function renderSessionMode(args: Args) {
         text.split(/\n+/).forEach((line: string) => {
           const p = document.createElement("div");
           p.textContent = line;
-          p.style.lineHeight = "1.75";
-          p.style.marginBottom = "2px";
+          p.classList.add("sprout-mcq-option-line");
           textEl.appendChild(p);
         });
       } else {
@@ -1102,8 +941,7 @@ export function renderSessionMode(args: Args) {
           onClick: goNext,
           kbd: "↵",
         });
-        continueBtn.style.setProperty("background-color", "var(--sprout-easy-bg)", "important");
-        continueBtn.style.setProperty("color", "var(--sprout-easy-fg)", "important");
+        continueBtn.classList.add("sprout-btn-easy");
         mainRow.appendChild(continueBtn);
         hasMainRowContent = true;
       } else {
@@ -1119,8 +957,7 @@ export function renderSessionMode(args: Args) {
           onClick: () => void args.gradeCurrentRating("again", {}).then(goNext),
           kbd: "1",
         });
-        againBtn.style.setProperty("background-color", "var(--sprout-again-bg)", "important");
-        againBtn.style.setProperty("color", "var(--sprout-again-fg)", "important");
+        againBtn.classList.add("sprout-btn-again");
         group.appendChild(againBtn);
 
         if (four) {
@@ -1130,8 +967,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("hard", {}).then(goNext),
             kbd: "2",
           });
-          hardBtn.style.setProperty("background-color", "var(--sprout-hard-bg)", "important");
-          hardBtn.style.setProperty("color", "var(--sprout-hard-fg)", "important");
+          hardBtn.classList.add("sprout-btn-hard");
           group.appendChild(hardBtn);
 
           const goodBtn = makeTextButton({
@@ -1140,8 +976,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "3",
           });
-          goodBtn.style.setProperty("background-color", "var(--sprout-good-bg)", "important");
-          goodBtn.style.setProperty("color", "var(--sprout-good-fg)", "important");
+          goodBtn.classList.add("sprout-btn-good");
           group.appendChild(goodBtn);
 
           const easyBtn = makeTextButton({
@@ -1150,8 +985,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("easy", {}).then(goNext),
             kbd: "4",
           });
-          easyBtn.style.setProperty("background-color", "var(--sprout-easy-bg)", "important");
-          easyBtn.style.setProperty("color", "var(--sprout-easy-fg)", "important");
+          easyBtn.classList.add("sprout-btn-easy");
           group.appendChild(easyBtn);
         } else {
           const goodBtn = makeTextButton({
@@ -1160,8 +994,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "2",
           });
-          goodBtn.style.setProperty("background-color", "var(--sprout-good-bg)", "important");
-          goodBtn.style.setProperty("color", "var(--sprout-good-fg)", "important");
+          goodBtn.classList.add("sprout-btn-good");
           group.appendChild(goodBtn);
         }
       }
@@ -1215,7 +1048,7 @@ export function renderSessionMode(args: Args) {
     const anchorStr = anchor ? `#^${anchor}` : "";
     const app = window.app;
     if (app && app.workspace && typeof app.workspace.openLinkText === 'function') {
-      app.workspace.openLinkText(filePath + anchorStr, filePath, true);
+      void app.workspace.openLinkText(filePath + anchorStr, filePath, true);
     }
   };
   footerRight.appendChild(

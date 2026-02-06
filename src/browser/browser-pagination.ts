@@ -1,8 +1,12 @@
 /**
- * browser/browser-pagination.ts
- * ─────────────────────────────
- * Extracted pagination renderer for the Flashcard Browser.
- * Originally part of SproutCardBrowserView._renderPagination.
+ * @file src/browser/browser-pagination.ts
+ * @summary Renders pagination controls (prev/next buttons, numbered page
+ * buttons, and ellipsis jumps) for the Flashcard Browser table. Extracted
+ * from SproutCardBrowserView to keep pagination logic self-contained.
+ *
+ * @exports
+ *   - PaginationContext — interface describing the page state and callbacks the renderer needs
+ *   - renderPagination — renders pagination buttons into a host element based on total row count
  */
 
 import { setIcon } from "obsidian";

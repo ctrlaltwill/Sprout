@@ -1,5 +1,14 @@
-// src/reviewer/skip.ts
-import { Modal, setIcon } from "obsidian";
+/**
+ * @file src/reviewer/skip.ts
+ * @summary Implements the card-skip feature for the reviewer. Allows users to postpone a card within the current session queue without affecting scheduling. After multiple skips of the same card, prompts the user to optionally bury it for the day.
+ *
+ * @exports
+ *   - isSkipEnabled — Checks whether the skip button is enabled in plugin settings
+ *   - initSkipState — Initialises the per-session skip count tracking object
+ *   - skipCurrentCard — Removes the current card from its position and re-inserts it later in the queue, prompting bury after 3 skips
+ */
+
+import { Modal, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { Session } from "./types";
 import type { SproutReviewerView } from "./review-view";
@@ -23,7 +32,7 @@ class ConfirmBuryForTodayModal extends Modal {
   private _onBury: () => void;
   private _onIgnore: () => void;
 
-  constructor(app: any, onBury: () => void, onIgnore: () => void) {
+  constructor(app: App, onBury: () => void, onIgnore: () => void) {
     super(app);
     this._onBury = onBury;
     this._onIgnore = onIgnore;

@@ -1,4 +1,13 @@
-// src/reviewer/markdownBlock.ts
+/**
+ * @file src/reviewer/markdown-block.ts
+ * @summary Provides functions for locating and rewriting card blocks within Markdown note files. Identifies card boundaries by anchor markers (^sprout-ID), and can rebuild a card's Markdown representation from a CardRecord in pipe-delimited format.
+ *
+ * @exports
+ *   - isMarkerLine — Tests whether a line is a card anchor (^sprout-...) or ID comment marker
+ *   - findCardBlockRangeById — Locates the start and end line indices of a card block in a lines array by card ID
+ *   - buildCardBlockMarkdown — Generates an array of Markdown lines representing a card in canonical pipe-delimited format
+ */
+
 import type { CardRecord } from "../core/store";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { escapePipes } from "./fields";

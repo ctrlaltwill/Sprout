@@ -1,4 +1,11 @@
-// src/reviewer/cloze.ts
+/**
+ * @file src/reviewer/question-cloze.ts
+ * @summary Renders cloze-deletion flashcard fronts for the reviewer. Parses {{cN::answer}} tokens in the card text and replaces them with styled blanks (unrevealed) or highlighted answer spans (revealed), with dynamic width sizing based on answer length.
+ *
+ * @exports
+ *   - renderClozeFront — Creates a DOM element rendering a cloze card's text with blanks or revealed answers
+ */
+
 import { el } from "../core/ui";
 
 export function renderClozeFront(text: string, reveal: boolean, targetIndex?: number | null): HTMLElement {
@@ -41,16 +48,6 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
       return;
     }
     if (lastNode) p.appendChild(document.createTextNode(" "));
-  };
-
-  const makeBlankText = (n: number) => {
-    const chunk = 6;
-    let out = "";
-    for (let i = 0; i < n; i++) {
-      out += " ";
-      if ((i + 1) % chunk === 0) out += "\u200B";
-    }
-    return out;
   };
 
   while ((m = re.exec(text))) {

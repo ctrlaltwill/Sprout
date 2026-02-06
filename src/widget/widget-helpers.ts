@@ -1,30 +1,46 @@
 /**
- * widget/widget-helpers.ts
- * ────────────────────────
- * Shared types and pure helper functions for the Sprout sidebar widget.
+ * @file src/widget/widget-helpers.ts
+ * @summary Shared types and pure helper functions for the Sprout sidebar widget. Defines the session and undo-frame data shapes, provides IO and cloze card-type detection utilities, filters out non-reviewable parent cards, and includes general string helpers.
  *
- * Exports:
- *  - Session              – widget review-session state
- *  - UndoFrame            – snapshot for undo-last-grade
- *  - ioChildKeyFromId     – extract IO child key from a card ID
- *  - cardHasIoChildKey    – whether a card has an IO child key
- *  - isIoParentCard       – detect IO parent cards
- *  - isClozeParentCard    – detect cloze parent cards
- *  - filterReviewableCards – filter out non-reviewable (parent) cards
- *  - toTitleCase          – convert string to Title Case
- *  - isClozeLike          – detect cloze or cloze-child cards
+ * @exports
+ *  - ReviewMeta           — type for freeform metadata attached to a grade or undo frame
+ *  - Session              — type representing the widget review-session state
+ *  - UndoFrame            — type for a snapshot used by undo-last-grade
+ *  - ioChildKeyFromId     — extracts the IO child key from a card ID string
+ *  - cardHasIoChildKey    — checks whether a card record has an IO child key
+ *  - isIoParentCard       — detects IO parent cards
+ *  - isClozeParentCard    — detects cloze parent cards
+ *  - isClozeLike          — detects cloze or cloze-child cards
+ *  - filterReviewableCards — filters out non-reviewable parent cards from an array
+ *  - WidgetViewLike       — interface describing the minimal widget view surface for helper functions
+ *  - toTitleCase          — converts a string to Title Case
  */
+
+import type { CardRecord } from "../types/card";
+import type { CardState } from "../types/scheduler";
+import type { ReviewRating } from "../types/scheduler";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
+/** Freeform metadata attached to a grade / undo frame. */
+export type ReviewMeta = {
+  mcqChoice?: number;
+  mcqCorrect?: number;
+  practice?: boolean;
+  auto?: boolean;
+  via?: string;
+  action?: string;
+  [key: string]: unknown;
+};
+
 /** State of a widget study session. */
 export type Session = {
   scopeName: string;
-  queue: any[];
+  queue: CardRecord[];
   index: number;
-  graded: Record<string, { rating: "again" | "hard" | "good" | "easy"; at: number; meta: any }>;
+  graded: Record<string, { rating: ReviewRating; at: number; meta: ReviewMeta | null }>;
   stats: { total: number; done: number };
   mode: "scheduled" | "practice";
 };
@@ -34,14 +50,14 @@ export type UndoFrame = {
   sessionStamp: number;
   id: string;
   cardType: string;
-  rating: "again" | "hard" | "good" | "easy";
+  rating: ReviewRating;
   at: number;
-  meta: any;
+  meta: ReviewMeta | null;
   sessionIndex: number;
   showAnswer: boolean;
   reviewLogLenBefore: number;
   analyticsLenBefore: number;
-  prevState: any;
+  prevState: CardState;
 };
 
 /* ------------------------------------------------------------------ */
@@ -57,7 +73,7 @@ export function ioChildKeyFromId(id: string): string | null {
 }
 
 /** Returns `true` if the card has an IO child key in any known property. */
-export function cardHasIoChildKey(card: any): boolean {
+export function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
   if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
   if (typeof card.ioGroupKey === "string" && card.ioGroupKey.trim()) return true;
@@ -71,7 +87,7 @@ export function cardHasIoChildKey(card: any): boolean {
 /* ------------------------------------------------------------------ */
 
 /** Returns `true` if the card is an IO *parent* (not a child). */
-export function isIoParentCard(card: any): boolean {
+export function isIoParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
   if (t === "io") return !cardHasIoChildKey(card);
@@ -79,7 +95,7 @@ export function isIoParentCard(card: any): boolean {
 }
 
 /** Returns `true` if the card is a cloze parent with child deletions. */
-export function isClozeParentCard(card: any): boolean {
+export function isClozeParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t !== "cloze") return false;
   const children = (card)?.clozeChildren;
@@ -87,7 +103,7 @@ export function isClozeParentCard(card: any): boolean {
 }
 
 /** Returns `true` if the card's type is `"cloze"` or `"cloze-child"`. */
-export function isClozeLike(card: any): boolean {
+export function isClozeLike(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   return t === "cloze" || t === "cloze-child";
 }
@@ -100,12 +116,64 @@ export function isClozeLike(card: any): boolean {
  * Filters out non-reviewable cards (parents that are represented by
  * their children during review: cloze parents, IO parents).
  */
-export function filterReviewableCards(cards: any[]): any[] {
+export function filterReviewableCards(cards: CardRecord[]): CardRecord[] {
   return (cards || []).filter((c) => {
     const t = String(c?.type ?? "").toLowerCase();
     if (t === "cloze" || t === "io" || t === "io-parent") return false;
     return !isClozeParentCard(c) && !isIoParentCard(c);
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  WidgetViewLike — structural interface for widget action modules     */
+/* ------------------------------------------------------------------ */
+
+import type { App, TFile } from "obsidian";
+import type { JsonStore } from "../core/store";
+import type { SproutSettings } from "../types/settings";
+
+/**
+ * Minimal structural interface describing what widget action helpers
+ * need from the actual `SproutWidgetView`.  Avoids circular imports
+ * while eliminating `view: any`.
+ */
+export interface WidgetViewLike {
+  app: App;
+  plugin: { store: JsonStore; settings: SproutSettings };
+  containerEl: HTMLElement;
+  activeFile: TFile | null;
+
+  mode: "summary" | "session";
+  session: Session | null;
+  showAnswer: boolean;
+
+  /** @internal */ _timer: number | null;
+  /** @internal */ _timing: { cardId: string; startedAt: number } | null;
+  /** @internal */ _undo: UndoFrame | null;
+  /** @internal */ _sessionStamp: number;
+  /** @internal */ _moreMenuToggle: (() => void) | null;
+
+  render(): void;
+  currentCard(): CardRecord | null;
+  backToSummary(): void;
+  clearTimer(): void;
+  armTimer(): void;
+
+  gradeCurrentRating(rating: ReviewRating, meta: ReviewMeta | null): Promise<void>;
+  canUndo(): boolean;
+  undoLastGrade(): Promise<void>;
+  buryCurrentCard(): Promise<void>;
+  suspendCurrentCard(): Promise<void>;
+  answerMcq(choiceIdx: number): Promise<void>;
+  nextCard(): Promise<void>;
+  openEditModalForCurrentCard(): void;
+
+  renderMarkdownInto(containerEl: HTMLElement, md: string, sourcePath: string): Promise<void>;
+  renderImageOcclusionInto(containerEl: HTMLElement, card: CardRecord, sourcePath: string, reveal: boolean): Promise<void>;
+
+  buildSessionForActiveNote(): Session | null;
+  startSession(): void;
+  startPracticeSession(): void;
 }
 
 /* ------------------------------------------------------------------ */

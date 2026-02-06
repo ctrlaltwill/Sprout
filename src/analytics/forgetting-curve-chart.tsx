@@ -1,3 +1,15 @@
+/**
+ * @file src/analytics/forgetting-curve-chart.tsx
+ * @summary Interactive forgetting-curve chart that lets users search for and select
+ * up to three cards, then plots each card's FSRS retrievability over time as a line
+ * chart. It replays each card's review history through the scheduler to reconstruct
+ * a stability timeline and uses the FSRS forgetting curve formula to project future
+ * memory retention.
+ *
+ * @exports
+ *   - ForgettingCurveChart — React component rendering a multi-card forgetting-curve line chart with card search and selection
+ */
+
 import * as React from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { generatorParameters, forgetting_curve } from "ts-fsrs";
@@ -216,7 +228,7 @@ function buildStabilityTimeline(
   return timeline;
 }
 
-function CardCurveTooltip(props: { active?: boolean; payload?: any[]; label?: number; baseStart: number }) {
+function CardCurveTooltip(props: { active?: boolean; payload?: Array<{ value?: number; name?: string; dataKey?: string; color?: string }>; label?: number; baseStart: number }) {
   if (!props.active || !props.payload?.length) return null;
   const dayIndex = typeof props.label === "number" ? props.label : 0;
   const date = new Date(props.baseStart + dayIndex * MS_DAY).toLocaleDateString(undefined, {
@@ -494,7 +506,7 @@ export function ForgettingCurveChart(props: {
     for (let day = 0; day <= maxDays; day += 1) {
       const row: DataRow = { day } as DataRow;
       for (const curve of curves) {
-        const { firstReviewAt, horizon, timeline } = curve;
+        const { firstReviewAt, horizon: _horizon, timeline } = curve;
         if (!Number.isFinite(firstReviewAt) || !timeline.length) {
           row[curve.id] = 0;
           continue;

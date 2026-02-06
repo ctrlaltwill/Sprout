@@ -1,20 +1,9 @@
 /**
- * modals/bulk-edit.ts
- * ---------------------------------------------------------------------------
- * "Edit flashcard" overlay used in the Card Browser and Reviewer views.
+ * @file src/modals/bulk-edit.ts
+ * @summary Full-screen "Edit flashcard" overlay used by the Card Browser and Reviewer views. Unlike the other modals (which extend Obsidian's Modal class), this builds a manual overlay appended to document.body so it can sit above Obsidian's own modal z-index. Supports single-card editing for basic, cloze, and MCQ types with read-only metadata fields and editable content fields including a dynamic MCQ options list and group tag-picker.
  *
- * Unlike the other modals (which extend Obsidian's Modal class), this builds
- * a full-screen overlay manually and appends it to `document.body`.  This is
- * because it needs to sit above Obsidian's own modal z-index and is called
- * outside of the normal Obsidian modal lifecycle.
- *
- * Supports:
- *  - Single-card editing for basic / cloze / MCQ types
- *  - Read-only metadata fields (ID, type, stage, due, location)
- *  - Editable fields: title, question, answer, extra info, groups
- *  - MCQ-specific UI: correct answer + dynamic wrong-options list
- *  - Groups field uses the Basecoat tag-picker (createGroupPickerFieldImpl)
- * ---------------------------------------------------------------------------
+ * @exports
+ *  - openBulkEditModalForCards — opens the bulk-edit overlay for one or more card records, returning a promise that resolves when the user saves or cancels
  */
 
 import { Notice, setIcon } from "obsidian";
@@ -48,9 +37,9 @@ function groupsToInputString(groups: string[]): string {
 }
 
 /** Coerce an arbitrary groups value into a string array. */
-function coerceGroups(g: any): string[] {
+function coerceGroups(g: unknown): string[] {
   if (!g) return [];
-  if (Array.isArray(g)) return g.map((x) => String(x)).filter(Boolean);
+  if (Array.isArray(g)) return g.map((x: unknown) => String(x)).filter(Boolean);
   return String(g || "")
     .split(/[,;]/)
     .map((x) => x.trim())
@@ -488,8 +477,8 @@ export function openBulkEditModalForCards(
 
       await onSave(updatedCards);
       removeOverlay();
-    } catch (err: any) {
-      new Notice(`${BRAND}: ${err?.message || String(err)}`);
+    } catch (err: unknown) {
+      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
     }
   })(); });
 

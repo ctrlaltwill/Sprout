@@ -1,19 +1,24 @@
 /**
- * ImageOcclusionReviewRender.ts
+ * @file src/imageocclusion/image-occlusion-review-render.ts
+ * @summary Renders the Image Occlusion review overlay shown during study sessions and in the home widget. Produces a masked image with coloured occlusion rectangles, handles reveal state, supports zoom-in modals for both the review session and widget contexts, and manages overlay sizing synchronisation with the underlying image element.
  *
- * IO review rendering — produces the masked image overlay shown
- * during reviews and in the widget, with zoom-modal support.
+ * @exports
+ *   - isIoParentCard — checks whether a CardRecord is an IO parent card
+ *   - isIoRevealableType — checks whether a CardRecord is an IO or IO-child card eligible for reveal
+ *   - renderImageOcclusionReviewInto — renders the masked IO image into a container element
  */
 
 import { type App, Modal, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../types/card";
+import type { StoredIORect } from "./image-occlusion-types";
 import { resolveImageFile } from "./io-helpers";
 
-export function isIoParentCard(card: any): boolean {
+export function isIoParentCard(card: CardRecord): boolean {
   return card && card.type === "io";
 }
 
-export function isIoRevealableType(card: any): boolean {
+export function isIoRevealableType(card: CardRecord): boolean {
   return card && (card.type === "io" || card.type === "io-child");
 }
 
@@ -21,10 +26,10 @@ export function renderImageOcclusionReviewInto(args: {
   app: App;
   plugin: SproutPlugin;
   containerEl: HTMLElement;
-  card: any;
+  card: CardRecord;
   sourcePath: string;
   reveal: boolean;
-  ioModule: any;
+  ioModule: typeof import("./image-occlusion-index");
   renderMarkdownInto: (el: HTMLElement, md: string, sp: string) => Promise<void>;
   enableWidgetModal?: boolean;
 }) {
@@ -58,17 +63,17 @@ export function renderImageOcclusionReviewInto(args: {
   const imageSrc = app.vault.getResourcePath(imageFile);
 
   // Load IO definition from store
-  let occlusions: any[] = [];
+  let occlusions: StoredIORect[] = [];
   const ioMap = plugin.store.data.io || {};
   const parentId = card.type === "io-child" ? String(card.parentId || "") : String(card.id || "");
   const ioDef = parentId ? ioMap[parentId] : null;
 
   if (ioDef && Array.isArray(ioDef.rects)) {
     occlusions = ioDef.rects;
-  } else if (Array.isArray(card.occlusions)) {
-    occlusions = card.occlusions;
-  } else if (Array.isArray(card.rects)) {
-    occlusions = card.rects;
+  } else if (Array.isArray((card as unknown as Record<string, unknown>).occlusions)) {
+    occlusions = (card as unknown as Record<string, unknown>).occlusions as StoredIORect[];
+  } else if (Array.isArray((card as unknown as Record<string, unknown>).rects)) {
+    occlusions = (card as unknown as Record<string, unknown>).rects as StoredIORect[];
   }
 
   // For io-child cards, filter to only show the relevant masks
@@ -79,10 +84,10 @@ export function renderImageOcclusionReviewInto(args: {
     
     if (rectIds.length > 0) {
       // Filter by rectIds
-      masksToShow = occlusions.filter((r: any) => rectIds.includes(String(r.rectId || "")));
+      masksToShow = occlusions.filter((r) => rectIds.includes(String(r.rectId || "")));
     } else if (groupKey) {
       // Filter by groupKey
-      masksToShow = occlusions.filter((r: any) => String(r.groupKey || "") === groupKey);
+      masksToShow = occlusions.filter((r) => String(r.groupKey || "") === groupKey);
     }
   }
 
@@ -183,7 +188,7 @@ export function renderImageOcclusionReviewInto(args: {
   let targetIds: Set<string> | null = null;
   let targetGroup: string | null = null;
   if (card.type === "io-child") {
-    const rectIds = Array.isArray(card.rectIds) ? card.rectIds.map((v: any) => String(v)) : [];
+    const rectIds = Array.isArray(card.rectIds) ? card.rectIds.map((v) => String(v)) : [];
     if (rectIds.length > 0) targetIds = new Set(rectIds);
     else if (card.groupKey) targetGroup = String(card.groupKey || "");
   }

@@ -1,12 +1,9 @@
 /**
- * reading-view.ts
+ * @file src/reading/reading-view.ts
+ * @summary Stateful, side-effectful code for Sprout's reading-view pretty-card rendering and masonry layout. Owns all mutable module-level state (sproutPluginRef, masonry timers, MutationObserver) and the Obsidian registerMarkdownPostProcessor hook that transforms card blocks into styled, interactive card elements in the editor.
  *
- * Stateful / side-effectful code for Sprout's reading-view pretty-card
- * rendering and masonry layout.  This module owns all mutable module-level
- * state (e.g. `sproutPluginRef`, masonry timers, MutationObserver) and
- * the Obsidian `registerMarkdownPostProcessor` hook.
- *
- * Pure / stateless helpers live in ./reading-helpers.ts and are imported.
+ * @exports
+ *  - registerReadingViewPrettyCards — registers the markdown post-processor that renders pretty cards in reading view
  */
 
 import type { Plugin, MarkdownPostProcessorContext } from "obsidian";
@@ -25,7 +22,6 @@ import {
   extractCardFromSource,
   parseSproutCard,
   normalizeMathSignature,
-  escapeHtml,
   processMarkdownFeatures,
   buildCardContentHTML,
   renderMathInElement,
@@ -247,14 +243,13 @@ function setupManualTrigger() {
     });
   };
 
-  window.addEventListener('sprout-cards-inserted', () => {
+  addTrackedWindowListener('sprout-cards-inserted', () => {
     debugLog('[Sprout] Received sprout-cards-inserted event — applying masonry');
     window.sproutApplyMasonryGrid?.();
   });
 
   // Re-layout on window resize (smooth + throttled)
-  window.addEventListener('resize', () => {
-    masonryIsResizing = true;
+  addTrackedWindowListener('resize', () => {
     if (masonryResizeRaf) return;
     masonryResizeRaf = window.requestAnimationFrame(() => {
       masonryResizeRaf = null;
@@ -263,14 +258,13 @@ function setupManualTrigger() {
 
     if (masonryResizeTimer) window.clearTimeout(masonryResizeTimer);
     masonryResizeTimer = window.setTimeout(() => {
-      masonryIsResizing = false;
       scheduleMasonryLayout();
     }, 180);
   });
 
   // Avoid relayout thrash while scrolling
   let st: number | null = null;
-  window.addEventListener(
+  addTrackedWindowListener(
     'scroll',
     () => {
       masonryIsScrolling = true;
@@ -298,6 +292,39 @@ let mutationObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 120;
 let pendingScrollWork = false;
+
+// Registered window listeners (stored for cleanup)
+let registeredWindowListeners: Array<{ event: string; handler: EventListenerOrEventListenerObject; options?: boolean | AddEventListenerOptions }> = [];
+
+function addTrackedWindowListener(
+  event: string,
+  handler: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions,
+) {
+  window.addEventListener(event, handler, options);
+  registeredWindowListeners.push({ event, handler, options });
+}
+
+/** Tear down all module-level state. Called from plugin.onunload(). */
+export function teardownReadingView(): void {
+  // Disconnect MutationObserver
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+    mutationObserver = null;
+  }
+  if (debounceTimer) {
+    window.clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  // Remove all tracked window listeners
+  for (const { event, handler, options } of registeredWindowListeners) {
+    window.removeEventListener(event, handler, options as boolean | EventListenerOptions | undefined);
+  }
+  registeredWindowListeners = [];
+  // Clear global references
+  sproutPluginRef = null;
+  delete (window as unknown as Record<string, unknown>).sproutApplyMasonryGrid;
+}
 
 function setupDebouncedMutationObserver() {
   if (mutationObserver) {
@@ -368,7 +395,7 @@ function setupDebouncedMutationObserver() {
    Card processing
    ========================= */
 
-async function processCardElements(container: HTMLElement, ctx?: MarkdownPostProcessorContext, sourceContent?: string) {
+async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostProcessorContext, sourceContent?: string) {
   const found: HTMLElement[] = [];
 
   try {
@@ -427,7 +454,6 @@ let masonryLayoutTimer: number | null = null;
 let masonryLayoutRaf: number | null = null;
 let masonryLayoutRunning = false;
 let masonryIsScrolling = false;
-let masonryIsResizing = false;
 let masonryResizeRaf: number | null = null;
 let masonryResizeTimer: number | null = null;
 
@@ -563,7 +589,7 @@ function layoutAllMasonryGrids(forceRebalance = false) {
     parents.get(parent)!.push(card);
   }
 
-  for (const [parent, group] of parents.entries()) {
+  for (const [parent, _group] of parents.entries()) {
     // iterate parent's children and collect consecutive .sprout-pretty-card nodes into subgroups
     const children = Array.from(parent.children);
     let current: HTMLElement[] = [];
@@ -777,96 +803,6 @@ function hideAllMasonryGridSiblings() {
 }
 
 /**
- * Hide duplicate siblings after a masonry grid wrapper
- * Collects all card content from cards in the grid and hides matching siblings
- * @deprecated Use hideAllMasonryGridSiblings instead (called after layout completes)
- */
-function hideMasonryGridSiblings(wrapper: HTMLElement, cards: HTMLElement[]) {
-  // Collect all card content signatures
-  const allCardText: string[] = [];
-  const allCardMathSigs: string[] = [];
-  
-  for (const card of cards) {
-    const rawTextAttr = card.getAttribute('data-sprout-raw-text');
-    if (rawTextAttr) {
-      const cardTextNorm = clean(rawTextAttr).replace(/\s+/g, " ").trim();
-      const cardMathSig = normalizeMathSignature(cardTextNorm);
-      if (cardTextNorm) allCardText.push(cardTextNorm);
-      if (cardMathSig) allCardMathSigs.push(cardMathSig);
-    }
-  }
-  
-  let next = wrapper.nextElementSibling;
-  const toHide: Element[] = [];
-  
-  // Look at siblings after the wrapper
-  while (next) {
-    const classes = next.className || '';
-    
-    // Stop if we hit a header (this would be "# Next Section" or similar)
-    if (classes.match(/\bel-h[1-6]\b/)) {
-      break;
-    }
-    
-    // Stop if we hit major structural elements
-    if (classes.includes('el-ul') ||
-        classes.includes('el-ol') ||
-        classes.includes('el-blockquote') ||
-        classes.includes('el-pre') ||
-        classes.includes('el-table')) {
-      break;
-    }
-    
-    // Check if this is duplicate content from any card
-    if (classes.includes('el-div') || classes.includes('el-p')) {
-      let raw = "";
-      if (classes.includes('el-p')) raw = extractRawTextFromParagraph(next as HTMLElement);
-      else raw = extractTextWithLaTeX(next as HTMLElement);
-
-      const rawNorm = clean(raw).replace(/\s+/g, " ").trim();
-      const hasMath = !!(next as HTMLElement).querySelector('.math, mjx-container, mjx-math');
-      const rawMathSig = rawNorm ? normalizeMathSignature(rawNorm) : "";
-
-      // Check if this content matches any card
-      let isMatch = false;
-      for (const cardText of allCardText) {
-        if (cardText && rawNorm && cardText.includes(rawNorm)) {
-          isMatch = true;
-          break;
-        }
-      }
-      
-      if (!isMatch && hasMath && rawMathSig) {
-        for (const mathSig of allCardMathSigs) {
-          if (mathSig && mathSig.includes(rawMathSig)) {
-            isMatch = true;
-            break;
-          }
-        }
-      }
-
-      if (isMatch) {
-        toHide.push(next);
-        next = next.nextElementSibling;
-        continue;
-      }
-
-      // If we don't have a match, stop hiding so normal content can render
-      break;
-    }
-    
-    // Unknown element type - stop
-    break;
-  }
-  
-  // Hide collected elements
-  for (const el of toHide) {
-    (el as HTMLElement).style.setProperty('display', 'none', 'important');
-    (el as HTMLElement).setAttribute('data-sprout-hidden', 'true');
-  }
-}
-
-/**
  * Hide duplicate siblings after individual cards
  */
 function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
@@ -1008,7 +944,7 @@ function enhanceCardElement(
         const app = window.app;
         if (app?.workspace?.openLinkText) {
           const sourcePath = app.workspace?.getActiveFile?.()?.path ?? '';
-          app.workspace.openLinkText(href, sourcePath, true);
+          void app.workspace.openLinkText(href, sourcePath, true);
         }
       }
     });
@@ -1123,9 +1059,9 @@ function enhanceCardElement(
               )
               .forEach((node) => node.dispatchEvent(new Event("sprout:prettify-cards-refresh")));
           }, 50);
-        } catch (err: any) {
+        } catch (err: unknown) {
           log.error("Failed to update card from reading view", err);
-          new Notice(`Failed to update card: ${String(err?.message || err)}`);  
+          new Notice(`Failed to update card: ${err instanceof Error ? err.message : String(err)}`);  
         }
       });
     });

@@ -1,17 +1,16 @@
 /**
- * widget/widget-markdown.ts
- * ─────────────────────────
- * Pure utility functions for markdown / HTML processing used by the
- * Sprout sidebar widget.
+ * @file src/widget/widget-markdown.ts
+ * @summary Pure utility functions for markdown and HTML processing used by the Sprout sidebar widget. Handles HTML escaping, wiki-link and LaTeX conversion, MathJax typesetting, and internal link click-handler wiring.
  *
- * Exports:
- *  - escapeHtml              – escape HTML special characters
- *  - processMarkdownFeatures – convert wiki-links and preserve LaTeX
- *  - renderMathInElement     – trigger MathJax typesetting on an element
- *  - setupInternalLinkHandlers – wire click handlers for [[wiki-links]]
+ * @exports
+ *  - escapeHtml                — escapes HTML special characters in a string
+ *  - processMarkdownFeatures   — converts [[wiki-links]] and preserves LaTeX delimiters in text
+ *  - renderMathInElement       — triggers MathJax typesetting on a DOM element
+ *  - setupInternalLinkHandlers — wires click handlers for internal [[wiki-link]] elements
  */
 
 import { log } from "../core/logger";
+import type { App } from "obsidian";
 
 /* ------------------------------------------------------------------ */
 /*  HTML escaping                                                      */
@@ -58,7 +57,7 @@ export function renderMathInElement(el: HTMLElement): void {
   const MathJax = window.MathJax;
   if (MathJax && typeof MathJax.typesetPromise === "function") {
     try {
-      MathJax.typesetPromise([el]).catch((err: any) => {
+      MathJax.typesetPromise([el]).catch((err: unknown) => {
         log.warn("MathJax rendering error:", err);
       });
     } catch (err) {
@@ -78,7 +77,7 @@ export function renderMathInElement(el: HTMLElement): void {
  * @param el  – container element to scan
  * @param app – the Obsidian `App` instance
  */
-export function setupInternalLinkHandlers(el: HTMLElement, app: any): void {
+export function setupInternalLinkHandlers(el: HTMLElement, app: App): void {
   const internalLinks = el.querySelectorAll<HTMLAnchorElement>("a.internal-link");
   internalLinks.forEach((link) => {
     link.addEventListener("click", (e) => {

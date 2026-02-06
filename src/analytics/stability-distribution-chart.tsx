@@ -1,6 +1,19 @@
+/**
+ * @file src/analytics/stability-distribution-chart.tsx
+ * @summary Area chart showing the distribution of cards by their FSRS stability
+ * value (expected retention interval in days). Cards are bucketed into non-linear
+ * intervals and plotted on a square-root-scaled x-axis so that both short- and
+ * long-stability cards are visible. Supports filtering by card type, deck, and
+ * group tags.
+ *
+ * @exports
+ *   - StabilityDistributionChart — React component rendering a stability distribution area chart with filter controls
+ */
+
 import * as React from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { endTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
+import type { CardState } from "../types/scheduler";
 
 function InfoIcon(props: { text: string }) {
   return (
@@ -64,8 +77,8 @@ function formatFilterPath(raw: string, maxChars = 40) {
 }
 
 type StabilityDistributionChartProps = {
-  cards: Array<{ id: string; type?: string; sourceNotePath?: string; groups?: string[] }>;
-  states: Record<string, any>;
+  cards: Array<{ id: string; type?: string; sourceNotePath?: string; groups?: string[]; clozeChildren?: number[] | null }>;
+  states: Record<string, CardState>;
   enableAnimations?: boolean;
 };
 
@@ -91,7 +104,7 @@ function formatStabilityLabel(value: number, data: StabilityBucket[]) {
   return `${Math.round(stability)} days`;
 }
 
-function StabilityTooltip(props: { active?: boolean; payload?: any[]; label?: number }) {
+function StabilityTooltip(props: { active?: boolean; payload?: Array<{ payload?: unknown }>; label?: number }) {
   if (!props.active || !props.payload || !props.payload.length) return null;
   const datum = props.payload[0]?.payload as StabilityBucket | undefined;
   if (!datum) return null;
@@ -105,7 +118,7 @@ function StabilityTooltip(props: { active?: boolean; payload?: any[]; label?: nu
 
 function createStabilityDistribution(
   cards: Array<{ id: string; type?: string; sourceNotePath?: string; groups?: string[] }>,
-  states: Record<string, any>
+  states: Record<string, CardState>
 ): StabilityBucket[] {
   // Find max stability to determine range
   let maxStability = 0;
@@ -213,7 +226,7 @@ const typeLabels: Record<string, string> = {
 };
 
 export function StabilityDistributionChart(props: StabilityDistributionChartProps) {
-  const renderStabilityLabel = React.useCallback((labelProps: any) => {
+  const renderStabilityLabel = React.useCallback((labelProps: { viewBox?: { x?: number; y?: number; width?: number; height?: number } }) => {
     const vb = labelProps?.viewBox ?? {};
     const cx = typeof vb.x === "number" && typeof vb.width === "number" ? vb.x + vb.width / 2 : 0;
     const cy = typeof vb.y === "number" && typeof vb.height === "number" ? vb.y + vb.height + 16 : 0;

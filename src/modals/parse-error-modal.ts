@@ -1,23 +1,17 @@
 /**
- * modals/ParseErrorModal.ts
- * ---------------------------------------------------------------------------
- * Displays a list of cards that failed to parse during sync and lets the user
- * jump to the anchor in the note or quick-edit the card right from the modal.
+ * @file src/modals/parse-error-modal.ts
+ * @summary Displays a list of cards that failed to parse during sync and lets the user jump to the anchor in the source note or quick-edit the card directly from the modal. Each quarantined card is shown with its anchor reference, source note path, parsing errors, and action buttons for navigation and inline editing.
  *
- * Each quarantined ID is shown with:
- *  - the ^sprout-<id> anchor reference
- *  - the source note path (if resolvable)
- *  - a list of parsing errors (if any)
- *  - action buttons: "Open at anchor" and "Quick edit"
- * ---------------------------------------------------------------------------
+ * @exports
+ *  - ParseErrorModal — Obsidian Modal subclass that renders the quarantined-cards list with "Open at anchor" and "Quick edit" actions
  */
 
 import { Modal, Notice, TFile, MarkdownView, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../core/store";
 import { BRAND } from "../core/constants";
 import { parseCardsFromText, type ParsedCard } from "../parser/parser";
 import { CardEditModal, saveCardEdits } from "../reviewer/card-editor";
-import { findCardBlockRangeById } from "../reviewer/markdown-block";
 
 import {
   mkDangerCallout,
@@ -149,18 +143,19 @@ export class ParseErrorModal extends Modal {
       tryGet((storeRef?.data as Record<string, unknown>)?.parseErrors),
       tryGet(storeRef?.data?.cards),
       tryGet((storeRef?.data as Record<string, unknown>)?.cardById),
-      typeof storeRef?.getCard === "function" ? storeRef.getCard(id) : null,
-      typeof (storeRef as Record<string, unknown> | undefined)?.getCardRecord === "function" ? (storeRef as { getCardRecord(id: string): unknown }).getCardRecord(id) : null,
+      typeof (storeRef as unknown as Record<string, unknown> | undefined)?.getCard === "function" ? (storeRef as unknown as { getCard(id: string): unknown }).getCard(id) : null,
+      typeof (storeRef as unknown as Record<string, unknown> | undefined)?.getCardRecord === "function" ? (storeRef as unknown as { getCardRecord(id: string): unknown }).getCardRecord(id) : null,
     ].filter(Boolean);
 
     const rec = candidates.length ? candidates[0] : null;
     if (rec && typeof rec === "object") {
-      const path = String((rec).sourceNotePath || (rec).notePath || "");
-      const startLine = Number((rec).sourceStartLine ?? 0);
+      const r = rec as Record<string, unknown>;
+      const path = String(r.sourceNotePath || r.notePath || "");
+      const startLine = Number(r.sourceStartLine ?? 0);
       const errsRaw =
-        (rec).errors ??
-        ((rec).reason
-          ? String((rec).reason)
+        r.errors ??
+        (r.reason
+          ? String(r.reason)
               .split(";")
               .map((s: string) => s.trim())
           : []);
@@ -267,13 +262,13 @@ export class ParseErrorModal extends Modal {
     const found: ParsedCard | undefined = (parsed.cards || []).find((c) => String(c.id || "") === String(id));
 
     // Normalise groups into a comma-separated string
-    const foundGroupsRaw = found ? found.groups ?? (found as Record<string, unknown>).g ?? (found as Record<string, unknown>).group ?? "" : "";
+    const foundGroupsRaw: unknown = found ? found.groups ?? (found as Record<string, unknown>).g ?? (found as Record<string, unknown>).group ?? "" : "";
     const foundGroups =
       Array.isArray(foundGroupsRaw)
         ? foundGroupsRaw.map((x) => String(x)).filter(Boolean).join(", ")
-        : String(foundGroupsRaw || "");
+        : typeof foundGroupsRaw === "string" ? foundGroupsRaw : "";
 
-    const cardLike: any = found
+    const cardLike: Record<string, unknown> = found
       ? {
           id: String(found.id || id),
           type: String(found.type || "basic"),
@@ -302,8 +297,8 @@ export class ParseErrorModal extends Modal {
           sourceNotePath: ref.sourceNotePath,
         };
 
-    new CardEditModal(this.app, cardLike, async (payload) => {
-      await saveCardEdits(this.plugin, cardLike, payload);
+    new CardEditModal(this.app, cardLike as CardRecord, async (payload) => {
+      await saveCardEdits(this.plugin, cardLike as CardRecord, payload);
     }).open();
   }
 }

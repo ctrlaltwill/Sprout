@@ -1,10 +1,17 @@
-// src/reviewer/renderDeck.ts
+/**
+ * @file src/reviewer/render-deck.ts
+ * @summary Renders the deck-browser mode of the reviewer, displaying a hierarchical tree of folders, notes, and groups with card-stage badges, expand/collapse controls, a group-scope combobox, and study-all/study-group actions.
+ *
+ * @exports
+ *   - renderDeckMode — Builds and mounts the full deck-browser DOM (tree table, controls, badges) into the given container
+ */
+
 import type { App } from "obsidian";
 import { setIcon } from "obsidian";
 import { el } from "../core/ui";
 import { buildDeckTree, type DeckNode } from "../deck/deck-tree";
 import type SproutPlugin from "../main";
-import type { Scope } from "./image-occlusion-types";
+import type { Scope } from "./types";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 import { log } from "../core/logger";
 
@@ -121,34 +128,6 @@ function makeIconButton(opts: {
   return btn;
 }
 
-function makeIconOnlyButton(opts: {
-  icon: string;
-  label: string;
-  title?: string;
-  className?: string;
-  onClick: () => void;
-}) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = opts.className || "btn-icon-outline";
-  btn.title = opts.title || "";
-  btn.setAttribute("aria-label", opts.label);
-
-  const iconWrap = document.createElement("span");
-  iconWrap.className = "inline-flex items-center justify-center";
-  setIcon(iconWrap, opts.icon);
-  iconWrap.querySelector("svg")?.classList.add("bc", "shrink-0");
-  btn.appendChild(iconWrap);
-
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    opts.onClick();
-  });
-
-  return btn;
-}
-
 function makeDisclosureChevron(isOpen: boolean, onToggle: () => void) {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -183,27 +162,6 @@ function makeDisclosureChevron(isOpen: boolean, onToggle: () => void) {
   });
 
   return btn;
-}
-
-function makeBadge(label: string, value: number, variant: "outline" | "secondary" = "outline") {
-  const wrap = document.createElement("span");
-  wrap.className = "inline-flex items-center";
-
-  const badge = document.createElement("span");
-  badge.className = variant === "secondary" ? "badge-secondary" : "badge-outline";
-
-  const lab = document.createElement("span");
-  lab.className = "text-xs text-muted-foreground";
-  lab.textContent = label;
-
-  const val = document.createElement("span");
-  val.className = "ml-2 font-medium";
-  val.textContent = String(value);
-
-  badge.appendChild(lab);
-  badge.appendChild(val);
-  wrap.appendChild(badge);
-  return wrap;
 }
 
 export function renderDeckMode(args: Args) {
@@ -716,7 +674,7 @@ export function renderDeckMode(args: Args) {
 
         // Make row clickable except for the disclosure chevron
         tr.addEventListener("click", (ev) => {
-          if (disclosureChevron && (ev.target === disclosureChevron || disclosureChevron.contains(ev.target))) {
+          if (disclosureChevron && (ev.target === disclosureChevron || disclosureChevron.contains(ev.target as Node))) {
             // Do nothing, handled by chevron
             return;
           }

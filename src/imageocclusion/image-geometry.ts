@@ -1,6 +1,28 @@
+/**
+ * @file src/imageocclusion/image-geometry.ts
+ * @summary Geometry helper types and functions for the Image Occlusion system. Provides pixel and normalised rectangle types, conversion between normalised (0–1) and pixel coordinate spaces, rectangle clamping to image bounds, and construction of axis-aligned rectangles from two corner points.
+ *
+ * @exports
+ *   - RectPx — type representing a rectangle in pixel coordinates (x, y, w, h)
+ *   - NormRect — type representing a normalised rectangle with rectId and groupKey
+ *   - clampRectPx — clamps a pixel rectangle to fit within image dimensions
+ *   - normToPxRect — converts a normalised rect to pixel coordinates given stage size
+ *   - pxToNormRect — converts a pixel rect to normalised coordinates given stage size
+ *   - rectPxFromPoints — builds an axis-aligned pixel rectangle from two corner points
+ */
+
 // Geometry helpers for image occlusion
 
 export type RectPx = { x: number; y: number; w: number; h: number };
+
+export type NormRect = {
+  rectId: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  groupKey: string;
+};
 
 export function clampRectPx(
   r: RectPx,
@@ -34,7 +56,7 @@ export function pxToNormRect(
   stageW: number,
   stageH: number,
   groupKey: string
-): any {
+): NormRect {
   return {
     rectId,
     x: px.x / stageW,

@@ -1,0 +1,333 @@
+/* ============================================================================
+   SESSION — Study-session card layout, header, sections, footer,
+   timer controls, mark/cloze reveals, Q/A/MCQ styling, quit button.
+   ========================================================================== */
+
+/* ---- Session card shell ---- */
+
+.sprout-session-card.card {
+  transition: height 0.2s ease-in-out;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: fit-content !important;
+  max-height: max-content !important;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  /* Prevent flex containers from stretching the card vertically */
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  align-self: flex-start;
+  justify-self: flex-start;
+  flex-basis: auto !important;
+}
+
+.sprout-session-card header {
+  padding: 0em 0em 2em 0em !important;
+  margin: 1.5rem 2.5rem 0.5rem;
+}
+
+.sprout-session-card section {
+  padding: 0 !important;
+  margin: 1rem 2.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.sprout-session-card footer {
+  border-top: 1px solid var(--border);
+  padding: 3em 0em 1em 0rem !important;
+  margin: 2.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Timer icon */
+.sprout-session-card [class*="timer"] svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  stroke: currentColor;
+}
+
+/* Timer button group - no hover/active effects */
+.button-group[aria-label="Timer controls"] .btn-sm {
+  pointer-events: auto;
+}
+
+.button-group[aria-label="Timer controls"] .btn-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Session card smooth height transitions (duplicate selector kept for cascade clarity) */
+.sprout-session-card.card {
+  transition: height 0.2s ease-in-out;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: fit-content !important;
+  max-height: max-content !important;
+  align-self: flex-start;
+  justify-self: flex-start;
+  flex-basis: auto !important;
+  padding: 0 !important;
+}
+
+.sprout-session-card.card section {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ---- Mark element (cloze answer reveals) ---- */
+
+.sprout mark {
+  border-radius: 3px;
+  background-color: rgb(0, 0, 0);
+  color: white;
+  padding: 0px 4px;
+  margin: 0px 1px;
+}
+
+.sprout-session-card header {
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0px;
+}
+
+/* ---- Q / A / MCQ styling ---- */
+
+/* Question styling: semibold */
+.sprout-session-card .sprout-q {
+  font-weight: 600 !important; /* semibold */
+}
+
+/* Answer styling: black, slightly larger */
+.sprout-session-card .sprout-a {
+  color: rgb(0, 0, 0) !important;
+  font-size: 1.0625rem !important; /* text-md equivalent */
+}
+.sprout-session-card .sprout-mcq-correct {
+  border-color: rgb(34, 197, 94) !important; /* green */
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.sprout-session-card .sprout-mcq-wrong {
+  border-color: rgb(239, 68, 68) !important; /* red */
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* MCQ review buttons: ensure readable text on colored backgrounds */
+.bc-mcq-correct,
+.bc-mcq-wrong {
+  color: oklch(0.2 0 0) !important;
+}
+
+/* Extra information: match answer font size */
+.sprout-session-card .sprout-info {
+  font-size: 1.0625rem !important; /* align with .sprout-a */
+}
+
+/* ---- Cloze reveals ---- */
+
+.sprout-cloze-revealed {
+  font-weight: 500;
+  background-color: var(--theme-accent);
+  color: white;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin: 0px 1px;
+}
+
+.sprout .hidden-cloze {
+  border-bottom: 1px solid var(--foreground) !important;
+  display: inline-block !important;
+  min-height: 1em !important;
+  margin-left: 0 !important;
+  margin-right: 4px !important;
+  border-radius: 0px !important;
+}
+
+/* ---- Ensure session cards stay content-sized ---- */
+
+.sprout .sprout-session-card.card {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  align-self: flex-start;
+  justify-self: flex-start;
+  flex: 0 0 auto !important;
+}
+
+/* ---- Session card header / quit button positioning ---- */
+
+/* Ensure session card header is relative for quit button positioning */
+.bc-session-card > header,
+.sprout-session-card > header {
+  position: relative !important;
+}
+
+.sprout-session-card .sprout-session-header-row {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+.sprout-session-card .sprout-session-header-row .sprout-quit-btn {
+  margin-left: auto;
+  margin-top: 10px;
+}
+/* Add 35px padding from edge for quit button */
+.bc-session-card > .absolute[data-tooltip="Quit study session (Q)"] {
+  top: 35px !important;
+  right: 35px !important;
+}
+
+/* ---- Timer controls ---- */
+
+.sprout .button-group[data-tooltip="Timer controls"] .btn-outline {
+  background: transparent !important;
+  transition: background 0.15s;
+}
+.sprout .button-group[data-tooltip="Timer controls"] .btn-outline:hover,
+.sprout .button-group[data-tooltip="Timer controls"] .btn-outline:focus-visible,
+.sprout .button-group[data-tooltip="Timer controls"] .btn-outline:active {
+  background: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* ---- Inline sentence input ---- */
+
+.sprout .sprout-inline-sentence {
+  position: relative;
+}
+
+.sprout .sprout-inline-sentence input {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  line-height: inherit;
+  font-style: inherit;
+  font-variant: inherit;
+  background: transparent;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  border-radius: 0 !important;
+  padding: 0 0.15em;
+  margin: 0 -0.15em;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  display: inline-block;
+  vertical-align: baseline;
+  caret-color: currentColor;
+}
+
+.sprout .sprout-inline-sentence input:focus-visible {
+  box-shadow: none !important;
+}
+
+/* ---- Session popover menu items ---- */
+
+.sprout-menu-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Quit button ---- */
+
+.sprout-quit-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px;
+  z-index: 10;
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ---- Markdown block text (Q/A/cloze/info) ---- */
+
+.sprout-md-block {
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+}
+
+/* ---- MCQ options ---- */
+
+.sprout-mcq-options {
+  margin-top: 10px;
+}
+
+.sprout-mcq-correct-highlight {
+  border-color: rgb(34, 197, 94) !important;
+  background-color: rgb(220, 252, 231) !important;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.sprout-mcq-wrong-highlight {
+  border-color: rgb(239, 68, 68) !important;
+  background-color: rgb(254, 226, 226) !important;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.sprout-mcq-option-text {
+  line-height: 1.75;
+  display: block;
+  font-size: 14px !important;
+}
+
+.sprout-mcq-option-line {
+  line-height: 1.75;
+  margin-bottom: 2px;
+}
+
+/* ---- Grading buttons ---- */
+
+.sprout-btn-again {
+  background-color: var(--sprout-again-bg) !important;
+  color: var(--sprout-again-fg) !important;
+}
+
+.sprout-btn-hard {
+  background-color: var(--sprout-hard-bg) !important;
+  color: var(--sprout-hard-fg) !important;
+}
+
+.sprout-btn-good {
+  background-color: var(--sprout-good-bg) !important;
+  color: var(--sprout-good-fg) !important;
+}
+
+.sprout-btn-easy {
+  background-color: var(--sprout-easy-bg) !important;
+  color: var(--sprout-easy-fg) !important;
+}
+
+.sprout-btn-start-practice {
+  background-color: rgb(0, 0, 0) !important;
+  color: white !important;
+}
+
+/* ---- AOS animation fallback ---- */
+
+.sprout-aos-fallback {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}

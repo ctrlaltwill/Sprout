@@ -1,0 +1,170 @@
+/* ============================================================================
+   LAYOUT — Workspace containers, view backgrounds, content sizing,
+   scrollbar behaviour, wide mode, status bar.
+   ========================================================================== */
+
+/* Workspace leaf / view containers: transparent so Sprout theming shows through */
+.workspace-leaf-content.sprout,
+.workspace-leaf-content .sprout,
+.workspace-leaf-content:has(.sprout),
+.view-content.sprout,
+.view-content .sprout,
+.view-content:has(.sprout),
+.view-header.sprout,
+.view-header .sprout,
+.view-header:has(.sprout),
+.workspace-leaf.sprout,
+.workspace-leaf .sprout,
+.workspace-leaf:has(.sprout) {
+  background: transparent !important;
+  border-radius: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* High-level view backgrounds */
+.sprout,
+.sprout .sprout-view-content,
+.sprout .sprout-browser-view,
+.sprout .sprout-analytics-root {
+  background-color: var(--background-primary) !important;
+}
+
+/* Workspace leaf containers for Sprout views */
+.workspace-leaf-content.sprout,
+.workspace-leaf-content .sprout {
+  background-color: var(--background-primary) !important;
+}
+
+/* ---- Content sizing & padding ---- */
+
+/* Keep ONLY the top-level sprout-content-view constrained */
+.sprout .sprout-view-content {
+  width: 100%;
+  padding: 40px 0 80px;
+  margin-left: auto;
+  margin-right: auto;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: scroll !important;
+}
+
+/* Keep scrollbar at the edge while preserving content padding */
+.sprout .sprout-view-content > * {
+  padding-left: 40px;
+  padding-right: 40px;
+  box-sizing: border-box;
+}
+
+/* Root container width management */
+.sprout-root[data-sprout-wide="1"] .sprout-view-content {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+.sprout-view-content {
+  max-width: 1080px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  min-height: 0;
+  gap: 12px;
+}
+
+.sprout[data-sprout-wide="1"] .sprout-view-content {
+  max-width: none;
+}
+
+/* Flashcards view: keep AOS travel distance consistent and subtle */
+.sprout .sprout-browser-view [data-aos="fade-up"] {
+  transform: translate3d(0, 16px, 0) !important;
+}
+.sprout .sprout-browser-view [data-aos="fade-up"].aos-animate {
+  transform: translate3d(0, 0, 0) !important;
+}
+
+/* ---- Scrollbar management ---- */
+
+/* Hide scrollbars in Sprout while keeping scroll behaviour */
+.sprout * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sprout *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Re-enable visible scrollbars inside modals */
+.sprout .sprout-modal,
+.sprout .sprout-modals,
+.sprout .sprout-modal *,
+.sprout .sprout-modals * {
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+}
+.sprout .sprout-modal::-webkit-scrollbar,
+.sprout .sprout-modals::-webkit-scrollbar,
+.sprout .sprout-modal *::-webkit-scrollbar,
+.sprout .sprout-modals *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.sprout .sprout-modal::-webkit-scrollbar-thumb,
+.sprout .sprout-modals::-webkit-scrollbar-thumb,
+.sprout .sprout-modal *::-webkit-scrollbar-thumb,
+.sprout .sprout-modals *::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.6);
+  border-radius: 6px;
+}
+.sprout .sprout-modal::-webkit-scrollbar-track,
+.sprout .sprout-modals::-webkit-scrollbar-track,
+.sprout .sprout-modal *::-webkit-scrollbar-track,
+.sprout .sprout-modals *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Global resets ---- */
+
+/* Hide Obsidian's global status bar only when Sprout views are active */
+body.sprout.sprout-hide-status-bar .status-bar {
+  display: none !important;
+}
+
+.sprout-header {
+    border: none !important;
+    border-radius: 0px !important;
+}
+
+.workspace-leaf-content.sprout {
+    border-radius: 0px !important;
+    border: none !important;
+}
+
+/* ---- Flex helpers ---- */
+/* Replaces inline: display:flex; align-items:center; gap:8px across 6+ files */
+
+.sprout .sprout-flex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprout .sprout-flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Fixed-height input ---- */
+/* Replaces inline: height/min-height/max-height 38px across 4+ files */
+
+.sprout .sprout-input-fixed {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+}

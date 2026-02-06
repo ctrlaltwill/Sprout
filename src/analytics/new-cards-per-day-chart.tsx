@@ -1,3 +1,13 @@
+/**
+ * @file src/analytics/new-cards-per-day-chart.tsx
+ * @summary Bar chart displaying the number of newly created cards per day over a
+ * configurable window (7, 30, or 90 days). Uses card creation timestamps to bucket
+ * counts by local day. Supports filtering by card type, deck, and group tags.
+ *
+ * @exports
+ *   - NewCardsPerDayChart — React component rendering a daily new-cards bar chart with filter controls
+ */
+
 import * as React from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
@@ -196,7 +206,7 @@ function rankFilterMatches(items: string[], query: string, limit = 5) {
     .slice(0, limit);
 }
 
-function TooltipContent(props: { active?: boolean; payload?: any[] }) {
+function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: unknown }> }) {
   if (!props.active || !props.payload || !props.payload.length) return null;
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;
@@ -356,7 +366,7 @@ export function NewCardsPerDayChart(props: {
   };
 
   const data = React.useMemo<AxisDatum[]>(() => {
-    const rows: Datum[] = [];
+    const rows: AxisDatum[] = [];
     const map = new Map<number, AxisDatum>();
 
     for (let i = 0; i < durationDays; i += 1) {

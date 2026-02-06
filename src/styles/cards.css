@@ -1,0 +1,225 @@
+/* ============================================================================
+   CARDS — Generic card surface, small card variant, dark mode polish,
+   card base background.
+   ========================================================================== */
+
+.card {
+  background-color: var(--background);
+  border-radius: var(--input-radius) !important;
+  box-shadow: none;
+  margin: 0;
+  padding: 25px;
+}
+
+/* Small card variant: removes p-4 and applies compact padding */
+.small-card {
+  padding: 20px !important;
+}
+
+/* Dark mode card polish (Basecoat-aligned) */
+.theme-dark .sprout .card,
+.theme-dark .sprout .card.sprout-ana-card,
+.theme-dark .sprout .sprout-ana-card {
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+.sprout .small-card .text-sm {
+    min-height: 22px;
+}
+
+/* ---- Tag box ---- */
+/* Replaces inline: height/min/max 38px; overflow:auto; padding:6px 8px;
+   display:flex; flex-wrap:wrap; gap across 3 files (~51 usages) */
+
+.sprout .sprout-tag-box {
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  overflow: auto;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  row-gap: 2px;
+  align-content: flex-start;
+}
+
+/* Tag pill (individual tag badge inside the box) */
+.sprout .sprout-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0 8px;
+  font-size: 11px;
+  height: 22px;
+  line-height: 22px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tag remove button */
+.sprout .sprout-tag-remove {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-left: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.sprout .sprout-tag-remove:hover {
+  opacity: 1;
+}
+
+/* ---- Card editor — Quick-edit modal ---- */
+
+.sprout .sprout-edit-input-full {
+  width: 100%;
+}
+
+.sprout .sprout-edit-textarea-full {
+  width: 100%;
+}
+
+.sprout .sprout-edit-mcq-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprout .sprout-edit-mcq-option-label {
+  min-width: 70px;
+}
+
+.sprout .sprout-edit-mcq-option-input {
+  flex: 1;
+  width: 100%;
+}
+
+.sprout .sprout-edit-mcq-add-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.sprout .sprout-edit-btn-row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+/* ---- Shared utility classes used across card-editor, bulk-edit, modals ---- */
+
+/* Info icon positioning (cloze tooltip) */
+.sprout-info-icon-elevated {
+  position: relative;
+  z-index: 1000001;
+  transform: scale(0.9);
+}
+
+/* Textarea (no resize, 80px min) */
+.sprout-textarea-fixed {
+  resize: none;
+  min-height: 80px;
+}
+
+/* Hidden/shown toggle via class */
+.sprout-is-hidden {
+  display: none !important;
+}
+
+/* Group picker container */
+.sprout-group-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Search input (borderless, transparent) */
+.sprout-search-naked {
+  min-width: 0;
+  width: 100%;
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Popover (absolute dropdown) */
+.sprout-popover-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: auto;
+  z-index: 10000;
+  width: 100%;
+  display: none;
+  pointer-events: auto;
+}
+
+.sprout-popover-dropdown.is-open {
+  display: block;
+}
+
+/* Badge placeholder (no-group state) */
+.sprout-badge-placeholder {
+  display: inline-flex;
+  color: #fff;
+}
+
+/* Badge inline */
+.sprout-badge-inline {
+  display: inline-flex;
+}
+
+/* Remove button (ghost) */
+.sprout-remove-btn-ghost {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: var(--muted-foreground) !important;
+}
+
+.sprout-remove-btn-ghost:hover:not(:disabled) {
+  color: var(--foreground) !important;
+}
+
+.sprout-remove-btn-ghost:disabled,
+.sprout-remove-btn-ghost.is-disabled {
+  opacity: 0.35 !important;
+  cursor: default;
+}
+
+/* Fixed-height input (38px) — used across MCQ correct/wrong/add fields */
+.sprout-input-fixed {
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+}
+
+/* Disable opacity */
+.sprout-disabled-opacity {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pointer events auto (panels) */
+.sprout-pointer-auto {
+  pointer-events: auto;
+}
+
+/* List unbounded (no max-height/overflow) */
+.sprout-list-unbounded {
+  max-height: none;
+  overflow: visible;
+}

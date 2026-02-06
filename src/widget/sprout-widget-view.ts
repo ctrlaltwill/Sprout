@@ -1,25 +1,12 @@
 /**
- * widget/SproutWidgetView.ts
- * ──────────────────────────
- * The Sprout sidebar widget – an Obsidian `ItemView` that displays a
- * lightweight flashcard review session for the currently-open note.
+ * @file src/widget/sprout-widget-view.ts
+ * @summary The Sprout sidebar widget — an Obsidian ItemView that displays a lightweight flashcard review session for the currently-open note. Manages summary mode (card counts and "Start Studying" button), session mode (one-at-a-time card review with grading, undo, bury, suspend), keyboard shortcuts, folder-note deck support, and inline card editing. Most logic is delegated to sibling modules (widget-markdown, widget-scope, widget-session-actions, widget-render-summary, widget-render-session).
  *
- * Responsibilities:
- *  - Summary mode: shows card counts, due count, and a "Start Studying" button
- *  - Session mode: presents cards one at a time with grading, undo, bury, suspend
- *  - Keyboard shortcuts (Enter, 1-4, E, M, B, S, U)
- *  - Folder-note "deck" support (treat folder notes as aggregate decks)
- *  - Inline card editing via the bulk-edit modal
- *
- * Most logic has been extracted into sibling modules:
- *  - widget-markdown.ts        – HTML escaping, wiki-link / LaTeX helpers
- *  - widget-scope.ts           – folder-note scope & card-data accessors
- *  - widget-session-actions.ts – grading, undo, bury, suspend, MCQ, next
- *  - widget-render-summary.ts  – summary-mode DOM builder
- *  - widget-render-session.ts  – session-mode DOM builder
+ * @exports
+ *  - SproutWidgetView — Obsidian ItemView subclass implementing the sidebar flashcard-review widget
  */
 
-import { ItemView, TFile, type WorkspaceLeaf } from "obsidian";
+import { ItemView, type TFile, type WorkspaceLeaf } from "obsidian";
 
 import { VIEW_TYPE_WIDGET } from "../core/constants";
 import { SproutMarkdownHelper } from "../reviewer/markdown-render";
@@ -28,7 +15,8 @@ import * as IO from "../imageocclusion/image-occlusion-index";
 import { renderImageOcclusionReviewInto } from "../imageocclusion/image-occlusion-review-render";
 import type SproutPlugin from "../main";
 
-import type { Session, UndoFrame } from "./widget-helpers";
+import type { Session, UndoFrame, ReviewMeta } from "./widget-helpers";
+import type { CardRecord } from "../types/card";
 import { filterReviewableCards, isClozeLike } from "./widget-helpers";
 import { getCardsInActiveScope } from "./widget-scope";
 import {
@@ -137,7 +125,7 @@ export class SproutWidgetView extends ItemView {
   /** Render an image-occlusion card into a container. */
   async renderImageOcclusionInto(
     containerEl: HTMLElement,
-    card: any,
+    card: CardRecord,
     sourcePath: string,
     reveal: boolean,
   ) {
@@ -195,27 +183,27 @@ export class SproutWidgetView extends ItemView {
     const states = this.plugin.store.data.states || {};
 
     const learnDue = cards.filter(
-      (c: any) => states[c.id] && states[c.id].stage === "learning" && states[c.id].due <= now,
+      (c) => states[c.id] && states[c.id].stage === "learning" && states[c.id].due <= now,
     );
     const reviewDue = cards.filter(
-      (c: any) => states[c.id] && states[c.id].stage === "review" && states[c.id].due <= now,
+      (c) => states[c.id] && states[c.id].stage === "review" && states[c.id].due <= now,
     );
-    const news = cards.filter((c: any) => states[c.id] && states[c.id].stage === "new");
+    const news = cards.filter((c) => states[c.id] && states[c.id].stage === "new");
 
     const reviewLimit = this.plugin.settings.reviewer.dailyReviewLimit ?? 200;
     const newLimit = this.plugin.settings.reviewer.dailyNewLimit ?? 20;
 
     const learnSorted = learnDue
       .sort(
-        (a: any, b: any) => states[a.id].due - states[b.id].due || String(a.id).localeCompare(String(b.id)),
+        (a, b) => states[a.id].due - states[b.id].due || String(a.id).localeCompare(String(b.id)),
       )
       .slice(0, reviewLimit);
     const reviewSorted = reviewDue
       .sort(
-        (a: any, b: any) => states[a.id].due - states[b.id].due || String(a.id).localeCompare(String(b.id)),
+        (a, b) => states[a.id].due - states[b.id].due || String(a.id).localeCompare(String(b.id)),
       )
       .slice(0, reviewLimit);
-    const newSorted = news.sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))).slice(0, newLimit);
+    const newSorted = news.sort((a, b) => String(a.id).localeCompare(String(b.id))).slice(0, newLimit);
 
     const queue = learnSorted.concat(reviewSorted).concat(newSorted);
 
@@ -234,7 +222,7 @@ export class SproutWidgetView extends ItemView {
     if (!f) return null;
 
     const cards = getCardsInActiveScope(this.plugin.store, f, this.plugin.settings);
-    const queue = filterReviewableCards(cards).sort((a: any, b: any) => {
+    const queue = filterReviewableCards(cards).sort((a, b) => {
       const pathA = String(a?.sourceNotePath ?? "");
       const pathB = String(b?.sourceNotePath ?? "");
       const pathCmp = pathA.localeCompare(pathB);
@@ -268,7 +256,7 @@ export class SproutWidgetView extends ItemView {
   /*  Delegated session actions                                        */
   /* ---------------------------------------------------------------- */
 
-  async gradeCurrentRating(rating: "again" | "hard" | "good" | "easy", meta: any) {
+  async gradeCurrentRating(rating: "again" | "hard" | "good" | "easy", meta: ReviewMeta | null) {
     return _gradeCurrentRating(this, rating, meta);
   }
   canUndo(): boolean {

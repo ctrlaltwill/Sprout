@@ -1,4 +1,16 @@
-// src/indexes/groupIndex.ts
+/**
+ * @file src/indexes/group-index.ts
+ * @summary Maintains a cached index of card groups (decks/tags) with per-group card counts and scheduling-state breakdowns. Provides group-path normalisation, prefix expansion for nested groups, and a singleton GroupIndex class that rebuilds on demand when the store changes.
+ *
+ * @exports
+ *  - normaliseGroupPath   — normalises a raw group path string (trims, collapses slashes, lowercases)
+ *  - expandGroupPrefixes  — expands a list of group paths to include all ancestor prefixes
+ *  - GroupCounts           — type describing per-state card counts for a group
+ *  - GroupIndex            — class that caches group-to-card mappings and count aggregations
+ *  - getGroupIndex         — returns the singleton GroupIndex instance, rebuilding if invalidated
+ *  - invalidateGroupIndex  — marks the cached GroupIndex as stale so it rebuilds on next access
+ */
+
 import type { CardRecord, CardState } from "../core/store";
 import type SproutPlugin from "../main";
 
@@ -38,7 +50,7 @@ export function expandGroupPrefixes(path: string): string[] {
   return out;
 }
 
-function isAvailableNowState(st: any, now: number): boolean {
+function isAvailableNowState(st: CardState | undefined, now: number): boolean {
   if (!st) return false;
 
   if (st.stage === "suspended") return false;

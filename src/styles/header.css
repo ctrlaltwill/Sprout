@@ -1,0 +1,75 @@
+/* ============================================================================
+   HEADER — Brand link, brand icon/text reveal animation.
+   ========================================================================== */
+
+.sprout .view-header.sprout-header {padding: 40px;}
+
+.sprout .sprout-header-brand-link,
+.sprout .view-header .sprout-header-brand-link,
+.sprout .view-header .sprout-header-brand .sprout-header-brand-link {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-radius: var(--radius) !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  transition: width 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.sprout .sprout-header-brand-link:hover,
+.sprout .sprout-header-brand-link:focus-visible,
+.sprout .view-header .sprout-header-brand-link:hover,
+.sprout .view-header .sprout-header-brand-link:focus-visible,
+.sprout .view-header .sprout-header-brand .sprout-header-brand-link:hover,
+.sprout .view-header .sprout-header-brand .sprout-header-brand-link:focus-visible {
+  background-color: #15803d !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+  width: 92px !important;
+}
+
+.sprout .sprout-header-brand-link:active,
+.sprout .view-header .sprout-header-brand-link:active,
+.sprout .view-header .sprout-header-brand .sprout-header-brand-link:active {
+  background-color: #166534 !important;
+  border-color: #166534 !important;
+  color: #ffffff !important;
+  width: 92px !important;
+}
+
+.sprout .sprout-header-brand-link .sprout-header-brand-icon {
+  flex: 0 0 auto;
+}
+
+.sprout .sprout-header-brand-link .sprout-header-brand-text {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.sprout .sprout-header-brand-link span:not(.sprout-header-brand-icon):not(.sprout-header-brand-text) {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.sprout .sprout-header-brand-link:hover .sprout-header-brand-text,
+.sprout .sprout-header-brand-link:focus-visible .sprout-header-brand-text,
+.sprout .sprout-header-brand-link:active .sprout-header-brand-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sprout .sprout-header-brand-link:hover span:not(.sprout-header-brand-icon):not(.sprout-header-brand-text),
+.sprout .sprout-header-brand-link:focus-visible span:not(.sprout-header-brand-icon):not(.sprout-header-brand-text),
+.sprout .sprout-header-brand-link:active span:not(.sprout-header-brand-icon):not(.sprout-header-brand-text) {
+  opacity: 1;
+  transform: translateX(0);
+}

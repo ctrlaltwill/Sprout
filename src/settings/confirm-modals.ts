@@ -1,16 +1,16 @@
 /**
- * src/settings/confirm-modals.ts
- * ──────────────────────────────
- * Confirmation-dialog modals used exclusively by `SproutSettingsTab`.
+ * @file src/settings/confirm-modals.ts
+ * @summary Confirmation-dialog modals used exclusively by SproutSettingsTab. Contains seven Modal subclasses for destructive or irreversible settings actions: scheduling reset, analytics reset, card deletion, defaults restoration, backup comparison, backup restoration, and backup deletion.
  *
- * Seven modals live here, all extending Obsidian's `Modal`:
- *  1. ConfirmResetSchedulingModal  – wipes card scheduling (sets all to New)
- *  2. ConfirmResetAnalyticsModal   – clears review history / heatmap data
- *  3. ConfirmDeleteAllFlashcardsModal – removes every card from notes + DB
- *  4. ConfirmResetDefaultsModal    – restores plugin settings to factory defaults
- *  5. BackupCompareModal           – read-only diff of current DB vs. a backup
- *  6. ConfirmRestoreBackupModal    – overwrites DB from a chosen backup file
- *  7. ConfirmDeleteBackupModal     – permanently deletes a backup file on disk
+ * @exports
+ *  - ConfirmResetSchedulingModal     — modal confirming a wipe of all card scheduling data (reset to New)
+ *  - ConfirmResetAnalyticsModal      — modal confirming clearance of review history and heatmap data
+ *  - ConfirmDeleteAllFlashcardsModal — modal confirming removal of every card from notes and the DB
+ *  - ConfirmResetDefaultsModal       — modal confirming restoration of plugin settings to factory defaults
+ *  - BackupCompareModal              — read-only modal showing a diff of the current DB vs. a backup snapshot
+ *  - CurrentDbSnapshot               — type describing the shape of a current-DB snapshot for comparison
+ *  - ConfirmRestoreBackupModal       — modal confirming overwrite of the DB from a chosen backup file
+ *  - ConfirmDeleteBackupModal        — modal confirming permanent deletion of a backup file on disk
  */
 
 import { type App, Modal, Notice } from "obsidian";
@@ -46,9 +46,7 @@ export class ConfirmResetSchedulingModal extends Modal {
     });
 
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "12px";
+    row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => this.close();
@@ -98,9 +96,7 @@ export class ConfirmResetAnalyticsModal extends Modal {
     });
 
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "12px";
+    row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => this.close();
@@ -161,16 +157,13 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
     );
 
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "12px";
+    row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => this.close();
 
     const deleteBtn = row.createEl("button", { text: "Delete all flashcards" });
-    deleteBtn.style.background = "var(--background-modifier-error)";
-    deleteBtn.style.color = "var(--text-on-accent)";
+    deleteBtn.classList.add("sprout-btn-danger");
     deleteBtn.onclick = async () => {
       this.close();
       try {
@@ -214,16 +207,13 @@ export class ConfirmResetDefaultsModal extends Modal {
     });
 
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "12px";
+    row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => this.close();
 
     const resetBtn = row.createEl("button", { text: "Reset settings" });
-    resetBtn.style.background = "var(--background-modifier-error)";
-    resetBtn.style.color = "var(--text-on-accent)";
+    resetBtn.classList.add("sprout-btn-danger");
     resetBtn.onclick = async () => {
       this.close();
       try {
@@ -286,19 +276,15 @@ export class BackupCompareModal extends Modal {
 
     /* ── comparison table ── */
     const box = contentEl.createDiv();
-    box.style.marginTop = "10px";
+    box.classList.add("sprout-confirm-box");
 
     const tbl = box.createEl("table");
-    tbl.style.width = "100%";
-    tbl.style.borderCollapse = "collapse";
+    tbl.classList.add("sprout-compare-table");
 
     const header = tbl.createEl("tr");
     ["Metric", "Current", "Backup", "Δ"].forEach((h) => {
       const th = header.createEl("th", { text: h });
-      th.style.textAlign = "left";
-      th.style.padding = "6px 8px";
-      th.style.borderBottom = "1px solid var(--background-modifier-border)";
-      th.style.fontWeight = "600";
+      th.classList.add("sprout-compare-th");
     });
 
     const addRow = (label: string, cur: number, bak: number) => {
@@ -308,8 +294,7 @@ export class BackupCompareModal extends Modal {
       const td3 = tr.createEl("td", { text: String(bak) });
       const td4 = tr.createEl("td", { text: this.fmtDelta(bak - cur) });
       [td1, td2, td3, td4].forEach((td) => {
-        td.style.padding = "6px 8px";
-        td.style.borderBottom = "1px solid var(--background-modifier-border)";
+        td.classList.add("sprout-compare-td");
       });
     };
 
@@ -321,7 +306,7 @@ export class BackupCompareModal extends Modal {
 
     /* ── metadata ── */
     const meta = contentEl.createDiv();
-    meta.style.marginTop = "10px";
+    meta.classList.add("sprout-confirm-meta");
     meta.createDiv({
       text: `Modified: ${this.backup.mtime ? new Date(this.backup.mtime).toLocaleString() : "—"}`,
     });
@@ -332,13 +317,10 @@ export class BackupCompareModal extends Modal {
     const note = contentEl.createEl("p", {
       text: "Restore will overwrite the current Sprout database in-memory and persist it. It does not edit your markdown notes; run a sync afterward if you want to reconcile notes and DB.",
     });
-    note.style.marginTop = "10px";
-    note.style.color = "var(--text-muted)";
+    note.classList.add("sprout-confirm-muted");
 
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "14px";
+    row.classList.add("sprout-confirm-row-lg");
 
     const closeBtn = row.createEl("button", { text: "Close" });
     closeBtn.onclick = () => this.close();
@@ -396,10 +378,7 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     /* ── change summary ── */
     const summary = contentEl.createDiv();
-    summary.style.marginTop = "10px";
-    summary.style.padding = "10px";
-    summary.style.border = "1px solid var(--background-modifier-border)";
-    summary.style.borderRadius = "8px";
+    summary.classList.add("sprout-confirm-summary");
 
     const add = (label: string, cur: number, bak: number) => {
       summary.createDiv({
@@ -415,17 +394,13 @@ export class ConfirmRestoreBackupModal extends Modal {
     const warning = contentEl.createEl("p", {
       text: "Note: restore does not edit markdown notes. After restoring, you can run Sync to reconcile notes and database.",
     });
-    warning.style.marginTop = "10px";
-    warning.style.color = "var(--text-muted)";
+    warning.classList.add("sprout-confirm-muted");
 
     /* ── safety-backup checkbox ── */
     let makeSafetyBackup = true;
 
     const checkRow = contentEl.createDiv();
-    checkRow.style.display = "flex";
-    checkRow.style.alignItems = "center";
-    checkRow.style.gap = "8px";
-    checkRow.style.marginTop = "10px";
+    checkRow.classList.add("sprout-confirm-check-row");
 
     const cb = checkRow.createEl("input");
     cb.type = "checkbox";
@@ -438,16 +413,13 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     /* ── action buttons ── */
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "14px";
+    row.classList.add("sprout-confirm-row-lg");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => this.close();
 
     const restoreBtn = row.createEl("button", { text: "Restore backup" });
-    restoreBtn.style.background = "var(--background-modifier-error)";
-    restoreBtn.style.color = "var(--text-on-accent)";
+    restoreBtn.classList.add("sprout-btn-danger");
 
     restoreBtn.onclick = async () => {
       restoreBtn.setAttr("disabled", "true");
@@ -502,16 +474,13 @@ export class ConfirmDeleteBackupModal extends Modal {
     contentEl.createEl("p", { text: `This will permanently delete: ${this.backup.name}` });
 
     const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "12px";
+    row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => this.close();
 
     const deleteBtn = row.createEl("button", { text: "Delete backup" });
-    deleteBtn.style.background = "var(--background-modifier-error)";
-    deleteBtn.style.color = "var(--text-on-accent)";
+    deleteBtn.classList.add("sprout-btn-danger");
     deleteBtn.onclick = async () => {
       this.close();
       try {

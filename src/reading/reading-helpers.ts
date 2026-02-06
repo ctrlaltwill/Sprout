@@ -1,12 +1,38 @@
 /**
- * reading-helpers.ts
+ * @file src/reading/reading-helpers.ts
+ * @summary Pure, stateless helper functions extracted from reading-view.ts. Covers regex constants, text-cleaning utilities, card parsing from raw markdown, card-content HTML builders for every card type (basic, cloze, MCQ, IO, info), collapsible sections, markdown-element parsing, and non-card-content detection. Nothing here depends on module-level mutable state or Obsidian lifecycle hooks.
  *
- * Pure / stateless helper functions extracted from readingView.ts.
- * These cover constants, text utilities, card parsing, card-content HTML
- * builders, markdown-element parsing, and non-card-content detection.
- *
- * Nothing here depends on module-level mutable state such as
- * `sproutPluginRef` or Obsidian lifecycle hooks.
+ * @exports
+ *  - INVIS_RE                    — regex stripping zero-width spaces and BOM characters
+ *  - ANCHOR_RE                   — regex matching a ^sprout-<id> anchor
+ *  - FIELD_START_RE              — regex matching a field-start line (FieldKey | value)
+ *  - FieldKey                    — type alias for valid field keys (T, Q, A, I, MCQ, CQ, O, G, IO)
+ *  - clean                       — strips invisible characters and trims whitespace
+ *  - unescapePipeText            — unescapes pipe characters in card field text
+ *  - normalizeMathSignature      — normalises LaTeX math delimiters for consistent rendering
+ *  - escapeHtml                  — escapes HTML special characters in a string
+ *  - processMarkdownFeatures     — converts wiki-links and preserves LaTeX delimiters
+ *  - splitAtPipeTerminator       — splits a line at the pipe terminator character
+ *  - extractLaTeXFromMathJax     — extracts raw LaTeX source from a MathJax-rendered element
+ *  - extractRawTextFromParagraph — extracts plain text from a paragraph element
+ *  - extractTextWithLaTeX        — extracts text preserving inline LaTeX from an element
+ *  - extractCardFromSource       — extracts a card's raw source block by anchor ID from a markdown string
+ *  - SproutCard                  — interface describing a parsed Sprout card with typed fields
+ *  - parseSproutCard             — parses a raw text block into a SproutCard object
+ *  - saveField                   — appends a field value to a fields record (handles multi-line)
+ *  - renderMathInElement         — triggers MathJax typesetting on a DOM element
+ *  - buildCardContentHTML        — builds the full HTML string for a card's content section
+ *  - buildClozeSectionHTML       — builds the HTML for a cloze-deletion card section
+ *  - buildMCQSectionHTML         — builds the HTML for an MCQ card section
+ *  - buildBasicSectionHTML       — builds the HTML for a basic Q&A card section
+ *  - buildIOSectionHTML          — builds the HTML for an image-occlusion card section
+ *  - buildInfoSectionHTML        — builds the HTML for an info-only card section
+ *  - buildCollapsibleSectionHTML — builds a collapsible/expandable HTML section
+ *  - ParsedMarkdownElement       — interface describing a parsed markdown element (type, content, metadata)
+ *  - parseMarkdownToElements     — parses a markdown string into an array of ParsedMarkdownElement objects
+ *  - createMarkdownElement       — creates an HTMLElement from a ParsedMarkdownElement
+ *  - checkForNonCardContent      — checks whether an element contains non-card content after a pipe
+ *  - containsNonCardContent      — returns true if an element has any non-card content
  */
 
 import { log } from "../core/logger";
@@ -32,7 +58,7 @@ export type FieldKey = "T" | "Q" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO";
 // No-op logger so extracted functions that previously called debugLog
 // keep their exact implementation without depending on mutable DEBUG state.
  
-function debugLog(..._args: any[]) {
+function debugLog(..._args: unknown[]) {
   /* intentionally empty */
 }
 
@@ -90,7 +116,7 @@ export function processMarkdownFeatures(text: string): string {
   let result = String(text);
   
   // Convert wiki links [[Page]] or [[Page|Display]] to HTML links
-  result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, target, display) => {
+  result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match, target, display) => {
     const linkText = display || target;
     // Create a data attribute for Obsidian to handle the click
     return `<a href="#" class="internal-link" data-href="${escapeHtml(target)}">${escapeHtml(linkText)}</a>`;
@@ -313,15 +339,15 @@ export interface SproutCard {
   type: "basic" | "cloze" | "mcq" | "io";
   title: string;
   fields: {
-    T?: any;
-    Q?: any;
-    A?: any;
-    CQ?: any;
-    MCQ?: any;
-    O?: any;
-    I?: any;
-    G?: any;
-    IO?: any;
+    T?: string | string[];
+    Q?: string | string[];
+    A?: string | string[];
+    CQ?: string | string[];
+    MCQ?: string | string[];
+    O?: string | string[];
+    I?: string | string[];
+    G?: string | string[];
+    IO?: string | string[];
   };
 }
 
@@ -338,7 +364,7 @@ export function parseSproutCard(text: string): SproutCard | null {
   }
   if (!anchorId) return null;
 
-  const fields: any = {};
+  const fields: Record<string, string | string[]> = {};
   let currentField: string | null = null;
   let currentContent: string[] = [];
   const parseFrom = anchorLineIndex + 1 < lines.length ? anchorLineIndex + 1 : 0;
@@ -412,10 +438,11 @@ export function parseSproutCard(text: string): SproutCard | null {
   return { anchorId, type, title, fields };
 }
 
-export function saveField(fields: any, fieldName: string, content: string[]) {
+export function saveField(fields: Record<string, string | string[]>, fieldName: string, content: string[]) {
   if (!fields[fieldName]) fields[fieldName] = [];
+  const arr = fields[fieldName];
   const filtered = content.map(c => String(c).trim()).filter(c => c.length > 0);
-  if (filtered.length > 0) fields[fieldName].push(...filtered);
+  if (filtered.length > 0 && Array.isArray(arr)) arr.push(...filtered);
 }
 
 /* -----------------------
@@ -427,7 +454,7 @@ export function renderMathInElement(el: HTMLElement) {
   const MathJax = window.MathJax;
   if (MathJax && typeof MathJax.typesetPromise === 'function') {
     try {
-      MathJax.typesetPromise([el]).catch((err: any) => {
+      MathJax.typesetPromise([el]).catch((err: unknown) => {
         log.warn('MathJax rendering error:', err);
       });
     } catch (err) {
@@ -443,7 +470,9 @@ export function buildCardContentHTML(card: SproutCard): string {
     contentHTML += buildClozeSectionHTML(clozeContent);
   } else if (card.type === "mcq" && card.fields.MCQ) {
     const question = Array.isArray(card.fields.MCQ) ? card.fields.MCQ.join('\n') : card.fields.MCQ;
-    const options = Array.isArray(card.fields.O) ? card.fields.O : [];
+    const options = Array.isArray(card.fields.O)
+      ? card.fields.O
+      : (typeof card.fields.O === 'string' ? card.fields.O.split('\n').filter(s => s.trim()) : []);
     const answer = Array.isArray(card.fields.A) ? card.fields.A.join('\n') : card.fields.A;
     contentHTML += buildMCQSectionHTML(question, options, answer);
   } else if (card.type === "basic" && card.fields.Q) {
@@ -559,12 +588,12 @@ export function buildIOSectionHTML(ioContent: string): string {
   `;
 }
 
-export function buildInfoSectionHTML(infoContent: string): string {
+export function buildInfoSectionHTML(_infoContent: string): string {
   const iId = `sprout-i-${Math.random().toString(36).slice(2,8)}`;
   return buildCollapsibleSectionHTML('Extra Information', `.sprout-info-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-info" id="${iId}" style="--p-spacing: 0px;"></div>`, iId);
 }
 
-export function buildCollapsibleSectionHTML(label: string, targetSelector: string, innerHtml: string, markdownId?: string) {
+export function buildCollapsibleSectionHTML(label: string, targetSelector: string, innerHtml: string, _markdownId?: string) {
   // targetSelector should be unique per card instance; caller supplies a selector string starting with '.'
   const contentId = targetSelector.startsWith('.') ? targetSelector.slice(1) : targetSelector.replace('#','');
 

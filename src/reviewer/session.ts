@@ -1,10 +1,19 @@
-// src/reviewer/session.ts
+/**
+ * @file src/reviewer/session.ts
+ * @summary Core session-building logic for the reviewer. Resolves which cards are in scope (vault, folder, note, or group), applies daily new/review limits, filters for currently-available cards, shuffles and interleaves cloze/IO children with round-robin scheduling, and assembles the study queue.
+ *
+ * @exports
+ *   - inScope — Predicate that checks whether a note path falls within a given scope
+ *   - isAvailableNow — Determines if a card's state makes it eligible for study right now
+ *   - buildSession — Constructs a full Session object (queue, stats, graded map) for a given scope
+ *   - getNextDueInScope — Returns the earliest future due timestamp among cards in the given scope, or null
+ */
+
 import type SproutPlugin from "../main";
 import type { Scope, Session } from "./types";
 import type { CardRecord } from "../core/store";
 import type { ReviewLogEntry } from "../types/review";
 import type { CardState } from "../types/scheduler";
-// src/reviewer/session.ts
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 
 
@@ -32,7 +41,7 @@ function startOfTodayMs(now: number): number {
   return d.getTime();
 }
 
-function toNonNegIntOrInfinity(x: any): number {
+function toNonNegIntOrInfinity(x: unknown): number {
   const n = Number(x);
   if (!Number.isFinite(n)) return Number.POSITIVE_INFINITY;
   return Math.max(0, Math.floor(n));
@@ -52,8 +61,8 @@ function cardHasIoChildKey(card: CardRecord): boolean {
   if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
   // Defensive: check non-standard fields that may appear on legacy records
   const rec = card as Record<string, unknown>;
-  if (typeof rec.ioGroupKey === "string" && (rec.ioGroupKey as string).trim()) return true;
-  if (typeof rec.key === "string" && (rec.key as string).trim()) return true;
+  if (typeof rec.ioGroupKey === "string" && (rec.ioGroupKey).trim()) return true;
+  if (typeof rec.key === "string" && (rec.key).trim()) return true;
 
   const id = String(card.id ?? "");
   return !!ioChildKeyFromId(id);
@@ -305,7 +314,8 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
     added = false;
     for (const key of parentKeys) {
       if (parentGroups[key].length) {
-        rrChildCards.push(parentGroups[key].shift());
+        const shifted = parentGroups[key].shift();
+        if (shifted) rrChildCards.push(shifted);
         added = true;
       }
     }

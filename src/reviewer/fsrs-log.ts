@@ -1,10 +1,21 @@
-// src/reviewer/fsrsLog.ts
+/**
+ * @file src/reviewer/fsrs-log.ts
+ * @summary Structured logging utilities for FSRS review events and undo operations. Formats and emits detailed log lines covering rating, state transitions, retrievability, stability, difficulty, MCQ metadata, and UI context for debugging and analytics.
+ *
+ * @exports
+ *   - logFsrsIfNeeded — Logs a structured FSRS review or skip event with metrics, state, and UI context
+ *   - logUndoIfNeeded — Logs a structured undo event showing the before/after state reversion details
+ */
+
 import { log } from "../core/logger";
-import type { Rating } from "./image-occlusion-types";
+import type { Rating } from "./types";
+import type { GradeResult, CardState } from "../types/scheduler";
+
+type ReviewMeta = Record<string, unknown>;
 
 type RatingOrSkip = Rating | "skip";
 
-function fsrsStateName(s: any): string {
+function fsrsStateName(s: number | undefined): string {
   switch (Number(s)) {
     case 0:
       return "New";
@@ -19,11 +30,11 @@ function fsrsStateName(s: any): string {
   }
 }
 
-function normLower(x: any): string {
+function normLower(x: unknown): string {
   return String(x ?? "").trim().toLowerCase();
 }
 
-function safeDueString(ms: any): string {
+function safeDueString(ms: unknown): string {
   const t = Number(ms);
   if (!Number.isFinite(t) || t <= 0) return "—";
   try {
@@ -33,13 +44,13 @@ function safeDueString(ms: any): string {
   }
 }
 
-function numOrDash(x: any, digits = 2): string {
+function numOrDash(x: unknown, digits = 2): string {
   const n = Number(x);
   if (!Number.isFinite(n)) return "—";
   return n.toFixed(digits);
 }
 
-function intOrDash(x: any): string {
+function intOrDash(x: unknown): string {
   const n = Number(x);
   if (!Number.isFinite(n)) return "—";
   return String(Math.floor(n));
@@ -53,10 +64,10 @@ export function logFsrsIfNeeded(args: {
   rating: RatingOrSkip;
 
   // For grade events, these will exist; for skip, they can be omitted.
-  metrics?: any;
+  metrics?: GradeResult["metrics"];
   nextDue?: number;
 
-  meta?: any;
+  meta?: ReviewMeta;
 }) {
   const { id, cardType } = args;
   const metrics = args.metrics;
@@ -108,9 +119,9 @@ export function logFsrsIfNeeded(args: {
       ? metrics.retrievabilityTarget
       : null;
 
-  const elapsedDays = Number.isFinite(metrics?.elapsedDays) ? Number(metrics.elapsedDays) : 0;
-  const sDays = Number.isFinite(metrics?.stabilityDays) ? Number(metrics.stabilityDays) : 0;
-  const dVal = Number.isFinite(metrics?.difficulty) ? Number(metrics.difficulty) : 0;
+  const elapsedDays = Number.isFinite(metrics?.elapsedDays) ? Number(metrics!.elapsedDays) : 0;
+  const sDays = Number.isFinite(metrics?.stabilityDays) ? Number(metrics!.stabilityDays) : 0;
+  const dVal = Number.isFinite(metrics?.difficulty) ? Number(metrics!.difficulty) : 0;
 
   const stateBefore = metrics?.stateBefore;
   const stateAfter = metrics?.stateAfter;
@@ -162,23 +173,23 @@ export function logUndoIfNeeded(args: {
   id: string;
   cardType: string;
   ratingUndone: RatingOrSkip | string;
-  meta?: any;
+  meta?: ReviewMeta;
 
   // Whether JSON store state was actually reverted (practice sessions are session-only)
   storeReverted: boolean;
 
   // Post-grade state before undo (if available)
-  fromState: any | null;
+  fromState: CardState | null;
 
   // Restored state after undo (if available)
-  toState: any | null;
+  toState: CardState | null;
 }) {
   const ct = normLower(args.cardType);
   const id = String(args.id ?? "");
   const rating = String(args.ratingUndone ?? "");
 
-  const from = args.fromState || {};
-  const to = args.toState || {};
+  const from: Partial<CardState> = args.fromState || {};
+  const to: Partial<CardState> = args.toState || {};
 
   const fromDue = safeDueString(from?.due);
   const toDue = safeDueString(to?.due);

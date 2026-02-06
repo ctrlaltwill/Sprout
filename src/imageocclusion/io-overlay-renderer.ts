@@ -1,17 +1,16 @@
 /**
- * imageocclusion/io-overlay-renderer.ts
- * ---------------------------------------------------------------------------
- * Renders the occlusion-rect and text-box overlays on the IO canvas.
+ * @file src/imageocclusion/io-overlay-renderer.ts
+ * @summary Renders occlusion-rectangle and text-box overlays on the Image Occlusion creator canvas. Handles all DOM creation, interactjs drag/resize wiring, selection highlighting, group-key input controls, and text-box inline editing for both rect and text overlays.
  *
- * Extracted from ImageOcclusionCreatorModal.renderRects() to keep the
- * main modal class a manageable size.  All DOM creation, interactjs
- * drag/resize wiring, and styling lives here.
- * ---------------------------------------------------------------------------
+ * @exports
+ *   - OverlayCallbacks — interface defining callback hooks for rect/text interaction events
+ *   - RenderOverlayOptions — interface describing all options accepted by renderOverlay
+ *   - renderOverlay — main entry point that renders all occlusion rects and text boxes onto the overlay element
  */
 
 import interact from "interactjs";
 import type { IORect, IOTextBox } from "./io-types";
-import { textBgCss, clampTextBgOpacity } from "./io-image-ops";
+import { textBgCss } from "./io-image-ops";
 
 // ── Public callback interface ───────────────────────────────────────────────
 

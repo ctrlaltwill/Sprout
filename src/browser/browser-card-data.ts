@@ -1,16 +1,23 @@
 /**
- * browser/browser-card-data.ts
- * ────────────────────────────
- * Data filtering, sorting, and field read/write logic for the Flashcard Browser.
- * Extracted from SproutCardBrowserView to keep the view class focused on UI.
+ * @file src/browser/browser-card-data.ts
+ * @summary Data filtering, sorting, and field read/write logic for the Flashcard
+ * Browser. Provides pure-ish helper functions that take the plugin or store
+ * explicitly (rather than relying on view instance state) so the logic is
+ * testable in isolation. Handles search-query parsing, type/stage/due filtering,
+ * group-based filtering, sort-value computation, cell-value application, field
+ * reading, and pre-write validation.
  *
- * Every function here is a pure-ish helper that takes the plugin (or store)
- * explicitly rather than relying on `this`, so the code is testable in
- * isolation.
+ * @exports
+ *   - BrowserRow — interface representing a single row (card + state + due timestamp)
+ *   - computeBrowserRows — builds the full filtered and sorted list of rows for the browser table
+ *   - browserSortValue — computes a comparable sort value for a card given a sort key
+ *   - applyValueToCard — applies an edited cell value back onto a card record (returns a deep clone)
+ *   - readCardField — reads the display value for a given column from a card
+ *   - validateCardBeforeWrite — validates a card's fields before writing to markdown, throws on failure
  */
 
 import type SproutPlugin from "../main";
-import type { CardRecord, CardState } from "../core/store";
+import type { CardRecord, CardState, QuarantineEntry } from "../core/store";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import {
@@ -70,7 +77,7 @@ export function computeBrowserRows(
   const now = Date.now();
   const sToday = startOfTodayMs();
   const eToday = endOfTodayMs();
-  const quarantine = (plugin.store.data.quarantine || {}) as Record<string, any>;
+  const quarantine = (plugin.store.data.quarantine || {}) as Record<string, QuarantineEntry>;
   const includeQuarantined = true;
 
   let baseCards: CardRecord[] = [];

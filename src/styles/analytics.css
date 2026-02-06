@@ -1,0 +1,203 @@
+/* ============================================================================
+   ANALYTICS — Grid, Recharts axis/tick, pie chart, info icons, filter
+   z-index stacking, chart cards, heatmap, analytics tables.
+   ========================================================================== */
+
+/* ---- Grid & card margins ---- */
+
+.sprout .sprout-analytics-root .sprout-ana-grid > .card,
+.sprout .sprout-analytics-root .sprout-ana-grid .card,
+.sprout .sprout-analytics-root .card.sprout-ana-card {
+  margin: 0 !important;
+}
+
+.sprout .sprout-analytics-root .sprout-ana-grid {
+  align-items: stretch;
+}
+
+.sprout .sprout-analytics-root .sprout-ana-grid > div {
+  display: flex;
+}
+
+.sprout .sprout-analytics-root .sprout-ana-grid > div > .card {
+  flex: 1;
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* ---- Recharts axis + ticks ---- */
+
+.sprout .sprout-analytics-root .recharts-cartesian-axis-line,
+.sprout .sprout-analytics-root .recharts-cartesian-axis-tick-line {
+  stroke: var(--border) !important;
+}
+.sprout .sprout-analytics-root .recharts-cartesian-axis-tick-value {
+  fill: var(--text-muted) !important;
+  font-size: 11px !important;
+}
+.sprout .sprout-analytics-root .recharts-label tspan {
+  fill: var(--text-muted) !important;
+}
+
+/* ---- Pie chart center value ---- */
+
+.sprout .sprout-analytics-root .fill-foreground {
+  fill: #111 !important;
+}
+.theme-dark .sprout .sprout-analytics-root .fill-foreground {
+  fill: #fff !important;
+}
+
+/* ---- Info icons ---- */
+
+.sprout .sprout-analytics-root .lucide-info {
+  width: 11.2px;
+  height: 11.2px;
+}
+
+.sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info) {
+  cursor: pointer;
+}
+
+/* Keep forgetting curve card height steady even when empty */
+.sprout .sprout-analytics-root .sprout-forgetting-curve-card {
+  min-height: 350px;
+}
+
+/* Add space between chart titles and info icons */
+.sprout .sprout-analytics-root .sprout-ana-card .font-semibold + span {
+  margin-left: 3px;
+}
+
+/* Nudge info tooltips a bit lower */
+.sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info)::after {
+  bottom: -48px;
+}
+
+/* ---- Filter popover z-index stacking ---- */
+
+.sprout .sprout-ana-card {
+  position: relative;
+}
+
+.sprout .sprout-ana-card:has(button[aria-expanded="true"]),
+.sprout .sprout-ana-card[data-popover-open="true"] {
+  z-index: 1000000;
+  overflow: visible !important;
+}
+
+/* Lift the entire row/grid when any filter is open */
+.sprout .sprout-analytics-root :where(.sprout-ana-grid, .grid, .sprout-heatmap-host):has(
+    .sprout-ana-card[data-popover-open="true"]
+  ),
+.sprout .sprout-analytics-root :where(.sprout-ana-grid, .grid, .sprout-heatmap-host):has(
+    .sprout-ana-card:has(button[aria-expanded="true"])
+  ) {
+  position: relative;
+  z-index: 1000002;
+  overflow: visible !important;
+}
+.sprout .sprout-analytics-root :where(.sprout-ana-grid, .grid, .sprout-heatmap-host)[data-popover-open="true"] {
+  position: relative;
+  z-index: 1000002;
+  overflow: visible !important;
+}
+.sprout .sprout-ana-card .dropdown-menu,
+.sprout .sprout-ana-card [data-popover="true"],
+.sprout .sprout-ana-card .bg-popover {
+  z-index: 1000001 !important;
+}
+
+/* Ensure open filters float above any chart stack */
+.sprout .sprout-analytics-root .sprout-ana-card [aria-hidden="false"],
+.sprout .sprout-analytics-root .sprout-ana-card [data-popover="true"] {
+  position: absolute;
+  z-index: 1000001 !important;
+}
+
+/* ---- Chart card sizing ---- */
+
+/* Stretch analytics chart cards to match tallest sibling */
+.sprout-analytics-chart-card.sprout-ana-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+/* Consistent fixed height for all analytics charts */
+.sprout-analytics-chart {
+  height: 250px;
+  min-height: 250px;
+  max-height: 250px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  padding-bottom: 0;
+  box-sizing: border-box;
+}
+
+/* ---- Ana-card min heights ---- */
+
+.sprout .sprout-ana-card .text-sm {
+    min-height: 22px;
+}
+
+.sprout-ana-card .text-2xl {
+  min-height: 30px;;
+}
+
+/* ---- Analytics tables ---- */
+
+.sprout .sprout-analytics-root .table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+.sprout .sprout-analytics-root .table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* ---- Legend dot ---- */
+/* Replaces inline: width/height 10px; borderRadius 3px; background:<color>
+   across 7 analytics chart files (~15 usages) */
+
+.sprout .sprout-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Variant for heatmap tooltip dots (smaller, round) */
+.sprout .sprout-legend-dot-sm {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Analytics table wrapper: padding + border so scroll stays inside */
+.sprout .sprout-analytics-table-wrap {
+  padding: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  overflow: auto;
+  background: var(--background);
+}
+
+/* Analytics table: keep hover radius on cells; wrapper handles border */
+.sprout .sprout-analytics-root .table {
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.sprout .sprout-analytics-root .table tbody tr:hover td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+.sprout .sprout-analytics-root .table tbody tr:hover td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}

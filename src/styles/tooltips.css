@@ -1,0 +1,87 @@
+/* ============================================================================
+   TOOLTIPS — Default, modal, dark-mode, settings, browser-table tooltips.
+   ========================================================================== */
+
+/* ---- Base tooltip ---- */
+
+[data-tooltip] {
+  position: relative;
+}
+
+/* Default tooltip below */
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--foreground);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  min-width: 160px;
+  max-width: 300px;
+  width: max-content;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 3000;
+  transition-delay: 1s;
+  border: none;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
+[data-tooltip]::before {
+  content: "";
+  display: none !important;
+}
+
+/* ---- Modal info tooltips: place to the right ---- */
+
+.sprout .sprout-modal [data-tooltip]:has(.lucide-info)::after,
+.sprout .sprout-modals [data-tooltip]:has(.lucide-info)::after {
+  bottom: auto;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+  text-align: left;
+  z-index: 10000;
+}
+
+/* ---- Dark mode tooltip contrast ---- */
+
+.theme-dark .sprout [data-tooltip]::after {
+  background-color: #111214;
+  color: #fff !important;
+  border: 1px solid var(--border);
+}
+
+/* ---- Tooltips above for browser table controls ---- */
+
+.sprout .sprout-view-content .btn-outline[data-tooltip]::after,
+.sprout .sprout-view-content .btn-icon-outline[data-tooltip]::after {
+  bottom: auto;
+  top: -35px;
+}
+
+/* ---- Settings tooltips: allow overflow and ensure visibility ---- */
+
+.sprout-settings .setting-item,
+.sprout-settings .setting-item-control,
+.sprout-settings .setting-item-info {
+  overflow: visible !important;
+}
+.sprout-settings [data-tooltip]::after {
+  z-index: 10000;
+}
+
+.sprout-settings .setting-item {
+  margin-bottom: 0px !important;
+}

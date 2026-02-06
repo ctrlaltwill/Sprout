@@ -1,4 +1,13 @@
-// src/reviewer/mcq.ts
+/**
+ * @file src/reviewer/question-mcq.ts
+ * @summary Manages MCQ option randomisation for the reviewer. Provides functions to check if randomisation is enabled, initialise per-session order maps, and compute or retrieve a shuffled display order for each MCQ card's options.
+ *
+ * @exports
+ *   - isMcqOptionRandomisationEnabled — Checks whether MCQ option shuffling is enabled in plugin settings
+ *   - initMcqOrderState — Initialises the per-session MCQ order map if not already present
+ *   - getMcqOptionOrder — Returns a (possibly shuffled) permutation of option indices for a given MCQ card
+ */
+
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../types/card";
 import type { Session } from "./types";

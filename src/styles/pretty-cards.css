@@ -1,0 +1,473 @@
+/* ============================================================================
+   PRETTY CARDS — Reading-view card rendering (accent + theme variants),
+   masonry grid, card header/title/meta/sections, cloze pills, tags, IO area.
+   ========================================================================== */
+
+/* ---- Masonry grid wrapper ---- */
+
+.sprout-masonry-grid-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 20px 0;
+  width: 100%;
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Card sizing */
+.sprout-masonry-grid-wrapper > .sprout-pretty-card {
+  flex: 1 1 300px;
+  max-width: 400px;
+  margin: 0;
+}
+
+/* ---- Card surface ---- */
+
+/* Accent style (default) */
+.sprout-pretty-card.accent {
+  border-radius: 6px;
+  padding: 12px 12px 15px 12px;
+  box-shadow: none;
+  box-sizing: border-box;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+
+  /* Use Obsidian accent variables to match callouts */
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.06);
+  border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.22);
+  overflow: visible;
+}
+
+/* Theme style (uses background/text/alt accent colors) */
+.sprout-pretty-card.theme {
+  border-radius: 6px;
+  padding: 12px 12px 15px 12px;
+  box-shadow: none;
+  box-sizing: border-box;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+
+  background-color: var(--background-primary) !important;
+  color: var(--color);
+  border: 1px solid var(--alt-accent-color);
+  overflow: visible;
+}
+
+/* ---- Card header ---- */
+
+.sprout-pretty-card.accent .sprout-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.sprout-pretty-card.theme .sprout-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* ---- Edit button ---- */
+
+.sprout .sprout-card-edit-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  outline-color: transparent !important;
+  text-decoration: none !important;
+  filter: none !important;
+  border-radius: 0 !important;
+  transition: opacity 0.15s !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.sprout .sprout-card-edit-btn:focus,
+.sprout .sprout-card-edit-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+.sprout-card-edit-btn {
+  opacity: 0.7;
+  cursor: pointer;
+}
+.sprout-card-edit-btn svg {
+  width: 12.8px;
+  height: 12.8px;
+}
+
+.sprout-card-edit-btn:hover {
+  opacity: 0.9;
+}
+
+.sprout-card-edit-btn:focus,
+.sprout-card-edit-btn:focus-visible,
+.sprout-card-edit-btn:active {
+  opacity: 1;
+}
+
+/* ---- Card title ---- */
+
+.sprout-pretty-card.accent .sprout-card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sprout-pretty-card.theme .sprout-card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--color);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- Card meta ---- */
+
+.sprout-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sprout-pretty-card.accent .sprout-card-meta,
+.sprout-pretty-card.theme .sprout-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---- Card ID ---- */
+
+.sprout-card-id {
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 1;
+  color: hsl(var(--accent-h),var(--accent-s),var(--accent-l));
+}
+.sprout-pretty-card.accent .sprout-card-id {
+  color: hsl(var(--accent-h),var(--accent-s),var(--accent-l));
+}
+.sprout-pretty-card.theme .sprout-card-id {
+  color: var(--color);
+}
+.sprout-pretty-card.accent .sprout-card-id::before,
+.sprout-pretty-card.theme .sprout-card-id::before {
+  content: "#";
+  position: relative;
+  left: 2px;
+  font-weight: 400;
+}
+
+.sprout-card-id::before {
+    content: "#";
+    position: relative;
+    left: 2px;
+    font-weight: 400;
+}
+
+/* ---- Edit button (variant inside pretty cards) ---- */
+
+.sprout-pretty-card.accent .sprout-edit-btn,
+.sprout-pretty-card.theme .sprout-edit-btn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* ---- Card section + labels ---- */
+
+.sprout-pretty-card.accent .sprout-card-section,
+.sprout-pretty-card.theme .sprout-card-section {
+  margin-bottom: 0px;
+}
+
+.sprout-pretty-card.accent .sprout-section-label,
+.sprout-pretty-card.theme .sprout-section-label {
+  opacity: 0.9;
+  margin-top: .5em;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Section content */
+.sprout-pretty-card.accent .sprout-section-content {
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.9;
+  color: var(--text-normal);
+}
+.sprout-pretty-card.theme .sprout-section-content {
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.9;
+  color: var(--color);
+}
+.sprout-pretty-card.theme .sprout-info {
+  font-size: 0.8rem;
+  color: var(--color);
+}
+
+/* ---- Cloze pills ---- */
+
+.sprout-pretty-card.accent .sprout-cloze {
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
+  border-radius: 6px;
+  margin: 0 0px;
+  padding: 1.5px 6px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.sprout-pretty-card.theme .sprout-cloze {
+  background-color: var(--alt-accent-color);
+  border-radius: 6px;
+  margin: 0 0px;
+  padding: 1.5px 6px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.sprout-pretty-card.accent .sprout-cloze-text {
+  font-weight: 500;
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+}
+.sprout-pretty-card.theme .sprout-cloze-text {
+  font-weight: 500;
+  color: var(--color);
+}
+
+/* Generic cloze styling */
+.sprout-cloze {
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
+    border-radius: 6px;
+    margin: 0 0px;
+    padding: 1.5px 6px;
+     -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.sprout-cloze-text {
+  font-weight: 500;
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+}
+
+/* ---- Muted text ---- */
+
+.sprout-pretty-card.accent .sprout-text-muted {
+  opacity: 0.9;
+  color: var(--text-color);
+}
+.sprout-pretty-card.theme .sprout-text-muted {
+  opacity: 0.9;
+  color: var(--color);
+}
+
+/* ---- Answers and IO area ---- */
+
+.sprout-pretty-card.accent .sprout-answer {
+  color: var(--text-color);
+  opacity: 0.9;
+  font-size: 0.8rem;
+  line-height: 1.9;
+}
+.sprout-pretty-card.theme .sprout-answer {
+  color: var(--color);
+  opacity: 0.9;
+  font-size: 0.8rem;
+  line-height: 1.9;
+}
+
+/* IO Card */
+.sprout-pretty-card.accent .sprout-section-io .sprout-section-content {
+  padding: 18px;
+  border: 1px dashed rgba(0,0,0,0.06);
+  border-radius: 6px;
+  text-align: center;
+}
+.sprout-pretty-card.theme .sprout-section-io .sprout-section-content {
+  padding: 18px;
+  border: 1px dashed var(--alt-accent-color);
+  border-radius: 6px;
+  text-align: center;
+}
+
+/* ---- Tags ---- */
+
+.sprout-pretty-card.accent .sprout-tags-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+.sprout-pretty-card.theme .sprout-tags-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+.sprout-pretty-card.accent .sprout-tags-list span {
+  font-size: 0.8rem;
+  opacity: 0.76;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.02);
+}
+.sprout-pretty-card.theme .sprout-tags-list span {
+  font-size: 0.8rem;
+  opacity: 0.76;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--background);
+}
+
+/* Hide original content (keeps existing behaviour) */
+.sprout-pretty-card.accent .sprout-original-content,
+.sprout-pretty-card.theme .sprout-original-content {
+  display: none;
+}
+
+/* ---- Pretty card sizing ---- */
+
+.sprout-pretty-card,
+.sprout-pretty-card figure,
+.sprout-pretty-card img {
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+/* Responsive: allow full width on narrow screens */
+@media (max-width: 520px) {
+  .sprout-masonry-grid-wrapper > .sprout-pretty-card {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ---- Pretty card paragraph margins ---- */
+
+.sprout .sprout-pretty-card p,
+.sprout .sprout-pretty-card .markdown-rendered p,
+.sprout .sprout-pretty-card.markdown-rendered p,
+.sprout .sprout-pretty-card .sprout-card-content p,
+.sprout .sprout-pretty-card .sprout-card-section p {
+  margin-block-start: 0 !important;
+  margin-block-end: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Pretty cards: remove paragraph + block math margins */
+.sprout .sprout-pretty-card p {
+  margin-block-start: 0 !important;
+  margin-block-end: 0 !important;
+}
+
+/* ---- Reading view cloze ---- */
+
+.sprout-reading-view-cloze {
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
+  border-radius: 6px;
+  margin: 0 0px;
+  padding: 1px 4px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.sprout-reading-view-cloze-text {
+  font-weight: 500;
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+}
+
+/* Internal links in reading view cards */
+.sprout-pretty-card a.internal-link {
+  color: var(--link-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sprout-pretty-card a.internal-link:hover {
+  color: var(--link-color-hover);
+  text-decoration: underline;
+}
+
+/* ---- Flexbox masonry grid (JS creates columns, CSS handles card sizing) ---- */
+
+.sprout-masonry-grid-wrapper {
+  width: 100% !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.sprout-masonry-grid {
+  display: flex !important;
+  gap: 16px !important;
+  align-items: flex-start !important;
+}
+
+.sprout-masonry-col {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* Cards inside columns fill the width */
+.sprout-masonry-col > .sprout-pretty-card {
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  margin-bottom: 0 !important;
+}
+
+/* Last card in grid should have bottom margin */
+.sprout-masonry-grid-wrapper:last-child {
+  margin-bottom: 20px !important;
+}
+
+/* ---- Content wrapping ---- */
+
+.sprout-pretty-card,
+.sprout-reading-card,
+.sprout-card-content,
+.sprout-card-section,
+.sprout-info {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}

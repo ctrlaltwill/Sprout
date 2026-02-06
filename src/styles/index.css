@@ -1,0 +1,61 @@
+/* ============================================================================
+   Sprout Overrides — Master entry point
+   ============================================================================
+   Import order matters: tokens first, then layout, then component styles.
+   All files are concatenated into the final styles.css by the Tailwind CLI
+   pipeline. This file replaces the old monolithic overrides.css.
+   ========================================================================== */
+
+/* 1. Design tokens (custom properties) — light & dark */
+@import "./tokens.css";
+
+/* 2. Layout — workspace containers, content sizing, scrollbars, status bar */
+@import "./layout.css";
+
+/* 3. Buttons — icon-outline, ghost, outline, button groups */
+@import "./buttons.css";
+
+/* 4. Header — brand link, reveal animation */
+@import "./header.css";
+
+/* 5. Deck — disclosure chevrons, group-select popover, expand icons */
+@import "./deck.css";
+
+/* 6. Modals — backdrop, panel, close button, card editor, IO modal */
+@import "./modals.css";
+
+/* 7. Tooltips — base, modal, dark, settings, browser-table */
+@import "./tooltips.css";
+
+/* 8. Dropdowns — floating popovers, filter panels, combobox, Basecoat tokens */
+@import "./dropdowns.css";
+
+/* 9. Cards — generic card surface, small card, dark mode polish */
+@import "./cards.css";
+
+/* 10. Analytics — grid, Recharts, pie chart, filters z-index, chart sizing */
+@import "./analytics.css";
+
+/* 11. Home view — greeting, deck search, rows, badges, heatmap, drag-handle */
+@import "./home.css";
+
+/* 12. Session — study card, Q/A/MCQ, cloze reveals, timer, quit button */
+@import "./session.css";
+
+/* 13. Browser — table, pagination, search, header cells, IO toolbar */
+@import "./browser.css";
+
+/* 14. Widget — root transparency, buttons, badges, cloze */
+@import "./widget.css";
+
+/* 15. Settings — backup grid rows, table wrapper, cell labels */
+@import "./settings.css";
+
+/* 16. Pretty cards — reading-view cards, masonry grid, cloze pills, tags */
+@import "./pretty-cards.css";
+
+/* 17. Tables — generic hover, changelog table, toggle chevrons */
+@import "./tables.css";
+
+/* 18. Miscellaneous — GitHub Stars, BMC, badges, checkboxes, MathJax, typography */
+@import "./misc.css";

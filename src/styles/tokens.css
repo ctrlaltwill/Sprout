@@ -1,0 +1,193 @@
+/* ============================================================================
+   TOKENS — Design tokens / custom properties
+   Light theme (.sprout) and dark theme (.theme-dark .sprout) overrides.
+   ========================================================================== */
+
+/* ============================================================================
+   Sprout theme tokens — converted to RGB/RGBA and grouped by shared colors.
+   Notes:hsl(  var(--accent-h),  var(--accent-s),  var(--accent-l),  0.08) !important
+   - Where values depend on Obsidian's accent (var(--color-accent)), they cannot
+     be reduced to a fixed RGB literal; those remain var()/color-mix() but with
+     RGB literals for the "white" endpoint and RGB fallbacks.
+   ========================================================================== */
+
+.sprout {
+  --radius: 0.65rem !important;
+
+  /* Surfaces - using parent theme color-base variables */
+  --background: var(--color-base-00) !important;
+  --background-primary: var(--color-base-00) !important;
+  --file-header-background-focused: var(--color-base-00) !important;
+  --color-popover: var(--color-base-00) !important;
+  --interactive-normal: var(--color-base-00) !important;
+  --card: var(--color-base-00) !important;
+  --popover: var(--color-base-00) !important;
+
+  /* App background */
+  --color-background: var(--color-base-20) !important;
+
+  /* Sidebar surface */
+  --sidebar: var(--color-base-10) !important;
+
+  /* Text/foreground - using darkest color-base for text */
+  --foreground: var(--color-base-100) !important;
+  --text-color: var(--color-base-100) !important;
+  --card-foreground: var(--color-base-100) !important;
+  --color-card-foreground: var(--text-color) !important;
+  --popover-foreground: var(--color-base-100) !important;
+  --sidebar-foreground: var(--color-base-100) !important;
+
+  /* Primary brand (light: rgb(94,165,0); dark: rgb(94,165,0)) */
+  --primary: rgb(94, 165, 0) !important;
+  --sidebar-primary: rgb(94, 165, 0) !important;
+
+  /* Primary contrast (light & dark: rgb(247,254,231)) */
+  --primary-foreground: rgb(247, 254, 231) !important;
+  --sidebar-primary-foreground: rgb(247, 254, 231) !important;
+
+  /* Secondary / muted surfaces */
+  --secondary: var(--color-base-10) !important;
+  --muted: var(--color-base-10) !important;
+
+  /* Secondary text */
+  --secondary-foreground: var(--color-base-100) !important;
+  --accent-foreground: var(--color-base-100) !important;
+  --sidebar-accent-foreground: var(--color-base-100) !important;
+
+  /* Muted text - using mid-gray */
+  --muted-foreground: var(--color-base-50) !important;
+
+  /* Destructive (light: rgb(231,0,11); dark: rgb(255,100,103)) */
+  --destructive: rgb(231, 0, 11) !important;
+
+  /* Borders/inputs - using lighter gray from color scale */
+  --border: var(--color-base-30) !important;
+  --background-modifier-border: var(--color-base-30) !important;
+  --color-border: var(--color-base-30) !important;
+  --input: var(--color-base-30) !important;
+
+  /* Ring/focus (light: rgb(154,230,0); dark: rgb(53,83,14)) */
+  --ring: rgb(154, 230, 0) !important;
+  --sidebar-ring: rgb(154, 230, 0) !important;
+
+  /* Obsidian accent passthrough (cannot be reduced to a single RGB literal) */
+  --theme-accent: var(--color-accent);
+
+  /* Sidebar accent uses accent when available, otherwise falls back (light fallback: rgb(244,244,245)) */
+  --sidebar-accent: var(--theme-accent, rgb(244, 244, 245)) !important;
+
+  /* Chart variations (depends on --theme-accent; keep color-mix but use RGB literal for white) */
+  --chart-accent-1: color-mix(in oklab, var(--theme-accent) 90%, rgb(255, 255, 255) 10%);
+  --chart-accent-2: color-mix(in oklab, var(--theme-accent) 70%, rgb(255, 255, 255) 30%);
+  --chart-accent-3: color-mix(in oklab, var(--theme-accent) 50%, rgb(255, 255, 255) 50%);
+  --chart-accent-4: color-mix(in oklab, var(--theme-accent) 30%, rgb(255, 255, 255) 70%);
+
+  /* Sprout ratings — light theme (dark equivalents in .theme-dark .sprout) */
+  --sprout-again-bg: rgb(239, 68, 68);
+  --sprout-again-fg: var(--bc-btn-fg, rgb(255, 255, 255));
+  --sprout-again-bg-light: rgb(254, 226, 226);
+
+  --sprout-good-bg: rgb(34, 197, 94);
+  --sprout-good-fg: rgb(255, 255, 255);
+  --sprout-good-bg-light: rgb(220, 252, 231);
+
+  --sprout-hard-bg: rgb(234, 179, 8);
+  --sprout-hard-fg: rgb(255, 255, 255);
+  --sprout-hard-bg-light: rgb(254, 249, 195);
+
+  --sprout-easy-bg: rgb(0, 0, 0);
+  --sprout-easy-fg: rgb(255, 255, 255);
+
+  /* Dropdown surfaces (light: rgb(255,255,255)/rgb(246,246,246); dark: rgb(42,42,42)/rgb(60,60,60)) */
+  --sprout-deck-dropdown-bg: rgb(255, 255, 255) !important;
+  --sprout-deck-hover-bg: rgb(246, 246, 246) !important;
+}
+
+.theme-dark .sprout {
+  /* Surfaces - using parent theme color-base variables */
+  --background: var(--color-base-00) !important;
+  --background-primary: var(--color-base-00) !important;
+  --color-popover: var(--color-base-00) !important;
+  --file-header-background-focused: var(--color-base-00) !important;
+
+  --interactive-normal: var(--color-base-20) !important;
+  --color-background: var(--color-base-20) !important;
+  --card: var(--color-base-20) !important;
+  --popover: var(--color-base-20) !important;
+  --sidebar: var(--color-base-20) !important;
+
+  /* Extra accent surface in dark */
+  --accent: var(--color-base-30) !important;
+
+  /* Text/foreground - using lightest color-base for text */
+  --foreground: var(--color-base-100) !important;
+  --text-color: var(--color-base-100) !important;
+  --card-foreground: var(--color-base-100) !important;
+  --color-card-foreground: var(--text-color) !important;
+  --popover-foreground: var(--color-base-100) !important;
+  --sidebar-foreground: var(--color-base-100) !important;
+  --secondary-foreground: var(--color-base-100) !important;
+  --accent-foreground: var(--color-base-100) !important;
+  --sidebar-accent-foreground: var(--color-base-100) !important;
+
+  /* Primary brand (light: rgb(94,165,0); dark: rgb(94,165,0) and a brighter sidebar variant) */
+  --primary: rgb(94, 165, 0) !important;
+  --primary-foreground: rgb(247, 254, 231) !important;
+
+  --sidebar-primary: rgb(124, 207, 0) !important;
+  --sidebar-primary-foreground: rgb(247, 254, 231) !important;
+
+  /* Secondary / muted surfaces */
+  --secondary: var(--color-base-25) !important;
+  --muted: var(--color-base-25) !important;
+
+  /* Muted text - using mid-gray */
+  --muted-foreground: var(--color-base-60) !important;
+
+  /* Obsidian accent passthrough (cannot be reduced to a single RGB literal) */
+  --theme-accent: var(--color-accent);
+
+  /* Sidebar accent uses accent when available, otherwise falls back (dark fallback: rgb(39,39,42)) */
+  --sidebar-accent: var(--theme-accent, rgb(39, 39, 42)) !important;
+
+  /* Chart variations (depends on --theme-accent; keep color-mix but use RGB literal for white) */
+  --chart-accent-1: color-mix(in oklab, var(--theme-accent) 90%, rgb(255, 255, 255) 10%);
+  --chart-accent-2: color-mix(in oklab, var(--theme-accent) 70%, rgb(255, 255, 255) 30%);
+  --chart-accent-3: color-mix(in oklab, var(--theme-accent) 50%, rgb(255, 255, 255) 50%);
+  --chart-accent-4: color-mix(in oklab, var(--theme-accent) 30%, rgb(255, 255, 255) 70%);
+
+  /* Destructive (light: rgb(231,0,11); dark: rgb(255,100,103)) */
+  --destructive: rgb(255, 100, 103) !important;
+
+  /* Borders/inputs - using mid-gray from color scale */
+  --border: var(--color-base-35) !important;
+  --background-modifier-border: var(--color-base-35) !important;
+  --color-border: var(--color-base-35) !important;
+  --sidebar-border: var(--color-base-35) !important;
+
+  --input: var(--color-base-40) !important;
+
+  /* Ring/focus (light: rgb(154,230,0); dark: rgb(53,83,14)) */
+  --ring: rgb(53, 83, 14) !important;
+  --sidebar-ring: rgb(53, 83, 14) !important;
+
+  /* Sprout ratings — dark theme (paired with light equivalents in .sprout) */
+  --sprout-again-bg: rgb(185, 28, 28);        /* light: rgb(239,68,68) */
+  --sprout-again-fg: var(--bc-btn-fg, rgb(255, 255, 255));
+  --sprout-again-bg-light: rgb(63, 29, 29);   /* light: rgb(254,226,226) */
+
+  --sprout-good-bg: rgb(21, 128, 61);         /* light: rgb(34,197,94) */
+  --sprout-good-fg: rgb(255, 255, 255);
+  --sprout-good-bg-light: rgb(22, 48, 34);    /* light: rgb(220,252,231) */
+
+  --sprout-hard-bg: rgb(161, 98, 7);          /* light: rgb(234,179,8) */
+  --sprout-hard-fg: rgb(255, 255, 255);
+  --sprout-hard-bg-light: rgb(52, 36, 10);    /* light: rgb(254,249,195) */
+
+  --sprout-easy-bg: rgb(60, 60, 60);          /* light: rgb(0,0,0) */
+  --sprout-easy-fg: rgb(255, 255, 255);
+
+  /* Dropdown surfaces (light: rgb(255,255,255)/rgb(246,246,246); dark: rgb(42,42,42)/rgb(60,60,60)) */
+  --sprout-deck-dropdown-bg: rgb(42, 42, 42) !important;
+  --sprout-deck-hover-bg: rgb(60, 60, 60) !important;
+}

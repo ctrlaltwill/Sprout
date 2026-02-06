@@ -1,0 +1,162 @@
+/* ============================================================================
+   SETTINGS — Backup grid rows, table wrapper, cell labels.
+   Replaces ~80 inline styles in sprout-settings-tab.ts.
+   ========================================================================== */
+
+/* ---- Backup table wrapper ---- */
+
+.sprout .sprout-settings-table-wrap {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+/* ---- Grid row (shared by header, current, and list rows) ---- */
+
+.sprout .sprout-settings-grid-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(130px, 0.8fr) minmax(220px, 1.8fr) minmax(140px, 0.8fr);
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Header row variant */
+.sprout .sprout-settings-grid-row--header {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 4px 8px 4px;
+}
+
+/* Current (active) row variant */
+.sprout .sprout-settings-grid-row--current {
+  padding: 6px 4px 10px 4px;
+}
+
+/* List row variant */
+.sprout .sprout-settings-grid-row--list {
+  padding: 8px 4px;
+}
+
+/* ---- Grid cell labels ---- */
+
+.sprout .sprout-settings-cell-label {
+  font-weight: 600;
+  font-size: 13px;
+  text-align: left;
+}
+
+.sprout .sprout-settings-cell-value {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+/* ---- Settings action buttons ---- */
+
+.sprout .sprout-settings-action-btn {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sprout .sprout-settings-action-btn:hover {
+  background: var(--color-base-25);
+  color: var(--foreground);
+}
+
+.sprout .sprout-settings-action-btn--danger {
+  color: var(--text-error, #e53935);
+}
+
+.sprout .sprout-settings-action-btn--danger:hover {
+  background: rgba(229, 57, 53, 0.08);
+  color: var(--text-error, #e53935);
+}
+
+/* ---- Backup section layout ---- */
+
+.sprout .sprout-settings-backup-control {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.sprout .sprout-settings-text-muted {
+  color: var(--text-muted);
+}
+
+.sprout .sprout-settings-cell-header {
+  font-weight: 600;
+  text-align: left;
+}
+
+.sprout .sprout-settings-cell-value--active {
+  color: var(--text-normal);
+}
+
+/* ---- Backup list (expandable) ---- */
+
+.sprout .sprout-settings-backup-list {
+  transition: max-height 0.2s ease;
+  overflow: hidden;
+  max-height: 240px;
+}
+
+.sprout .sprout-settings-backup-list--expanded {
+  max-height: 720px;
+}
+
+/* ---- Backup row actions ---- */
+
+.sprout .sprout-settings-actions-wrap {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.sprout .sprout-settings-icon-btn {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
+.sprout .sprout-settings-icon-btn--danger {
+  color: var(--text-error);
+}
+
+/* ---- See more/fewer toggle ---- */
+
+.sprout .sprout-settings-see-more-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.sprout .sprout-settings-see-more-btn {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+/* ---- Utility: opacity flicker for repaint ---- */
+
+.sprout .sprout-settings-opacity-flicker {
+  opacity: 0.99;
+}

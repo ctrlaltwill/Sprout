@@ -16,5 +16,5 @@
 /* Tailwind utilities (needed for w-[240px], flex, px-4, etc.) */
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* Your overrides last */
-@import "./overrides.css";
+/* Your overrides last (split into src/styles/ partials) */
+@import "./styles/index.css";

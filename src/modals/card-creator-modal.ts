@@ -16,7 +16,6 @@ import type SproutPlugin from "../main";
 import { BRAND, POPOVER_Z_INDEX } from "../core/constants";
 import { log } from "../core/logger";
 import type { CardType } from "../card-editor/card-editor";
-import { ImageOcclusionEditorModal } from "../imageocclusion/image-mask-renderer";
 import { syncOneFile } from "../sync/sync-engine";
 
 import {
@@ -24,10 +23,7 @@ import {
   extFromMime,
   bestEffortAttachmentPath,
   writeBinaryToVault,
-  setDisabledUnder,
-  parkBehind,
   setVisible,
-  nextFrame,
   focusFirstField,
   hasClozeToken,
   formatPipeField,
@@ -111,8 +107,8 @@ export class CardCreatorModal extends Modal {
         textarea.focus();
 
         new Notice(`${BRAND}: Image will be saved when you add the card`);
-      } catch (e: any) {
-        new Notice(`${BRAND}: Failed to process pasted image (${String(e?.message || e)})`);
+      } catch (e: unknown) {
+        new Notice(`${BRAND}: Failed to process pasted image (${e instanceof Error ? e.message : String(e)})`);
       }
       return;
     }
@@ -127,7 +123,7 @@ export class CardCreatorModal extends Modal {
 
     for (const [placeholder, imageInfo] of this.pendingImages) {
       try {
-        const vaultPath = await bestEffortAttachmentPath(this.plugin, sourceFile, placeholder, "card");
+        const vaultPath = bestEffortAttachmentPath(this.plugin, sourceFile, placeholder, "card");
         await writeBinaryToVault(this.app, vaultPath, imageInfo.data);
 
         const actualPath = normaliseVaultPath(vaultPath);
@@ -135,8 +131,8 @@ export class CardCreatorModal extends Modal {
           new RegExp(`!\\[\\[${placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]\\]`, "g"),
           `![[${actualPath}]]`,
         );
-      } catch (e: any) {
-        new Notice(`${BRAND}: Failed to save image ${placeholder} (${String(e?.message || e)})`);
+      } catch (e: unknown) {
+        new Notice(`${BRAND}: Failed to save image ${placeholder} (${e instanceof Error ? e.message : String(e)})`);
       }
     }
 
@@ -210,7 +206,7 @@ export class CardCreatorModal extends Modal {
     typeSel.createEl("option", { text: "Cloze", value: "cloze" });
     typeSel.createEl("option", { text: "Multiple Choice", value: "mcq" });
 
-    let cardEditor: (ModalCardEditorResult & any) | null = null;
+    let cardEditor: ModalCardEditorResult | null = null;
     let currentType: CardType = this.forcedType || "basic";
     const typeLabelFor = (type: CardType) => {
       if (type === "cloze") return "Cloze";
@@ -475,9 +471,9 @@ export class CardCreatorModal extends Modal {
         }
 
         focusFirstField(cardEditor.root);
-      } catch (e: any) {
+      } catch (e: unknown) {
         cardEditor = null;
-        const msg = `Failed to render card fields (${String(e?.message || e)})`;
+        const msg = `Failed to render card fields (${e instanceof Error ? e.message : String(e)})`;
         editorContainer.createDiv({ text: msg, cls: "bc text-sm text-destructive" });
         new Notice(`${BRAND}: ${msg}`);
       }
@@ -485,7 +481,6 @@ export class CardCreatorModal extends Modal {
 
     // ── IO image paste zone ─────────────────────────────────────────────────
     let ioImageData: ClipboardImage | null = null;
-    let ioImageFile: TFile | null = null;
 
     const ioWrap = body.createDiv({ cls: "bc fieldset", attr: { role: "group" } });
     setVisible(ioWrap, false);
@@ -533,7 +528,6 @@ export class CardCreatorModal extends Modal {
 
     ioClearBtn.addEventListener("click", () => {
       ioImageData = null;
-      ioImageFile = null;
       updateIOPreview();
     });
 
@@ -554,8 +548,8 @@ export class CardCreatorModal extends Modal {
           const data = await blob.arrayBuffer();
           ioImageData = { mime: item.type, data };
           updateIOPreview();
-        } catch (e: any) {
-          new Notice(`${BRAND}: Failed to load pasted image (${String(e?.message || e)})`);
+        } catch (e: unknown) {
+          new Notice(`${BRAND}: Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
         }
         return;
       }
@@ -611,32 +605,6 @@ export class CardCreatorModal extends Modal {
         const txt = await this.app.vault.read(active);
         const out = (txt.endsWith("\n") ? txt : txt + "\n") + textToInsert;
         await this.app.vault.modify(active, out);
-      }
-    };
-
-    /** Open the IO editor overlay for a newly-created IO parent card. */
-    const openIoEditorFor = async (parentId: string) => {
-      try {
-        setDisabledUnder(modalRoot, true);
-        parkBehind(this.modalEl, true);
-
-        await nextFrame();
-        await nextFrame();
-
-        ImageOcclusionEditorModal.openForParent(this.plugin, parentId, {
-          onClose: () => {
-            try {
-              parkBehind(this.modalEl, false);
-            } catch {
-              // ignore
-            }
-            this.close();
-          },
-        });
-      } catch (e: any) {
-        parkBehind(this.modalEl, false);
-        setDisabledUnder(modalRoot, false);
-        new Notice(`${BRAND}: failed to open IO editor (${String(e?.message || e)})`);
       }
     };
 
@@ -711,7 +679,7 @@ export class CardCreatorModal extends Modal {
           if (!requireNonEmpty(questionVal, "Multiple Choice requires a stem")) return;
           const mcqValues = cardEditor.getMcqOptions?.();
           const correct = String(mcqValues?.correct || "").trim();
-          const wrongs = (mcqValues?.wrongs || []).map((x: any) => String(x || "").trim()).filter(Boolean);
+          const wrongs = (mcqValues?.wrongs || []).map((x: unknown) => String(x || "").trim()).filter(Boolean);
           if (!requireNonEmpty(correct, "Multiple Choice requires a correct option")) return;
           if (wrongs.length < 1) {
             new Notice(`${BRAND}: Multiple Choice requires at least one wrong option`);
@@ -748,15 +716,15 @@ export class CardCreatorModal extends Modal {
               new Notice(
                 `${BRAND}: added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
               );
-            } catch (e: any) {
+            } catch (e: unknown) {
               log.error("sync failed", e);
-              new Notice(`${BRAND}: sync failed (${String(e?.message || e)})`);
+              new Notice(`${BRAND}: sync failed (${e instanceof Error ? e.message : String(e)})`);
             }
           })();
         }, 1000);
-      } catch (e: any) {
+      } catch (e: unknown) {
         log.error("add failed", e);
-        new Notice(`${BRAND}: add failed (${String(e?.message || e)})`);
+        new Notice(`${BRAND}: add failed (${e instanceof Error ? e.message : String(e)})`);
       }
     };
 

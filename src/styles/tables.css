@@ -1,0 +1,148 @@
+/* ============================================================================
+   TABLES — Generic table hover, changelog table, toggle chevrons,
+   browser table hover overrides.
+   ========================================================================== */
+
+/* ---- Generic table row hover ---- */
+
+.sprout .bc table tbody tr:hover {
+  background-color: var(--background-secondary) !important;
+}
+.sprout .bc table tbody tr:hover,
+.sprout .bc table tbody tr:hover td {
+  border-color: var(--background-secondary) !important;
+  border-bottom-color: var(--background-secondary) !important;
+}
+
+@media (hover: hover) {
+  .sprout .table tr:hover {
+    background-color: var(--color-background) !important;
+  }
+}
+
+/* ---- Toggle buttons & chevrons ---- */
+
+.sprout-toggle-btn {
+  box-shadow: none !important;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure chevron SVG is visible and sized correctly */
+.sprout-toggle-chevron {
+  width: 1em;
+  height: 1em;
+  color: inherit;
+  display: inline-block;
+  vertical-align: middle;
+}
+.sprout-toggle-btn:hover,
+.sprout-toggle-btn:active,
+.sprout-toggle-btn:focus {
+  background: none !important;
+}
+
+/* ---- Changelog table ---- */
+
+.sprout-changelog-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  background: var(--background);
+}
+
+/* Changelog wrapper: padding + border so scroll stays inside */
+.sprout .sprout-changelog-scroll {
+  padding: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  max-height: 165px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--background);
+}
+
+.sprout-changelog-table thead tr {
+  background: var(--background);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.sprout-changelog-table tbody tr {
+  background: var(--background);
+}
+.sprout-changelog-table th,
+.sprout-changelog-table td,
+.sprout-changelog-cell {
+  padding: 8px 10px;
+  border: none;
+  vertical-align: top;
+}
+.sprout-changelog-table tbody td {
+  background: inherit;
+  border: none;
+}
+.sprout-changelog-table tbody td:first-child {
+  border-left: none;
+}
+.sprout-changelog-table tbody td:last-child {
+  border-right: none;
+}
+
+/* Add a single border below the header (top of tbody) */
+.sprout-changelog-table tbody {
+  border-top: 1px solid var(--background-modifier-border);
+}
+.sprout-changelog-table th:first-child,
+.sprout-changelog-table td:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.sprout-changelog-table th:last-child,
+.sprout-changelog-table td:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+.sprout-changelog-table th {
+  color: var(--text-color);
+  font-weight: 600;
+  text-align: left;
+}
+.sprout-changelog-table td,
+.sprout-changelog-cell {
+  color: var(--text-muted);
+}
+.sprout-changelog-table th:last-child,
+.sprout-changelog-table td:last-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Row hover: single rounded rectangle */
+.sprout .sprout-changelog-table tbody tr:hover {
+  background-color: var(--color-background) !important;
+}
+.sprout .sprout-changelog-table tbody tr:hover td {
+  background-color: var(--color-background) !important;
+  border-color: var(--background-modifier-border) !important;
+}
+.sprout .sprout-changelog-table tbody tr:hover td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+.sprout .sprout-changelog-table tbody tr:hover td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.sprout-changelog-cell {
+    border-radius: 0px;
+}

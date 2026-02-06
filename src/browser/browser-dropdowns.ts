@@ -1,9 +1,16 @@
 /**
- * browser/browser-dropdowns.ts
- * ────────────────────────────
- * Extracted dropdown factory functions for the Flashcard Browser toolbar.
- * Originally part of SproutCardBrowserView._makeDropdownMenu and
- * _makeColumnsDropdown.
+ * @file src/browser/browser-dropdowns.ts
+ * @summary Factory functions for body-portal dropdown menus used in the Flashcard
+ * Browser toolbar. Provides a generic radio-style dropdown (used for type, stage,
+ * due, and page-size filters) and a checkbox-style columns-visibility dropdown.
+ * Both use fixed-position popovers to avoid clipping issues in Obsidian panes.
+ *
+ * @exports
+ *   - DropdownMenuArgs — interface for configuring a generic radio dropdown menu
+ *   - makeDropdownMenu — creates a radio-style dropdown with trigger button, popover, and keyboard support
+ *   - ColumnsDropdownArgs — interface for configuring the columns-visibility dropdown
+ *   - ColumnsDropdownContext — interface providing get/set callbacks for column visibility state
+ *   - makeColumnsDropdown — creates a checkbox-style dropdown for toggling table column visibility
  */
 
 import { setIcon } from "obsidian";

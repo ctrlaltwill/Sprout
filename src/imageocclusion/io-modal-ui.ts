@@ -1,12 +1,18 @@
 /**
- * imageocclusion/io-modal-ui.ts
- * ---------------------------------------------------------------------------
- * DOM-construction helpers for the Image Occlusion creator modal.
+ * @file src/imageocclusion/io-modal-ui.ts
+ * @summary DOM-construction helpers for the Image Occlusion creator modal. Each builder function creates a self-contained section of the modal UI (toolbar, canvas container, footer, header, image-limit dialog) and returns element references the caller needs to wire up event handling and state management.
  *
- * Each builder function creates a self-contained section of the modal UI and
- * returns references the caller needs to wire up.  This keeps the large
- * `onOpen()` method in ImageOcclusionCreatorModal focused on orchestration.
- * ---------------------------------------------------------------------------
+ * @exports
+ *   - ToolbarRefs — interface with references to toolbar DOM elements
+ *   - ToolbarCallbacks — interface defining toolbar action callbacks
+ *   - buildToolbar — builds the IO editor toolbar with file upload, undo/redo, drawing tools, crop, and rotate buttons
+ *   - CanvasContainerRefs — interface with references to canvas container DOM elements
+ *   - CanvasContainerCallbacks — interface defining canvas container callbacks
+ *   - buildCanvasContainer — builds the canvas container with placeholder, viewport, stage, image, and overlay elements
+ *   - FooterCallbacks — interface defining footer button callbacks
+ *   - buildFooter — builds the modal footer with Cancel, Hide All, and Hide One buttons
+ *   - buildImageLimitDialog — builds a dialog warning that only one image per card is allowed
+ *   - buildHeader — builds the modal header row with title and close button
  */
 
 import { setIcon } from "obsidian";
@@ -148,7 +154,7 @@ export function buildCanvasContainer(
   defaults: { height: string; minHeight: string; maxHeight: string },
   cb: CanvasContainerCallbacks,
 ): CanvasContainerRefs {
-  const canvasContainer = parent.createDiv({ cls: "bc rounded-lg border border-border bg-background" }) as HTMLDivElement;
+  const canvasContainer = parent.createDiv({ cls: "bc rounded-lg border border-border bg-background" });
   canvasContainer.style.position = "relative";
   canvasContainer.style.width = "100%";
   canvasContainer.style.maxWidth = "1500px";

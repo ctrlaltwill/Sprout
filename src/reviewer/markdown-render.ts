@@ -1,16 +1,23 @@
-// src/reviewer/markdownRender.ts
-import { MarkdownRenderer, TFile, type App } from "obsidian";
+/**
+ * @file src/reviewer/markdown-render.ts
+ * @summary Wraps Obsidian's MarkdownRenderer to handle image resolution (both Obsidian embeds and shorthand links), stale-render prevention, and clickable image zoom decoration for card content displayed in the reviewer.
+ *
+ * @exports
+ *   - SproutMarkdownHelper — Class that renders Markdown into DOM containers with image expansion, zoom affordance, and stale-render guards
+ */
+
+import { MarkdownRenderer, TFile, type App, type Component } from "obsidian";
 
 type Opts = {
   app: App;
-  owner: any; // the ItemView/Component used as MarkdownRenderer "source component"
+  owner: Component; // the ItemView/Component used as MarkdownRenderer "source component"
   onZoom: (src: string, alt: string) => void;
   maxHeightPx?: number;
 };
 
 export class SproutMarkdownHelper {
   private app: App;
-  private owner: any;
+  private owner: Component;
   private onZoom: (src: string, alt: string) => void;
   private maxHeightPx: number;
 

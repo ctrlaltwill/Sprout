@@ -1,10 +1,17 @@
-// src/imageocclusion/ImageMaskRenderer.ts
+/**
+ * @file src/imageocclusion/image-mask-renderer.ts
+ * @summary Implements the Image Occlusion editor modal for editing existing IO cards. Provides a full interactive canvas with image display, occlusion rectangle drawing/dragging/resizing via interactjs, pan/zoom controls, group key editing, undo/reset, and save functionality that persists changes to the store and updates the note markdown.
+ *
+ * @exports
+ *   - ImageOcclusionEditorModal — Modal subclass providing the IO mask editor UI for existing IO parent cards
+ */
+
 import { type App, Modal, Notice, Platform, TFile, setIcon } from "obsidian";
 import interact from "interactjs";
 
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import type { IOParentDef, IORect, IOMaskMode } from "./image-occlusion-types";
+import type { IOParentDef, StoredIORect, IOMaskMode } from "./image-occlusion-types";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints, type RectPx } from "./image-geometry";
 import { applyStageTransform, clientToStage, zoomAt, type StageTransform } from "./image-transform";
 import { 
@@ -34,12 +41,12 @@ export class ImageOcclusionEditorModal extends Modal {
   private stageH = 1;
 
   private ioDef: IOParentDef | null = null;
-  private rects: IORect[] = [];
+  private rects: StoredIORect[] = [];
 
   private selectedRectId: string | null = null;
 
   // snapshot for reset
-  private initialRects: IORect[] = [];
+  private initialRects: StoredIORect[] = [];
   private initialMaskMode: IOMaskMode = "solo";
 
   // DOM
@@ -80,7 +87,7 @@ export class ImageOcclusionEditorModal extends Modal {
   private panStart: { x: number; y: number; tx: number; ty: number } | null = null;
 
   // interact handles
-  private interactables = new Map<string, any>();
+  private interactables = new Map<string, ReturnType<typeof interact>>();
 
   // window listeners (so we can unbind cleanly)
   private onWinMove?: (e: MouseEvent) => void;
@@ -108,7 +115,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     // IMPORTANT inline sizing (requested): max-width 800px, width 90%
     try {
-      const inner = this.containerEl.querySelector(".modal");
+      const inner = this.containerEl.querySelector(".modal") as HTMLElement | null;
       if (inner) {
         inner.style.setProperty("width", "90%", "important");
         inner.style.setProperty("max-width", "800px", "important");
@@ -119,9 +126,9 @@ export class ImageOcclusionEditorModal extends Modal {
 
     try {
       this.containerEl.style.zIndex = "3000";
-      const bg = this.containerEl.querySelector(".modal-bg");
+      const bg = this.containerEl.querySelector(".modal-bg") as HTMLElement | null;
       if (bg) bg.style.zIndex = "2999";
-      const inner = this.containerEl.querySelector(".modal");
+      const inner = this.containerEl.querySelector(".modal") as HTMLElement | null;
       if (inner) inner.style.zIndex = "3000";
     } catch {
       // ignore
@@ -926,7 +933,7 @@ export class ImageOcclusionEditorModal extends Modal {
     const it = interact(el)
       .draggable({
         listeners: {
-          move: (event: any) => {
+          move: (event: { dx?: number; dy?: number }) => {
             this.selectRect(rectId);
 
             const r = this.rects.find((x) => x.rectId === rectId);
@@ -950,7 +957,7 @@ export class ImageOcclusionEditorModal extends Modal {
       .resizable({
         edges: { left: true, right: true, top: true, bottom: true },
         listeners: {
-          move: (event: any) => {
+          move: (event: { deltaRect?: { left?: number; top?: number }; rect?: { width?: number; height?: number } }) => {
             this.selectRect(rectId);
 
             const r = this.rects.find((x) => x.rectId === rectId);
@@ -1049,13 +1056,12 @@ export class ImageOcclusionEditorModal extends Modal {
       groupToRectIds.set(g, arr);
     }
 
-    const existingChildren: any[] = [];
+    const existingChildren: CardRecord[] = [];
     for (const c of Object.values(cards)) {
-      const anyC: any = c;
-      if (!anyC) continue;
-      if (String(anyC.type) !== "io-child") continue;
-      if (String(anyC.parentId || "") !== String(this.parentId)) continue;
-      existingChildren.push(anyC);
+      if (!c) continue;
+      if (String(c.type) !== "io-child") continue;
+      if (String((c as CardRecord).parentId || "") !== String(this.parentId)) continue;
+      existingChildren.push(c as CardRecord);
     }
 
     const keepChildIds = new Set<string>();
@@ -1067,7 +1073,7 @@ export class ImageOcclusionEditorModal extends Modal {
       const titleBase = parent?.title ? String(parent.title) : "Image Occlusion";
       const childTitle = titleBase;
 
-      const rec: any = {
+      const rec = {
         id: childId,
         type: "io-child",
         title: childTitle,
@@ -1088,7 +1094,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
         updatedAt: now,
         lastSeenAt: now,
-      };
+      } as CardRecord;
 
       const prev = cards[childId];
       if (prev && typeof prev === "object") {
