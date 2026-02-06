@@ -2,7 +2,13 @@
 
 ## Starting a session
 
-Open a deck from the **Home** view or tap the deck-tree widget and choose a scope:
+There are several ways to start studying:
+
+- **Study page** — open the deck tree, pick a scope, and start.
+- **Home page** — open recent decks or pinned decks for quick access.
+- **Deck-tree widget** — tap a deck in the sidebar widget.
+
+Choose a scope for the session:
 
 | Scope | Covers |
 |-------|--------|
@@ -48,7 +54,7 @@ Press **Space** or **Enter** to reveal the answer.
 
 Practice mode lets you review cards that are **not yet due** — useful for extra revision before an exam.
 
-Cards are sorted closest-to-due first. Ratings in practice mode do not update scheduling.
+Cards are sorted closest-to-due first. **Ratings in practice mode do not update scheduling** — your intervals and stability are unaffected, so you can practise freely without consequences.
 
 ## Timer
 
@@ -98,6 +104,28 @@ Press `M` or tap the **⋮** button to open the More menu.
 ## Zoom
 
 Click any image during a review to open it in a full-screen overlay. Click again or press `Escape` to close.
+
+## How scheduling works (FSRS)
+
+Sprout uses **FSRS** (Free Spaced Repetition Scheduler), a modern algorithm that models how your memory decays over time.
+
+Every card tracks three key values:
+
+| Value | Meaning |
+|-------|---------|
+| **Stability** | How many days until your recall probability drops to the requested retention. Higher = longer intervals. |
+| **Difficulty** | How inherently hard the card is for you (0–10). Updated with each review. |
+| **Retrievability** | Your estimated probability of recalling the card right now (0–1). Decays over time. |
+
+When you rate a card:
+
+1. FSRS updates **difficulty** and **stability** based on your rating and the time elapsed since the last review.
+2. It calculates the next interval so that your **retrievability** will equal your **requested retention** (default 0.90) on the due date.
+3. The card is scheduled for that many days in the future.
+
+In short: cards you find easy get longer intervals; cards you forget get shorter ones. The algorithm adapts to each card individually rather than using fixed multipliers.
+
+You can tune the scheduler in [[Settings]] — choose a preset (Relaxed / Balanced / Aggressive) or set learning steps and retention manually.
 
 ## Time tracking
 

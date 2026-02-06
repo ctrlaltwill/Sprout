@@ -68,11 +68,44 @@ I | Keep answers short and structured. |
 
 ## LaTeX
 
-LaTeX is supported in multi-line cards. Leave a blank line between the last line of LaTeX and the closing pipe for best rendering.
+LaTeX is supported in multi-line cards. When a field ends with LaTeX, the opening and closing pipes **must** be on their own lines — otherwise the parser will break on the `|` characters inside LaTeX expressions.
 
-## Links
+✅ Correct:
+```
+Q
+|
+What is $\frac{a}{b}$?
+|
+```
 
-Use standard Obsidian link syntax inside fields: `[[note name]]`.
+❌ Incorrect:
+```
+Q | What is $\frac{a}{b}$? |
+```
+
+Leave a blank line between the last line of LaTeX and the closing pipe for best rendering.
+
+## Links & images
+
+Standard Obsidian syntax works inside any field:
+
+- **Wikilinks**: `[[note name]]` or `[[note name|display text]]`
+- **Images**: `![[image.png]]` or `![[image.png|400]]` for a sized embed
+- **External images**: `![alt](https://...)`
+
+## Creating cards from the context menu
+
+You don't have to write the pipe syntax by hand. Right-click in any note (or use the command palette) and choose one of the **Add flashcard** options to open a modal where you can fill in the fields. Sprout will insert the formatted card block into your note automatically.
+
+## Editing cards later
+
+Cards can be edited at any time:
+
+- **From the source note** — edit the pipe-delimited block directly in Markdown.
+- **From the Card Browser** — select a card and click **Edit** to open the card editor.
+- **During a study session** — press `E` or choose **Edit** from the More menu (`M`) to edit the current card inline.
+
+Changes are picked up on the next sync.
 
 ## Card identity
 
