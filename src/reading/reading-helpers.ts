@@ -424,7 +424,7 @@ export function saveField(fields: any, fieldName: string, content: string[]) {
 
 export function renderMathInElement(el: HTMLElement) {
   // Check if MathJax is available (Obsidian loads it)
-  const MathJax = (window as any).MathJax;
+  const MathJax = window.MathJax;
   if (MathJax && typeof MathJax.typesetPromise === 'function') {
     try {
       MathJax.typesetPromise([el]).catch((err: any) => {

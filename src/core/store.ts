@@ -9,7 +9,7 @@
 
 import type SproutPlugin from "../main";
 import { State } from "ts-fsrs";
-import { TFile, Notice } from "obsidian";
+import { TFile, TFolder, Notice } from "obsidian";
 
 // ── Re-export shared types (backward-compatible) ────────────────────────────
 export type { CardRecord } from "../types/card";
@@ -85,20 +85,18 @@ export class JsonStore {
   }
 
   private _ensureAnalyticsShape(now: number) {
-    const anyD: any = this.data as any;
-
-    if (!anyD.analytics || typeof anyD.analytics !== "object") {
-      anyD.analytics = { version: ANALYTICS_VERSION, seq: 0, events: [] };
+    if (!this.data.analytics || typeof this.data.analytics !== "object") {
+      this.data.analytics = { version: ANALYTICS_VERSION, seq: 0, events: [] };
     }
 
-    const a: any = anyD.analytics;
+    const a = this.data.analytics;
 
     if (!Number.isFinite(a.version)) a.version = ANALYTICS_VERSION;
     if (!Number.isFinite(a.seq) || a.seq < 0) a.seq = 0;
     if (!Array.isArray(a.events)) a.events = [];
 
     // Basic hygiene: drop non-objects; keep size bounded.
-    a.events = a.events.filter((e: any) => e && typeof e === "object" && typeof e.kind === "string");
+    a.events = a.events.filter((e) => e && typeof e === "object" && typeof e.kind === "string");
 
     if (a.events.length > ANALYTICS_MAX_EVENTS) {
       a.events = a.events.slice(a.events.length - ANALYTICS_MAX_EVENTS);
@@ -109,24 +107,23 @@ export class JsonStore {
 
     // Ensure createdAt exists on cards (best-effort, one-time).
     for (const c of Object.values(this.data.cards || {})) {
-      const anyC: any = c as any;
-      if (!Number.isFinite(anyC.createdAt) || anyC.createdAt <= 0) {
-        const guess = Number(anyC.updatedAt) || Number(anyC.lastSeenAt) || 0;
-        if (Number.isFinite(guess) && guess > 0) anyC.createdAt = guess;
-        else anyC.createdAt = now; // last resort
+      if (!Number.isFinite(c.createdAt) || (c.createdAt ?? 0) <= 0) {
+        const guess = Number(c.updatedAt) || Number(c.lastSeenAt) || 0;
+        if (Number.isFinite(guess) && guess > 0) c.createdAt = guess;
+        else c.createdAt = now; // last resort
       }
     }
   }
 
   private _nextAnalyticsId(): string {
-    const a = (this.data as any).analytics as AnalyticsData;
+    const a = this.data.analytics;
     a.seq = clampInt(Number(a.seq || 0) + 1, 0, Number.MAX_SAFE_INTEGER);
     return String(a.seq);
   }
 
   getAnalyticsEvents(): AnalyticsEvent[] {
-    const a: any = (this.data as any).analytics;
-    return Array.isArray(a?.events) ? (a.events as AnalyticsEvent[]) : [];
+    const a = this.data.analytics;
+    return Array.isArray(a?.events) ? a.events : [];
   }
 
   appendAnalyticsReview(args: Omit<AnalyticsReviewEvent, "kind" | "eventId">): AnalyticsReviewEvent {
@@ -142,19 +139,19 @@ export class JsonStore {
       cardId: String(args.cardId || ""),
       cardType: String(args.cardType || "unknown"),
 
-      result: args.result as any,
-      mode: (args.mode === "practice" ? "practice" : "scheduled") as any,
+      result: args.result,
+      mode: args.mode === "practice" ? "practice" : "scheduled",
 
-      msToAnswer: Number.isFinite(args.msToAnswer as any) ? Number(args.msToAnswer) : undefined,
+      msToAnswer: Number.isFinite(args.msToAnswer) ? Number(args.msToAnswer) : undefined,
 
-      prevDue: Number.isFinite(args.prevDue as any) ? Number(args.prevDue) : undefined,
-      nextDue: Number.isFinite(args.nextDue as any) ? Number(args.nextDue) : undefined,
+      prevDue: Number.isFinite(args.prevDue) ? Number(args.prevDue) : undefined,
+      nextDue: Number.isFinite(args.nextDue) ? Number(args.nextDue) : undefined,
 
       scope: args.scope ?? undefined,
       meta: args.meta ?? undefined,
     };
 
-    const a: any = (this.data as any).analytics;
+    const a = this.data.analytics;
     a.events.push(ev);
 
     if (a.events.length > ANALYTICS_MAX_EVENTS) {
@@ -174,16 +171,16 @@ export class JsonStore {
       eventId: this._nextAnalyticsId(),
       at: Number(args.at) || now,
       scope: args.scope ?? undefined,
-      startedAt: Number.isFinite(args.startedAt as any) ? Number(args.startedAt) : undefined,
-      endedAt: Number.isFinite(args.endedAt as any) ? Number(args.endedAt) : undefined,
-      durationMs: Number.isFinite(args.durationMs as any) ? Number(args.durationMs) : undefined,
+      startedAt: Number.isFinite(args.startedAt) ? Number(args.startedAt) : undefined,
+      endedAt: Number.isFinite(args.endedAt) ? Number(args.endedAt) : undefined,
+      durationMs: Number.isFinite(args.durationMs) ? Number(args.durationMs) : undefined,
     };
     if (!Number.isFinite(ev.startedAt)) ev.startedAt = ev.at;
     if (Number.isFinite(ev.durationMs) && !Number.isFinite(ev.endedAt) && Number.isFinite(ev.startedAt)) {
       ev.endedAt = Number(ev.startedAt) + Number(ev.durationMs);
     }
 
-    const a: any = (this.data as any).analytics;
+    const a = this.data.analytics;
     a.events.push(ev);
 
     if (a.events.length > ANALYTICS_MAX_EVENTS) {
@@ -201,7 +198,7 @@ export class JsonStore {
     if (!Number.isFinite(raw)) return;
     const n = Math.max(0, Math.floor(raw));
 
-    const a: any = (this.data as any).analytics;
+    const a = this.data.analytics;
     if (!Array.isArray(a.events)) a.events = [];
     if (a.events.length > n) a.events.length = n;
 
@@ -218,7 +215,7 @@ export class JsonStore {
     if (!this.data.states) this.data.states = {};
     if (!this.data.reviewLog) this.data.reviewLog = [];
     if (!this.data.quarantine) this.data.quarantine = {};
-    if (!this.data.io || typeof this.data.io !== "object") (this.data as any).io = {};
+    if (!this.data.io || typeof this.data.io !== "object") this.data.io = {};
     if (!Number.isFinite(this.data.version)) this.data.version = 0;
 
     // Analytics defaults + card createdAt best-effort fill
@@ -289,12 +286,12 @@ export class JsonStore {
     }
 
     // IO schema hygiene
-    const ioAny: any = (this.data as any).io;
-    if (ioAny && typeof ioAny === "object") {
-      for (const [pid, def] of Object.entries(ioAny)) {
+    const ioMap = this.data.io;
+    if (ioMap && typeof ioMap === "object") {
+      for (const [pid, def] of Object.entries(ioMap)) {
         const d: any = def;
         if (!d || typeof d !== "object") {
-          delete ioAny[pid];
+          delete ioMap[pid];
           continue;
         }
         if (typeof d.imageRef !== "string") d.imageRef = "";
@@ -313,7 +310,7 @@ export class JsonStore {
           .filter((r: any) => !!r.rectId);
       }
     } else {
-      (this.data as any).io = {};
+      this.data.io = {};
     }
 
     if (this.data.version < 10) this.data.version = 10;
@@ -455,10 +452,10 @@ export class JsonStore {
   listBackups(plugin: SproutPlugin): TFile[] {
     const dir = this.getBackupDir(plugin);
     const folder = plugin.app.vault.getAbstractFileByPath(dir);
-    if (!folder || !(folder as any).children) return [];
-    return (folder as any).children
-      .filter((f: TFile) => f instanceof TFile && f.name.endsWith(".json"))
-      .sort((a: TFile, b: TFile) => b.name.localeCompare(a.name));
+    if (!folder || !("children" in folder)) return [];
+    return (folder as TFolder).children
+      .filter((f): f is TFile => f instanceof TFile && f.name.endsWith(".json"))
+      .sort((a, b) => b.name.localeCompare(a.name));
   }
 
 }

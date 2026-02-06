@@ -381,9 +381,9 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
     case "type":
       return String(card.type ?? "");
     case "stage":
-      return String((card as any).stage ?? "");
+      return String((card as unknown as Record<string, unknown>).stage ?? "");
     case "due":
-      return String((card as any).due ?? "");
+      return String((card as unknown as Record<string, unknown>).due ?? "");
     case "title":
       return (card.title || "").split(/\r?\n/)[0] || "";
     case "question":
@@ -408,10 +408,10 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
     case "location":
       return String(card.sourceNotePath || "");
     case "groups":
-      return (card as any).groups
-        ? Array.isArray((card as any).groups)
-          ? (card as any).groups.join(", ")
-          : String((card as any).groups)
+      return card.groups
+        ? Array.isArray(card.groups)
+          ? card.groups.join(", ")
+          : String(card.groups)
         : "";
     default:
       return "";
@@ -458,8 +458,8 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
 
   const optionSet = new Set<string>();
   for (const c of plugin.store.getAllCards() || []) {
-    const groups = Array.isArray((c as any)?.groups) ? (c as any).groups : [];
-    for (const g of groups.map((path: any) => titleCaseGroupPath(String(path).trim())).filter(Boolean)) {
+    const groups = Array.isArray(c?.groups) ? c.groups : [];
+    for (const g of groups.map((path: string) => titleCaseGroupPath(String(path).trim())).filter(Boolean)) {
       for (const ancestor of expandGroupAncestors(g)) optionSet.add(ancestor);
     }
   }

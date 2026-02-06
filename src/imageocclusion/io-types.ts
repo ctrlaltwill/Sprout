@@ -1,11 +1,11 @@
 /**
- * modals/io-types.ts
+ * imageocclusion/io-types.ts
  * ---------------------------------------------------------------------------
  * Shared types for the Image Occlusion creator modal and its helpers.
  * ---------------------------------------------------------------------------
  */
 
-import type { ClipboardImage } from "./modal-utils";
+export type ClipboardImage = { mime: string; data: ArrayBuffer };
 
 export type IORect = {
   rectId: string;

@@ -61,7 +61,7 @@ import {
 import { type SproutHeader, createViewHeader } from "../core/header";
 
 function isFourButtonMode(plugin: SproutPlugin): boolean {
-  return !!((plugin.settings?.reviewer as any)?.fourButtonMode);
+  return !!(plugin.settings?.reviewer?.fourButtonMode);
 }
 
 type UndoFrame = {
@@ -113,7 +113,7 @@ export class SproutReviewerView extends ItemView {
   _moreOpen = false;
   _moreWrap: HTMLElement | null = null;
   _moreMenuEl: HTMLElement | null = null;
-  _moreBtnEl: HTMLButtonElement | null = null;
+  _moreBtnEl: HTMLElement | null = null;
   _moreOutsideBound = false;
 
   // Width toggle (header action)
@@ -235,7 +235,7 @@ export class SproutReviewerView extends ItemView {
   }
 
   private getSessionStamp(): number {
-    return Number((this.session as any)?._bcStamp ?? 0);
+    return Number(this.session?._bcStamp ?? 0);
   }
 
   canUndo(): boolean {
@@ -268,33 +268,23 @@ export class SproutReviewerView extends ItemView {
 
     const store = this.plugin.store;
 
-    const fromState = u.storeMutated ? deepClone(store.getState(u.id) as any) : null;
+    const fromState = u.storeMutated ? deepClone(store.getState(u.id)) : null;
 
     try {
       const needPersist = u.storeMutated || u.analyticsMutated;
 
       if (u.storeMutated) {
         if (u.prevState) store.upsertState(deepClone(u.prevState));
-
-        if (typeof (store as any).truncateReviewLog === "function") {
-          (store as any).truncateReviewLog(u.reviewLogLenBefore);
-        } else if (Array.isArray((store as any).data?.reviewLog)) {
-          (store as any).data.reviewLog.length = Math.max(0, Math.floor(u.reviewLogLenBefore));
-        }
+        store.truncateReviewLog(u.reviewLogLenBefore);
       }
 
       if (u.analyticsMutated) {
-        if (typeof (store as any).truncateAnalyticsEvents === "function") {
-          (store as any).truncateAnalyticsEvents(u.analyticsLenBefore);
-        } else {
-          const a: any = (store as any).data?.analytics;
-          if (a && Array.isArray(a.events)) a.events.length = Math.max(0, Math.floor(u.analyticsLenBefore));
-        }
+        store.truncateAnalyticsEvents(u.analyticsLenBefore);
       }
 
       if (needPersist) await store.persist();
 
-      delete (this.session.graded as any)[u.id];
+      delete this.session.graded[u.id];
       this.session.stats.done = Object.keys(this.session.graded || {}).length;
 
       const maxIdx = Math.max(0, Number(this.session.queue?.length ?? 0));
@@ -308,7 +298,7 @@ export class SproutReviewerView extends ItemView {
       logUndoIfNeeded({
         id: u.id,
         cardType: u.cardType,
-        ratingUndone: u.rating as any,
+        ratingUndone: u.rating,
         meta: u.meta ?? null,
         storeReverted: u.storeMutated,
         fromState,
@@ -316,7 +306,7 @@ export class SproutReviewerView extends ItemView {
       });
 
       this.render();
-    } catch {
+    } catch (e) {
       log.error(`UNDO: failed`, e);
       new Notice(`${BRAND}: undo failed. See console.`);
       this.render();
@@ -328,7 +318,7 @@ export class SproutReviewerView extends ItemView {
   // -----------------------------
 
   private isPracticeSession(): boolean {
-    return !!(this.session && (this.session as any).practice);
+    return !!(this.session && this.session!.practice);
   }
 
   private buildPracticeQueue(scope: Scope, excludeIds?: Set<string>): any[] {
@@ -423,8 +413,8 @@ export class SproutReviewerView extends ItemView {
       stats: { total: queue.length, done: 0 },
     };
 
-    (s as any).practice = true;
-    (s as any)._bcStamp = ++this._sessionStamp;
+    s.practice = true;
+    s._bcStamp = ++this._sessionStamp;
 
     this.mode = "session";
     this.session = s;
@@ -445,7 +435,7 @@ export class SproutReviewerView extends ItemView {
     const card = this.currentCard();
     if (!card) return;
 
-    const id = String((card as any).id ?? "");
+    const id = String(card.id ?? "");
     if (!id) return;
     if (this.session.graded[id]) return;
 
@@ -472,7 +462,7 @@ export class SproutReviewerView extends ItemView {
     const card = this.currentCard();
     if (!card) return;
 
-    const id = String((card as any).id ?? "");
+    const id = String(card.id ?? "");
     if (!id) return;
 
     if (this.session.graded[id]) return;
@@ -482,8 +472,8 @@ export class SproutReviewerView extends ItemView {
 
       logFsrsIfNeeded({
         id,
-        cardType: String((card as any).type ?? "unknown"),
-        rating: "skip" as any,
+        cardType: String(card.type ?? "unknown"),
+        rating: "skip",
         meta: {
           action: "skip",
           via: this.isPracticeSession() ? "practice" : "review",
@@ -492,7 +482,7 @@ export class SproutReviewerView extends ItemView {
           ...extraMeta,
         },
       });
-    } catch {
+    } catch (e) {
       log.warn("Boot Camp: failed to log skip", e);
     }
 
@@ -563,7 +553,7 @@ export class SproutReviewerView extends ItemView {
     });
   }
 
-  onOpen() {
+  async onOpen() {
     this.containerEl.tabIndex = 0;
     this.ensureMarkdownHelper();
 
@@ -606,7 +596,7 @@ export class SproutReviewerView extends ItemView {
     this.render();
   }
 
-  onClose() {
+  async onClose() {
     this.clearTimer();
     this.clearCountdown();
     closeMoreMenuImpl(this);
@@ -688,8 +678,8 @@ export class SproutReviewerView extends ItemView {
     const card = this.currentCard();
     if (!card) return;
 
-    const id = String((card as any).id || "");
-    const path = String((card as any).sourceNotePath || "");
+    const id = String(card.id || "");
+    const path = String(card.sourceNotePath || "");
     if (!id || !path) return;
 
     const file = this.app.vault.getAbstractFileByPath(path);
@@ -751,7 +741,7 @@ export class SproutReviewerView extends ItemView {
     // If this is a cloze child, edit the parent cloze instead so changes persist to the source note
     let targetCard = card;
     if (cardType === "cloze-child") {
-      const parentId = String((card as any).parentId || "");
+      const parentId = String(card.parentId || "");
       if (!parentId) {
         new Notice("Cannot edit cloze child: missing parent card.");
         return;
@@ -829,13 +819,13 @@ export class SproutReviewerView extends ItemView {
 
     const stamp = this.getSessionStamp();
 
-    const store = this.plugin.store as any;
+    const store = this.plugin.store;
 
     const reviewLogLenBefore = Array.isArray(this.plugin.store.data?.reviewLog)
       ? this.plugin.store.data.reviewLog.length
       : 0;
 
-    const analyticsLenBefore = Array.isArray(store?.data?.analytics?.events)
+    const analyticsLenBefore = Array.isArray(store.data.analytics?.events)
       ? store.data.analytics.events.length
       : 0;
 
@@ -845,7 +835,7 @@ export class SproutReviewerView extends ItemView {
       this._undo = {
         sessionStamp: stamp,
         id,
-        cardType: String((card as any).type || "unknown"),
+        cardType: String(card.type || "unknown"),
         rating,
         at: now,
         meta: meta || null,
@@ -868,8 +858,8 @@ export class SproutReviewerView extends ItemView {
           store.appendAnalyticsReview({
             at: now,
             cardId: id,
-            cardType: String((card as any).type || "unknown"),
-            result: rating as any,
+            cardType: String(card.type || "unknown"),
+            result: rating,
             mode: "practice",
             msToAnswer,
             scope: this.session.scope,
@@ -877,7 +867,7 @@ export class SproutReviewerView extends ItemView {
           });
           await store.persist();
         }
-      } catch {
+      } catch (e) {
         log.warn(`failed to persist practice analytics`, e);
       }
 
@@ -895,7 +885,7 @@ export class SproutReviewerView extends ItemView {
     this._undo = {
       sessionStamp: stamp,
       id,
-      cardType: String((card as any).type || "unknown"),
+      cardType: String(card.type || "unknown"),
       rating,
       at: now,
       meta: meta || null,
@@ -915,7 +905,7 @@ export class SproutReviewerView extends ItemView {
     try {
       const { nextState, prevDue, nextDue, metrics } = gradeFromRating(
         st,
-        rating as any,
+        rating,
         now,
         this.plugin.settings,
       );
@@ -924,7 +914,7 @@ export class SproutReviewerView extends ItemView {
       this.plugin.store.appendReviewLog({
         id,
         at: now,
-        result: rating as any,
+        result: rating,
         prevDue,
         nextDue,
         meta: meta || null,
@@ -934,8 +924,8 @@ export class SproutReviewerView extends ItemView {
         store.appendAnalyticsReview({
           at: now,
           cardId: id,
-          cardType: String((card as any).type || "unknown"),
-          result: rating as any,
+          cardType: String(card.type || "unknown"),
+          result: rating,
           mode: "scheduled",
           msToAnswer,
           prevDue,
@@ -955,7 +945,7 @@ export class SproutReviewerView extends ItemView {
 
       logFsrsIfNeeded({
         id,
-        cardType: String((card as any).type || "unknown"),
+        cardType: String(card.type || "unknown"),
         rating,
         metrics,
         nextDue,
@@ -975,7 +965,7 @@ export class SproutReviewerView extends ItemView {
     const card = this.currentCard();
     if (!card) return;
 
-    const id = String((card as any).id);
+    const id = String(card.id);
     if (this.session.graded[id]) return;
 
     const st = this.plugin.store.getState(id);
@@ -1001,14 +991,14 @@ export class SproutReviewerView extends ItemView {
     const card = this.currentCard();
     if (!card) return;
 
-    const id = String((card as any).id);
+    const id = String(card.id);
     if (this.session.graded[id]) return;
 
     const st = this.plugin.store.getState(id);
     if (!st) return;
 
     const now = Date.now();
-    const nextState = { ...st, stage: "suspended" };
+    const nextState = { ...st, stage: "suspended" as const };
 
     this.plugin.store.upsertState(nextState);
     await this.plugin.store.persist();
@@ -1023,12 +1013,12 @@ export class SproutReviewerView extends ItemView {
 
   private async answerMcq(choiceIdx: number) {
     const card = this.currentCard();
-    if (!card || (card as any).type !== "mcq" || !this.session) return;
+    if (!card || card.type !== "mcq" || !this.session) return;
 
-    const id = String((card as any).id);
+    const id = String(card.id);
     if (this.session.graded[id]) return;
 
-    const pass = choiceIdx === (card as any).correctIndex;
+    const pass = choiceIdx === card.correctIndex;
 
     const four = isFourButtonMode(this.plugin);
     const rating: any = pass ? (four ? "easy" : "good") : "again";
@@ -1041,7 +1031,7 @@ export class SproutReviewerView extends ItemView {
 
     await this.gradeCurrentRating(rating, {
       mcqChoice: choiceIdx,
-      mcqCorrect: (card as any).correctIndex,
+      mcqCorrect: card.correctIndex,
       mcqPass: pass,
     });
 
@@ -1053,7 +1043,7 @@ export class SproutReviewerView extends ItemView {
 
     const card = this.currentCard();
     if (card) {
-      const id = String((card as any).id);
+      const id = String(card.id);
       if (!this.session.graded[id]) {
         await this.gradeCurrentRating("again", { auto: true });
       }
@@ -1064,7 +1054,7 @@ export class SproutReviewerView extends ItemView {
       this.resetTiming();
 
       const next = this.currentCard();
-      this.showAnswer = !!(next && this.session.graded[String((next as any).id)]);
+      this.showAnswer = !!(next && this.session.graded[String(next.id)]);
       this.render();
       return;
     }
@@ -1083,7 +1073,7 @@ export class SproutReviewerView extends ItemView {
     this.resetTiming();
 
     const card = this.currentCard();
-    this.showAnswer = !!(card && this.session.graded[String((card as any).id)]);
+    this.showAnswer = !!(card && this.session.graded[String(card.id)]);
     this.render();
   }
 
@@ -1113,11 +1103,11 @@ export class SproutReviewerView extends ItemView {
         Math.max(0, this.session.queue.length),
       );
 
-      (this.session as any)._bcStamp = ++this._sessionStamp;
+      this.session!._bcStamp = ++this._sessionStamp;
 
       initMcqOrderState(this.session);
       initSkipState(this.session);
-      (this.session as any).practice = false;
+      this.session!.practice = false;
     }
 
     this.showAnswer = false;
@@ -1139,8 +1129,8 @@ export class SproutReviewerView extends ItemView {
   }
 
   isActiveLeaf(): boolean {
-    const ws: any = this.app.workspace as any;
-    const active = ws?.activeLeaf ?? ws?.getMostRecentLeaf?.() ?? ws?.getLeaf?.(false) ?? null;
+    const ws = this.app.workspace;
+    const active = ws?.activeLeaf ?? ws?.getActiveLeaf?.() ?? null;
     return !!active && active === this.leaf;
   }
 
@@ -1153,7 +1143,7 @@ export class SproutReviewerView extends ItemView {
       (t.tagName === "INPUT" ||
         t.tagName === "TEXTAREA" ||
         t.tagName === "SELECT" ||
-        (t as any).isContentEditable)
+        t.isContentEditable)
     )
       return;
 
@@ -1167,7 +1157,7 @@ export class SproutReviewerView extends ItemView {
     }
 
     const isEnter =
-      ev.key === "Enter" || (ev as any).code === "Enter" || (ev as any).code === "NumpadEnter";
+      ev.key === "Enter" || ev.code === "Enter" || ev.code === "NumpadEnter";
 
     const k = (ev.key || "").toLowerCase();
 
@@ -1199,7 +1189,7 @@ export class SproutReviewerView extends ItemView {
           return;
         }
       }
-      if (ev.key === "Escape" || ev.key === "q" || ev.key === "Q" || (ev as any).code === "KeyQ") {
+      if (ev.key === "Escape" || ev.key === "q" || ev.key === "Q" || ev.code === "KeyQ") {
         if (ev.metaKey || ev.ctrlKey) return;
         ev.preventDefault();
         ev.stopPropagation();
@@ -1210,10 +1200,10 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    const id = String((card as any).id);
+    const id = String(card.id);
     const graded = this.session.graded[id] || null;
 
-    if (ev.key === "Escape" || ev.key === "q" || ev.key === "Q" || (ev as any).code === "KeyQ") {
+    if (ev.key === "Escape" || ev.key === "q" || ev.key === "Q" || ev.code === "KeyQ") {
       if (ev.metaKey || ev.ctrlKey) return;
       ev.preventDefault();
       ev.stopPropagation();
@@ -1269,9 +1259,9 @@ export class SproutReviewerView extends ItemView {
       closeMoreMenuImpl(this);
 
       if (
-        (((card as any).type === "basic" ||
-          (card as any).type === "cloze" ||
-          (card as any).type === "cloze-child" ||
+        ((card.type === "basic" ||
+          card.type === "cloze" ||
+          card.type === "cloze-child" ||
           isIoRevealableType(card)) &&
           this.showAnswer)
       ) {
@@ -1292,14 +1282,14 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    if ((card as any).type === "mcq") {
+    if (card.type === "mcq") {
       if (/^[1-9]$/.test(ev.key)) {
         ev.preventDefault();
         ev.stopPropagation();
         closeMoreMenuImpl(this);
 
         const displayIdx = Number(ev.key) - 1;
-        const opts = (card as any).options || [];
+        const opts = card.options || [];
         if (displayIdx < 0 || displayIdx >= opts.length) return;
 
         const order = getMcqOptionOrder(this.plugin, this.session, card);
@@ -1312,9 +1302,9 @@ export class SproutReviewerView extends ItemView {
     }
 
     const isRevealable =
-      (card as any).type === "basic" ||
-      (card as any).type === "cloze" ||
-      (card as any).type === "cloze-child" ||
+      card.type === "basic" ||
+      card.type === "cloze" ||
+      card.type === "cloze-child" ||
       isIoRevealableType(card);
 
     if (isRevealable) {
@@ -1386,7 +1376,7 @@ export class SproutReviewerView extends ItemView {
   }
 
   private async resyncActiveFile() {
-    const active = (this.plugin as any)._getActiveMarkdownFile?.() ?? null;
+    const active = this.plugin._getActiveMarkdownFile() ?? null;
     if (!active) return;
 
     const res = await syncOneFile(this.plugin, active);
@@ -1396,7 +1386,7 @@ export class SproutReviewerView extends ItemView {
     if (res.quarantinedCount > 0)
       new ParseErrorModal(this.plugin.app, this.plugin, res.quarantinedIds).open();
 
-    (this.plugin as any)._refreshOpenViews?.();
+    this.plugin.refreshAllViews();
   }
 
   private renderHeaderActions() {
@@ -1410,13 +1400,10 @@ export class SproutReviewerView extends ItemView {
       toggleMoreMenuImpl(this);
     });
 
-    this._moreBtnEl = moreEl as any;
+    this._moreBtnEl = moreEl;
 
     const syncEl = this.addAction("refresh-cw", "Sync Flashcards", () => {
-      const anyPlugin = this.plugin as any;
-      if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
-      else if (typeof anyPlugin.syncBank === "function") void anyPlugin.syncBank();
-      else void this.resyncActiveFile();
+      void this.plugin.syncBank();
     });
 
     const widthEl = this.addAction(this._wideIcon(), this._wideLabel(), () => {
@@ -1547,7 +1534,7 @@ export class SproutReviewerView extends ItemView {
 
     const infoPresent = this.hasInfoField(activeCard);
     const showInfo =
-      !!(this.plugin.settings.reviewer as any).showInfoByDefault || (this.showAnswer && infoPresent);
+      !!this.plugin.settings.reviewer.showInfoByDefault || (this.showAnswer && infoPresent);
 
     const practiceMode = this.isPracticeSession();
     const canStartPractice = !practiceMode && !activeCard && this.canStartPractice(this.session.scope);
@@ -1557,12 +1544,12 @@ export class SproutReviewerView extends ItemView {
 
       session: this.session,
       showAnswer: this.showAnswer,
-      setShowAnswer: (v) => (this.showAnswer = v),
+      setShowAnswer: (v: boolean) => (this.showAnswer = v),
 
       currentCard: () => this.currentCard(),
 
       backToDecks: () => this.backToDecks(),
-      nextCard: (userInitiated) => this.nextCard(userInitiated),
+      nextCard: (userInitiated: boolean) => this.nextCard(userInitiated),
 
       gradeCurrentRating: (rating: Rating, meta: any) => this.gradeCurrentRating(rating, meta),
       answerMcq: (idx: number) => this.answerMcq(idx),
@@ -1570,7 +1557,7 @@ export class SproutReviewerView extends ItemView {
       enableSkipButton: isSkipEnabled(this.plugin),
       skipCurrentCard: (meta?: any) => this.doSkipCurrentCard(meta),
 
-      canBurySuspend: !practiceMode && !!activeCard && !this.session.graded[String((activeCard as any)?.id ?? "")],
+      canBurySuspend: !practiceMode && !!activeCard && !this.session.graded[String(activeCard?.id ?? "")],
       buryCurrentCard: () => void this.buryCurrentCard(),
       suspendCurrentCard: () => void this.suspendCurrentCard(),
 
@@ -1599,10 +1586,6 @@ export class SproutReviewerView extends ItemView {
         reveal2: boolean,
       ) => this.renderImageOcclusionInto(containerEl, card2, sourcePath2, reveal2),
 
-      keybox,
-      makePlainButton,
-      appendKeyboxRight,
-
       randomizeMcqOptions: isMcqOptionRandomisationEnabled(this.plugin),
 
       fourButtonMode: isFourButtonMode(this.plugin),
@@ -1613,7 +1596,7 @@ export class SproutReviewerView extends ItemView {
       aosDelayMs: this._firstSessionRender ? 100 : 0,
 
       rerender: () => this.render(),
-    } as any);
+    });
 
     queueMicrotask(() =>
       renderTitleMarkdownIfNeeded({

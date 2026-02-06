@@ -52,9 +52,7 @@ function cleanPositiveNumberArray(v: any, fallback: number[]): number[] {
 }
 
 function clonePlain<T>(x: T): T {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sc = (globalThis as any)?.structuredClone;
-  if (typeof sc === "function") return sc(x);
+  if (typeof structuredClone === "function") return structuredClone(x);
   return JSON.parse(JSON.stringify(x)) as T;
 }
 
@@ -66,7 +64,7 @@ type BasecoatApi = {
 };
 
 function getBasecoatApi(): BasecoatApi | null {
-  const bc = (window as any)?.basecoat as BasecoatApi | undefined;
+  const bc = window?.basecoat as BasecoatApi | undefined;
   if (!bc) return null;
   const hasInit = typeof bc.initAll === "function" || typeof bc.init === "function";
   const hasStart = typeof bc.start === "function";
@@ -75,8 +73,8 @@ function getBasecoatApi(): BasecoatApi | null {
 }
 
 export default class SproutPlugin extends Plugin {
-  settings: SproutSettings;
-  store: JsonStore;
+  settings!: SproutSettings;
+  store!: JsonStore;
   _bc: any;
 
   private _basecoatStarted = false;
@@ -119,9 +117,9 @@ export default class SproutPlugin extends Plugin {
       bc.start?.();
 
       this._basecoatStarted = true;
-      (this as any)._basecoatApi = bc;
+      (this as unknown as { _basecoatApi: unknown })._basecoatApi = bc;
       log.info(`Basecoat initAll + start OK`);
-    } catch {
+    } catch (e) {
       log.warn(`Basecoat init failed`, e);
     }
   }
@@ -136,25 +134,23 @@ export default class SproutPlugin extends Plugin {
   }
 
   private _getActiveLeafSafe(): WorkspaceLeaf | null {
-    const ws: any = this.app.workspace as any;
-    if (typeof ws?.getActiveLeaf === "function") return (ws.getActiveLeaf() as WorkspaceLeaf) ?? null; // newer builds
-    return (ws?.activeLeaf as WorkspaceLeaf) ?? null; // older builds
+    const ws = this.app.workspace;
+    if (typeof ws?.getActiveLeaf === "function") return ws.getActiveLeaf() ?? null;
+    return ws?.activeLeaf ?? null;
   }
 
   private _updateStatusBarVisibility(leaf: WorkspaceLeaf | null) {
-    const viewType = (leaf?.view as any)?.getViewType?.() as string | undefined;
+    const viewType = leaf?.view?.getViewType?.();
     const hide = !!viewType && this._hideStatusBarViewTypes.has(viewType);
     document.body.classList.toggle("sprout-hide-status-bar", hide);
   }
 
   private _normaliseSettingsInPlace() {
-    const s: any = this.settings as any;
-    s.scheduler ??= {};
-    s.home ??= {};
+    const s = this.settings;
+    s.scheduler ??= {} as SproutSettings["scheduler"];
+    s.home ??= {} as SproutSettings["home"];
     s.home.pinnedDecks ??= [];
-    s.home.githubStars ??= {};
-    if (!("count" in s.home.githubStars)) s.home.githubStars.count = null;
-    if (!("fetchedAt" in s.home.githubStars)) s.home.githubStars.fetchedAt = null;
+    s.home.githubStars ??= { count: null, fetchedAt: null };
 
     s.scheduler.learningStepsMinutes = cleanPositiveNumberArray(
       s.scheduler.learningStepsMinutes,
@@ -183,7 +179,7 @@ export default class SproutPlugin extends Plugin {
       "easeDeltaEasy",
     ];
     for (const k of legacyKeys) {
-      if (k in s.scheduler) delete s.scheduler[k];
+      if (k in s.scheduler) delete (s.scheduler as Record<string, unknown>)[k];
     }
   }
 
@@ -277,7 +273,7 @@ export default class SproutPlugin extends Plugin {
       // Hide status bar when Boot Camp views are active
       this.registerEvent(
         this.app.workspace.on("active-leaf-change", (leaf) => {
-          this._updateStatusBarVisibility((leaf as any) ?? null);
+          this._updateStatusBarVisibility(leaf ?? null);
         }),
       );
 
@@ -286,7 +282,7 @@ export default class SproutPlugin extends Plugin {
           const f = file instanceof TFile ? file : null;
           this.app.workspace
             .getLeavesOfType(VIEW_TYPE_WIDGET)
-            .forEach((leaf) => (leaf.view as any)?.onFileOpen?.(f));
+            .forEach((leaf) => (leaf.view as { onFileOpen?(f: TFile | null): void })?.onFileOpen?.(f));
         }),
       );
 
@@ -301,7 +297,7 @@ export default class SproutPlugin extends Plugin {
       await this.saveAll();
       void this.refreshGithubStars();
       log.info(`loaded`);
-    } catch {
+    } catch (e) {
       log.error(`failed to load`, e);
       new Notice(`${BRAND}: failed to load. See console for details.`);
     }
@@ -376,7 +372,7 @@ export default class SproutPlugin extends Plugin {
           item.setTitle("Add Flashcard").setIcon("plus");
 
           // Create submenu
-          const submenu = (item as any).setSubmenu?.();
+          const submenu = item.setSubmenu?.();
           if (submenu) {
             submenu.addItem((subItem: any) => {
               subItem.setTitle("Basic").setIcon("file-text").onClick(() => this.openAddFlashcardModal("basic"));
@@ -392,12 +388,12 @@ export default class SproutPlugin extends Plugin {
             });
           }
 
-          itemDom = (item as any)?.dom ?? null;
+          itemDom = item?.dom ?? null;
         });
 
         const positionAfterExternalLink = () => {
           try {
-            const menuDom: HTMLElement | null = (menu as any)?.dom ?? null;
+            const menuDom: HTMLElement | null = menu?.dom ?? null;
             if (!menuDom || !itemDom) return;
 
             let node: HTMLElement | null = itemDom;
@@ -479,8 +475,8 @@ export default class SproutPlugin extends Plugin {
   }
 
   async refreshGithubStars(force = false) {
-    const s: any = this.settings as any;
-    s.home ??= {};
+    const s = this.settings;
+    s.home ??= {} as SproutSettings["home"];
     s.home.githubStars ??= { count: null, fetchedAt: null };
 
     const lastAt = Number(s.home.githubStars.fetchedAt || 0);
@@ -550,7 +546,7 @@ export default class SproutPlugin extends Plugin {
     for (const [id, raw] of Object.entries(map)) {
       if (!this._isCardStateLike(raw)) continue;
 
-      const prev: CardState = { id, ...(raw as any) };
+      const prev: CardState = { id, ...(raw as Record<string, unknown>) } as CardState;
       map[id] = resetCardScheduling(prev, now, this.settings);
       count++;
     }
@@ -641,7 +637,7 @@ export default class SproutPlugin extends Plugin {
     // If possible, move the new tab after the active tab
     try {
       if (activeLeaf && activeLeaf !== leaf && typeof ws.moveLeaf === "function") {
-        ws.moveLeaf(leaf, ws.getGroup(activeLeaf), ws.getGroup(activeLeaf)?.index + 1);
+        ws.moveLeaf(leaf, ws.getGroup(activeLeaf), (ws.getGroup(activeLeaf)?.index ?? 0) + 1);
       }
     } catch (e) { log.swallow("move leaf after active tab", e); }
     void ws.revealLeaf(leaf);
@@ -678,7 +674,7 @@ export default class SproutPlugin extends Plugin {
   private async openWidgetSafe(): Promise<void> {
     try {
       await this.openWidget();
-    } catch {
+    } catch (e) {
       log.error(`failed to open widget`, e);
       new Notice(`${BRAND}: failed to open widget. See console for details.`);
     }
@@ -724,7 +720,7 @@ export default class SproutPlugin extends Plugin {
           } catch (e) { log.swallow("open settings tab by id", e); }
         }
       }
-    } catch {
+    } catch (e) {
       log.error(`failed to open settings`, e);
       new Notice(`${BRAND}: Unable to open settings automatically. Open Settings → Community plugins → ${BRAND}.`);
     }

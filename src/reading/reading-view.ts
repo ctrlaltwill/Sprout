@@ -9,12 +9,13 @@
  * Pure / stateless helpers live in ./reading-helpers.ts and are imported.
  */
 
-import type { Plugin, MarkdownPostProcessorContext, Component } from "obsidian";
-import { MarkdownRenderer, Notice, setIcon, TFile } from "obsidian";
+import type { Plugin, MarkdownPostProcessorContext } from "obsidian";
+import { Component, MarkdownRenderer, Notice, setIcon, TFile } from "obsidian";
 import { log } from "../core/logger";
 import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import type { CardRecord } from "../core/store";
+import type SproutPlugin from "../main";
 
 import {
   ANCHOR_RE,
@@ -40,13 +41,24 @@ import {
 
 let sproutPluginRef: Plugin | null = null;
 
-function getSproutPlugin(): Plugin | null {
-  if (sproutPluginRef) return sproutPluginRef;
+/** Shape of a Sprout plugin instance for appearance-setting lookups. */
+type SproutPluginLike = Plugin & {
+  store?: { data?: { cards?: Record<string, CardRecord> } };
+  settings?: { appearance?: { prettifyCards?: string } };
+  syncBank?(): Promise<void>;
+  refreshAllViews?(): void;
+};
+
+function getSproutPlugin(): SproutPluginLike | null {
+  if (sproutPluginRef) return sproutPluginRef as SproutPluginLike;
   try {
-    const plugin = Object.values((window as any)?.app?.plugins?.plugins ?? {}).find(
-      (p: any) => p?.store && p?.settings?.appearance,
+    const plugin = Object.values(window?.app?.plugins?.plugins ?? {}).find(
+      (p): p is SproutPluginLike => {
+        const sp = p as SproutPluginLike;
+        return !!sp?.store && !!sp?.settings?.appearance;
+      },
     );
-    return (plugin as Plugin) ?? null;
+    return plugin ?? null;
   } catch {
     return null;
   }
@@ -91,7 +103,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
         // Try to get source file content
         let sourceContent = '';
         try {
-          const sourcePath = (ctx as any).sourcePath;
+          const sourcePath = ctx.sourcePath;
           if (sourcePath && plugin.app.vault) {
             const file = plugin.app.vault.getAbstractFileByPath(sourcePath);
             if (file && 'extension' in file && file.extension === 'md') {
@@ -100,7 +112,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
               sourceContent = content;
             }
           }
-        } catch {
+        } catch (e) {
           debugLog("[Sprout] Could not read source file:", e);
         }
 
@@ -146,8 +158,8 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
     // Get current prettify style from plugin instance
     let prettifyStyle: string = "accent";
     try {
-      const activePlugin = Object.values((window as any)?.app?.plugins?.plugins ?? {}).find((p: any) => p?.settings?.appearance?.prettifyCards);
-      if (activePlugin && activePlugin.settings && activePlugin.settings.appearance?.prettifyCards) {
+      const activePlugin = getSproutPlugin();
+      if (activePlugin?.settings?.appearance?.prettifyCards) {
         prettifyStyle = activePlugin.settings.appearance.prettifyCards;
       }
     } catch (e) { log.swallow("read prettify plugin setting", e); }
@@ -156,7 +168,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
       ? e.currentTarget
       : (e.target instanceof HTMLElement ? e.target : null);
     if (root) {
-      const cards = root.querySelectorAll<HTMLElement>(".sprout-pretty-card");
+      const cards = Array.from(root.querySelectorAll<HTMLElement>(".sprout-pretty-card"));
       for (const card of cards) {
         card.classList.remove("theme", "accent");
         card.classList.add(prettifyStyle === "theme" ? "theme" : "accent");
@@ -170,14 +182,8 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
 
   // Attach listeners on load and after mutation observer runs
   attachRefreshListenerToMarkdownViews();
-  // If mutation observer is used, re-attach listeners after DOM changes
-  if (typeof setupDebouncedMutationObserver === "function") {
-    const orig = setupDebouncedMutationObserver;
-    setupDebouncedMutationObserver = function (...args: any[]) {
-      orig.apply(this, args);
-      attachRefreshListenerToMarkdownViews();
-    };
-  }
+  // Re-attach listeners after mutation observer triggers DOM changes
+  // (handled inline in the mutation observer callback via attachRefreshListenerToMarkdownViews)
 }
 
 /* =========================
@@ -231,7 +237,7 @@ function injectStylesOnce() {
    ========================= */
 
 function setupManualTrigger() {
-  (window as any).sproutApplyMasonryGrid = () => {
+  window.sproutApplyMasonryGrid = () => {
     debugLog('[Sprout] Manual sproutApplyMasonryGrid() called');
     requestAnimationFrame(() => {
       setTimeout(() => {
@@ -243,7 +249,7 @@ function setupManualTrigger() {
 
   window.addEventListener('sprout-cards-inserted', () => {
     debugLog('[Sprout] Received sprout-cards-inserted event — applying masonry');
-    (window as any).sproutApplyMasonryGrid();
+    window.sproutApplyMasonryGrid?.();
   });
 
   // Re-layout on window resize (smooth + throttled)
@@ -532,7 +538,7 @@ function rebalanceExistingGrid(wrapper: HTMLElement) {
 function layoutAllMasonryGrids(forceRebalance = false) {
   // First, check if existing grids need rebalancing (e.g., after resize)
   if (forceRebalance || shouldRebalanceGrids()) {
-    const existingWrappers = document.querySelectorAll<HTMLElement>('.sprout-masonry-grid-wrapper[data-sprout-masonry="true"]');
+    const existingWrappers = Array.from(document.querySelectorAll<HTMLElement>('.sprout-masonry-grid-wrapper[data-sprout-masonry="true"]'));
     for (const wrapper of existingWrappers) {
       rebalanceExistingGrid(wrapper);
     }
@@ -954,8 +960,8 @@ function enhanceCardElement(
   let prettifyStyle: string = 'accent';
   try {
     // Try to get the plugin instance from Obsidian global registry
-    const activePlugin = Object.values((window as any)?.app?.plugins?.plugins ?? {}).find((p: any) => p?.settings?.appearance?.prettifyCards);
-    if (activePlugin && activePlugin.settings && activePlugin.settings.appearance?.prettifyCards) {
+    const activePlugin = getSproutPlugin();
+    if (activePlugin?.settings?.appearance?.prettifyCards) {
       prettifyStyle = activePlugin.settings.appearance.prettifyCards;
     }
   } catch (e) { log.swallow("read prettify plugin setting", e); }
@@ -999,15 +1005,10 @@ function enhanceCardElement(
       const href = link.getAttribute('data-href');
       if (href) {
         // Use Obsidian's app to open the link
-        const app = (window as any).app;
+        const app = window.app;
         if (app?.workspace?.openLinkText) {
           const sourcePath = app.workspace?.getActiveFile?.()?.path ?? '';
-          const leaf = app.workspace?.getLeaf?.('tab') ?? null;
-          if (leaf?.openLinkText) {
-            leaf.openLinkText(href, sourcePath, true);
-          } else {
-            app.workspace.openLinkText(href, sourcePath, true);
-          }
+          app.workspace.openLinkText(href, sourcePath, true);
         }
       }
     });
@@ -1027,7 +1028,7 @@ function enhanceCardElement(
         return;
       }
 
-      const cardsMap = ((plugin as any).store?.data?.cards || {}) as Record<string, CardRecord>;
+      const cardsMap = plugin.store?.data?.cards ?? {};
       const cardId = String(card.anchorId || "");
       let targetCard = cardsMap[cardId];
 
@@ -1038,7 +1039,7 @@ function enhanceCardElement(
 
       // If this is a cloze child, edit the parent cloze instead
       if (targetCard.type === "cloze-child") {
-        const parentId = String((targetCard as any).parentId || "");
+        const parentId = String(targetCard.parentId || "");
         if (!parentId) {
           new Notice("Cannot edit cloze child: missing parent card.");
           return;
@@ -1051,7 +1052,7 @@ function enhanceCardElement(
         targetCard = parentCard;
       }
 
-      void openBulkEditModalForCards(plugin as any, [targetCard], async (updatedCards) => {
+      void openBulkEditModalForCards(plugin as unknown as SproutPlugin, [targetCard], async (updatedCards) => {
         if (!updatedCards.length) return;
 
         try {
@@ -1071,11 +1072,11 @@ function enhanceCardElement(
           await plugin.app.vault.modify(file, lines.join("\n"));
 
           // Resync database + refresh views
-          if (typeof (plugin as any).syncBank === "function") {
-            await (plugin as any).syncBank();
+          if (typeof plugin.syncBank === "function") {
+            await plugin.syncBank();
           }
-          if (typeof (plugin as any).refreshAllViews === "function") {
-            (plugin as any).refreshAllViews();
+          if (typeof plugin.refreshAllViews === "function") {
+            plugin.refreshAllViews();
           }
 
           // Update the pretty-card content in-place
@@ -1088,18 +1089,18 @@ function enhanceCardElement(
               title: String(rec.title || ""),
               fields: {
                 T: rec.title || "",
-                Q: (rec as any).q || "",
-                A: (rec as any).a || "",
-                CQ: (rec as any).clozeText || "",
-                MCQ: (rec as any).stem || "",
-                O: Array.isArray((rec as any).options) ? (rec as any).options : [],
-                I: (rec as any).info || "",
+                Q: rec.q || "",
+                A: rec.a || "",
+                CQ: rec.clozeText || "",
+                MCQ: rec.stem || "",
+                O: Array.isArray(rec.options) ? rec.options : [],
+                I: rec.info || "",
               },
             };
             if (sproutCard.type === "mcq") {
-              const options = Array.isArray((rec as any).options) ? (rec as any).options : [];
-              const correctIndex = Number.isFinite((rec as any).correctIndex)
-                ? Number((rec as any).correctIndex)
+              const options = Array.isArray(rec.options) ? rec.options : [];
+              const correctIndex = Number.isFinite(rec.correctIndex)
+                ? Number(rec.correctIndex)
                 : -1;
               sproutCard.fields.A = correctIndex >= 0 && options[correctIndex] ? options[correctIndex] : "";
               sproutCard.fields.O = options;
@@ -1112,7 +1113,7 @@ function enhanceCardElement(
 
           // Nudge current markdown view to refresh pretty cards
           try {
-            (plugin.app.workspace as any)?.trigger?.("file-open", file);
+            plugin.app.workspace.trigger("file-open", file);
           } catch (e) { log.swallow("trigger file-open after edit", e); }
 
           setTimeout(() => {
@@ -1178,7 +1179,7 @@ function enhanceCardElement(
    ========================= */
 
 async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
-  const app = (window as any).app;
+  const app = window.app;
   if (!app) return;
   
   // Get the plugin instance to use as component parent
@@ -1186,10 +1187,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
   if (!plugin) return;
   
   // Create a temporary component for rendering to avoid memory leaks
-  const component = plugin.addChild({
-    load() {},
-    unload() {},
-  } as any);
+  const component = plugin.addChild(new Component());
   
   try {
     // Render markdown for Basic card Q/A fields using the card data directly
@@ -1260,7 +1258,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
 
 declare global { interface Window { sproutApplyMasonryGrid?: () => void; } }
 
-(window as any).sproutApplyMasonryGrid = (window as any).sproutApplyMasonryGrid || (() => {
+window.sproutApplyMasonryGrid = window.sproutApplyMasonryGrid || (() => {
   debugLog('[Sprout] sproutApplyMasonryGrid placeholder invoked');
   void processCardElements(document.documentElement, undefined, '');
   scheduleMasonryLayout();

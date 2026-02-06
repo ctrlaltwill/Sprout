@@ -40,6 +40,8 @@ export type CardRecord = {
 
   // ── IO parent ──────────────────────────────────────────────────────────
   imageRef?: string | null;
+  /** @deprecated Alias for `imageRef`; kept for backwards-compat with older stores. */
+  ioSrc?: string | null;
   maskMode?: "solo" | "all" | null;
 
   // ── IO child ───────────────────────────────────────────────────────────

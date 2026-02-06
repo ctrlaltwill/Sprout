@@ -1,16 +1,15 @@
 // src/reviewer/skip.ts
 import { Modal, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
-import type { Session } from "./image-occlusion-types";
+import type { Session } from "./types";
 import type { SproutReviewerView } from "./review-view";
 
 export function isSkipEnabled(plugin: SproutPlugin): boolean {
-  return !!(plugin.settings.reviewer as any)?.enableSkipButton;
+  return !!plugin.settings.reviewer?.enableSkipButton;
 }
 
 export function initSkipState(session: Session) {
-  const s: any = session as any;
-  if (!s.skipCounts || typeof s.skipCounts !== "object") s.skipCounts = {};
+  if (!session.skipCounts || typeof session.skipCounts !== "object") session.skipCounts = {};
 }
 
 function computeDefaultSkipDelay(remainingAfterThisCard: number): number {
@@ -124,10 +123,10 @@ export function skipCurrentCard(view: SproutReviewerView) {
   const card = view.currentCard();
   if (!card) return;
 
-  const type = String((card as any).type || "");
+  const type = String(card.type || "");
   if (type !== "basic" && type !== "cloze" && type !== "cloze-child") return;
 
-  const id = String((card as any).id || "");
+  const id = String(card.id || "");
   if (!id) return;
 
   if (view.session.graded[id]) return;
@@ -135,16 +134,15 @@ export function skipCurrentCard(view: SproutReviewerView) {
   const remaining = Math.max(0, view.session.queue.length - view.session.index - 1);
   const baseN = computeDefaultSkipDelay(remaining);
 
-  const s: any = view.session as any;
-  if (!s.skipCounts || typeof s.skipCounts !== "object") s.skipCounts = {};
-  const skipCounts = s.skipCounts as Record<string, number>;
+  if (!view.session.skipCounts || typeof view.session.skipCounts !== "object") view.session.skipCounts = {};
+  const skipCounts = view.session.skipCounts;
 
   const nextCount = (Number(skipCounts[id]) || 0) + 1;
   skipCounts[id] = nextCount;
 
   if (nextCount >= 3) {
     new ConfirmBuryForTodayModal(
-      (view as any).app,
+      view.app,
       () => {
         void view.buryCurrentCard();
       },

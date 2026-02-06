@@ -158,8 +158,7 @@ export class SproutHeader {
             ? VIEW_TYPE_ANALYTICS
             : VIEW_TYPE_BROWSER;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.deps.leaf as any).setViewState?.({ type, active: true });
+    await this.deps.leaf.setViewState?.({ type, active: true });
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this.deps.app.workspace.revealLeaf(this.deps.leaf);
     this.deps.afterNavigate?.();
@@ -334,8 +333,8 @@ export class SproutHeader {
     const navHost =
       (this.deps.containerEl.querySelector(
         ":scope > .view-header .view-header-left .view-header-nav-buttons",
-      )) ??
-      (this.deps.containerEl.querySelector(".view-header .view-header-left .view-header-nav-buttons"));
+      ) as HTMLElement | null) ??
+      (this.deps.containerEl.querySelector(".view-header .view-header-left .view-header-nav-buttons") as HTMLElement | null);
 
     if (!navHost) return;
 
@@ -542,8 +541,8 @@ export class SproutHeader {
 
   private installHeaderActionsButtonGroup(active: SproutHeaderPage) {
     const actionsHost =
-      (this.deps.containerEl.querySelector(":scope > .view-header .view-actions")) ??
-      (this.deps.containerEl.querySelector(".view-header .view-actions"));
+      (this.deps.containerEl.querySelector(":scope > .view-header .view-actions") as HTMLElement | null) ??
+      (this.deps.containerEl.querySelector(".view-header .view-actions") as HTMLElement | null);
 
     if (!actionsHost) return;
 
@@ -735,8 +734,7 @@ export function createViewHeader(opts: {
     },
     runSync: () => {
       opts.beforeSync?.();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = opts.plugin as any;
+      const p = opts.plugin as { _runSync?(): void; syncBank?(): void };
       if (typeof p._runSync === "function") void p._runSync();
       else if (typeof p.syncBank === "function") void p.syncBank();
       else new Notice("Sync not available (no sync method found).");

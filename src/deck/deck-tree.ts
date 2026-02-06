@@ -42,7 +42,7 @@ function inferFsrsState(st: CardState | undefined | null): State {
   if (st.fsrsState !== undefined) return st.fsrsState;
 
   // Legacy fallback
-  const stage: any = (st as any).stage ?? "new";
+  const stage = st.stage ?? "new";
   if (stage === "new") return State.New;
   if (stage === "review") return State.Review;
   if (stage === "relearning") return State.Relearning;

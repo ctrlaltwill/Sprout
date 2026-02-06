@@ -28,6 +28,86 @@ declare module "obsidian" {
       /** All registered commands, keyed by command ID. */
       commands: Record<string, Command>;
     };
+
+    /** Internal plugin manager. */
+    plugins: {
+      plugins: Record<string, unknown>;
+    };
+  }
+
+  interface Vault {
+    /** Low-level filesystem adapter (NodeJS or mobile). */
+    adapter: DataAdapter;
+    /** Write binary data to an existing file. */
+    modifyBinary?(file: TFile, data: ArrayBuffer): Promise<void>;
+    /** Create a new file with binary content. */
+    createBinary?(path: string, data: ArrayBuffer): Promise<TFile>;
+    /** Read a file as an ArrayBuffer. */
+    readBinary?(file: TFile): Promise<ArrayBuffer>;
+  }
+
+  interface DataAdapter {
+    /** Read a file as text (UTF-8). */
+    read(normalizedPath: string): Promise<string>;
+    /** Write text to a file. */
+    write(normalizedPath: string, data: string): Promise<void>;
+    /** Check if a path exists. */
+    exists(normalizedPath: string): Promise<boolean>;
+    /** Create a directory (recursive). */
+    mkdir(normalizedPath: string): Promise<void>;
+    /** Remove a file or empty directory. */
+    remove(normalizedPath: string): Promise<void>;
+    /** Rename/move a path. */
+    rename(normalizedPath: string, newPath: string): Promise<void>;
+    /** List files and folders in a directory. */
+    list(normalizedPath: string): Promise<{ files: string[]; folders: string[] }>;
+    /** Get file modification time (epoch ms). Returns 0 if not found. */
+    stat(normalizedPath: string): Promise<{ mtime: number; size: number } | null>;
+    /** Base path of the vault on disk. */
+    basePath?: string;
+    /** Read a file as an ArrayBuffer. */
+    readBinary?(normalizedPath: string): Promise<ArrayBuffer>;
+    /** Write binary data to a file. */
+    writeBinary?(normalizedPath: string, data: ArrayBuffer): Promise<void>;
+  }
+
+  interface MenuItem {
+    /** Add a submenu to this item. Returns the submenu Menu instance. */
+    setSubmenu(): Menu;
+    /** The DOM element for this menu item. */
+    dom: HTMLElement;
+  }
+
+  interface Menu {
+    /** The DOM element for this menu. */
+    dom: HTMLElement;
+  }
+
+  interface Workspace {
+    /** @deprecated Replaced by getActiveViewOfType / getMostRecentLeaf. Still used by some APIs. */
+    getActiveLeaf(): WorkspaceLeaf | null;
+
+    /** @deprecated Pre-1.0 alias; still present at runtime. */
+    activeLeaf: WorkspaceLeaf | null;
+
+    /** Internal event trigger for file-open, etc. */
+    trigger(name: string, ...data: unknown[]): void;
+
+    /** Internal: move a leaf to a different group/position. */
+    moveLeaf(leaf: WorkspaceLeaf, group: unknown, index?: number): void;
+
+    /** Internal: get the tab group that contains the leaf. */
+    getGroup(leaf: WorkspaceLeaf): { index: number; [key: string]: unknown } | null;
+  }
+
+  interface WorkspaceLeaf {
+    /** Internal: change the leaf's view state programmatically. */
+    setViewState(state: { type: string; active?: boolean; state?: unknown }): Promise<void>;
+  }
+
+  interface DataAdapter {
+    /** Move a file to the system trash (Electron only). */
+    trash?(normalizedPath: string): Promise<void>;
   }
 
   interface MarkdownView {
@@ -42,4 +122,49 @@ declare module "obsidian" {
       onLoadFile(file: TFile): void;
     };
   }
+
+  interface MarkdownPostProcessorContext {
+    /** Internal: the container element the post-processor runs within. */
+    containerEl?: HTMLElement;
+  }
+
+  interface View {
+    /** Internal: set the tab title (not in public typings for ItemView). */
+    setTitle?(title: string): void;
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Global window augmentations for Obsidian environment
+// ---------------------------------------------------------------------------
+interface BasecoatApi {
+  start?(): void;
+  [key: string]: unknown;
+}
+
+interface SproutGlobals {
+  /** Obsidian app instance, available globally at runtime. */
+  app?: import("obsidian").App;
+  /** Basecoat UI framework (optional). */
+  basecoat?: BasecoatApi;
+  /** MathJax renderer (optional). */
+  MathJax?: { typeset?(elements: Element[]): void; [key: string]: unknown };
+  /** Masonry grid helper injected by reading view. */
+  sproutApplyMasonryGrid?: () => void;
+  /** Sprout widget view reference. */
+  SproutWidgetView?: unknown;
+  /** Basecoat boot flag. */
+  __bc_bootcamp_started?: boolean;
+}
+
+declare global {
+  interface Window extends SproutGlobals {}
+
+  /** Sprout debug log handle, attached at init. */
+  // eslint-disable-next-line no-var
+  var __sproutLog: unknown;
+
+  /** structuredClone polyfill awareness — present in modern runtimes. */
+  function structuredClone<T>(value: T): T;
+}
+

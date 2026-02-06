@@ -127,7 +127,7 @@ export class CardCreatorModal extends Modal {
 
     for (const [placeholder, imageInfo] of this.pendingImages) {
       try {
-        const vaultPath = bestEffortAttachmentPath(this.plugin, sourceFile, placeholder, "card");
+        const vaultPath = await bestEffortAttachmentPath(this.plugin, sourceFile, placeholder, "card");
         await writeBinaryToVault(this.app, vaultPath, imageInfo.data);
 
         const actualPath = normaliseVaultPath(vaultPath);
@@ -594,8 +594,8 @@ export class CardCreatorModal extends Modal {
 
         if (forcePersist) {
           try {
-            const anyView: any = view as any;
-            if (typeof anyView?.save === "function") await anyView.save();
+            const saveable = view as unknown as { save?(): Promise<void> };
+            if (typeof saveable?.save === "function") await saveable.save();
           } catch {
             // ignore
           }
@@ -623,7 +623,7 @@ export class CardCreatorModal extends Modal {
         await nextFrame();
         await nextFrame();
 
-        (ImageOcclusionEditorModal as any).openForParent(this.plugin, parentId, {
+        ImageOcclusionEditorModal.openForParent(this.plugin, parentId, {
           onClose: () => {
             try {
               parkBehind(this.modalEl, false);

@@ -1,5 +1,5 @@
 /**
- * modals/io-image-ops.ts
+ * imageocclusion/io-image-ops.ts
  * ---------------------------------------------------------------------------
  * Pure image-manipulation functions for the Image Occlusion creator modal.
  *
@@ -12,8 +12,7 @@
  * ---------------------------------------------------------------------------
  */
 
-import type { ClipboardImage } from "./modal-utils";
-import type { IORect, IOTextBox } from "./io-types";
+import type { ClipboardImage, IORect, IOTextBox } from "./io-types";
 
 // ── Colour / background helpers ─────────────────────────────────────────────
 

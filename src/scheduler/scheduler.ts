@@ -254,7 +254,7 @@ function buildFsrsParams(cfg: SchedulerSettings): FsrsParams {
 function inferFsrsState(s: CardState): State {
   if (s.fsrsState !== undefined) return s.fsrsState;
 
-  if ((s as any).stage === "suspended") return State.New;
+  if (s.stage === "suspended") return State.New;
   if (s.stage === "new") return State.New;
   if (s.stage === "review") return State.Review;
 
@@ -330,7 +330,7 @@ function toFsrsCard(s: CardState, nowMs: number): FsrsCard {
 
 function fromFsrsCard(prev: CardState, card: FsrsCard): CardState {
   // Preserve suspended if something ever tries to pass through FSRS unexpectedly.
-  if ((prev as any).stage === "suspended") {
+  if (prev.stage === "suspended") {
     return { ...prev, due: prev.due };
   }
 
@@ -340,7 +340,7 @@ function fromFsrsCard(prev: CardState, card: FsrsCard): CardState {
       : card.state === State.Review
         ? "review"
         : card.state === State.Relearning
-          ? ("relearning" as any)
+          ? "relearning"
           : "learning";
 
   const schedDays = Number.isFinite(card.scheduled_days)
@@ -395,7 +395,7 @@ function gradeCardFsrs(
 ): GradeResult {
   const prevDue = state.due;
 
-  if ((state as any).stage === "suspended") {
+  if (state.stage === "suspended") {
     const fs = inferFsrsState(state);
     return {
       nextState: state,
@@ -497,14 +497,14 @@ export function suspendCard(prev: CardState, now: number): CardState {
   const priorDue = Number.isFinite(prev.due) ? prev.due : now;
   return {
     ...prev,
-    stage: "suspended" as any,
+    stage: "suspended",
     suspendedDue: priorDue,
     due: farFutureMs(now),
   };
 }
 
 export function unsuspendCard(prev: CardState, now: number): CardState {
-  if ((prev as any).stage !== "suspended") return prev;
+  if (prev.stage !== "suspended") return prev;
 
   const due = Number.isFinite(prev.suspendedDue) ? (prev.suspendedDue as number) : now;
 
@@ -513,14 +513,14 @@ export function unsuspendCard(prev: CardState, now: number): CardState {
     fs === State.Review
       ? "review"
       : fs === State.Relearning
-        ? ("relearning" as any)
+        ? "relearning"
         : fs === State.Learning
           ? "learning"
           : "new";
 
   return {
     ...prev,
-    stage: stage as any,
+    stage,
     due,
     suspendedDue: undefined,
   };

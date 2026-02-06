@@ -3,6 +3,7 @@ import { type App, Modal, Notice, Platform, TFile, setIcon } from "obsidian";
 import interact from "interactjs";
 
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../core/store";
 import type { IOParentDef, IORect, IOMaskMode } from "./image-occlusion-types";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints, type RectPx } from "./image-geometry";
 import { applyStageTransform, clientToStage, zoomAt, type StageTransform } from "./image-transform";
@@ -132,7 +133,7 @@ export class ImageOcclusionEditorModal extends Modal {
       return;
     }
 
-    const parent = (this.plugin.store?.data?.cards || {})[this.parentId] as any;
+    const parent = (this.plugin.store?.data?.cards || {})[this.parentId];
     if (!parent || String(parent.type) !== "io") {
       new Notice("Boot Camp: select an IO parent card to edit.");
       this.close();
@@ -142,7 +143,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.sourceNotePath = String(parent.sourceNotePath || "");
     this.imageRef = String(parent.imageRef || parent.ioSrc || "");
 
-    const ioMap = (this.plugin.store?.data as any)?.io || {};
+    const ioMap = this.plugin.store?.data?.io || {};
     const existing = ioMap[this.parentId] as IOParentDef | undefined;
 
     const imageRefFromIo = existing?.imageRef ? String(existing.imageRef) : "";
@@ -172,7 +173,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.initialMaskMode = maskMode;
 
     try {
-      (this as any).titleEl?.setText?.("Image Occlusion");
+      this.titleEl?.setText?.("Image Occlusion");
     } catch {
       // ignore
     }
@@ -987,7 +988,7 @@ export class ImageOcclusionEditorModal extends Modal {
   private async saveAndClose(forceMaskMode?: IOMaskMode) {
     const now = Date.now();
 
-    const parent = (this.plugin.store?.data?.cards || {})[this.parentId] as any;
+    const parent = (this.plugin.store?.data?.cards || {})[this.parentId];
     if (!parent) {
       new Notice("Boot Camp: IO parent missing.");
       return;
@@ -1008,8 +1009,8 @@ export class ImageOcclusionEditorModal extends Modal {
 
     if (this.ioDef) this.ioDef.maskMode = maskMode;
 
-    const ioMap: any = (this.plugin.store.data as any).io || {};
-    (this.plugin.store.data as any).io = ioMap;
+    const ioMap = this.plugin.store.data.io || {};
+    this.plugin.store.data.io = ioMap;
 
     ioMap[this.parentId] = {
       imageRef,
@@ -1037,8 +1038,8 @@ export class ImageOcclusionEditorModal extends Modal {
     this.close();
   }
 
-  private syncChildrenFromRects(parent: any, def: IOParentDef, now: number) {
-    const cards = (this.plugin.store.data.cards || {}) as any;
+  private syncChildrenFromRects(parent: CardRecord, def: IOParentDef, now: number) {
+    const cards = this.plugin.store.data.cards || {};
 
     const groupToRectIds = new Map<string, string[]>();
     for (const r of def.rects || []) {

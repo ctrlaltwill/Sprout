@@ -59,7 +59,7 @@ export function renderImageOcclusionReviewInto(args: {
 
   // Load IO definition from store
   let occlusions: any[] = [];
-  const ioMap = (plugin.store.data as any).io || {};
+  const ioMap = plugin.store.data.io || {};
   const parentId = card.type === "io-child" ? String(card.parentId || "") : String(card.id || "");
   const ioDef = parentId ? ioMap[parentId] : null;
 

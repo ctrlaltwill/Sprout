@@ -276,7 +276,7 @@ export function StagePieCard(props: {
     for (const card of props.cards ?? []) {
       const t = String(card?.type ?? "");
       if (!t || t === "io") continue;
-      if (t === "cloze" && Array.isArray((card as any).clozeChildren) && (card as any).clozeChildren.length) continue;
+      if (t === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length) continue;
       counts.set(t, (counts.get(t) ?? 0) + 1);
     }
     if (counts.has("all")) {
@@ -354,7 +354,7 @@ export function StagePieCard(props: {
   const filteredCards = React.useMemo(() => {
     return (props.cards ?? []).filter((card) => {
       if (!card) return false;
-      if (card.type === "cloze" && Array.isArray((card as any).clozeChildren) && (card as any).clozeChildren.length)
+      if (card.type === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length)
         return false;
       if (selectedType && selectedType !== "all" && card.type !== selectedType) return false;
       if (selectedGroups.length) {

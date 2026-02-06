@@ -1,5 +1,6 @@
 // src/indexes/groupIndex.ts
 import type { CardRecord, CardState } from "../core/store";
+import type SproutPlugin from "../main";
 
 /** Normalise a group path like " /a//b/ c / " -> "a/b/c" */
 export function normaliseGroupPath(raw: string): string | null {
@@ -62,10 +63,10 @@ export class GroupIndex {
     this.groupToIds.clear();
 
     for (const c of cards) {
-      const id = String((c as any)?.id ?? "");
+      const id = String(c?.id ?? "");
       if (!id) continue;
 
-      const groups = Array.isArray((c as any)?.groups) ? ((c as any).groups as string[]) : [];
+      const groups = Array.isArray(c?.groups) ? c.groups : [];
       for (const gRaw of groups) {
         const g = normaliseGroupPath(gRaw);
         if (!g) continue;
@@ -104,7 +105,7 @@ export class GroupIndex {
 
     let due = 0;
     for (const id of ids) {
-      const st: any = (states as any)[id];
+      const st = states[id];
       if (isAvailableNowState(st, now)) due += 1;
     }
 
@@ -124,22 +125,25 @@ export class GroupIndex {
   }
 }
 
+/** Module-level cache keyed by plugin instance — avoids polluting the plugin type. */
+const _cache = new WeakMap<SproutPlugin, { rev: number; index: GroupIndex }>();
+
 /**
  * Plugin-scoped cached index.
  * Rebuilds when store revision changes (store.ts implements getRevision()).
  */
-export function getGroupIndex(plugin: any): GroupIndex {
-  const store = plugin?.store;
-  const rev = typeof store?.getRevision === "function" ? Number(store.getRevision()) : 0;
+export function getGroupIndex(plugin: SproutPlugin): GroupIndex {
+  const store = plugin.store;
+  const rev = store.getRevision();
 
-  const cache = plugin?._bcGroupIndexCache as { rev: number; index: GroupIndex } | undefined;
-  if (cache && cache.index && cache.rev === rev) return cache.index;
+  const cached = _cache.get(plugin);
+  if (cached && cached.index && cached.rev === rev) return cached.index;
 
-  const index = new GroupIndex().build(store?.getAllCards?.() ? store.getAllCards() : []);
-  plugin._bcGroupIndexCache = { rev, index };
+  const index = new GroupIndex().build(store.getAllCards());
+  _cache.set(plugin, { rev, index });
   return index;
 }
 
-export function invalidateGroupIndex(plugin: any) {
-  if (plugin && plugin._bcGroupIndexCache) delete plugin._bcGroupIndexCache;
+export function invalidateGroupIndex(plugin: SproutPlugin) {
+  _cache.delete(plugin);
 }

@@ -22,6 +22,7 @@ import { TFile } from "obsidian";
 import { parseCardsFromText, type ParsedCard } from "../parser/parser";
 import { generateUniqueId } from "../core/ids";
 import type SproutPlugin from "../main";
+import type { CardRecord } from "../types/card";
 import { loadSchedulingFromDataJson } from "../core/store";
 import { log } from "../core/logger";
 
@@ -146,7 +147,7 @@ function inferPrefixAt(lines: string[], lineIndex: number): string {
 
 /** Checks whether a scheduling state already exists for `id`. */
 function hasState(plugin: SproutPlugin, id: string): boolean {
-  const states: any = (plugin.store.data as any)?.states;
+  const states = plugin.store.data.states;
   return !!(states && Object.prototype.hasOwnProperty.call(states, id));
 }
 
@@ -178,7 +179,7 @@ function upsertStateIfPresent(plugin: SproutPlugin, snapshot: StateMap | null | 
  * Used when the in-memory store has zero states but cards exist in notes.
  */
 async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMap | null> {
-  const inMem = (plugin.store.data as any)?.states;
+  const inMem = plugin.store.data.states;
   if (countObjectKeys(inMem) > 0) return inMem as StateMap;
 
   // Try store helper first (may already do the right thing)
@@ -190,8 +191,8 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
   }
 
   // Try direct disk read for current plugin folder
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
-  const pluginId: string | null = String((plugin as any)?.manifest?.id ?? "").trim() || null;
+  const adapter = plugin.app?.vault?.adapter;
+  const pluginId: string | null = String(plugin.manifest?.id ?? "").trim() || null;
 
   const candidateFiles = ["data.json", "data.json.bak", "data.json.prev", "data.json.old", "data.json.backup"];
 
@@ -247,8 +248,8 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
  * from Settings → Backups.
  */
 async function backupCurrentPluginDataJson(plugin: SproutPlugin): Promise<void> {
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
-  const pluginId: string | null = String((plugin as any)?.manifest?.id ?? "").trim() || null;
+  const adapter = plugin.app?.vault?.adapter;
+  const pluginId: string | null = String(plugin.manifest?.id ?? "").trim() || null;
   if (!adapter || !pluginId) return;
 
   const dataPath = joinPath(".obsidian/plugins", pluginId, "data.json");
@@ -275,8 +276,8 @@ async function backupCurrentPluginDataJson(plugin: SproutPlugin): Promise<void> 
  * store has zero scheduling, but parsed cards exist in markdown.
  */
 function isLikelyRecoveryScenario(plugin: SproutPlugin, parsedCardCount: number): boolean {
-  const stateCount = countObjectKeys((plugin.store.data as any)?.states);
-  const cardCount = countObjectKeys((plugin.store.data as any)?.cards);
+  const stateCount = countObjectKeys(plugin.store.data.states);
+  const cardCount = countObjectKeys(plugin.store.data.cards);
   if (stateCount > 0) return false;
   return cardCount === 0 && parsedCardCount > 0;
 }
@@ -337,18 +338,18 @@ function cardSignature(rec: any): string {
 /** Removes cards with legacy types ("lq", "fq") from cards + quarantine. */
 function purgeDeprecatedTypes(plugin: SproutPlugin) {
   const cards = plugin.store.data.cards || {};
-  const states = (plugin.store.data as any).states || {};
+  const states = plugin.store.data.states || {};
   for (const [id, rec] of Object.entries(cards)) {
-    const t = String((rec as any)?.type ?? "").toLowerCase();
+    const t = String(rec?.type ?? "").toLowerCase();
     if (t === "lq" || t === "fq") {
-      delete (cards as any)[id];
+      delete cards[id];
       delete (states)[id];
     }
   }
   const quarantine = plugin.store.data.quarantine || {};
   for (const [id, rec] of Object.entries(quarantine)) {
-    const t = String((rec as any)?.type ?? "").toLowerCase();
-    if (t === "lq" || t === "fq") delete (quarantine as any)[id];
+    const t = String((rec as Record<string, unknown>)?.type ?? "").toLowerCase();
+    if (t === "lq" || t === "fq") delete quarantine[id];
   }
 }
 
@@ -359,21 +360,21 @@ function quarantineIoCardsWithMissingImages(plugin: SproutPlugin): number {
   let count = 0;
 
   for (const [id, rec] of Object.entries(cards)) {
-    if (!rec || String((rec as any).type) !== "io") continue;
+    if (!rec || String(rec.type) !== "io") continue;
 
-    const imageRef = normalizeIoImageRef((rec as any).imageRef || (rec as any).ioSrc);
+    const imageRef = normalizeIoImageRef(rec.imageRef || rec.ioSrc);
     if (!imageRef) continue;
 
     const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
     if (!imageFile || !(imageFile instanceof TFile)) {
       plugin.store.data.quarantine[id] = {
         id,
-        notePath: (rec as any).sourceNotePath || "",
-        sourceStartLine: (rec as any).sourceStartLine || 0,
+        notePath: rec.sourceNotePath || "",
+        sourceStartLine: rec.sourceStartLine || 0,
         reason: `Image file not found: ${imageRef}`,
         lastSeenAt: now,
       };
-      delete (plugin.store.data.cards as any)[id];
+      delete plugin.store.data.cards[id];
       count += 1;
     }
   }
@@ -488,7 +489,7 @@ async function deleteIoImage(plugin: SproutPlugin, imageRef: string): Promise<vo
     const vault = plugin.app.vault;
     const file = vault.getAbstractFileByPath(normalized);
     if (file && file instanceof TFile) await vault.delete(file);
-  } catch {
+  } catch (e) {
     log.warn(`Failed to delete IO image ${normalized}:`, e);
   }
 }
@@ -498,25 +499,25 @@ function deleteIoChildren(plugin: SproutPlugin, parentId: string): number {
   let deleted = 0;
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (String(rec.type) !== "io-child") continue;
     if (String(rec.parentId || "") !== String(parentId || "")) continue;
 
-    delete (plugin.store.data.cards as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+    delete plugin.store.data.cards[id];
+    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
     deleted += 1;
   }
 
   // Defensive: clean io-child entries from quarantine too.
   for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q: any = (plugin.store.data.quarantine as any)[id];
+    const q = plugin.store.data.quarantine[id];
     if (!q) continue;
-    if (String(q.type || "") !== "io-child") continue;
-    if (String(q.parentId || "") !== String(parentId || "")) continue;
+    if (String((q as Record<string, unknown>).type || "") !== "io-child") continue;
+    if (String((q as Record<string, unknown>).parentId || "") !== String(parentId || "")) continue;
 
-    delete (plugin.store.data.quarantine as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+    delete plugin.store.data.quarantine[id];
+    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
     deleted += 1;
   }
 
@@ -528,21 +529,21 @@ function deleteOrphanIoChildren(plugin: SproutPlugin): number {
   const liveParents = new Set<string>();
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (String(rec.type) === "io") liveParents.add(String(rec.id ?? id));
   }
 
   let removed = 0;
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (String(rec.type) !== "io-child") continue;
 
     const pid = String(rec.parentId || "");
     if (!pid || !liveParents.has(pid)) {
-      delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+      delete plugin.store.data.cards[id];
+      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
       removed += 1;
     }
   }
@@ -577,24 +578,24 @@ function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number {
   let deleted = 0;
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (String(rec.type) !== "cloze-child") continue;
     if (String(rec.parentId || "") !== String(parentId || "")) continue;
 
-    delete (plugin.store.data.cards as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+    delete plugin.store.data.cards[id];
+    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
     deleted += 1;
   }
 
   for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q: any = (plugin.store.data.quarantine as any)[id];
+    const q = plugin.store.data.quarantine[id];
     if (!q) continue;
-    if (String(q.type || "") !== "cloze-child") continue;
-    if (String(q.parentId || "") !== String(parentId || "")) continue;
+    if (String((q as Record<string, unknown>).type || "") !== "cloze-child") continue;
+    if (String((q as Record<string, unknown>).parentId || "") !== String(parentId || "")) continue;
 
-    delete (plugin.store.data.quarantine as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+    delete plugin.store.data.quarantine[id];
+    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
     deleted += 1;
   }
 
@@ -606,21 +607,21 @@ function deleteOrphanClozeChildren(plugin: SproutPlugin): number {
   const liveParents = new Set<string>();
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (String(rec.type) === "cloze") liveParents.add(String(rec.id ?? id));
   }
 
   let removed = 0;
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (String(rec.type) !== "cloze-child") continue;
 
     const pid = String(rec.parentId || "");
     if (!pid || !liveParents.has(pid)) {
-      delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+      delete plugin.store.data.cards[id];
+      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
       removed += 1;
     }
   }
@@ -657,7 +658,7 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
 
   const ioCardIds = new Set<string>();
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const card: any = (plugin.store.data.cards as any)[id];
+    const card = plugin.store.data.cards[id];
     if (card && String(card.type) === "io") ioCardIds.add(String(id));
   }
 
@@ -675,7 +676,7 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
     try {
       await vault.delete(file);
       deleted += 1;
-    } catch {
+    } catch (e) {
       log.warn(`Failed to delete orphaned IO image ${file.path}:`, e);
     }
   }
@@ -688,20 +689,19 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
  * Creates new children for added deletions, preserves existing ones,
  * and removes children for deletions that no longer exist.
  */
-function syncClozeChildren(plugin: SproutPlugin, parent: any, now: number, schedulingSnapshot?: StateMap | null) {
+function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
   const parentId = String(parent?.id ?? "");
   if (!parentId) return;
 
   const clozeIndices = extractClozeIndices(parent?.clozeText ?? "");
   const keepChildIds = new Set<string>();
 
-  const existingChildren: any[] = [];
+  const existingChildren: CardRecord[] = [];
   for (const c of Object.values(plugin.store.data.cards || {})) {
-    const anyC: any = c;
-    if (!anyC) continue;
-    if (String(anyC.type) !== "cloze-child") continue;
-    if (String(anyC.parentId || "") !== parentId) continue;
-    existingChildren.push(anyC);
+    if (!c) continue;
+    if (c.type !== "cloze-child") continue;
+    if (String(c.parentId || "") !== parentId) continue;
+    existingChildren.push(c);
   }
 
   const titleBase = parent?.title ? String(parent.title) : "Cloze";
@@ -710,14 +710,14 @@ function syncClozeChildren(plugin: SproutPlugin, parent: any, now: number, sched
     const childId = stableClozeChildId(parentId, idx);
     keepChildIds.add(childId);
 
-    const prev = (plugin.store.data.cards as any)?.[childId];
+    const prev = plugin.store.data.cards?.[childId];
     const createdAt = (() => {
       if (prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0) return Number(prev.createdAt);
       if (Number.isFinite(parent?.createdAt) && Number(parent.createdAt) > 0) return Number(parent.createdAt);
       return now;
     })();
 
-    const rec: any = {
+    const rec: CardRecord = {
       id: childId,
       type: "cloze-child",
       title: `${titleBase} • c${idx}`,
@@ -738,10 +738,10 @@ function syncClozeChildren(plugin: SproutPlugin, parent: any, now: number, sched
 
     if (prev && typeof prev === "object") {
       const merged = { ...prev, ...rec };
-      (plugin.store.data.cards as any)[childId] = merged;
+      plugin.store.data.cards[childId] = merged;
       plugin.store.upsertCard(merged);
     } else {
-      (plugin.store.data.cards as any)[childId] = rec;
+      plugin.store.data.cards[childId] = rec;
       plugin.store.upsertCard(rec);
     }
 
@@ -756,8 +756,8 @@ function syncClozeChildren(plugin: SproutPlugin, parent: any, now: number, sched
     const id = String(ch.id || "");
     if (!id) continue;
     if (keepChildIds.has(id)) continue;
-    delete (plugin.store.data.cards as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+    delete plugin.store.data.cards[id];
+    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
   }
 }
 
@@ -781,11 +781,11 @@ function mcqLegacyFromParsed(c: ParsedCard): { options: string[]; correctIndex: 
   }
   // fallback legacy
   const opts = Array.isArray(c.options) ? c.options : [];
-  const options = opts.map((o) => String((o as any)?.text ?? "")).map((s) => s.trim());
+  const options = opts.map((o) => String(o?.text ?? "")).map((s) => s.trim());
   let correctIndex: number | null =
-    Number.isFinite((c.correctIndex as any)) && (c.correctIndex as any) !== null ? (c.correctIndex as any) : null;
+    Number.isFinite(c.correctIndex) && c.correctIndex !== null ? c.correctIndex : null;
   if (correctIndex === null) {
-    const idx = opts.findIndex((o: any) => !!o?.isCorrect);
+    const idx = opts.findIndex((o) => !!o?.isCorrect);
     correctIndex = idx >= 0 ? idx : null;
   }
   return { options, correctIndex };
@@ -819,24 +819,21 @@ function normalizeIoImageRef(raw: string | null | undefined): string | null {
 }
 
 /** Extracts IO-specific fields from a parsed card. */
-function ioFieldsFromParsed(c: any): { imageRef: string | null; occlusions: any[] | null; maskMode: any } {
+function ioFieldsFromParsed(c: ParsedCard): { imageRef: string | null; occlusions: unknown[] | null; maskMode: "solo" | "all" | null } {
+  const legacy: any = c;
   const rawImageRef =
-    typeof c?.imageRef === "string"
-      ? c.imageRef
+    typeof legacy?.imageRef === "string"
+      ? legacy.imageRef
       : typeof c?.ioSrc === "string"
         ? c.ioSrc
-        : typeof c?.src === "string"
-          ? c.src
-          : typeof c?.image === "string"
-            ? c.image
-            : null;
+        : null;
 
   const imageRef = normalizeIoImageRef(rawImageRef);
 
-  const occlusionsRaw = c?.occlusions ?? c?.rects ?? c?.masks ?? c?.ioOcclusions ?? c?.ioRects ?? null;
+  const occlusionsRaw = c?.occlusions ?? null;
   const occlusions = Array.isArray(occlusionsRaw) ? occlusionsRaw : null;
 
-  const maskMode = c?.maskMode ?? c?.mode ?? c?.ioMode ?? null;
+  const maskMode = (c?.maskMode ?? legacy?.mode ?? legacy?.ioMode ?? null) as "solo" | "all" | null;
 
   return { imageRef, occlusions, maskMode };
 }
@@ -845,9 +842,9 @@ function ioFieldsFromParsed(c: any): { imageRef: string | null; occlusions: any[
 const IO_IMAGE_ID_RE = /sprout-io-(\d{9})/i;
 
 /** Attempts to infer the card ID from an IO card's image reference. */
-function inferIoIdFromCard(c: any): string | null {
-  if (!c || String(c.type) !== "io") return null;
-  const raw = String(c?.ioSrc ?? c?.imageRef ?? c?.src ?? "");
+function inferIoIdFromCard(c: ParsedCard): string | null {
+  if (!c || c.type !== "io") return null;
+  const raw = String(c?.ioSrc ?? "");
   if (!raw) return null;
   const match = IO_IMAGE_ID_RE.exec(raw);
   return match?.[1] ?? null;
@@ -890,7 +887,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
   // Mark existing cards/quarantine from this note as unseen for this run
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (rec.sourceNotePath !== file.path) continue;
     if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
@@ -922,8 +919,8 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     if (!id) {
       const inferred = inferIoIdFromCard(c);
       if (inferred) {
-        const existing = (plugin.store.data.cards as any)?.[inferred] ?? (plugin.store.data.quarantine as any)?.[inferred];
-        const sameNote = existing && String(existing.sourceNotePath || existing.notePath || "") === file.path;
+        const existing = plugin.store.data.cards?.[inferred] ?? plugin.store.data.quarantine?.[inferred];
+        const sameNote = existing && String((existing as { sourceNotePath?: string }).sourceNotePath || (existing as { notePath?: string }).notePath || "") === file.path;
         id = !usedIds.has(inferred) || sameNote ? inferred : generateUniqueId(usedIds);
       } else {
         id = generateUniqueId(usedIds);
@@ -974,15 +971,15 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     const id = String(c.id || c.assignedId || "");
     if (!id) continue;
 
-    if ((c as any).errors && (c as any).errors.length) {
+    if (c.errors && c.errors.length) {
       plugin.store.data.quarantine[id] = {
         id,
         notePath: c.sourceNotePath,
         sourceStartLine: c.sourceStartLine,
-        reason: (c as any).errors.join("; "),
+        reason: c.errors.join("; "),
         lastSeenAt: now,
       };
-      delete (plugin.store.data.cards as any)[id];
+      delete plugin.store.data.cards[id];
       ensureStateIfMissing(plugin, id, now, 2.5);
 
       quarantinedCount += 1;
@@ -992,12 +989,12 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
     if (plugin.store.data.quarantine && plugin.store.data.quarantine[id]) delete plugin.store.data.quarantine[id];
 
-    const prev = (plugin.store.data.cards as any)[id];
+    const prev = plugin.store.data.cards[id];
     const createdAt = prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0 ? Number(prev.createdAt) : now;
 
-    const clozeChildren = c.type === "cloze" ? extractClozeIndices((c as any).clozeText ?? "") : null;
+    const clozeChildren = c.type === "cloze" ? extractClozeIndices(c.clozeText ?? "") : null;
 
-    const record: any = {
+    const record: CardRecord = {
       id,
       type: c.type,
 
@@ -1019,13 +1016,13 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
       ...(c.type === "io"
         ? (() => {
-            const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c as any);
+            const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
             return {
               ioSrc: imageRef ?? null,
               imageRef: imageRef ?? null,
               occlusions: occlusions ?? null,
               maskMode: maskMode ?? null,
-              prompt: (c as any).prompt ?? null,
+              prompt: c.prompt ?? null,
             };
           })()
         : {}),
@@ -1067,7 +1064,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
             reason: `Image file not found: ${imageRef}`,
             lastSeenAt: now,
           };
-          delete (plugin.store.data.cards as any)[id];
+          delete plugin.store.data.cards[id];
 
           quarantinedCount += 1;
           quarantinedIds.push(id);
@@ -1084,7 +1081,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
   const removedClozeParents: string[] = [];
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec: any = (plugin.store.data.cards as any)[id];
+    const rec = plugin.store.data.cards[id];
     if (!rec) continue;
     if (rec.sourceNotePath !== file.path) continue;
     if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
@@ -1093,8 +1090,8 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
       if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null });
       if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
 
-      delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+      delete plugin.store.data.cards[id];
+      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
       removed += 1;
     }
   }
@@ -1102,7 +1099,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
   for (const ioData of removedIoParentData) {
     removed += deleteIoChildren(plugin, ioData.id);
     if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
-    const ioMap: any = (plugin.store.data as any).io || {};
+    const ioMap = plugin.store.data.io || {};
     if (ioMap[ioData.id]) delete ioMap[ioData.id];
   }
 
@@ -1112,7 +1109,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     const q = plugin.store.data.quarantine[id];
     if (q && q.notePath === file.path && q.lastSeenAt === 0) {
       delete plugin.store.data.quarantine[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
       removed += 1;
     }
   }
@@ -1157,7 +1154,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
   const schedulingSnapshot = await loadBestSchedulingSnapshot(plugin);
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const c: any = (plugin.store.data.cards as any)[id];
+    const c = plugin.store.data.cards[id];
     if (!c) continue;
     if (String(c.type) === "io-child" || String(c.type) === "cloze-child") continue;
     c.lastSeenAt = 0;
@@ -1207,8 +1204,8 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
       if (!id) {
         const inferred = inferIoIdFromCard(c);
         if (inferred) {
-          const existing = (plugin.store.data.cards as any)?.[inferred] ?? (plugin.store.data.quarantine as any)?.[inferred];
-          const sameNote = existing && String(existing.sourceNotePath || existing.notePath || "") === file.path;
+          const existing = plugin.store.data.cards?.[inferred] ?? plugin.store.data.quarantine?.[inferred];
+          const sameNote = existing && String((existing as { sourceNotePath?: string }).sourceNotePath || (existing as { notePath?: string }).notePath || "") === file.path;
           id = !usedIds.has(inferred) || sameNote ? inferred : generateUniqueId(usedIds);
         } else {
           id = generateUniqueId(usedIds);
@@ -1249,15 +1246,15 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     const id = String(c.id || c.assignedId || "");
     if (!id) continue;
 
-    if ((c as any).errors && (c as any).errors.length) {
+    if (c.errors && c.errors.length) {
       plugin.store.data.quarantine[id] = {
         id,
         notePath: c.sourceNotePath,
         sourceStartLine: c.sourceStartLine,
-        reason: (c as any).errors.join("; "),
+        reason: c.errors.join("; "),
         lastSeenAt: now,
       };
-      delete (plugin.store.data.cards as any)[id];
+      delete plugin.store.data.cards[id];
 
       ensureStateIfMissing(plugin, id, now, 2.5);
 
@@ -1268,10 +1265,10 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
 
     if (plugin.store.data.quarantine && plugin.store.data.quarantine[id]) delete plugin.store.data.quarantine[id];
 
-    const prev = (plugin.store.data.cards as any)[id];
+    const prev = plugin.store.data.cards[id];
     const createdAt = prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0 ? Number(prev.createdAt) : now;
 
-    const record: any = {
+    const record: CardRecord = {
       id,
       type: c.type,
 
@@ -1292,13 +1289,13 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
 
       ...(c.type === "io"
         ? (() => {
-            const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c as any);
+            const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
             return {
               ioSrc: imageRef ?? null,
               imageRef: imageRef ?? null,
               occlusions: occlusions ?? null,
               maskMode: maskMode ?? null,
-              prompt: (c as any).prompt ?? null,
+              prompt: c.prompt ?? null,
             };
           })()
         : {}),
@@ -1339,7 +1336,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
             reason: `Image file not found: ${imageRef}`,
             lastSeenAt: now,
           };
-          delete (plugin.store.data.cards as any)[id];
+          delete plugin.store.data.cards[id];
 
           quarantinedCount += 1;
           quarantinedIds.push(id);
@@ -1354,7 +1351,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
   const removedClozeParents: string[] = [];
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const card: any = (plugin.store.data.cards as any)[id];
+    const card = plugin.store.data.cards[id];
     if (!card) continue;
 
     if (String(card.type) === "io-child" || String(card.type) === "cloze-child") continue;
@@ -1363,8 +1360,8 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
       if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null });
       if (String(card.type) === "cloze") removedClozeParents.push(String(id));
 
-      delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+      delete plugin.store.data.cards[id];
+      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
       removed += 1;
     }
   }
@@ -1372,7 +1369,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
   for (const ioData of removedIoParentData) {
     removed += deleteIoChildren(plugin, ioData.id);
     if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
-    const ioMap: any = (plugin.store.data as any).io || {};
+    const ioMap = plugin.store.data.io || {};
     if (ioMap[ioData.id]) delete ioMap[ioData.id];
   }
 
@@ -1382,7 +1379,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     const q = plugin.store.data.quarantine[id];
     if (q && q.lastSeenAt !== now) {
       delete plugin.store.data.quarantine[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
+      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
       removed += 1;
     }
   }

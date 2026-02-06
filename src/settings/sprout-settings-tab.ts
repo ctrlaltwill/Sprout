@@ -22,6 +22,7 @@ import {
   MarkdownView,
 } from "obsidian";
 import type SproutPlugin from "../main";
+import type { CardState } from "../types/scheduler";
 import { log } from "../core/logger";
 import { VIEW_TYPE_WIDGET } from "../core/constants";
 import {
@@ -107,9 +108,8 @@ export class SproutSettingsTab extends PluginSettingTab {
 
   /** Calls the plugin's global view-refresh function if available. */
   private refreshReviewerViewsIfPossible() {
-    const anyPlugin: any = this.plugin as any;
     try {
-      if (typeof anyPlugin?._refreshOpenViews === "function") anyPlugin._refreshOpenViews();
+      this.plugin.refreshAllViews();
     } catch {
       log.warn("failed to refresh open views", e);
     }
@@ -133,7 +133,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     quarantine: number;
     io: number;
   } {
-    const data: any = (this.plugin as any)?.store?.data ?? {};
+    const data = this.plugin.store.data;
     const cards = data?.cards && typeof data.cards === "object" ? Object.keys(data.cards).length : 0;
     const states = data?.states && typeof data.states === "object" ? Object.keys(data.states).length : 0;
     const sched = this.computeSchedulingStats(data?.states ?? {}, Date.now());
@@ -150,17 +150,17 @@ export class SproutSettingsTab extends PluginSettingTab {
    *  - `review`:   cards in "review" stage
    *  - `mature`:   review cards with stability ≥ 30 days
    */
-  private computeSchedulingStats(states: any, now: number) {
+  private computeSchedulingStats(states: Record<string, CardState>, now: number) {
     const out = { due: 0, learning: 0, review: 0, mature: 0 };
     if (!states || typeof states !== "object") return out;
     for (const st of Object.values(states)) {
       if (!st || typeof st !== "object") continue;
-      const stage = String((st as any).stage ?? "");
+      const stage = String(st.stage ?? "");
       if (stage === "learning" || stage === "relearning") out.learning += 1;
       if (stage === "review") out.review += 1;
-      const stability = Number((st as any).stabilityDays ?? 0);
+      const stability = Number(st.stabilityDays ?? 0);
       if (stage === "review" && Number.isFinite(stability) && stability >= 30) out.mature += 1;
-      const due = Number((st as any).due ?? 0);
+      const due = Number(st.due ?? 0);
       if (stage !== "suspended" && Number.isFinite(due) && due > 0 && due <= now) out.due += 1;
     }
     return out;
@@ -361,7 +361,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             new ConfirmRestoreBackupModal(this.app, this.plugin, s, current, () => {
               this.refreshReviewerViewsIfPossible();
               this.refreshAllWidgetViews();
-              (this.plugin as any)._refreshOpenViews?.();
+              this.plugin.refreshAllViews();
               this.display();
             }).open();
           };
@@ -524,7 +524,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
   /** Clears all card data from the plugin store (cards, states, review log, quarantine). */
   private async clearSproutStore(): Promise<void> {
-    const data: any = (this.plugin as any)?.store?.data;
+    const data = this.plugin.store.data;
     if (!data || typeof data !== "object") return;
 
     data.cards = {};
@@ -533,11 +533,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     data.quarantine = {};
     data.version = Math.max(Number(data.version) || 0, 5);
 
-    if (typeof (this.plugin as any)?.store?.persist === "function") {
-      await (this.plugin as any).store.persist();
-    } else if (typeof (this.plugin as any)?.saveAll === "function") {
-      await (this.plugin as any).saveAll();
-    }
+    await this.plugin.store.persist();
   }
 
   // ── Settings reset ────────────────────────
@@ -547,42 +543,7 @@ export class SproutSettingsTab extends PluginSettingTab {
    * well-known method/property names on the plugin instance.
    */
   private async resetSettingsToDefaults(): Promise<void> {
-    const anyPlugin: any = this.plugin as any;
-
-    const fns = [
-      "resetSettingsToDefaults",
-      "resetToDefaultSettings",
-      "resetDefaultSettings",
-      "loadDefaultSettings",
-    ] as const;
-
-    for (const name of fns) {
-      const fn = anyPlugin?.[name];
-      if (typeof fn === "function") {
-        await fn.call(this.plugin);
-        return;
-      }
-    }
-
-    const candidates = [
-      anyPlugin?.DEFAULT_SETTINGS,
-      anyPlugin?.DEFAULT_SPROUT_SETTINGS,
-      anyPlugin?.defaultSettings,
-      anyPlugin?.defaults,
-    ];
-
-    const defaults = candidates.find((x) => x && typeof x === "object");
-    if (!defaults) {
-      throw new Error("No reset function found and no DEFAULT_SETTINGS-like object available on plugin.");
-    }
-
-    (this.plugin as any).settings = clonePlain(defaults);
-
-    if (typeof anyPlugin?.saveAll === "function") {
-      await anyPlugin.saveAll();
-    } else if (typeof anyPlugin?.saveSettings === "function") {
-      await anyPlugin.saveSettings();
-    }
+    await this.plugin.resetSettingsToDefaults();
   }
 
   // ── Quarantine list ───────────────────────
@@ -592,7 +553,7 @@ export class SproutSettingsTab extends PluginSettingTab {
    * of the settings panel, each with an "Open note" button.
    */
   private renderQuarantineList(containerEl: HTMLElement) {
-    const q = (this.plugin as any)?.store?.data?.quarantine || {};
+    const q = this.plugin.store.data.quarantine || {};
     const ids = Object.keys(q);
 
     if (!ids.length) {
@@ -660,12 +621,11 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setDesc("Your name for greetings and personalization.")
       .addText((t) => {
         t.setPlaceholder("Your name");
-        t.setValue(String((this.plugin.settings as any)?.home?.userName ?? ""));
+        t.setValue(String(this.plugin.settings.home.userName ?? ""));
         t.onChange(async (v) => {
-          (this.plugin.settings as any).home ??= {};
-          (this.plugin.settings as any).home.userName = v.trim();
+          this.plugin.settings.home.userName = v.trim();
           await this.plugin.saveAll();
-          (this.plugin as any)._refreshOpenViews?.();
+          this.plugin.refreshAllViews();
         });
       });
 
@@ -675,14 +635,12 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setDesc("Show information about Sprout development and features on the homepage.")
       .addToggle((t) => {
         // ON by default
-        const showSproutInfo = (this.plugin.settings as any)?.home?.hideSproutInfo !== true;
+        const showSproutInfo = this.plugin.settings.home.hideSproutInfo !== true;
         t.setValue(showSproutInfo);
         t.onChange(async (v) => {
-          (this.plugin.settings as any).home ??= {};
-          // Store the inverse for compatibility
-          (this.plugin.settings as any).home.hideSproutInfo = !v;
+          this.plugin.settings.home.hideSproutInfo = !v;
           await this.plugin.saveAll();
-          (this.plugin as any)._refreshOpenViews?.();
+          this.plugin.refreshAllViews();
         });
       });
 
@@ -691,12 +649,11 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setName("Show greeting text")
       .setDesc("Turn off to show only 'Home' as the title on the home page.")
       .addToggle((t) => {
-        t.setValue((this.plugin.settings as any)?.home?.showGreeting !== false);
+        t.setValue(this.plugin.settings.home.showGreeting !== false);
         t.onChange(async (v) => {
-          (this.plugin.settings as any).home ??= {};
-          (this.plugin.settings as any).home.showGreeting = !!v;
+          this.plugin.settings.home.showGreeting = !!v;
           await this.plugin.saveAll();
-          (this.plugin as any)._refreshOpenViews?.();
+          this.plugin.refreshAllViews();
         });
       });
 
@@ -714,7 +671,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .addButton((b) =>
         b.setButtonText("Reset…").onClick(() => {
           new ConfirmResetDefaultsModal(this.app, async () => {
-            const before = clonePlain((this.plugin as any).settings);
+            const before = clonePlain(this.plugin.settings);
             try {
               await this.resetSettingsToDefaults();
 
@@ -724,7 +681,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               this.display();
               this.queueSettingsNotice("settings.resetDefaults", "Settings reset to defaults", 0);
             } catch {
-              (this.plugin as any).settings = before;
+              this.plugin.settings = before;
               log.error(e);
               new Notice(
                 "Sprout: could not reset settings to defaults. Implement resetSettingsToDefaults() or expose DEFAULT_SETTINGS on the plugin (see console).",
@@ -742,7 +699,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (!this.plugin.settings.appearance) this.plugin.settings.appearance = { enableAnimations: true };
           this.plugin.settings.appearance.enableAnimations = v;
           await this.plugin.saveAll();
-          (this.plugin as any)._refreshOpenViews?.();
+          this.plugin.refreshAllViews();
         }),
       );
 
@@ -758,14 +715,10 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.plugin.settings.appearance.prettifyCards = v;
           await this.plugin.saveAll();
           // Refresh all Sprout views
-          if (typeof this.plugin.refreshAllViews === "function") {
-            this.plugin.refreshAllViews();
-          } else if (typeof (this.plugin as any)._refreshOpenViews === "function") {
-            (this.plugin as any)._refreshOpenViews();
-          }
+          this.plugin.refreshAllViews();
 
           // Show alert when setting is changed
-          new (window as any).Notice("Prettify cards setting changed: " + v);
+          new Notice("Prettify cards setting changed: " + v);
 
           // Force reload of all markdown reading views (note tabs)
           const ws = this.plugin.app.workspace;
@@ -814,7 +767,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const allFolders = listVaultFolders(this.app);
 
         const cur =
-          (this.plugin.settings as any)?.imageOcclusion?.attachmentFolderPath ?? "Attachments/Image Occlusion/";
+          this.plugin.settings.imageOcclusion.attachmentFolderPath ?? "Attachments/Image Occlusion/";
         t.setPlaceholder("Attachments/Image Occlusion/");
         t.setValue(String(cur));
 
@@ -846,7 +799,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         /** Commits the chosen folder path to settings. */
         const commit = async (rawValue: string, fromPick: boolean) => {
-          const prev = String((this.plugin.settings as any)?.imageOcclusion?.attachmentFolderPath ?? "");
+          const prev = String(this.plugin.settings.imageOcclusion.attachmentFolderPath ?? "");
           const next = normaliseFolderPath(rawValue || "Attachments/Image Occlusion/");
 
           inputEl.value = next;
@@ -856,8 +809,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             return;
           }
 
-          (this.plugin.settings as any).imageOcclusion ??= {};
-          (this.plugin.settings as any).imageOcclusion.attachmentFolderPath = next;
+          this.plugin.settings.imageOcclusion.attachmentFolderPath = next;
 
           await this.plugin.saveAll();
 
@@ -972,8 +924,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .addToggle((t) =>
         t.setValue(this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true).onChange(async (v) => {
           const prev = this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true;
-          (this.plugin.settings as any).imageOcclusion ??= {};
-          (this.plugin.settings as any).imageOcclusion.deleteOrphanedImages = v;
+          this.plugin.settings.imageOcclusion.deleteOrphanedImages = v;
           await this.plugin.saveAll();
 
           if (prev !== v) {
@@ -993,7 +944,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .addText((t) => {
         const allFolders = listVaultFolders(this.app);
 
-        const cur = (this.plugin.settings as any)?.cardAttachments?.attachmentFolderPath ?? "Attachments/Cards/";
+        const cur = this.plugin.settings.cardAttachments.attachmentFolderPath ?? "Attachments/Cards/";
         t.setPlaceholder("Attachments/Cards/");
         t.setValue(String(cur));
 
@@ -1025,7 +976,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         /** Commits the chosen folder path to settings. */
         const commit = async (rawValue: string, fromPick: boolean) => {
-          const prev = String((this.plugin.settings as any)?.cardAttachments?.attachmentFolderPath ?? "");
+          const prev = String(this.plugin.settings.cardAttachments.attachmentFolderPath ?? "");
           const next = normaliseFolderPath(rawValue || "Attachments/Cards/");
 
           inputEl.value = next;
@@ -1035,8 +986,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             return;
           }
 
-          (this.plugin.settings as any).cardAttachments ??= {};
-          (this.plugin.settings as any).cardAttachments.attachmentFolderPath = next;
+          this.plugin.settings.cardAttachments.attachmentFolderPath = next;
 
           await this.plugin.saveAll();
 
@@ -1234,14 +1184,14 @@ export class SproutSettingsTab extends PluginSettingTab {
         d.addOption("two", "Two buttons");
         d.addOption("four", "Four buttons");
 
-        const curFour = !!(this.plugin.settings.reviewer as any)?.fourButtonMode;
+        const curFour = !!this.plugin.settings.reviewer?.fourButtonMode;
         d.setValue(curFour ? "four" : "two");
 
         d.onChange(async (key) => {
-          const prevFour = !!(this.plugin.settings.reviewer as any)?.fourButtonMode;
+          const prevFour = !!this.plugin.settings.reviewer?.fourButtonMode;
           const nextFour = key === "four";
 
-          (this.plugin.settings.reviewer as any).fourButtonMode = nextFour;
+          this.plugin.settings.reviewer.fourButtonMode = nextFour;
 
           await this.plugin.saveAll();
           this.refreshReviewerViewsIfPossible();
@@ -1257,11 +1207,11 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setName("Skip button")
       .setDesc("Shows a Skip button (Enter). Skip postpones within the session and does not affect scheduling.")
       .addToggle((t) => {
-        const cur = !!(this.plugin.settings.reviewer as any)?.enableSkipButton;
+        const cur = !!this.plugin.settings.reviewer?.enableSkipButton;
         t.setValue(cur);
         t.onChange(async (v) => {
-          const prev = !!(this.plugin.settings.reviewer as any)?.enableSkipButton;
-          (this.plugin.settings.reviewer as any).enableSkipButton = v;
+          const prev = !!this.plugin.settings.reviewer?.enableSkipButton;
+          this.plugin.settings.reviewer.enableSkipButton = v;
 
           await this.plugin.saveAll();
           this.refreshReviewerViewsIfPossible();
@@ -1276,11 +1226,11 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setName("Randomise MCQ options")
       .setDesc("Shuffles MCQ options per card (stable during the session). Hotkeys follow the displayed order.")
       .addToggle((t) => {
-        const cur = !!(this.plugin.settings.reviewer as any)?.randomizeMcqOptions;
+        const cur = !!this.plugin.settings.reviewer?.randomizeMcqOptions;
         t.setValue(cur);
         t.onChange(async (v) => {
-          const prev = !!(this.plugin.settings.reviewer as any)?.randomizeMcqOptions;
-          (this.plugin.settings.reviewer as any).randomizeMcqOptions = v;
+          const prev = !!this.plugin.settings.reviewer?.randomizeMcqOptions;
+          this.plugin.settings.reviewer.randomizeMcqOptions = v;
 
           await this.plugin.saveAll();
           this.refreshReviewerViewsIfPossible();
@@ -1300,12 +1250,11 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setName("Treat folder notes as decks")
       .setDesc("If enabled, a folder note studies cards from all notes in that folder and its subfolders.")
       .addToggle((t) => {
-        const current = (this.plugin.settings as any)?.widget?.treatFolderNotesAsDecks;
+        const current = this.plugin.settings.widget.treatFolderNotesAsDecks;
         t.setValue(current !== false);
         t.onChange(async (v) => {
-          const prev = (this.plugin.settings as any)?.widget?.treatFolderNotesAsDecks;
-          (this.plugin.settings as any).widget ??= {};
-          (this.plugin.settings as any).widget.treatFolderNotesAsDecks = v;
+          const prev = this.plugin.settings.widget.treatFolderNotesAsDecks;
+          this.plugin.settings.widget.treatFolderNotesAsDecks = v;
 
           await this.plugin.saveAll();
           this.refreshAllWidgetViews();
@@ -1353,7 +1302,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       { key: "custom", label: "Custom", desc: "Keep your current values.", learning: [], relearning: [], retention: 0.9 },
       { key: "relaxed", label: "Relaxed", desc: "Learning: 20m | Relearning: 20m | Retention: 0.88", learning: [20], relearning: [20], retention: 0.88 },
       { key: "balanced", label: "Balanced", desc: "Learning: 10m, 1d | Relearning: 10m | Retention: 0.90", learning: [10, 1440], relearning: [10], retention: 0.9 },
-      { key: "aggressive", label: "Aggressive", desc: "Learning: 5m, 30m, 1d | Relearning: 10m | Retention: 0.92", learning: [5, 30, 1440], relelearning: [10], retention: 0.92 } as any,
+      { key: "aggressive", label: "Aggressive", desc: "Learning: 5m, 30m, 1d | Relearning: 10m | Retention: 0.92", learning: [5, 30, 1440], relearning: [10], retention: 0.92 },
     ];
 
     /** Detects which preset matches the current scheduling parameters. */
@@ -1366,7 +1315,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         if (p.key === "custom") continue;
         if (
           arraysEqualNumbers(curLearning, p.learning) &&
-          arraysEqualNumbers(curRelearning, (p as any).relearning ?? []) &&
+          arraysEqualNumbers(curRelearning, p.relearning ?? []) &&
           round2(p.retention) === curRetention
         ) {
           return p.key;
@@ -1417,7 +1366,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           const prevRetention = sched.requestRetention;
 
           sched.learningStepsMinutes = p.learning.slice();
-          sched.relearningStepsMinutes = ((p as any).relearning ?? []).slice();
+          sched.relearningStepsMinutes = (p.relearning ?? []).slice();
           sched.requestRetention = p.retention;
 
           await this.plugin.saveAll();

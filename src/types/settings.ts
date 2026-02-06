@@ -63,6 +63,10 @@ export type SproutSettings = {
   };
 
   home: {
+    userName: string;
+    showGreeting: boolean;
+    hideSproutInfo: boolean;
+    hasOpenedHome: boolean;
     pinnedDecks: string[];
     githubStars: {
       count: number | null;
@@ -72,5 +76,7 @@ export type SproutSettings = {
 
   appearance: {
     enableAnimations: boolean;
+    /** "accent" uses theme accent colour; "theme" uses background/text alt colours. */
+    prettifyCards: string;
   };
 };

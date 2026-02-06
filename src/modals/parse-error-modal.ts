@@ -12,7 +12,7 @@
  * ---------------------------------------------------------------------------
  */
 
-import { Modal, Notice, TFile, setIcon, type App } from "obsidian";
+import { Modal, Notice, TFile, MarkdownView, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { parseCardsFromText, type ParsedCard } from "../parser/parser";
@@ -135,21 +135,22 @@ export class ParseErrorModal extends Modal {
    * Falls back to the currently-active file if nothing else can be resolved.
    */
   private resolveCardRef(id: string): CardRef | null {
-    const storeAny: any = (this.plugin as any)?.store;
+    const storeRef = this.plugin.store;
 
-    const tryGet = (obj: any): any => {
+    const tryGet = (obj: unknown): unknown => {
       if (!obj || typeof obj !== "object") return null;
-      return obj[id] ?? obj[String(id)] ?? null;
+      const rec = obj as Record<string, unknown>;
+      return rec[id] ?? rec[String(id)] ?? null;
     };
 
     const candidates = [
-      tryGet(storeAny?.data?.quarantine),
-      tryGet(storeAny?.data?.quarantined),
-      tryGet(storeAny?.data?.parseErrors),
-      tryGet(storeAny?.data?.cards),
-      tryGet(storeAny?.data?.cardById),
-      typeof storeAny?.getCard === "function" ? storeAny.getCard(id) : null,
-      typeof storeAny?.getCardRecord === "function" ? storeAny.getCardRecord(id) : null,
+      tryGet(storeRef?.data?.quarantine),
+      tryGet((storeRef?.data as Record<string, unknown>)?.quarantined),
+      tryGet((storeRef?.data as Record<string, unknown>)?.parseErrors),
+      tryGet(storeRef?.data?.cards),
+      tryGet((storeRef?.data as Record<string, unknown>)?.cardById),
+      typeof storeRef?.getCard === "function" ? storeRef.getCard(id) : null,
+      typeof (storeRef as Record<string, unknown> | undefined)?.getCardRecord === "function" ? (storeRef as { getCardRecord(id: string): unknown }).getCardRecord(id) : null,
     ].filter(Boolean);
 
     const rec = candidates.length ? candidates[0] : null;
@@ -218,13 +219,13 @@ export class ParseErrorModal extends Modal {
     );
 
     const view = leaf.view;
-    if (!(view as any)?.editor) {
+    if (!(view instanceof MarkdownView) || !view.editor) {
       // Fallback: open via link syntax which Obsidian interprets as anchor nav
       await this.app.workspace.openLinkText(`${ref.sourceNotePath}#^sprout-${id}`, ref.sourceNotePath, true);
       return;
     }
 
-    const ed = (view as any).editor;
+    const ed = view.editor;
 
     const needle = `^sprout-${id}`;
     const text = await this.app.vault.read(file);
@@ -266,7 +267,7 @@ export class ParseErrorModal extends Modal {
     const found: ParsedCard | undefined = (parsed.cards || []).find((c) => String(c.id || "") === String(id));
 
     // Normalise groups into a comma-separated string
-    const foundGroupsRaw: any = found ? (found as any).groups ?? (found as any).g ?? (found as any).group ?? "" : "";
+    const foundGroupsRaw = found ? found.groups ?? (found as Record<string, unknown>).g ?? (found as Record<string, unknown>).group ?? "" : "";
     const foundGroups =
       Array.isArray(foundGroupsRaw)
         ? foundGroupsRaw.map((x) => String(x)).filter(Boolean).join(", ")
@@ -284,9 +285,9 @@ export class ParseErrorModal extends Modal {
           stem: found.stem || "",
           options: Array.isArray(found.options) ? found.options : [],
           correctIndex: Number.isFinite(found.correctIndex) ? Number(found.correctIndex) : -1,
-          prompt: (found as any).prompt ?? "",
-          lines: Array.isArray((found as any).lines) ? (found as any).lines : [],
-          ioSrc: (found as any).ioSrc ?? (found as any).src ?? "",
+          prompt: found.prompt ?? "",
+          lines: Array.isArray((found as Record<string, unknown>).lines) ? (found as Record<string, unknown>).lines as unknown[] : [],
+          ioSrc: found.ioSrc ?? (found as Record<string, unknown>).src ?? "",
           info: found.info || "",
           sourceNotePath: ref.sourceNotePath,
         }

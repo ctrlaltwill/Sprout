@@ -2,6 +2,8 @@
 import type SproutPlugin from "../main";
 import type { Scope, Session } from "./types";
 import type { CardRecord } from "../core/store";
+import type { ReviewLogEntry } from "../types/review";
+import type { CardState } from "../types/scheduler";
 // src/reviewer/session.ts
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 
@@ -45,17 +47,19 @@ function ioChildKeyFromId(id: string): string | null {
   return k ? k : null;
 }
 
-function cardHasIoChildKey(card: any): boolean {
+function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
   if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
-  if (typeof card.ioGroupKey === "string" && card.ioGroupKey.trim()) return true;
-  if (typeof card.key === "string" && card.key.trim()) return true;
+  // Defensive: check non-standard fields that may appear on legacy records
+  const rec = card as Record<string, unknown>;
+  if (typeof rec.ioGroupKey === "string" && (rec.ioGroupKey as string).trim()) return true;
+  if (typeof rec.key === "string" && (rec.key as string).trim()) return true;
 
   const id = String(card.id ?? "");
   return !!ioChildKeyFromId(id);
 }
 
-function isIoParentCard(card: any): boolean {
+function isIoParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
 
   if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
@@ -68,14 +72,14 @@ function isIoParentCard(card: any): boolean {
   return false;
 }
 
-function isClozeParentCard(card: any): boolean {
+function isClozeParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t !== "cloze") return false;
-  const children = (card)?.clozeChildren;
+  const children = card?.clozeChildren;
   return Array.isArray(children) && children.length > 0;
 }
 
-function filterReviewable(cards: any[]): any[] {
+function filterReviewable(cards: CardRecord[]): CardRecord[] {
   return (cards || []).filter((c) => {
     const t = String(c?.type ?? "").toLowerCase();
     if (t === "cloze") return false;
@@ -97,7 +101,7 @@ function getTodayCountsInScope(
   idsInScope: Set<string>,
   startToday: number,
 ) {
-  const log = (plugin.store?.data?.reviewLog || []) as any[];
+  const log: ReviewLogEntry[] = plugin.store?.data?.reviewLog || [];
 
   const earliestAtById = new Map<string, number>();
   const reviewedToday = new Set<string>();
@@ -141,7 +145,7 @@ function getTodayCountsInScope(
  * - exclude "suspended" cards
  * - be robust to missing/invalid due timestamps (treat as available so users don't get "No cards left")
  */
-export function isAvailableNow(st: any, now: number): boolean {
+export function isAvailableNow(st: CardState | undefined, now: number): boolean {
   if (!st) return false;
 
   if (st.stage === "suspended") return false;
@@ -157,7 +161,7 @@ export function isAvailableNow(st: any, now: number): boolean {
 
 function resolveCardsInScope(plugin: SproutPlugin, scope: Scope): CardRecord[] {
   if (!scope || scope.type === "vault") {
-    return filterReviewable(plugin.store.getAllCards() as any) as any;
+    return filterReviewable(plugin.store.getAllCards());
   }
 
   if (scope.type === "group") {
@@ -170,14 +174,14 @@ function resolveCardsInScope(plugin: SproutPlugin, scope: Scope): CardRecord[] {
       .filter((k) => !!k);
     if (!keys.length) return [];
 
-    const gx = getGroupIndex(plugin as any);
+    const gx = getGroupIndex(plugin);
     const ids = new Set<string>();
     for (const key of keys) {
       for (const id of gx.getIds(key)) ids.add(String(id));
     }
 
     const cardsObj = (plugin.store?.data?.cards || {});
-    const quarantine = (plugin.store?.data?.quarantine || {}) as Record<string, any>;
+    const quarantine = plugin.store?.data?.quarantine || {};
 
     const out: CardRecord[] = [];
     for (const id of ids) {
@@ -185,20 +189,20 @@ function resolveCardsInScope(plugin: SproutPlugin, scope: Scope): CardRecord[] {
       const c = cardsObj[String(id)];
       if (c) out.push(c);
     }
-    return filterReviewable(out) as any;
+    return filterReviewable(out);
   }
 
   // folder/note
-  const raw = (plugin.store.getAllCards() as any[]).filter((c: any) => inScope(scope, c.sourceNotePath));
-  return filterReviewable(raw) as any;
+  const raw = plugin.store.getAllCards().filter((c) => inScope(scope, c.sourceNotePath));
+  return filterReviewable(raw);
 }
 
 export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
   const now = Date.now();
   const startToday = startOfTodayMs(now);
 
-  const settings: any = (plugin as any)?.settings ?? {};
-  const reviewer = settings.reviewer ?? {};
+  const settings = plugin.settings;
+  const reviewer = settings?.reviewer ?? {};
 
   const dailyNewLimit = toNonNegIntOrInfinity(reviewer.dailyNewLimit);
   const dailyReviewLimit = toNonNegIntOrInfinity(reviewer.dailyReviewLimit);
@@ -207,7 +211,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
   const states = plugin.store.data.states || {};
 
   // Scope IDs for today-count accounting
-  const idsInScope = new Set<string>(cards.map((c: any) => String(c.id)));
+  const idsInScope = new Set<string>(cards.map((c) => String(c.id)));
 
   // How many have we already done today in this scope?
   const { newDoneToday, reviewDoneToday } = getTodayCountsInScope(plugin, idsInScope, startToday);
@@ -223,14 +227,14 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
       : Math.max(0, dailyReviewLimit - reviewDoneToday);
 
   // Filter to available now
-  const available = cards.filter((c: any) => {
+  const available = cards.filter((c) => {
     const st = states[c.id];
     return isAvailableNow(st, now);
   });
 
   // Partition into due-like vs new
-  const dueLike: any[] = [];
-  const news: any[] = [];
+  const dueLike: CardRecord[] = [];
+  const news: CardRecord[] = [];
 
   for (const c of available) {
     const st = states[c.id];
@@ -248,7 +252,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
 
 
   // Sort due-like by due (invalid due sorts first)
-  dueLike.sort((a: any, b: any) => {
+  dueLike.sort((a, b) => {
     const sa = states[a.id];
     const sb = states[b.id];
     const da = sa && typeof sa.due === "number" && Number.isFinite(sa.due) ? Number(sa.due) : -1;
@@ -257,11 +261,11 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
   });
 
   // Round-robin interleaving for cloze/IO children by parent
-  function isChildCard(card: any) {
+  function isChildCard(card: CardRecord) {
     const t = String(card?.type ?? "").toLowerCase();
     return t === "cloze-child" || t === "io-child";
   }
-  function getParentKey(card: any) {
+  function getParentKey(card: CardRecord) {
     // For cloze-child: parentId or id up to ::cloze::
     if (card.parentId) return card.parentId;
     const id = String(card.id || "");
@@ -274,7 +278,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
   const childCards = dueLike.filter(isChildCard);
   const otherCards = dueLike.filter((c) => !isChildCard(c));
   // Group child cards by parent
-  const parentGroups: Record<string, any[]> = {};
+  const parentGroups: Record<string, CardRecord[]> = {};
   for (const card of childCards) {
     const key = getParentKey(card);
     if (!parentGroups[key]) parentGroups[key] = [];
@@ -295,7 +299,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
     const j = Math.floor(Math.random() * (i + 1));
     [parentKeys[i], parentKeys[j]] = [parentKeys[j], parentKeys[i]];
   }
-  const rrChildCards: any[] = [];
+  const rrChildCards: CardRecord[] = [];
   let added;
   do {
     added = false;
@@ -312,7 +316,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
     [otherCards[i], otherCards[j]] = [otherCards[j], otherCards[i]];
   }
   // Interleave round-robin child cards and others
-  const shuffledDueLike: any[] = [];
+  const shuffledDueLike: CardRecord[] = [];
   let i = 0, j = 0;
   while (i < otherCards.length || j < rrChildCards.length) {
     if (i < otherCards.length) shuffledDueLike.push(otherCards[i++]);
@@ -320,7 +324,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
   }
 
   // Sort new by id (stable)
-  news.sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)));
+  news.sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
   const dueTake =
     remainingReview === Number.POSITIVE_INFINITY ? shuffledDueLike : shuffledDueLike.slice(0, remainingReview);
@@ -346,8 +350,8 @@ export function getNextDueInScope(plugin: SproutPlugin, scope: Scope): number | 
   const states = plugin.store.data.states || {};
   let next: number | null = null;
 
-  for (const c of cards as any[]) {
-    const st = states[(c).id];
+  for (const c of cards) {
+    const st = states[c.id];
     if (!st) continue;
     if (st.stage === "suspended") continue;
 

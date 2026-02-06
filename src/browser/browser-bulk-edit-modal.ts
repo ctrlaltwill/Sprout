@@ -597,7 +597,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     const card = cards[0];
     mcqOriginalString = buildAnswerOrOptionsFor(card);
     const options = Array.isArray(card.options) ? [...card.options] : [];
-    const correctIndex = Number.isFinite(card.correctIndex) ? card.correctIndex : 0;
+    const correctIndex = Number.isFinite(card.correctIndex) ? card.correctIndex! : 0;
     const correctValue = options[correctIndex] ?? "";
     const wrongValues = options.filter((_, idx) => idx !== correctIndex);
 

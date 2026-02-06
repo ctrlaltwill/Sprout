@@ -91,8 +91,8 @@ export class SproutMarkdownHelper {
     const imgs = Array.from(containerEl.querySelectorAll("img"));
 
     for (const img of imgs) {
-      if ((img as any).dataset?.bcZoomBound === "1") continue;
-      (img as any).dataset.bcZoomBound = "1";
+      if (img.dataset?.bcZoomBound === "1") continue;
+      img.dataset.bcZoomBound = "1";
 
       img.classList.add("sprout-zoomable");
 
@@ -128,17 +128,17 @@ export class SproutMarkdownHelper {
    */
   async renderInto(containerEl: HTMLElement, md: string, sourcePath: string) {
     const rid = String(++this._serial);
-    (containerEl as any).dataset.bcMdRid = rid;
+    containerEl.dataset.bcMdRid = rid;
 
     // Obsidian convenience method
-    (containerEl as any).empty?.();
+    (containerEl as HTMLElement & { empty?(): void }).empty?.();
 
     const srcPath = String(sourcePath || "");
     const expanded = this.expandImagesToRealMarkdown(md ?? "", srcPath);
 
     await MarkdownRenderer.renderMarkdown(expanded, containerEl, srcPath, this.owner);
 
-    if (((containerEl as any).dataset.bcMdRid || "") !== rid) return;
+    if ((containerEl.dataset.bcMdRid || "") !== rid) return;
 
     this.decorateRenderedImages(containerEl);
   }

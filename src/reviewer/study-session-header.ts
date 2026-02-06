@@ -68,7 +68,6 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
     elapsedSeconds: 0,
     timerInterval: null,
   };
-  (studySessionHeader as any).__timerState = timerState;
 
   const updateTimerDisplay = () => {
     if (timerState.elapsedSeconds >= 3600) {

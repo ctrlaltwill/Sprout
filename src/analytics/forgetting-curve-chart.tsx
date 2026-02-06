@@ -542,7 +542,7 @@ export function ForgettingCurveChart(props: {
     for (const issue of issues) {
       if (curveIds.has(issue.id)) continue;
       const card = cardById.get(issue.id);
-      const title = card && "title" in (card as any) ? String((card as any).title ?? "") : "";
+      const title = card ? String(card.title ?? "") : "";
       const question = card ? getQuestionPreview(card, 80) : "";
       const tooltip = [title, question].filter(Boolean).join(" — ");
       items.push({

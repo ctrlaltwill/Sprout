@@ -18,12 +18,12 @@ export function closeMoreMenu(view: SproutReviewerView) {
     } catch (e) { log.swallow("moreMenu popover.remove", e); }
   }
 
-  const cleanup = (view as any)._moreCleanup as (() => void) | null;
+  const cleanup = (view as unknown as { _moreCleanup?: (() => void) | null })._moreCleanup ?? null;
   if (cleanup) {
     try {
       cleanup();
     } catch (e) { log.swallow("moreMenu cleanup", e); }
-    (view as any)._moreCleanup = null;
+    (view as unknown as { _moreCleanup: null })._moreCleanup = null;
   }
 }
 
@@ -98,7 +98,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     document.addEventListener("keydown", onDocKeydown, true);
   }, 0);
 
-  (view as any)._moreCleanup = () => {
+  (view as unknown as { _moreCleanup: (() => void) | null })._moreCleanup = () => {
     window.clearTimeout(tid);
     window.removeEventListener("resize", onResizeOrScroll, true);
     window.removeEventListener("scroll", onResizeOrScroll, true);
@@ -116,7 +116,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
   const card = view.currentCard();
   if (!card) return;
 
-  const id = String((card as any).id);
+  const id = String(card.id);
   const graded = !!view.session.graded[id];
 
   const root = view.contentEl;
@@ -281,8 +281,8 @@ export function injectMoreMenu(view: SproutReviewerView) {
   };
 
   // --- Undo (only show on the *following* card)
-  const undoFrame: any = (view as any)._undo ?? null;
-  const canUndoNow = typeof (view as any).canUndo === "function" ? (view as any).canUndo() : false;
+  const undoFrame = (view as unknown as { _undo?: { id?: string } | null })._undo ?? null;
+  const canUndoNow = typeof view.canUndo === "function" ? view.canUndo() : false;
 
   const showUndoHere = !!canUndoNow && !!undoFrame && String(undoFrame.id ?? "") !== String(id);
 
@@ -301,7 +301,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
     menu.appendChild(sep);
 
     const undoItem = createMenuItem("Undo", "U", () => {
-      void (view as any).undoLastGrade?.();
+      void view.undoLastGrade?.();
     });
     undoItem.dataset.bcAction = "undo-grade";
     menu.appendChild(undoItem);

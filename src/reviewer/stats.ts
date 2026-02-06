@@ -44,7 +44,7 @@ export function getStageCountsAll(plugin: SproutPlugin): {
   for (const c of cards) {
     if (isIoParentCard(c) || isClozeParentCard(c)) continue;
     const st = plugin.store.getState(String(c.id));
-    const stage = (st as any)?.stage ?? "new";
+    const stage = st?.stage ?? "new";
 
     if (stage === "new") counts.new += 1;
     else if (stage === "review") counts.review += 1;

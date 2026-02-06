@@ -16,22 +16,32 @@
  * ---------------------------------------------------------------------------
  */
 
-import { Modal, Notice, setIcon, type App } from "obsidian";
-import interact from "interactjs";
+import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
 import { normaliseGroupKey } from "../imageocclusion/mask-tool";
+import { IO_EDITOR_STYLES } from "../imageocclusion/io-editor-styles";
+import { renderOverlay } from "../imageocclusion/io-overlay-renderer";
+import {
+  buildToolbar,
+  buildCanvasContainer,
+  buildFooter,
+  buildHeader,
+  buildImageLimitDialog,
+} from "../imageocclusion/io-modal-ui";
 
 import {
-  resolveIoImageFile,
+  resolveImageFile as resolveIoImageFile,
   mimeFromExt,
+} from "../imageocclusion/io-helpers";
+import {
   setModalTitle,
   type ClipboardImage,
 } from "./modal-utils";
 
-import type { IORect, StageTransform, IOTextBox, IOHistoryEntry } from "./io-types";
+import type { IORect, StageTransform, IOTextBox, IOHistoryEntry } from "../imageocclusion/io-types";
 import {
   loadImageElement,
   rotateImageData,
@@ -39,12 +49,9 @@ import {
   burnTextBoxesIntoImageData,
   drawTextOnImageData,
   clampTextBgOpacity,
-  hexToRgb,
   textBgCss,
-} from "./io-image-ops";
-import { saveIoCard, type IoSaveParams } from "./io-save";
-
-// Types are imported from ./io-types
+} from "../imageocclusion/io-image-ops";
+import { saveIoCard } from "../imageocclusion/io-save";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ImageOcclusionCreatorModal
@@ -187,239 +194,15 @@ export class ImageOcclusionCreatorModal extends Modal {
 
     // Inject scoped IO-editor styles
     const ioStyle = modalRoot.createEl("style");
-    ioStyle.textContent = `
-      [data-sprout-toolbar] {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        padding: 6px;
-        border-radius: 6px;
-        background: var(--background);
-        border: 1px solid var(--background-modifier-border);
-        box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
-        width: fit-content;
-        max-width: 100%;
-      }
-
-      .sprout-io-toolbar-group {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px;
-        border-radius: 6px;
-        border: 1px solid var(--background-modifier-border);
-        background: var(--background-secondary);
-      }
-
-      .sprout-io-toolbar-sep {
-        width: 1px;
-        height: 18px;
-        background: var(--background-modifier-border);
-        margin: 0 2px;
-      }
-
-      .sprout-io-btn {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid transparent;
-        background: transparent;
-        color: var(--foreground);
-        transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
-      }
-
-      .sprout-io-btn:hover {
-        background: var(--background-modifier-hover);
-      }
-
-      .sprout-io-btn.is-active {
-        background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
-        border-color: color-mix(in srgb, var(--theme-accent) 40%, transparent);
-        color: var(--theme-accent);
-      }
-
-      .sprout-io-btn.is-disabled {
-        opacity: 0.4;
-        pointer-events: none;
-      }
-
-      .sprout-io-btn svg {
-        width: 17px;
-        height: 17px;
-      }
-
-      .sprout-io-field {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 6px;
-        border-radius: 6px;
-        border: 1px solid var(--background-modifier-border);
-        background: var(--background);
-      }
-
-      .sprout-io-toolbar-label {
-        font-size: 11px;
-        color: var(--muted-foreground);
-      }
-
-      .sprout-io-input {
-        height: 26px;
-        font-size: 12px;
-        padding: 2px 6px;
-        border-radius: 7px;
-        border: 1px solid var(--background-modifier-border);
-        background: var(--background);
-        color: var(--foreground);
-      }
-
-      .sprout-io-input[type="number"] {
-        appearance: textfield;
-      }
-      .sprout-io-input[type="number"]::-webkit-outer-spin-button,
-      .sprout-io-input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-
-      .sprout-io-color {
-        width: 26px;
-        height: 26px;
-        padding: 2px;
-        border-radius: 7px;
-        border: 1px solid var(--background-modifier-border);
-        background: var(--background);
-        cursor: pointer;
-      }
-
-      .sprout-io-zoom-slider {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 70px;
-        height: 12px;
-        cursor: pointer;
-        background: transparent;
-        margin: 0;
-        transform: rotate(-90deg);
-        transform-origin: center;
-      }
-
-      .sprout-io-zoom-slider::-webkit-slider-runnable-track {
-        background: color-mix(in srgb, var(--background) 70%, transparent);
-        width: 70px;
-        height: 12px;
-        border-radius: 999px;
-        border: 1px solid var(--background-modifier-border);
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 60%, transparent);
-      }
-
-      .sprout-io-zoom-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        background: var(--background);
-        border: 2px solid var(--theme-accent);
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
-        margin-left: -7px;
-      }
-
-      .sprout-io-zoom-slider::-moz-range-track {
-        background: color-mix(in srgb, var(--background) 70%, transparent);
-        width: 70px;
-        height: 12px;
-        border-radius: 999px;
-        border: 1px solid var(--background-modifier-border);
-      }
-
-      .sprout-io-zoom-slider::-moz-range-thumb {
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        background: var(--background);
-        border: 2px solid var(--theme-accent);
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
-      }
-
-      .sprout-io-zoom-slider:focus-visible {
-        outline: none;
-      }
-
-      .sprout-io-text-icon {
-        position: relative;
-        width: 20px;
-        height: 20px;
-      }
-
-      .sprout-io-text-icon-svg {
-        width: 18px;
-        height: 18px;
-        display: block;
-      }
-
-      .sprout-io-text-icon-letter {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--foreground);
-      }
-    `;
+    ioStyle.textContent = IO_EDITOR_STYLES;
 
     // ── Header ──────────────────────────────────────────────────────────────
-    const headerRow = modalRoot.createDiv({ cls: "bc flex items-center justify-between gap-3 mb-1" });
-    headerRow.createDiv({ text: headerTitle, cls: "bc text-lg font-semibold" });
-    const headerClose = headerRow.createEl("button", {
-      cls: "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",
-      attr: { type: "button", "data-tooltip": "Close" },
-    });
-    headerClose.style.setProperty("border", "none", "important");
-    headerClose.style.setProperty("background", "transparent", "important");
-    headerClose.style.setProperty("box-shadow", "none", "important");
-    headerClose.style.setProperty("padding", "0", "important");
-    headerClose.style.setProperty("cursor", "pointer", "important");
-    const headerCloseIcon = headerClose.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
-    setIcon(headerCloseIcon, "x");
-    headerClose.onclick = () => this.close();
+    buildHeader(modalRoot, headerTitle, () => this.close());
 
     const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-3" });
 
     // ── Image limit dialog ──────────────────────────────────────────────────
-    this.imageLimitDialog = modalRoot.createEl("dialog", { cls: "bc dialog" });
-    const dlgInner = this.imageLimitDialog.createDiv({ cls: "bc flex flex-col gap-3" });
-    const dlgHeader = dlgInner.createDiv({ cls: "bc" });
-    dlgHeader.createEl("h2", { cls: "bc text-lg font-semibold", text: "Image already loaded" });
-    dlgHeader.createEl("p", {
-      cls: "bc text-sm text-muted-foreground",
-      text: "Only one image per card. Remove the current image before adding another.",
-    });
-    const dlgFooter = dlgInner.createDiv({ cls: "bc flex justify-end gap-2" });
-    const dlgCancel = dlgFooter.createEl("button", {
-      cls: "bc btn inline-flex items-center justify-center px-3 h-9 text-sm",
-      attr: { type: "button" },
-      text: "Cancel",
-    });
-    dlgCancel.style.backgroundColor = "#000";
-    dlgCancel.style.color = "#fff";
-    dlgCancel.style.border = "1px solid #000";
-    dlgCancel.onclick = () => this.imageLimitDialog?.close();
-
-    const dlgDelete = dlgFooter.createEl("button", {
-      cls: "bc btn-outline inline-flex items-center justify-center px-3 h-9 text-sm",
-      attr: { type: "button" },
-      text: "Delete image",
-    });
-    dlgDelete.style.backgroundColor = "#fff";
-    dlgDelete.style.color = "var(--foreground)";
-    dlgDelete.onclick = () => this.deleteLoadedImage();
+    this.imageLimitDialog = buildImageLimitDialog(modalRoot, () => this.deleteLoadedImage());
 
     // ── Title field ─────────────────────────────────────────────────────────
     const titleField = body.createDiv({ cls: "bc flex flex-col gap-1" });
@@ -439,173 +222,53 @@ export class ImageOcclusionCreatorModal extends Modal {
     canvasLabel.createSpan({ text: "*", cls: "bc text-destructive ml-1" });
 
     // ── Toolbar ─────────────────────────────────────────────────────────────
-    const toolbar = body.createDiv();
-    toolbar.removeAttribute("class");
-    toolbar.setAttr("role", "toolbar");
-    toolbar.style.setProperty("width", "fit-content");
-    toolbar.style.setProperty("max-width", "100%");
-    toolbar.style.setProperty("align-self", "flex-start");
-    toolbar.dataset.sproutToolbar = "1";
-    toolbar.dataset.sproutToolbar = "1";
-
-    const toolbarGroup = toolbar.createDiv({ cls: "bc sprout-io-toolbar-group" });
-
-    const createToolbarSeparator = () => {
-      return toolbarGroup.createDiv({ cls: "bc sprout-io-toolbar-sep" });
-    };
-
-    /** Helper to create icon buttons for the toolbar. */
-    const createIconBtn = (
-      parent: HTMLElement,
-      iconName: string,
-      tooltip: string,
-      onClick: () => void,
-      opts: { disabled?: boolean } = {},
-    ) => {
-      const btn = parent.createEl("button", { cls: "bc sprout-io-btn" });
-      btn.type = "button";
-      btn.setAttribute("data-tooltip", tooltip);
-
-      const iconWrapper = btn.createEl("span", { cls: "bc inline-flex items-center justify-center" });
-      setIcon(iconWrapper, iconName);
-
-      btn.addEventListener("click", (ev) => {
-        if (btn.disabled) return;
-        ev.preventDefault();
-        ev.stopPropagation();
-        onClick();
-      });
-
-      if (opts.disabled) {
-        btn.disabled = true;
-        btn.setAttribute("aria-disabled", "true");
-        btn.classList.add("is-disabled");
-      }
-
-      return btn;
-    };
-
-    // File upload button
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
-    fileInput.style.display = "none";
-    toolbar.appendChild(fileInput);
-
-    createIconBtn(toolbarGroup, "upload", "Insert from file", () => fileInput.click());
-
-    createToolbarSeparator();
-
-    // Undo/Redo
-    this.btnUndo = createIconBtn(toolbarGroup, "undo", "Undo (Ctrl+Z)", () => this.undo());
-    this.btnRedo = createIconBtn(toolbarGroup, "redo", "Redo (Ctrl+Shift+Z)", () => this.redo());
-
-    createToolbarSeparator();
-
-    // Move, Rectangle, Ellipse
-    this.btnTransform = createIconBtn(toolbarGroup, "move", "Pan / Move", () => this.setTool("transform"));
-    this.btnRectTool = createIconBtn(toolbarGroup, "square", "Draw Rectangle", () => this.setTool("occlusion-rect"));
-    this.btnCircleTool = createIconBtn(toolbarGroup, "circle", "Draw Ellipse", () => this.setTool("occlusion-circle"));
-
-    createToolbarSeparator();
-
-    // Crop, Rotate
-    this.btnCrop = createIconBtn(toolbarGroup, "crop", "Crop image", () => this.setTool("crop"));
-    this.btnRotateLeft = createIconBtn(toolbarGroup, "rotate-ccw-square", "Rotate 90° left", () => void this.rotateImage("ccw"));
-    this.btnRotateRight = createIconBtn(toolbarGroup, "rotate-cw-square", "Rotate 90° right", () => void this.rotateImage("cw"));
+    const toolbarRefs = buildToolbar(body, {
+      onFileSelected: (file: File) => {
+        if (this.ioImageData) {
+          this.showImageLimitAlert();
+          return;
+        }
+        void (async () => {
+          try {
+            const data = await file.arrayBuffer();
+            this.ioImageData = { mime: file.type, data };
+            await this.loadImageToCanvas();
+            this.updatePlaceholderVisibility();
+          } catch (e: any) {
+            new Notice(`${BRAND}: Failed to load image (${String(e?.message || e)})`);
+          }
+        })();
+      },
+      onUndo: () => this.undo(),
+      onRedo: () => this.redo(),
+      onSetTool: (tool) => this.setTool(tool),
+      onRotate: (dir) => void this.rotateImage(dir),
+    });
+    this.btnUndo = toolbarRefs.btnUndo;
+    this.btnRedo = toolbarRefs.btnRedo;
+    this.btnTransform = toolbarRefs.btnTransform;
+    this.btnRectTool = toolbarRefs.btnRectTool;
+    this.btnCircleTool = toolbarRefs.btnCircleTool;
+    this.btnCrop = toolbarRefs.btnCrop;
+    this.btnRotateLeft = toolbarRefs.btnRotateLeft;
+    this.btnRotateRight = toolbarRefs.btnRotateRight;
 
     // Set initial tool highlight
     this.setTool(this.currentTool);
 
-    fileInput.addEventListener("change", (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      if (this.ioImageData) {
-        this.showImageLimitAlert();
-        return;
-      }
-      void (async () => {
-        try {
-          const data = await file.arrayBuffer();
-          this.ioImageData = { mime: file.type, data };
-          await this.loadImageToCanvas();
-          this.updatePlaceholderVisibility();
-        } catch (e: any) {
-          new Notice(`${BRAND}: Failed to load image (${String(e?.message || e)})`);
-        }
-      })();
-    });
-
     // ── Canvas container ────────────────────────────────────────────────────
-    const canvasContainer = body.createDiv({ cls: "bc rounded-lg border border-border bg-background" });
-    this.canvasContainerEl = canvasContainer;
-    canvasContainer.style.position = "relative";
-    canvasContainer.style.width = "100%";
-    canvasContainer.style.maxWidth = "1500px";
-    canvasContainer.style.height = this.canvasHeightDefaults.height;
-    canvasContainer.style.minHeight = this.canvasHeightDefaults.minHeight;
-    canvasContainer.style.maxHeight = this.canvasHeightDefaults.maxHeight;
-    canvasContainer.style.overflow = "hidden";
-    canvasContainer.style.flexShrink = "0";
-
-    // Placeholder (shown when no image loaded)
-    const placeholder = canvasContainer.createDiv({
-      cls: "bc flex items-center justify-center text-muted-foreground text-sm",
+    const canvasRefs = buildCanvasContainer(body, this.canvasHeightDefaults, {
+      onEmptyClick: () => {
+        if (this.ioImageData) return;
+        toolbarRefs.fileInput.click();
+      },
     });
-    placeholder.innerHTML = `Insert from file or paste an image <span class="bc inline-flex items-center gap-1 ml-1"><kbd class="bc kbd">⌘+V</kbd> / <kbd class="bc kbd">Ctrl+V</kbd></span>`;
-    placeholder.style.position = "absolute";
-    placeholder.style.inset = "0";
-    placeholder.style.display = "flex";
-    placeholder.style.alignItems = "center";
-    placeholder.style.justifyContent = "center";
-    placeholder.style.pointerEvents = "auto";
-    placeholder.style.cursor = "pointer";
-    this.placeholderEl = placeholder;
-    placeholder.addEventListener("click", (e) => {
-      if (this.ioImageData) return;
-      e.preventDefault();
-      e.stopPropagation();
-      fileInput.click();
-    });
-
-    // Viewport (scrollable canvas area)
-    this.viewportEl = canvasContainer.createDiv({ cls: "bc" });
-    this.viewportEl.style.position = "absolute";
-    this.viewportEl.style.top = "0";
-    this.viewportEl.style.left = "0";
-    this.viewportEl.style.width = "100%";
-    this.viewportEl.style.height = "100%";
-    this.viewportEl.style.overflow = "hidden";
-    this.viewportEl.style.display = "none";
-
-    this.stageEl = this.viewportEl.createDiv({ cls: "bc" });
-    this.stageEl.style.position = "absolute";
-    this.stageEl.style.top = "0";
-    this.stageEl.style.left = "0";
-    this.stageEl.style.transformOrigin = "0 0";
-
-    this.imgEl = this.stageEl.createEl("img", { cls: "bc" });
-    this.imgEl.style.display = "block";
-    this.imgEl.style.userSelect = "none";
-    this.imgEl.style.border = "1px solid var(--border)";
-    this.imgEl.style.boxSizing = "border-box";
-    this.imgEl.draggable = false;
-
-    this.overlayEl = this.stageEl.createDiv({ cls: "bc" });
-    this.overlayEl.style.position = "absolute";
-    this.overlayEl.style.top = "0";
-    this.overlayEl.style.left = "0";
-    this.overlayEl.style.width = "100%";
-    this.overlayEl.style.height = "100%";
-    this.overlayEl.style.pointerEvents = "none";
-
-    // Clicking empty canvas area opens file picker when no image loaded
-    canvasContainer.addEventListener("click", (e) => {
-      if (this.ioImageData) return;
-      e.preventDefault();
-      e.stopPropagation();
-      fileInput.click();
-    });
+    this.canvasContainerEl = canvasRefs.canvasContainerEl;
+    this.placeholderEl = canvasRefs.placeholderEl;
+    this.viewportEl = canvasRefs.viewportEl;
+    this.stageEl = canvasRefs.stageEl;
+    this.imgEl = canvasRefs.imgEl;
+    this.overlayEl = canvasRefs.overlayEl;
 
     // Global paste handler
     const handlePaste = async (ev: ClipboardEvent) => {
@@ -660,7 +323,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     const groupsLabel = groupsField.createEl("label", { cls: "bc text-sm font-medium" });
     groupsLabel.textContent = "Groups";
     const initialGroups = editing
-      ? ((this.plugin.store?.data?.cards || {}) as any)?.[String(this.editParentId)]?.groups
+      ? (this.plugin.store?.data?.cards || {})[String(this.editParentId)]?.groups
       : null;
     const initialGroupsStr = Array.isArray(initialGroups)
       ? initialGroups.join(", ")
@@ -680,7 +343,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         if (this.titleInput) this.titleInput.value = String(parent.title || "Image Occlusion");
         if (this.infoInput) this.infoInput.value = String(parent.info || "");
 
-        const ioMap: any = (this.plugin.store?.data as any)?.io || {};
+        const ioMap = this.plugin.store?.data?.io || {};
         const def = ioMap[String(this.editParentId)] || null;
         const imageRef = String(parent.imageRef || def?.imageRef || "").trim();
         this.editImageRef = imageRef || null;
@@ -748,34 +411,11 @@ export class ImageOcclusionCreatorModal extends Modal {
 
 
     // ── Footer buttons ──────────────────────────────────────────────────────
-    const footer = modalRoot.createDiv({ cls: "bc flex items-center justify-end gap-4" });
-    footer.style.paddingTop = "15px";
-
-    const cancelBtn = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
-    cancelBtn.type = "button";
-    const cancelIcon = cancelBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
-    setIcon(cancelIcon, "x");
-    cancelBtn.createSpan({ text: "Cancel" });
-    cancelBtn.onclick = () => this.close();
-
-    const hideAllBtn = footer.createEl("button", {
-      cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
-      attr: { "data-tooltip": "Hide All: study with all masks hidden; no context clues." },
+    buildFooter(modalRoot, {
+      onCancel: () => this.close(),
+      onSaveAll: () => void saveIo("all"),
+      onSaveSolo: () => void saveIo("solo"),
     });
-    hideAllBtn.type = "button";
-    hideAllBtn.style.setProperty("background", "var(--foreground)", "important");
-    hideAllBtn.style.setProperty("color", "var(--background)", "important");
-    hideAllBtn.style.setProperty("border-color", "var(--foreground)", "important");
-    hideAllBtn.createSpan({ text: "Hide All" });
-    hideAllBtn.onclick = () => void saveIo("all");
-
-    const hideOneBtn = footer.createEl("button", {
-      cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
-      attr: { "data-tooltip": "Hide One: hide only the active mask; keeps context visible." },
-    });
-    hideOneBtn.type = "button";
-    hideOneBtn.createSpan({ text: "Hide One" });
-    hideOneBtn.onclick = () => void saveIo("solo");
   }
 
   // ── Tool management ───────────────────────────────────────────────────────
@@ -956,8 +596,9 @@ export class ImageOcclusionCreatorModal extends Modal {
         new Notice(`${BRAND}: IO image file not found for edit.`);
         return;
       }
-      const data = await (this.app.vault as any).readBinary(file);
-      const mime = mimeFromExt(String((file as any).extension || ""));
+      const data = await this.app.vault.readBinary?.(file);
+      if (!data) throw new Error("readBinary not available");
+      const mime = mimeFromExt(file.extension || "");
       this.ioImageData = { mime, data };
       await this.loadImageToCanvas();
     } catch (e: any) {
@@ -1682,370 +1323,52 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.renderRects();
   }
 
-  // ── Render overlay (rects + text boxes with interactjs drag/resize) ───────
+  // ── Render overlay (rects + text boxes – delegated to io-overlay-renderer) ─
 
   private renderRects() {
     if (!this.overlayEl) return;
-    const stageW = this.stageW || 1;
-    const stageH = this.stageH || 1;
-    const scale = this.t.scale || 1;
 
-    // Clear existing elements (preserve active previews)
-    const children = Array.from(this.overlayEl.children);
-    for (const child of children) {
-      if (child !== this.previewEl && child !== this.cropPreviewEl) {
-        try {
-          interact(child as HTMLElement).unset();
-        } catch {
-          // ignore
-        }
-        child.remove();
-      }
-    }
-
-    const applyStyle = (el: HTMLElement, r: IORect) => {
-      el.style.left = `${r.normX * stageW}px`;
-      el.style.top = `${r.normY * stageH}px`;
-      el.style.width = `${r.normW * stageW}px`;
-      el.style.height = `${r.normH * stageH}px`;
-    };
-
-    // Render occlusion rects
-    for (const rect of this.rects) {
-      const el = document.createElement("div");
-      el.style.position = "absolute";
-      el.style.pointerEvents = this.currentTool === "crop" ? "none" : "auto";
-      el.setAttribute("data-rect-id", rect.rectId);
-      applyStyle(el, rect);
-
-      if (rect.shape === "circle") {
-        el.style.borderRadius = "50%";
-      } else {
-        el.style.borderRadius = "4px";
-      }
-
-      const isSelected = rect.rectId === this.selectedRectId;
-      if (isSelected) {
-        el.style.border = "3px dashed #3b82f6";
-        el.style.backgroundColor = "rgba(59, 130, 246, 0.12)";
-      } else {
-        el.style.border = "3px dashed #ef4444";
-        el.style.backgroundColor = "rgba(239, 68, 68, 0.08)";
-      }
-
-      // GroupKey input (centred on the rect)
-      const groupInput = document.createElement("input");
-      groupInput.type = "text";
-      groupInput.value = rect.groupKey || "1";
-      groupInput.style.position = "absolute";
-      groupInput.style.left = "50%";
-      groupInput.style.top = "50%";
-      groupInput.style.transform = "translate(-50%, -50%)";
-      groupInput.style.width = "60px";
-      groupInput.style.padding = "6px 12px";
-      groupInput.style.fontSize = "21px";
-      groupInput.style.fontWeight = "700";
-      groupInput.style.textAlign = "center";
-      groupInput.style.border = "2px solid rgba(0, 0, 0, 0.3)";
-      groupInput.style.borderRadius = "6px";
-      groupInput.style.backgroundColor = "rgba(255, 255, 255, 0.95)";
-      groupInput.style.color = "#000";
-      groupInput.style.pointerEvents = this.currentTool === "crop" ? "none" : "auto";
-      groupInput.style.cursor = "text";
-      groupInput.style.zIndex = "10";
-      groupInput.setAttribute("data-group-input", rect.rectId);
-
-      groupInput.addEventListener("click", (e) => {
-        e.stopPropagation();
-      });
-
-      const getRectRef = () => this.rects.find((r) => r.rectId === rect.rectId);
-
-      groupInput.addEventListener("change", () => {
-        const r = getRectRef();
-        if (r) {
-          r.groupKey = groupInput.value.trim() || "1";
-          this.saveHistory();
-        }
-      });
-
-      groupInput.addEventListener("input", () => {
-        const r = getRectRef();
-        if (r) {
-          r.groupKey = groupInput.value.trim() || "1";
-        }
-      });
-
-      el.appendChild(groupInput);
-
-      // Corner resize affordances (rectangles only)
-      if (rect.shape !== "circle") {
-        const cornerSize = 10;
-        const addCorner = (cx: string, cy: string) => {
-          const c = document.createElement("div");
-          c.style.position = "absolute";
-          c.style.width = `${cornerSize}px`;
-          c.style.height = `${cornerSize}px`;
-          c.style.background = "rgba(0,0,0,0.25)";
-          c.style.border = "1px solid rgba(255,255,255,0.7)";
-          c.style.borderRadius = "3px";
-          c.style[cx as "left" | "right"] = "-5px";
-          c.style[cy as "top" | "bottom"] = "-5px";
-          c.style.pointerEvents = "none";
-          c.style.boxShadow = "0 0 0 1px rgba(0,0,0,0.08)";
-          el.appendChild(c);
-        };
-        addCorner("left", "top");
-        addCorner("right", "top");
-        addCorner("left", "bottom");
-        addCorner("right", "bottom");
-      }
-
-      // Cursor hints near corners
-      el.addEventListener("mousemove", (evt) => {
-        const bounds = el.getBoundingClientRect();
-        const px = evt.clientX - bounds.left;
-        const py = evt.clientY - bounds.top;
-        const nearLeft = px <= 12;
-        const nearRight = px >= bounds.width - 12;
-        const nearTop = py <= 12;
-        const nearBottom = py >= bounds.height - 12;
-        if ((nearLeft && nearTop) || (nearRight && nearBottom)) {
-          el.style.cursor = "nwse-resize";
-        } else if ((nearRight && nearTop) || (nearLeft && nearBottom)) {
-          el.style.cursor = "nesw-resize";
-        } else {
-          el.style.cursor = "move";
-        }
-      });
-      el.addEventListener("mouseleave", () => {
-        el.style.cursor = "move";
-      });
-
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.selectedRectId = rect.rectId;
-        this.selectedTextId = null;
-        this.renderRects();
-      });
-
-      this.overlayEl.appendChild(el);
-
-      const syncStyle = () => {
-        const r = getRectRef();
-        if (!r) return;
-        applyStyle(el, r);
-      };
-
-      // Interactjs: drag + resize
-      interact(el)
-        .draggable({
-          ignoreFrom: "input,textarea,button,select",
-          listeners: {
-            start: () => {
-              this.selectedRectId = rect.rectId;
-              this.selectedTextId = null;
-            },
-            move: (event) => {
-              const r = getRectRef();
-              if (!r) return;
-              const dx = event.dx / scale;
-              const dy = event.dy / scale;
-              const w = r.normW * stageW;
-              const h = r.normH * stageH;
-              let x = r.normX * stageW + dx;
-              let y = r.normY * stageH + dy;
-              x = Math.max(0, Math.min(stageW - w, x));
-              y = Math.max(0, Math.min(stageH - h, y));
-              r.normX = x / stageW;
-              r.normY = y / stageH;
-              syncStyle();
-            },
-            end: () => {
-              this.saveHistory();
-              this.renderRects();
-            },
-          },
-        })
-        .resizable({
-          edges: { left: true, right: true, top: true, bottom: true },
-          listeners: {
-            start: () => {
-              this.selectedRectId = rect.rectId;
-            },
-            move: (event) => {
-              const r = getRectRef();
-              if (!r) return;
-              const delta = event.deltaRect || { left: 0, top: 0, width: 0, height: 0 };
-              let x = r.normX * stageW + delta.left / scale;
-              let y = r.normY * stageH + delta.top / scale;
-              let w = r.normW * stageW + delta.width / scale;
-              let h = r.normH * stageH + delta.height / scale;
-              const minSize = 5;
-              w = Math.max(minSize, w);
-              h = Math.max(minSize, h);
-              if (x < 0) {
-                w += x;
-                x = 0;
-              }
-              if (y < 0) {
-                h += y;
-                y = 0;
-              }
-              if (x + w > stageW) w = stageW - x;
-              if (y + h > stageH) h = stageH - y;
-              w = Math.max(minSize, w);
-              h = Math.max(minSize, h);
-              r.normX = x / stageW;
-              r.normY = y / stageH;
-              r.normW = w / stageW;
-              r.normH = h / stageH;
-              syncStyle();
-            },
-            end: () => {
-              this.saveHistory();
-              this.renderRects();
-            },
-          },
-        })
-        .styleCursor(false);
-    }
-
-    // Render text boxes
-    const applyTextStyle = (el: HTMLElement, t: IOTextBox) => {
-      el.style.left = `${t.normX * stageW}px`;
-      el.style.top = `${t.normY * stageH}px`;
-      el.style.width = `${t.normW * stageW}px`;
-      el.style.height = `${t.normH * stageH}px`;
-    };
-
-    for (const textBox of this.textBoxes) {
-      const el = document.createElement("div");
-      el.style.position = "absolute";
-      el.style.pointerEvents = this.currentTool === "crop" ? "none" : "auto";
-      el.setAttribute("data-text-id", textBox.textId);
-      applyTextStyle(el, textBox);
-
-      const isSelected = textBox.textId === this.selectedTextId;
-      const bgCss = textBgCss(textBox.bgColor, textBox.bgOpacity ?? 1);
-      const hasBg = bgCss !== "transparent";
-      el.style.border = isSelected ? "2px dashed #10b981" : "1px dashed rgba(16, 185, 129, 0.6)";
-      el.style.backgroundColor = hasBg ? bgCss : isSelected ? "rgba(16, 185, 129, 0.08)" : "transparent";
-      el.style.boxShadow = isSelected ? "0 0 0 2px rgba(16, 185, 129, 0.12)" : "none";
-      el.style.borderRadius = "6px";
-      el.style.padding = "6px 8px";
-      el.style.boxSizing = "border-box";
-      el.style.display = "flex";
-      el.style.alignItems = "flex-start";
-      el.style.justifyContent = "flex-start";
-
-      const textEl = document.createElement("div");
-      textEl.textContent = textBox.text;
-      textEl.style.whiteSpace = "pre-wrap";
-      textEl.style.wordBreak = "break-word";
-      textEl.style.fontSize = `${Math.max(8, textBox.fontSize)}px`;
-      textEl.style.lineHeight = "1.3";
-      textEl.style.color = textBox.color || "#111111";
-      textEl.style.pointerEvents = "none";
-      el.appendChild(textEl);
-
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.selectedTextId = textBox.textId;
-        this.selectedRectId = null;
-        this.renderRects();
-      });
-
-      el.addEventListener("dblclick", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.selectedTextId = textBox.textId;
-        this.selectedRectId = null;
-        this.activeTextId = textBox.textId;
-        this.textFontSize = textBox.fontSize || this.textFontSize;
-        this.textColor = textBox.color || this.textColor;
-        this.textBgColor = textBox.bgColor || "transparent";
-        this.textBgOpacity = clampTextBgOpacity(textBox.bgOpacity ?? this.textBgOpacity);
-        if (this.textColorInput) this.textColorInput.value = this.textColor;
-        if (this.textBgInput) this.textBgInput.value = this.textBgColor !== "transparent" ? this.textBgColor : "#ffffff";
-        this.syncTextBgOpacityInput();
-        this.openTextInput(textBox.normX * stageW, textBox.normY * stageH);
-      });
-
-      const getTextRef = () => this.textBoxes.find((t) => t.textId === textBox.textId);
-
-      interact(el)
-        .draggable({
-          listeners: {
-            start: () => {
-              this.selectedTextId = textBox.textId;
-              this.selectedRectId = null;
-            },
-            move: (event) => {
-              const t = getTextRef();
-              if (!t) return;
-              const dx = event.dx / scale;
-              const dy = event.dy / scale;
-              const w = t.normW * stageW;
-              const h = t.normH * stageH;
-              let x = t.normX * stageW + dx;
-              let y = t.normY * stageH + dy;
-              x = Math.max(0, Math.min(stageW - w, x));
-              y = Math.max(0, Math.min(stageH - h, y));
-              t.normX = x / stageW;
-              t.normY = y / stageH;
-              applyTextStyle(el, t);
-            },
-            end: () => {
-              this.saveHistory();
-              this.renderRects();
-            },
-          },
-        })
-        .resizable({
-          edges: { left: true, right: true, top: true, bottom: true },
-          listeners: {
-            start: () => {
-              this.selectedTextId = textBox.textId;
-              this.selectedRectId = null;
-            },
-            move: (event) => {
-              const t = getTextRef();
-              if (!t) return;
-              const delta = event.deltaRect || { left: 0, top: 0, width: 0, height: 0 };
-              let x = t.normX * stageW + delta.left / scale;
-              let y = t.normY * stageH + delta.top / scale;
-              let w = t.normW * stageW + delta.width / scale;
-              let h = t.normH * stageH + delta.height / scale;
-              const minSize = 40;
-              w = Math.max(minSize, w);
-              h = Math.max(minSize, h);
-              if (x < 0) {
-                w += x;
-                x = 0;
-              }
-              if (y < 0) {
-                h += y;
-                y = 0;
-              }
-              if (x + w > stageW) w = stageW - x;
-              if (y + h > stageH) h = stageH - y;
-              w = Math.max(minSize, w);
-              h = Math.max(minSize, h);
-              t.normX = x / stageW;
-              t.normY = y / stageH;
-              t.normW = w / stageW;
-              t.normH = h / stageH;
-              applyTextStyle(el, t);
-            },
-            end: () => {
-              this.saveHistory();
-              this.renderRects();
-            },
-          },
-        })
-        .styleCursor(false);
-    }
+    renderOverlay({
+      overlayEl: this.overlayEl,
+      stageW: this.stageW,
+      stageH: this.stageH,
+      scale: this.t.scale,
+      selectedRectId: this.selectedRectId,
+      selectedTextId: this.selectedTextId,
+      currentTool: this.currentTool,
+      preserveEls: new Set<Element | null>([this.previewEl, this.cropPreviewEl]),
+      rects: this.rects,
+      textBoxes: this.textBoxes,
+      cb: {
+        findRect: (id) => this.rects.find((r) => r.rectId === id),
+        findTextBox: (id) => this.textBoxes.find((t) => t.textId === id),
+        selectRect: (id) => {
+          this.selectedRectId = id;
+          this.selectedTextId = null;
+          this.renderRects();
+        },
+        selectText: (id) => {
+          this.selectedTextId = id;
+          this.selectedRectId = null;
+          this.renderRects();
+        },
+        saveHistory: () => this.saveHistory(),
+        rerender: () => this.renderRects(),
+        editTextBox: (textBox) => {
+          this.selectedTextId = textBox.textId;
+          this.selectedRectId = null;
+          this.activeTextId = textBox.textId;
+          this.textFontSize = textBox.fontSize || this.textFontSize;
+          this.textColor = textBox.color || this.textColor;
+          this.textBgColor = textBox.bgColor || "transparent";
+          this.textBgOpacity = clampTextBgOpacity(textBox.bgOpacity ?? this.textBgOpacity);
+          if (this.textColorInput) this.textColorInput.value = this.textColor;
+          if (this.textBgInput) this.textBgInput.value = this.textBgColor !== "transparent" ? this.textBgColor : "#ffffff";
+          this.syncTextBgOpacityInput();
+          this.openTextInput(textBox.normX * (this.stageW || 1), textBox.normY * (this.stageH || 1));
+        },
+      },
+    });
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────────────

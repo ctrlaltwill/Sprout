@@ -250,7 +250,7 @@ export class SproutAnalyticsView extends ItemView {
     return "chart-spline";
   }
 
-  onOpen() {
+  async onOpen() {
     this.render();
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.appearance?.enableAnimations ?? true) {
@@ -266,7 +266,7 @@ export class SproutAnalyticsView extends ItemView {
     }
   }
 
-  onClose() {
+  async onClose() {
     try {
       this._header?.dispose?.();
     } catch (e) { log.swallow("dispose header", e); }
@@ -435,8 +435,8 @@ export class SproutAnalyticsView extends ItemView {
     const now = Date.now();
     const events = this.plugin.store.getAnalyticsEvents?.() ?? [];
     const cards = this.plugin.store.getAllCards?.() ?? [];
-    const states = (this.plugin.store as any)?.data?.states ?? {};
-    const reviewLog = (this.plugin.store as any)?.data?.reviewLog ?? [];
+    const states = this.plugin.store.data.states ?? {};
+    const reviewLog = this.plugin.store.data.reviewLog ?? [];
 
     const dueForecast = computeDueForecast(states, now);
     void dueForecast; // reserved for future use
@@ -459,8 +459,8 @@ export class SproutAnalyticsView extends ItemView {
 
     for (const st of Object.values(states || {})) {
       if (!st || typeof st !== "object") continue;
-      if ((st as any).stage === "suspended") continue;
-      const due = Number((st as any).due);
+      if (st.stage === "suspended") continue;
+      const due = Number(st.due);
       if (!Number.isFinite(due) || due <= 0) continue;
       const idx = localDayIndex(due, timezone);
       dueByDay.set(idx, (dueByDay.get(idx) ?? 0) + 1);
@@ -763,7 +763,7 @@ export class SproutAnalyticsView extends ItemView {
     this._stabilityDistributionRoot = createRoot(stabilityDistributionHost);
     this._stabilityDistributionRoot.render(
       React.createElement(StabilityDistributionChart, {
-        cards: cards as any,
+        cards,
         states,
         enableAnimations: animationsEnabled,
       }),
@@ -815,11 +815,12 @@ export class SproutAnalyticsView extends ItemView {
     for (const ev of reviewEvents) {
       const at = Number(ev.at);
       if (!Number.isFinite(at)) continue;
+      if (ev.kind !== "review") continue;
       const idx = localDayIndex(at, timezone);
       const row = ratingsByDay.get(idx) ?? { again: 0, hard: 0, good: 0, easy: 0 };
-      const r = String((ev as any).result || "");
+      const r = String(ev.result || "");
       if (r === "again" || r === "hard" || r === "good" || r === "easy") {
-        (row as any)[r] += 1;
+        row[r as keyof typeof row] += 1;
       }
       ratingsByDay.set(idx, row);
     }

@@ -19,6 +19,7 @@ import {
   createCardEditor,
 } from "../card-editor/card-editor";
 import type { CardRecord } from "../core/store";
+import type { CardRecordType } from "../types/card";
 import { generateUniqueId } from "../core/ids";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -72,41 +73,6 @@ export function normaliseFolderPath(p: string): string {
   return s;
 }
 
-/** Strip Obsidian embed syntax `![[foo|bar]]` → `foo`. */
-export function stripEmbedSyntax(raw: string): string {
-  let s = String(raw ?? "").trim();
-  if (s.startsWith("![[") && s.endsWith("]]")) s = s.slice(3, -2).trim();
-  if (s.includes("|")) s = s.split("|")[0].trim();
-  return normaliseVaultPath(s);
-}
-
-/**
- * Resolve an IO image reference (embed syntax or plain path) to a vault TFile.
- * Tries metadataCache link resolution first, then direct path lookup.
- */
-export function resolveIoImageFile(app: App, sourceNotePath: string, imageRef: string): TFile | null {
-  const link = stripEmbedSyntax(imageRef);
-  if (!link) return null;
-
-  const dest = app.metadataCache.getFirstLinkpathDest(link, sourceNotePath);
-  if (dest instanceof TFile) return dest;
-
-  const af = app.vault.getAbstractFileByPath(link);
-  if (af instanceof TFile) return af;
-
-  return null;
-}
-
-/** Map a file extension to its MIME type (for IO image handling). */
-export function mimeFromExt(ext: string): string {
-  const e = String(ext || "").toLowerCase();
-  if (e === "png") return "image/png";
-  if (e === "jpg" || e === "jpeg") return "image/jpeg";
-  if (e === "webp") return "image/webp";
-  if (e === "gif") return "image/gif";
-  return "image/png";
-}
-
 /** True when running on Obsidian desktop. */
 export function isDesktop(): boolean {
   return !Platform.isMobileApp;
@@ -123,7 +89,7 @@ export function setDisabledUnder(root: HTMLElement, disabled: boolean) {
   );
   els.forEach((el) => {
     try {
-      (el as any).disabled = disabled;
+      el.disabled = disabled;
     } catch {
       // ignore
     }
@@ -137,12 +103,12 @@ export function setDisabledUnder(root: HTMLElement, disabled: boolean) {
 export function parkBehind(modalEl: HTMLElement, behind: boolean) {
   if (behind) {
     modalEl.addClass("sprout-modal-behind-io-editor");
-    (modalEl.style as any).pointerEvents = "none";
-    (modalEl.style as any).zIndex = "0";
+    modalEl.style.pointerEvents = "none";
+    modalEl.style.zIndex = "0";
   } else {
     modalEl.removeClass("sprout-modal-behind-io-editor");
-    (modalEl.style as any).pointerEvents = "";
-    (modalEl.style as any).zIndex = "";
+    modalEl.style.pointerEvents = "";
+    modalEl.style.zIndex = "";
   }
 }
 
@@ -284,7 +250,7 @@ export function createModalCardEditor(config: ModalCardEditorConfig): ModalCardE
   // Build a minimal card record so the editor component can render
   const dummyCard: CardRecord = {
     id: "",
-    type: type as any,
+    type: type as CardRecordType,
     title: null,
     q: null,
     a: null,
@@ -309,7 +275,7 @@ export function createModalCardEditor(config: ModalCardEditorConfig): ModalCardE
 
   return {
     root: editor.root,
-    inputEls: editor.inputEls as any,
+    inputEls: editor.inputEls,
     getGroupInputValue: editor.getGroupInputValue,
     getMcqOptions: editor.getMcqOptions,
     buildMcqValue: editor.buildMcqValue,
@@ -382,10 +348,9 @@ export type ClipboardImage = { mime: string; data: ArrayBuffer };
 /** Try to read an image from the system clipboard. Returns `null` on failure. */
 export async function readClipboardImage(): Promise<ClipboardImage | null> {
   try {
-    const navAny: any = navigator as any;
-    if (!navAny?.clipboard?.read) return null;
+    if (!navigator?.clipboard?.read) return null;
 
-    const items: any[] = await navAny.clipboard.read();
+    const items = await navigator.clipboard.read();
     for (const item of items) {
       const types: string[] = Array.isArray(item?.types) ? item.types : [];
       const imgType = types.find((t) => typeof t === "string" && t.startsWith("image/"));
@@ -421,7 +386,7 @@ export async function ensureParentFolder(app: App, vaultPath: string) {
   if (parts.length <= 1) return;
 
   const parent = parts.slice(0, -1).join("/");
-  const adapter: any = (app.vault as any)?.adapter;
+  const adapter = app.vault?.adapter;
   if (!adapter?.exists || !adapter?.mkdir) return;
 
   const exists = await adapter.exists(parent);
@@ -430,25 +395,25 @@ export async function ensureParentFolder(app: App, vaultPath: string) {
 
 /** Write binary data to a vault path (create or overwrite). */
 export async function writeBinaryToVault(app: App, vaultPath: string, data: ArrayBuffer) {
-  const vaultAny: any = app.vault as any;
+  const vault = app.vault;
   const path = normaliseVaultPath(vaultPath);
 
   await ensureParentFolder(app, path);
 
-  const existing = app.vault.getAbstractFileByPath(path);
+  const existing = vault.getAbstractFileByPath(path);
   if (existing instanceof TFile) {
-    if (typeof vaultAny?.modifyBinary === "function") {
-      await vaultAny.modifyBinary(existing, data);
+    if (typeof vault?.modifyBinary === "function") {
+      await vault.modifyBinary(existing, data);
       return;
     }
   }
 
-  if (typeof vaultAny?.createBinary === "function") {
-    await vaultAny.createBinary(path, data);
+  if (typeof vault?.createBinary === "function") {
+    await vault.createBinary(path, data);
     return;
   }
 
-  const adapter: any = vaultAny?.adapter;
+  const adapter = vault?.adapter;
   if (adapter?.writeBinary) {
     await adapter.writeBinary(path, data);
     return;
@@ -466,17 +431,17 @@ export async function writeBinaryToVault(app: App, vaultPath: string, data: Arra
  */
 export function bestEffortAttachmentPath(plugin: SproutPlugin, active: TFile, baseName: string, type: "io" | "card" = "io"): string {
   const folderRaw = type === "card"
-    ? ((plugin.settings as any)?.cardAttachments?.attachmentFolderPath ?? "")
-    : ((plugin.settings as any)?.imageOcclusion?.attachmentFolderPath ?? "");
+    ? (plugin.settings.cardAttachments.attachmentFolderPath ?? "")
+    : (plugin.settings.imageOcclusion.attachmentFolderPath ?? "");
   const folder = normaliseFolderPath(folderRaw);
 
   if (folder) return normaliseVaultPath(`${folder}${baseName}`);
 
-  const fm: any = (plugin.app as any)?.fileManager;
+  const fm = plugin.app.fileManager;
   if (fm?.getAvailablePathForAttachment) {
     try {
-      const p = fm.getAvailablePathForAttachment(baseName, active.path);
-      if (typeof p === "string" && p.length) return normaliseVaultPath(p);
+      const p = fm.getAvailablePathForAttachment(baseName, active.path) as unknown as string;
+      if (p && p.length) return normaliseVaultPath(p);
     } catch {
       // fall through
     }
@@ -507,13 +472,13 @@ export function collectAnchorIdsFromText(text: string): Set<string> {
  * existing IDs in the store or in the note's anchor references.
  */
 export async function reserveNewBcId(plugin: SproutPlugin, file: TFile): Promise<string> {
-  const storeAny: any = (plugin as any)?.store;
+  const store = plugin.store;
   const used = new Set<string>();
 
   try {
-    for (const k of Object.keys(storeAny?.data?.cards || {})) used.add(String(k));
-    for (const k of Object.keys(storeAny?.data?.quarantine || {})) used.add(String(k));
-    for (const k of Object.keys(storeAny?.data?.cardById || {})) used.add(String(k));
+    for (const k of Object.keys(store?.data?.cards || {})) used.add(String(k));
+    for (const k of Object.keys(store?.data?.quarantine || {})) used.add(String(k));
+    for (const k of Object.keys((store?.data as Record<string, unknown>)?.cardById ?? {})) used.add(String(k));
   } catch {
     // ignore
   }
@@ -525,7 +490,7 @@ export async function reserveNewBcId(plugin: SproutPlugin, file: TFile): Promise
     // ignore
   }
 
-  const id = String((generateUniqueId as any)(used)).trim();
+  const id = String(generateUniqueId(used)).trim();
   return id;
 }
 
@@ -558,10 +523,8 @@ export function buildIoMarkdownWithAnchor(params: {
 
 /** Set a modal's title text (cross-version compatibility). */
 export function setModalTitle(modal: Modal, title: string) {
-  const anyModal: any = modal as any;
-  if (typeof anyModal?.setTitle === "function") anyModal.setTitle(title);
-  else if (anyModal?.titleEl && typeof anyModal.titleEl.setText === "function") anyModal.titleEl.setText(title);
-  else if (anyModal?.titleEl) anyModal.titleEl.textContent = title;
+  if (typeof modal.setTitle === "function") modal.setTitle(title);
+  else if (modal.titleEl) modal.titleEl.textContent = title;
 }
 
 /** Does the string contain at least one `{{cN::…}}` cloze token? */

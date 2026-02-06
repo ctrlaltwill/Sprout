@@ -59,7 +59,7 @@ export class ConfirmResetSchedulingModal extends Modal {
       try {
         await this.plugin.resetAllCardScheduling();
         new Notice("Sprout – Settings Updated\nScheduling reset for all cards");
-      } catch {
+      } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset scheduling (see console).");
       }
@@ -111,7 +111,7 @@ export class ConfirmResetAnalyticsModal extends Modal {
       try {
         await this.plugin.resetAllAnalyticsData();
         new Notice("Sprout – Settings Updated\nAnalytics data cleared");
-      } catch {
+      } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset analytics (see console).");
       }
@@ -175,7 +175,7 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
       this.close();
       try {
         await this.onConfirm();
-      } catch {
+      } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to delete flashcards (see console).");
       }
@@ -228,7 +228,7 @@ export class ConfirmResetDefaultsModal extends Modal {
       this.close();
       try {
         await this.onConfirm();
-      } catch {
+      } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset settings (see console).");
       }
@@ -455,16 +455,16 @@ export class ConfirmRestoreBackupModal extends Modal {
         const res = await restoreFromDataJsonBackup(this.plugin, this.backup.path, { makeSafetyBackup });
         if (!res.ok) {
           new Notice(`Sprout: ${res.message}`);
-          restoreBtn.removeAttr("disabled");
+          restoreBtn.removeAttribute("disabled");
           return;
         }
         new Notice("Sprout – Settings Updated\nBackup restored");
         this.close();
         this.onRestored();
-      } catch {
+      } catch (e) {
         log.error(e);
         new Notice("Sprout: restore failed (see console).");
-        restoreBtn.removeAttr("disabled");
+        restoreBtn.removeAttribute("disabled");
       }
     };
   }
@@ -515,7 +515,7 @@ export class ConfirmDeleteBackupModal extends Modal {
     deleteBtn.onclick = async () => {
       this.close();
       try {
-        const adapter: any = (this.app.vault as any)?.adapter;
+        const adapter = this.app.vault?.adapter;
         if (!adapter) {
           new Notice("Sprout: cannot delete backup (no adapter).");
           return;
@@ -528,7 +528,7 @@ export class ConfirmDeleteBackupModal extends Modal {
         }
         new Notice("Sprout – Settings Updated\nBackup deleted");
         this.onDone?.();
-      } catch {
+      } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to delete backup (see console).");
       }

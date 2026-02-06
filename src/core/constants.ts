@@ -36,11 +36,14 @@ export type { SproutSettings } from "./default-settings";
 export { DEFAULT_SETTINGS } from "./default-settings";
 
 export function deepMerge<T>(target: T, src: Partial<T>): T {
-  const out: any = Array.isArray(target) ? (target as any[]).slice() : { ...(target as any) };
+  const out = Array.isArray(target)
+    ? (target as unknown[]).slice()
+    : { ...(target as Record<string, unknown>) };
   for (const k of Object.keys(src || {})) {
-    const v: any = (src as any)[k];
-    if (v && typeof v === "object" && !Array.isArray(v)) out[k] = deepMerge(out[k] || {}, v);
-    else out[k] = v;
+    const v = (src as Record<string, unknown>)[k];
+    if (v && typeof v === "object" && !Array.isArray(v))
+      (out as Record<string, unknown>)[k] = deepMerge((out as Record<string, unknown>)[k] || {}, v as Partial<never>);
+    else (out as Record<string, unknown>)[k] = v;
   }
   return out as T;
 }

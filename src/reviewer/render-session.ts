@@ -4,7 +4,14 @@ import { refreshAOS } from "../core/aos-loader";
 import { POPOVER_Z_INDEX } from "../core/constants";
 import { log } from "../core/logger";
 import { renderStudySessionHeader } from "./study-session-header";
-import type { Scope, Session, Rating } from "./image-occlusion-types";
+import type { Scope, Session, Rating } from "./types";
+import type { CardRecord } from "../core/store";
+
+declare global {
+  interface Window {
+    sproutOpenCurrentCardNote?: () => void;
+  }
+}
 
 type Args = {
   container: HTMLElement;
@@ -247,20 +254,19 @@ function getIoGroupKey(card: any): string | null {
   return ioChildKeyFromId(id);
 }
 
-function isIoCard(card: any): boolean {
+function isIoCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
-  return t === "io" || t === "io-child" || t === "io_child" || t === "iochild";
+  return t === "io" || t === "io-child";
 }
 
 // --- MCQ option order --------------------------------------------------------
 
 function ensureMcqOrderMap(session: Session): Record<string, number[]> {
-  const s: any = session as any;
-  if (!s.mcqOrderMap || typeof s.mcqOrderMap !== "object") s.mcqOrderMap = {};
-  return s.mcqOrderMap as Record<string, number[]>;
+  if (!session.mcqOrderMap || typeof session.mcqOrderMap !== "object") session.mcqOrderMap = {};
+  return session.mcqOrderMap;
 }
 
-function isPermutation(arr: any, n: number): boolean {
+function isPermutation(arr: unknown, n: number): boolean {
   if (!Array.isArray(arr) || arr.length !== n) return false;
   const seen = new Array<boolean>(n).fill(false);
   for (const x of arr) {
@@ -598,7 +604,7 @@ function makeHeaderMenu(opts: {
 // --- Main -------------------------------------------------------------------
 
 export function renderSessionMode(args: Args) {
-  const skipEnabled = !!((args as any).enableSkipButton ?? (args as any).skipEnabled);
+  const skipEnabled = !!(args.enableSkipButton ?? args.skipEnabled);
   const practiceMode = !!args.practiceMode;
   const four = !!args.fourButtonMode;
   const applyAOS = !!args.applyAOS;
@@ -826,6 +832,8 @@ export function renderSessionMode(args: Args) {
             })()
           : "Basic");
 
+  const sourcePath = String(card.sourceNotePath || card.location || card.sourcePath || args.session?.scope?.name || "");
+
   const titleEl = document.createElement("h2");
   titleEl.className =
     "bc text-lg font-bold leading-none whitespace-pre-wrap break-words text-center px-4 bc-question-title";
@@ -838,13 +846,11 @@ export function renderSessionMode(args: Args) {
     titleEl.textContent = titleMd;
   }
 
-  const sourcePath = String(card.sourceNotePath || card.location || card.sourcePath || args.session?.scope?.name || "");
-
   // ===== Content =====
   const mutedLabel = (s: string) => h("div", "text-muted-foreground text-sm font-medium", s);
 
   const setupLinkHandlers = (rootEl: HTMLElement, srcPath: string) => {
-    const app = (window as any)?.app;
+    const app = window?.app;
     const links = rootEl.querySelectorAll<HTMLAnchorElement>("a");
     links.forEach((link) => {
       link.addEventListener("click", (e) => {
@@ -915,8 +921,8 @@ export function renderSessionMode(args: Args) {
     section.appendChild(mutedLabel(reveal ? "Answer" : "Options"));
 
     // Only show MCQ options, not info, as answer options
-    const opts = (card.options || []).filter(opt => !opt.isCorrect || (opt.isCorrect && (card.a || "").trim() === opt.text.trim()));
-    const chosenOrigIdx = graded?.meta?.mcqChoice;
+    const opts = (card.options || []).filter((opt: any) => !opt.isCorrect || (opt.isCorrect && (card.a || "").trim() === opt.text.trim()));
+    const chosenOrigIdx = (graded?.meta as Record<string, unknown> | undefined)?.mcqChoice;
     const order = getMcqDisplayOrder(args.session, card, !!args.randomizeMcqOptions);
 
     const optionList = document.createElement("div");
@@ -978,7 +984,7 @@ export function renderSessionMode(args: Args) {
       if (text && (text.includes('[[') || text.includes('$'))) {
         void args.renderMarkdownInto(textEl, text, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
       } else if (text && text.includes("\n")) {
-        text.split(/\n+/).forEach(line => {
+        text.split(/\n+/).forEach((line: string) => {
           const p = document.createElement("div");
           p.textContent = line;
           p.style.lineHeight = "1.75";
@@ -1110,7 +1116,7 @@ export function renderSessionMode(args: Args) {
         const againBtn = makeTextButton({
           label: "Again",
           className: "btn-destructive",
-          onClick: () => void args.gradeCurrentRating("again" as any, {}).then(goNext),
+          onClick: () => void args.gradeCurrentRating("again", {}).then(goNext),
           kbd: "1",
         });
         againBtn.style.setProperty("background-color", "var(--sprout-again-bg)", "important");
@@ -1121,7 +1127,7 @@ export function renderSessionMode(args: Args) {
           const hardBtn = makeTextButton({
             label: "Hard",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("hard" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("hard", {}).then(goNext),
             kbd: "2",
           });
           hardBtn.style.setProperty("background-color", "var(--sprout-hard-bg)", "important");
@@ -1131,7 +1137,7 @@ export function renderSessionMode(args: Args) {
           const goodBtn = makeTextButton({
             label: "Good",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("good" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "3",
           });
           goodBtn.style.setProperty("background-color", "var(--sprout-good-bg)", "important");
@@ -1141,7 +1147,7 @@ export function renderSessionMode(args: Args) {
           const easyBtn = makeTextButton({
             label: "Easy",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("easy" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("easy", {}).then(goNext),
             kbd: "4",
           });
           easyBtn.style.setProperty("background-color", "var(--sprout-easy-bg)", "important");
@@ -1151,7 +1157,7 @@ export function renderSessionMode(args: Args) {
           const goodBtn = makeTextButton({
             label: "Good",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("good" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "2",
           });
           goodBtn.style.setProperty("background-color", "var(--sprout-good-bg)", "important");
@@ -1167,7 +1173,7 @@ export function renderSessionMode(args: Args) {
           onClick: () => args.skipCurrentCard({ uiSource: "skip-btn", uiKey: 13, uiButtons: four ? 4 : 2 }),
           kbd: "↵",
         });
-        (skipBtn as any).dataset.bcAction = "skip-card";
+        skipBtn.dataset.bcAction = "skip-card";
         skipBtn.title = "Skip (↵)";
         mainRow.appendChild(skipBtn);
       }
@@ -1207,8 +1213,7 @@ export function renderSessionMode(args: Args) {
     if (!filePath) return;
     const anchor = card.anchor || card.blockId || card.id;
     const anchorStr = anchor ? `#^${anchor}` : "";
-    // @ts-expect-error — Obsidian injects app on window at runtime
-    const app = window.app || (window.require && window.require('obsidian').app);
+    const app = window.app;
     if (app && app.workspace && typeof app.workspace.openLinkText === 'function') {
       app.workspace.openLinkText(filePath + anchorStr, filePath, true);
     }

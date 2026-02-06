@@ -1,0 +1,186 @@
+/**
+ * widget/widget-render-summary.ts
+ * ────────────────────────────────
+ * Renders the "summary" mode of the Sprout sidebar widget – the screen
+ * the user sees before starting a study session.
+ *
+ * Extracted from `SproutWidgetView.renderSummary` to keep the main
+ * view file lean.
+ */
+
+import { MS_DAY } from "../core/constants";
+import { el } from "../core/ui";
+
+import { toTitleCase } from "./widget-helpers";
+import { makeTextButton, applyWidgetActionButtonStyles } from "./widget-buttons";
+import { isFolderNote, getCardsInActiveScope, computeCounts, folderNotesAsDecksEnabled } from "./widget-scope";
+
+/* ------------------------------------------------------------------ */
+/*  renderWidgetSummary                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Build and append the summary-mode DOM tree into `root`.
+ *
+ * @param view – the `SproutWidgetView` instance (typed loosely to avoid
+ *               circular imports)
+ * @param root – container element to render into
+ */
+export function renderWidgetSummary(view: any, root: HTMLElement): void {
+  const wrap = el("div", "bc bg-background");
+  wrap.classList.add("sprout-widget", "sprout");
+
+  const f = view.activeFile;
+  const noteName = f ? f.basename : "No note open";
+
+  const cards = f ? getCardsInActiveScope(view.plugin.store, f, view.plugin.settings) : [];
+  const counts = computeCounts(cards, view.plugin.store);
+
+  // Header: study title with open button
+  const header = el("div", "bc flex items-center justify-between px-4 py-3 gap-2");
+  header.style.setProperty("border", "none", "important");
+  header.style.setProperty("border-radius", "0", "important");
+  header.style.setProperty("margin", "0 20px", "important");
+  header.style.setProperty("padding", "15px 0 10px 0", "important");
+
+  // Create title (not a button)
+  const isFolder = isFolderNote(f);
+  const titleText = noteName.replace(/\.md$/, ""); // Remove .md extension
+  const titleCased = toTitleCase(titleText);
+
+  const summaryLabelWrap = el("div", "bc flex flex-col items-start");
+  const summaryScope = `${titleCased} ${isFolder ? "Folder" : "Note"}`;
+  const summaryTitle = el("div", "bc text-xs", `Study ${summaryScope}`);
+  summaryTitle.style.setProperty("color", "var(--foreground)", "important");
+  summaryTitle.style.setProperty("font-weight", "600", "important");
+  summaryLabelWrap.appendChild(summaryTitle);
+
+  const remainingCount = counts.total;
+  const remainingLabel = `${remainingCount} Flashcard${remainingCount === 1 ? "" : "s"}`;
+  const remainingLine = el("div", "bc text-xs", remainingLabel);
+  remainingLine.style.setProperty("color", "var(--foreground)", "important");
+  remainingLine.style.setProperty("font-weight", "400", "important");
+  remainingLine.style.setProperty("margin-top", "3px", "important");
+  summaryLabelWrap.appendChild(remainingLine);
+
+  header.appendChild(summaryLabelWrap);
+
+  wrap.appendChild(header);
+
+  if (!f) {
+    const body = el("div", "bc px-4 py-6 text-center");
+    const msg = el("div", "bc text-muted-foreground text-sm", "Open a note to see flashcards.");
+    body.appendChild(msg);
+    wrap.appendChild(body);
+    root.appendChild(wrap);
+    return;
+  }
+
+  if (!cards.length) {
+    const body = el("div", "bc px-4 py-6");
+    body.style.setProperty("border-radius", "0", "important");
+    body.style.setProperty("margin", "0 10px", "important");
+    body.style.setProperty("padding", "15px 5px", "important");
+    body.style.setProperty("text-align", "center", "important");
+    const folderDecksEnabled = folderNotesAsDecksEnabled(view.plugin.settings);
+
+    let msg = "No flashcards found in this note.";
+    if (isFolder && folderDecksEnabled) {
+      msg = "No flashcards found in this note or folder.";
+    } else if (isFolder && !folderDecksEnabled) {
+      msg = "No flashcards found. Enable 'Treat folder notes as decks' in settings.";
+    }
+
+    const msgEl = el("div", "bc text-muted-foreground mt-3 text-sm", msg);
+    body.appendChild(msgEl);
+    wrap.appendChild(body);
+    root.appendChild(wrap);
+    return;
+  }
+
+  // Teaser card: summary + next up preview
+  const teaser = el("div", "bc card px-4 py-4 space-y-3");
+  teaser.style.setProperty("margin", "10px auto 20px", "important");
+  teaser.style.setProperty("gap", "0", "important");
+  teaser.style.setProperty("border-radius", "var(--input-radius)", "important");
+  teaser.style.setProperty("border", "var(--border-width) solid var(--background-modifier-border)", "important");
+  teaser.style.setProperty("padding", "20px", "important");
+  teaser.style.setProperty("max-width", "90%", "important");
+  teaser.style.setProperty("box-shadow", "none", "important");
+
+  const teaserTitle = el("div", "bc text-xs font-semibold", `${titleCased} ${isFolder ? "Folder" : "Note"}`);
+  teaserTitle.style.setProperty("color", "var(--foreground)", "important");
+  teaserTitle.style.setProperty("font-size", "11px", "important");
+  teaserTitle.style.setProperty("margin-bottom", "0", "important");
+  teaser.appendChild(teaserTitle);
+
+  const previewSession = view.buildSessionForActiveNote();
+  const queueCount = previewSession?.queue?.length ?? 0;
+  const events = view.plugin.store.getAnalyticsEvents?.() ?? [];
+  const nowMs = Date.now();
+  const weekAgo = nowMs - 7 * MS_DAY;
+  let timeTotalMs = 0;
+  let timeCount = 0;
+  for (const ev of events) {
+    if (!ev || ev.kind !== "review") continue;
+    const at = Number(ev.at);
+    if (!Number.isFinite(at) || at < weekAgo) continue;
+    const ms = Number(ev.msToAnswer);
+    if (!Number.isFinite(ms) || ms <= 0) continue;
+    timeTotalMs += ms;
+    timeCount += 1;
+  }
+  const avgMs = timeCount > 0 ? timeTotalMs / timeCount : 60_000;
+  const roundedAvgMs = Math.ceil(avgMs / 10_000) * 10_000;
+  const estTotalMs = queueCount * roundedAvgMs;
+  const estMinutes = queueCount > 0 ? Math.max(1, Math.round(estTotalMs / 60_000)) : 0;
+  const dueLabel = queueCount > 0 ? `${queueCount} Cards Due` : "No Cards Due";
+  const countsLine = el("div", "bc text-xs", `${dueLabel}  •  ${counts.total} Cards Total`);
+  countsLine.style.setProperty("color", "var(--foreground)", "important");
+  countsLine.style.setProperty("opacity", "0.7", "important");
+  countsLine.style.setProperty("margin-top", "10.5px", "important");
+  teaser.appendChild(countsLine);
+
+  if (queueCount > 0) {
+    const timeLine = el("div", "bc text-xs", `Estimated Time: ${estMinutes} min`);
+    timeLine.style.setProperty("color", "var(--foreground)", "important");
+    timeLine.style.setProperty("opacity", "0.7", "important");
+    teaser.appendChild(timeLine);
+  } else {
+    const practiceLine = el(
+      "div",
+      "bc text-xs",
+      "Would you like to start a practice session? This won't count towards card scheduling and you cannot bury cards or undo answers in this mode.",
+    );
+    practiceLine.style.setProperty("color", "var(--foreground)", "important");
+    practiceLine.style.setProperty("opacity", "0.7", "important");
+    teaser.appendChild(practiceLine);
+  }
+
+  wrap.appendChild(teaser);
+
+  // Footer: Study button
+  const footer = el("div", "bc px-4 py-3 flex gap-2");
+  footer.style.setProperty("border", "none", "important");
+  footer.style.setProperty("border-radius", "0", "important");
+  footer.style.setProperty("max-width", "90%", "important");
+  footer.style.setProperty("margin", "10px auto", "important");
+  footer.style.setProperty("padding", "0 0 15px 0", "important");
+  const studyLabel = queueCount > 0 ? "Start Studying" : "Start A Practice Session";
+  const studyBtn = makeTextButton({
+    label: studyLabel,
+    className: "bc btn-outline w-full text-xs flex items-center justify-center gap-2",
+    onClick: () => (queueCount > 0 ? view.startSession() : view.startPracticeSession()),
+  });
+  applyWidgetActionButtonStyles(studyBtn);
+
+  const studyKbd = document.createElement("kbd");
+  studyKbd.className = "bc kbd ml-2 text-xs";
+  studyKbd.textContent = "↵";
+  studyBtn.appendChild(studyKbd);
+
+  footer.appendChild(studyBtn);
+  wrap.appendChild(footer);
+
+  root.appendChild(wrap);
+}

@@ -306,7 +306,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
   const filteredCards = React.useMemo(() => {
     return (props.cards ?? []).filter((card) => {
       if (!card) return false;
-      if (card.type === "cloze" && Array.isArray((card as any).clozeChildren) && (card as any).clozeChildren.length)
+      if (card.type === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length)
         return false;
       if (selectedType && selectedType !== "all" && card.type !== selectedType) return false;
       if (selectedGroups.length) {

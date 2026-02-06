@@ -201,7 +201,7 @@ function isBackupFileName(name: string): boolean {
  * Prunes old backup files, keeping at most `maxCount` (sorted by mtime desc).
  */
 async function pruneDataJsonBackups(plugin: SproutPlugin, maxCount = BACKUP_MAX_COUNT): Promise<void> {
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
+  const adapter = plugin.app?.vault?.adapter;
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return;
 
@@ -232,7 +232,7 @@ async function pruneDataJsonBackups(plugin: SproutPlugin, maxCount = BACKUP_MAX_
 
 /** Reads the plugin manifest ID (e.g. "sprout-flashcards"). */
 export function getPluginId(plugin: SproutPlugin): string | null {
-  const id = String((plugin as any)?.manifest?.id ?? "").trim();
+  const id = String(plugin.manifest?.id ?? "").trim();
   return id ? id : null;
 }
 
@@ -248,14 +248,15 @@ export function getPluginId(plugin: SproutPlugin): string | null {
 function getStoreLikeRoot(obj: any): any | null {
   if (!obj || typeof obj !== "object") return null;
 
-  const candidates = [obj?.data, obj?.store, obj?.db, obj] as any[];
+  const candidates = [obj?.data, obj?.store, obj?.db, obj] as unknown[];
   for (const c of candidates) {
     if (!isPlainObject(c)) continue;
 
-    const hasCards = isPlainObject((c as any).cards);
-    const hasStates = isPlainObject((c as any).states);
-    const hasReviewLog = Array.isArray((c as any).reviewLog);
-    const hasQuarantine = isPlainObject((c as any).quarantine);
+    const rec = c as Record<string, unknown>;
+    const hasCards = isPlainObject(rec.cards);
+    const hasStates = isPlainObject(rec.states);
+    const hasReviewLog = Array.isArray(rec.reviewLog);
+    const hasQuarantine = isPlainObject(rec.quarantine);
 
     if (hasCards || hasStates || hasReviewLog || hasQuarantine) return c;
   }
@@ -291,9 +292,7 @@ function computeSchedulingStats(states: any, now: number) {
  * JSON round-trip.
  */
 function clonePlain<T>(x: T): T {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sc = (globalThis as any)?.structuredClone;
-  if (typeof sc === "function") return sc(x);
+  if (typeof structuredClone === "function") return structuredClone(x);
   return JSON.parse(JSON.stringify(x)) as T;
 }
 
@@ -344,7 +343,7 @@ export type DataJsonBackupStats = DataJsonBackupEntry & {
  * Sorted newest-first by mtime.
  */
 export async function listDataJsonBackups(plugin: SproutPlugin): Promise<DataJsonBackupEntry[]> {
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
+  const adapter = plugin.app?.vault?.adapter;
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return [];
 
@@ -372,7 +371,7 @@ export async function listDataJsonBackups(plugin: SproutPlugin): Promise<DataJso
  * Returns `null` if the file can't be read or doesn't contain valid data.
  */
 export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string): Promise<DataJsonBackupStats | null> {
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
+  const adapter = plugin.app?.vault?.adapter;
   if (!adapter || !path) return null;
 
   const obj = await tryReadJson(adapter, path);
@@ -423,7 +422,7 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
  * Returns the backup file path, or `null` on failure.
  */
 export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: string): Promise<string | null> {
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
+  const adapter = plugin.app?.vault?.adapter;
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return null;
 
@@ -467,7 +466,7 @@ export async function restoreFromDataJsonBackup(
   backupPath: string,
   opts: { makeSafetyBackup?: boolean } = {},
 ): Promise<{ ok: boolean; message: string }> {
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
+  const adapter = plugin.app?.vault?.adapter;
   if (!adapter) return { ok: false, message: "No vault adapter available." };
   if (!backupPath) return { ok: false, message: "No backup path provided." };
 
@@ -492,16 +491,10 @@ export async function restoreFromDataJsonBackup(
     (snapshot).version = Math.max(Number((snapshot).version ?? 0) || 0, 1);
 
     // Mutate-in-place to preserve references to plugin.store.data
-    replaceObjectContents((plugin.store as any).data, snapshot);
+    replaceObjectContents(plugin.store.data, snapshot);
 
-    // Persist through the store if available; otherwise fall back to plugin save
-    if (typeof (plugin.store as any)?.persist === "function") {
-      await (plugin.store as any).persist();
-    } else if (typeof (plugin as any)?.saveAll === "function") {
-      await (plugin as any).saveAll();
-    } else if (typeof (plugin as any)?.saveData === "function") {
-      await (plugin as any).saveData((plugin as any).store?.data ?? snapshot);
-    }
+    // Persist through the store
+    await plugin.store.persist();
 
     return { ok: true, message: "Restore completed." };
   } catch (e: any) {
@@ -523,7 +516,7 @@ export async function ensureRoutineBackupIfNeeded(plugin: SproutPlugin): Promise
   if (now - lastRoutineBackupCheck < ROUTINE_CHECK_COOLDOWN_MS) return;
   lastRoutineBackupCheck = now;
 
-  const adapter: any = (plugin.app?.vault as any)?.adapter;
+  const adapter = plugin.app?.vault?.adapter;
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return;
 

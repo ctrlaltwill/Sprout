@@ -55,6 +55,10 @@ export const DEFAULT_SETTINGS: SproutSettings = {
   },
 
   home: {
+    userName: "",
+    showGreeting: true,
+    hideSproutInfo: false,
+    hasOpenedHome: false,
     pinnedDecks: [],
     githubStars: {
       count: null,

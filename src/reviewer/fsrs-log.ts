@@ -147,7 +147,7 @@ export function logFsrsIfNeeded(args: {
 
   const prefix = isSkip ? "SKIP:" : "FSRS:";
 
-  log.debug(
+  log.info(
     `${prefix} card ${id} | type=${ct || "unknown"} | rating=${String(args.rating)}${uiBits} | ` +
       `${stateBits}${tBits} | ` +
       `R_now=${rNowStr} | R_target=${rTargetStr} | ` +
@@ -198,7 +198,7 @@ export function logUndoIfNeeded(args: {
       ? ` | mcqChoice=${args.meta?.mcqChoice} | mcqCorrect=${args.meta?.mcqCorrect} | mcqPass=${args.meta?.mcqPass}`
       : "";
 
-  log.debug(
+  log.info(
     `UNDO: card ${id} | type=${ct || "unknown"} | reverted=1 | undoneRating=${rating} | ${bits}${mcqBits}`,
   );
 }

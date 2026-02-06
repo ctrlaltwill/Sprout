@@ -1,14 +1,14 @@
 // src/reviewer/mcq.ts
 import type SproutPlugin from "../main";
-import type { Session } from "./image-occlusion-types";
+import type { CardRecord } from "../types/card";
+import type { Session } from "./types";
 
 export function isMcqOptionRandomisationEnabled(plugin: SproutPlugin): boolean {
-  return !!(plugin.settings.reviewer as any)?.randomizeMcqOptions;
+  return !!plugin.settings.reviewer?.randomizeMcqOptions;
 }
 
 export function initMcqOrderState(session: Session) {
-  const s: any = session as any;
-  if (!s.mcqOrderMap || typeof s.mcqOrderMap !== "object") s.mcqOrderMap = {};
+  if (!session.mcqOrderMap || typeof session.mcqOrderMap !== "object") session.mcqOrderMap = {};
 }
 
 function isPermutation(arr: number[], n: number): boolean {
@@ -31,20 +31,19 @@ function shuffleInPlace(a: number[]) {
   }
 }
 
-export function getMcqOptionOrder(plugin: SproutPlugin, session: Session, card: any): number[] {
-  const opts = (card)?.options || [];
+export function getMcqOptionOrder(plugin: SproutPlugin, session: Session, card: CardRecord): number[] {
+  const opts = card?.options || [];
   const n = Array.isArray(opts) ? opts.length : 0;
   const identity = Array.from({ length: n }, (_, i) => i);
 
-  if ((card)?.type !== "mcq") return identity;
+  if (card?.type !== "mcq") return identity;
   if (!isMcqOptionRandomisationEnabled(plugin)) return identity;
 
-  const id = String((card)?.id ?? "");
+  const id = String(card?.id ?? "");
   if (!id) return identity;
 
-  const s: any = session as any;
-  if (!s.mcqOrderMap || typeof s.mcqOrderMap !== "object") s.mcqOrderMap = {};
-  const map = s.mcqOrderMap as Record<string, number[]>;
+  if (!session.mcqOrderMap || typeof session.mcqOrderMap !== "object") session.mcqOrderMap = {};
+  const map = session.mcqOrderMap;
 
   const existing = map[id];
   if (isPermutation(existing, n)) return existing;

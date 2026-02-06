@@ -7,6 +7,7 @@
  */
 
 import type { CardRecord } from "../core/store";
+import type { App } from "obsidian";
 import { log } from "../core/logger";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
@@ -255,11 +256,11 @@ export function buildCardBlockPipeMarkdown(id: string, rec: CardRecord): string[
       else pushPipeField(out, "O", txt);
     });
   } else if (rec.type === "io") {
-    const src = String((rec as any).imageRef || (rec as any).ioSrc || "");
+    const src = String(rec.imageRef || "");
     pushPipeField(out, "IO", src.trim());
-    const prompt = String((rec as any).prompt || "").trim();
+    const prompt = String(rec.prompt || "").trim();
     if (prompt) pushPipeField(out, "Q", prompt);
-    const mask = String((rec as any).maskMode || "").trim();
+    const mask = String(rec.maskMode || "").trim();
     if (mask) pushPipeField(out, "C", mask);
   }
 
@@ -366,15 +367,11 @@ export function tryResolveToResourceSrc(app: any, linkpathOrPath: string, fromNo
 /**
  * Get a resolved `<img src>` URL + a display reference for IO cards.
  */
-export function getIoResolvedImage(app: any, card: any): { src: string | null; displayRef: string | null } {
+export function getIoResolvedImage(app: App, card: CardRecord): { src: string | null; displayRef: string | null } {
   const raw =
     typeof card?.imageRef === "string"
       ? card.imageRef
-      : typeof card?.ioSrc === "string"
-        ? card.ioSrc
-        : typeof card?.src === "string"
-          ? card.src
-          : null;
+      : null;
 
   if (!raw || !String(raw).trim()) return { src: null, displayRef: null };
 
@@ -390,19 +387,20 @@ export function getIoResolvedImage(app: any, card: any): { src: string | null; d
  * Extract small occlusion labels from a card's mask data
  * (for badge rendering in the IO preview).
  */
-export function extractOcclusionLabels(card: any, max = 8): string[] {
+export function extractOcclusionLabels(card: CardRecord, max = 8): string[] {
   const out: string[] = [];
 
-  const push = (v: any) => {
+  const push = (v: unknown) => {
     const s = String(v ?? "").trim();
     if (!s) return;
     out.push(s);
   };
 
-  const list: any[] = Array.isArray(card?.occlusions)
-    ? card.occlusions
-    : Array.isArray(card?.rects)
-      ? card.rects
+  const c = card as Record<string, unknown>;
+  const list: unknown[] = Array.isArray(c?.occlusions)
+    ? c.occlusions
+    : Array.isArray(c?.rects)
+      ? c.rects
       : [];
 
   for (const r of list) {
@@ -423,7 +421,7 @@ export function extractOcclusionLabels(card: any, max = 8): string[] {
 }
 
 /** Render small occlusion badge chips as an HTML string. */
-export function renderOcclusionBadgesHtml(card: any): string {
+export function renderOcclusionBadgesHtml(card: CardRecord): string {
   const labels = extractOcclusionLabels(card, 10);
   if (!labels.length) return "";
 
@@ -525,10 +523,10 @@ export function buildIoOccludedHtml(
 
 /** Build a searchable text blob from all card fields. */
 export function searchText(card: CardRecord): string {
-  const id = String((card as any)?.id ?? "").toLowerCase();
+  const id = String(card.id ?? "").toLowerCase();
   const title = (card.title || "").toLowerCase();
 
-  const t = String((card as any)?.type ?? "").toLowerCase();
+  const t = String(card.type ?? "").toLowerCase();
   const tLabel = typeLabelBrowser(t).toLowerCase();
 
   const typeAliases = t === "io" ? ["io", "image", "image occlusion", "occlusion"] : [t];
@@ -537,14 +535,12 @@ export function searchText(card: CardRecord): string {
   const answer = buildAnswerOrOptionsFor(card).toLowerCase();
   const info = (card.info || "").toLowerCase();
 
-  const groups = fmtGroups((card as any).groups).toLowerCase();
-  const rawGroups = coerceGroups((card as any).groups).map((g) => String(g).toLowerCase());
+  const groups = fmtGroups(card.groups).toLowerCase();
+  const rawGroups = coerceGroups(card.groups).map((g) => String(g).toLowerCase());
   const location = fmtLocation(card.sourceNotePath).toLowerCase();
   const sourcePath = String(card.sourceNotePath || "").toLowerCase();
-  const stage = stageLabel(String((card as any)?.stage || "")).toLowerCase();
-  const dueText = fmtDue((card as any)?.due ?? null).toLowerCase();
 
-  return `${id}\n${t}\n${tLabel}\n${typeAliases.join(" ")}\n${title}\n${prompt}\n${answer}\n${info}\n${groups}\n${rawGroups.join(" ")}\n${location}\n${sourcePath}\n${stage}\n${dueText}`;
+  return `${id}\n${t}\n${tLabel}\n${typeAliases.join(" ")}\n${title}\n${prompt}\n${answer}\n${info}\n${groups}\n${rawGroups.join(" ")}\n${location}\n${sourcePath}`;
 }
 
 /** Parse a search query string, extracting `g:` group filters and `type:` type filters. */

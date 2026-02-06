@@ -92,7 +92,7 @@ export const log = {
 // Expose on globalThis so devs can toggle from the console:
 //   window.__sproutLog.setLevel("debug")
 try {
-  (globalThis as any).__sproutLog = log;
+  globalThis.__sproutLog = log;
 } catch {
   // non-browser environment — harmless
 }

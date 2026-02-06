@@ -32,11 +32,10 @@ function prettifyGroupLabel(groupPath: string) {
 }
 
 function ensureBasecoatStartedOnce() {
-  const bc = (window as any)?.basecoat;
+  const bc = window?.basecoat;
   if (!bc) return;
 
-  const w = window as any;
-  if (w.__bc_bootcamp_started) return;
+  if (window.__bc_bootcamp_started) return;
 
   try {
     if (typeof bc.start === "function") bc.start();
@@ -44,7 +43,7 @@ function ensureBasecoatStartedOnce() {
     // ignore
   }
 
-  w.__bc_bootcamp_started = true;
+  window.__bc_bootcamp_started = true;
 }
 
 function titleCaseToken(token: string): string {
@@ -236,7 +235,7 @@ export function renderDeckMode(args: Args) {
   root.appendChild(title);
 
   // Tree early (needed for badges + expand/collapse all)
-  const tree: DeckNode = buildDeckTree(cards as any, states, now, vaultName);
+  const tree: DeckNode = buildDeckTree(cards, states, now, vaultName);
 
   const collectFolderKeys = (node: DeckNode, out: Set<string>) => {
     for (const child of node.children.values()) {
@@ -271,7 +270,7 @@ export function renderDeckMode(args: Args) {
   studyAllBtn.style.setProperty("padding", "7px 15px", "important");
 
   // ===== Group combobox (single select) =====
-  const gx = getGroupIndex(plugin as any);
+  const gx = getGroupIndex(plugin);
 
   const groupCombo = document.createElement("div");
   groupCombo.className = "relative w-full md:w-auto";
@@ -318,7 +317,7 @@ export function renderDeckMode(args: Args) {
   searchInput.type = "text";
   searchInput.placeholder = "Search groups…";
   searchInput.autocomplete = "off";
-  (searchInput as any).autocorrect = "off";
+  searchInput.setAttribute("autocorrect", "off");
   searchInput.spellcheck = false;
   searchInput.className = "sprout-group-search-input text-sm flex-1 h-9";
   searchInput.style.minWidth = "0";
@@ -330,28 +329,16 @@ export function renderDeckMode(args: Args) {
   popover.appendChild(listbox);
 
   const getAllGroups = (): string[] => {
-    const anyGx = gx as any;
-
     try {
-      if (typeof anyGx.getAllGroups === "function") return anyGx.getAllGroups();
-      if (typeof anyGx.all === "function") return anyGx.all();
-      if (anyGx.groups && typeof anyGx.groups[Symbol.iterator] === "function")
-        return Array.from(anyGx.groups);
-      if (anyGx.paths && typeof anyGx.paths[Symbol.iterator] === "function")
-        return Array.from(anyGx.paths);
-      if (Array.isArray(anyGx.groups)) return anyGx.groups.slice();
+      return gx.getAllGroups();
     } catch {
       // ignore
     }
 
     // Fallback: derive from cards (best-effort)
     const out = new Set<string>();
-    for (const c of cards as any[]) {
-      const gp = (c).groupPath ?? (c).group ?? (c).groupKey;
-      if (typeof gp === "string" && gp) out.add(gp);
-
-      const gps = (c).groups;
-      if (Array.isArray(gps)) for (const g of gps) if (typeof g === "string" && g) out.add(g);
+    for (const c of cards) {
+      if (Array.isArray(c.groups)) for (const g of c.groups) if (typeof g === "string" && g) out.add(g);
     }
     return Array.from(out);
   };

@@ -428,7 +428,7 @@ export function parseCardsFromText(
         "info",
       ] as const
     ).forEach((k) => {
-      if ((current as any)[k]) (current as any)[k] = normaliseMultiline((current as any)[k]);
+      if (current[k]) current[k] = normaliseMultiline(current[k] as string);
     });
 
     if (!current.id && pendingId) {
@@ -506,8 +506,7 @@ export function parseCardsFromText(
   };
 
   const appendToField = (card: ParsedCard, key: CurrentFieldKey, chunk: string) => {
-    const curAny = card as any;
-    curAny[key] = (curAny[key] ? curAny[key] + "\n" : "") + chunk;
+    card[key] = (card[key] ? card[key] + "\n" : "") + chunk;
   };
 
   const appendMarkedMcqLine = (card: ParsedCard, kind: "W" | "C", chunk: string) => {
@@ -607,7 +606,7 @@ export function parseCardsFromText(
         const { text: rawText, closed } = stripClosingPipe(restRaw);
         const chunk = unescapePipeText(rawText);
 
-        (current as any).prompt = (current as any).prompt ?? null;
+        current.prompt = current.prompt ?? null;
         appendToField(current, "prompt", chunk);
         if (!closed) pipeField = "prompt";
 
@@ -669,7 +668,7 @@ export function parseCardsFromText(
       // IO-specific fields first (so they don't get misinterpreted as MCQ)
       if (current.type === "io") {
         if (key === "O") {
-          (current as any).ioOcclusionsRaw = (current as any).ioOcclusionsRaw ?? null;
+          current.ioOcclusionsRaw = current.ioOcclusionsRaw ?? null;
           appendToField(current, "ioOcclusionsRaw", chunk);
           pipeField = closed ? null : "ioOcclusionsRaw";
           currentField = null;
@@ -692,7 +691,7 @@ export function parseCardsFromText(
         }
 
         if (key === "T") {
-          (current as any).title = null;
+          current.title = null;
           appendToField(current, "title", chunk);
           pipeField = closed ? null : "title";
           currentField = null;
@@ -700,7 +699,7 @@ export function parseCardsFromText(
         }
 
         if (key === "G") {
-          (current as any).groupsRaw = (current as any).groupsRaw ?? null;
+          current.groupsRaw = current.groupsRaw ?? null;
           appendToField(current, "groupsRaw", chunk);
           pipeField = closed ? null : "groupsRaw";
           currentField = null;
@@ -708,7 +707,7 @@ export function parseCardsFromText(
         }
 
         if (key === "I") {
-          (current as any).info = null;
+          current.info = null;
           appendToField(current, "info", chunk);
           pipeField = closed ? null : "info";
           currentField = null;
@@ -733,7 +732,7 @@ export function parseCardsFromText(
         continue;
       }
       if (current.type === "mcq" && key === "A") {
-        (current as any).a = (current as any).a ?? null;
+        current.a = current.a ?? null;
         appendToField(current, "a", chunk);
         pipeField = closed ? null : "a";
         currentField = null;
@@ -741,7 +740,7 @@ export function parseCardsFromText(
       }
 
       if (key === "G") {
-        (current as any).groupsRaw = (current as any).groupsRaw ?? null;
+        current.groupsRaw = current.groupsRaw ?? null;
         appendToField(current, "groupsRaw", chunk);
         pipeField = closed ? null : "groupsRaw";
         currentField = null;
@@ -749,7 +748,7 @@ export function parseCardsFromText(
       }
 
       if (key === "T") {
-        (current as any).title = null;
+        current.title = null;
         appendToField(current, "title", chunk);
         pipeField = closed ? null : "title";
         currentField = null;
@@ -758,7 +757,7 @@ export function parseCardsFromText(
 
       if (key === "I") {
         // Always treat I | ... | as info, never as answer
-        (current as any).info = null;
+        current.info = null;
         appendToField(current, "info", chunk);
         pipeField = closed ? null : "info";
         currentField = null;
@@ -767,7 +766,7 @@ export function parseCardsFromText(
 
       if (key === "A") {
         if (current.type !== "mcq") {
-          (current as any).a = null;
+          current.a = null;
           appendToField(current, "a", chunk);
           pipeField = closed ? null : "a";
           currentField = null;
@@ -783,8 +782,7 @@ export function parseCardsFromText(
 
     // 10) Legacy continuation lines
     if (current && currentField && !ANY_HEADER_RE.test(line)) {
-      const curAny = current as any;
-      curAny[currentField] = (curAny[currentField] ? curAny[currentField] + "\n" : "") + line;
+      current[currentField] = (current[currentField] ? current[currentField] + "\n" : "") + line;
       continue;
     }
 

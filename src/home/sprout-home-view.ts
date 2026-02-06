@@ -66,7 +66,7 @@ export class SproutHomeView extends ItemView {
     return "sprout";
   }
 
-  onOpen() {
+  async onOpen() {
     this.render();
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.appearance?.enableAnimations ?? true) {
@@ -82,7 +82,7 @@ export class SproutHomeView extends ItemView {
     }
   }
 
-  onClose() {
+  async onClose() {
     try {
       this._header?.dispose?.();
     } catch (e) { log.swallow("dispose header", e); }
@@ -142,13 +142,12 @@ export class SproutHomeView extends ItemView {
     }
 
     // --- Hide Sprout info logic ---
-    const hideSproutInfo = (this.plugin.settings as any)?.home?.hideSproutInfo === true;
+    const hideSproutInfo = this.plugin.settings.home.hideSproutInfo === true;
 
     this._rootEl = root;
     root.classList.add("bc", "sprout-view-content", "flex", "flex-col");
 
     this.containerEl.addClass("sprout");
-    this.setTitle?.("Sprout");
 
     // Animation control
     const animationsEnabled = this.plugin.settings?.appearance?.enableAnimations ?? true;
@@ -171,8 +170,8 @@ export class SproutHomeView extends ItemView {
 
 
     // Greeting logic: show greeting or just 'Home' based on settings
-    const showGreeting = (this.plugin.settings as any)?.home?.showGreeting !== false;
-    const nameSetting = (this.plugin.settings as any)?.home?.userName ?? "";
+    const showGreeting = this.plugin.settings.home.showGreeting !== false;
+    const nameSetting = this.plugin.settings.home.userName ?? "";
     const trimmedName = String(nameSetting || "").trim();
     const nowMs = Date.now();
 
@@ -246,12 +245,11 @@ export class SproutHomeView extends ItemView {
         syncNameWidth();
       };
 
-      const firstHomeOpen = !((this.plugin.settings as any)?.home?.hasOpenedHome);
+      const firstHomeOpen = !(this.plugin.settings.home.hasOpenedHome);
       setGreetingText(trimmedName, firstHomeOpen);
       if (firstHomeOpen) {
-        (this.plugin.settings as any).home ??= {};
-        (this.plugin.settings as any).home.hasOpenedHome = true;
-        try { void (this.plugin as any).saveAll?.(); } catch (e) { log.swallow("save settings", e); }
+        this.plugin.settings.home.hasOpenedHome = true;
+        try { void this.plugin.saveAll(); } catch (e) { log.swallow("save settings", e); }
       }
 
       // Typing placeholder effect for the name input when empty
@@ -310,8 +308,7 @@ export class SproutHomeView extends ItemView {
         saveTimer = window.setTimeout(() => {
           void (async () => {
             const next = nameInput.value.trim();
-            (this.plugin.settings as any).home ??= {};
-            (this.plugin.settings as any).home.userName = next;
+            this.plugin.settings.home.userName = next;
             await this.plugin.saveAll();
           })();
         }, 300);
@@ -336,14 +333,12 @@ export class SproutHomeView extends ItemView {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const events = this.plugin.store.getAnalyticsEvents?.() ?? [];
     const cards = this.plugin.store.getAllCards?.() ?? [];
-    const states = (this.plugin.store as any)?.data?.states ?? {};
-    const starData = (this.plugin.settings as any)?.home?.githubStars ?? {};
+    const states = this.plugin.store.data.states ?? {};
+    const starData = this.plugin.settings.home.githubStars ?? {};
     const starCount = Number(starData?.count);
 
     // Refresh GitHub stars (respects 6-hour cache unless forced)
-    if (typeof (this.plugin as any).refreshGithubStars === "function") {
-      void (this.plugin as any).refreshGithubStars(false);
-    }
+    void this.plugin.refreshGithubStars(false);
 
     const cardsById = new Map<string, any>();
     for (const card of cards) {
@@ -373,7 +368,7 @@ export class SproutHomeView extends ItemView {
       if (recentDecks.length >= 5) break;
     }
 
-    const pinnedDecks: string[] = (this.plugin.settings as any)?.home?.pinnedDecks ?? [];
+    const pinnedDecks: string[] = this.plugin.settings.home.pinnedDecks ?? [];
 
     const dueCounts = new Map<string, number>();
     let totalOverdue = 0;
@@ -429,6 +424,7 @@ export class SproutHomeView extends ItemView {
     for (const ev of reviewEvents) {
       const at = Number(ev.at);
       if (!Number.isFinite(at)) continue;
+      if (ev.kind !== "review") continue;
       const dayIndex = localDayIndex(at, timezone);
       const entry = dayMap.get(dayIndex) ?? { count: 0, totalMs: 0 };
       entry.count += 1;
@@ -466,7 +462,7 @@ export class SproutHomeView extends ItemView {
       try {
         await this.plugin.openReviewerTab();
         const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER)[0];
-        const view = leaf?.view as any;
+        const view = leaf?.view as { openSession?(scope: unknown): void } | undefined;
         if (view && typeof view.openSession === "function") {
           view.openSession(scope);
         } else {
@@ -668,9 +664,8 @@ export class SproutHomeView extends ItemView {
     // Get all available deck paths for search
     const allDeckPaths = new Set<string>();
     for (const card of Object.values(this.plugin.store.data.cards || {})) {
-      const c = card as any;
-      if (!c || typeof c !== "object") continue;
-      const path = String(c.sourceNotePath || "").trim();
+      if (!card || typeof card !== "object") continue;
+      const path = String(card.sourceNotePath || "").trim();
       if (!path) continue;
       allDeckPaths.add(path);
       const parts = path.split("/");
@@ -689,10 +684,8 @@ export class SproutHomeView extends ItemView {
     const currentPinned = pinnedDecks.slice(0, MAX_PINNED);
     
     const savePinnedDecks = async (decks: string[]) => {
-      const settings = this.plugin.settings as any;
-      if (!settings.home) settings.home = {};
-      settings.home.pinnedDecks = decks.slice(0, MAX_PINNED);
-      await this.plugin.saveData(settings);
+      this.plugin.settings.home.pinnedDecks = decks.slice(0, MAX_PINNED);
+      await this.plugin.saveData(this.plugin.settings);
     };
     
     const renderPinnedDecks = () => {

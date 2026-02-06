@@ -85,7 +85,7 @@ export function openBulkEditModalForCards(
 
   // Defensive: if overlay is ever created elsewhere, ensure only one .sprout wrapper
   if (overlay.parentElement && overlay.parentElement.classList.contains("sprout")) {
-    sproutWrapper = overlay.parentElement;
+    sproutWrapper = overlay.parentElement as HTMLDivElement;
   } else {
     sproutWrapper.appendChild(overlay);
   }
@@ -165,7 +165,7 @@ export function openBulkEditModalForCards(
         if (card.type === "mcq") return buildAnswerOrOptionsFor(card);
       }
       if (field === "info") return String(card.info || "");
-      if (field === "groups") return groupsToInputString(coerceGroups((card as any).groups));
+      if (field === "groups") return groupsToInputString(coerceGroups(card.groups));
       return "";
     });
 
@@ -224,9 +224,9 @@ export function openBulkEditModalForCards(
 
   topGrid.appendChild(createReadonlyField("ID", card0.id));
   topGrid.appendChild(createReadonlyField("Type", typeLabelBrowser(card0.type)));
-  topGrid.appendChild(createReadonlyField("Stage", stageLabel(String((state0 as any)?.stage || "new"))));
+  topGrid.appendChild(createReadonlyField("Stage", stageLabel(String(state0?.stage || "new"))));
   topGrid.appendChild(
-    createReadonlyField("Due", state0 && Number.isFinite((state0 as any).due) ? fmtDue((state0 as any).due) : "—"),
+    createReadonlyField("Due", state0 && Number.isFinite(state0.due) ? fmtDue(state0.due) : "—"),
   );
 
   form.appendChild(topGrid);
@@ -320,7 +320,7 @@ export function openBulkEditModalForCards(
         ev.preventDefault();
         ev.stopPropagation();
         if (wrongRows.length <= 1) return;
-        const idx = wrongRows.indexOf({ input } as any);
+        const idx = wrongRows.findIndex((r) => r.input === input);
         if (idx === -1) return;
         wrongRows[idx].input.parentElement?.remove();
         wrongRows.splice(idx, 1);

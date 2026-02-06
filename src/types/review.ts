@@ -4,8 +4,8 @@
 // These are used by both the reviewer UI and the scheduler engine.
 // ---------------------------------------------------------------------------
 
-/** Possible grading outcomes. "pass"/"fail" are legacy two-button mode values. */
-export type ReviewResult = "pass" | "fail" | "again" | "hard" | "good" | "easy";
+/** Possible grading outcomes. "pass"/"fail" are legacy two-button mode values. "skip" is used when the user explicitly skips a card. */
+export type ReviewResult = "pass" | "fail" | "again" | "hard" | "good" | "easy" | "skip";
 
 /**
  * Single entry in the review log.

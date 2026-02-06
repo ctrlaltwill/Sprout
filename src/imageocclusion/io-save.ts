@@ -1,5 +1,5 @@
 /**
- * modals/io-save.ts
+ * imageocclusion/io-save.ts
  * ---------------------------------------------------------------------------
  * IO-card save logic extracted from ImageOcclusionCreatorModal.onOpen().
  *
@@ -12,17 +12,20 @@ import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import type { CardRecord } from "../core/store";
-import { normaliseGroupKey, stableIoChildId } from "../imageocclusion/mask-tool";
+import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
 import {
   normaliseVaultPath,
+  collectAnchorIdsFromText,
+  reserveNewBcId,
+  buildIoMarkdownWithAnchor,
+} from "./io-helpers";
+import {
   extFromMime,
   bestEffortAttachmentPath,
   writeBinaryToVault,
-  reserveNewBcId,
-  buildIoMarkdownWithAnchor,
   type ClipboardImage,
-} from "./modal-utils";
+} from "../modals/modal-utils";
 import type { IORect } from "./io-types";
 
 // ── Insert-at-cursor helper ─────────────────────────────────────────────────
@@ -41,8 +44,7 @@ export async function insertTextAtCursorOrAppend(
 
     if (forcePersist) {
       try {
-        const anyView: any = view as any;
-        if (typeof anyView?.save === "function") await anyView.save();
+        if (typeof (view as { save?: () => Promise<void> }).save === "function") await (view as { save: () => Promise<void> }).save();
       } catch {
         // ignore
       }
@@ -122,8 +124,8 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       return false;
     }
 
-    const ioMap: any = (plugin.store.data as any).io || {};
-    (plugin.store.data as any).io = ioMap;
+    const ioMap = plugin.store.data.io || {};
+    plugin.store.data.io = ioMap;
 
     const currentImageRef = String(parent.imageRef || ioMap[parentId]?.imageRef || editImageRef || "").trim();
     let imagePath = currentImageRef;
@@ -134,10 +136,10 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       if (!imagePath) {
         const baseName = `sprout-io-${parentId}.${ext}`;
         const srcFile = app.vault.getAbstractFileByPath(String(parent.sourceNotePath || ""));
-        if (srcFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, srcFile, baseName);
+        if (srcFile instanceof TFile) imagePath = await bestEffortAttachmentPath(plugin, srcFile, baseName);
         else {
           const activeFile = app.workspace.getActiveFile();
-          if (activeFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, activeFile, baseName);
+          if (activeFile instanceof TFile) imagePath = await bestEffortAttachmentPath(plugin, activeFile, baseName);
         }
       }
       try {
@@ -197,7 +199,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       groupToRectIds.set(g, arr);
     }
 
-    const cards = (plugin.store.data.cards || {}) as any;
+    const cards = (plugin.store.data.cards || {}) as Record<string, CardRecord>;
     const keepChildIds = new Set<string>();
     const titleBase = parentRec.title || "Image Occlusion";
 
@@ -307,7 +309,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   const id = await reserveNewBcId(plugin, active);
   const ext = extFromMime(ioImageData.mime);
   const baseName = `sprout-io-${id}.${ext}`;
-  const vaultPath = bestEffortAttachmentPath(plugin, active, baseName);
+  const vaultPath = await bestEffortAttachmentPath(plugin, active, baseName);
 
   try {
     await writeBinaryToVault(app, vaultPath, ioImageData.data);
@@ -340,8 +342,8 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   plugin.store.upsertCard(parentRec);
 
   // Persist IO definition in store.io
-  const ioMap: any = (plugin.store.data as any).io || {};
-  (plugin.store.data as any).io = ioMap;
+  const ioMap = plugin.store.data.io || {};
+  plugin.store.data.io = ioMap;
 
   const normRects = rects.map((r) => ({
     rectId: String(r.rectId),
@@ -368,7 +370,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     groupToRectIds.set(g, arr);
   }
 
-  const cards = (plugin.store.data.cards || {}) as any;
+  const cards = (plugin.store.data.cards || {}) as Record<string, CardRecord>;
   const keepChildIds = new Set<string>();
   const titleBase = parentRec.title || "Image Occlusion";
 

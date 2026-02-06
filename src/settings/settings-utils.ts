@@ -125,9 +125,7 @@ export function looksLikeCardBlock(lines: string[], startIdx: number): boolean {
  * JSON round-trip.
  */
 export function clonePlain<T>(x: T): T {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sc = (globalThis as any)?.structuredClone;
-  if (typeof sc === "function") return sc(x);
+  if (typeof structuredClone === "function") return structuredClone(x);
   return JSON.parse(JSON.stringify(x)) as T;
 }
 
@@ -210,7 +208,7 @@ export function fuzzyFolderMatches(allFolders: string[], rawQuery: string, limit
  */
 export function listDeckPaths(plugin: SproutPlugin): string[] {
   const out = new Set<string>();
-  const cards = (plugin.store.getAllCards?.() as any[]) ?? [];
+  const cards = plugin.store.getAllCards?.() ?? [];
   for (const card of cards) {
     const raw = String(card?.sourceNotePath ?? "").trim();
     if (raw) out.add(normaliseVaultPath(raw));

@@ -28,7 +28,7 @@ export function renderTitleMarkdownIfNeeded(args: {
   const hasShorthand = /!\[[^\]]+\](?!\s*\()/.test(s);
   if (!hasEmbed && !hasShorthand) return;
 
-  const sourcePath = String((card).sourceNotePath || (session as any)?.scope?.name || "");
+  const sourcePath = String(card.sourceNotePath || session?.scope?.name || "");
   void renderMarkdownInto(titleEl, s, sourcePath);
   // Unwrap a single <p> wrapper inserted by the Markdown renderer to keep
   // content directly inside the <h2> without nested paragraphs.
