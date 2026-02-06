@@ -120,18 +120,6 @@ function formatNotePathForHeader(raw: string): string {
   return formatBreadcrumbs(s);
 }
 
-function buildCardAnchorFragment(cardId: string | null | undefined): string {
-  const raw = String(cardId ?? "").trim();
-  if (!raw) return "";
-  const cleaned = raw.startsWith("^") ? raw.slice(1) : raw;
-  const normalized = cleaned.startsWith("sprout-")
-    ? cleaned
-    : /^\d{9}$/.test(cleaned)
-      ? `sprout-${cleaned}`
-      : cleaned;
-  return `#^${normalized}`;
-}
-
 function extractInfoField(card: CardRecord): string | null {
   if (!card) return null;
 
