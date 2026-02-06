@@ -16,61 +16,34 @@
  * ---------------------------------------------------------------------------
  */
 
-import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
+import { Modal, Notice, setIcon, type App } from "obsidian";
 import interact from "interactjs";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
-import type { CardRecord } from "../core/store";
-import { normaliseGroupKey, stableIoChildId } from "../imageocclusion/mask-tool";
-import { syncOneFile } from "../sync/sync-engine";
-import { findCardBlockRangeById } from "../reviewer/markdown-block";
+import { normaliseGroupKey } from "../imageocclusion/mask-tool";
 
 import {
-  normaliseVaultPath,
   resolveIoImageFile,
   mimeFromExt,
-  extFromMime,
-  bestEffortAttachmentPath,
-  writeBinaryToVault,
-  reserveNewBcId,
   setModalTitle,
-  setVisible,
-  formatPipeField,
-  buildIoMarkdownWithAnchor,
   type ClipboardImage,
 } from "./modal-utils";
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Local types (canvas geometry)
-// ──────────────────────────────────────────────────────────────────────────────
+import type { IORect, StageTransform, IOTextBox, IOHistoryEntry } from "./io-types";
+import {
+  loadImageElement,
+  rotateImageData,
+  cropImageData,
+  burnTextBoxesIntoImageData,
+  drawTextOnImageData,
+  clampTextBgOpacity,
+  hexToRgb,
+  textBgCss,
+} from "./io-image-ops";
+import { saveIoCard, type IoSaveParams } from "./io-save";
 
-type IORect = {
-  rectId: string;
-  normX: number;
-  normY: number;
-  normW: number;
-  normH: number;
-  groupKey: string;
-  shape?: "rect" | "circle";
-};
-
-type StageTransform = { scale: number; tx: number; ty: number };
-
-type IOTextBox = {
-  textId: string;
-  normX: number;
-  normY: number;
-  normW: number;
-  normH: number;
-  text: string;
-  fontSize: number;
-  color: string;
-  bgColor?: string | null;
-  bgOpacity?: number;
-};
-
-type IOHistoryEntry = { rects: IORect[]; texts: IOTextBox[]; image: ClipboardImage | null };
+// Types are imported from ./io-types
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ImageOcclusionCreatorModal
@@ -744,400 +717,33 @@ export class ImageOcclusionCreatorModal extends Modal {
       }
     }
 
-    // ── Insert-at-cursor helper ─────────────────────────────────────────────
-    const insertTextAtCursorOrAppend = async (active: TFile, textToInsert: string, forcePersist = false) => {
-      const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-      if (view?.file?.path === active.path && view.editor) {
-        const ed = view.editor;
-        const cur = ed.getCursor();
-        ed.replaceRange(textToInsert, cur);
-
-        if (forcePersist) {
-          try {
-            const anyView: any = view as any;
-            if (typeof anyView?.save === "function") await anyView.save();
-          } catch {
-            // ignore
-          }
-          try {
-            if (typeof ed.getValue === "function") {
-              await this.app.vault.modify(active, ed.getValue());
-            }
-          } catch {
-            // ignore
-          }
-        }
-      } else {
-        const txt = await this.app.vault.read(active);
-        const out = (txt.endsWith("\n") ? txt : txt + "\n") + textToInsert;
-        await this.app.vault.modify(active, out);
-      }
-    };
-
-    // ── Save IO (maskMode: "all" = Hide All, "solo" = Hide One) ─────────────
+    // ── Save IO (delegates to io-save.ts) ──────────────────────────────────
     const saveIo = async (maskMode: "all" | "solo") => {
       try {
-        const isEdit = !!this.editParentId;
-
-        const titleVal = String(this.titleInput?.value || "").trim();
-        const groupsVal = String(this.groupsField?.hiddenInput?.value || "").trim();
-        const infoVal = String(this.infoInput?.value || "").trim();
-
-        const groupsArr = groupsVal
-          ? groupsVal
-              .split(",")
-              .map((g) => g.trim())
-              .filter(Boolean)
-          : null;
-
-        // Burn text boxes into the image before saving
-        if (this.textBoxes.length) {
-          await this.burnTextBoxesIntoImage();
-        }
-
-        if (isEdit) {
-          const parentId = String(this.editParentId || "");
-          const cardsMap = (this.plugin.store?.data?.cards || {}) as Record<string, any>;
-          const parent = cardsMap[parentId];
-          if (!parent || String(parent.type) !== "io") {
-            new Notice(`${BRAND}: could not find IO parent to edit.`);
-            return;
-          }
-
-          const ioMap: any = (this.plugin.store.data as any).io || {};
-          (this.plugin.store.data as any).io = ioMap;
-
-          const currentImageRef = String(parent.imageRef || ioMap[parentId]?.imageRef || this.editImageRef || "").trim();
-          let imagePath = currentImageRef;
-
-          if (this.ioImageData) {
-            const ext = extFromMime(this.ioImageData.mime);
-            if (!imagePath) {
-              const baseName = `sprout-io-${parentId}.${ext}`;
-              const srcFile = this.app.vault.getAbstractFileByPath(String(parent.sourceNotePath || ""));
-              if (srcFile instanceof TFile) imagePath = bestEffortAttachmentPath(this.plugin, srcFile, baseName);
-              else {
-                const activeFile = this.app.workspace.getActiveFile();
-                if (activeFile instanceof TFile) imagePath = bestEffortAttachmentPath(this.plugin, activeFile, baseName);
-              }
-            }
-            try {
-              await writeBinaryToVault(this.app, imagePath, this.ioImageData.data);
-            } catch (e: any) {
-              new Notice(`${BRAND}: failed to save image (${String(e?.message || e)})`);
-              return;
-            }
-          }
-
-          if (!imagePath) {
-            new Notice(`${BRAND}: IO card is missing an image.`);
-            return;
-          }
-
-          const now = Date.now();
-          const mask = this.rects.length > 0 ? maskMode : null;
-
-          const parentRec: CardRecord = {
-            ...parent,
-            id: parentId,
-            type: "io",
-            title: titleVal || parent.title || "Image Occlusion",
-            prompt: parent.prompt ?? null,
-            info: infoVal || null,
-            groups: groupsArr && groupsArr.length ? groupsArr : null,
-            imageRef: normaliseVaultPath(imagePath),
-            maskMode: mask,
-            updatedAt: now,
-            lastSeenAt: now,
-          };
-
-          this.plugin.store.upsertCard(parentRec);
-
-          const normRects = this.rects.map((r) => ({
-            rectId: String(r.rectId),
-            x: Math.max(0, Math.min(1, r.normX)),
-            y: Math.max(0, Math.min(1, r.normY)),
-            w: Math.max(0, Math.min(1, r.normW)),
-            h: Math.max(0, Math.min(1, r.normH)),
-            groupKey: normaliseGroupKey(r.groupKey),
-            shape: r.shape || "rect",
-          }));
-
-          ioMap[parentId] = {
-            imageRef: normaliseVaultPath(imagePath),
-            maskMode: mask,
-            rects: normRects,
-          };
-
-          // Create/update child IO cards per group
-          const groupToRectIds = new Map<string, string[]>();
-          for (const r of normRects) {
-            const g = normaliseGroupKey(r.groupKey);
-            const arr = groupToRectIds.get(g) ?? [];
-            arr.push(String(r.rectId));
-            groupToRectIds.set(g, arr);
-          }
-
-          const cards = (this.plugin.store.data.cards || {}) as any;
-          const keepChildIds = new Set<string>();
-          const titleBase = parentRec.title || "Image Occlusion";
-
-          for (const [groupKey, rectIds] of groupToRectIds.entries()) {
-            const childId = stableIoChildId(parentId, groupKey);
-            keepChildIds.add(childId);
-
-            const rec: CardRecord = {
-              id: childId,
-              type: "io-child",
-              title: titleBase,
-              parentId,
-              groupKey,
-              rectIds: rectIds.slice(),
-              retired: false,
-              prompt: null,
-              info: parentRec.info,
-              groups: parentRec.groups || null,
-              sourceNotePath: String(parentRec.sourceNotePath || ""),
-              sourceStartLine: Number(parentRec.sourceStartLine ?? 0) || 0,
-              imageRef: normaliseVaultPath(imagePath),
-              maskMode: mask,
-              createdAt: Number((cards[childId] as any)?.createdAt ?? now),
-              updatedAt: now,
-              lastSeenAt: now,
-            };
-
-            const prev = cards[childId];
-            if (prev && typeof prev === "object") {
-              cards[childId] = { ...prev, ...rec };
-              this.plugin.store.upsertCard(cards[childId]);
-            } else {
-              cards[childId] = rec;
-              this.plugin.store.upsertCard(rec);
-            }
-
-            this.plugin.store.ensureState(childId, now, 2.5);
-          }
-
-          // Retire stale children that no longer have a matching group
-          for (const c of Object.values(cards) as any[]) {
-            if (!c || c.type !== "io-child") continue;
-            if (String(c.parentId) !== parentId) continue;
-            if (keepChildIds.has(String(c.id))) continue;
-            c.retired = true;
-            c.updatedAt = now;
-            c.lastSeenAt = now;
-            this.plugin.store.upsertCard(c as any);
-          }
-
-          await this.plugin.store.persist();
-
-          // Update the markdown block in the note
-          try {
-            const srcPath = String(parentRec.sourceNotePath || "");
-            const file = this.app.vault.getAbstractFileByPath(srcPath);
-            if (file instanceof TFile) {
-              const text = await this.app.vault.read(file);
-              const lines = text.split(/\r?\n/);
-              const { start, end } = findCardBlockRangeById(lines, parentId);
-              const embed = `![[${normaliseVaultPath(imagePath)}]]`;
-              const ioBlock = [
-                `^sprout-${parentId}`,
-                ...buildIoMarkdownWithAnchor({
-                  id: parentId,
-                  title: titleVal || parentRec.title || undefined,
-                  groups: groupsVal || undefined,
-                  ioEmbed: embed,
-                  info: infoVal || undefined,
-                }),
-              ];
-              lines.splice(start, end - start, ...ioBlock);
-              await this.app.vault.modify(file, lines.join("\n"));
-            }
-          } catch (e: any) {
-            console.warn(`${BRAND}: Failed to update IO markdown`, e);
-          }
-
-          new Notice(`${BRAND}: IO updated.`);
-          this.close();
-          return;
-        }
-
-        // ── New IO card (not editing) ─────────────────────────────────────────
-
-        const active = this.app.workspace.getActiveFile();
-        if (!(active instanceof TFile)) {
-          new Notice(`${BRAND}: open a markdown note first`);
-          return;
-        }
-
-        if (!this.ioImageData) {
-          new Notice(`${BRAND}: paste an image to create an IO card`);
-          return;
-        }
-
-        if (this.textBoxes.length) {
-          await this.burnTextBoxesIntoImage();
-        }
-
-        // Save image to vault
-        const id = await reserveNewBcId(this.plugin, active);
-        const ext = extFromMime(this.ioImageData.mime);
-        const baseName = `sprout-io-${id}.${ext}`;
-        const vaultPath = bestEffortAttachmentPath(this.plugin, active, baseName);
-
-        try {
-          await writeBinaryToVault(this.app, vaultPath, this.ioImageData.data);
-        } catch (e: any) {
-          new Notice(`${BRAND}: failed to save image (${String(e?.message || e)})`);
-          return;
-        }
-
-        const imagePath = normaliseVaultPath(vaultPath);
-        const now = Date.now();
-        const mask = this.rects.length > 0 ? maskMode : null;
-
-        // Persist parent IO card in store
-        const parentRec: CardRecord = {
-          id,
-          type: "io",
-          title: titleVal || "Image Occlusion",
-          prompt: null,
-          info: infoVal || null,
-          groups: groupsArr && groupsArr.length ? groupsArr : null,
-          imageRef: imagePath,
-          maskMode: mask,
-          sourceNotePath: active.path,
-          sourceStartLine: 0,
-          createdAt: now,
-          updatedAt: now,
-          lastSeenAt: now,
-        };
-
-        this.plugin.store.upsertCard(parentRec);
-
-        // Persist IO definition in store.io
-        const ioMap: any = (this.plugin.store.data as any).io || {};
-        (this.plugin.store.data as any).io = ioMap;
-
-        const normRects = this.rects.map((r) => ({
-          rectId: String(r.rectId),
-          x: Math.max(0, Math.min(1, r.normX)),
-          y: Math.max(0, Math.min(1, r.normY)),
-          w: Math.max(0, Math.min(1, r.normW)),
-          h: Math.max(0, Math.min(1, r.normH)),
-          groupKey: normaliseGroupKey(r.groupKey),
-          shape: r.shape || "rect",
-        }));
-
-        ioMap[id] = {
-          imageRef: imagePath,
-          maskMode: mask,
-          rects: normRects,
-        };
-
-        // Create child IO cards per group
-        const groupToRectIds = new Map<string, string[]>();
-        for (const r of normRects) {
-          const g = normaliseGroupKey(r.groupKey);
-          const arr = groupToRectIds.get(g) ?? [];
-          arr.push(String(r.rectId));
-          groupToRectIds.set(g, arr);
-        }
-
-        const cards = (this.plugin.store.data.cards || {}) as any;
-        const keepChildIds = new Set<string>();
-        const titleBase = parentRec.title || "Image Occlusion";
-
-        for (const [groupKey, rectIds] of groupToRectIds.entries()) {
-          const childId = stableIoChildId(id, groupKey);
-          keepChildIds.add(childId);
-
-          const rec: CardRecord = {
-            id: childId,
-            type: "io-child",
-            title: titleBase,
-            parentId: id,
-            groupKey,
-            rectIds: rectIds.slice(),
-            retired: false,
-            prompt: null,
-            info: parentRec.info,
-            groups: parentRec.groups || null,
-            sourceNotePath: active.path,
-            sourceStartLine: 0,
-            imageRef: imagePath,
-            maskMode: mask,
-            createdAt: now,
-            updatedAt: now,
-            lastSeenAt: now,
-          };
-
-          const prev = cards[childId];
-          if (prev && typeof prev === "object") {
-            cards[childId] = { ...prev, ...rec };
-            this.plugin.store.upsertCard(cards[childId]);
-          } else {
-            cards[childId] = rec;
-            this.plugin.store.upsertCard(rec);
-          }
-
-          this.plugin.store.ensureState(childId, now, 2.5);
-        }
-
-        // Retire stale children
-        for (const c of Object.values(cards) as any[]) {
-          if (!c || c.type !== "io-child") continue;
-          if (String(c.parentId) !== id) continue;
-          if (keepChildIds.has(String(c.id))) continue;
-          c.retired = true;
-          c.updatedAt = now;
-          c.lastSeenAt = now;
-          this.plugin.store.upsertCard(c as any);
-        }
-
-        await this.plugin.store.persist();
-
-        // Write markdown block to the note
-        const embed = `![[${imagePath}]]`;
-        const occlusionsJson =
-          normRects.length > 0
-            ? JSON.stringify(
-                normRects.map((r: any) => ({
-                  rectId: r.rectId,
-                  x: r.x,
-                  y: r.y,
-                  w: r.w,
-                  h: r.h,
-                  groupKey: r.groupKey,
-                  shape: r.shape || "rect",
-                })),
-              )
-            : null;
-
-        const ioBlock = buildIoMarkdownWithAnchor({
-          id,
-          title: titleVal || undefined,
-          groups: groupsVal || undefined,
-          ioEmbed: embed,
-          occlusionsJson,
-          maskMode: mask,
-          info: infoVal || undefined,
-        });
-
-        try {
-          await insertTextAtCursorOrAppend(active, ioBlock.join("\n"), true);
-        } catch (e: any) {
-          console.warn(`${BRAND}: Failed to insert IO markdown, but card saved to store`, e);
-        }
-
-        new Notice(`${BRAND}: IO saved.`);
-        this.close();
+        const shouldClose = await saveIoCard(
+          {
+            plugin: this.plugin,
+            app: this.app,
+            editParentId: this.editParentId,
+            editImageRef: this.editImageRef,
+            titleVal: String(this.titleInput?.value || "").trim(),
+            groupsVal: String(this.groupsField?.hiddenInput?.value || "").trim(),
+            infoVal: String(this.infoInput?.value || "").trim(),
+            getImageData: () => this.ioImageData,
+            rects: this.rects,
+            hasTextBoxes: this.textBoxes.length > 0,
+            burnTextBoxes: () => this.burnTextBoxesIntoImage(),
+          },
+          maskMode,
+        );
+        if (shouldClose) this.close();
       } catch (e: any) {
         // eslint-disable-next-line no-console
         console.error(e);
         new Notice(`${BRAND}: add failed (${String(e?.message || e)})`);
       }
     };
+
 
     // ── Footer buttons ──────────────────────────────────────────────────────
     const footer = modalRoot.createDiv({ cls: "bc flex items-center justify-end gap-4" });
@@ -1599,38 +1205,11 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.zoomSlider.value = current.toFixed(2);
   }
 
-  // ── Text background helpers ───────────────────────────────────────────────
-
-  private clampTextBgOpacity(value: number) {
-    if (!Number.isFinite(value)) return 1;
-    return Math.max(0, Math.min(1, value));
-  }
-
-  private hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-    let s = String(hex || "").trim();
-    if (!s || s === "transparent") return null;
-    if (s.startsWith("#")) s = s.slice(1);
-    if (s.length === 3) s = `${s[0]}${s[0]}${s[1]}${s[1]}${s[2]}${s[2]}`;
-    if (s.length !== 6) return null;
-    const r = parseInt(s.slice(0, 2), 16);
-    const g = parseInt(s.slice(2, 4), 16);
-    const b = parseInt(s.slice(4, 6), 16);
-    if (![r, g, b].every((v) => Number.isFinite(v))) return null;
-    return { r, g, b };
-  }
-
-  private textBgCss(color: string | null | undefined, opacity: number | null | undefined) {
-    const c = String(color || "").trim();
-    if (!c || c === "transparent") return "transparent";
-    const o = this.clampTextBgOpacity(opacity ?? 1);
-    const rgb = this.hexToRgb(c);
-    if (!rgb) return c;
-    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${o})`;
-  }
+  // ── Text background helpers (delegated to io-image-ops.ts) ─────────────
 
   private syncTextBgOpacityInput() {
     if (!this.textBgOpacityInput) return;
-    const pct = Math.round(this.clampTextBgOpacity(this.textBgOpacity) * 100);
+    const pct = Math.round(clampTextBgOpacity(this.textBgOpacity) * 100);
     this.textBgOpacityInput.value = String(pct);
   }
 
@@ -1652,7 +1231,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       this.textFontSize = box.fontSize || this.textFontSize;
       this.textColor = box.color || this.textColor;
       this.textBgColor = box.bgColor || "transparent";
-      this.textBgOpacity = this.clampTextBgOpacity(box.bgOpacity ?? this.textBgOpacity);
+      this.textBgOpacity = clampTextBgOpacity(box.bgOpacity ?? this.textBgOpacity);
       if (this.textColorInput) this.textColorInput.value = this.textColor;
       if (this.textBgInput) this.textBgInput.value = this.textBgColor !== "transparent" ? this.textBgColor : "#ffffff";
       this.syncTextBgOpacityInput();
@@ -1684,7 +1263,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     input.style.border = "1px dashed rgba(16, 185, 129, 0.6)";
     input.style.borderRadius = "6px";
     input.style.outline = "none";
-    input.style.background = this.textBgCss(this.textBgColor, this.textBgOpacity);
+    input.style.background = textBgCss(this.textBgColor, this.textBgOpacity);
     input.style.boxShadow = "0 4px 10px rgba(0,0,0,0.12)";
     wrap.appendChild(input);
 
@@ -1778,61 +1357,16 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.renderRects();
   }
 
-  // ── Text rendering on image (drawTextOnImage / burnTextBoxesIntoImage) ────
+  // ── Text rendering on image (delegated to io-image-ops.ts) ─────────────
 
   private async drawTextOnImage(text: string, stageX: number, stageY: number, fontSize: number) {
     if (!this.ioImageData) return;
-    const img = await this.loadImageElementFromData();
-    if (!img) {
+    const result = await drawTextOnImageData(this.ioImageData, text, stageX, stageY, fontSize, this.textColor);
+    if (!result) {
       new Notice(`${BRAND}: failed to load image for text.`);
       return;
     }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(img, 0, 0);
-
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    ctx.font = `${fontSize}px system-ui, -apple-system, Segoe UI, sans-serif`;
-    const fill = this.textColor || "#111111";
-    const hex = fill.replace("#", "").trim();
-    let r = 255;
-    let g = 255;
-    let b = 255;
-    if (hex.length === 3) {
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b = parseInt(hex[2] + hex[2], 16);
-    } else if (hex.length === 6) {
-      r = parseInt(hex.slice(0, 2), 16);
-      g = parseInt(hex.slice(2, 4), 16);
-      b = parseInt(hex.slice(4, 6), 16);
-    }
-    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-    const stroke = luminance > 0.6 ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)";
-    ctx.fillStyle = fill;
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = Math.max(1, Math.round(fontSize / 8));
-
-    const lines = text.split(/\r?\n/);
-    const lineHeight = Math.round(fontSize * 1.3);
-    let x = stageX;
-    let y = stageY;
-    for (const line of lines) {
-      ctx.strokeText(line, x, y);
-      ctx.fillText(line, x, y);
-      y += lineHeight;
-    }
-
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b || new Blob()), this.ioImageData?.mime || "image/png");
-    });
-    const data = await blob.arrayBuffer();
-    this.ioImageData = { mime: this.ioImageData.mime, data };
+    this.ioImageData = result;
     this.saveHistory();
     await this.loadImageToCanvas();
   }
@@ -1840,102 +1374,7 @@ export class ImageOcclusionCreatorModal extends Modal {
   /** Burn all text annotation boxes into the image pixel data. */
   private async burnTextBoxesIntoImage() {
     if (!this.ioImageData || this.textBoxes.length === 0) return;
-    const img = await this.loadImageElementFromData();
-    if (!img) {
-      new Notice(`${BRAND}: failed to load image for text.`);
-      return;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(img, 0, 0);
-
-    const wrapText = (text: string, maxWidth: number, fontSize: number) => {
-      const words = text.split(/\s+/);
-      const lines: string[] = [];
-      let line = "";
-      for (const word of words) {
-        const test = line ? `${line} ${word}` : word;
-        if (ctx.measureText(test).width > maxWidth && line) {
-          lines.push(line);
-          line = word;
-        } else {
-          line = test;
-        }
-      }
-      if (line) lines.push(line);
-      return lines.length ? lines : [text];
-    };
-
-    for (const t of this.textBoxes) {
-      const x = t.normX * img.naturalWidth;
-      const y = t.normY * img.naturalHeight;
-      const w = t.normW * img.naturalWidth;
-      const h = t.normH * img.naturalHeight;
-      if (w <= 2 || h <= 2 || !t.text.trim()) continue;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.clip();
-
-      const bg = this.textBgCss(t.bgColor, t.bgOpacity ?? 1);
-      if (bg && bg !== "transparent") {
-        ctx.fillStyle = bg;
-        ctx.fillRect(x, y, w, h);
-      }
-
-      const fontSize = Math.max(8, Math.round(t.fontSize || 14));
-      ctx.font = `${fontSize}px system-ui, -apple-system, Segoe UI, sans-serif`;
-      ctx.textBaseline = "top";
-      ctx.textAlign = "left";
-
-      const fill = t.color || "#111111";
-      const hex = fill.replace("#", "").trim();
-      let r = 255;
-      let g = 255;
-      let b = 255;
-      if (hex.length === 3) {
-        r = parseInt(hex[0] + hex[0], 16);
-        g = parseInt(hex[1] + hex[1], 16);
-        b = parseInt(hex[2] + hex[2], 16);
-      } else if (hex.length === 6) {
-        r = parseInt(hex.slice(0, 2), 16);
-        g = parseInt(hex.slice(2, 4), 16);
-        b = parseInt(hex.slice(4, 6), 16);
-      }
-      const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-      const stroke = luminance > 0.6 ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)";
-      ctx.fillStyle = fill;
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = Math.max(1, Math.round(fontSize / 8));
-
-      const padding = 6;
-      const maxWidth = Math.max(1, w - padding * 2);
-      const lines = t.text.split(/\r?\n/);
-      let cursorY = y + padding;
-      for (const rawLine of lines) {
-        const wrapped = wrapText(rawLine, maxWidth, fontSize);
-        for (const line of wrapped) {
-          ctx.strokeText(line, x + padding, cursorY);
-          ctx.fillText(line, x + padding, cursorY);
-          cursorY += Math.round(fontSize * 1.3);
-          if (cursorY > y + h) break;
-        }
-        if (cursorY > y + h) break;
-      }
-
-      ctx.restore();
-    }
-
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b || new Blob()), this.ioImageData?.mime || "image/png");
-    });
-    const data = await blob.arrayBuffer();
-    this.ioImageData = { mime: this.ioImageData.mime, data };
+    this.ioImageData = await burnTextBoxesIntoImageData(this.ioImageData, this.textBoxes);
   }
 
   // ── Preview overlays (text / crop / occlusion drawing) ────────────────────
@@ -2145,22 +1584,11 @@ export class ImageOcclusionCreatorModal extends Modal {
     setBtnState(this.btnRedo, canRedo);
   }
 
-  // ── Image utilities ───────────────────────────────────────────────────────
+  // ── Image utilities (delegated to io-image-ops.ts) ─────────────────────
 
   private async loadImageElementFromData() {
     if (!this.ioImageData) return null;
-    const blob = new Blob([this.ioImageData.data], { type: this.ioImageData.mime });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    await new Promise<void>((resolve) => {
-      const done = () => resolve();
-      img.onload = done;
-      img.onerror = done;
-      img.src = url;
-    });
-    URL.revokeObjectURL(url);
-    if (!img.naturalWidth || !img.naturalHeight) return null;
-    return img;
+    return loadImageElement(this.ioImageData);
   }
 
   /** Rotate the image 90° clockwise or counter-clockwise. */
@@ -2169,97 +1597,14 @@ export class ImageOcclusionCreatorModal extends Modal {
       new Notice(`${BRAND}: add an image first.`);
       return;
     }
-
-    const img = await this.loadImageElementFromData();
-    if (!img) {
+    const result = await rotateImageData(this.ioImageData, direction, this.rects, this.textBoxes);
+    if (!result) {
       new Notice(`${BRAND}: failed to load image for rotation.`);
       return;
     }
-
-    const srcW = img.naturalWidth;
-    const srcH = img.naturalHeight;
-    const canvas = document.createElement("canvas");
-    canvas.width = srcH;
-    canvas.height = srcW;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    if (direction === "cw") {
-      ctx.translate(srcH, 0);
-      ctx.rotate(Math.PI / 2);
-    } else {
-      ctx.translate(0, srcW);
-      ctx.rotate(-Math.PI / 2);
-    }
-    ctx.drawImage(img, 0, 0);
-
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b || new Blob()), this.ioImageData?.mime || "image/png");
-    });
-    const data = await blob.arrayBuffer();
-    this.ioImageData = { mime: this.ioImageData.mime, data };
-
-    // Transform occlusion rects to match the new orientation
-    const dstW = srcH;
-    const dstH = srcW;
-    this.rects = this.rects
-      .map((r) => {
-        const x = r.normX * srcW;
-        const y = r.normY * srcH;
-        const w = r.normW * srcW;
-        const h = r.normH * srcH;
-        let nx = 0;
-        let ny = 0;
-        let nw = h;
-        let nh = w;
-
-        if (direction === "cw") {
-          nx = srcH - (y + h);
-          ny = x;
-        } else {
-          nx = y;
-          ny = srcW - (x + w);
-        }
-
-        return {
-          ...r,
-          normX: nx / dstW,
-          normY: ny / dstH,
-          normW: nw / dstW,
-          normH: nh / dstH,
-        };
-      })
-      .filter((r) => r.normW > 0 && r.normH > 0);
-
-    this.textBoxes = this.textBoxes
-      .map((t) => {
-        const x = t.normX * srcW;
-        const y = t.normY * srcH;
-        const w = t.normW * srcW;
-        const h = t.normH * srcH;
-        let nx = 0;
-        let ny = 0;
-        let nw = h;
-        let nh = w;
-
-        if (direction === "cw") {
-          nx = srcH - (y + h);
-          ny = x;
-        } else {
-          nx = y;
-          ny = srcW - (x + w);
-        }
-
-        return {
-          ...t,
-          normX: nx / dstW,
-          normY: ny / dstH,
-          normW: nw / dstW,
-          normH: nh / dstH,
-        };
-      })
-      .filter((t) => t.normW > 0 && t.normH > 0);
-
+    this.ioImageData = result.imageData;
+    this.rects = result.rects;
+    this.textBoxes = result.textBoxes;
     this.selectedRectId = null;
     this.selectedTextId = null;
     this.saveHistory();
@@ -2282,89 +1627,15 @@ export class ImageOcclusionCreatorModal extends Modal {
       new Notice(`${BRAND}: add an image first.`);
       return;
     }
-    const img = await this.loadImageElementFromData();
-    if (!img) {
+    const result = await cropImageData(this.ioImageData, sx, sy, sw, sh, this.rects, this.textBoxes);
+    if (!result) {
       new Notice(`${BRAND}: failed to load image for crop.`);
       return;
     }
-
-    const srcW = img.naturalWidth;
-    const srcH = img.naturalHeight;
-    const cropX = Math.max(0, Math.min(srcW - 1, sx));
-    const cropY = Math.max(0, Math.min(srcH - 1, sy));
-    const cropW = Math.max(1, Math.min(srcW - cropX, sw));
-    const cropH = Math.max(1, Math.min(srcH - cropY, sh));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(cropW);
-    canvas.height = Math.round(cropH);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
-
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b || new Blob()), this.ioImageData?.mime || "image/png");
-    });
-    const data = await blob.arrayBuffer();
-    this.ioImageData = { mime: this.ioImageData.mime, data };
-
-    const dstW = canvas.width;
-    const dstH = canvas.height;
-    const nextRects: IORect[] = [];
-    const nextTexts: IOTextBox[] = [];
-
-    // Remap rects to cropped coordinates (clip to crop bounds)
-    for (const r of this.rects) {
-      const x = r.normX * srcW;
-      const y = r.normY * srcH;
-      const w = r.normW * srcW;
-      const h = r.normH * srcH;
-
-      const ix0 = Math.max(cropX, x);
-      const iy0 = Math.max(cropY, y);
-      const ix1 = Math.min(cropX + cropW, x + w);
-      const iy1 = Math.min(cropY + cropH, y + h);
-      const iw = ix1 - ix0;
-      const ih = iy1 - iy0;
-
-      if (iw <= 1 || ih <= 1) continue;
-
-      nextRects.push({
-        ...r,
-        normX: (ix0 - cropX) / dstW,
-        normY: (iy0 - cropY) / dstH,
-        normW: iw / dstW,
-        normH: ih / dstH,
-      });
-    }
-
-    for (const t of this.textBoxes) {
-      const x = t.normX * srcW;
-      const y = t.normY * srcH;
-      const w = t.normW * srcW;
-      const h = t.normH * srcH;
-
-      const ix0 = Math.max(cropX, x);
-      const iy0 = Math.max(cropY, y);
-      const ix1 = Math.min(cropX + cropW, x + w);
-      const iy1 = Math.min(cropY + cropH, y + h);
-      const iw = ix1 - ix0;
-      const ih = iy1 - iy0;
-
-      if (iw <= 1 || ih <= 1) continue;
-
-      nextTexts.push({
-        ...t,
-        normX: (ix0 - cropX) / dstW,
-        normY: (iy0 - cropY) / dstH,
-        normW: iw / dstW,
-        normH: ih / dstH,
-      });
-    }
-
-    this.rects = nextRects;
+    this.ioImageData = result.imageData;
+    this.rects = result.rects;
     this.selectedRectId = null;
-    this.textBoxes = nextTexts;
+    this.textBoxes = result.textBoxes;
     this.selectedTextId = null;
     this.saveHistory();
     await this.loadImageToCanvas();
@@ -2654,7 +1925,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       applyTextStyle(el, textBox);
 
       const isSelected = textBox.textId === this.selectedTextId;
-      const bgCss = this.textBgCss(textBox.bgColor, textBox.bgOpacity ?? 1);
+      const bgCss = textBgCss(textBox.bgColor, textBox.bgOpacity ?? 1);
       const hasBg = bgCss !== "transparent";
       el.style.border = isSelected ? "2px dashed #10b981" : "1px dashed rgba(16, 185, 129, 0.6)";
       el.style.backgroundColor = hasBg ? bgCss : isSelected ? "rgba(16, 185, 129, 0.08)" : "transparent";
@@ -2692,7 +1963,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         this.textFontSize = textBox.fontSize || this.textFontSize;
         this.textColor = textBox.color || this.textColor;
         this.textBgColor = textBox.bgColor || "transparent";
-        this.textBgOpacity = this.clampTextBgOpacity(textBox.bgOpacity ?? this.textBgOpacity);
+        this.textBgOpacity = clampTextBgOpacity(textBox.bgOpacity ?? this.textBgOpacity);
         if (this.textColorInput) this.textColorInput.value = this.textColor;
         if (this.textBgInput) this.textBgInput.value = this.textBgColor !== "transparent" ? this.textBgColor : "#ffffff";
         this.syncTextBgOpacityInput();

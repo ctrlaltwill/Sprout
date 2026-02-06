@@ -3,10 +3,8 @@
   "name": "Sprout - Flashcards & Spaced Repetition",
   "version": "0.0.5",
   "minAppVersion": "1.5.0",
-  "description": "Spaced repetition flashcards for Obsidian. Write in Markdown, review efficiently, retain more.",
+  "description": "Spaced repetition flashcards. Write in Markdown, review efficiently, retain more.",
   "author": "William Guy",
-  "authorUrl": "github.com/ctrlaltwill",
-  "isDesktopOnly": false,
-  "main": "main.js",
-  "css": "styles.css"
+  "authorUrl": "https://github.com/ctrlaltwill",
+  "isDesktopOnly": false
 }
