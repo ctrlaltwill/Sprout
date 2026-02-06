@@ -1525,7 +1525,6 @@ export class SproutReviewerView extends ItemView {
           this.plugin.isWideMode = !this.plugin.isWideMode;
           this._applyReviewerWidthMode();
         },
-        getShowBrandButton: () => !!this.plugin.settings?.header?.showSproutButton,
 
         runSync: () => {
           const anyPlugin = this.plugin as any;

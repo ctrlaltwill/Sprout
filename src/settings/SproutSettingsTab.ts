@@ -742,19 +742,6 @@ export class SproutSettingsTab extends PluginSettingTab {
       );
 
     new Setting(wrapper)
-      .setName("Show Sprout header button")
-      .setDesc("Shows the Sprout button in the center of the view header.")
-      .addToggle((t) =>
-        t.setValue(!!(this.plugin.settings as any)?.header?.showSproutButton).onChange(async (v) => {
-          (this.plugin.settings as any).header ??= {};
-          (this.plugin.settings as any).header.showSproutButton = v;
-          await this.plugin.saveAll();
-          (this.plugin as any)._refreshOpenViews?.();
-        }),
-      );
-
-
-    new Setting(wrapper)
       .setName("Enable animations")
       .setDesc("Enable fade-up animations when pages load. Disable for a more immediate interface.")
       .addToggle((t) =>

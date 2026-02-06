@@ -3323,7 +3323,6 @@ export class SproutCardBrowserView extends ItemView {
           this.plugin.isWideMode = !this.plugin.isWideMode;
           this._applyWidthMode();
         },
-        getShowBrandButton: () => !!this.plugin.settings?.header?.showSproutButton,
 
         runSync: () => {
           this._captureScrollPosition();

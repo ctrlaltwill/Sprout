@@ -14,7 +14,6 @@ Open **Settings → Community plugins → Sprout** to configure the plugin.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Show Sprout header button | Off | Show a branded button in the view header |
 | Enable animations | On | Page-load fade-up animations |
 | Prettify cards | Accent | Card colour scheme — **Accent** (plugin colours) or **Theme** (inherit from Obsidian theme) |
 

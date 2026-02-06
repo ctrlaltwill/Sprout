@@ -25,9 +25,6 @@ type Deps = {
   // sync action
   runSync: () => void;
 
-  // optional: show brand button
-  getShowBrandButton?: () => boolean;
-
   // optional: called after nav
   afterNavigate?: () => void;
 };
@@ -61,7 +58,6 @@ export class SproutHeader {
 
   private syncBtnIconEl: HTMLElement | null = null;
   // Theme button and mode removed; now syncs with Obsidian
-  private brandWrapEl: HTMLElement | null = null;
 
   constructor(deps: Deps) {
     this.deps = deps;
@@ -91,7 +87,6 @@ export class SproutHeader {
 
     this.installHeaderDropdownNav(active);
     this.installHeaderActionsButtonGroup(active);
-    // Brand button removed from header; icon lives in nav dropdown.
 
     this.updateWidthButtonLabel();
     this.updateSyncButtonIcon();
@@ -146,64 +141,6 @@ export class SproutHeader {
     // Listen for Obsidian theme changes
     const obsidianObserver = new MutationObserver(updateTheme);
     obsidianObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-  }
-
-  private installHeaderBrandButton() {
-    const viewHeader =
-      (this.deps.containerEl.querySelector(":scope > .view-header") as HTMLElement | null) ??
-      (this.deps.containerEl.querySelector(".view-header") as HTMLElement | null);
-    if (!viewHeader) return;
-
-    if (this.brandWrapEl) {
-      try {
-        this.brandWrapEl.remove();
-      } catch {}
-      this.brandWrapEl = null;
-    }
-
-    const show = this.deps.getShowBrandButton ? this.deps.getShowBrandButton() : true;
-    if (!show) return;
-
-    viewHeader.style.position = "relative";
-
-    const wrap = document.createElement("div");
-    wrap.className = "sprout-header-brand";
-    wrap.style.position = "absolute";
-    wrap.style.left = "50%";
-    wrap.style.top = "50%";
-    wrap.style.transform = "translate(-50%, -50%)";
-    wrap.style.display = "flex";
-    wrap.style.alignItems = "center";
-    wrap.style.pointerEvents = "auto";
-
-    const link = document.createElement("a");
-    link.className = "sprout-header-brand-link inline-flex items-center gap-2 h-7 px-2 text-xs";
-    link.href = "https://github.com/ctrlaltwill/sprout";
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "";
-    link.style.textDecoration = "none";
-
-    const icon = document.createElement("span");
-    icon.className = "inline-flex items-center justify-center sprout-header-brand-icon";
-    setIcon(icon, "sprout");
-    const svg = icon.querySelector("svg");
-    if (svg) {
-      svg.setAttribute("width", "14");
-      svg.setAttribute("height", "14");
-      (svg as any).style.width = "14px";
-      (svg as any).style.height = "14px";
-    }
-
-    const text = document.createElement("span");
-    text.className = "sprout-header-brand-text";
-    text.textContent = "Sprout";
-
-    link.appendChild(icon);
-    link.appendChild(text);
-    wrap.appendChild(link);
-    viewHeader.appendChild(wrap);
-    this.brandWrapEl = wrap;
   }
 
   // ---------------------------

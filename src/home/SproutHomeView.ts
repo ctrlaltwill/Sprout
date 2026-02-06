@@ -168,7 +168,6 @@ export class SproutHomeView extends ItemView {
           this.plugin.isWideMode = !this.plugin.isWideMode;
           this._applyWidthMode();
         },
-        getShowBrandButton: () => !!this.plugin.settings?.header?.showSproutButton,
         runSync: () => {
           const anyPlugin = this.plugin as any;
           if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
