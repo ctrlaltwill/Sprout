@@ -60,4 +60,8 @@ Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
 
 ## License
 
-[MIT](LICENSE)
+Sprout is released under the **MIT License**.  
+
+This means you are free to **use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies** of this software, as long as you include the original copyright notice and this permission notice in all copies or substantial portions of the software.  
+
+See the [full license](LICENSE) for complete details.  
