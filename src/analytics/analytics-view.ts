@@ -1,10 +1,11 @@
 // src/analytics/AnalyticsView.ts
-import { ItemView, Notice, type WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, type WorkspaceLeaf, setIcon } from "obsidian";
 import * as React from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
-import { SproutHeader, type SproutHeaderPage } from "../components/header";
-import { BRAND, VIEW_TYPE_ANALYTICS } from "../core/constants";
+import { type SproutHeader, createViewHeader } from "../core/header";
+import { log } from "../core/logger";
+import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS } from "../core/constants";
 import type SproutPlugin from "../main";
 import { StagePieCard } from "./pie-charts";
 import { FutureDueChart } from "./future-due-chart";
@@ -13,8 +14,6 @@ import { StackedReviewButtonsChart } from "./stacked-review-buttons-chart";
 import { ReviewCalendarHeatmap } from "./review-calendar-heatmap";
 import { StabilityDistributionChart } from "./stability-distribution-chart";
 import { ForgettingCurveChart } from "./forgetting-curve-chart";
-
-const MS_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * IMPORTANT:
@@ -42,9 +41,9 @@ function computeDueForecast(states: Record<string, any>, now: number) {
 
   for (const st of Object.values(states || {})) {
     if (!st || typeof st !== "object") continue;
-    if ((st as any).stage === "suspended") continue;
+    if ((st).stage === "suspended") continue;
 
-    const due = Number((st as any).due);
+    const due = Number((st).due);
     if (!Number.isFinite(due) || due <= 0) continue;
 
     for (const d of thresholds) {
@@ -94,8 +93,8 @@ function buildHeatmapData(events: any[], states: Record<string, any>, now: numbe
   } else {
     for (const st of Object.values(states || {})) {
       if (!st || typeof st !== "object") continue;
-      if ((st as any).stage === "suspended") continue;
-      const due = Number((st as any).due);
+      if ((st).stage === "suspended") continue;
+      const due = Number((st).due);
       if (!Number.isFinite(due)) continue;
       const key = toDateKey(due);
       map.set(key, (map.get(key) || 0) + 1);
@@ -251,14 +250,14 @@ export class SproutAnalyticsView extends ItemView {
     return "chart-spline";
   }
 
-  async onOpen() {
+  onOpen() {
     this.render();
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.appearance?.enableAnimations ?? true) {
       // Delay init to ensure DOM is fully rendered
       setTimeout(() => {
         initAOS({
-          duration: 600,
+          duration: AOS_DURATION,
           easing: "ease-out",
           once: true,
           offset: 50,
@@ -267,42 +266,42 @@ export class SproutAnalyticsView extends ItemView {
     }
   }
 
-  async onClose() {
+  onClose() {
     try {
       this._header?.dispose?.();
-    } catch {}
+    } catch (e) { log.swallow("dispose header", e); }
     this._header = null;
     try {
       this._heatmapRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount heatmap root", e); }
     this._heatmapRoot = null;
     try {
       this._stagePieRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount stage pie root", e); }
     this._stagePieRoot = null;
     try {
       this._answerPieRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount answer pie root", e); }
     this._answerPieRoot = null;
     try {
       this._futureDueRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount future due root", e); }
     this._futureDueRoot = null;
     try {
       this._newCardsRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount new cards root", e); }
     this._newCardsRoot = null;
     try {
       this._stackedButtonsRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount stacked buttons root", e); }
     this._stackedButtonsRoot = null;
     try {
       this._stabilityDistributionRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount stability distribution root", e); }
     this._stabilityDistributionRoot = null;
     try {
       this._forgettingCurveRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount forgetting curve root", e); }
     this._forgettingCurveRoot = null;
     resetAOS();
   }
@@ -322,7 +321,7 @@ export class SproutAnalyticsView extends ItemView {
       root.style.setProperty("max-width", "none", "important");
       root.style.setProperty("width", "100%", "important");
     } else {
-      root.style.setProperty("max-width", "1080px", "important");
+      root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
       root.style.setProperty("width", "100%", "important");
     }
     root.style.setProperty("margin-left", "auto", "important");
@@ -336,49 +335,49 @@ export class SproutAnalyticsView extends ItemView {
     if (this._heatmapRoot) {
       try {
         this._heatmapRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount heatmap root", e); }
       this._heatmapRoot = null;
     }
     if (this._stagePieRoot) {
       try {
         this._stagePieRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount stage pie root", e); }
       this._stagePieRoot = null;
     }
     if (this._answerPieRoot) {
       try {
         this._answerPieRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount answer pie root", e); }
       this._answerPieRoot = null;
     }
     if (this._futureDueRoot) {
       try {
         this._futureDueRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount future due root", e); }
       this._futureDueRoot = null;
     }
     if (this._newCardsRoot) {
       try {
         this._newCardsRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount new cards root", e); }
       this._newCardsRoot = null;
     }
     if (this._stackedButtonsRoot) {
       try {
         this._stackedButtonsRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount stacked buttons root", e); }
       this._stackedButtonsRoot = null;
     }
     if (this._stabilityDistributionRoot) {
       try {
         this._stabilityDistributionRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount stability distribution root", e); }
       this._stabilityDistributionRoot = null;
     }
     if (this._forgettingCurveRoot) {
       try {
         this._forgettingCurveRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount forgetting curve root", e); }
       this._forgettingCurveRoot = null;
     }
 
@@ -392,29 +391,14 @@ export class SproutAnalyticsView extends ItemView {
     this.setTitle?.("Analytics");
 
     if (!this._header) {
-      const leaf = this.leaf ?? this.app.workspace.getLeaf(false);
-
-      this._header = new SproutHeader({
-        app: this.app,
-        leaf,
-        containerEl: this.containerEl,
-
-        getIsWide: () => this.plugin.isWideMode,
-        toggleWide: () => {
-          this.plugin.isWideMode = !this.plugin.isWideMode;
-          this._applyWidthMode();
-        },
-
-        runSync: () => {
-          const anyPlugin = this.plugin as any;
-          if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
-          else if (typeof anyPlugin.syncBank === "function") void anyPlugin.syncBank();
-          else new Notice("Sync not available (no sync method found).");
-        },
-      } as any);
+      this._header = createViewHeader({
+        view: this,
+        plugin: this.plugin,
+        onToggleWide: () => this._applyWidthMode(),
+      });
     }
 
-    (this._header as any).install?.("analytics" as SproutHeaderPage);
+    this._header.install("analytics");
     this._applyWidthMode();
 
     const animationsEnabled = this.plugin.settings?.appearance?.enableAnimations ?? true;
@@ -1056,7 +1040,7 @@ export class SproutAnalyticsView extends ItemView {
     rowsPopover.className = "bc";
     rowsPopover.setAttribute("aria-hidden", "true");
     rowsPopover.style.setProperty("position", "fixed", "important");
-    rowsPopover.style.setProperty("z-index", "999999", "important");
+    rowsPopover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
     rowsPopover.style.setProperty("display", "none", "important");
     rowsPopover.style.setProperty("pointer-events", "auto", "important");
     sproutWrapper.appendChild(rowsPopover);
@@ -1080,7 +1064,7 @@ export class SproutAnalyticsView extends ItemView {
       rowsPopover.style.setProperty("display", "none", "important");
       try {
         sproutWrapper.remove();
-      } catch {}
+      } catch (e) { log.swallow("remove rows menu wrapper", e); }
       rowsOpen = false;
     };
 

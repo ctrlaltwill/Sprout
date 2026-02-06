@@ -13,7 +13,8 @@
 
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
+import { BRAND, POPOVER_Z_INDEX } from "../core/constants";
+import { log } from "../core/logger";
 import type { CardType } from "../card-editor/card-editor";
 import { ImageOcclusionEditorModal } from "../imageocclusion/image-mask-renderer";
 import { syncOneFile } from "../sync/sync-engine";
@@ -255,7 +256,7 @@ export class CardCreatorModal extends Modal {
     typePopover.className = "bc";
     typePopover.setAttribute("aria-hidden", "true");
     typePopover.style.setProperty("position", "fixed", "important");
-    typePopover.style.setProperty("z-index", "999999", "important");
+    typePopover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
     typePopover.style.setProperty("display", "none", "important");
     typePopover.style.setProperty("pointer-events", "auto", "important");
     typeSproutWrapper.appendChild(typePopover);
@@ -290,7 +291,7 @@ export class CardCreatorModal extends Modal {
       typePopover.style.setProperty("display", "none", "important");
       try {
         typeSproutWrapper.remove();
-      } catch {}
+      } catch (e) { log.swallow("remove type menu wrapper", e); }
       typeMenuOpen = false;
     };
 
@@ -460,16 +461,16 @@ export class CardCreatorModal extends Modal {
           const infoInput = cardEditor.inputEls.info;
 
           if (questionInput && questionInput instanceof HTMLTextAreaElement) {
-            questionInput.addEventListener("paste", (ev) => this.handleImagePaste(ev, questionInput));
+            questionInput.addEventListener("paste", (ev) => void this.handleImagePaste(ev, questionInput));
           }
 
           // MCQ answer field is handled by the options UI, not a plain textarea
           if (answerInput && answerInput instanceof HTMLTextAreaElement && currentType !== "mcq") {
-            answerInput.addEventListener("paste", (ev) => this.handleImagePaste(ev, answerInput));
+            answerInput.addEventListener("paste", (ev) => void this.handleImagePaste(ev, answerInput));
           }
 
           if (infoInput && infoInput instanceof HTMLTextAreaElement) {
-            infoInput.addEventListener("paste", (ev) => this.handleImagePaste(ev, infoInput));
+            infoInput.addEventListener("paste", (ev) => void this.handleImagePaste(ev, infoInput));
           }
         }
 
@@ -560,7 +561,7 @@ export class CardCreatorModal extends Modal {
       }
     };
 
-    document.addEventListener("paste", handleIoPaste);
+    document.addEventListener("paste", (ev) => { void handleIoPaste(ev); });
 
     const syncVisibility = () => {
       const showIo = currentType === "io";
@@ -672,11 +673,11 @@ export class CardCreatorModal extends Modal {
           return;
         }
 
-        const getValue = (key: ModalCardFieldKey) => String((cardEditor!.inputEls as any)[key]?.value ?? "").trim();
-        let titleVal = getValue("title");
-        let questionVal = getValue("question");
-        let answerVal = getValue("answer");
-        let infoVal = getValue("info");
+        const getValue = (key: ModalCardFieldKey) => String((cardEditor!.inputEls)[key]?.value ?? "").trim();
+        const titleVal = getValue("title");
+        const questionVal = getValue("question");
+        const answerVal = getValue("answer");
+        const infoVal = getValue("info");
         const groupsVal = String(cardEditor.getGroupInputValue() || "").trim();
 
         const requireNonEmpty = (val: string, message: string) => {
@@ -740,21 +741,21 @@ export class CardCreatorModal extends Modal {
         this.close();
 
         // Auto-sync after a short delay so the new block gets picked up
-        setTimeout(async () => {
-          try {
-            const res = await syncOneFile(this.plugin, active);
-            new Notice(
-              `${BRAND}: added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
-            );
-          } catch (e: any) {
-            // eslint-disable-next-line no-console
-            console.error(e);
-            new Notice(`${BRAND}: sync failed (${String(e?.message || e)})`);
-          }
+        setTimeout(() => {
+          void (async () => {
+            try {
+              const res = await syncOneFile(this.plugin, active);
+              new Notice(
+                `${BRAND}: added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
+              );
+            } catch (e: any) {
+              log.error("sync failed", e);
+              new Notice(`${BRAND}: sync failed (${String(e?.message || e)})`);
+            }
+          })();
         }, 1000);
       } catch (e: any) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+        log.error("add failed", e);
         new Notice(`${BRAND}: add failed (${String(e?.message || e)})`);
       }
     };

@@ -23,6 +23,7 @@ import {
   forgetting_curve,
   type Card as FsrsCard,
 } from "ts-fsrs";
+import { MS_DAY } from "../core/constants";
 
 // --------------------
 // Small utilities
@@ -32,7 +33,7 @@ function clamp(x: number, lo: number, hi: number) {
 }
 
 function daysToMs(d: number) {
-  return d * 24 * 60 * 60 * 1000;
+  return d * MS_DAY;
 }
 
 function startOfTomorrowMs(now: number): number {
@@ -195,7 +196,7 @@ export function shuffleCardsWithParentAwareness<T extends { due: number; parentI
     });
     
     // Interleave groups (round-robin)
-    let maxLength = Math.max(...allGroups.map(g => g.length));
+    const maxLength = Math.max(...allGroups.map(g => g.length));
     for (let i = 0; i < maxLength; i++) {
       for (const group of allGroups) {
         if (i < group.length) {
@@ -434,7 +435,7 @@ function gradeCardFsrs(
   const next = fromFsrsCard(state, result.card);
 
   const msToDue = result.card.due.getTime() - nowDate.getTime();
-  const daysToDue = Math.max(0, msToDue / (24 * 60 * 60 * 1000));
+  const daysToDue = Math.max(0, msToDue / MS_DAY);
 
   const retrievabilityTarget =
     result.card.stability > 0

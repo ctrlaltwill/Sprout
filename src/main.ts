@@ -6,8 +6,8 @@ import {
   Plugin,
   Notice,
   TFile,
+  type ItemView,
   MarkdownView,
-  Platform,
   type Menu,
   type WorkspaceLeaf,
   requestUrl,
@@ -25,6 +25,7 @@ import {
   type SproutSettings,
 } from "./core/constants";
 
+import { log } from "./core/logger";
 import { registerReadingViewPrettyCards } from "./reading/reading-view";
 
 import { JsonStore } from "./core/store";
@@ -39,7 +40,6 @@ import { CardCreatorModal } from "./modals/card-creator-modal";
 import { ImageOcclusionCreatorModal } from "./modals/image-occlusion-creator-modal";
 import { ParseErrorModal } from "./modals/parse-error-modal";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
-import { ImageOcclusionEditor } from "./imageocclusion/image-occlusion-editor";
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
@@ -104,7 +104,7 @@ export default class SproutPlugin extends Plugin {
   private _initBasecoatRuntime() {
     const bc = getBasecoatApi();
     if (!bc) {
-      console.warn(`${BRAND}: Basecoat API not found on window.basecoat (dropdowns may not work).`);
+      log.warn(`Basecoat API not found on window.basecoat (dropdowns may not work).`);
       return;
     }
 
@@ -120,9 +120,9 @@ export default class SproutPlugin extends Plugin {
 
       this._basecoatStarted = true;
       (this as any)._basecoatApi = bc;
-      console.log(`${BRAND}: Basecoat initAll + start OK`);
-    } catch (e) {
-      console.warn(`${BRAND}: Basecoat init failed`, e);
+      log.info(`Basecoat initAll + start OK`);
+    } catch {
+      log.warn(`Basecoat init failed`, e);
     }
   }
 
@@ -131,7 +131,7 @@ export default class SproutPlugin extends Plugin {
     try {
       const bc = getBasecoatApi();
       bc?.stop?.();
-    } catch {}
+    } catch (e) { log.swallow("stop basecoat runtime", e); }
     this._basecoatStarted = false;
   }
 
@@ -192,7 +192,7 @@ export default class SproutPlugin extends Plugin {
    * If multiple exist, detaches the extras and returns the kept leaf.
    */
   private _ensureSingleLeafOfType(viewType: string): WorkspaceLeaf | null {
-    const leaves = this.app.workspace.getLeavesOfType(viewType) as WorkspaceLeaf[];
+    const leaves = this.app.workspace.getLeavesOfType(viewType);
     if (!leaves.length) return null;
 
     const [keep, ...extras] = leaves;
@@ -200,7 +200,7 @@ export default class SproutPlugin extends Plugin {
     for (const l of extras) {
       try {
         l.detach();
-      } catch {}
+      } catch (e) { log.swallow("detach extra leaf", e); }
     }
 
     return keep;
@@ -232,11 +232,11 @@ export default class SproutPlugin extends Plugin {
       };
 
       const root = (await this.loadData()) || {};
-      this.settings = deepMerge(DEFAULT_SETTINGS, (root as any).settings || {});
+      this.settings = deepMerge(DEFAULT_SETTINGS, (root).settings || {});
       this._normaliseSettingsInPlace();
 
       this.store = new JsonStore(this);
-      await this.store.load(root as any);
+      this.store.load(root);
 
       registerReadingViewPrettyCards(this);
 
@@ -267,7 +267,7 @@ export default class SproutPlugin extends Plugin {
         id: "sprout-add-flashcard",
         name: "Add flashcard to note",
         hotkeys: [],
-        callback: async () => this.openAddFlashcardModal(),
+        callback: () => this.openAddFlashcardModal(),
       });
 
       // Replace dropdown with separate ribbon icons (desktop + mobile)
@@ -300,9 +300,9 @@ export default class SproutPlugin extends Plugin {
 
       await this.saveAll();
       void this.refreshGithubStars();
-      console.log(`${BRAND}: loaded`);
-    } catch (e) {
-      console.error(`${BRAND}: failed to load`, e);
+      log.info(`loaded`);
+    } catch {
+      log.error(`failed to load`, e);
       new Notice(`${BRAND}: failed to load. See console for details.`);
     }
   }
@@ -310,7 +310,7 @@ export default class SproutPlugin extends Plugin {
   onunload() {
     try {
       void this.saveAll();
-    } catch {}
+    } catch (e) { log.swallow("save all on unload", e); }
     this._destroyRibbonIcons();
     document.body.classList.remove("sprout-hide-status-bar");
 
@@ -322,7 +322,7 @@ export default class SproutPlugin extends Plugin {
     for (const el of this._ribbonEls) {
       try {
         el.remove();
-      } catch {}
+      } catch (e) { log.swallow("remove ribbon icon", e); }
     }
     this._ribbonEls = [];
   }
@@ -335,7 +335,7 @@ export default class SproutPlugin extends Plugin {
   private _ensureEditingNoteEditor() {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!view) return null;
-    if (typeof (view as any).getMode === "function" && (view as any).getMode() !== "source") return null;
+    if (view.getMode() !== "source") return null;
     const editor = view.editor;
     if (!editor) return null;
     return { view, editor };
@@ -364,7 +364,7 @@ export default class SproutPlugin extends Plugin {
       this.app.workspace.on("editor-menu", (menu: Menu, _editor: any, view: any) => {
         if (!(view instanceof MarkdownView)) return;
 
-        const mode = typeof (view as any).getMode === "function" ? (view as any).getMode() : "source";
+        const mode = view.getMode();
         if (mode !== "source") return;
 
         if (!(view.file instanceof TFile)) return;
@@ -402,7 +402,7 @@ export default class SproutPlugin extends Plugin {
 
             let node: HTMLElement | null = itemDom;
             while (node && node.parentElement && node.parentElement !== menuDom) {
-              node = node.parentElement as HTMLElement;
+              node = node.parentElement;
             }
             if (!node || node.parentElement !== menuDom) return;
 
@@ -429,7 +429,7 @@ export default class SproutPlugin extends Plugin {
                 menuDom.insertBefore(node, menuDom.children[1]);
               }
             }
-          } catch {}
+          } catch (e) { log.swallow("reposition menu item", e); }
         };
 
         positionAfterExternalLink();
@@ -466,11 +466,16 @@ export default class SproutPlugin extends Plugin {
   }
 
   private _refreshOpenViews() {
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER).forEach((l) => (l.view as any)?.onRefresh?.());
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET).forEach((l) => (l.view as any)?.onRefresh?.());
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_BROWSER).forEach((l) => (l.view as any)?.onRefresh?.());
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_ANALYTICS).forEach((l) => (l.view as any)?.onRefresh?.());
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_HOME).forEach((l) => (l.view as any)?.onRefresh?.());
+    const refresh = (type: string) =>
+      this.app.workspace.getLeavesOfType(type).forEach((l) => {
+        const v = l.view as ItemView & { onRefresh?(): void };
+        v.onRefresh?.();
+      });
+    refresh(VIEW_TYPE_REVIEWER);
+    refresh(VIEW_TYPE_WIDGET);
+    refresh(VIEW_TYPE_BROWSER);
+    refresh(VIEW_TYPE_ANALYTICS);
+    refresh(VIEW_TYPE_HOME);
   }
 
   async refreshGithubStars(force = false) {
@@ -609,21 +614,21 @@ export default class SproutPlugin extends Plugin {
     if (!forceNew) {
       const existing = this._ensureSingleLeafOfType(VIEW_TYPE_REVIEWER);
       if (existing) {
-        this.app.workspace.revealLeaf(existing);
+        void this.app.workspace.revealLeaf(existing);
         return;
       }
     }
 
     const leaf = this.app.workspace.getLeaf("tab");
     await leaf.setViewState({ type: VIEW_TYPE_REVIEWER, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 
   async openHomeTab(forceNew: boolean = false) {
     if (!forceNew) {
       const existing = this._ensureSingleLeafOfType(VIEW_TYPE_HOME);
       if (existing) {
-        this.app.workspace.revealLeaf(existing);
+        void this.app.workspace.revealLeaf(existing);
         return;
       }
     }
@@ -638,43 +643,43 @@ export default class SproutPlugin extends Plugin {
       if (activeLeaf && activeLeaf !== leaf && typeof ws.moveLeaf === "function") {
         ws.moveLeaf(leaf, ws.getGroup(activeLeaf), ws.getGroup(activeLeaf)?.index + 1);
       }
-    } catch {}
-    ws.revealLeaf(leaf);
+    } catch (e) { log.swallow("move leaf after active tab", e); }
+    void ws.revealLeaf(leaf);
   }
 
   async openBrowserTab(forceNew: boolean = false) {
     if (!forceNew) {
       const existing = this._ensureSingleLeafOfType(VIEW_TYPE_BROWSER);
       if (existing) {
-        this.app.workspace.revealLeaf(existing);
+        void this.app.workspace.revealLeaf(existing);
         return;
       }
     }
 
     const leaf = this.app.workspace.getLeaf("tab");
     await leaf.setViewState({ type: VIEW_TYPE_BROWSER, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 
   async openAnalyticsTab(forceNew: boolean = false) {
     if (!forceNew) {
       const existing = this._ensureSingleLeafOfType(VIEW_TYPE_ANALYTICS);
       if (existing) {
-        this.app.workspace.revealLeaf(existing);
+        void this.app.workspace.revealLeaf(existing);
         return;
       }
     }
 
     const leaf = this.app.workspace.getLeaf("tab");
     await leaf.setViewState({ type: VIEW_TYPE_ANALYTICS, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 
   private async openWidgetSafe(): Promise<void> {
     try {
       await this.openWidget();
-    } catch (e) {
-      console.error(`${BRAND}: failed to open widget`, e);
+    } catch {
+      log.error(`failed to open widget`, e);
       new Notice(`${BRAND}: failed to open widget. See console for details.`);
     }
   }
@@ -682,7 +687,7 @@ export default class SproutPlugin extends Plugin {
   async openWidget() {
     const existing = this._ensureSingleLeafOfType(VIEW_TYPE_WIDGET);
     if (existing) {
-      this.app.workspace.revealLeaf(existing);
+      void this.app.workspace.revealLeaf(existing);
       return;
     }
 
@@ -691,21 +696,20 @@ export default class SproutPlugin extends Plugin {
     if (!leaf) return;
 
     await leaf.setViewState({ type: VIEW_TYPE_WIDGET, active: true, state: {} });
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 
   private _openSproutSettings() {
-    const appAny = this.app as any;
     try {
-      if (appAny?.setting) {
-        if (typeof appAny.setting.open === "function") appAny.setting.open();
-      } else if (appAny?.commands?.executeCommandById) {
+      if (this.app.setting) {
+        if (typeof this.app.setting.open === "function") this.app.setting.open();
+      } else if (this.app.commands?.executeCommandById) {
         try {
-          appAny.commands.executeCommandById("app:open-settings");
-        } catch {}
+          this.app.commands.executeCommandById("app:open-settings");
+        } catch (e) { log.swallow("execute open-settings command", e); }
       }
 
-      const setting = appAny?.setting;
+      const setting = this.app.setting;
       const id = this.manifest?.id;
 
       if (setting && id) {
@@ -717,11 +721,11 @@ export default class SproutPlugin extends Plugin {
           try {
             setting.openTab(id);
             return;
-          } catch {}
+          } catch (e) { log.swallow("open settings tab by id", e); }
         }
       }
-    } catch (e) {
-      console.error(`${BRAND}: failed to open settings`, e);
+    } catch {
+      log.error(`failed to open settings`, e);
       new Notice(`${BRAND}: Unable to open settings automatically. Open Settings → Community plugins → ${BRAND}.`);
     }
   }

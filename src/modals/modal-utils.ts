@@ -10,7 +10,7 @@
  * ---------------------------------------------------------------------------
  */
 
-import { Modal, Notice, Platform, TFile, setIcon, type App } from "obsidian";
+import { type Modal, Notice, Platform, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import {
@@ -88,8 +88,7 @@ export function resolveIoImageFile(app: App, sourceNotePath: string, imageRef: s
   const link = stripEmbedSyntax(imageRef);
   if (!link) return null;
 
-  const cache: any = (app as any).metadataCache;
-  const dest = cache?.getFirstLinkpathDest?.(link, sourceNotePath);
+  const dest = app.metadataCache.getFirstLinkpathDest(link, sourceNotePath);
   if (dest instanceof TFile) return dest;
 
   const af = app.vault.getAbstractFileByPath(link);

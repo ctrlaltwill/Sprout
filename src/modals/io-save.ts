@@ -10,6 +10,7 @@
 import { Notice, MarkdownView, TFile, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
+import { log } from "../core/logger";
 import type { CardRecord } from "../core/store";
 import { normaliseGroupKey, stableIoChildId } from "../imageocclusion/mask-tool";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
@@ -219,7 +220,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
         sourceStartLine: Number(parentRec.sourceStartLine ?? 0) || 0,
         imageRef: normaliseVaultPath(imagePath),
         maskMode: mask,
-        createdAt: Number((cards[childId] as any)?.createdAt ?? now),
+        createdAt: Number((cards[childId])?.createdAt ?? now),
         updatedAt: now,
         lastSeenAt: now,
       };
@@ -237,14 +238,14 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     }
 
     // Retire stale children that no longer have a matching group
-    for (const c of Object.values(cards) as any[]) {
+    for (const c of Object.values(cards)) {
       if (!c || c.type !== "io-child") continue;
       if (String(c.parentId) !== parentId) continue;
       if (keepChildIds.has(String(c.id))) continue;
       c.retired = true;
       c.updatedAt = now;
       c.lastSeenAt = now;
-      plugin.store.upsertCard(c as any);
+      plugin.store.upsertCard(c);
     }
 
     await plugin.store.persist();
@@ -272,7 +273,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
         await app.vault.modify(file, lines.join("\n"));
       }
     } catch (e: any) {
-      console.warn(`${BRAND}: Failed to update IO markdown`, e);
+      log.warn("Failed to update IO markdown", e);
     }
 
     new Notice(`${BRAND}: IO updated.`);
@@ -408,14 +409,14 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   }
 
   // Retire stale children
-  for (const c of Object.values(cards) as any[]) {
+  for (const c of Object.values(cards)) {
     if (!c || c.type !== "io-child") continue;
     if (String(c.parentId) !== id) continue;
     if (keepChildIds.has(String(c.id))) continue;
     c.retired = true;
     c.updatedAt = now;
     c.lastSeenAt = now;
-    plugin.store.upsertCard(c as any);
+    plugin.store.upsertCard(c);
   }
 
   await plugin.store.persist();
@@ -450,7 +451,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   try {
     await insertTextAtCursorOrAppend(app, active, ioBlock.join("\n"), true);
   } catch (e: any) {
-    console.warn(`${BRAND}: Failed to insert IO markdown, but card saved to store`, e);
+    log.warn("Failed to insert IO markdown, but card saved to store", e);
   }
 
   new Notice(`${BRAND}: IO saved.`);

@@ -32,14 +32,14 @@ function shuffleInPlace(a: number[]) {
 }
 
 export function getMcqOptionOrder(plugin: SproutPlugin, session: Session, card: any): number[] {
-  const opts = (card as any)?.options || [];
+  const opts = (card)?.options || [];
   const n = Array.isArray(opts) ? opts.length : 0;
   const identity = Array.from({ length: n }, (_, i) => i);
 
-  if ((card as any)?.type !== "mcq") return identity;
+  if ((card)?.type !== "mcq") return identity;
   if (!isMcqOptionRandomisationEnabled(plugin)) return identity;
 
-  const id = String((card as any)?.id ?? "");
+  const id = String((card)?.id ?? "");
   if (!id) return identity;
 
   const s: any = session as any;

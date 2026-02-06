@@ -1,5 +1,5 @@
 // src/reviewer/markdownRender.ts
-import { MarkdownRenderer, TFile, type App, ItemView } from "obsidian";
+import { MarkdownRenderer, TFile, type App } from "obsidian";
 
 type Opts = {
   app: App;
@@ -88,7 +88,7 @@ export class SproutMarkdownHelper {
    * Also enforce block/left-aligned layout.
    */
   private decorateRenderedImages(containerEl: HTMLElement) {
-    const imgs = Array.from(containerEl.querySelectorAll("img")) as HTMLImageElement[];
+    const imgs = Array.from(containerEl.querySelectorAll("img"));
 
     for (const img of imgs) {
       if ((img as any).dataset?.bcZoomBound === "1") continue;

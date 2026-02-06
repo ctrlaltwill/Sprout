@@ -17,9 +17,9 @@
 
 import { ItemView, TFile, type WorkspaceLeaf, setIcon, Notice } from "obsidian";
 
-import { VIEW_TYPE_WIDGET } from "../core/constants";
+import { MS_DAY, VIEW_TYPE_WIDGET } from "../core/constants";
+import { log } from "../core/logger";
 import { el } from "../core/ui";
-import { shuffleCardsWithParentAwareness } from "../scheduler/scheduler";
 import { gradeFromRating } from "../scheduler/scheduler";
 import type SproutPlugin from "../main";
 import { renderClozeFront } from "../reviewer/question-cloze";
@@ -28,7 +28,6 @@ import { openSproutImageZoom } from "../reviewer/zoom";
 import * as IO from "../imageocclusion/image-occlusion-index";
 import { renderImageOcclusionReviewInto } from "../imageocclusion/image-occlusion-review-render";
 import { deepClone, clampInt } from "../reviewer/utilities";
-import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "../reviewer/markdown-block";
 import { syncOneFile } from "../sync/sync-engine";
@@ -41,7 +40,6 @@ import {
 } from "./widget-helpers";
 
 import {
-  makeIconButton,
   makeTextButton,
   applyWidgetActionButtonStyles,
   applyWidgetHoverDarken,
@@ -88,7 +86,7 @@ export class SproutWidgetView extends ItemView {
     return "lucide-sprout";
   }
 
-  async onOpen() {
+  onOpen() {
     this.activeFile = this.app.workspace.getActiveFile();
 
     // Keyboard shortcuts only when this view has focus
@@ -169,10 +167,10 @@ export class SproutWidgetView extends ItemView {
     if (MathJax && typeof MathJax.typesetPromise === "function") {
       try {
         MathJax.typesetPromise([el]).catch((err: any) => {
-          console.warn("[Sprout Widget] MathJax rendering error:", err);
+          log.warn("MathJax rendering error:", err);
         });
       } catch (err) {
-        console.warn("[Sprout Widget] MathJax rendering error:", err);
+        log.warn("MathJax rendering error:", err);
       }
     }
   }
@@ -184,7 +182,7 @@ export class SproutWidgetView extends ItemView {
         e.preventDefault();
         const href = link.getAttribute("data-href");
         if (href) {
-          this.app.workspace.openLinkText(href, "", true);
+          void this.app.workspace.openLinkText(href, "", true);
         }
       });
     });
@@ -196,7 +194,7 @@ export class SproutWidgetView extends ItemView {
     sourcePath: string,
     reveal: boolean,
   ) {
-    await renderImageOcclusionReviewInto({
+    renderImageOcclusionReviewInto({
       app: this.app,
       plugin: this.plugin,
       containerEl,
@@ -233,9 +231,11 @@ export class SproutWidgetView extends ItemView {
     const sec = Number(this.plugin.settings.reviewer.autoAdvanceSeconds);
     if (!Number.isFinite(sec) || sec <= 0) return;
 
-    this._timer = window.setTimeout(async () => {
-      this._timer = null;
-      await this.nextCard();
+    this._timer = window.setTimeout(() => {
+      void (async () => {
+        this._timer = null;
+        await this.nextCard();
+      })();
     }, sec * 1000);
   }
 
@@ -317,8 +317,8 @@ export class SproutWidgetView extends ItemView {
   private computeCounts(cards: any[]) {
     const now = Date.now();
     const states = this.plugin.store.data.states || {};
-    let total = cards.length,
-      nNew = 0,
+    const total = cards.length;
+    let nNew = 0,
       nLearn = 0,
       nDue = 0;
 
@@ -547,7 +547,7 @@ export class SproutWidgetView extends ItemView {
       this.showAnswer = false;
 
       this.render();
-    } catch (e) {
+    } catch {
       new Notice("Undo failed.");
       this.render();
     }
@@ -566,7 +566,7 @@ export class SproutWidgetView extends ItemView {
     if (!st) return;
 
     const now = Date.now();
-    const nextState = { ...st, due: now + 24 * 60 * 60 * 1000 };
+    const nextState = { ...st, due: now + MS_DAY };
     this.plugin.store.upsertState(nextState);
     await this.plugin.store.persist();
 
@@ -815,7 +815,7 @@ export class SproutWidgetView extends ItemView {
           };
           const rating = ratingMap[ev.key];
           if (rating) {
-            this.gradeCurrentRating(rating, {}).then(() => void this.nextCard());
+            void this.gradeCurrentRating(rating, {}).then(() => void this.nextCard());
           }
           return;
         }
@@ -845,7 +845,7 @@ export class SproutWidgetView extends ItemView {
     // If this is a cloze child, edit the parent cloze instead so changes persist to the source note
     let targetCard = card;
     if (cardType === "cloze-child") {
-      const parentId = String((card as any).parentId || "");
+      const parentId = String((card).parentId || "");
       if (!parentId) {
         new Notice("Cannot edit cloze child: missing parent card.");
         return;
@@ -861,7 +861,7 @@ export class SproutWidgetView extends ItemView {
     }
 
     // Use bulk edit modal for basic, cloze, and MCQ (editing parent for cloze-child)
-    openBulkEditModalForCards(this.plugin, [targetCard], async (updatedCards) => {
+    void openBulkEditModalForCards(this.plugin, [targetCard], async (updatedCards) => {
       if (!updatedCards.length) return;
 
       try {
@@ -1010,7 +1010,7 @@ export class SproutWidgetView extends ItemView {
     const queueCount = previewSession?.queue?.length ?? 0;
     const events = this.plugin.store.getAnalyticsEvents?.() ?? [];
     const nowMs = Date.now();
-    const weekAgo = nowMs - 7 * 24 * 60 * 60 * 1000;
+    const weekAgo = nowMs - 7 * MS_DAY;
     let timeTotalMs = 0;
     let timeCount = 0;
     for (const ev of events) {
@@ -1198,7 +1198,7 @@ export class SproutWidgetView extends ItemView {
     applySectionStyles(titleEl);
     body.appendChild(titleEl);
 
-    const infoText = String((card as any)?.info ?? "").trim();
+    const infoText = String((card)?.info ?? "").trim();
 
     if (card.type === "basic") {
       const qEl = el("div", "bc");
@@ -1333,7 +1333,7 @@ export class SproutWidgetView extends ItemView {
 
       // Randomise MCQ options if setting enabled
       const randomize = !!(this.plugin.settings.reviewer?.randomizeMcqOptions);
-      let order = opts.map((_, i) => i);
+      const order = opts.map((_, i) => i);
       if (randomize) {
         // Fisher-Yates shuffle
         for (let i = order.length - 1; i > 0; i--) {
@@ -1375,7 +1375,7 @@ export class SproutWidgetView extends ItemView {
         }
         left.appendChild(textEl);
         d.appendChild(left);
-        if (!graded) d.addEventListener("click", () => this.answerMcq(idx));
+        if (!graded) d.addEventListener("click", () => { void this.answerMcq(idx); });
         if (graded) {
           // Map idx back to original for correctIndex
           const origIdx = randomize ? order[idx] : idx;
@@ -1462,8 +1462,8 @@ export class SproutWidgetView extends ItemView {
         const nextBtn = makeTextButton({
           label: "Next",
           className: "bc btn-outline w-full text-sm",
-          onClick: async () => {
-            await this.nextCard();
+          onClick: () => {
+            void this.nextCard();
           },
           kbd: "↵",
         });
@@ -1502,9 +1502,11 @@ export class SproutWidgetView extends ItemView {
           const againBtn = makeTextButton({
             label: "Again",
             className: fourButton ? "bc btn-outline text-xs w-full" : "bc btn-outline text-xs flex-1",
-            onClick: async () => {
-              await this.gradeCurrentRating("again", {});
-              this.render();
+            onClick: () => {
+              void (async () => {
+                await this.gradeCurrentRating("again", {});
+                this.render();
+              })();
             },
             kbd: fourButton ? "1" : "1",
           });
@@ -1516,9 +1518,11 @@ export class SproutWidgetView extends ItemView {
             const hardBtn = makeTextButton({
               label: "Hard",
               className: "bc btn-outline text-xs w-full",
-              onClick: async () => {
-                await this.gradeCurrentRating("hard", {});
-                this.render();
+              onClick: () => {
+                void (async () => {
+                  await this.gradeCurrentRating("hard", {});
+                  this.render();
+                })();
               },
               kbd: "2",
             });
@@ -1530,9 +1534,11 @@ export class SproutWidgetView extends ItemView {
           const goodBtn = makeTextButton({
             label: "Good",
             className: fourButton ? "bc btn-outline text-xs w-full" : "bc btn-outline text-xs flex-1",
-            onClick: async () => {
-              await this.gradeCurrentRating("good", {});
-              this.render();
+            onClick: () => {
+              void (async () => {
+                await this.gradeCurrentRating("good", {});
+                this.render();
+              })();
             },
             kbd: fourButton ? "3" : "2",
           });
@@ -1544,9 +1550,11 @@ export class SproutWidgetView extends ItemView {
             const easyBtn = makeTextButton({
               label: "Easy",
               className: "bc btn-outline text-xs w-full",
-              onClick: async () => {
-                await this.gradeCurrentRating("easy", {});
-                this.render();
+              onClick: () => {
+                void (async () => {
+                  await this.gradeCurrentRating("easy", {});
+                  this.render();
+                })();
               },
               kbd: "4",
             });
@@ -1564,8 +1572,8 @@ export class SproutWidgetView extends ItemView {
         const nextBtn = makeTextButton({
           label: "Next",
           className: "bc btn-outline w-full text-sm",
-          onClick: async () => {
-            await this.nextCard();
+          onClick: () => {
+            void this.nextCard();
           },
           kbd: "↵",
         });
@@ -1615,7 +1623,7 @@ export class SproutWidgetView extends ItemView {
         if (!filePath) return;
         const anchor = card.anchor || card.blockId || card.id;
         const anchorStr = anchor ? `#^${anchor}` : "";
-        this.app.workspace.openLinkText(filePath + anchorStr, filePath, true);
+        void this.app.workspace.openLinkText(filePath + anchorStr, filePath, true);
       },
     });
     this._moreMenuToggle = () => moreMenu.toggle();

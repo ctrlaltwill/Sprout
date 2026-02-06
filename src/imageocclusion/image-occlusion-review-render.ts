@@ -5,7 +5,7 @@
  * during reviews and in the widget, with zoom-modal support.
  */
 
-import { App, Modal, setIcon } from "obsidian";
+import { type App, Modal, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import { resolveImageFile } from "./io-helpers";
 
@@ -17,7 +17,7 @@ export function isIoRevealableType(card: any): boolean {
   return card && (card.type === "io" || card.type === "io-child");
 }
 
-export async function renderImageOcclusionReviewInto(args: {
+export function renderImageOcclusionReviewInto(args: {
   app: App;
   plugin: SproutPlugin;
   containerEl: HTMLElement;
@@ -353,7 +353,7 @@ export async function renderImageOcclusionReviewInto(args: {
           zoomHost.style.setProperty("max-height", "90vh", "important");
           zoomHost.style.setProperty("overflow", "visible", "important");
 
-          void renderImageOcclusionReviewInto({
+          renderImageOcclusionReviewInto({
             app,
             plugin,
             containerEl: zoomHost,
@@ -363,8 +363,9 @@ export async function renderImageOcclusionReviewInto(args: {
             ioModule,
             renderMarkdownInto: args.renderMarkdownInto,
             enableWidgetModal: false,
-          }).then(() => {
-            const zoomImg = zoomHost.querySelector("img") as HTMLImageElement | null;
+          });
+          {
+            const zoomImg = zoomHost.querySelector("img");
             if (zoomImg) {
               zoomImg.style.setProperty("max-width", "95vw", "important");
               zoomImg.style.setProperty("max-height", "90vh", "important");
@@ -413,7 +414,7 @@ export async function renderImageOcclusionReviewInto(args: {
               this.close();
             });
             zoomHost.appendChild(closeBtn);
-          });
+          }
         }
 
         onClose() {

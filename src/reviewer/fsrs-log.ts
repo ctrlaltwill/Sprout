@@ -1,5 +1,5 @@
 // src/reviewer/fsrsLog.ts
-import { BRAND } from "../core/constants";
+import { log } from "../core/logger";
 import type { Rating } from "./image-occlusion-types";
 
 type RatingOrSkip = Rating | "skip";
@@ -145,10 +145,9 @@ export function logFsrsIfNeeded(args: {
     return parts.length ? ` | ${parts.join(" ")}` : "";
   })();
 
-  const prefix = isSkip ? `${BRAND} SKIP:` : `${BRAND} FSRS:`;
+  const prefix = isSkip ? "SKIP:" : "FSRS:";
 
-  // eslint-disable-next-line no-console
-  console.log(
+  log.debug(
     `${prefix} card ${id} | type=${ct || "unknown"} | rating=${String(args.rating)}${uiBits} | ` +
       `${stateBits}${tBits} | ` +
       `R_now=${rNowStr} | R_target=${rTargetStr} | ` +
@@ -199,8 +198,7 @@ export function logUndoIfNeeded(args: {
       ? ` | mcqChoice=${args.meta?.mcqChoice} | mcqCorrect=${args.meta?.mcqCorrect} | mcqPass=${args.meta?.mcqPass}`
       : "";
 
-  // eslint-disable-next-line no-console
-  console.log(
-    `${BRAND} UNDO: card ${id} | type=${ct || "unknown"} | reverted=1 | undoneRating=${rating} | ${bits}${mcqBits}`,
+  log.debug(
+    `UNDO: card ${id} | type=${ct || "unknown"} | reverted=1 | undoneRating=${rating} | ${bits}${mcqBits}`,
   );
 }

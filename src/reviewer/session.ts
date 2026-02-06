@@ -71,7 +71,7 @@ function isIoParentCard(card: any): boolean {
 function isClozeParentCard(card: any): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t !== "cloze") return false;
-  const children = (card as any)?.clozeChildren;
+  const children = (card)?.clozeChildren;
   return Array.isArray(children) && children.length > 0;
 }
 
@@ -176,7 +176,7 @@ function resolveCardsInScope(plugin: SproutPlugin, scope: Scope): CardRecord[] {
       for (const id of gx.getIds(key)) ids.add(String(id));
     }
 
-    const cardsObj = (plugin.store?.data?.cards || {}) as Record<string, CardRecord>;
+    const cardsObj = (plugin.store?.data?.cards || {});
     const quarantine = (plugin.store?.data?.quarantine || {}) as Record<string, any>;
 
     const out: CardRecord[] = [];
@@ -347,7 +347,7 @@ export function getNextDueInScope(plugin: SproutPlugin, scope: Scope): number | 
   let next: number | null = null;
 
   for (const c of cards as any[]) {
-    const st = states[(c as any).id];
+    const st = states[(c).id];
     if (!st) continue;
     if (st.stage === "suspended") continue;
 

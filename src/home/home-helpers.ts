@@ -11,8 +11,8 @@ import type { Scope } from "../reviewer/types";
 
 // ─── Constants ───────────────────────────────────────────────────────
 
-/** Milliseconds in one day. */
-export const MS_DAY = 24 * 60 * 60 * 1000;
+import { MS_DAY } from "../core/constants";
+export { MS_DAY };
 
 // ─── Date / time helpers ─────────────────────────────────────────────
 

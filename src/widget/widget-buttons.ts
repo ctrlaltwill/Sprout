@@ -12,6 +12,8 @@
  */
 
 import { setIcon } from "obsidian";
+import { POPOVER_Z_INDEX } from "../core/constants";
+import { log } from "../core/logger";
 
 /* ------------------------------------------------------------------ */
 /*  Hover colour helper                                                */
@@ -165,7 +167,7 @@ export function attachWidgetMoreMenu(opts: {
   popover.className = "bc sprout";
   popover.setAttribute("aria-hidden", "true");
   popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", "999999", "important");
+  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
   popover.style.setProperty("display", "none", "important");
   popover.style.setProperty("pointer-events", "auto", "important");
 
@@ -271,12 +273,12 @@ export function attachWidgetMoreMenu(opts: {
 
     try {
       cleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("popover cleanup", e); }
     cleanup = null;
 
     try {
       popover.remove();
-    } catch {}
+    } catch (e) { log.swallow("remove popover", e); }
   };
 
   const open = () => {

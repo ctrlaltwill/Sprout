@@ -1,6 +1,7 @@
-// src/header.ts
-import { setIcon, type App, type WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "../core/constants";
+// src/core/header.ts
+import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
+import { MAX_CONTENT_WIDTH, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
+import { log } from "./logger";
 
 export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics";
 
@@ -70,19 +71,19 @@ export class SproutHeader {
     this.closeMorePopover();
     try {
       this.widthResizeCleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("dispose: widthResizeCleanup", e); }
     this.widthResizeCleanup = null;
     try {
       this.widthResizeObserver?.disconnect();
-    } catch {}
+    } catch (e) { log.swallow("dispose: widthResizeObserver disconnect", e); }
     this.widthResizeObserver = null;
     // Theme cleanup not needed; handled by syncThemeWithObsidian
   }
 
   install(active: SproutHeaderPage) {
     const viewHeader =
-      (this.deps.containerEl.querySelector(":scope > .view-header") as HTMLElement | null) ??
-      (this.deps.containerEl.querySelector(".view-header") as HTMLElement | null);
+      (this.deps.containerEl.querySelector(":scope > .view-header")) ??
+      (this.deps.containerEl.querySelector(".view-header"));
     if (viewHeader) viewHeader.classList.add("bc", "sprout-header");
 
     this.installHeaderDropdownNav(active);
@@ -102,16 +103,16 @@ export class SproutHeader {
     const isWide = this.deps.getIsWide();
     // Only hide if the available header space is too narrow, not based on the button group width
     const header =
-      (this.deps.containerEl?.querySelector(":scope > .view-header") as HTMLElement | null) ??
-      (this.deps.containerEl?.querySelector(".view-header") as HTMLElement | null);
+      (this.deps.containerEl?.querySelector(":scope > .view-header")) ??
+      (this.deps.containerEl?.querySelector(".view-header"));
     const availableWidth = header?.clientWidth ?? this.deps.containerEl?.clientWidth ?? 0;
     const hide =
-      availableWidth > 0 ? availableWidth <= 1080 : typeof window !== "undefined" && window.innerWidth <= 1080;
+      availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
     this.widthBtnEl.style.display = hide ? "none" : "";
     this.widthBtnEl.setAttribute("data-tooltip", isWide ? "Collapse table" : "Expand table");
 
     const text = isWide ? "Collapse" : "Expand";
-    const textNode = this.widthBtnEl.querySelector("[data-sprout-label]") as HTMLElement | null;
+    const textNode = this.widthBtnEl.querySelector("[data-sprout-label]");
     if (textNode) textNode.textContent = text;
 
     if (this.widthBtnIconEl) {
@@ -171,17 +172,17 @@ export class SproutHeader {
   private closeTopNavPopover() {
     try {
       this.topNavCleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("closeTopNavPopover: topNavCleanup", e); }
     this.topNavCleanup = null;
 
     if (this.topNavPopoverEl) {
       try {
         this.topNavPopoverEl.remove();
-      } catch {}
+      } catch (e) { log.swallow("closeTopNavPopover: remove popover element", e); }
     }
     this.topNavPopoverEl = null;
 
-    const trigger = this.deps.containerEl.querySelector(`#${this.headerNavId}-trigger`) as HTMLElement | null;
+    const trigger = this.deps.containerEl.querySelector(`#${this.headerNavId}-trigger`);
     if (trigger) trigger.setAttribute("aria-expanded", "false");
   }
 
@@ -194,7 +195,7 @@ export class SproutHeader {
     const root = document.createElement("div");
     root.className = "dropdown-menu";
     root.style.setProperty("position", "fixed", "important");
-    root.style.setProperty("z-index", "999999", "important");
+    root.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
     sproutWrapper.appendChild(root);
 
     const panel = document.createElement("div");
@@ -262,7 +263,7 @@ export class SproutHeader {
           ev.preventDefault();
           ev.stopPropagation();
           this.closeTopNavPopover();
-          (trigger as HTMLElement).focus();
+          (trigger).focus();
         }
       });
 
@@ -307,7 +308,7 @@ export class SproutHeader {
       ev.preventDefault();
       ev.stopPropagation();
       this.closeTopNavPopover();
-      (trigger as HTMLElement).focus();
+      (trigger).focus();
     };
 
     window.addEventListener("resize", onResizeOrScroll, true);
@@ -333,8 +334,8 @@ export class SproutHeader {
     const navHost =
       (this.deps.containerEl.querySelector(
         ":scope > .view-header .view-header-left .view-header-nav-buttons",
-      ) as HTMLElement | null) ??
-      (this.deps.containerEl.querySelector(".view-header .view-header-left .view-header-nav-buttons") as HTMLElement | null);
+      )) ??
+      (this.deps.containerEl.querySelector(".view-header .view-header-left .view-header-nav-buttons"));
 
     if (!navHost) return;
 
@@ -398,13 +399,13 @@ export class SproutHeader {
   private closeMorePopover() {
     try {
       this.moreCleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("closeMorePopover: moreCleanup", e); }
     this.moreCleanup = null;
 
     if (this.morePopoverEl) {
       try {
         this.morePopoverEl.remove();
-      } catch {}
+      } catch (e) { log.swallow("closeMorePopover: remove popover element", e); }
     }
     this.morePopoverEl = null;
     this.morePanelEl = null;
@@ -421,7 +422,7 @@ export class SproutHeader {
     const root = document.createElement("div");
     root.className = "dropdown-menu";
     root.style.setProperty("position", "fixed", "important");
-    root.style.setProperty("z-index", "999999", "important");
+    root.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
     sproutWrapper.appendChild(root);
 
     const panel = document.createElement("div");
@@ -476,7 +477,7 @@ export class SproutHeader {
           ev.preventDefault();
           ev.stopPropagation();
           this.closeMorePopover();
-          (trigger as HTMLElement).focus();
+          (trigger).focus();
         }
       });
 
@@ -519,7 +520,7 @@ export class SproutHeader {
       ev.preventDefault();
       ev.stopPropagation();
       this.closeMorePopover();
-      (trigger as HTMLElement).focus();
+      (trigger).focus();
     };
 
     window.addEventListener("resize", onResizeOrScroll, true);
@@ -541,8 +542,8 @@ export class SproutHeader {
 
   private installHeaderActionsButtonGroup(active: SproutHeaderPage) {
     const actionsHost =
-      (this.deps.containerEl.querySelector(":scope > .view-header .view-actions") as HTMLElement | null) ??
-      (this.deps.containerEl.querySelector(".view-header .view-actions") as HTMLElement | null);
+      (this.deps.containerEl.querySelector(":scope > .view-header .view-actions")) ??
+      (this.deps.containerEl.querySelector(".view-header .view-actions"));
 
     if (!actionsHost) return;
 
@@ -587,13 +588,13 @@ export class SproutHeader {
     if (typeof ResizeObserver !== "undefined") {
       try {
         const header =
-          (this.deps.containerEl?.querySelector(":scope > .view-header") as HTMLElement | null) ??
-          (this.deps.containerEl?.querySelector(".view-header") as HTMLElement | null);
+          (this.deps.containerEl?.querySelector(":scope > .view-header")) ??
+          (this.deps.containerEl?.querySelector(".view-header"));
         const ro = new ResizeObserver(() => this.updateWidthButtonLabel());
         if (header) ro.observe(header);
         if (this.deps.containerEl) ro.observe(this.deps.containerEl);
         this.widthResizeObserver = ro;
-      } catch {}
+      } catch (e) { log.swallow("install: ResizeObserver setup", e); }
     }
 
     // Sync
@@ -649,31 +650,29 @@ export class SproutHeader {
 
     const splitRight = () => {
       const newLeaf = this.deps.app.workspace.getLeaf("split", "vertical");
-      this.deps.app.workspace.revealLeaf(newLeaf);
+      void this.deps.app.workspace.revealLeaf(newLeaf);
     };
 
     const splitLeft = () => {
       const newLeaf = this.deps.app.workspace.getLeaf("split", "vertical");
-      this.deps.app.workspace.revealLeaf(newLeaf);
+      void this.deps.app.workspace.revealLeaf(newLeaf);
     };
 
     const splitDown = () => {
       const newLeaf = this.deps.app.workspace.getLeaf("split", "horizontal");
-      this.deps.app.workspace.revealLeaf(newLeaf);
+      void this.deps.app.workspace.revealLeaf(newLeaf);
     };
 
     const closeTab = () => {
       try {
         this.deps.leaf.detach();
-      } catch {}
+      } catch (e) { log.swallow("closeTab: leaf detach", e); }
     };
 
     const openSettings = () => {
       // Open the Sprout settings section in Obsidian
-      // @ts-ignore
       if (typeof this.deps.app.setting?.open === "function") {
         // Open settings
-        // @ts-ignore
         this.deps.app.setting.open();
         // Select the Sprout section by data-setting-id
         setTimeout(() => {
@@ -682,7 +681,6 @@ export class SproutHeader {
         }, 100);
       } else {
         // fallback: open settings modal
-        // @ts-ignore
         this.deps.app.commands?.executeCommandById?.("app:open-settings");
         setTimeout(() => {
           const sproutTab = document.querySelector('.vertical-tab-nav-item[data-setting-id="sprout"]');
@@ -706,4 +704,42 @@ export class SproutHeader {
       else this.openMorePopover(moreBtn, menuItems);
     });
   }
+}
+
+// ─── Factory ────────────────────────────────────────────────────────
+/**
+ * Creates a {@link SproutHeader} with the common wiring shared by all
+ * four top-level views (Home, Study, Flashcards, Analytics).
+ *
+ * Each view only needs to supply:
+ *  - `view`          – the ItemView instance (`this`)
+ *  - `plugin`        – the SproutPlugin (needs `.isWideMode`)
+ *  - `onToggleWide`  – callback to run *after* isWideMode is flipped
+ *  - `beforeSync?`   – optional hook that runs before sync (e.g. save scroll position)
+ */
+export function createViewHeader(opts: {
+  view: ItemView;
+  plugin: { isWideMode: boolean };
+  onToggleWide: () => void;
+  beforeSync?: () => void;
+}): SproutHeader {
+  const leaf = opts.view.leaf ?? opts.view.app.workspace.getLeaf(false);
+  return new SproutHeader({
+    app: opts.view.app,
+    leaf,
+    containerEl: opts.view.containerEl,
+    getIsWide: () => opts.plugin.isWideMode,
+    toggleWide: () => {
+      opts.plugin.isWideMode = !opts.plugin.isWideMode;
+      opts.onToggleWide();
+    },
+    runSync: () => {
+      opts.beforeSync?.();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = opts.plugin as any;
+      if (typeof p._runSync === "function") void p._runSync();
+      else if (typeof p.syncBank === "function") void p.syncBank();
+      else new Notice("Sync not available (no sync method found).");
+    },
+  });
 }

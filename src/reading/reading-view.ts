@@ -11,6 +11,7 @@
 
 import type { Plugin, MarkdownPostProcessorContext, Component } from "obsidian";
 import { MarkdownRenderer, Notice, setIcon, TFile } from "obsidian";
+import { log } from "../core/logger";
 import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import type { CardRecord } from "../core/store";
@@ -37,8 +38,6 @@ import {
    Module-level mutable state
    ----------------------- */
 
-const DEBUG = false; // set to true for debug logs
-
 let sproutPluginRef: Plugin | null = null;
 
 function getSproutPlugin(): Plugin | null {
@@ -53,8 +52,8 @@ function getSproutPlugin(): Plugin | null {
   }
 }
 
-function debugLog(...args: any[]) {
-  if (DEBUG) console.log("[Sprout]", ...args);
+function debugLog(...args: unknown[]) {
+  log.debug(...args);
 }
 
 /* =========================
@@ -101,7 +100,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
               sourceContent = content;
             }
           }
-        } catch (e) {
+        } catch {
           debugLog("[Sprout] Could not read source file:", e);
         }
 
@@ -111,7 +110,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
         // Masonry layout pass shortly after
         scheduleMasonryLayout();
       } catch (err) {
-        console.error("[Sprout] readingView prettifier error", err);
+        log.error("readingView prettifier error", err);
       }
     },
     1000,
@@ -137,13 +136,13 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
       if (content) {
         content.removeEventListener("sprout:prettify-cards-refresh", handleRefreshEvent);
         content.addEventListener("sprout:prettify-cards-refresh", handleRefreshEvent);
-        console.log("Attached sprout:prettify-cards-refresh listener to", content);
+        log.debug("Attached sprout:prettify-cards-refresh listener to", content);
       }
     }
   }
 
   function handleRefreshEvent(e: Event) {
-    console.log("sprout:prettify-cards-refresh event received", e);
+    log.debug("sprout:prettify-cards-refresh event received", e);
     // Get current prettify style from plugin instance
     let prettifyStyle: string = "accent";
     try {
@@ -151,7 +150,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
       if (activePlugin && activePlugin.settings && activePlugin.settings.appearance?.prettifyCards) {
         prettifyStyle = activePlugin.settings.appearance.prettifyCards;
       }
-    } catch {}
+    } catch (e) { log.swallow("read prettify plugin setting", e); }
     // Update all .sprout-pretty-card classes inside the event target
     const root = (e.currentTarget instanceof HTMLElement)
       ? e.currentTarget
@@ -164,7 +163,7 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
       }
       scheduleMasonryLayout();
     } else {
-      void processCardElements(document.documentElement as HTMLElement, undefined, '');
+      void processCardElements(document.documentElement, undefined, '');
       scheduleMasonryLayout();
     }
   }
@@ -236,7 +235,7 @@ function setupManualTrigger() {
     debugLog('[Sprout] Manual sproutApplyMasonryGrid() called');
     requestAnimationFrame(() => {
       setTimeout(() => {
-        void processCardElements(document.documentElement as HTMLElement, undefined, '');
+        void processCardElements(document.documentElement, undefined, '');
         scheduleMasonryLayout();
       }, 40);
     });
@@ -274,7 +273,7 @@ function setupManualTrigger() {
         masonryIsScrolling = false;
         if (pendingScrollWork) {
           pendingScrollWork = false;
-          void processCardElements(document.documentElement as HTMLElement, undefined, '');
+          void processCardElements(document.documentElement, undefined, '');
         }
         scheduleMasonryLayout();
       }, 250);
@@ -334,10 +333,10 @@ function setupDebouncedMutationObserver() {
     debounceTimer = window.setTimeout(() => {
       try {
         debugLog('[Sprout] MutationObserver triggered — processing new nodes');
-        void processCardElements(document.documentElement as HTMLElement, undefined, '');
+        void processCardElements(document.documentElement, undefined, '');
         scheduleMasonryLayout();
       } catch (err) {
-        console.error('[Sprout] MutationObserver handler error', err);
+        log.error('MutationObserver handler error', err);
       } finally {
         debounceTimer = null;
       }
@@ -368,7 +367,7 @@ async function processCardElements(container: HTMLElement, ctx?: MarkdownPostPro
 
   try {
     if (container.matches && container.matches('.el-p')) found.push(container);
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -407,9 +406,9 @@ async function processCardElements(container: HTMLElement, ctx?: MarkdownPostPro
 
       el.dataset.sproutProcessed = 'true';
 
-      await enhanceCardElement(el, card, undefined, rawText);
+      enhanceCardElement(el, card, undefined, rawText);
     } catch (err) {
-      console.error('[Sprout] Error processing element', err);
+      log.error('Error processing element', err);
     }
   }
 }
@@ -943,7 +942,7 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
    Card enhancement
    ========================= */
 
-async function enhanceCardElement(
+function enhanceCardElement(
   el: HTMLElement,
   card: SproutCard,
   originalContentOverride?: string,
@@ -959,7 +958,7 @@ async function enhanceCardElement(
     if (activePlugin && activePlugin.settings && activePlugin.settings.appearance?.prettifyCards) {
       prettifyStyle = activePlugin.settings.appearance.prettifyCards;
     }
-  } catch {}
+  } catch (e) { log.swallow("read prettify plugin setting", e); }
   el.classList.add('sprout-pretty-card', 'sprout-reading-card', 'sprout-reading-view-wrapper', prettifyStyle === 'theme' ? 'theme' : 'accent');
 
   el.dataset.sproutId = card.anchorId;
@@ -1018,7 +1017,7 @@ async function enhanceCardElement(
   const editBtn = el.querySelector<HTMLElement>(".sprout-card-edit-btn");
   if (editBtn) {
     setIcon(editBtn, "pencil");
-    editBtn.addEventListener("click", async (e) => {
+    editBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -1052,7 +1051,7 @@ async function enhanceCardElement(
         targetCard = parentCard;
       }
 
-      openBulkEditModalForCards(plugin as any, [targetCard], async (updatedCards) => {
+      void openBulkEditModalForCards(plugin as any, [targetCard], async (updatedCards) => {
         if (!updatedCards.length) return;
 
         try {
@@ -1082,7 +1081,7 @@ async function enhanceCardElement(
           // Update the pretty-card content in-place
           try {
             const original = el.querySelector<HTMLElement>(".sprout-original-content")?.innerHTML ?? "";
-            const rec = updatedCard as CardRecord;
+            const rec = updatedCard;
             const sproutCard: SproutCard = {
               anchorId: String(rec.id || cardId),
               type: (String(rec.type || "basic").toLowerCase() as SproutCard["type"]),
@@ -1105,16 +1104,16 @@ async function enhanceCardElement(
               sproutCard.fields.A = correctIndex >= 0 && options[correctIndex] ? options[correctIndex] : "";
               sproutCard.fields.O = options;
             }
-            await enhanceCardElement(el, sproutCard, original);
+            enhanceCardElement(el, sproutCard, original);
             scheduleMasonryLayout();
           } catch (e) {
-            console.warn("[Sprout] Failed to refresh pretty-card DOM after edit", e);
+            log.warn("Failed to refresh pretty-card DOM after edit", e);
           }
 
           // Nudge current markdown view to refresh pretty cards
           try {
             (plugin.app.workspace as any)?.trigger?.("file-open", file);
-          } catch {}
+          } catch (e) { log.swallow("trigger file-open after edit", e); }
 
           setTimeout(() => {
             document
@@ -1124,13 +1123,13 @@ async function enhanceCardElement(
               .forEach((node) => node.dispatchEvent(new Event("sprout:prettify-cards-refresh")));
           }, 50);
         } catch (err: any) {
-          console.error("[Sprout] Failed to update card from reading view", err);
-          new Notice(`Failed to update card: ${String(err?.message || err)}`);
+          log.error("Failed to update card from reading view", err);
+          new Notice(`Failed to update card: ${String(err?.message || err)}`);  
         }
       });
     });
 
-    editBtn.addEventListener("keydown", async (e) => {
+    editBtn.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
       e.stopPropagation();
@@ -1171,7 +1170,7 @@ async function enhanceCardElement(
   });
 
   // Render MathJax if present
-  renderMarkdownInElements(el, card);
+  void renderMarkdownInElements(el, card);
 }
 
 /* =========================
@@ -1210,7 +1209,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
             '',  // sourcePath
             component
           );
-        } catch (e) {
+        } catch {
           qEl.textContent = qText;
         }
       }
@@ -1223,7 +1222,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
             '',  // sourcePath
             component
           );
-        } catch (e) {
+        } catch {
           aEl.textContent = aText;
         }
       }
@@ -1241,7 +1240,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
             '',  // sourcePath
             component
           );
-        } catch (e) {
+        } catch {
           iEl.textContent = iText;
         }
       }
@@ -1263,6 +1262,6 @@ declare global { interface Window { sproutApplyMasonryGrid?: () => void; } }
 
 (window as any).sproutApplyMasonryGrid = (window as any).sproutApplyMasonryGrid || (() => {
   debugLog('[Sprout] sproutApplyMasonryGrid placeholder invoked');
-  void processCardElements(document.documentElement as HTMLElement, undefined, '');
+  void processCardElements(document.documentElement, undefined, '');
   scheduleMasonryLayout();
 });

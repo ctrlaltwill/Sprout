@@ -9,7 +9,7 @@
 
 import type SproutPlugin from "../main";
 import { State } from "ts-fsrs";
-import { normalizePath, TFile, Notice } from "obsidian";
+import { TFile, Notice } from "obsidian";
 
 // ── Re-export shared types (backward-compatible) ────────────────────────────
 export type { CardRecord } from "../types/card";
@@ -208,7 +208,7 @@ export class JsonStore {
     this.bumpRevision();
   }
 
-  async load(rootData: any) {
+  load(rootData: any) {
     if (rootData && rootData.store) this.data = rootData.store;
     else this.data = defaultStore();
 
@@ -235,7 +235,7 @@ export class JsonStore {
       if (!Number.isFinite(anyS.lapses)) anyS.lapses = 0;
       if (!Number.isFinite(anyS.learningStepIndex)) anyS.learningStepIndex = 0;
 
-      const st = (anyS.stage ?? "new") as any;
+      const st = (anyS.stage ?? "new");
       const isValidStage =
         st === "new" ||
         st === "learning" ||
@@ -452,7 +452,7 @@ export class JsonStore {
   }
 
   // Helper: list backup files (sorted newest first)
-  async listBackups(plugin: SproutPlugin): Promise<TFile[]> {
+  listBackups(plugin: SproutPlugin): TFile[] {
     const dir = this.getBackupDir(plugin);
     const folder = plugin.app.vault.getAbstractFileByPath(dir);
     if (!folder || !(folder as any).children) return [];
@@ -465,13 +465,15 @@ export class JsonStore {
 
 
 // Helper: load scheduling data from the plugin's persistent store (data.json)
+import { log } from "./logger";
+
 export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<Record<string, any> | null> {
   try {
     const root = await plugin.loadData();
     if (root && root.store && root.store.states && typeof root.store.states === "object") {
       return root.store.states;
     }
-  } catch {}
+  } catch (e) { log.swallow("load scheduling from data.json", e); }
   return null;
 }
 
@@ -483,7 +485,7 @@ export async function restoreSchedulingFromBackup(plugin: SproutPlugin): Promise
   try {
     const raw = await plugin.app.vault.adapter.read(filePath);
     data = JSON.parse(raw);
-  } catch {}
+  } catch (e) { log.swallow("read backup.json", e); }
   if (!data.states || typeof data.states !== "object") return false;
   plugin.store.data.states = data.states;
   await plugin.store.persist();

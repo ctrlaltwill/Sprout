@@ -118,7 +118,7 @@ class ConfirmBuryForTodayModal extends Modal {
   }
 }
 
-export async function skipCurrentCard(view: SproutReviewerView) {
+export function skipCurrentCard(view: SproutReviewerView) {
   if (view.mode !== "session" || !view.session) return;
 
   const card = view.currentCard();

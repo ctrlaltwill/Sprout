@@ -7,7 +7,7 @@
  * Extracted to eliminate duplication across IO files.
  */
 
-import { App, TFile } from "obsidian";
+import { type App, TFile } from "obsidian";
 
 /* -----------------------
    Vault path utilities
@@ -36,8 +36,7 @@ export function resolveImageFile(app: App, sourceNotePath: string, imageRef: str
   const link = stripEmbedSyntax(imageRef);
   if (!link) return null;
 
-  const cache: any = (app as any).metadataCache;
-  const dest = cache?.getFirstLinkpathDest?.(link, sourceNotePath);
+  const dest = app.metadataCache.getFirstLinkpathDest(link, sourceNotePath);
   if (dest instanceof TFile) return dest;
 
   const af = app.vault.getAbstractFileByPath(link);

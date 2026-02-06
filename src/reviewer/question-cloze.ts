@@ -2,7 +2,7 @@
 import { el } from "../core/ui";
 
 export function renderClozeFront(text: string, reveal: boolean, targetIndex?: number | null): HTMLElement {
-  const container = el("div", "") as HTMLElement;
+  const container = el("div", "");
   container.className = "bc whitespace-pre-wrap break-words";
 
   // Wrap cloze content in a <p dir="auto"> so it matches MarkdownRenderer output

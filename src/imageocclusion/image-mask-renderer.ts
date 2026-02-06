@@ -1,9 +1,9 @@
 // src/imageocclusion/ImageMaskRenderer.ts
-import { App, Modal, Notice, Platform, TFile, setIcon } from "obsidian";
+import { type App, Modal, Notice, Platform, TFile, setIcon } from "obsidian";
 import interact from "interactjs";
 
 import type SproutPlugin from "../main";
-import { IOParentDef, IORect, IOMaskMode } from "./image-occlusion-types";
+import type { IOParentDef, IORect, IOMaskMode } from "./image-occlusion-types";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints, type RectPx } from "./image-geometry";
 import { applyStageTransform, clientToStage, zoomAt, type StageTransform } from "./image-transform";
 import { 
@@ -14,12 +14,9 @@ import {
   stableIoChildId 
 } from "./mask-tool";
 import {
-  normaliseVaultPath,
-  stripEmbedSyntax,
   resolveImageFile,
   isEditableTarget,
   emptyEl,
-  uid,
   type IoEditorOpenOpts,
 } from "./io-helpers";
 
@@ -110,7 +107,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     // IMPORTANT inline sizing (requested): max-width 800px, width 90%
     try {
-      const inner = this.containerEl.querySelector(".modal") as HTMLElement | null;
+      const inner = this.containerEl.querySelector(".modal");
       if (inner) {
         inner.style.setProperty("width", "90%", "important");
         inner.style.setProperty("max-width", "800px", "important");
@@ -121,9 +118,9 @@ export class ImageOcclusionEditorModal extends Modal {
 
     try {
       this.containerEl.style.zIndex = "3000";
-      const bg = this.containerEl.querySelector(".modal-bg") as HTMLElement | null;
+      const bg = this.containerEl.querySelector(".modal-bg");
       if (bg) bg.style.zIndex = "2999";
-      const inner = this.containerEl.querySelector(".modal") as HTMLElement | null;
+      const inner = this.containerEl.querySelector(".modal");
       if (inner) inner.style.zIndex = "3000";
     } catch {
       // ignore
@@ -157,12 +154,12 @@ export class ImageOcclusionEditorModal extends Modal {
       return;
     }
 
-    const maskMode: IOMaskMode = isMaskMode(existing?.maskMode) ? existing!.maskMode : "solo";
+    const maskMode: IOMaskMode = isMaskMode(existing?.maskMode) ? existing.maskMode : "solo";
 
     this.ioDef = {
       imageRef,
       maskMode,
-      rects: Array.isArray(existing?.rects) ? existing!.rects.map((r) => ({ ...r })) : [],
+      rects: Array.isArray(existing?.rects) ? existing.rects.map((r) => ({ ...r })) : [],
     };
 
     this.rects = this.ioDef.rects.map((r) => ({
@@ -414,20 +411,20 @@ export class ImageOcclusionEditorModal extends Modal {
       cls: "bc btn",
       attr: { type: "button" },
       text: "Draw Occlusion",
-    }) as HTMLButtonElement;
+    });
     this.btnOcclusion.onclick = () => this.setTool("occlusion");
 
     this.btnTransform = toolbar.createEl("button", {
       cls: "bc btn-outline",
       attr: { type: "button" },
       text: "Move Image",
-    }) as HTMLButtonElement;
+    });
     this.btnTransform.onclick = () => this.setTool("transform");
 
     // Input + info tooltip
     this.groupInput = toolbar.createEl("input", {
       cls: "bc input flex-1 min-w-[260px]",
-    }) as HTMLInputElement;
+    });
     this.groupInput.type = "text";
     this.groupInput.placeholder = "Choose a shape to change its group";
     this.groupInput.disabled = true;
@@ -457,7 +454,7 @@ export class ImageOcclusionEditorModal extends Modal {
         title:
           "Group sets which rectangles are hidden together.\nSelect a rectangle, then edit this field to change its group.",
       },
-    }) as HTMLButtonElement;
+    });
     {
       const ico = groupInfo.createSpan({ cls: "bc sprout-io-ico" });
       setIcon(ico, "info");
@@ -466,7 +463,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.btnDelete = toolbar.createEl("button", {
       cls: "bc btn-icon-ghost",
       attr: { type: "button", "data-tooltip": "Delete selected occlusion" },
-    }) as HTMLButtonElement;
+    });
     {
       const ico = this.btnDelete.createSpan({ cls: "bc sprout-io-ico" });
       setIcon(ico, "trash-2");
@@ -477,7 +474,7 @@ export class ImageOcclusionEditorModal extends Modal {
       cls: "bc btn-outline",
       attr: { type: "button" },
       text: "Reset",
-    }) as HTMLButtonElement;
+    });
     this.btnReset.onclick = () => this.resetOcclusionsAndView();
 
     // -------------------------
@@ -504,7 +501,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.btnZoomIn = canvasControls.createEl("button", {
       cls: "bc btn-icon-outline",
       attr: { type: "button", "data-tooltip": "Zoom in" },
-    }) as HTMLButtonElement;
+    });
     {
       const ico = this.btnZoomIn.createSpan({ cls: "bc sprout-io-ico" });
       setIcon(ico, "plus");
@@ -514,7 +511,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.btnZoomOut = canvasControls.createEl("button", {
       cls: "bc btn-icon-outline",
       attr: { type: "button", "data-tooltip": "Zoom out" },
-    }) as HTMLButtonElement;
+    });
     {
       const ico = this.btnZoomOut.createSpan({ cls: "bc sprout-io-ico" });
       setIcon(ico, "minus");
@@ -524,7 +521,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.btnFit = canvasControls.createEl("button", {
       cls: "bc btn-icon-outline",
       attr: { type: "button", "data-tooltip": "Fit" },
-    }) as HTMLButtonElement;
+    });
     {
       const ico = this.btnFit.createSpan({ cls: "bc sprout-io-ico" });
       setIcon(ico, "maximize-2");
@@ -549,7 +546,7 @@ export class ImageOcclusionEditorModal extends Modal {
         title:
           "Save (Hide One): each rectangle becomes its own card.\nSave (Hide All): all rectangles in the same group are hidden together.",
       },
-    }) as HTMLButtonElement;
+    });
     {
       const ico = saveInfo.createSpan({ cls: "bc sprout-io-ico" });
       setIcon(ico, "info");
@@ -563,14 +560,14 @@ export class ImageOcclusionEditorModal extends Modal {
       cls: "bc btn-outline",
       attr: { type: "button" },
       text: "Save (Hide One)",
-    }) as HTMLButtonElement;
+    });
     this.btnSaveSolo.onclick = () => void this.saveAndClose("solo");
 
     this.btnSaveAll = saveWrap.createEl("button", {
       cls: "bc btn",
       attr: { type: "button" },
       text: "Save (Hide All)",
-    }) as HTMLButtonElement;
+    });
     this.btnSaveAll.onclick = () => void this.saveAndClose("all");
 
     // default tool
@@ -814,7 +811,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const el = this.overlayEl.querySelector(
       `.sprout-io-rect[data-rect-id="${CSS.escape(id)}"]`,
-    ) as HTMLElement | null;
+    );
     el?.remove();
 
     const it = this.interactables.get(id);
@@ -1006,7 +1003,7 @@ export class ImageOcclusionEditorModal extends Modal {
       forceMaskMode === "all" || forceMaskMode === "solo"
         ? forceMaskMode
         : isMaskMode(this.ioDef?.maskMode)
-          ? (this.ioDef!.maskMode as IOMaskMode)
+          ? (this.ioDef.maskMode as IOMaskMode)
           : "solo";
 
     if (this.ioDef) this.ioDef.maskMode = maskMode;

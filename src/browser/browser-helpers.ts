@@ -7,6 +7,7 @@
  */
 
 import type { CardRecord } from "../core/store";
+import { log } from "../core/logger";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
@@ -348,16 +349,16 @@ export function tryResolveToResourceSrc(app: any, linkpathOrPath: string, fromNo
       const src = app?.vault?.getResourcePath?.(file);
       if (typeof src === "string" && src) return src;
     }
-  } catch {}
+  } catch (e) { log.swallow("resolve link path to resource", e); }
 
   // Fallback: direct vault path lookup
   try {
     const af = app?.vault?.getAbstractFileByPath?.(p);
-    if (af && (af as any).path && app?.vault?.getResourcePath) {
+    if (af && (af).path && app?.vault?.getResourcePath) {
       const src = app.vault.getResourcePath(af);
       if (typeof src === "string" && src) return src;
     }
-  } catch {}
+  } catch (e) { log.swallow("resolve vault path to resource", e); }
 
   return null;
 }
@@ -405,9 +406,9 @@ export function extractOcclusionLabels(card: any, max = 8): string[] {
       : [];
 
   for (const r of list) {
-    push((r as any).groupKey);
-    push((r as any).key);
-    push((r as any).label);
+    push((r).groupKey);
+    push((r).key);
+    push((r).label);
     if (out.length >= max) break;
   }
 
@@ -467,22 +468,22 @@ export function buildIoOccludedHtml(
   const rects = Array.isArray(occlusions) ? occlusions : [];
   const overlays = rects
     .map((r) => {
-      const x = Number.isFinite((r as any).x)
-        ? Number((r as any).x)
-        : Number.isFinite((r as any).x1)
-          ? Number((r as any).x1)
+      const x = Number.isFinite((r).x)
+        ? Number((r).x)
+        : Number.isFinite((r).x1)
+          ? Number((r).x1)
           : 0;
-      const y = Number.isFinite((r as any).y)
-        ? Number((r as any).y)
-        : Number.isFinite((r as any).y1)
-          ? Number((r as any).y1)
+      const y = Number.isFinite((r).y)
+        ? Number((r).y)
+        : Number.isFinite((r).y1)
+          ? Number((r).y1)
           : 0;
 
-      let w = Number.isFinite((r as any).w) ? Number((r as any).w) : null;
-      let h = Number.isFinite((r as any).h) ? Number((r as any).h) : null;
+      let w = Number.isFinite((r).w) ? Number((r).w) : null;
+      let h = Number.isFinite((r).h) ? Number((r).h) : null;
 
-      if (w == null && Number.isFinite((r as any).x2)) w = Number((r as any).x2) - x;
-      if (h == null && Number.isFinite((r as any).y2)) h = Number((r as any).y2) - y;
+      if (w == null && Number.isFinite((r).x2)) w = Number((r).x2) - x;
+      if (h == null && Number.isFinite((r).y2)) h = Number((r).y2) - y;
 
       w = w == null ? 0 : w;
       h = h == null ? 0 : h;

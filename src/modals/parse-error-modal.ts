@@ -154,12 +154,12 @@ export class ParseErrorModal extends Modal {
 
     const rec = candidates.length ? candidates[0] : null;
     if (rec && typeof rec === "object") {
-      const path = String((rec as any).sourceNotePath || (rec as any).notePath || "");
-      const startLine = Number((rec as any).sourceStartLine ?? 0);
+      const path = String((rec).sourceNotePath || (rec).notePath || "");
+      const startLine = Number((rec).sourceStartLine ?? 0);
       const errsRaw =
-        (rec as any).errors ??
-        ((rec as any).reason
-          ? String((rec as any).reason)
+        (rec).errors ??
+        ((rec).reason
+          ? String((rec).reason)
               .split(";")
               .map((s: string) => s.trim())
           : []);

@@ -3,6 +3,9 @@
  * The querySelector errors don't break anything - we just hide them
  */
 
+import { log } from "./logger";
+import { AOS_DURATION } from "./constants";
+
 let AOS: any = null;
 let AOS_INITIALIZED = false;
 
@@ -14,19 +17,20 @@ window.addEventListener('error', (event) => {
   }
 });
 
-// Load AOS
+// Load AOS (CJS require needed for sync bundled module)
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   AOS = require("aos");
   if (AOS.default) AOS = AOS.default;
-} catch (err) {
-  console.warn("AOS not available");
+} catch {
+  log.warn("AOS not available");
 }
 
 export function initAOS(config?: any): void {
   if (AOS_INITIALIZED || !AOS) return;
   try {
     AOS.init(config || { 
-      duration: 600, 
+      duration: AOS_DURATION, 
       easing: "ease-out", 
       once: true, 
       offset: 50,
@@ -38,7 +42,7 @@ export function initAOS(config?: any): void {
     setTimeout(() => {
       if (AOS?.refresh) AOS.refresh();
     }, 100);
-  } catch {}
+  } catch (e) { log.swallow("AOS init", e); }
 }
 
 export function refreshAOS(): void {
@@ -46,7 +50,7 @@ export function refreshAOS(): void {
   try { 
     AOS.refresh?.(); 
     AOS.refreshHard?.(); 
-  } catch {}
+  } catch (e) { log.swallow("AOS refresh", e); }
 }
 
 export function getAOS() { return AOS; }

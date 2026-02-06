@@ -13,6 +13,7 @@
  */
 
 import type SproutPlugin from "../main";
+import { MS_DAY } from "../core/constants";
 
 // ────────────────────────────────────────────
 // Module-level constants & mutable state
@@ -22,7 +23,7 @@ import type SproutPlugin from "../main";
 const BACKUP_MAX_COUNT = 12;
 
 /** Minimum interval between automatic (routine) backups. */
-const ROUTINE_BACKUP_MIN_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const ROUTINE_BACKUP_MIN_INTERVAL_MS = MS_DAY;
 
 /** Cooldown to avoid re-checking backup necessity on every sync. */
 const ROUTINE_CHECK_COOLDOWN_MS = 5 * 60 * 1000;
@@ -68,9 +69,9 @@ export function likelySproutStateKey(k: string): boolean {
 export function extractStatesFromDataJsonObject(obj: any): Record<string, any> | null {
   if (!obj) return null;
   const root = isPlainObject(obj.data) ? obj.data : obj;
-  const states = (root as any)?.states;
+  const states = (root)?.states;
   if (!isPlainObject(states)) return null;
-  return states as Record<string, any>;
+  return states;
 }
 
 // ────────────────────────────────────────────
@@ -146,7 +147,7 @@ export async function safeStatMtime(adapter: any, path: string): Promise<number>
   try {
     if (adapter && typeof adapter.stat === "function") {
       const st = await adapter.stat(path);
-      const m = Number((st as any)?.mtime ?? 0);
+      const m = Number((st)?.mtime ?? 0);
       return Number.isFinite(m) ? m : 0;
     }
   } catch {
@@ -160,7 +161,7 @@ async function safeStatSize(adapter: any, path: string): Promise<number> {
   try {
     if (adapter && typeof adapter.stat === "function") {
       const st = await adapter.stat(path);
-      const s = Number((st as any)?.size ?? 0);
+      const s = Number((st)?.size ?? 0);
       return Number.isFinite(s) ? s : 0;
     }
   } catch {
@@ -273,12 +274,12 @@ function computeSchedulingStats(states: any, now: number) {
   out.states = values.length;
   for (const st of values) {
     if (!st || typeof st !== "object") continue;
-    const stage = String((st as any).stage ?? "");
+    const stage = String((st).stage ?? "");
     if (stage === "learning" || stage === "relearning") out.learning += 1;
     if (stage === "review") out.review += 1;
-    const stability = Number((st as any).stabilityDays ?? 0);
+    const stability = Number((st).stabilityDays ?? 0);
     if (stage === "review" && Number.isFinite(stability) && stability >= 30) out.mature += 1;
-    const due = Number((st as any).due ?? 0);
+    const due = Number((st).due ?? 0);
     if (stage !== "suspended" && Number.isFinite(due) && due > 0 && due <= now) out.due += 1;
   }
   return out;
@@ -378,11 +379,11 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
   const root = getStoreLikeRoot(obj);
   if (!root) return null;
 
-  const cards = (root as any).cards;
-  const states = (root as any).states;
-  const reviewLog = (root as any).reviewLog;
-  const quarantine = (root as any).quarantine;
-  const io = (root as any).io;
+  const cards = (root).cards;
+  const states = (root).states;
+  const reviewLog = (root).reviewLog;
+  const quarantine = (root).quarantine;
+  const io = (root).io;
 
   const cardCount = countObjectKeys(cards);
   const stateKeys = isPlainObject(states) ? Object.keys(states) : [];
@@ -403,7 +404,7 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
 
   return {
     ...entry,
-    version: Number((root as any).version ?? 0) || 0,
+    version: Number((root).version ?? 0) || 0,
     cards: cardCount,
     states: stateCount,
     due: sched.due,
@@ -483,12 +484,12 @@ export async function restoreFromDataJsonBackup(
     const snapshot = clonePlain(root);
 
     // Ensure required keys exist (avoid undefined holes)
-    (snapshot as any).cards ??= {};
-    (snapshot as any).states ??= {};
-    (snapshot as any).reviewLog ??= [];
-    (snapshot as any).quarantine ??= {};
-    (snapshot as any).io ??= (snapshot as any).io ?? {};
-    (snapshot as any).version = Math.max(Number((snapshot as any).version ?? 0) || 0, 1);
+    (snapshot).cards ??= {};
+    (snapshot).states ??= {};
+    (snapshot).reviewLog ??= [];
+    (snapshot).quarantine ??= {};
+    (snapshot).io ??= (snapshot).io ?? {};
+    (snapshot).version = Math.max(Number((snapshot).version ?? 0) || 0, 1);
 
     // Mutate-in-place to preserve references to plugin.store.data
     replaceObjectContents((plugin.store as any).data, snapshot);

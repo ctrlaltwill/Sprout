@@ -1,5 +1,6 @@
 // src/reviewer/titleMarkdown.ts
 import type { Session } from "./image-occlusion-types";
+import { log } from "../core/logger";
 
 export function renderTitleMarkdownIfNeeded(args: {
   rootEl: HTMLElement;
@@ -10,14 +11,14 @@ export function renderTitleMarkdownIfNeeded(args: {
   const { rootEl, session, card, renderMarkdownInto } = args;
   if (!session || !card) return;
 
-  const titleEl = rootEl.querySelector(".sprout-question-title") as HTMLElement | null;
+  const titleEl = rootEl.querySelector(".sprout-question-title");
   if (!titleEl) return;
 
   const titleText =
-    (card as any).title ||
-    ((card as any).type === "mcq"
+    (card).title ||
+    ((card).type === "mcq"
       ? "MCQ"
-      : (card as any).type === "cloze" || (card as any).type === "cloze-child"
+      : (card).type === "cloze" || (card).type === "cloze-child"
         ? "Cloze"
         : "Basic");
 
@@ -27,7 +28,7 @@ export function renderTitleMarkdownIfNeeded(args: {
   const hasShorthand = /!\[[^\]]+\](?!\s*\()/.test(s);
   if (!hasEmbed && !hasShorthand) return;
 
-  const sourcePath = String((card as any).sourceNotePath || (session as any)?.scope?.name || "");
+  const sourcePath = String((card).sourceNotePath || (session as any)?.scope?.name || "");
   void renderMarkdownInto(titleEl, s, sourcePath);
   // Unwrap a single <p> wrapper inserted by the Markdown renderer to keep
   // content directly inside the <h2> without nested paragraphs.
@@ -40,5 +41,5 @@ export function renderTitleMarkdownIfNeeded(args: {
       }
       titleEl.removeChild(p);
     }
-  } catch {}
+  } catch (e) { log.swallow("titleMarkdown unwrap paragraph", e); }
 }

@@ -18,6 +18,7 @@
  */
 
 import { Notice, setIcon } from "obsidian";
+import { log } from "../core/logger";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import type { CardRecord } from "../core/store";
@@ -34,7 +35,6 @@ import {
   fmtDue,
   fmtLocation,
   parseGroupsInput,
-  setVisible,
 } from "./modal-utils";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ function coerceGroups(g: any): string[] {
  * Opens a bulk edit modal for a single card (or multiple cards) in review mode.
  * Focuses on basic, cloze, and MCQ cards. IO cards are excluded.
  */
-export async function openBulkEditModalForCards(
+export function openBulkEditModalForCards(
   plugin: SproutPlugin,
   cards: CardRecord[],
   onSave: (updatedCards: CardRecord[]) => Promise<void>,
@@ -354,7 +354,7 @@ export async function openBulkEditModalForCards(
   const groupField = createGroupPickerFieldImpl(sharedValue("groups"), cards.length, plugin);
   groupsWrapper.appendChild(groupField.element);
   groupsWrapper.appendChild(groupField.hiddenInput);
-  inputEls["groups"] = groupField.hiddenInput as HTMLInputElement;
+  inputEls["groups"] = groupField.hiddenInput;
 
   form.appendChild(groupsWrapper);
 
@@ -397,14 +397,14 @@ export async function openBulkEditModalForCards(
   function removeOverlay() {
     try {
       overlay.remove();
-    } catch {}
+    } catch (e) { log.swallow("remove overlay", e); }
   }
 
   cancel.addEventListener("click", removeOverlay);
   close.addEventListener("click", removeOverlay);
 
   // ── Save handler ──────────────────────────────────────────────────────────
-  save.addEventListener("click", async () => {
+  save.addEventListener("click", () => { void (async () => {
     const updates: Partial<Record<string, string>> = {};
 
     // Collect editable field values
@@ -456,7 +456,7 @@ export async function openBulkEditModalForCards(
       // Apply updates to card records
       const updatedCards: CardRecord[] = [];
       for (const card of cards) {
-        let updated: CardRecord = JSON.parse(JSON.stringify(card));
+        const updated: CardRecord = JSON.parse(JSON.stringify(card));
 
         if (updates.title !== undefined) updated.title = updates.title;
 
@@ -491,7 +491,7 @@ export async function openBulkEditModalForCards(
     } catch (err: any) {
       new Notice(`${BRAND}: ${err?.message || String(err)}`);
     }
-  });
+  })(); });
 
   // Click outside panel = close
   overlay.addEventListener("click", (ev) => {

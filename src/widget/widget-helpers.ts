@@ -82,7 +82,7 @@ export function isIoParentCard(card: any): boolean {
 export function isClozeParentCard(card: any): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t !== "cloze") return false;
-  const children = (card as any)?.clozeChildren;
+  const children = (card)?.clozeChildren;
   return Array.isArray(children) && children.length > 0;
 }
 

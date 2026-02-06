@@ -6,8 +6,10 @@
  * builders, markdown-element parsing, and non-card-content detection.
  *
  * Nothing here depends on module-level mutable state such as
- * `sproutPluginRef`, `DEBUG`, or Obsidian lifecycle hooks.
+ * `sproutPluginRef` or Obsidian lifecycle hooks.
  */
+
+import { log } from "../core/logger";
 
 /* -----------------------
    Constants
@@ -29,7 +31,7 @@ export type FieldKey = "T" | "Q" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO";
 
 // No-op logger so extracted functions that previously called debugLog
 // keep their exact implementation without depending on mutable DEBUG state.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 function debugLog(..._args: any[]) {
   /* intentionally empty */
 }
@@ -76,7 +78,7 @@ export function normalizeMathSignature(s: string): string {
 export function escapeHtml(text: string): string {
   if (text === undefined || text === null) return '';
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-             .replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
+             .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 /**
@@ -426,10 +428,10 @@ export function renderMathInElement(el: HTMLElement) {
   if (MathJax && typeof MathJax.typesetPromise === 'function') {
     try {
       MathJax.typesetPromise([el]).catch((err: any) => {
-        console.warn('[Sprout] MathJax rendering error:', err);
+        log.warn('MathJax rendering error:', err);
       });
     } catch (err) {
-      console.warn('[Sprout] MathJax rendering error:', err);
+      log.warn('MathJax rendering error:', err);
     }
   }
 }
@@ -468,7 +470,7 @@ export function buildClozeSectionHTML(clozeContent: string): string {
   let match;
   while ((match = clozeRegex.exec(clozeContent)) !== null) {
     if (match.index > lastIndex) {
-      let nonCloze = clozeContent.slice(lastIndex, match.index) || '';
+      const nonCloze = clozeContent.slice(lastIndex, match.index) || '';
       processedHtml += `<span class="sprout-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
     }
     const answer = match[1];
@@ -480,7 +482,7 @@ export function buildClozeSectionHTML(clozeContent: string): string {
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < clozeContent.length) {
-    let nonCloze = clozeContent.slice(lastIndex) || '';
+    const nonCloze = clozeContent.slice(lastIndex) || '';
     processedHtml += `<span class="sprout-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
   }
 
@@ -495,7 +497,7 @@ export function buildClozeSectionHTML(clozeContent: string): string {
 export function buildMCQSectionHTML(question: string, options: string[], answer?: string): string {
   // Shuffle options and insert answer at random position
   function shuffleAndInsertAnswer(opts: string[], ans: string): { options: string[], answerIdx: number } {
-    let arr = opts.filter(opt => opt.trim() !== ans.trim());
+    const arr = opts.filter(opt => opt.trim() !== ans.trim());
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -505,9 +507,9 @@ export function buildMCQSectionHTML(question: string, options: string[], answer?
     return { options: arr, answerIdx };
   }
 
-  let shuffled = answer ? shuffleAndInsertAnswer(options, answer) : { options, answerIdx: -1 };
-  let allOptions = shuffled.options;
-  let answerIdx = shuffled.answerIdx;
+  const shuffled = answer ? shuffleAndInsertAnswer(options, answer) : { options, answerIdx: -1 };
+  const allOptions = shuffled.options;
+  const answerIdx = shuffled.answerIdx;
 
   // Render options as ABCD list with full stop and 6px gap, styled
   const optionsHTML = allOptions.map((opt, idx) => {
@@ -605,7 +607,7 @@ export function parseMarkdownToElements(text: string): ParsedMarkdownElement[] {
   let remaining = text.trim();
   
   // First, try to extract header at the start
-  const headerMatch = remaining.match(/^(#{1,6})\s+([^\d\[\]]+?)(?=\s*\d+\.\s|\s*[-*]\s|$)/);
+  const headerMatch = remaining.match(/^(#{1,6})\s+([^\d[\]]+?)(?=\s*\d+\.\s|\s*[-*]\s|$)/);
   if (headerMatch) {
     elements.push({
       type: 'header',

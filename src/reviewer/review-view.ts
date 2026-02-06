@@ -10,8 +10,8 @@ import {
   setIcon,
 } from "obsidian";
 
-import { BRAND, VIEW_TYPE_REVIEWER } from "../core/constants";
-import { el } from "../core/ui";
+import { AOS_DURATION, BRAND, MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_REVIEWER } from "../core/constants";
+import { log } from "../core/logger";
 import { gradeFromRating } from "../scheduler/scheduler";
 import { syncOneFile } from "../sync/sync-engine";
 import { ParseErrorModal } from "../modals/parse-error-modal";
@@ -30,7 +30,6 @@ import { openSproutImageZoom } from "./zoom";
 import { SproutMarkdownHelper } from "./markdown-render";
 
 // split-out helpers
-import { getStageCountsAll } from "./stats";
 import { isSkipEnabled, initSkipState, skipCurrentCard } from "./skip";
 import {
   initMcqOrderState,
@@ -59,7 +58,7 @@ import {
 } from "../imageocclusion/image-occlusion-review-render";
 
 // ✅ shared header import (like browser.ts)
-import { SproutHeader, type SproutHeaderPage } from "../components/header";
+import { type SproutHeader, createViewHeader } from "../core/header";
 
 function isFourButtonMode(plugin: SproutPlugin): boolean {
   return !!((plugin.settings?.reviewer as any)?.fourButtonMode);
@@ -161,7 +160,7 @@ export class SproutReviewerView extends ItemView {
     else this.containerEl.removeAttribute("data-sprout-wide");
 
     const containerWidth = this.containerEl?.clientWidth ?? 0;
-    const hideToggle = containerWidth > 0 ? containerWidth < 1080 : typeof window !== "undefined" && window.innerWidth < 1080;
+    const hideToggle = containerWidth > 0 ? containerWidth < MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth < MAX_CONTENT_WIDTH;
     if (this._widthToggleActionEl) {
       this._widthToggleActionEl.style.display = hideToggle ? "none" : "";
     }
@@ -172,7 +171,7 @@ export class SproutReviewerView extends ItemView {
       root.style.setProperty("margin-left", "auto", "important");
       root.style.setProperty("margin-right", "auto", "important");
     } else {
-      root.style.setProperty("max-width", "1080px", "important");
+      root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
       root.style.setProperty("width", "100%", "important");
       root.style.setProperty("margin-left", "auto", "important");
       root.style.setProperty("margin-right", "auto", "important");
@@ -200,7 +199,7 @@ export class SproutReviewerView extends ItemView {
     if (!this.session) return;
 
     const stamp = this.getSessionStamp();
-    const id = String((card as any)?.id ?? "");
+    const id = String((card)?.id ?? "");
     if (!id) return;
 
     // If this card is already graded in-session, do not start a timer.
@@ -317,9 +316,8 @@ export class SproutReviewerView extends ItemView {
       });
 
       this.render();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(`${BRAND} UNDO: failed`, e);
+    } catch {
+      log.error(`UNDO: failed`, e);
       new Notice(`${BRAND}: undo failed. See console.`);
       this.render();
     }
@@ -344,7 +342,7 @@ export class SproutReviewerView extends ItemView {
     for (const c of cards) {
       if (isIoParentCard(c)) continue;
 
-      const id = String((c as any)?.id ?? "");
+      const id = String((c)?.id ?? "");
       if (!id) continue;
       if (excludeIds?.has(id)) continue;
 
@@ -358,7 +356,7 @@ export class SproutReviewerView extends ItemView {
       if (due <= now) continue;
 
       const path = String(
-        (c as any).sourceNotePath || (c as any).sourcePath || (c as any).location || "",
+        (c).sourceNotePath || (c).sourcePath || (c).location || "",
       );
       if (!path) continue;
       if (!matchesScope(scope, path)) continue;
@@ -368,13 +366,13 @@ export class SproutReviewerView extends ItemView {
 
     out.sort((a, b) => {
       const da = Number(
-        this.plugin.store.getState(String((a as any).id))?.due ?? Number.POSITIVE_INFINITY,
+        this.plugin.store.getState(String((a).id))?.due ?? Number.POSITIVE_INFINITY,
       );
       const db = Number(
-        this.plugin.store.getState(String((b as any).id))?.due ?? Number.POSITIVE_INFINITY,
+        this.plugin.store.getState(String((b).id))?.due ?? Number.POSITIVE_INFINITY,
       );
       if (da !== db) return da - db;
-      return String((a as any).id).localeCompare(String((b as any).id));
+      return String((a).id).localeCompare(String((b).id));
     });
 
     return out;
@@ -494,9 +492,8 @@ export class SproutReviewerView extends ItemView {
           ...extraMeta,
         },
       });
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn("Boot Camp: failed to log skip", e);
+    } catch {
+      log.warn("Boot Camp: failed to log skip", e);
     }
 
     if (this.isPracticeSession()) {
@@ -513,15 +510,15 @@ export class SproutReviewerView extends ItemView {
     const root = this.contentEl;
 
     const menu =
-      (root.querySelector('[data-sprout-action="more-menu"]') as HTMLElement | null) ||
-      (root.querySelector(".sprout-more-menu") as HTMLElement | null) ||
+      (root.querySelector('[data-sprout-action="more-menu"]')) ||
+      (root.querySelector(".sprout-more-menu")) ||
       null;
 
     const scopeEl = menu || root;
 
-    const buttons = Array.from(scopeEl.querySelectorAll("button")) as HTMLButtonElement[];
+    const buttons = Array.from(scopeEl.querySelectorAll("button"));
     for (const b of buttons) {
-      const left = (b.querySelector(".sprout-btn-left") as HTMLElement | null)?.textContent?.trim();
+      const left = (b.querySelector(".sprout-btn-left"))?.textContent?.trim();
       const txt = (left || b.textContent || "").trim().toLowerCase();
       if (txt === "bury" || txt === "suspend") b.remove();
     }
@@ -554,7 +551,7 @@ export class SproutReviewerView extends ItemView {
     sourcePath: string,
     reveal: boolean,
   ) {
-    await renderImageOcclusionReviewInto({
+    renderImageOcclusionReviewInto({
       app: this.app,
       plugin: this.plugin,
       containerEl,
@@ -566,7 +563,7 @@ export class SproutReviewerView extends ItemView {
     });
   }
 
-  async onOpen() {
+  onOpen() {
     this.containerEl.tabIndex = 0;
     this.ensureMarkdownHelper();
 
@@ -609,7 +606,7 @@ export class SproutReviewerView extends ItemView {
     this.render();
   }
 
-  async onClose() {
+  onClose() {
     this.clearTimer();
     this.clearCountdown();
     closeMoreMenuImpl(this);
@@ -670,7 +667,7 @@ export class SproutReviewerView extends ItemView {
     if (graded) {
       void this.nextCard(false);
     } else {
-      this.gradeCurrentRating("again", { auto: true }).then(() => void this.nextCard(false));
+      void this.gradeCurrentRating("again", { auto: true }).then(() => void this.nextCard(false));
     }
   }
 
@@ -770,7 +767,7 @@ export class SproutReviewerView extends ItemView {
     }
 
     // Use bulk edit modal for basic, cloze, and MCQ (editing parent for cloze-child)
-    openBulkEditModalForCards(this.plugin, [targetCard], async (updatedCards) => {
+    void openBulkEditModalForCards(this.plugin, [targetCard], async (updatedCards) => {
       if (!updatedCards.length) return;
       
       try {
@@ -814,8 +811,7 @@ export class SproutReviewerView extends ItemView {
 
         this.render();
       } catch (e: any) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+        log.error(e);
         new Notice(`${BRAND}: edit failed (${String(e?.message || e)})`);
       }
     });
@@ -881,9 +877,8 @@ export class SproutReviewerView extends ItemView {
           });
           await store.persist();
         }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn(`${BRAND}: failed to persist practice analytics`, e);
+      } catch {
+        log.warn(`failed to persist practice analytics`, e);
       }
 
       this.session.graded[id] = { rating, at: now, meta: meta || null };
@@ -987,7 +982,7 @@ export class SproutReviewerView extends ItemView {
     if (!st) return;
 
     const now = Date.now();
-    const nextState = { ...st, due: now + 24 * 60 * 60 * 1000 };
+    const nextState = { ...st, due: now + MS_DAY };
 
     this.plugin.store.upsertState(nextState);
     await this.plugin.store.persist();
@@ -1040,12 +1035,11 @@ export class SproutReviewerView extends ItemView {
 
     const st = this.plugin.store.getState(id);
     if (!st && !this.isPracticeSession()) {
-      // eslint-disable-next-line no-console
-      console.warn(`${BRAND} MCQ: missing state for id=${id}; cannot grade/FSRS`);
+      log.warn(`MCQ: missing state for id=${id}; cannot grade/FSRS`);
       return;
     }
 
-    await this.gradeCurrentRating(rating as any, {
+    await this.gradeCurrentRating(rating, {
       mcqChoice: choiceIdx,
       mcqCorrect: (card as any).correctIndex,
       mcqPass: pass,
@@ -1098,7 +1092,7 @@ export class SproutReviewerView extends ItemView {
       if (typeof this.plugin.store.appendAnalyticsSession === "function") {
         this.plugin.store.appendAnalyticsSession({ at: Date.now(), scope });
       }
-    } catch {}
+    } catch (e) { log.swallow("review-view appendAnalyticsSession", e); }
 
     this.clearUndo();
     this.resetTiming();
@@ -1233,7 +1227,7 @@ export class SproutReviewerView extends ItemView {
       ev.stopPropagation();
       const trigger = this.contentEl.querySelector(
         'button[data-sprout-action="reviewer-more-trigger"]',
-      ) as HTMLButtonElement | null;
+      );
       if (trigger) {
         trigger.dispatchEvent(new PointerEvent("pointerdown", { button: 0, bubbles: true }));
       }
@@ -1379,7 +1373,7 @@ export class SproutReviewerView extends ItemView {
             else rating = "easy";
           }
 
-          this.gradeCurrentRating(rating as any, {}).then(() => void this.nextCard(true));
+          void this.gradeCurrentRating(rating, {}).then(() => void this.nextCard(true));
           return;
         }
 
@@ -1407,14 +1401,14 @@ export class SproutReviewerView extends ItemView {
 
   private renderHeaderActions() {
     const actionsEl =
-      (this.containerEl.querySelector(":scope > .view-header .view-actions") as HTMLElement | null) ??
-      (this.containerEl.querySelector(".view-header .view-actions") as HTMLElement | null);
+      (this.containerEl.querySelector(":scope > .view-header .view-actions")) ??
+      (this.containerEl.querySelector(".view-header .view-actions"));
 
     if (actionsEl) actionsEl.replaceChildren();
 
     const moreEl = this.addAction("more-vertical", "More options", () => {
       toggleMoreMenuImpl(this);
-    }) as HTMLElement;
+    });
 
     this._moreBtnEl = moreEl as any;
 
@@ -1423,12 +1417,12 @@ export class SproutReviewerView extends ItemView {
       if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
       else if (typeof anyPlugin.syncBank === "function") void anyPlugin.syncBank();
       else void this.resyncActiveFile();
-    }) as HTMLElement;
+    });
 
     const widthEl = this.addAction(this._wideIcon(), this._wideLabel(), () => {
       this.plugin.isWideMode = !this.plugin.isWideMode;
       this._applyReviewerWidthMode();
-    }) as HTMLElement;
+    });
 
     widthEl.dataset.bcAction = "toggle-browser-width";
     this._widthToggleActionEl = widthEl;
@@ -1458,19 +1452,19 @@ export class SproutReviewerView extends ItemView {
     };
 
     const direct =
-      pick((card as any).info) ??
-      pick((card as any).information) ??
-      pick((card as any).i) ??
-      pick((card as any).I);
+      pick((card).info) ??
+      pick((card).information) ??
+      pick((card).i) ??
+      pick((card).I);
     if (direct) return direct;
 
-    const fields = (card as any).fields;
+    const fields = (card).fields;
     if (fields && typeof fields === "object") {
       const fromFields =
-        pick((fields as any).info) ??
-        pick((fields as any).information) ??
-        pick((fields as any).i) ??
-        pick((fields as any).I);
+        pick((fields).info) ??
+        pick((fields).information) ??
+        pick((fields).i) ??
+        pick((fields).I);
       if (fromFields) return fromFields;
     }
 
@@ -1485,7 +1479,7 @@ export class SproutReviewerView extends ItemView {
     const root = this.contentEl;
     
     // Preserve the study session header when in session mode
-    const studySessionHeader = root.querySelector("[data-study-session-header]") as HTMLElement | null;
+    const studySessionHeader = root.querySelector("[data-study-session-header]");
     const headerWillPersist = !!studySessionHeader && this.mode === "session" && !!this.session;
     
     root.empty();
@@ -1513,40 +1507,14 @@ export class SproutReviewerView extends ItemView {
 
     // --- Use shared SproutHeader ---
     if (!this._header) {
-      const leaf = this.leaf ?? this.app.workspace.getLeaf(false);
-
-      this._header = new SproutHeader({
-        app: this.app,
-        leaf,
-        containerEl: this.containerEl,
-
-        getIsWide: () => this.plugin.isWideMode,
-        toggleWide: () => {
-          this.plugin.isWideMode = !this.plugin.isWideMode;
-          this._applyReviewerWidthMode();
-        },
-
-        runSync: () => {
-          const anyPlugin = this.plugin as any;
-          if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
-          else if (typeof anyPlugin.syncBank === "function") void anyPlugin.syncBank();
-          else new Notice("Sync not available (no sync method found).");
-        },
-
-        moreItems: [
-          {
-            label: "Back to decks",
-            icon: "arrow-left",
-            onActivate: () => {
-              this.backToDecks();
-            },
-          },
-        ],
-      } as any);
+      this._header = createViewHeader({
+        view: this,
+        plugin: this.plugin,
+        onToggleWide: () => this._applyReviewerWidthMode(),
+      });
     }
 
-    // Tell header we are on the Study page
-    (this._header as any).install?.("study" as SproutHeaderPage);
+    this._header.install("study");
 
     // Apply width rules again after mode-specific DOM is present
     this._applyReviewerWidthMode();
@@ -1662,8 +1630,8 @@ export class SproutReviewerView extends ItemView {
       // Initialize AOS animations for reviewer cards
       if (animationsEnabled) {
         try {
-          initAOS({ duration: 600, easing: "ease-out", once: true, offset: 50 });
-        } catch {}
+          initAOS({ duration: AOS_DURATION, easing: "ease-out", once: true, offset: 50 });
+        } catch (e) { log.swallow("review-view initAOS", e); }
       }
       this._firstSessionRender = false;
       this.armTimer();

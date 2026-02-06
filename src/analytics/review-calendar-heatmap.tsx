@@ -303,7 +303,7 @@ export function ReviewCalendarHeatmap(props: {
       lastWeekday = (lastWeekday + 6) % 7;
       // The last cell in the grid should be at col=lastWeekday, row=rows-1
       // Fill backwards from there
-      let grid = Array(rows * cols).fill(null);
+      const grid = Array(rows * cols).fill(null);
       for (let i = 0; i < 30; i++) {
         // Position from the end
         const gridPos = rows * cols - 1 - ((30 - 1 - i) + (cols - 1 - lastWeekday));

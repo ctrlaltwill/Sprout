@@ -1,6 +1,8 @@
 // src/reviewer/renderSession.ts
 import { setIcon } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
+import { POPOVER_Z_INDEX } from "../core/constants";
+import { log } from "../core/logger";
 import { renderStudySessionHeader } from "./study-session-header";
 import type { Scope, Session, Rating } from "./image-occlusion-types";
 
@@ -415,7 +417,7 @@ function makeHeaderMenu(opts: {
   popover.className = "bc sprout";
   popover.setAttribute("aria-hidden", "true");
   popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", "999999", "important");
+  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
   popover.style.setProperty("display", "none", "important");
   popover.style.setProperty("pointer-events", "auto", "important");
 
@@ -532,12 +534,12 @@ function makeHeaderMenu(opts: {
 
     try {
       cleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("render-session close cleanup", e); }
     cleanup = null;
 
     try {
       popover.remove();
-    } catch {}
+    } catch (e) { log.swallow("render-session close popover.remove", e); }
   };
 
   const open = () => {
@@ -773,7 +775,7 @@ export function renderSessionMode(args: Args) {
       requestAnimationFrame(() => {
         try {
           refreshAOS();
-        } catch {}
+        } catch (e) { log.swallow("render-session refreshAOS empty", e); }
       });
     });
     return;
@@ -1011,7 +1013,7 @@ export function renderSessionMode(args: Args) {
     if (typeof args.renderImageOcclusionInto === "function") {
       void args.renderImageOcclusionInto(ioHost, card, sourcePath, reveal);
     } else {
-      const md = String((card as any).ioSrc ?? (card as any).src ?? (card as any).image ?? (card as any).imageRef ?? "");
+      const md = String((card).ioSrc ?? (card).src ?? (card).image ?? (card).imageRef ?? "");
       if (md.trim()) void args.renderMarkdownInto(ioHost, md, sourcePath).then(() => setupLinkHandlers(ioHost, sourcePath));
       else ioHost.appendChild(h("div", "text-muted-foreground text-sm", "IO card missing image source."));
     }
@@ -1108,7 +1110,7 @@ export function renderSessionMode(args: Args) {
         const againBtn = makeTextButton({
           label: "Again",
           className: "btn-destructive",
-          onClick: () => args.gradeCurrentRating("again" as any, {}).then(goNext),
+          onClick: () => void args.gradeCurrentRating("again" as any, {}).then(goNext),
           kbd: "1",
         });
         againBtn.style.setProperty("background-color", "var(--sprout-again-bg)", "important");
@@ -1119,7 +1121,7 @@ export function renderSessionMode(args: Args) {
           const hardBtn = makeTextButton({
             label: "Hard",
             className: "btn",
-            onClick: () => args.gradeCurrentRating("hard" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("hard" as any, {}).then(goNext),
             kbd: "2",
           });
           hardBtn.style.setProperty("background-color", "var(--sprout-hard-bg)", "important");
@@ -1129,7 +1131,7 @@ export function renderSessionMode(args: Args) {
           const goodBtn = makeTextButton({
             label: "Good",
             className: "btn",
-            onClick: () => args.gradeCurrentRating("good" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("good" as any, {}).then(goNext),
             kbd: "3",
           });
           goodBtn.style.setProperty("background-color", "var(--sprout-good-bg)", "important");
@@ -1139,7 +1141,7 @@ export function renderSessionMode(args: Args) {
           const easyBtn = makeTextButton({
             label: "Easy",
             className: "btn",
-            onClick: () => args.gradeCurrentRating("easy" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("easy" as any, {}).then(goNext),
             kbd: "4",
           });
           easyBtn.style.setProperty("background-color", "var(--sprout-easy-bg)", "important");
@@ -1149,7 +1151,7 @@ export function renderSessionMode(args: Args) {
           const goodBtn = makeTextButton({
             label: "Good",
             className: "btn",
-            onClick: () => args.gradeCurrentRating("good" as any, {}).then(goNext),
+            onClick: () => void args.gradeCurrentRating("good" as any, {}).then(goNext),
             kbd: "2",
           });
           goodBtn.style.setProperty("background-color", "var(--sprout-good-bg)", "important");
@@ -1205,7 +1207,7 @@ export function renderSessionMode(args: Args) {
     if (!filePath) return;
     const anchor = card.anchor || card.blockId || card.id;
     const anchorStr = anchor ? `#^${anchor}` : "";
-    // @ts-ignore
+    // @ts-expect-error — Obsidian injects app on window at runtime
     const app = window.app || (window.require && window.require('obsidian').app);
     if (app && app.workspace && typeof app.workspace.openLinkText === 'function') {
       app.workspace.openLinkText(filePath + anchorStr, filePath, true);
@@ -1231,7 +1233,7 @@ export function renderSessionMode(args: Args) {
     requestAnimationFrame(() => {
       try {
         refreshAOS();
-      } catch {}
+      } catch (e) { log.swallow("render-session refreshAOS card", e); }
     });
   });
 }

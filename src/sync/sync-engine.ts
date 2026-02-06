@@ -23,9 +23,9 @@ import { parseCardsFromText, type ParsedCard } from "../parser/parser";
 import { generateUniqueId } from "../core/ids";
 import type SproutPlugin from "../main";
 import { loadSchedulingFromDataJson } from "../core/store";
+import { log } from "../core/logger";
 
 import {
-  isPlainObject,
   countObjectKeys,
   joinPath,
   likelySproutStateKey,
@@ -342,7 +342,7 @@ function purgeDeprecatedTypes(plugin: SproutPlugin) {
     const t = String((rec as any)?.type ?? "").toLowerCase();
     if (t === "lq" || t === "fq") {
       delete (cards as any)[id];
-      delete (states as any)[id];
+      delete (states)[id];
     }
   }
   const quarantine = plugin.store.data.quarantine || {};
@@ -488,8 +488,8 @@ async function deleteIoImage(plugin: SproutPlugin, imageRef: string): Promise<vo
     const vault = plugin.app.vault;
     const file = vault.getAbstractFileByPath(normalized);
     if (file && file instanceof TFile) await vault.delete(file);
-  } catch (e) {
-    console.warn(`Failed to delete IO image ${normalized}:`, e);
+  } catch {
+    log.warn(`Failed to delete IO image ${normalized}:`, e);
   }
 }
 
@@ -504,7 +504,7 @@ function deleteIoChildren(plugin: SproutPlugin, parentId: string): number {
     if (String(rec.parentId || "") !== String(parentId || "")) continue;
 
     delete (plugin.store.data.cards as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
     deleted += 1;
   }
 
@@ -516,7 +516,7 @@ function deleteIoChildren(plugin: SproutPlugin, parentId: string): number {
     if (String(q.parentId || "") !== String(parentId || "")) continue;
 
     delete (plugin.store.data.quarantine as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
     deleted += 1;
   }
 
@@ -542,7 +542,7 @@ function deleteOrphanIoChildren(plugin: SproutPlugin): number {
     const pid = String(rec.parentId || "");
     if (!pid || !liveParents.has(pid)) {
       delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
       removed += 1;
     }
   }
@@ -583,7 +583,7 @@ function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number {
     if (String(rec.parentId || "") !== String(parentId || "")) continue;
 
     delete (plugin.store.data.cards as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
     deleted += 1;
   }
 
@@ -594,7 +594,7 @@ function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number {
     if (String(q.parentId || "") !== String(parentId || "")) continue;
 
     delete (plugin.store.data.quarantine as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
     deleted += 1;
   }
 
@@ -620,7 +620,7 @@ function deleteOrphanClozeChildren(plugin: SproutPlugin): number {
     const pid = String(rec.parentId || "");
     if (!pid || !liveParents.has(pid)) {
       delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
       removed += 1;
     }
   }
@@ -675,8 +675,8 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
     try {
       await vault.delete(file);
       deleted += 1;
-    } catch (e) {
-      console.warn(`Failed to delete orphaned IO image ${file.path}:`, e);
+    } catch {
+      log.warn(`Failed to delete orphaned IO image ${file.path}:`, e);
     }
   }
 
@@ -757,7 +757,7 @@ function syncClozeChildren(plugin: SproutPlugin, parent: any, now: number, sched
     if (!id) continue;
     if (keepChildIds.has(id)) continue;
     delete (plugin.store.data.cards as any)[id];
-    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+    if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
   }
 }
 
@@ -1094,7 +1094,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
       if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
 
       delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
       removed += 1;
     }
   }
@@ -1112,7 +1112,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     const q = plugin.store.data.quarantine[id];
     if (q && q.notePath === file.path && q.lastSeenAt === 0) {
       delete plugin.store.data.quarantine[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
       removed += 1;
     }
   }
@@ -1364,7 +1364,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
       if (String(card.type) === "cloze") removedClozeParents.push(String(id));
 
       delete (plugin.store.data.cards as any)[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
       removed += 1;
     }
   }
@@ -1382,7 +1382,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     const q = plugin.store.data.quarantine[id];
     if (q && q.lastSeenAt !== now) {
       delete plugin.store.data.quarantine[id];
-      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states as any)[id];
+      if ((plugin.store.data as any).states) delete ((plugin.store.data as any).states)[id];
       removed += 1;
     }
   }
@@ -1391,7 +1391,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
   removed += deleteOrphanClozeChildren(plugin);
 
   const deletedImages = await deleteOrphanedIoImages(plugin);
-  if (deletedImages > 0) console.log(`Deleted ${deletedImages} orphaned IO image(s)`);
+  if (deletedImages > 0) log.info(`Deleted ${deletedImages} orphaned IO image(s)`);
 
   await plugin.store.persist();
 

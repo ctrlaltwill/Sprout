@@ -8,7 +8,7 @@
  * they're safe to import from anywhere.
  */
 
-import { App, TFolder } from "obsidian";
+import { type App, TFolder } from "obsidian";
 import type SproutPlugin from "../main";
 
 // ────────────────────────────────────────────

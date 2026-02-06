@@ -7,6 +7,7 @@
 
 import { Notice, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
+import { log } from "../core/logger";
 import { BRAND } from "../core/constants";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import type { ColKey } from "./browser-helpers";
@@ -117,8 +118,8 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   };
   const applyClozeShortcut = (textarea: HTMLTextAreaElement, mode: ClozeShortcut) => {
     const value = String(textarea.value ?? "");
-    const start = Number.isFinite(textarea.selectionStart) ? (textarea.selectionStart as number) : value.length;
-    const end = Number.isFinite(textarea.selectionEnd) ? (textarea.selectionEnd as number) : value.length;
+    const start = Number.isFinite(textarea.selectionStart) ? (textarea.selectionStart) : value.length;
+    const end = Number.isFinite(textarea.selectionEnd) ? (textarea.selectionEnd) : value.length;
     const indices = getClozeIndices(value);
     const maxIdx = indices.length ? Math.max(...indices) : 0;
     const lastIdx = indices.length ? indices[indices.length - 1] : maxIdx;
@@ -443,7 +444,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       if (cleanup) {
         try {
           cleanup();
-        } catch {}
+        } catch (e) { log.swallow("bulk edit popover cleanup", e); }
         cleanup = null;
       }
     };
@@ -475,7 +476,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     };
 
     tagBox.addEventListener("pointerdown", (ev) => {
-      if ((ev as PointerEvent).button !== 0) return;
+      if ((ev).button !== 0) return;
       ev.preventDefault();
       ev.stopPropagation();
       if (popover.style.display === "block") {
@@ -812,7 +813,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   saveText.textContent = "Save";
   save.appendChild(saveIcon);
   save.appendChild(saveText);
-  save.addEventListener("click", async () => {
+  save.addEventListener("click", () => { void (async () => {
     const updates: Partial<Record<ColKey, string>> = {};
     for (const field of fields) {
       if (!field.editable) continue;
@@ -845,7 +846,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     } catch (err: any) {
       new Notice(`${BRAND}: ${err?.message || String(err)}`);
     }
-  });
+  })(); });
   footer.appendChild(cancel);
   footer.appendChild(save);
   panel.appendChild(footer);

@@ -4,6 +4,7 @@ import { Modal, Notice, TFile, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { syncOneFile } from "../sync/sync-engine";
 import { BRAND } from "../core/constants";
+import { log } from "../core/logger";
 
 export type CardEditPayload = {
   title?: string;
@@ -264,8 +265,8 @@ export class CardEditModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    const type = String((this.card as any).type || "basic");
-    const id = String((this.card as any).id || "");
+    const type = String((this.card).type || "basic");
+    const id = String((this.card).id || "");
 
     contentEl.createEl("h3", { text: `Quick edit flashcard ${id}` });
 
@@ -287,7 +288,7 @@ export class CardEditModal extends Modal {
 
     // ---- Title (always first) ----
     mkSectionTitle(contentEl, "Title");
-    const titleEl = mkInput(String((this.card as any).title || ""));
+    const titleEl = mkInput(String((this.card).title || ""));
 
     // ---- Per-type fields ----
     let qEl: HTMLTextAreaElement | null = null;
@@ -372,10 +373,10 @@ export class CardEditModal extends Modal {
 
     if (type === "cloze") {
       mkSectionTitle(contentEl, "Cloze");
-      clozeEl = mkTextarea(String((this.card as any).clozeText || ""), 5);
+      clozeEl = mkTextarea(String((this.card).clozeText || ""), 5);
 
       mkSectionTitle(contentEl, "Extra information");
-      const infoEl = mkTextarea(String((this.card as any).info || ""), 4);
+      const infoEl = mkTextarea(String((this.card).info || ""), 4);
 
       this.renderButtons(type, titleEl, {
         clozeEl,
@@ -390,13 +391,13 @@ export class CardEditModal extends Modal {
 
     if (type === "basic") {
       mkSectionTitle(contentEl, "Question");
-      qEl = mkTextarea(String((this.card as any).q || ""), 4);
+      qEl = mkTextarea(String((this.card).q || ""), 4);
 
       mkSectionTitle(contentEl, "Answer");
-      aEl = mkTextarea(String((this.card as any).a || ""), 4);
+      aEl = mkTextarea(String((this.card).a || ""), 4);
 
       mkSectionTitle(contentEl, "Extra information");
-      const infoEl = mkTextarea(String((this.card as any).info || ""), 4);
+      const infoEl = mkTextarea(String((this.card).info || ""), 4);
 
       this.renderButtons(type, titleEl, {
         qEl,
@@ -411,14 +412,14 @@ export class CardEditModal extends Modal {
 
     // MCQ
     mkSectionTitle(contentEl, "Question");
-    mcqStemEl = mkTextarea(String((this.card as any).stem || ""), 4);
+    mcqStemEl = mkTextarea(String((this.card).stem || ""), 4);
 
     mkSectionTitle(contentEl, "Options");
 
     // Seed options + correct
-    const currentOpts: string[] = Array.isArray((this.card as any).options) ? (this.card as any).options : [];
-    const currentCorrect = Number.isFinite((this.card as any).correctIndex)
-      ? Number((this.card as any).correctIndex)
+    const currentOpts: string[] = Array.isArray((this.card).options) ? (this.card).options : [];
+    const currentCorrect = Number.isFinite((this.card).correctIndex)
+      ? Number((this.card).correctIndex)
       : -1;
 
     // default to at least 2 options if none
@@ -437,7 +438,7 @@ export class CardEditModal extends Modal {
     plusBtn.onclick = () => addMcqOptionRow("", false);
 
     mkSectionTitle(contentEl, "Extra information");
-    const infoEl = mkTextarea(String((this.card as any).info || ""), 4);
+    const infoEl = mkTextarea(String((this.card).info || ""), 4);
 
     this.renderButtons(type, titleEl, {
       qEl: null,
@@ -518,8 +519,7 @@ export class CardEditModal extends Modal {
         await this.onSave(payload);
         this.close();
       } catch (e: any) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+        log.error("edit failed", e);
         new Notice(`${BRAND}: edit failed (${String(e?.message || e)})`);
       }
     };
@@ -532,9 +532,9 @@ export async function saveCardEdits(
   card: any,
   payload: CardEditPayload,
 ): Promise<void> {
-  const id = String((card as any).id || "");
-  const path = String((card as any).sourceNotePath || "");
-  const type = String((card as any).type || "basic");
+  const id = String((card).id || "");
+  const path = String((card).sourceNotePath || "");
+  const type = String((card).type || "basic");
 
   if (!id || !path) throw new Error("Missing card id or sourceNotePath.");
 

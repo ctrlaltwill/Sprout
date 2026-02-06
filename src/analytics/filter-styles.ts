@@ -26,7 +26,7 @@ export function useAnalyticsPopoverZIndex(open: boolean, wrapRef: React.RefObjec
   React.useEffect(() => {
     const card = wrapRef.current?.closest(".sprout-ana-card") as HTMLElement | null;
     if (!card) return;
-    const grid = card.closest(".sprout-ana-grid, .grid, .sprout-heatmap-host") as HTMLElement | null;
+    const grid = card.closest(".sprout-ana-grid, .grid, .sprout-heatmap-host");
     if (open) {
       card.setAttribute("data-popover-open", "true");
       if (grid) grid.setAttribute("data-popover-open", "true");

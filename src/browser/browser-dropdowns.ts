@@ -7,6 +7,8 @@
  */
 
 import { setIcon } from "obsidian";
+import { POPOVER_Z_INDEX } from "../core/constants";
+import { log } from "../core/logger";
 import { type ColKey, type DropdownOption, clearNode } from "./browser-helpers";
 
 // ── Generic dropdown menu ──────────────────────────────────
@@ -64,7 +66,7 @@ export function makeDropdownMenu<T extends string>(
   popover.setAttribute("aria-hidden", "true");
 
   popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", "999999", "important");
+  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
   popover.style.setProperty("display", "none", "important");
   popover.style.setProperty("pointer-events", "auto", "important");
 
@@ -188,7 +190,7 @@ export function makeDropdownMenu<T extends string>(
 
     try {
       cleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("dropdown menu cleanup", e); }
     cleanup = null;
 
     // Instead of removing popover, detach sproutWrapper from body if present
@@ -324,7 +326,7 @@ export function makeColumnsDropdown(
   popover.className = "";
   popover.setAttribute("aria-hidden", "true");
   popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", "999999", "important");
+  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
   popover.style.setProperty("display", "none", "important");
   popover.style.setProperty("pointer-events", "auto", "important");
 
@@ -443,7 +445,7 @@ export function makeColumnsDropdown(
 
     try {
       cleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("columns dropdown cleanup", e); }
     cleanup = null;
 
     if (autoCloseTimer) window.clearTimeout(autoCloseTimer);
@@ -451,7 +453,7 @@ export function makeColumnsDropdown(
 
     try {
       sproutWrapper.remove();
-    } catch {}
+    } catch (e) { log.swallow("remove columns dropdown wrapper", e); }
   };
 
   const open = () => {

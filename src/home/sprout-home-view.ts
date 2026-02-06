@@ -11,8 +11,9 @@
 import { ItemView, Notice, setIcon, type WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
-import { SproutHeader, type SproutHeaderPage } from "../components/header";
-import { VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
+import { type SproutHeader, createViewHeader } from "../core/header";
+import { log } from "../core/logger";
+import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
 import type SproutPlugin from "../main";
 import { ReviewCalendarHeatmap } from "../analytics/review-calendar-heatmap";
 import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
@@ -65,14 +66,14 @@ export class SproutHomeView extends ItemView {
     return "sprout";
   }
 
-  async onOpen() {
+  onOpen() {
     this.render();
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.appearance?.enableAnimations ?? true) {
       // Delay init to ensure DOM is fully rendered
       setTimeout(() => {
         initAOS({
-          duration: 600,
+          duration: AOS_DURATION,
           easing: "ease-out",
           once: true,
           offset: 50,
@@ -81,10 +82,10 @@ export class SproutHomeView extends ItemView {
     }
   }
 
-  async onClose() {
+  onClose() {
     try {
       this._header?.dispose?.();
-    } catch {}
+    } catch (e) { log.swallow("dispose header", e); }
     this._header = null;
     if (this._streakTimer) {
       window.clearInterval(this._streakTimer);
@@ -96,7 +97,7 @@ export class SproutHomeView extends ItemView {
     }
     try {
       this._heatmapRoot?.unmount();
-    } catch {}
+    } catch (e) { log.swallow("unmount heatmap root", e); }
     this._heatmapRoot = null;
     resetAOS();
   }
@@ -117,7 +118,7 @@ export class SproutHomeView extends ItemView {
       root.style.setProperty("max-width", "none", "important");
       root.style.setProperty("width", "100%", "important");
     } else {
-      root.style.setProperty("max-width", "1080px", "important");
+      root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
       root.style.setProperty("width", "100%", "important");
     }
     root.style.setProperty("margin-left", "auto", "important");
@@ -136,7 +137,7 @@ export class SproutHomeView extends ItemView {
     if (this._heatmapRoot) {
       try {
         this._heatmapRoot.unmount();
-      } catch {}
+      } catch (e) { log.swallow("unmount heatmap root", e); }
       this._heatmapRoot = null;
     }
 
@@ -158,26 +159,14 @@ export class SproutHomeView extends ItemView {
     };
 
     if (!this._header) {
-      const leaf = this.leaf ?? this.app.workspace.getLeaf(false);
-      this._header = new SproutHeader({
-        app: this.app,
-        leaf,
-        containerEl: this.containerEl,
-        getIsWide: () => this.plugin.isWideMode,
-        toggleWide: () => {
-          this.plugin.isWideMode = !this.plugin.isWideMode;
-          this._applyWidthMode();
-        },
-        runSync: () => {
-          const anyPlugin = this.plugin as any;
-          if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
-          else if (typeof anyPlugin.syncBank === "function") void anyPlugin.syncBank();
-          else new Notice("Sync not available (no sync method found).");
-        },
-      } as any);
+      this._header = createViewHeader({
+        view: this,
+        plugin: this.plugin,
+        onToggleWide: () => this._applyWidthMode(),
+      });
     }
 
-    (this._header as any).install?.("home" as SproutHeaderPage);
+    this._header.install("home");
     this._applyWidthMode();
 
 
@@ -262,7 +251,7 @@ export class SproutHomeView extends ItemView {
       if (firstHomeOpen) {
         (this.plugin.settings as any).home ??= {};
         (this.plugin.settings as any).home.hasOpenedHome = true;
-        try { void (this.plugin as any).saveAll?.(); } catch {}
+        try { void (this.plugin as any).saveAll?.(); } catch (e) { log.swallow("save settings", e); }
       }
 
       // Typing placeholder effect for the name input when empty
@@ -287,7 +276,7 @@ export class SproutHomeView extends ItemView {
       const startTypingEffect = () => {
         if (typingTimer) return;
         typingIdx = 0;
-        typingDir = 1 as 1;
+        typingDir = 1 as const;
         typingStep();
       };
 
@@ -318,11 +307,13 @@ export class SproutHomeView extends ItemView {
       nameInput.addEventListener("input", () => {
         syncNameWidth();
         if (saveTimer) window.clearTimeout(saveTimer);
-        saveTimer = window.setTimeout(async () => {
-          const next = nameInput.value.trim();
-          (this.plugin.settings as any).home ??= {};
-          (this.plugin.settings as any).home.userName = next;
-          await this.plugin.saveAll();
+        saveTimer = window.setTimeout(() => {
+          void (async () => {
+            const next = nameInput.value.trim();
+            (this.plugin.settings as any).home ??= {};
+            (this.plugin.settings as any).home.userName = next;
+            await this.plugin.saveAll();
+          })();
         }, 300);
       });
       nameInput.addEventListener("blur", () => {
@@ -391,7 +382,7 @@ export class SproutHomeView extends ItemView {
     let dueTomorrow = 0;
     const startOfTodayMs = new Date(nowMs).setHours(0, 0, 0, 0);
     const endOfTodayMs = new Date(nowMs).setHours(23, 59, 59, 999);
-    const tomorrowMs = nowMs + 24 * 60 * 60 * 1000;
+    const tomorrowMs = nowMs + MS_DAY;
     for (const card of cards) {
       const id = String(card?.id ?? "");
       if (!id) continue;
@@ -481,7 +472,7 @@ export class SproutHomeView extends ItemView {
         } else {
           new Notice("Study view not ready yet. Try again.");
         }
-      } catch (e) {
+      } catch {
         new Notice("Unable to open Study.");
       }
     };
@@ -493,7 +484,7 @@ export class SproutHomeView extends ItemView {
     const openAnalytics = async () => {
       try {
         await this.plugin.openAnalyticsTab();
-      } catch (e) {
+      } catch {
         new Notice("Unable to open Analytics.");
       }
     };
@@ -748,11 +739,13 @@ export class SproutHomeView extends ItemView {
             attr: { "data-action": "delete" }
           });
           setIcon(removeBtn, "x");
-          removeBtn.addEventListener("click", async (e) => {
+          removeBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            currentPinned.splice(i, 1);
-            await savePinnedDecks(currentPinned);
-            renderPinnedDecks();
+            void (async () => {
+              currentPinned.splice(i, 1);
+              await savePinnedDecks(currentPinned);
+              renderPinnedDecks();
+            })();
           });
           
           // Drag and drop reordering with animation
@@ -830,18 +823,20 @@ export class SproutHomeView extends ItemView {
             }
           });
           
-          row.addEventListener("drop", async (e) => {
+          row.addEventListener("drop", (e) => {
             e.preventDefault();
-            const fromIndex = Number(e.dataTransfer?.getData("text/plain") || "-1");
-            if (fromIndex === -1 || fromIndex === i) return;
-            // Clear transforms before re-rendering
-            const allRows = pinnedList.querySelectorAll<HTMLElement>(".sprout-deck-row");
-            allRows.forEach(r => r.style.transform = "");
-            const item = currentPinned[fromIndex];
-            currentPinned.splice(fromIndex, 1);
-            currentPinned.splice(i, 0, item);
-            await savePinnedDecks(currentPinned);
-            renderPinnedDecks();
+            void (async () => {
+              const fromIndex = Number(e.dataTransfer?.getData("text/plain") || "-1");
+              if (fromIndex === -1 || fromIndex === i) return;
+              // Clear transforms before re-rendering
+              const allRows = pinnedList.querySelectorAll<HTMLElement>(".sprout-deck-row");
+              allRows.forEach(r => r.style.transform = "");
+              const item = currentPinned[fromIndex];
+              currentPinned.splice(fromIndex, 1);
+              currentPinned.splice(i, 0, item);
+              await savePinnedDecks(currentPinned);
+              renderPinnedDecks();
+            })();
           });
         } else if (i === currentPinned.length && currentPinned.length < MAX_PINNED) {
           // Render search input in the first empty slot
@@ -924,15 +919,17 @@ export class SproutHomeView extends ItemView {
         label.textContent = pinnedLabel;
         label.setAttr("title", pinnedLabel);
         
-        item.addEventListener("mousedown", async (e) => {
+        item.addEventListener("mousedown", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          currentPinned.push(deck);
-          await savePinnedDecks(currentPinned);
-          deckSearchQuery = "";
-          if (searchInputEl) searchInputEl.value = "";
-          searchDropdownOpen = false;
-          renderPinnedDecks();
+          void (async () => {
+            currentPinned.push(deck);
+            await savePinnedDecks(currentPinned);
+            deckSearchQuery = "";
+            if (searchInputEl) searchInputEl.value = "";
+            searchDropdownOpen = false;
+            renderPinnedDecks();
+          })();
         });
       });
     };

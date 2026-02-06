@@ -13,8 +13,9 @@
  *  7. ConfirmDeleteBackupModal     – permanently deletes a backup file on disk
  */
 
-import { App, Modal, Notice } from "obsidian";
+import { type App, Modal, Notice } from "obsidian";
 import type SproutPlugin from "../main";
+import { log } from "../core/logger";
 import type { DataJsonBackupStats } from "../sync/backup";
 import { restoreFromDataJsonBackup } from "../sync/backup";
 
@@ -58,9 +59,8 @@ export class ConfirmResetSchedulingModal extends Modal {
       try {
         await this.plugin.resetAllCardScheduling();
         new Notice("Sprout – Settings Updated\nScheduling reset for all cards");
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch {
+        log.error(e);
         new Notice("Sprout: failed to reset scheduling (see console).");
       }
     };
@@ -111,9 +111,8 @@ export class ConfirmResetAnalyticsModal extends Modal {
       try {
         await this.plugin.resetAllAnalyticsData();
         new Notice("Sprout – Settings Updated\nAnalytics data cleared");
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch {
+        log.error(e);
         new Notice("Sprout: failed to reset analytics (see console).");
       }
     };
@@ -176,9 +175,8 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
       this.close();
       try {
         await this.onConfirm();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch {
+        log.error(e);
         new Notice("Sprout: failed to delete flashcards (see console).");
       }
     };
@@ -230,9 +228,8 @@ export class ConfirmResetDefaultsModal extends Modal {
       this.close();
       try {
         await this.onConfirm();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch {
+        log.error(e);
         new Notice("Sprout: failed to reset settings (see console).");
       }
     };
@@ -464,9 +461,8 @@ export class ConfirmRestoreBackupModal extends Modal {
         new Notice("Sprout – Settings Updated\nBackup restored");
         this.close();
         this.onRestored();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch {
+        log.error(e);
         new Notice("Sprout: restore failed (see console).");
         restoreBtn.removeAttr("disabled");
       }
@@ -532,9 +528,8 @@ export class ConfirmDeleteBackupModal extends Modal {
         }
         new Notice("Sprout – Settings Updated\nBackup deleted");
         this.onDone?.();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch {
+        log.error(e);
         new Notice("Sprout: failed to delete backup (see console).");
       }
     };

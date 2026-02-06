@@ -2,6 +2,7 @@ import * as React from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
 import { endTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { MS_DAY } from "../core/constants";
 
 function InfoIcon(props: { text: string }) {
   return (
@@ -30,7 +31,6 @@ function InfoIcon(props: { text: string }) {
   );
 }
 
-const MS_DAY = 24 * 60 * 60 * 1000;
 const BAR_COLOR = "var(--chart-accent-2)";
 
 const MAX_SELECTIONS = 3;

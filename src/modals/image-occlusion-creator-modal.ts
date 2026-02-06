@@ -18,6 +18,7 @@
 
 import { Modal, Notice, setIcon, type App } from "obsidian";
 import interact from "interactjs";
+import { log } from "../core/logger";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
@@ -461,7 +462,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       onClick: () => void,
       opts: { disabled?: boolean } = {},
     ) => {
-      const btn = parent.createEl("button", { cls: "bc sprout-io-btn" }) as HTMLButtonElement;
+      const btn = parent.createEl("button", { cls: "bc sprout-io-btn" });
       btn.type = "button";
       btn.setAttribute("data-tooltip", tooltip);
 
@@ -496,41 +497,43 @@ export class ImageOcclusionCreatorModal extends Modal {
     createToolbarSeparator();
 
     // Undo/Redo
-    this.btnUndo = createIconBtn(toolbarGroup, "undo", "Undo (Ctrl+Z)", () => this.undo()) as HTMLButtonElement;
-    this.btnRedo = createIconBtn(toolbarGroup, "redo", "Redo (Ctrl+Shift+Z)", () => this.redo()) as HTMLButtonElement;
+    this.btnUndo = createIconBtn(toolbarGroup, "undo", "Undo (Ctrl+Z)", () => this.undo());
+    this.btnRedo = createIconBtn(toolbarGroup, "redo", "Redo (Ctrl+Shift+Z)", () => this.redo());
 
     createToolbarSeparator();
 
     // Move, Rectangle, Ellipse
-    this.btnTransform = createIconBtn(toolbarGroup, "move", "Pan / Move", () => this.setTool("transform")) as HTMLButtonElement;
-    this.btnRectTool = createIconBtn(toolbarGroup, "square", "Draw Rectangle", () => this.setTool("occlusion-rect")) as HTMLButtonElement;
-    this.btnCircleTool = createIconBtn(toolbarGroup, "circle", "Draw Ellipse", () => this.setTool("occlusion-circle")) as HTMLButtonElement;
+    this.btnTransform = createIconBtn(toolbarGroup, "move", "Pan / Move", () => this.setTool("transform"));
+    this.btnRectTool = createIconBtn(toolbarGroup, "square", "Draw Rectangle", () => this.setTool("occlusion-rect"));
+    this.btnCircleTool = createIconBtn(toolbarGroup, "circle", "Draw Ellipse", () => this.setTool("occlusion-circle"));
 
     createToolbarSeparator();
 
     // Crop, Rotate
-    this.btnCrop = createIconBtn(toolbarGroup, "crop", "Crop image", () => this.setTool("crop")) as HTMLButtonElement;
-    this.btnRotateLeft = createIconBtn(toolbarGroup, "rotate-ccw-square", "Rotate 90° left", () => void this.rotateImage("ccw")) as HTMLButtonElement;
-    this.btnRotateRight = createIconBtn(toolbarGroup, "rotate-cw-square", "Rotate 90° right", () => void this.rotateImage("cw")) as HTMLButtonElement;
+    this.btnCrop = createIconBtn(toolbarGroup, "crop", "Crop image", () => this.setTool("crop"));
+    this.btnRotateLeft = createIconBtn(toolbarGroup, "rotate-ccw-square", "Rotate 90° left", () => void this.rotateImage("ccw"));
+    this.btnRotateRight = createIconBtn(toolbarGroup, "rotate-cw-square", "Rotate 90° right", () => void this.rotateImage("cw"));
 
     // Set initial tool highlight
     this.setTool(this.currentTool);
 
-    fileInput.addEventListener("change", async (e) => {
+    fileInput.addEventListener("change", (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       if (this.ioImageData) {
         this.showImageLimitAlert();
         return;
       }
-      try {
-        const data = await file.arrayBuffer();
-        this.ioImageData = { mime: file.type, data };
-        await this.loadImageToCanvas();
-        this.updatePlaceholderVisibility();
-      } catch (e: any) {
-        new Notice(`${BRAND}: Failed to load image (${String(e?.message || e)})`);
-      }
+      void (async () => {
+        try {
+          const data = await file.arrayBuffer();
+          this.ioImageData = { mime: file.type, data };
+          await this.loadImageToCanvas();
+          this.updatePlaceholderVisibility();
+        } catch (e: any) {
+          new Notice(`${BRAND}: Failed to load image (${String(e?.message || e)})`);
+        }
+      })();
     });
 
     // ── Canvas container ────────────────────────────────────────────────────
@@ -633,7 +636,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       }
     };
 
-    document.addEventListener("paste", handlePaste);
+    document.addEventListener("paste", (ev) => { void handlePaste(ev); });
 
     // Setup canvas mouse/keyboard interactions
     this.setupCanvasEvents();
@@ -738,8 +741,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         );
         if (shouldClose) this.close();
       } catch (e: any) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+        log.error("add failed", e);
         new Notice(`${BRAND}: add failed (${String(e?.message || e)})`);
       }
     };
@@ -900,8 +902,8 @@ export class ImageOcclusionCreatorModal extends Modal {
       this.imgEl!.addEventListener("error", done, { once: true });
     });
 
-    this.stageW = Math.max(1, this.imgEl!.naturalWidth || 1);
-    this.stageH = Math.max(1, this.imgEl!.naturalHeight || 1);
+    this.stageW = Math.max(1, this.imgEl.naturalWidth || 1);
+    this.stageH = Math.max(1, this.imgEl.naturalHeight || 1);
 
     if (this.stageEl) {
       this.stageEl.style.width = `${this.stageW}px`;
@@ -1310,7 +1312,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     if (refocus && this.viewportEl) this.viewportEl.focus();
   }
 
-  private async commitTextInput() {
+  private commitTextInput() {
     const input = this.activeTextInput;
     const pos = this.activeTextPos;
     if (!input || !pos) {
@@ -2051,7 +2053,7 @@ export class ImageOcclusionCreatorModal extends Modal {
   onClose() {
     try {
       this.onCloseCallback?.();
-    } catch {}
+    } catch (e) { log.swallow("IO modal onClose callback", e); }
     this.containerEl.removeClass("sprout-modal-container");
     this.containerEl.removeClass("sprout-modal-dim");
     this.modalEl.removeClass("bc", "sprout-modals", "sprout-io-creator");

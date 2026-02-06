@@ -54,8 +54,8 @@ function getClozeIndices(text: string): number[] {
 
 function applyClozeShortcut(textarea: HTMLTextAreaElement, mode: ClozeShortcut) {
   const value = String(textarea.value ?? "");
-  const start = Number.isFinite(textarea.selectionStart) ? (textarea.selectionStart as number) : value.length;
-  const end = Number.isFinite(textarea.selectionEnd) ? (textarea.selectionEnd as number) : value.length;
+  const start = Number.isFinite(textarea.selectionStart) ? (textarea.selectionStart) : value.length;
+  const end = Number.isFinite(textarea.selectionEnd) ? (textarea.selectionEnd) : value.length;
   const indices = getClozeIndices(value);
   const maxIdx = indices.length ? Math.max(...indices) : 0;
   const lastIdx = indices.length ? indices[indices.length - 1] : maxIdx;

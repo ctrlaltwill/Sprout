@@ -14,16 +14,17 @@
 // src/browser.ts
 import { ItemView, Notice, TFile, type WorkspaceLeaf, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../core/constants";
+import { AOS_CASCADE_STEP, BRAND, MAX_CONTENT_WIDTH_PX, POPOVER_Z_INDEX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../core/constants";
 import type { CardRecord, CardState } from "../core/store";
 import { syncOneFile } from "../sync/sync-engine";
 import { unsuspendCard, suspendCard } from "../scheduler/scheduler";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 import { ImageOcclusionCreatorModal } from "../modals/image-occlusion-creator-modal";
 import { refreshAOS } from "../core/aos-loader";
+import { log } from "../core/logger";
 
 // ✅ shared header (you placed it at src/header.ts)
-import { SproutHeader, type SproutHeaderPage } from "../components/header";
+import { type SproutHeader, createViewHeader } from "../core/header";
 
 // ✅ moved helpers
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
@@ -208,14 +209,14 @@ export class SproutCardBrowserView extends ItemView {
     return "table-2";
   }
 
-  async onOpen() {
+  onOpen() {
     this.render();
   }
 
-  async onClose() {
+  onClose() {
     try {
       this._header?.dispose?.();
-    } catch {}
+    } catch (e) { log.swallow("dispose browser header", e); }
     this._header = null;
 
     this._disposeUiPopovers();
@@ -235,7 +236,7 @@ export class SproutCardBrowserView extends ItemView {
     for (const fn of fns) {
       try {
         fn();
-      } catch {}
+      } catch (e) { log.swallow("dispose UI popover cleanup", e); }
     }
     this._typeFilterMenu = null;
     this._stageFilterMenu = null;
@@ -256,7 +257,7 @@ export class SproutCardBrowserView extends ItemView {
         root.style.setProperty("max-width", "none", "important");
         root.style.setProperty("width", "100%", "important");
       } else {
-        root.style.setProperty("max-width", "1080px", "important");
+        root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
         root.style.setProperty("width", "100%", "important");
       }
       root.style.setProperty("margin-left", "auto", "important");
@@ -266,7 +267,7 @@ export class SproutCardBrowserView extends ItemView {
     // keep header button label in sync
     try {
       this._header?.updateWidthButtonLabel?.();
-    } catch {}
+    } catch (e) { log.swallow("update width button label", e); }
   }
 
   private _setSelection(id: string, selected: boolean): boolean {
@@ -505,7 +506,7 @@ export class SproutCardBrowserView extends ItemView {
     let baseCards: CardRecord[] = [];
 
     if (groupFilters.length) {
-      const cardsObj = (this.plugin.store.data.cards || {}) as Record<string, CardRecord>;
+      const cardsObj = (this.plugin.store.data.cards || {});
 
       if (includeQuarantined) {
         const matchesGroups = (card: CardRecord) => {
@@ -719,7 +720,7 @@ export class SproutCardBrowserView extends ItemView {
     return draft;
   }
 
-  private async openSource(card: CardRecord) {
+  private openSource(card: CardRecord) {
     const link = `${card.sourceNotePath}#^sprout-${card.id}`;
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this.app.workspace.openLinkText(link, card.sourceNotePath, true);
@@ -815,7 +816,7 @@ export class SproutCardBrowserView extends ItemView {
 
   private _openIoEditor(cardId: string) {
     try {
-      const cards = (this.plugin.store.data.cards || {}) as Record<string, CardRecord>;
+      const cards = (this.plugin.store.data.cards || {});
       const raw = cards[String(cardId)] as any;
       const parentId = raw && String(raw.type) === "io-child" ? String(raw.parentId || "") : String(cardId);
       ImageOcclusionCreatorModal.openForParent(this.plugin, parentId, {
@@ -832,7 +833,7 @@ export class SproutCardBrowserView extends ItemView {
   private _openBulkEditModal() {
     if (this._selectedIds.size === 0) return;
 
-    const cardsMap = (this.plugin.store.data.cards || {}) as Record<string, CardRecord>;
+    const cardsMap = (this.plugin.store.data.cards || {});
     const cards = Array.from(this._selectedIds)
       .map((id) => cardsMap[id])
       .filter((card): card is CardRecord => !!card);
@@ -1167,7 +1168,7 @@ export class SproutCardBrowserView extends ItemView {
         linkIcon.style.transformOrigin = "center";
         // Keep inline-flex to preserve layout
         linkIcon.style.display = "inline-flex";
-      } catch {}
+      } catch (e) { log.swallow("scale link icon", e); }
 
       idBtn.appendChild(linkIcon);
 
@@ -1229,9 +1230,8 @@ export class SproutCardBrowserView extends ItemView {
 
         if (col === "answer" && card.type === "cloze") {
           const td = document.createElement("td");
-          td.className = (
-            `align-top ${this._readonlyTextClass} ${this._cellWrapClass} text-muted-foreground`,
-          );
+          td.className =
+            `align-top ${this._readonlyTextClass} ${this._cellWrapClass} text-muted-foreground`;
           td.textContent = CLOZE_ANSWER_HELP;
           td.style.height = `${this._rowHeightPx}px`;
           td.style.verticalAlign = "top";
@@ -1267,7 +1267,7 @@ export class SproutCardBrowserView extends ItemView {
                 ? (card as any).rectIds.map((r: any) => String(r))
                 : [];
               maskedRects = rectIds.length
-                ? rects.filter((r: any) => rectIds.includes(String((r as any).rectId)))
+                ? rects.filter((r: any) => rectIds.includes(String((r).rectId)))
                 : rects;
             }
             const labelsCard = Array.isArray(maskedRects) ? { rects: maskedRects } : card;
@@ -1336,23 +1336,25 @@ export class SproutCardBrowserView extends ItemView {
           }
         });
 
-        ta.addEventListener("blur", async () => {
-          const nextVal = ta.value;
-          if (nextVal === baseline) return;
-          if (this._saving.has(key)) return;
+        ta.addEventListener("blur", () => {
+          void (async () => {
+            const nextVal = ta.value;
+            if (nextVal === baseline) return;
+            if (this._saving.has(key)) return;
 
-          this._saving.add(key);
+            this._saving.add(key);
 
-          try {
-            const updated = this.applyValueToCard(card, col, nextVal);
-            await this.writeCardToMarkdown(updated);
-            baseline = nextVal;
-          } catch (err: any) {
-            new Notice(`${BRAND}: ${err?.message || String(err)}`);
-            ta.value = baseline;
-          } finally {
-            this._saving.delete(key);
-          }
+            try {
+              const updated = this.applyValueToCard(card, col, nextVal);
+              await this.writeCardToMarkdown(updated);
+              baseline = nextVal;
+            } catch (err: any) {
+              new Notice(`${BRAND}: ${err?.message || String(err)}`);
+              ta.value = baseline;
+            } finally {
+              this._saving.delete(key);
+            }
+          })();
         });
 
         td.appendChild(ta);
@@ -1427,7 +1429,7 @@ export class SproutCardBrowserView extends ItemView {
               selected = selected.filter((t) => t !== tag);
               renderBadges();
               renderList();
-              commit();
+              void commit();
             });
             badge.appendChild(removeBtn);
 
@@ -1460,7 +1462,7 @@ export class SproutCardBrowserView extends ItemView {
         popover.className = "sprout";
         popover.setAttribute("aria-hidden", "true");
         popover.style.setProperty("position", "fixed", "important");
-        popover.style.setProperty("z-index", "999999", "important");
+        popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
         popover.style.setProperty("display", "none", "important");
         popover.style.setProperty("pointer-events", "auto", "important");
 
@@ -1645,11 +1647,11 @@ export class SproutCardBrowserView extends ItemView {
           popover.style.display = "none";
           try {
             cleanup?.();
-          } catch {}
+          } catch (e) { log.swallow("popover cleanup", e); }
           cleanup = null;
           try {
             popover.remove();
-          } catch {}
+          } catch (e) { log.swallow("remove popover", e); }
           void commit();
           renderBadges();
         };
@@ -1697,7 +1699,7 @@ export class SproutCardBrowserView extends ItemView {
         };
 
         tagBox.addEventListener("pointerdown", (ev) => {
-          if ((ev as PointerEvent).button !== 0) return;
+          if ((ev).button !== 0) return;
           ev.preventDefault();
           ev.stopPropagation();
           open();
@@ -1837,42 +1839,15 @@ export class SproutCardBrowserView extends ItemView {
 
     // ✅ Universal shared header: ensure instance exists, then install for this page
     if (!this._header) {
-      const leaf = this.leaf ?? this.app.workspace.getLeaf(false);
-
-      this._header = new SproutHeader({
-        app: this.app,
-        leaf,
-        containerEl: this.containerEl,
-
-        getIsWide: () => this.plugin.isWideMode,
-        toggleWide: () => {
-          this.plugin.isWideMode = !this.plugin.isWideMode;
-          this._applyWidthMode();
-        },
-
-        runSync: () => {
-          this._captureScrollPosition();
-          const anyPlugin = this.plugin as any;
-          if (typeof anyPlugin._runSync === "function") void anyPlugin._runSync();
-          else if (typeof anyPlugin.syncBank === "function") void anyPlugin.syncBank();
-          else new Notice("Sync not available (no sync method found).");
-        },
-
-        moreItems: [
-          {
-            label: "Reset filters",
-            icon: "rotate-ccw",
-            onActivate: () => {
-              this._resetFilters(false);
-              this.render();
-            },
-          },
-        ],
-      } as any);
+      this._header = createViewHeader({
+        view: this,
+        plugin: this.plugin,
+        onToggleWide: () => this._applyWidthMode(),
+        beforeSync: () => this._captureScrollPosition(),
+      });
     }
 
-    // Tell header we are on the Flashcards page
-    (this._header as any).install?.("flashcards" as SproutHeaderPage);
+    this._header.install("flashcards");
 
     // keep content width mode in sync
     this._applyWidthMode();
@@ -1889,7 +1864,7 @@ export class SproutCardBrowserView extends ItemView {
     };
 
     // Cascading AOS delays (top → bottom)
-    const cascadeStep = 120;
+    const cascadeStep = AOS_CASCADE_STEP;
     let cascadeDelay = 0;
     const nextDelay = () => {
       cascadeDelay += cascadeStep;
@@ -2037,35 +2012,37 @@ export class SproutCardBrowserView extends ItemView {
     suspendBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
     suspendBtn.disabled = true;
     suspendBtn.setAttribute("data-tooltip", "Suspend or Unsuspend selected cards");
-    suspendBtn.addEventListener("click", async (ev) => {
+    suspendBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      const mode = suspendBtn.getAttribute("data-mode") === "unsuspend" ? "unsuspend" : "suspend";
-      const now = Date.now();
-      const ids = Array.from(this._selectedIds).filter((id) => !this.plugin.store.isQuarantined(id));
-      if (ids.length === 0) return;
-      try {
-        let count = 0;
-        for (const id of ids) {
-          const prev = this.plugin.store.ensureState(id, now);
-          if (mode === "unsuspend") {
-            if ((prev as any).stage === "suspended") {
-              const next = unsuspendCard(prev as any, now);
+      void (async () => {
+        const mode = suspendBtn.getAttribute("data-mode") === "unsuspend" ? "unsuspend" : "suspend";
+        const now = Date.now();
+        const ids = Array.from(this._selectedIds).filter((id) => !this.plugin.store.isQuarantined(id));
+        if (ids.length === 0) return;
+        try {
+          let count = 0;
+          for (const id of ids) {
+            const prev = this.plugin.store.ensureState(id, now);
+            if (mode === "unsuspend") {
+              if ((prev as any).stage === "suspended") {
+                const next = unsuspendCard(prev as any, now);
+                this.plugin.store.upsertState(next as any);
+                count += 1;
+              }
+            } else {
+              const next = suspendCard(prev as any, now);
               this.plugin.store.upsertState(next as any);
               count += 1;
             }
-          } else {
-            const next = suspendCard(prev as any, now);
-            this.plugin.store.upsertState(next as any);
-            count += 1;
           }
+          await this.plugin.store.persist();
+          new Notice(`${mode === "unsuspend" ? "Unsuspended" : "Suspended"} ${count} card${count === 1 ? "" : "s"}`);
+          this.refreshTable();
+        } catch (err: any) {
+          new Notice(`${BRAND}: ${err?.message || String(err)}`);
         }
-        await this.plugin.store.persist();
-        new Notice(`${mode === "unsuspend" ? "Unsuspended" : "Suspended"} ${count} card${count === 1 ? "" : "s"}`);
-        this.refreshTable();
-      } catch (err: any) {
-        new Notice(`${BRAND}: ${err?.message || String(err)}`);
-      }
+      })();
     });
     controlsRow.appendChild(suspendBtn);
     this._suspendButton = suspendBtn;
@@ -2295,7 +2272,7 @@ export class SproutCardBrowserView extends ItemView {
         this.toggleSort(key);
       });
 
-      this.makeResizableTh(th, key as ColKey);
+      this.makeResizableTh(th, key);
       // Ensure the resizer is 4px wide and has a high z-index for clickability
       // This is handled in makeResizableTh, but if not, ensure the style is set:
       // .sprout-col-resize { width: 4px !important; z-index: 50 !important; }

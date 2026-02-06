@@ -1,7 +1,6 @@
 // src/reviewer/moreMenu.ts
-import { el } from "../core/ui";
-import { setIcon } from "obsidian";
-import { appendKeyboxRight, makePlainButton } from "./ui";
+import { POPOVER_Z_INDEX } from "../core/constants";
+import { log } from "../core/logger";
 import type { SproutReviewerView } from "./review-view";
 
 export function closeMoreMenu(view: SproutReviewerView) {
@@ -10,20 +9,20 @@ export function closeMoreMenu(view: SproutReviewerView) {
     view._moreBtnEl.setAttribute("aria-expanded", "false");
   }
 
-  const popover = view._moreMenuEl as HTMLElement | null;
+  const popover = view._moreMenuEl;
   if (popover) {
     popover.setAttribute("aria-hidden", "true");
     popover.style.setProperty("display", "none", "important");
     try {
       popover.remove();
-    } catch {}
+    } catch (e) { log.swallow("moreMenu popover.remove", e); }
   }
 
   const cleanup = (view as any)._moreCleanup as (() => void) | null;
   if (cleanup) {
     try {
       cleanup();
-    } catch {}
+    } catch (e) { log.swallow("moreMenu cleanup", e); }
     (view as any)._moreCleanup = null;
   }
 }
@@ -36,7 +35,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     view._moreBtnEl.setAttribute("aria-expanded", next ? "true" : "false");
   }
 
-  const popover = view._moreMenuEl as HTMLElement | null;
+  const popover = view._moreMenuEl;
   if (!popover) return;
 
   if (!next) {
@@ -44,7 +43,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     return;
   }
 
-  const panel = popover.querySelector(".sprout-more-panel") as HTMLElement | null;
+  const panel = popover.querySelector(".sprout-more-panel");
 
   const place = () => {
     const btn = view._moreBtnEl as HTMLElement | null;
@@ -107,7 +106,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     document.removeEventListener("keydown", onDocKeydown, true);
   };
 
-  const firstItem = popover.querySelector("[role='menuitem']") as HTMLElement | null;
+  const firstItem = popover.querySelector("[role='menuitem']");
   firstItem?.focus?.();
 }
 
@@ -137,12 +136,12 @@ export function injectMoreMenu(view: SproutReviewerView) {
     )
     .forEach((n) => n.remove());
 
-  const flash = (root.querySelector(".sprout-flashcard") as HTMLElement | null) ?? root;
-  const rows = Array.from(flash.querySelectorAll(".sprout-row")) as HTMLElement[];
+  const flash = (root.querySelector(".sprout-flashcard")) ?? root;
+  const rows = Array.from(flash.querySelectorAll(".sprout-row"));
   if (!rows.length) return;
 
   const rowHasBtn = (row: HTMLElement, label: string) => {
-    const btnLefts = Array.from(row.querySelectorAll(".sprout-btn-left")) as HTMLElement[];
+    const btnLefts = Array.from(row.querySelectorAll(".sprout-btn-left"));
     return btnLefts.some((x) => (x.textContent || "").trim().toLowerCase() === label.toLowerCase());
   };
 
@@ -214,7 +213,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
   popover.className = "bc";
   popover.setAttribute("aria-hidden", "true");
   popover.style.setProperty("position", "fixed", "important");
-  popover.style.setProperty("z-index", "999999", "important");
+  popover.style.setProperty("z-index", POPOVER_Z_INDEX, "important");
   popover.style.setProperty("display", "none", "important");
   popover.style.setProperty("pointer-events", "auto", "important");
   document.body.appendChild(popover);

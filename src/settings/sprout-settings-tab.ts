@@ -16,12 +16,13 @@ import {
   PluginSettingTab,
   Setting,
   TFile,
-  App,
+  type App,
   Notice,
   setIcon,
   MarkdownView,
 } from "obsidian";
 import type SproutPlugin from "../main";
+import { log } from "../core/logger";
 import { VIEW_TYPE_WIDGET } from "../core/constants";
 import {
   listDataJsonBackups,
@@ -49,12 +50,9 @@ import {
   isFieldLine,
   looksLikeCardBlock,
   clonePlain,
-  normaliseVaultPath,
   normaliseFolderPath,
   listVaultFolders,
   fuzzyFolderMatches,
-  listDeckPaths,
-  fuzzyPathMatches,
 } from "./settings-utils";
 
 // ────────────────────────────────────────────
@@ -101,9 +99,8 @@ export class SproutSettingsTab extends PluginSettingTab {
         if (typeof v?.resetToSummaryAndRender === "function") v.resetToSummaryAndRender();
         else if (typeof v?.onRefresh === "function") v.onRefresh();
         else if (typeof v?.render === "function") v.render();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error("Sprout: failed to refresh widget view", e);
+      } catch {
+        log.error("failed to refresh widget view", e);
       }
     }
   }
@@ -113,9 +110,8 @@ export class SproutSettingsTab extends PluginSettingTab {
     const anyPlugin: any = this.plugin as any;
     try {
       if (typeof anyPlugin?._refreshOpenViews === "function") anyPlugin._refreshOpenViews();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn("Sprout: failed to refresh open views", e);
+    } catch {
+      log.warn("failed to refresh open views", e);
     }
   }
 
@@ -420,9 +416,8 @@ export class SproutSettingsTab extends PluginSettingTab {
           }
           cachedRows = rows;
           renderTable(rows);
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.error(e);
+        } catch {
+          log.error(e);
           renderEmpty("Failed to scan backups (see console).");
         }
       };
@@ -436,9 +431,8 @@ export class SproutSettingsTab extends PluginSettingTab {
           }
           new Notice("Sprout – Settings Updated\nBackup created");
           await scan();
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.error(e);
+        } catch {
+          log.error(e);
           new Notice("Sprout: failed to create backup (see console).");
         }
       };
@@ -631,9 +625,9 @@ export class SproutSettingsTab extends PluginSettingTab {
 
           const anchor = `^sprout-${id}`;
           try {
-            this.app.workspace.openLinkText(`${notePath}#${anchor}`, notePath, false);
+            void this.app.workspace.openLinkText(`${notePath}#${anchor}`, notePath, false);
             return;
-          } catch {}
+          } catch (e) { log.swallow("open link text", e); }
 
           const f = this.app.vault.getAbstractFileByPath(notePath);
           if (f instanceof TFile) await this.app.workspace.getLeaf(false).openFile(f);
@@ -729,10 +723,9 @@ export class SproutSettingsTab extends PluginSettingTab {
 
               this.display();
               this.queueSettingsNotice("settings.resetDefaults", "Settings reset to defaults", 0);
-            } catch (e) {
+            } catch {
               (this.plugin as any).settings = before;
-              // eslint-disable-next-line no-console
-              console.error(e);
+              log.error(e);
               new Notice(
                 "Sprout: could not reset settings to defaults. Implement resetSettingsToDefaults() or expose DEFAULT_SETTINGS on the plugin (see console).",
               );
@@ -786,10 +779,10 @@ export class SproutSettingsTab extends PluginSettingTab {
               ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section"
             );
             if (content) {
-              console.log("Dispatching sprout:prettify-cards-refresh to", content);
+              log.debug("Dispatching sprout:prettify-cards-refresh to", content);
               try {
                 content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
-              } catch {}
+              } catch (e) { log.swallow("dispatch prettify-cards-refresh", e); }
               if (content instanceof HTMLElement) {
                 content.style.opacity = "0.99";
                 setTimeout(() => { content.style.opacity = ""; }, 50);
@@ -799,11 +792,11 @@ export class SproutSettingsTab extends PluginSettingTab {
             const view = leaf.view;
             if (view instanceof MarkdownView) {
               try {
-                (view as any).previewMode?.rerender?.();
-              } catch {}
+                view.previewMode?.rerender?.();
+              } catch (e) { log.swallow("rerender preview", e); }
               try {
-                (view as any).previewMode?.onLoadFile?.(view.file);
-              } catch {}
+                view.previewMode?.onLoadFile?.(view.file!);
+              } catch (e) { log.swallow("reload preview file", e); }
             }
           }
         });

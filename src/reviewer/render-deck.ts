@@ -6,7 +6,7 @@ import { buildDeckTree, type DeckNode } from "../deck/deck-tree";
 import type SproutPlugin from "../main";
 import type { Scope } from "./image-occlusion-types";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
-import { BRAND } from "../core/constants";
+import { log } from "../core/logger";
 
 type Args = {
   app: App;
@@ -347,10 +347,10 @@ export function renderDeckMode(args: Args) {
     // Fallback: derive from cards (best-effort)
     const out = new Set<string>();
     for (const c of cards as any[]) {
-      const gp = (c as any).groupPath ?? (c as any).group ?? (c as any).groupKey;
+      const gp = (c).groupPath ?? (c).group ?? (c).groupKey;
       if (typeof gp === "string" && gp) out.add(gp);
 
-      const gps = (c as any).groups;
+      const gps = (c).groups;
       if (Array.isArray(gps)) for (const g of gps) if (typeof g === "string" && g) out.add(g);
     }
     return Array.from(out);
@@ -430,7 +430,7 @@ export function renderDeckMode(args: Args) {
     comboTrigger.setAttribute("aria-expanded", "false");
     try {
       cleanup?.();
-    } catch {}
+    } catch (e) { log.swallow("render-deck closePopover cleanup", e); }
     cleanup = null;
   };
 
@@ -463,7 +463,7 @@ export function renderDeckMode(args: Args) {
   };
 
   comboTrigger.addEventListener("pointerdown", (ev) => {
-    if ((ev as PointerEvent).button !== 0) return;
+    if ((ev).button !== 0) return;
     ev.preventDefault();
     ev.stopPropagation();
     openPopover();
@@ -476,7 +476,7 @@ export function renderDeckMode(args: Args) {
       if (document.activeElement !== searchInput) searchInput.focus();
       try {
         searchInput.setSelectionRange(value.length, value.length);
-      } catch {}
+      } catch (e) { log.swallow("render-deck searchInput setSelectionRange", e); }
     });
   });
   searchInput.addEventListener("blur", () => {
@@ -570,7 +570,7 @@ export function renderDeckMode(args: Args) {
 
   if (!cards.length) {
     const empty = el("div", "text-muted-foreground", 'No cards found. Run “Sync Question Bank”.');
-    (empty as HTMLElement).classList.add(...("p-3 text-sm").split(" "));
+    (empty).classList.add(...("p-3 text-sm").split(" "));
     bodyWrap.appendChild(empty);
     container.appendChild(root);
 

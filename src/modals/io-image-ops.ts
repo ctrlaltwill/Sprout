@@ -385,7 +385,7 @@ export async function drawTextOnImageData(
 
   const lines = text.split(/\r?\n/);
   const lineHeight = Math.round(fontSize * 1.3);
-  let x = stageX;
+  const x = stageX;
   let y = stageY;
   for (const line of lines) {
     ctx.strokeText(line, x, y);
