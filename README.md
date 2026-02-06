@@ -29,10 +29,11 @@ We are waiting on approval to be listed in Obsidian community plugins – watch 
 
 1. Go to [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release
 2. Copy `main.js`, `styles.css`, and `manifest.json` into:
+
    ```
    <Your Vault>/.obsidian/plugins/sprout/
    ```
-3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
+4. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
 
 ### Option 3 — Build from source
 
@@ -60,8 +61,6 @@ Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
 
 ## License
 
-Sprout is released under the **MIT License**.  
-
-This means you are free to **use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies** of this software, as long as you include the original copyright notice and this permission notice in all copies or substantial portions of the software.  
+Sprout is released under the **MIT License**.   
 
 See the [full license](LICENSE) for complete details.  
