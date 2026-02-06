@@ -8,7 +8,7 @@
 
 import type { App } from "obsidian";
 import { setIcon } from "obsidian";
-import { el, setCssProps } from "../core/ui";
+import { el, queryFirst, setCssProps } from "../core/ui";
 import { buildDeckTree, type DeckNode } from "../deck/deck-tree";
 import type SproutPlugin from "../main";
 import type { Scope } from "./types";
@@ -112,7 +112,7 @@ function makeIconButton(opts: {
   const iconWrap = document.createElement("span");
   iconWrap.className = `inline-flex items-center justify-center${opts.iconClassName ? ` ${opts.iconClassName}` : ""}`;
   setIcon(iconWrap, opts.icon);
-  iconWrap.querySelector("svg")?.classList.add("bc", "shrink-0");
+  queryFirst(iconWrap, "svg")?.classList.add("bc", "shrink-0");
   btn.appendChild(iconWrap);
 
   const text = document.createElement("span");
@@ -142,7 +142,7 @@ function makeDisclosureChevron(isOpen: boolean, onToggle: () => void) {
   const renderIcon = (open: boolean) => {
     iconWrap.replaceChildren();
     setIcon(iconWrap, open ? "minus" : "plus");
-    iconWrap.querySelector("svg")?.classList.add("bc");
+    queryFirst(iconWrap, "svg")?.classList.add("bc");
   };
   renderIcon(isOpen);
   btn.appendChild(iconWrap);

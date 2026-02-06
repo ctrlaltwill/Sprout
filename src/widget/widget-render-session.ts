@@ -28,6 +28,18 @@ import { isFolderNote } from "./widget-scope";
 /*  renderWidgetSession                                                */
 /* ------------------------------------------------------------------ */
 
+function buildCardAnchorFragment(cardId: string | null | undefined): string {
+  const raw = String(cardId ?? "").trim();
+  if (!raw) return "";
+  const cleaned = raw.startsWith("^") ? raw.slice(1) : raw;
+  const normalized = cleaned.startsWith("sprout-")
+    ? cleaned
+    : /^\d{9}$/.test(cleaned)
+      ? `sprout-${cleaned}`
+      : cleaned;
+  return `#^${normalized}`;
+}
+
 /**
  * Build and append the session-mode DOM tree into `root`.
  *
@@ -552,8 +564,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
       if (!c) return;
       const filePath = c.sourceNotePath || view.activeFile?.path;
       if (!filePath) return;
-      const anchor = String(c.id ?? "").trim();
-      const anchorStr = anchor ? `#^${anchor}` : "";
+      const anchorStr = buildCardAnchorFragment(c.id);
       void view.app.workspace.openLinkText(filePath + anchorStr, filePath, true);
     },
   });

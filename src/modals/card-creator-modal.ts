@@ -15,7 +15,7 @@ import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian"
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
 import { syncOneFile } from "../sync/sync-engine";
 
@@ -148,8 +148,8 @@ export class CardCreatorModal extends Modal {
     this.containerEl.addClass("sprout");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-card-creator-modal");
     this.contentEl.addClass("bc", "sprout-card-creator-content");
-    this.modalEl.querySelector(".modal-header")?.remove();
-    this.modalEl.querySelector(".modal-close-button")?.remove();
+    queryFirst(this.modalEl, ".modal-header")?.remove();
+    queryFirst(this.modalEl, ".modal-close-button")?.remove();
 
 
     const { contentEl } = this;
@@ -407,7 +407,7 @@ export class CardCreatorModal extends Modal {
 
           const children = Array.from(root.children);
           const groupsWrapper = children.find((child) => {
-            const lbl = child.querySelector("label");
+            const lbl = queryFirst(child, "label");
             return lbl && lbl.textContent?.trim() === "Groups";
           });
           if (groupsWrapper && groupsWrapper.parentElement) {

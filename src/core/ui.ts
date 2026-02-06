@@ -97,3 +97,8 @@ export function replaceChildrenWithHTML(el: HTMLElement, html: string): void {
   const frag = createFragmentFromHTML(html);
   el.replaceChildren(frag);
 }
+
+export function queryFirst<T extends Element = Element>(root: ParentNode, selector: string): T | null {
+  const matches = root.querySelectorAll<T>(selector);
+  return matches.length ? matches[0] : null;
+}

@@ -1,14 +1,34 @@
 # Sprout - Flashcards & Spaced Repetition
 
+[![Release](https://img.shields.io/github/v/release/ctrlaltwill/Sprout?display_name=tag)](https://github.com/ctrlaltwill/Sprout/releases)
+[![Dependencies](https://img.shields.io/librariesio/github/ctrlaltwill/Sprout)](https://libraries.io/github/ctrlaltwill/Sprout)
+[![License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/blob/main/LICENSE)
+[![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
+
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
 > **Beta 0.0.5** — major update with new UI, analytics dashboard, image occlusion, and reading view cards.
 
-📖 **[Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
+## Key features
+
+- FSRS-based scheduler for optimised spaced repitition 
+- Card types: cloze, basic, multiple choice, and image occlusion
+- Analytics dashboard with charts and heatmaps
+- Inline editor, card browser, and bulk edit tools
+- Markdown-first workflow with note-linked cards
+- Reading view cards for excerpts and highlights to keep your notes clean
+
+📖 **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 
 ## Installation
 
-### Option 1 — Download a release
+We are waiting on approval to be listed in Obsidian community plugins – watch this space!
+
+### Option 1 — BRAT (recommended)
+
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) is a community plugin that lets you install beta plugins and receive updates automatically. Install BRAT, then add `ctrlaltwill/Sprout` as a beta plugin.
+
+### Option 2 — Download a release
 
 1. Go to [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release
 2. Copy `main.js`, `styles.css`, and `manifest.json` into:
@@ -17,7 +37,7 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
    ```
 3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
 
-### Option 2 — Build from source
+### Option 3 — Build from source
 
 Requires [Node.js](https://nodejs.org/) 18+.
 
@@ -35,10 +55,6 @@ ln -s "$(pwd)/dist" "<Your Vault>/.obsidian/plugins/sprout"
 ```
 
 Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
-
-### Option 3 — BRAT
-
-Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `ctrlaltwill/Sprout` as a beta plugin.
 
 ## License
 

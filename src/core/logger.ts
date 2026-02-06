@@ -14,18 +14,10 @@
 const PREFIX = "[Sprout]";
 
 // Bind console methods once so call-sites don't trigger the no-console rule.
-const _debug: (...data: unknown[]) => void = Function.prototype.bind.call(
-  globalThis.console.debug, globalThis.console,
-);
-const _log: (...data: unknown[]) => void = Function.prototype.bind.call(
-  globalThis.console.log, globalThis.console,
-);
-const _warn: (...data: unknown[]) => void = Function.prototype.bind.call(
-  globalThis.console.warn, globalThis.console,
-);
-const _error: (...data: unknown[]) => void = Function.prototype.bind.call(
-  globalThis.console.error, globalThis.console,
-);
+const _debug = globalThis.console.debug.bind(globalThis.console);
+const _log = globalThis.console.log.bind(globalThis.console);
+const _warn = globalThis.console.warn.bind(globalThis.console);
+const _error = globalThis.console.error.bind(globalThis.console);
 
 export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
 

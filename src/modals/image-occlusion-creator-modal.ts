@@ -18,7 +18,7 @@
 
 import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
@@ -153,8 +153,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.containerEl.addClass("sprout");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-io-creator", "sprout-io-creator-modal");
     this.contentEl.addClass("bc");
-    this.modalEl.querySelector(".modal-header")?.remove();
-    this.modalEl.querySelector(".modal-close-button")?.remove();
+    queryFirst(this.modalEl, ".modal-header")?.remove();
+    queryFirst(this.modalEl, ".modal-close-button")?.remove();
 
     const { contentEl } = this;
     contentEl.empty();

@@ -16,7 +16,7 @@
 import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
 import { MAX_CONTENT_WIDTH, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
 import { log } from "./logger";
-import { setCssProps } from "./ui";
+import { queryFirst, setCssProps } from "./ui";
 
 export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics";
 
@@ -100,8 +100,8 @@ export class SproutHeader {
 
   install(active: SproutHeaderPage) {
     const viewHeader =
-      (this.deps.containerEl.querySelector(":scope > .view-header")) ??
-      (this.deps.containerEl.querySelector(".view-header"));
+      queryFirst(this.deps.containerEl, ":scope > .view-header") ??
+      queryFirst(this.deps.containerEl, ".view-header");
     if (viewHeader) viewHeader.classList.add("bc", "sprout-header");
 
     this.installHeaderDropdownNav(active);
@@ -121,8 +121,8 @@ export class SproutHeader {
     const isWide = this.deps.getIsWide();
     // Only hide if the available header space is too narrow, not based on the button group width
     const header =
-      (this.deps.containerEl?.querySelector(":scope > .view-header")) ??
-      (this.deps.containerEl?.querySelector(".view-header"));
+      (this.deps.containerEl ? queryFirst(this.deps.containerEl, ":scope > .view-header") : null) ??
+      (this.deps.containerEl ? queryFirst(this.deps.containerEl, ".view-header") : null);
     const availableWidth = header?.clientWidth ?? this.deps.containerEl?.clientWidth ?? 0;
     const hide =
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
@@ -130,7 +130,7 @@ export class SproutHeader {
     this.widthBtnEl.setAttribute("data-tooltip", isWide ? "Collapse table" : "Expand table");
 
     const text = isWide ? "Collapse" : "Expand";
-    const textNode = this.widthBtnEl.querySelector("[data-sprout-label]");
+    const textNode = queryFirst(this.widthBtnEl, "[data-sprout-label]");
     if (textNode) textNode.textContent = text;
 
     if (this.widthBtnIconEl) {
@@ -201,7 +201,7 @@ export class SproutHeader {
     }
     this.topNavPopoverEl = null;
 
-    const trigger = this.deps.containerEl.querySelector(`#${this.headerNavId}-trigger`);
+    const trigger = queryFirst(this.deps.containerEl, `#${this.headerNavId}-trigger`);
     if (trigger) trigger.setAttribute("aria-expanded", "false");
   }
 
@@ -580,8 +580,8 @@ export class SproutHeader {
     if (typeof ResizeObserver !== "undefined") {
       try {
         const header =
-          (this.deps.containerEl?.querySelector(":scope > .view-header")) ??
-          (this.deps.containerEl?.querySelector(".view-header"));
+          (this.deps.containerEl ? queryFirst(this.deps.containerEl, ":scope > .view-header") : null) ??
+          (this.deps.containerEl ? queryFirst(this.deps.containerEl, ".view-header") : null);
         const ro = new ResizeObserver(() => this.updateWidthButtonLabel());
         if (header) ro.observe(header);
         if (this.deps.containerEl) ro.observe(this.deps.containerEl);
@@ -667,14 +667,14 @@ export class SproutHeader {
         this.deps.app.setting.open();
         // Select the Sprout section by data-setting-id
         setTimeout(() => {
-          const sproutTab = document.querySelector('.vertical-tab-nav-item[data-setting-id="sprout"]');
+          const sproutTab = queryFirst(document, '.vertical-tab-nav-item[data-setting-id="sprout"]');
           if (sproutTab) (sproutTab as HTMLElement).click();
         }, 100);
       } else {
         // fallback: open settings modal
         this.deps.app.commands?.executeCommandById?.("app:open-settings");
         setTimeout(() => {
-          const sproutTab = document.querySelector('.vertical-tab-nav-item[data-setting-id="sprout"]');
+          const sproutTab = queryFirst(document, '.vertical-tab-nav-item[data-setting-id="sprout"]');
           if (sproutTab) (sproutTab as HTMLElement).click();
         }, 300);
       }

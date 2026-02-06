@@ -14,7 +14,7 @@ import type { CardRecord } from "../core/store";
 import type { IOParentDef, StoredIORect, IOMaskMode } from "./image-occlusion-types";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints, type RectPx } from "./image-geometry";
 import { applyStageTransform, clientToStage, zoomAt, type StageTransform } from "./image-transform";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import { 
   isMaskMode, 
   makeRectId, 
@@ -688,7 +688,8 @@ export class ImageOcclusionEditorModal extends Modal {
     const idx = this.rects.findIndex((r) => r.rectId === id);
     if (idx >= 0) this.rects.splice(idx, 1);
 
-    const el = this.overlayEl.querySelector(
+    const el = queryFirst(
+      this.overlayEl,
       `.sprout-io-rect[data-rect-id="${CSS.escape(id)}"]`,
     );
     el?.remove();
@@ -727,18 +728,18 @@ export class ImageOcclusionEditorModal extends Modal {
   }
 
   private updateRectLabel(rectId: string) {
-    const el = this.overlayEl.querySelector(`.sprout-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
+    const el = queryFirst(this.overlayEl, `.sprout-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
     if (!(el instanceof HTMLElement)) return;
 
     const r = this.rects.find((x) => x.rectId === rectId);
     if (!r) return;
 
-    const label = el.querySelector(".sprout-io-rect-label");
+    const label = queryFirst(el, ".sprout-io-rect-label");
     if (label) (label as HTMLElement).textContent = String(r.groupKey ?? "");
   }
 
   private updateRectElement(rectId: string) {
-    const el = this.overlayEl.querySelector(`.sprout-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
+    const el = queryFirst(this.overlayEl, `.sprout-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
     if (!(el instanceof HTMLElement)) return;
 
     const r = this.rects.find((x) => x.rectId === rectId);

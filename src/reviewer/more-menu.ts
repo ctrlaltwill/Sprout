@@ -9,7 +9,7 @@
  */
 
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import type { SproutReviewerView } from "./review-view";
 
 export function closeMoreMenu(view: SproutReviewerView) {
@@ -52,7 +52,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
     return;
   }
 
-  const panel = popover.querySelector(".sprout-more-panel");
+  const panel = queryFirst(popover, ".sprout-more-panel");
 
   const place = () => {
     const btn = view._moreBtnEl;
@@ -145,7 +145,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
     )
     .forEach((n) => n.remove());
 
-  const flash = (root.querySelector(".sprout-flashcard") as HTMLElement) ?? root;
+  const flash = (queryFirst(root, ".sprout-flashcard") as HTMLElement) ?? root;
   const rows = Array.from(flash.querySelectorAll<HTMLElement>(".sprout-row"));
   if (!rows.length) return;
 
@@ -321,7 +321,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
   targetRow.appendChild(wrap);
 
   for (const r of rows) {
-    const hasButtons = r.querySelector("button") != null;
+    const hasButtons = queryFirst(r, "button") != null;
     const hasMeaningfulContent = (r.textContent || "").trim().length > 0;
     if (!hasButtons && !hasMeaningfulContent) r.remove();
   }

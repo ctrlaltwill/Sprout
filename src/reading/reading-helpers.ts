@@ -36,6 +36,7 @@
  */
 
 import { log } from "../core/logger";
+import { queryFirst } from "../core/ui";
 
 /* -----------------------
    Constants
@@ -167,7 +168,7 @@ export function extractLaTeXFromMathJax(mathEl: Element): string {
   }
   
   // Method 2: Check the mathEl itself for a script child
-  const inlineScript = mathEl.querySelector('script[type="math/tex"]');
+  const inlineScript = queryFirst(mathEl, 'script[type="math/tex"]');
   if (inlineScript) {
     return inlineScript.textContent || '';
   }
@@ -178,7 +179,7 @@ export function extractLaTeXFromMathJax(mathEl: Element): string {
   
   // Method 4: Try to reconstruct from MathJax's internal structure
   // The mjx-math element might have the LaTeX classes that hint at structure
-  const mjxMath = mathEl.querySelector('mjx-math');
+  const mjxMath = queryFirst(mathEl, 'mjx-math');
   if (mjxMath && mjxMath.classList.contains('MJX-TEX')) {
     // This is rendered TeX - try to extract structure
     // For simple cases like variables, textContent works
@@ -201,7 +202,7 @@ export function extractLaTeXFromMathJax(mathEl: Element): string {
  */
 export function extractRawTextFromParagraph(el: HTMLElement): string {
   // Look for the <p> tag that contains the actual card content
-  const pTag = el.querySelector('p[dir="auto"]');
+  const pTag = queryFirst(el, 'p[dir="auto"]');
   if (!pTag) {
     return extractTextWithLaTeX(el);
   }
@@ -836,7 +837,7 @@ export function checkForNonCardContent(el: Element): { hasNonCardContent: boolea
   }
   
   // Check if MathJax error contains header-like content after pipe
-  const mjxError = el.querySelector('mjx-merror');
+  const mjxError = queryFirst(el, 'mjx-merror');
   if (mjxError) {
     const errorText = mjxError.textContent || '';
     // Match pipe followed by ANY content starting with header - capture everything

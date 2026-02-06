@@ -182,7 +182,7 @@ export function logFsrsIfNeeded(args: {
 export function logUndoIfNeeded(args: {
   id: string;
   cardType: string;
-  ratingUndone: RatingOrSkip | string;
+  ratingUndone: RatingOrSkip | null;
   meta?: ReviewMeta;
 
   // Whether JSON store state was actually reverted (practice sessions are session-only)

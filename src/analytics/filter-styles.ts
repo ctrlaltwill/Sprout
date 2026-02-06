@@ -12,6 +12,7 @@
  */
 
 import * as React from "react";
+import { queryFirst } from "../core/ui";
 export const endTruncateClass = "sprout-ana-truncate-row sprout-ana-truncate-end";
 export const startTruncateClass = "sprout-ana-truncate-row sprout-ana-truncate-start";
 
@@ -25,13 +26,13 @@ export function useAnalyticsPopoverZIndex(open: boolean, wrapRef: React.RefObjec
       if (grid) grid.setAttribute("data-popover-open", "true");
     } else {
       card.removeAttribute("data-popover-open");
-      if (grid && !grid.querySelector(".sprout-ana-card[data-popover-open=\"true\"]")) {
+      if (grid && !queryFirst(grid, ".sprout-ana-card[data-popover-open=\"true\"]")) {
         grid.removeAttribute("data-popover-open");
       }
     }
     return () => {
       card.removeAttribute("data-popover-open");
-      if (grid && !grid.querySelector(".sprout-ana-card[data-popover-open=\"true\"]")) {
+      if (grid && !queryFirst(grid, ".sprout-ana-card[data-popover-open=\"true\"]")) {
         grid.removeAttribute("data-popover-open");
       }
     };

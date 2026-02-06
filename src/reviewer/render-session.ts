@@ -6,6 +6,7 @@
  *   - renderSessionMode — Builds and mounts the full session-mode DOM (card, buttons, header, menus) into the given container
  */
 
+import { Setting } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
@@ -92,6 +93,18 @@ type Args = {
   rerender: () => void;
 };
 
+function buildCardAnchorFragment(cardId: string | null | undefined): string {
+  const raw = String(cardId ?? "").trim();
+  if (!raw) return "";
+  const cleaned = raw.startsWith("^") ? raw.slice(1) : raw;
+  const normalized = cleaned.startsWith("sprout-")
+    ? cleaned
+    : /^\d{9}$/.test(cleaned)
+      ? `sprout-${cleaned}`
+      : cleaned;
+  return `#^${normalized}`;
+}
+
 function formatBreadcrumbs(s: string): string {
   return String(s ?? "")
     .replace(/\s*\/\s*/g, " / ")
@@ -105,6 +118,18 @@ function formatNotePathForHeader(raw: string): string {
   s = s.replace(/\\/g, "/").replace(/^\.\//, "");
   s = s.replace(/\.md$/i, "");
   return formatBreadcrumbs(s);
+}
+
+function buildCardAnchorFragment(cardId: string | null | undefined): string {
+  const raw = String(cardId ?? "").trim();
+  if (!raw) return "";
+  const cleaned = raw.startsWith("^") ? raw.slice(1) : raw;
+  const normalized = cleaned.startsWith("sprout-")
+    ? cleaned
+    : /^\d{9}$/.test(cleaned)
+      ? `sprout-${cleaned}`
+      : cleaned;
+  return `#^${normalized}`;
 }
 
 function extractInfoField(card: CardRecord): string | null {
@@ -180,7 +205,7 @@ function ioChildKeyFromId(id: string): string | null {
   return k ? k : null;
 }
 
-function getIoGroupKey(card: CardRecord): string | null {
+function getGroupKey(card: CardRecord): string | null {
   if (!card) return null;
   const direct = typeof card.groupKey === "string" && card.groupKey.trim()
     ? card.groupKey.trim()
@@ -581,11 +606,20 @@ export function renderSessionMode(args: Args) {
     // Always append quit button to header row for correct positioning
     locationRow.appendChild(quitBtn);
 
-    const titleEl = document.createElement("h2");
-    titleEl.className =
-      "bc text-lg font-bold leading-none whitespace-pre-wrap break-words text-center px-4 bc-question-title";
-    titleEl.textContent = practiceMode ? "Practice complete" : "No cards are due";
-    header.appendChild(titleEl);
+    const titleSetting = new Setting(header)
+      .setName(practiceMode ? "Practice complete" : "No cards are due")
+      .setHeading();
+    titleSetting.settingEl.classList.add("bc");
+    titleSetting.nameEl.classList.add(
+      "text-lg",
+      "font-bold",
+      "leading-none",
+      "whitespace-pre-wrap",
+      "break-words",
+      "text-center",
+      "px-4",
+      "bc-question-title",
+    );
 
     // Section: Practice session message (centered, no alert wrapper)
     if (practiceMode) {
@@ -665,7 +699,7 @@ export function renderSessionMode(args: Args) {
   header.className = "bc flex flex-col gap-4 pt-4 p-6";
   wrap.appendChild(header);
 
-  const locationRaw = card.sourceNotePath || card.location || card.sourcePath || args.session?.scope?.name || "Note";
+  const locationRaw = card.sourceNotePath || args.session?.scope?.name || "Note";
   const location = formatNotePathForHeader(locationRaw);
 
   // Location row
@@ -696,17 +730,26 @@ export function renderSessionMode(args: Args) {
         ? "Cloze"
         : ioLike
           ? (() => {
-              const k = getIoGroupKey(card);
+              const k = getGroupKey(card);
               return k ? `Image Occlusion • ${k}` : "Image Occlusion";
             })()
           : "Basic");
 
-  const sourcePath = String(card.sourceNotePath || card.location || card.sourcePath || args.session?.scope?.name || "");
+  const sourcePath = String(card.sourceNotePath || args.session?.scope?.name || "");
 
-  const titleEl = document.createElement("h2");
-  titleEl.className =
-    "bc text-lg font-bold leading-none whitespace-pre-wrap break-words text-center px-4 bc-question-title";
-  header.appendChild(titleEl);
+  const titleSetting = new Setting(header).setName("").setHeading();
+  titleSetting.settingEl.classList.add("bc");
+  titleSetting.nameEl.classList.add(
+    "text-lg",
+    "font-bold",
+    "leading-none",
+    "whitespace-pre-wrap",
+    "break-words",
+    "text-center",
+    "px-4",
+    "bc-question-title",
+  );
+  const titleEl = titleSetting.nameEl;
   // Render title as markdown to support wiki links and LaTeX
   const titleMd = String(titleText ?? "");
   if (titleMd.includes('[[') || titleMd.includes('$')) {
@@ -1058,8 +1101,7 @@ export function renderSessionMode(args: Args) {
     if (!card) return;
     const filePath = card.sourceNotePath;
     if (!filePath) return;
-    const anchor = String(card.id ?? "").trim();
-    const anchorStr = anchor ? `#^${anchor}` : "";
+    const anchorStr = buildCardAnchorFragment(card.id);
     const app = window.app;
     if (app && app.workspace && typeof app.workspace.openLinkText === 'function') {
       void app.workspace.openLinkText(filePath + anchorStr, filePath, true);

@@ -18,7 +18,7 @@ import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
-import { replaceChildrenWithHTML, setCssProps } from "../core/ui";
+import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { stageLabel } from "../reviewer/labels";
@@ -309,12 +309,12 @@ export function renderEmptyState(
   total: number,
 ): { cleanup: (() => void) | null } {
   // Remove any previous error message
-  const prevError = rootEl?.querySelector(".sprout-browser-empty-message");
+  const prevError = rootEl ? queryFirst(rootEl, ".sprout-browser-empty-message") : null;
   if (prevError) prevError.remove();
 
-  const wrap = rootEl?.querySelector(
-    ".bc.rounded-lg.border.border-border.overflow-auto",
-  ) as HTMLElement | null;
+  const wrap = rootEl
+    ? queryFirst<HTMLElement>(rootEl, ".bc.rounded-lg.border.border-border.overflow-auto")
+    : null;
 
   if (!wrap) return { cleanup: null };
 
@@ -352,7 +352,7 @@ export function renderEmptyState(
  * Remove any existing empty-state overlay from the root.
  */
 export function clearEmptyState(rootEl: HTMLElement | null): void {
-  const prev = rootEl?.querySelector(".sprout-browser-empty-message");
+  const prev = rootEl ? queryFirst(rootEl, ".sprout-browser-empty-message") : null;
   if (prev) prev.remove();
 }
 

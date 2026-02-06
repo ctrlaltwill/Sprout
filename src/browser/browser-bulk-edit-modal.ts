@@ -11,7 +11,7 @@
  *   - openBulkEditModal — creates and displays the bulk-edit overlay for a set of selected cards
  */
 
-import { Notice, setIcon } from "obsidian";
+import { Notice, Platform, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
 import { log } from "../core/logger";
 import { BRAND } from "../core/constants";
@@ -92,7 +92,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   const answerLabel = hasMcq ? "Answer / Options" : "Answer";
   const isClozeOnly = normalizedTypes.length > 0 && normalizedTypes.every((type) => type === "cloze");
 
-  const isMacLike = () => /Mac|iPhone|iPad|iPod/i.test((navigator as any).userAgentData?.platform ?? navigator.userAgent);
+  const isMacLike = () => Platform.isMacOS;
   type ClozeShortcut = "new" | "same";
   const getClozeShortcut = (ev: KeyboardEvent): ClozeShortcut | null => {
     const key = String(ev.key || "").toLowerCase();

@@ -22,7 +22,7 @@ import { unsuspendCard, suspendCard } from "../scheduler/scheduler";
 import { ImageOcclusionCreatorModal } from "../modals/image-occlusion-creator-modal";
 import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
 
 // ✅ shared header
@@ -312,7 +312,7 @@ export class SproutCardBrowserView extends ItemView {
 
   private _applyColumnVisibility() {
     if (!this._rootEl) return;
-    const table = this._rootEl.querySelector("table");
+    const table = queryFirst(this._rootEl, "table");
     if (!table) return;
 
     for (const col of this._allCols) {

@@ -344,7 +344,7 @@ export class SproutReviewerView extends ItemView {
       if (due <= now) continue;
 
       const path = String(
-        (c).sourceNotePath || (c).sourcePath || (c).location || "",
+        (c).sourceNotePath || "",
       );
       if (!path) continue;
       if (!matchesScope(scope, path)) continue;

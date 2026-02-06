@@ -8,6 +8,7 @@
 
 import type { Session } from "./types";
 import type { CardRecord } from "../types/card";
+import { queryFirst } from "../core/ui";
 import { log } from "../core/logger";
 
 export function renderTitleMarkdownIfNeeded(args: {
@@ -19,7 +20,7 @@ export function renderTitleMarkdownIfNeeded(args: {
   const { rootEl, session, card, renderMarkdownInto } = args;
   if (!session || !card) return;
 
-  const titleEl = rootEl.querySelector(".sprout-question-title");
+    const titleEl = queryFirst(rootEl, ".sprout-question-title");
   if (!titleEl) return;
 
   const titleText =

@@ -12,7 +12,7 @@ import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
-import { replaceChildrenWithHTML, setCssProps } from "../core/ui";
+import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import type { Scope } from "../reviewer/types";
@@ -642,8 +642,8 @@ export class SproutHomeView extends ItemView {
       this._streakTimer = window.setInterval(() => {
         if (!statsRow?.parentElement) return; // Element was removed from DOM
         const cards = Array.from(statsRow.querySelectorAll(".sprout-ana-card"));
-        const last = cards[cards.length - 1] as HTMLElement | undefined;
-        const noteEl = last?.querySelector(".text-xs") as HTMLElement | null;
+        const last = cards[cards.length - 1] ?? undefined;
+        const noteEl = last ? queryFirst<HTMLElement>(last, ".text-xs") : null;
         if (noteEl) noteEl.textContent = `Ends in ${formatCountdownToMidnight(Date.now())} — study today.`;
       }, 1000);
     }
@@ -1045,11 +1045,11 @@ export class SproutHomeView extends ItemView {
       bmcIcon.className = "sprout-bmc-icon sprout-rotate sprout-bmc-rotate";
       setIcon(bmcIcon, "coffee");
       // Force the coffee SVG color to #111
-      const coffeeSvg = bmcIcon.querySelector("svg");
+      const coffeeSvg = queryFirst(bmcIcon, "svg");
       if (coffeeSvg) {
         coffeeSvg.setAttribute("fill", "#111");
         // Also set path fill if needed
-        const coffeePath = coffeeSvg.querySelector("path");
+        const coffeePath = queryFirst(coffeeSvg, "path");
         if (coffeePath) coffeePath.setAttribute("fill", "#111");
       }
       // Add smooth transition for rotation

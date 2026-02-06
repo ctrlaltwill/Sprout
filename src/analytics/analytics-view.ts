@@ -19,7 +19,7 @@ import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_ANALYTICS } from "../core/constants";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
 import { StagePieCard } from "./pie-charts";
@@ -417,7 +417,7 @@ export class SproutAnalyticsView extends ItemView {
       icon.className = "inline-flex items-center justify-center";
       const iconName = trend.dir > 0 ? "trending-up" : trend.dir < 0 ? "trending-down" : "minus";
       setIcon(icon, iconName);
-      const svg = icon.querySelector("svg");
+      const svg = queryFirst(icon, "svg");
       if (svg) {
         (svg as SVGElement).setAttribute("stroke", "currentColor");
       }

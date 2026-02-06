@@ -275,21 +275,18 @@ export default class SproutPlugin extends Plugin {
       this.addCommand({
         id: "sync-flashcards",
         name: "Sync Flashcards",
-        hotkeys: [],
         callback: async () => this._runSync(),
       });
 
       this.addCommand({
         id: "open",
         name: "Open Sprout",
-        hotkeys: [],
         callback: async () => this.openHomeTab(),
       });
 
       this.addCommand({
         id: "add-flashcard",
         name: "Add flashcard to note",
-        hotkeys: [],
         callback: () => this.openAddFlashcardModal(),
       });
 

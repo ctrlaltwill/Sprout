@@ -13,7 +13,7 @@ import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import type { CardRecord } from "../core/store";
 import type SproutPlugin from "../main";
-import { replaceChildrenWithHTML } from "../core/ui";
+import { queryFirst, replaceChildrenWithHTML } from "../core/ui";
 
 import {
   ANCHOR_RE,
@@ -100,10 +100,11 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
         // Try to get source file content
         let sourceContent = '';
         try {
-          const sourcePath = ctx.sourcePath;
-          if (sourcePath && plugin.app.vault) {
+          const ctxPaths = ctx as { sourceNotePath?: string; sourcePath?: string };
+          const sourcePath = ctxPaths.sourceNotePath ?? ctxPaths.sourcePath;
+          if (typeof sourcePath === "string" && sourcePath && plugin.app.vault) {
             const file = plugin.app.vault.getAbstractFileByPath(sourcePath);
-            if (file instanceof TFile && file.extension === 'md') {
+            if (file instanceof TFile && file.extension === "md") {
               const content = await plugin.app.vault.read(file);
               sourceContent = content;
             }
@@ -307,7 +308,7 @@ function setupDebouncedMutationObserver() {
             // Skip if the added node is just being moved (check if it already has sprout-processed)
             if (el.matches && (
               (el.matches('.el-p') && !el.hasAttribute('data-sprout-processed')) || 
-              (el.querySelector && el.querySelector('.el-p:not([data-sprout-processed])'))
+              (el.querySelectorAll && queryFirst(el as ParentNode, '.el-p:not([data-sprout-processed])'))
             )) {
               sawRelevant = true;
               break;
@@ -471,7 +472,7 @@ function shouldRebalanceGrids(): boolean {
  * Rebalance an existing masonry grid's columns without rebuilding
  */
 function rebalanceExistingGrid(wrapper: HTMLElement) {
-  const grid = wrapper.querySelector('.sprout-masonry-grid') as HTMLElement;
+  const grid = queryFirst<HTMLElement>(wrapper, ".sprout-masonry-grid");
   if (!grid) return;
   
   // Get all cards from all columns
@@ -812,7 +813,7 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
       else raw = extractTextWithLaTeX(next as HTMLElement);
 
       const rawNorm = clean(raw).replace(/\s+/g, " ").trim();
-      const hasMath = !!(next as HTMLElement).querySelector('.math, mjx-container, mjx-math');
+      const hasMath = !!queryFirst(next as HTMLElement, '.math, mjx-container, mjx-math');
       const rawMathSig = rawNorm ? normalizeMathSignature(rawNorm) : "";
 
       if (cardTextNorm && rawNorm && cardTextNorm.includes(rawNorm)) {
@@ -1094,17 +1095,12 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       const aText = Array.isArray(card.fields.A) ? card.fields.A.join('\n') : card.fields.A;
       
       // Find Q/A elements by ID pattern
-      const qEl = el.querySelector('[id^="sprout-q-"]');
-      const aEl = el.querySelector('[id^="sprout-a-"]');
+      const qEl = queryFirst(el, '[id^="sprout-q-"]');
+      const aEl = queryFirst(el, '[id^="sprout-a-"]');
       
       if (qEl && qText) {
         try {
-          await MarkdownRenderer.renderMarkdown(
-            qText,
-            qEl as HTMLElement,
-            '',  // sourcePath
-            component
-          );
+          await MarkdownRenderer.render(component, qText, qEl as HTMLElement, "");
         } catch {
           qEl.textContent = qText;
         }
@@ -1112,12 +1108,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       
       if (aEl && aText) {
         try {
-          await MarkdownRenderer.renderMarkdown(
-            aText,
-            aEl as HTMLElement,
-            '',  // sourcePath
-            component
-          );
+          await MarkdownRenderer.render(component, aText, aEl as HTMLElement, "");
         } catch {
           aEl.textContent = aText;
         }
@@ -1127,15 +1118,10 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
     // Render markdown for Info fields (all card types)
     const iText = Array.isArray(card.fields.I) ? card.fields.I.join('\n') : card.fields.I;
     if (iText) {
-      const iEl = el.querySelector('[id^="sprout-i-"]');
+      const iEl = queryFirst(el, '[id^="sprout-i-"]');
       if (iEl) {
         try {
-          await MarkdownRenderer.renderMarkdown(
-            iText,
-            iEl as HTMLElement,
-            '',  // sourcePath
-            component
-          );
+          await MarkdownRenderer.render(component, iText, iEl as HTMLElement, "");
         } catch {
           iEl.textContent = iText;
         }

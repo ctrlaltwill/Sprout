@@ -14,7 +14,7 @@ import type { CardRecord } from "../types/card";
 import type { StoredIORect } from "./image-occlusion-types";
 import { resolveImageFile } from "./io-helpers";
 import type * as IoModule from "./image-occlusion-index";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 
 export function isIoParentCard(card: CardRecord): boolean {
   return card && card.type === "io";
@@ -282,8 +282,8 @@ export function renderImageOcclusionReviewInto(args: {
         onOpen() {
           this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
           this.modalEl.addClass("bc", "sprout-modals", "sprout-zoom-overlay");
-          this.modalEl.querySelector(".modal-header")?.remove();
-          this.modalEl.querySelector(".modal-close-button")?.remove();
+          queryFirst(this.modalEl, ".modal-header")?.remove();
+          queryFirst(this.modalEl, ".modal-close-button")?.remove();
 
           this.contentEl.empty();
           this.contentEl.classList.add("sprout-zoom-content");
@@ -303,7 +303,7 @@ export function renderImageOcclusionReviewInto(args: {
             enableWidgetModal: false,
           });
           {
-            const zoomImg = zoomHost.querySelector("img");
+            const zoomImg = queryFirst(zoomHost, "img");
             if (zoomImg) {
               zoomImg.classList.add("sprout-zoom-img", "sprout-io-image-zoomed");
             }

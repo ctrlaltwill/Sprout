@@ -9,7 +9,7 @@
 
 import { setIcon } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
-import { setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 
 export interface TimerState {
   timerRunning: boolean;
@@ -23,7 +23,7 @@ export interface TimerState {
  */
 export function renderStudySessionHeader(container: HTMLElement, applyAOS?: boolean): void {
   // Check if header already exists
-  let studySessionHeader = container.querySelector("[data-study-session-header]") as HTMLElement;
+  let studySessionHeader = queryFirst<HTMLElement>(container, "[data-study-session-header]");
   if (studySessionHeader) {
     if (!applyAOS) {
       studySessionHeader.removeAttribute("data-aos");

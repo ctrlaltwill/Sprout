@@ -10,7 +10,7 @@
  *  - createGroupPickerField — creates a tag-picker input field for card group assignment
  */
 
-import { Notice, setIcon } from "obsidian";
+import { Notice, Platform, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
@@ -41,7 +41,7 @@ const PLACEHOLDER_INFO = "Extra information shown on the back to add context";
 type ClozeShortcut = "new" | "same";
 
 function isMacLike(): boolean {
-  return /Mac|iPhone|iPad|iPod/i.test((navigator as any).userAgentData?.platform ?? navigator.userAgent);
+  return Platform.isMacOS;
 }
 
 function getClozeShortcut(ev: KeyboardEvent): ClozeShortcut | null {

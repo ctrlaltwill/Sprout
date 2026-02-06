@@ -14,6 +14,7 @@ import * as React from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { generatorParameters, forgetting_curve } from "ts-fsrs";
 import type { CardRecord, CardState, ReviewLogEntry } from "../core/store";
+import type { ReviewResult } from "../types/review";
 import { gradeFromPassFail, gradeFromRating, resetCardScheduling, type SchedulerSettings } from "../scheduler/scheduler";
 import { useAnalyticsPopoverZIndex } from "./filter-styles";
 
@@ -184,10 +185,11 @@ function getCardStability(state?: CardState | null) {
   return 0;
 }
 
-function normalizeReviewResult(result: string): "pass" | "fail" | "again" | "hard" | "good" | "easy" | null {
+function normalizeReviewResult(result: ReviewResult | string): ReviewResult | null {
   const r = String(result ?? "").toLowerCase();
   if (r === "pass" || r === "fail") return r;
   if (r === "again" || r === "hard" || r === "good" || r === "easy") return r;
+  if (r === "skip") return null;
   return null;
 }
 

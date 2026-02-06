@@ -11,6 +11,7 @@
 import { Modal, Notice, TFile, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import { queryFirst } from "../core/ui";
 import { syncOneFile } from "../sync/sync-engine";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
@@ -250,7 +251,7 @@ export class CardEditModal extends Modal {
     if (this.modalEl.classList.contains("fixed") && this.modalEl.classList.contains("inset-0")) {
       this.modalEl.classList.add("sprout-modal");
     } else {
-      const overlay = sproutWrapper.querySelector(".fixed.inset-0");
+      const overlay = queryFirst(sproutWrapper, ".fixed.inset-0");
       if (overlay) overlay.classList.add("sprout-modal");
     }
 
@@ -348,7 +349,7 @@ export class CardEditModal extends Modal {
 
         // Renumber option labels
         optionRows.forEach((r, i) => {
-          const labelEl = r.wrap.querySelector("div");
+          const labelEl = queryFirst(r.wrap, "div");
           if (labelEl) labelEl.textContent = `Option ${i + 1}`;
         });
       });

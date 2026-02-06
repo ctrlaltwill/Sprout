@@ -16,9 +16,15 @@ function ioChildKeyFromId(id: string): string | null {
   return k ? k : null;
 }
 
+function getGroupKey(card: CardRecord): string | null {
+  if (!card) return null;
+  const raw = typeof card.groupKey === "string" ? card.groupKey.trim() : "";
+  return raw ? raw : null;
+}
+
 function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
-  if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
+  if (getGroupKey(card)) return true;
   const id = String(card.id ?? "");
   return !!ioChildKeyFromId(id);
 }

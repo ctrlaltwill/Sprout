@@ -10,8 +10,10 @@
  *   - ReviewLogEntry — type for a single entry in the review log
  */
 
+import type { ReviewRating } from "./scheduler";
+
 /** Possible grading outcomes. "pass"/"fail" are legacy two-button mode values. "skip" is used when the user explicitly skips a card. */
-export type ReviewResult = "pass" | "fail" | "again" | "hard" | "good" | "easy" | "skip";
+export type ReviewResult = "pass" | "fail" | ReviewRating | "skip";
 
 /**
  * Single entry in the review log.
