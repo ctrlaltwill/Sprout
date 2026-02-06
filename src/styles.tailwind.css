@@ -1,0 +1,20 @@
+/* src/styles.tailwind.css */
+@layer theme, base, components, utilities;
+
+/* Tailwind design tokens (variables) */
+@import "tailwindcss/theme.css" layer(theme);
+
+/* Your class scanning */
+@source "./src";
+
+/* Basecoat (pick ONE approach: package OR CDN) */
+@import "basecoat-css"; /* preferred if you already installed it */
+
+/* AOS animations */
+@import "aos/dist/aos.css";
+
+/* Tailwind utilities (needed for w-[240px], flex, px-4, etc.) */
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Your overrides last */
+@import "./overrides.css";

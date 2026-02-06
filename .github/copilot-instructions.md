@@ -1,0 +1,726 @@
+// src/main.ts
+// Basecoat CSS + JS bundle (registers components and exposes window.basecoat)
+import "basecoat-css/all";
+
+import {
+  Plugin,
+  Notice,
+  TFile,
+  MarkdownView,
+  Platform,
+  type Menu,
+  type WorkspaceLeaf,
+  requestUrl,
+} from "obsidian";
+
+import {
+  VIEW_TYPE_REVIEWER,
+  VIEW_TYPE_WIDGET,
+  VIEW_TYPE_BROWSER,
+  VIEW_TYPE_ANALYTICS,
+  VIEW_TYPE_HOME,
+  BRAND,
+  DEFAULT_SETTINGS,
+  deepMerge,
+  type BootCampSettings,
+} from "./constants";
+
+import { registerReadingViewPrettyCards } from "./readingView";
+
+import { JsonStore } from "./store";
+import { BootCampReviewerView } from "./reviewer/ReviewView";
+import { BootCampWidgetView } from "./widget";
+import { BootCampCardBrowserView } from "./browser";
+import { BootCampAnalyticsView } from "./analytics/AnalyticsView";
+import { BootCampHomeView } from "./home";
+import { BootCampSettingsTab } from "./settings";
+import { formatSyncNotice, syncQuestionBank } from "./sync";
+import { CardCreatorModal, ImageOcclusionCreatorModal, ParseErrorModal } from "./modals";
+import { resetCardScheduling, type CardState } from "./scheduler";
+import { ImageOcclusionEditor } from "./imageocclusion/ImageOcclusionEditor";
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function cleanPositiveNumberArray(v: any, fallback: number[]): number[] {
+  const arr = Array.isArray(v) ? v : [];
+  const out = arr.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  return out.length ? out : fallback;
+}
+
+function clonePlain<T>(x: T): T {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sc = (globalThis as any)?.structuredClone;
+  if (typeof sc === "function") return sc(x);
+  return JSON.parse(JSON.stringify(x)) as T;
+}
+
+type BasecoatApi = {
+  init?: (group: string) => void;
+  initAll?: () => void;
+  start?: () => void;
+  stop?: () => void;
+};
+
+function getBasecoatApi(): BasecoatApi | null {
+  const bc = (window as any)?.basecoat as BasecoatApi | undefined;
+  if (!bc) return null;
+  const hasInit = typeof bc.initAll === "function" || typeof bc.init === "function";
+  const hasStart = typeof bc.start === "function";
+  if (!hasInit || !hasStart) return null;
+  return bc;
+}
+
+export default class BootCampPlugin extends Plugin {
+  settings: BootCampSettings;
+  store: JsonStore;
+  _bc: any;
+
+  private _basecoatStarted = false;
+
+  // Shared wide mode state across all views
+  isWideMode = false;
+
+  readonly DEFAULT_SETTINGS: BootCampSettings = DEFAULT_SETTINGS;
+  readonly defaultSettings: BootCampSettings = DEFAULT_SETTINGS;
+  readonly defaults: BootCampSettings = DEFAULT_SETTINGS;
+
+  // Ribbon icons (desktop + mobile)
+  private _ribbonEls: HTMLElement[] = [];
+
+  // Hide Obsidian global status bar when these views are active
+  private readonly _hideStatusBarViewTypes = new Set<string>([
+    VIEW_TYPE_REVIEWER,
+    VIEW_TYPE_BROWSER,
+    VIEW_TYPE_ANALYTICS,
+    VIEW_TYPE_HOME,
+    // If you also want it hidden in the sidebar widget, uncomment:
+    // VIEW_TYPE_WIDGET,
+  ]);
+
+  private _initBasecoatRuntime() {
+    const bc = getBasecoatApi();
+    if (!bc) {
+      console.warn(`${BRAND}: Basecoat API not found on window.basecoat (dropdowns may not work).`);
+      return;
+    }
+
+    try {
+      // If hot-reloading or reloading the plugin, avoid multiple observers.
+      bc.stop?.();
+
+      // Initialize any already-rendered components (Obsidian loads long after DOMContentLoaded).
+      bc.initAll?.();
+
+      // Start observing future DOM changes (for views created later).
+      bc.start?.();
+
+      this._basecoatStarted = true;
+      (this as any)._basecoatApi = bc;
+      console.log(`${BRAND}: Basecoat initAll + start OK`);
+    } catch (e) {
+      console.warn(`${BRAND}: Basecoat init failed`, e);
+    }
+  }
+
+  private _stopBasecoatRuntime() {
+    if (!this._basecoatStarted) return;
+    try {
+      const bc = getBasecoatApi();
+      bc?.stop?.();
+    } catch {}
+    this._basecoatStarted = false;
+  }
+
+  private _getActiveLeafSafe(): WorkspaceLeaf | null {
+    const ws: any = this.app.workspace as any;
+    if (typeof ws?.getActiveLeaf === "function") return (ws.getActiveLeaf() as WorkspaceLeaf) ?? null; // newer builds
+    return (ws?.activeLeaf as WorkspaceLeaf) ?? null; // older builds
+  }
+
+  private _updateStatusBarVisibility(leaf: WorkspaceLeaf | null) {
+    const viewType = (leaf?.view as any)?.getViewType?.() as string | undefined;
+    const hide = !!viewType && this._hideStatusBarViewTypes.has(viewType);
+    document.body.classList.toggle("sprout-hide-status-bar", hide);
+  }
+
+  private _normaliseSettingsInPlace() {
+    const s: any = this.settings as any;
+    s.scheduler ??= {};
+    s.home ??= {};
+    s.home.pinnedDecks ??= [];
+    s.home.githubStars ??= {};
+    if (!("count" in s.home.githubStars)) s.home.githubStars.count = null;
+    if (!("fetchedAt" in s.home.githubStars)) s.home.githubStars.fetchedAt = null;
+
+    s.scheduler.learningStepsMinutes = cleanPositiveNumberArray(
+      s.scheduler.learningStepsMinutes,
+      DEFAULT_SETTINGS.scheduler.learningStepsMinutes,
+    );
+
+    s.scheduler.relearningStepsMinutes = cleanPositiveNumberArray(
+      s.scheduler.relearningStepsMinutes,
+      DEFAULT_SETTINGS.scheduler.relearningStepsMinutes,
+    );
+
+    s.scheduler.requestRetention = clamp(
+      Number(s.scheduler.requestRetention ?? DEFAULT_SETTINGS.scheduler.requestRetention),
+      0.8,
+      0.97,
+    );
+
+    const legacyKeys = [
+      "graduatingIntervalDays",
+      "easyBonus",
+      "hardFactor",
+      "minEase",
+      "maxEase",
+      "easeDeltaAgain",
+      "easeDeltaHard",
+      "easeDeltaEasy",
+    ];
+    for (const k of legacyKeys) {
+      if (k in s.scheduler) delete s.scheduler[k];
+    }
+  }
+
+  /**
+   * Ensures exactly one leaf exists for a given view type.
+   * If multiple exist, detaches the extras and returns the kept leaf.
+   */
+  private _ensureSingleLeafOfType(viewType: string): WorkspaceLeaf | null {
+    const leaves = this.app.workspace.getLeavesOfType(viewType) as WorkspaceLeaf[];
+    if (!leaves.length) return null;
+
+    const [keep, ...extras] = leaves;
+
+    for (const l of extras) {
+      try {
+        l.detach();
+      } catch {}
+    }
+
+    return keep;
+  }
+
+  async onload() {
+    try {
+      // ✅ IMPORTANT: Basecoat runtime init for Obsidian (DOMContentLoaded already happened)
+      this._initBasecoatRuntime();
+
+      this._bc = {
+        VIEW_TYPE_REVIEWER,
+        VIEW_TYPE_WIDGET,
+        VIEW_TYPE_BROWSER,
+        VIEW_TYPE_ANALYTICS,
+        VIEW_TYPE_HOME,
+        BRAND,
+        DEFAULT_SETTINGS,
+        deepMerge,
+        BootCampReviewerView,
+        BootCampWidgetView,
+        BootCampCardBrowserView,
+        BootCampAnalyticsView,
+        BootCampHomeView,
+        BootCampSettingsTab,
+        syncQuestionBank,
+        CardCreatorModal,
+        ParseErrorModal,
+      };
+
+      const root = (await this.loadData()) || {};
+      this.settings = deepMerge(DEFAULT_SETTINGS, (root as any).settings || {});
+      this._normaliseSettingsInPlace();
+
+      this.store = new JsonStore(this);
+      await this.store.load(root as any);
+
+      registerReadingViewPrettyCards(this);
+
+      this.registerView(VIEW_TYPE_REVIEWER, (leaf) => new BootCampReviewerView(leaf, this));
+      this.registerView(VIEW_TYPE_WIDGET, (leaf) => new BootCampWidgetView(leaf, this));
+      this.registerView(VIEW_TYPE_BROWSER, (leaf) => new BootCampCardBrowserView(leaf, this));
+      this.registerView(VIEW_TYPE_ANALYTICS, (leaf) => new BootCampAnalyticsView(leaf, this));
+      this.registerView(VIEW_TYPE_HOME, (leaf) => new BootCampHomeView(leaf, this));
+
+      this.addSettingTab(new BootCampSettingsTab(this.app, this));
+
+      // Commands (hotkeys default to none; users can bind in Settings → Hotkeys)
+      this.addCommand({
+        id: "sprout-sync-flashcards",
+        name: "Sync Flashcards",
+        hotkeys: [],
+        callback: async () => this._runSync(),
+      });
+
+      this.addCommand({
+        id: "sprout-open",
+        name: "Open Sprout",
+        hotkeys: [],
+        callback: async () => this.openHomeTab(),
+      });
+
+      this.addCommand({
+        id: "sprout-add-flashcard",
+        name: "Add flashcard to note",
+        hotkeys: [],
+        callback: async () => this.openAddFlashcardModal(),
+      });
+
+      // Replace dropdown with separate ribbon icons (desktop + mobile)
+      this._registerRibbonIcons();
+      this._registerEditorContextMenu();
+
+      // Hide status bar when Boot Camp views are active
+      this.registerEvent(
+        this.app.workspace.on("active-leaf-change", (leaf) => {
+          this._updateStatusBarVisibility((leaf as any) ?? null);
+        }),
+      );
+
+      this.registerEvent(
+        this.app.workspace.on("file-open", (file) => {
+          const f = file instanceof TFile ? file : null;
+          this.app.workspace
+            .getLeavesOfType(VIEW_TYPE_WIDGET)
+            .forEach((leaf) => (leaf.view as any)?.onFileOpen?.(f));
+        }),
+      );
+
+      this.app.workspace.onLayoutReady(() => {
+        if (this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET).length === 0) {
+          void this.openWidgetSafe();
+        }
+        // Ensure status bar class matches the active leaf after layout settles
+        this._updateStatusBarVisibility(this._getActiveLeafSafe());
+      });
+
+      await this.saveAll();
+      void this.refreshGithubStars();
+      console.log(`${BRAND}: loaded`);
+    } catch (e) {
+      console.error(`${BRAND}: failed to load`, e);
+      new Notice(`${BRAND}: failed to load. See console for details.`);
+    }
+  }
+
+  onunload() {
+    try {
+      void this.saveAll();
+    } catch {}
+    this._destroyRibbonIcons();
+    document.body.classList.remove("sprout-hide-status-bar");
+
+    // ✅ stop Basecoat observer on unload (helps plugin reload / dev)
+    this._stopBasecoatRuntime();
+  }
+
+  private _destroyRibbonIcons() {
+    for (const el of this._ribbonEls) {
+      try {
+        el.remove();
+      } catch {}
+    }
+    this._ribbonEls = [];
+  }
+
+  _getActiveMarkdownFile(): TFile | null {
+    const f = this.app.workspace.getActiveFile();
+    return f instanceof TFile ? f : null;
+  }
+
+  private _ensureEditingNoteEditor() {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view) return null;
+    if (typeof (view as any).getMode === "function" && (view as any).getMode() !== "source") return null;
+    const editor = view.editor;
+    if (!editor) return null;
+    return { view, editor };
+  }
+
+  openAddFlashcardModal(forcedType?: "basic" | "cloze" | "mcq" | "io") {
+    const ok = this._ensureEditingNoteEditor();
+    if (!ok) {
+      new Notice("Must be editing a note to add a flashcard");
+      return;
+    }
+
+    if (forcedType === "io") {
+      new ImageOcclusionCreatorModal(this.app, this).open();
+    } else {
+      new CardCreatorModal(this.app, this, forcedType).open();
+    }
+  }
+
+  // -----------------------
+  // Editor right-click menu
+  // -----------------------
+
+  private _registerEditorContextMenu() {
+    this.registerEvent(
+      this.app.workspace.on("editor-menu", (menu: Menu, _editor: any, view: any) => {
+        if (!(view instanceof MarkdownView)) return;
+
+        const mode = typeof (view as any).getMode === "function" ? (view as any).getMode() : "source";
+        if (mode !== "source") return;
+
+        if (!(view.file instanceof TFile)) return;
+
+        // Add the item with submenu
+        let itemDom: HTMLElement | null = null;
+
+        menu.addItem((item) => {
+          item.setTitle("Add Flashcard").setIcon("plus");
+
+          // Create submenu
+          const submenu = (item as any).setSubmenu?.();
+          if (submenu) {
+            submenu.addItem((subItem: any) => {
+              subItem.setTitle("Basic").setIcon("file-text").onClick(() => this.openAddFlashcardModal("basic"));
+            });
+            submenu.addItem((subItem: any) => {
+              subItem.setTitle("Cloze").setIcon("file-minus").onClick(() => this.openAddFlashcardModal("cloze"));
+            });
+            submenu.addItem((subItem: any) => {
+              subItem.setTitle("Multiple Choice").setIcon("list").onClick(() => this.openAddFlashcardModal("mcq"));
+            });
+            submenu.addItem((subItem: any) => {
+              subItem.setTitle("Image Occlusion").setIcon("image").onClick(() => this.openAddFlashcardModal("io"));
+            });
+          }
+
+          itemDom = (item as any)?.dom ?? null;
+        });
+
+        const positionAfterExternalLink = () => {
+          try {
+            const menuDom: HTMLElement | null = (menu as any)?.dom ?? null;
+            if (!menuDom || !itemDom) return;
+
+            let node: HTMLElement | null = itemDom;
+            while (node && node.parentElement && node.parentElement !== menuDom) {
+              node = node.parentElement as HTMLElement;
+            }
+            if (!node || node.parentElement !== menuDom) return;
+
+            // Find "Add external link" menu item
+            const menuItems = Array.from(menuDom.children);
+            let externalLinkItem: Element | null = null;
+
+            for (const item of menuItems) {
+              const titleEl = item.querySelector(".menu-item-title");
+              if (titleEl && titleEl.textContent?.includes("Add external link")) {
+                externalLinkItem = item;
+                break;
+              }
+            }
+
+            // Position after external link, or at top if not found
+            if (externalLinkItem && externalLinkItem.nextSibling) {
+              menuDom.insertBefore(node, externalLinkItem.nextSibling);
+            } else if (externalLinkItem) {
+              menuDom.appendChild(node);
+            } else {
+              // Fallback: insert after first item (likely "Add link")
+              if (menuDom.children.length > 1 && menuDom.children[1]) {
+                menuDom.insertBefore(node, menuDom.children[1]);
+              }
+            }
+          } catch {}
+        };
+
+        positionAfterExternalLink();
+        setTimeout(positionAfterExternalLink, 0);
+      }),
+    );
+  }
+
+  public async syncBank(): Promise<void> {
+    await this._runSync();
+  }
+
+  public refreshAllViews(): void {
+    this._refreshOpenViews();
+  }
+
+  async _runSync() {
+    const res = await syncQuestionBank(this);
+
+    const notice = formatSyncNotice("Sync complete", res, { includeDeleted: true });
+    new Notice(notice);
+
+    if (res.quarantinedCount > 0) {
+      new ParseErrorModal(this.app, this, res.quarantinedIds).open();
+    }
+
+    this._refreshOpenViews();
+  }
+
+  async saveAll() {
+    const root: any = (await this.loadData()) || {};
+    root.settings = this.settings;
+    root.store = this.store.data;
+    await this.saveData(root);
+  }
+
+  private _refreshOpenViews() {
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER).forEach((l) => (l.view as any)?.onRefresh?.());
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET).forEach((l) => (l.view as any)?.onRefresh?.());
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_BROWSER).forEach((l) => (l.view as any)?.onRefresh?.());
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_ANALYTICS).forEach((l) => (l.view as any)?.onRefresh?.());
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_HOME).forEach((l) => (l.view as any)?.onRefresh?.());
+  }
+
+  async refreshGithubStars(force = false) {
+    const s: any = this.settings as any;
+    s.home ??= {};
+    s.home.githubStars ??= { count: null, fetchedAt: null };
+
+    const lastAt = Number(s.home.githubStars.fetchedAt || 0);
+    const staleMs = 6 * 60 * 60 * 1000;
+    if (!force && lastAt && Date.now() - lastAt < staleMs) return;
+
+    try {
+      const res = await requestUrl({
+        url: "https://api.github.com/repos/ctrlaltwill/sprout",
+        method: "GET",
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      const count = Number(res?.json?.stargazers_count);
+      if (Number.isFinite(count)) {
+        s.home.githubStars.count = count;
+        s.home.githubStars.fetchedAt = Date.now();
+        await this.saveAll();
+        this._refreshOpenViews();
+      }
+    } catch {
+      // offline or rate-limited; keep last known value
+    }
+  }
+
+  public async resetSettingsToDefaults(): Promise<void> {
+    this.settings = clonePlain(DEFAULT_SETTINGS);
+    this._normaliseSettingsInPlace();
+    await this.saveAll();
+    this._refreshOpenViews();
+  }
+
+  public async resetToDefaultSettings(): Promise<void> {
+    return this.resetSettingsToDefaults();
+  }
+  public async resetDefaultSettings(): Promise<void> {
+    return this.resetSettingsToDefaults();
+  }
+  public async loadDefaultSettings(): Promise<void> {
+    return this.resetSettingsToDefaults();
+  }
+
+  private _isCardStateLike(v: any): v is CardState {
+    if (!v || typeof v !== "object") return false;
+
+    const stageOk =
+      v.stage === "new" ||
+      v.stage === "learning" ||
+      v.stage === "review" ||
+      v.stage === "relearning" ||
+      v.stage === "suspended";
+
+    if (!stageOk) return false;
+
+    const numsOk =
+      typeof v.due === "number" &&
+      typeof v.scheduledDays === "number" &&
+      typeof v.reps === "number" &&
+      typeof v.lapses === "number" &&
+      typeof v.learningStepIndex === "number";
+
+    return numsOk;
+  }
+
+  private _resetCardStateMapInPlace(map: Record<string, any>, now: number): number {
+    let count = 0;
+
+    for (const [id, raw] of Object.entries(map)) {
+      if (!this._isCardStateLike(raw)) continue;
+
+      const prev: CardState = { id, ...(raw as any) };
+      map[id] = resetCardScheduling(prev, now, this.settings);
+      count++;
+    }
+
+    return count;
+  }
+
+  private _looksLikeCardStateMap(node: any): node is Record<string, any> {
+    if (!node || typeof node !== "object") return false;
+    if (Array.isArray(node)) return false;
+
+    for (const v of Object.values(node)) {
+      if (this._isCardStateLike(v)) return true;
+    }
+    return false;
+  }
+
+  async resetAllCardScheduling(): Promise<void> {
+    const now = Date.now();
+    let total = 0;
+
+    const visited = new Set<any>();
+    const walk = (node: any) => {
+      if (!node || typeof node !== "object") return;
+      if (visited.has(node)) return;
+      visited.add(node);
+
+      if (this._looksLikeCardStateMap(node)) {
+        total += this._resetCardStateMapInPlace(node, now);
+      }
+
+      for (const v of Object.values(node)) walk(v);
+    };
+
+    walk(this.store.data);
+
+    await this.saveAll();
+    this._refreshOpenViews();
+
+    new Notice(`${BRAND}: reset scheduling for ${total} cards.`);
+  }
+
+  async openReviewerTab(forceNew: boolean = false) {
+    if (!forceNew) {
+      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_REVIEWER);
+      if (existing) {
+        this.app.workspace.revealLeaf(existing);
+        return;
+      }
+    }
+
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: VIEW_TYPE_REVIEWER, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  async openHomeTab(forceNew: boolean = false) {
+    if (!forceNew) {
+      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_HOME);
+      if (existing) {
+        this.app.workspace.revealLeaf(existing);
+        return;
+      }
+    }
+
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: VIEW_TYPE_HOME, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  async openBrowserTab(forceNew: boolean = false) {
+    if (!forceNew) {
+      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_BROWSER);
+      if (existing) {
+        this.app.workspace.revealLeaf(existing);
+        return;
+      }
+    }
+
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: VIEW_TYPE_BROWSER, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  async openAnalyticsTab(forceNew: boolean = false) {
+    if (!forceNew) {
+      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_ANALYTICS);
+      if (existing) {
+        this.app.workspace.revealLeaf(existing);
+        return;
+      }
+    }
+
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: VIEW_TYPE_ANALYTICS, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  private async openWidgetSafe(): Promise<void> {
+    try {
+      await this.openWidget();
+    } catch (e) {
+      console.error(`${BRAND}: failed to open widget`, e);
+      new Notice(`${BRAND}: failed to open widget. See console for details.`);
+    }
+  }
+
+  async openWidget() {
+    const existing = this._ensureSingleLeafOfType(VIEW_TYPE_WIDGET);
+    if (existing) {
+      this.app.workspace.revealLeaf(existing);
+      return;
+    }
+
+    let leaf = this.app.workspace.getRightLeaf(false) ?? this.app.workspace.getRightLeaf(true);
+    if (!leaf) leaf = this.app.workspace.getLeaf("tab");
+    if (!leaf) return;
+
+    await leaf.setViewState({ type: VIEW_TYPE_WIDGET, active: true, state: {} });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  private _openBootCampSettings() {
+    const appAny = this.app as any;
+    try {
+      if (appAny?.setting) {
+        if (typeof appAny.setting.open === "function") appAny.setting.open();
+      } else if (appAny?.commands?.executeCommandById) {
+        try {
+          appAny.commands.executeCommandById("app:open-settings");
+        } catch {}
+      }
+
+      const setting = appAny?.setting;
+      const id = this.manifest?.id;
+
+      if (setting && id) {
+        if (typeof setting.openTabById === "function") {
+          setting.openTabById(id);
+          return;
+        }
+        if (typeof setting.openTab === "function") {
+          try {
+            setting.openTab(id);
+            return;
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.error(`${BRAND}: failed to open settings`, e);
+      new Notice(`${BRAND}: Unable to open settings automatically. Open Settings → Community plugins → ${BRAND}.`);
+    }
+  }
+
+  // --------------------------------
+  // Ribbon icons (desktop + mobile)
+  // --------------------------------
+
+  private _registerRibbonIcons() {
+    // Always use separate icons now (desktop and mobile).
+    // Also: keep the editor context-menu for "Insert Flashcard".
+
+    this._destroyRibbonIcons();
+
+    const add = (icon: string, title: string, onClick: (ev: MouseEvent) => void) => {
+      const el = this.addRibbonIcon(icon, title, onClick);
+      el.addClass("sprout-ribbon-action");
+      el.addClass("bc");
+      this._ribbonEls.push(el);
+      return el;
+    };
+
+    // 1) Home - single instance by default, multiple with Cmd/Ctrl+Click
+    add("sprout", BRAND, (ev: MouseEvent) => {
+      const forceNew = ev.metaKey || ev.ctrlKey;
+      void this.openHomeTab(forceNew);
+    });
+  }
+}

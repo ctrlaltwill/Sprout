@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+
+# Build artifacts (dist/ IS committed for Obsidian BRAT / manual install)
+# If you don't want to commit built files, uncomment the next line:
+# dist/
+
+# Temp files
+*.tmp.css
+*.map
