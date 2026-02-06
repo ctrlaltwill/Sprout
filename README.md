@@ -1,4 +1,4 @@
-# Sprout - Flashcards & Spaced Repetition
+# Sprout - Flashcards & Spaced Repetition in Obsidian
 
 Sprout is a plugin for writing flashcards directly inside Markdown notes and reviewing them within Obsidian with an FSRS-based scheduler.
 
