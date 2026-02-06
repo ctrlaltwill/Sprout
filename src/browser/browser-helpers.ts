@@ -59,6 +59,7 @@
 import type { CardRecord } from "../core/store";
 import type { App, TFile } from "obsidian";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
@@ -129,30 +130,18 @@ export function clearNode(node: HTMLElement) {
  * To beat that, we MUST set inline styles with priority "important".
  */
 export function forceWrapStyles(el: HTMLElement) {
-  el.style.setProperty("white-space", "normal", "important");
-  el.style.setProperty("overflow-wrap", "anywhere", "important");
-  el.style.setProperty("word-break", "keep-all", "important");
-  el.style.setProperty("hyphens", "auto", "important");
+  el.classList.add("sprout-force-wrap");
 }
 
 /** Fixed-row tables: clip extra lines (still wraps, but won't grow row height). */
 export function forceCellClip(el: HTMLElement) {
-  el.style.setProperty("overflow", "hidden", "important");
-  el.style.setProperty("text-overflow", "clip", "important");
+  el.classList.add("sprout-cell-clip");
 }
 
 /** Sticky headers (th). */
 export function applyStickyThStyles(th: HTMLTableCellElement, topPx = 0) {
-  th.style.setProperty("position", "sticky", "important");
-  th.style.setProperty("top", `${topPx}px`, "important");
-  th.style.setProperty("z-index", "10", "important");
-  th.style.setProperty("background", "var(--background)", "important");
-  th.style.setProperty("box-shadow", "0 1px 0 var(--background-modifier-border)", "important");
-
-  // ✅ stable header height + vertical centring via inner flex wrapper
-  th.style.setProperty("height", "44px", "important");
-  th.style.setProperty("vertical-align", "middle", "important");
-  th.style.setProperty("padding", "0", "important");
+  th.classList.add("sprout-sticky-th");
+  setCssProps(th, "--sprout-sticky-top", `${topPx}px`);
 
   forceCellClip(th);
   forceWrapStyles(th);
@@ -404,8 +393,8 @@ export function tryResolveToResourceSrc(app: App, linkpathOrPath: string, fromNo
   // Fallback: direct vault path lookup
   try {
     const af = app?.vault?.getAbstractFileByPath?.(p);
-    if (af && (af).path && app?.vault?.getResourcePath) {
-      const src = app.vault.getResourcePath(af as TFile);
+    if (af instanceof TFile && app?.vault?.getResourcePath) {
+      const src = app.vault.getResourcePath(af);
       if (typeof src === "string" && src) return src;
     }
   } catch (e) { log.swallow("resolve vault path to resource", e); }
@@ -496,7 +485,7 @@ export function buildIoImgHtml(resolvedSrc: string, _displayRef: string, title: 
   <img
     src="${safeSrc}"
     alt="${safeTitle}"
-    style="max-width:100%; max-height:140px; object-fit:contain; border-radius:10px; border:1px solid var(--background-modifier-border); background: var(--background-secondary);"
+    class="sprout-browser-io-img"
   />
 </div>
 `.trim();
@@ -543,27 +532,21 @@ export function buildIoOccludedHtml(
       const height = Math.max(0, Math.min(1, h)) * 100;
 
       return `<div class="bc" style="
-        position:absolute;
-        left:${left}%;
-        top:${top}%;
-        width:${width}%;
-        height:${height}%;
-        background: rgba(0,0,0,0.55);
-        border: 1px solid rgba(0,0,0,0.25);
-        border-radius: 6px;
-        pointer-events:none;
-        z-index: 1;
-      "></div>`;
+        --sprout-io-left:${left}%;
+        --sprout-io-top:${top}%;
+        --sprout-io-width:${width}%;
+        --sprout-io-height:${height}%;
+      " class="sprout-browser-io-overlay"></div>`;
     })
     .join("");
 
   const badges = cardForLabels ? renderOcclusionBadgesHtml(cardForLabels) : "";
 
   return `
-<div class="bc" title="${safeTitle}" style="display:inline-block;">
-  <div class="bc" style="position:relative; display:inline-block; border-radius:10px; overflow:hidden; border:1px solid var(--background-modifier-border); background: var(--background-secondary);">
+<div class="bc sprout-browser-io-wrap" title="${safeTitle}">
+  <div class="bc sprout-browser-io-frame">
     ${badges}
-    <img class="bc" src="${safeSrc}" alt="${safeTitle}" style="display:block; max-width:100%; max-height:140px; object-fit:contain;" />
+    <img class="bc sprout-browser-io-img-inner" src="${safeSrc}" alt="${safeTitle}" />
     ${overlays}
   </div>
 </div>

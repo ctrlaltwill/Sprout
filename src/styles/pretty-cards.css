@@ -3,6 +3,90 @@
    masonry grid, card header/title/meta/sections, cloze pills, tags, IO area.
    ========================================================================== */
 
+/* ---- Reading-view base layout (moved from inline <style> injection) ---- */
+
+.sprout-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sprout-section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sprout-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0 !important;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sprout-toggle-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.sprout-toggle-chevron {
+  display: inline-block;
+  transition: transform 0.18s ease;
+  will-change: transform;
+  width: 1em;
+  height: 1em;
+  color: inherit;
+  vertical-align: middle;
+}
+
+.sprout-collapsible {
+  overflow: hidden;
+  transition: max-height 0.22s ease, padding 0.22s ease;
+}
+
+.sprout-collapsible.collapsed {
+  max-height: 0;
+  padding-top: 0;
+}
+
+.sprout-collapsible.expanded {
+  max-height: 2000px;
+}
+
+.sprout-options-list {
+  position: relative;
+}
+
+.sprout-option {
+  position: relative;
+  padding-left: 1.7em;
+  color: var(--text-color);
+  opacity: 0.9;
+  font-size: 0.9rem;
+  line-height: 1.9;
+  margin-bottom: 6px;
+}
+
+.sprout-option-bullet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.7em;
+  display: inline-block;
+}
+
+mjx-container[jax="CHTML"][display="true"] {
+  display: block;
+  text-align: left;
+  margin: 0.5em 1em;
+}
+
 /* ---- Masonry grid wrapper ---- */
 
 .sprout-masonry-grid-wrapper {
@@ -15,6 +99,21 @@
   box-sizing: border-box;
   break-inside: avoid;
   page-break-inside: avoid;
+}
+
+/* ---- Reading view utilities ---- */
+
+.sprout .sprout-reading-break-reset {
+  break-inside: auto !important;
+  page-break-inside: auto !important;
+}
+
+.sprout .sprout-reading-last-card {
+  margin-bottom: 20px !important;
+}
+
+.sprout .sprout-reading-chevron-collapsed {
+  transform: rotate(-90deg) !important;
 }
 
 /* Card sizing */
@@ -158,6 +257,30 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ---- Reading view utilities ---- */
+
+.sprout .sprout-p-spacing-none {
+  --p-spacing: 0px;
+}
+
+.sprout .sprout-toggle-btn-compact {
+  padding: 0 !important;
+}
+
+.sprout .sprout-reading-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.5em !important;
+}
+
+.sprout .sprout-reading-card-title {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-weight: 500 !important;
+  line-height: 1.15 !important;
 }
 .sprout-pretty-card.accent .sprout-card-meta,
 .sprout-pretty-card.theme .sprout-card-meta {

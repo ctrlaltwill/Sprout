@@ -79,7 +79,7 @@ export function openBulkEditModalForCards(
   sproutWrapper.className = "sprout";
 
   const overlay = document.createElement("div");
-  overlay.className = "bc fixed inset-0 flex items-center justify-center";
+  overlay.className = "bc fixed inset-0 flex items-center justify-center sprout-bulk-edit-overlay";
 
   // Defensive: if overlay is ever created elsewhere, ensure only one .sprout wrapper
   if (overlay.parentElement && overlay.parentElement.classList.contains("sprout")) {
@@ -87,20 +87,10 @@ export function openBulkEditModalForCards(
   } else {
     sproutWrapper.appendChild(overlay);
   }
-  overlay.style.setProperty("background", "rgba(0, 0, 0, 0.55)", "important");
-  overlay.style.setProperty("padding", "24px", "important");
-  overlay.style.setProperty("z-index", "1000000", "important");
 
   // ── Panel container ─────────────────────────────────────────────────────
   const panel = document.createElement("div");
-  panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground";
-  panel.style.setProperty("width", "min(640px, 100%)", "important");
-  panel.style.setProperty("max-height", "90vh", "important");
-  panel.style.setProperty("overflow", "auto", "important");
-  panel.style.setProperty("padding", "20px", "important");
-  panel.style.setProperty("display", "flex", "important");
-  panel.style.setProperty("flex-direction", "column", "important");
-  panel.style.setProperty("gap", "16px", "important");
+  panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground sprout-bulk-edit-panel";
   overlay.appendChild(panel);
 
   // ── Header ──────────────────────────────────────────────────────────────
@@ -114,12 +104,7 @@ export function openBulkEditModalForCards(
   const close = document.createElement("button");
   close.type = "button";
   close.className =
-    "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground";
-  close.style.setProperty("border", "none", "important");
-  close.style.setProperty("background", "transparent", "important");
-  close.style.setProperty("box-shadow", "none", "important");
-  close.style.setProperty("padding", "0", "important");
-  close.style.setProperty("cursor", "pointer", "important");
+    "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground sprout-io-close-btn";
   close.setAttribute("data-tooltip", "Close");
   const closeIcon = document.createElement("span");
   closeIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
@@ -182,11 +167,9 @@ export function openBulkEditModalForCards(
     wrapper.appendChild(labelEl);
 
     const textarea = document.createElement("textarea");
-    textarea.className = "bc textarea w-full";
+    textarea.className = "bc textarea w-full sprout-textarea-fixed";
     textarea.rows = 3;
     textarea.value = sharedValue(field);
-    textarea.style.resize = "none";
-    textarea.style.minHeight = "80px";
     wrapper.appendChild(textarea);
     inputEls[field] = textarea;
 
@@ -288,7 +271,7 @@ export function openBulkEditModalForCards(
       wrongContainer!.querySelectorAll("button").forEach((btn) => {
         btn.disabled = disable;
         btn.setAttribute("aria-disabled", disable ? "true" : "false");
-        btn.style.setProperty("opacity", disable ? "0.35" : "1", "important");
+        btn.classList.toggle("is-disabled", disable);
       });
     };
 
@@ -298,17 +281,14 @@ export function openBulkEditModalForCards(
       row.className = "bc flex items-center gap-2";
       const input = document.createElement("input");
       input.type = "text";
-      input.className = "bc input flex-1 text-sm";
+      input.className = "bc input flex-1 text-sm sprout-input-fixed";
       input.placeholder = "Wrong option";
       input.value = value;
       row.appendChild(input);
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "bc inline-flex items-center justify-center text-muted-foreground";
-      removeBtn.style.setProperty("border", "none", "important");
-      removeBtn.style.setProperty("background", "transparent", "important");
-      removeBtn.style.setProperty("padding", "0", "important");
+      removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
       const xIcon = document.createElement("span");
       xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-[0.8rem]";
       setIcon(xIcon, "x");

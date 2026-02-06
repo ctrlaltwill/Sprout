@@ -16,6 +16,7 @@
  */
 
 import { setIcon } from "obsidian";
+import { setCssProps } from "../core/ui";
 
 // ── Toolbar ─────────────────────────────────────────────────────────────────
 
@@ -45,9 +46,7 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
   const toolbar = parent.createDiv();
   toolbar.removeAttribute("class");
   toolbar.setAttr("role", "toolbar");
-  toolbar.style.setProperty("width", "fit-content");
-  toolbar.style.setProperty("max-width", "100%");
-  toolbar.style.setProperty("align-self", "flex-start");
+  toolbar.classList.add("sprout-io-toolbar");
   toolbar.dataset.sproutToolbar = "1";
 
   const toolbarGroup = toolbar.createDiv({ cls: "bc sprout-io-toolbar-group" });
@@ -88,7 +87,7 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
   const fileInput = document.createElement("input");
   fileInput.type = "file";
   fileInput.accept = "image/*";
-  fileInput.style.display = "none";
+  fileInput.classList.add("sprout-io-file-input");
   toolbar.appendChild(fileInput);
 
   createIconBtn(toolbarGroup, "upload", "Insert from file", () => fileInput.click());
@@ -155,27 +154,21 @@ export function buildCanvasContainer(
   cb: CanvasContainerCallbacks,
 ): CanvasContainerRefs {
   const canvasContainer = parent.createDiv({ cls: "bc rounded-lg border border-border bg-background" });
-  canvasContainer.style.position = "relative";
-  canvasContainer.style.width = "100%";
-  canvasContainer.style.maxWidth = "1500px";
-  canvasContainer.style.height = defaults.height;
-  canvasContainer.style.minHeight = defaults.minHeight;
-  canvasContainer.style.maxHeight = defaults.maxHeight;
-  canvasContainer.style.overflow = "hidden";
-  canvasContainer.style.flexShrink = "0";
+  canvasContainer.classList.add("sprout-io-canvas", "sprout-io-canvas-container");
+  setCssProps(canvasContainer, "--sprout-io-canvas-height", defaults.height);
+  setCssProps(canvasContainer, "--sprout-io-canvas-min-height", defaults.minHeight);
+  setCssProps(canvasContainer, "--sprout-io-canvas-max-height", defaults.maxHeight);
 
   // Placeholder (shown when no image loaded)
   const placeholder = canvasContainer.createDiv({
     cls: "bc flex items-center justify-center text-muted-foreground text-sm",
   });
-  placeholder.innerHTML = `Insert from file or paste an image <span class="bc inline-flex items-center gap-1 ml-1"><kbd class="bc kbd">⌘+V</kbd> / <kbd class="bc kbd">Ctrl+V</kbd></span>`;
-  placeholder.style.position = "absolute";
-  placeholder.style.inset = "0";
-  placeholder.style.display = "flex";
-  placeholder.style.alignItems = "center";
-  placeholder.style.justifyContent = "center";
-  placeholder.style.pointerEvents = "auto";
-  placeholder.style.cursor = "pointer";
+  placeholder.classList.add("sprout-io-canvas-placeholder");
+  placeholder.createSpan({ text: "Insert from file or paste an image " });
+  const kbdWrap = placeholder.createSpan({ cls: "bc inline-flex items-center gap-1 ml-1" });
+  kbdWrap.createEl("kbd", { cls: "bc kbd", text: "⌘+V" });
+  kbdWrap.createSpan({ text: " / " });
+  kbdWrap.createEl("kbd", { cls: "bc kbd", text: "Ctrl+V" });
   placeholder.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -184,34 +177,14 @@ export function buildCanvasContainer(
 
   // Viewport (scrollable canvas area)
   const viewportEl = canvasContainer.createDiv({ cls: "bc" });
-  viewportEl.style.position = "absolute";
-  viewportEl.style.top = "0";
-  viewportEl.style.left = "0";
-  viewportEl.style.width = "100%";
-  viewportEl.style.height = "100%";
-  viewportEl.style.overflow = "hidden";
-  viewportEl.style.display = "none";
+  viewportEl.classList.add("sprout-io-viewport");
 
-  const stageEl = viewportEl.createDiv({ cls: "bc" });
-  stageEl.style.position = "absolute";
-  stageEl.style.top = "0";
-  stageEl.style.left = "0";
-  stageEl.style.transformOrigin = "0 0";
+  const stageEl = viewportEl.createDiv({ cls: "bc sprout-io-stage" });
 
-  const imgEl = stageEl.createEl("img", { cls: "bc" });
-  imgEl.style.display = "block";
-  imgEl.style.userSelect = "none";
-  imgEl.style.border = "1px solid var(--border)";
-  imgEl.style.boxSizing = "border-box";
+  const imgEl = stageEl.createEl("img", { cls: "bc sprout-io-stage-image" });
   imgEl.draggable = false;
 
-  const overlayEl = stageEl.createDiv({ cls: "bc" });
-  overlayEl.style.position = "absolute";
-  overlayEl.style.top = "0";
-  overlayEl.style.left = "0";
-  overlayEl.style.width = "100%";
-  overlayEl.style.height = "100%";
-  overlayEl.style.pointerEvents = "none";
+  const overlayEl = stageEl.createDiv({ cls: "bc sprout-io-stage-overlay" });
 
   // Clicking empty canvas area opens file picker when no image loaded
   canvasContainer.addEventListener("click", (e) => {
@@ -234,7 +207,7 @@ export interface FooterCallbacks {
 /** Build the modal footer with Cancel / Hide All / Hide One buttons. */
 export function buildFooter(parent: HTMLElement, cb: FooterCallbacks): HTMLElement {
   const footer = parent.createDiv({ cls: "bc flex items-center justify-end gap-4" });
-  footer.style.paddingTop = "15px";
+  footer.classList.add("sprout-io-footer");
 
   const cancelBtn = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
   cancelBtn.type = "button";
@@ -248,9 +221,7 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks): HTMLEleme
     attr: { "data-tooltip": "Hide All: study with all masks hidden; no context clues." },
   });
   hideAllBtn.type = "button";
-  hideAllBtn.style.setProperty("background", "var(--foreground)", "important");
-  hideAllBtn.style.setProperty("color", "var(--background)", "important");
-  hideAllBtn.style.setProperty("border-color", "var(--foreground)", "important");
+  hideAllBtn.classList.add("sprout-io-hide-all");
   hideAllBtn.createSpan({ text: "Hide All" });
   hideAllBtn.onclick = () => cb.onSaveAll();
 
@@ -285,9 +256,7 @@ export function buildImageLimitDialog(
     attr: { type: "button" },
     text: "Cancel",
   });
-  dlgCancel.style.backgroundColor = "#000";
-  dlgCancel.style.color = "#fff";
-  dlgCancel.style.border = "1px solid #000";
+  dlgCancel.classList.add("sprout-io-dlg-cancel");
   dlgCancel.onclick = () => dialog.close();
 
   const dlgDelete = dlgFooter.createEl("button", {
@@ -295,8 +264,7 @@ export function buildImageLimitDialog(
     attr: { type: "button" },
     text: "Delete image",
   });
-  dlgDelete.style.backgroundColor = "#fff";
-  dlgDelete.style.color = "var(--foreground)";
+  dlgDelete.classList.add("sprout-io-dlg-delete");
   dlgDelete.onclick = () => onDelete();
 
   return dialog;
@@ -311,11 +279,7 @@ export function buildHeader(parent: HTMLElement, title: string, onClose: () => v
     cls: "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",
     attr: { type: "button", "data-tooltip": "Close" },
   });
-  headerClose.style.setProperty("border", "none", "important");
-  headerClose.style.setProperty("background", "transparent", "important");
-  headerClose.style.setProperty("box-shadow", "none", "important");
-  headerClose.style.setProperty("padding", "0", "important");
-  headerClose.style.setProperty("cursor", "pointer", "important");
+  headerClose.classList.add("sprout-io-close-btn");
   const headerCloseIcon = headerClose.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
   setIcon(headerCloseIcon, "x");
   headerClose.onclick = () => onClose();

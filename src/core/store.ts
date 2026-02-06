@@ -27,7 +27,7 @@
 
 import type SproutPlugin from "../main";
 import { State } from "ts-fsrs";
-import { TFile, type TFolder, Notice } from "obsidian";
+import { TFile, TFolder, Notice } from "obsidian";
 
 // ── Re-export shared types (backward-compatible) ────────────────────────────
 export type { CardRecord } from "../types/card";
@@ -484,8 +484,8 @@ export class JsonStore {
   listBackups(plugin: SproutPlugin): TFile[] {
     const dir = this.getBackupDir(plugin);
     const folder = plugin.app.vault.getAbstractFileByPath(dir);
-    if (!folder || !("children" in folder)) return [];
-    return (folder as TFolder).children
+    if (!(folder instanceof TFolder)) return [];
+    return folder.children
       .filter((f): f is TFile => f instanceof TFile && f.name.endsWith(".json"))
       .sort((a, b) => b.name.localeCompare(a.name));
   }

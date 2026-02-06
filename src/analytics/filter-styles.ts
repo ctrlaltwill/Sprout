@@ -12,28 +12,8 @@
  */
 
 import * as React from "react";
-import type { CSSProperties } from "react";
-
-export const endTruncateStyle: CSSProperties = {
-  minWidth: 0,
-  flex: "1 1 auto",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  direction: "rtl",
-  textAlign: "left",
-  unicodeBidi: "plaintext",
-};
-
-export const startTruncateStyle: CSSProperties = {
-  minWidth: 0,
-  flex: "1 1 auto",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  direction: "rtl",
-  textAlign: "left",
-  unicodeBidi: "plaintext",
-};
+export const endTruncateClass = "sprout-ana-truncate-row sprout-ana-truncate-end";
+export const startTruncateClass = "sprout-ana-truncate-row sprout-ana-truncate-start";
 
 export function useAnalyticsPopoverZIndex(open: boolean, wrapRef: React.RefObject<HTMLElement | null>) {
   React.useEffect(() => {

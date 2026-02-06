@@ -12,6 +12,7 @@ import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
+import { replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import type { Scope } from "../reviewer/types";
@@ -117,14 +118,10 @@ export class SproutHomeView extends ItemView {
     if (!root) return;
 
     if (this.plugin.isWideMode) {
-      root.style.setProperty("max-width", "none", "important");
-      root.style.setProperty("width", "100%", "important");
+      setCssProps(root, "--sprout-home-max-width", "none");
     } else {
-      root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
-      root.style.setProperty("width", "100%", "important");
+      setCssProps(root, "--sprout-home-max-width", MAX_CONTENT_WIDTH_PX);
     }
-    root.style.setProperty("margin-left", "auto", "important");
-    root.style.setProperty("margin-right", "auto", "important");
   }
 
   // ─── Main render ─────────────────────────────────────────────────
@@ -147,7 +144,7 @@ export class SproutHomeView extends ItemView {
     const hideSproutInfo = this.plugin.settings.home.hideSproutInfo === true;
 
     this._rootEl = root;
-    root.classList.add("bc", "sprout-view-content", "flex", "flex-col");
+    root.classList.add("bc", "sprout-view-content", "flex", "flex-col", "sprout-home-root");
 
     this.containerEl.addClass("sprout");
 
@@ -212,18 +209,18 @@ export class SproutHomeView extends ItemView {
         const computed = window.getComputedStyle(nameInput);
         const fontSizePx = Number.parseFloat(computed.fontSize || "16") || 16;
         const paddingBuffer = fontSizePx * 0.3;
-        nameSizer.style.fontFamily = computed.fontFamily;
-        nameSizer.style.fontSize = computed.fontSize;
-        nameSizer.style.fontWeight = computed.fontWeight;
-        nameSizer.style.letterSpacing = computed.letterSpacing;
-        nameSizer.style.textTransform = computed.textTransform;
-        nameSizer.style.fontStyle = computed.fontStyle;
-        nameSizer.style.fontVariant = computed.fontVariant;
-        nameSizer.style.lineHeight = computed.lineHeight;
+        setCssProps(nameSizer, "--sprout-home-font-family", computed.fontFamily);
+        setCssProps(nameSizer, "--sprout-home-font-size", computed.fontSize);
+        setCssProps(nameSizer, "--sprout-home-font-weight", computed.fontWeight);
+        setCssProps(nameSizer, "--sprout-home-letter-spacing", computed.letterSpacing);
+        setCssProps(nameSizer, "--sprout-home-text-transform", computed.textTransform);
+        setCssProps(nameSizer, "--sprout-home-font-style", computed.fontStyle);
+        setCssProps(nameSizer, "--sprout-home-font-variant", computed.fontVariant);
+        setCssProps(nameSizer, "--sprout-home-line-height", computed.lineHeight);
         nameSizer.textContent = value;
         const measured = nameSizer.getBoundingClientRect().width;
         const next = Math.max(32, measured + paddingBuffer);
-        nameInput.style.width = `${Math.min(next, 240)}px`;
+        setCssProps(nameInput, "--sprout-home-name-width", `${Math.min(next, 240)}px`);
       };
 
       const setGreetingText = (_name: string, firstOpen: boolean) => {
@@ -558,7 +555,7 @@ export class SproutHomeView extends ItemView {
 
     const buildTrendBadge = (trend: { value: number; text: string; dir: number }) => {
       const badge = document.createElement("span");
-      badge.className = "sprout-trend-badge";
+      badge.className = "sprout-trend-badge sprout-rotate";
       const icon = document.createElement("span");
       icon.className = "inline-flex items-center justify-center";
       const iconName = trend.dir > 0 ? "trending-up" : trend.dir < 0 ? "trending-down" : "minus";
@@ -581,10 +578,10 @@ export class SproutHomeView extends ItemView {
         const currentVal = (trend.dir === 0 ? 0 : (eased * Math.abs(target))) * (trend.dir >= 0 ? 1 : -1);
         valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(1)}%`;
         const angle = startAngle + (endAngle - startAngle) * eased;
-        (badge as HTMLElement).style.transform = `rotate(${angle}deg)`;
+        setCssProps(badge as HTMLElement, "--sprout-rotate", `${angle}deg`);
         if (p < 1) requestAnimationFrame(animate);
         else {
-          (badge as HTMLElement).style.transform = "rotate(0deg)";
+          setCssProps(badge as HTMLElement, "--sprout-rotate", "0deg");
           valueEl.textContent = trend.text;
         }
       };
@@ -744,7 +741,6 @@ export class SproutHomeView extends ItemView {
               e.dataTransfer.setData("text/plain", i.toString());
             }
             row.classList.add("sprout-deck-row-dragging");
-            row.style.zIndex = "10";
             // Set all rows to relative for transform animation
             const allRows = pinnedList.querySelectorAll<HTMLElement>(".sprout-deck-row");
             const firstRow = allRows[0];
@@ -753,20 +749,19 @@ export class SproutHomeView extends ItemView {
               dragOffset = Math.round(firstRow.getBoundingClientRect().height + gapValue);
             }
             allRows.forEach(r => {
-              r.style.position = "relative";
-              r.style.transition = "transform 0.2s cubic-bezier(0.4,0,0.2,1)";
+              r.classList.add("sprout-deck-row-anim");
+              setCssProps(r, "--sprout-deck-row-translate", "0px");
             });
           });
           
           row.addEventListener("dragend", () => {
             row.classList.remove("sprout-deck-row-dragging");
-            row.style.zIndex = "";
             draggedOverIndex = null;
             // Clear any transforms and reset position
             const allRows = pinnedList.querySelectorAll<HTMLElement>(".sprout-deck-row");
             allRows.forEach(r => {
-              r.style.transform = "";
-              r.style.position = "";
+              setCssProps(r, "--sprout-deck-row-translate", "0px");
+              r.classList.remove("sprout-deck-row-anim");
             });
           });
           
@@ -785,8 +780,7 @@ export class SproutHomeView extends ItemView {
               allRows.forEach((r, idx) => {
                 if (idx === fromIndex) {
                   // Dragged item: visually move to hovered slot
-                  r.style.transform = `translateY(${(i - fromIndex) * dragOffset}px)`;
-                  r.style.zIndex = "10";
+                  setCssProps(r, "--sprout-deck-row-translate", `${(i - fromIndex) * dragOffset}px`);
                 } else {
                   // Calculate if this row should move up or down
                   let offset = 0;
@@ -801,8 +795,7 @@ export class SproutHomeView extends ItemView {
                       offset = dragOffset;
                     }
                   }
-                  r.style.transform = offset !== 0 ? `translateY(${offset}px)` : "";
-                  r.style.zIndex = "";
+                  setCssProps(r, "--sprout-deck-row-translate", `${offset}px`);
                 }
               });
             }
@@ -815,7 +808,7 @@ export class SproutHomeView extends ItemView {
               if (fromIndex === -1 || fromIndex === i) return;
               // Clear transforms before re-rendering
               const allRows = pinnedList.querySelectorAll<HTMLElement>(".sprout-deck-row");
-              allRows.forEach(r => r.style.transform = "");
+              allRows.forEach(r => setCssProps(r, "--sprout-deck-row-translate", "0px"));
               const item = currentPinned[fromIndex];
               currentPinned.splice(fromIndex, 1);
               currentPinned.splice(i, 0, item);
@@ -855,7 +848,6 @@ export class SproutHomeView extends ItemView {
           dropdownEl = searchRow.createDiv({ 
             cls: "sprout-deck-search-dropdown sprout-dropdown-shadow hidden overflow-hidden"
           });
-          dropdownEl.style.background = "var(--sprout-deck-dropdown-bg)";
           
           renderSearchDropdown();
         } else {
@@ -995,36 +987,41 @@ export class SproutHomeView extends ItemView {
 
       const githubIcon = document.createElement("span");
       githubIcon.className = "sprout-github-stars-icon";
-      githubIcon.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C6.477 2 2 6.484 2 12.019c0 4.423 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.866-.014-1.7-2.782.605-3.369-1.344-3.369-1.344-.454-1.158-1.109-1.467-1.109-1.467-.907-.62.069-.608.069-.608 1.003.07 1.53 1.035 1.53 1.035.892 1.53 2.341 1.088 2.91.833.091-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.094.39-1.989 1.029-2.69-.103-.254-.446-1.27.098-2.647 0 0 .84-.27 2.75 1.026A9.566 9.566 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.748-1.026 2.748-1.026.546 1.377.203 2.393.1 2.647.64.701 1.028 1.596 1.028 2.69 0 3.848-2.338 4.695-4.566 4.943.359.31.679.92.679 1.856 0 1.34-.012 2.419-.012 2.748 0 .268.18.58.688.481A10.019 10.019 0 0 0 22 12.02C22 6.484 17.523 2 12 2z"/></svg>';
+      replaceChildrenWithHTML(
+        githubIcon,
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C6.477 2 2 6.484 2 12.019c0 4.423 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.866-.014-1.7-2.782.605-3.369-1.344-3.369-1.344-.454-1.158-1.109-1.467-1.109-1.467-.907-.62.069-.608.069-.608 1.003.07 1.53 1.035 1.53 1.035.892 1.53 2.341 1.088 2.91.833.091-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.094.39-1.989 1.029-2.69-.103-.254-.446-1.27.098-2.647 0 0 .84-.27 2.75 1.026A9.566 9.566 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.748-1.026 2.748-1.026.546 1.377.203 2.393.1 2.647.64.701 1.028 1.596 1.028 2.69 0 3.848-2.338 4.695-4.566 4.943.359.31.679.92.679 1.856 0 1.34-.012 2.419-.012 2.748 0 .268.18.58.688.481A10.019 10.019 0 0 0 22 12.02C22 6.484 17.523 2 12 2z"/></svg>',
+      );
 
       const starsLabel = document.createElement("span");
       starsLabel.textContent = "GitHub Stars";
 
       const starIcon = document.createElement("span");
-      starIcon.className = "sprout-github-stars-star";
+      starIcon.className = "sprout-github-stars-star sprout-rotate sprout-star-spin";
       // Set star color based on theme
       function setStarIconColor() {
         const isDark = document.body.classList.contains("theme-dark");
         const fill = isDark ? "#fff" : "#f4b400";
-        starIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="${fill}" d="m12 3 2.84 5.75 6.35.92-4.6 4.48 1.08 6.33L12 17.77 6.33 20.48l1.08-6.33-4.6-4.48 6.35-.92L12 3z"/></svg>`;
+        replaceChildrenWithHTML(
+          starIcon,
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="${fill}" d="m12 3 2.84 5.75 6.35.92-4.6 4.48 1.08 6.33L12 17.77 6.33 20.48l1.08-6.33-4.6-4.48 6.35-.92L12 3z"/></svg>`,
+        );
       }
       setStarIconColor();
       // Listen for theme changes
       const observer = new MutationObserver(setStarIconColor);
       observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
       // Add smooth transition for spin
-      starIcon.style.transition = "transform 0.3s cubic-bezier(.4,2,.6,1)";
+      setCssProps(starIcon, "--sprout-rotate", "0deg");
       let spinning = false;
       starsLink.addEventListener("click", (_e) => {
         if (spinning) return;
         spinning = true;
         // Spin backwards (opposite direction), twice as fast
-        starIcon.style.transition = "transform 0.15s cubic-bezier(.4,2,.6,1)";
-        starIcon.style.transform = "rotate(-360deg)";
+        starIcon.classList.add("is-fast");
+        setCssProps(starIcon, "--sprout-rotate", "-360deg");
         setTimeout(() => {
-          starIcon.style.transition = "transform 0.3s cubic-bezier(.4,2,.6,1)";
-          starIcon.style.transform = "rotate(0deg)";
+          starIcon.classList.remove("is-fast");
+          setCssProps(starIcon, "--sprout-rotate", "0deg");
           spinning = false;
         }, 150);
       });
@@ -1045,7 +1042,7 @@ export class SproutHomeView extends ItemView {
       bmcLink.setAttr("target", "_blank");
       bmcLink.setAttr("rel", "noopener");
       const bmcIcon = document.createElement("span");
-      bmcIcon.className = "sprout-bmc-icon";
+      bmcIcon.className = "sprout-bmc-icon sprout-rotate sprout-bmc-rotate";
       setIcon(bmcIcon, "coffee");
       // Force the coffee SVG color to #111
       const coffeeSvg = bmcIcon.querySelector("svg");
@@ -1056,16 +1053,16 @@ export class SproutHomeView extends ItemView {
         if (coffeePath) coffeePath.setAttribute("fill", "#111");
       }
       // Add smooth transition for rotation
-      bmcIcon.style.transition = "transform 0.4s cubic-bezier(.4,2,.6,1)";
+      setCssProps(bmcIcon, "--sprout-rotate", "0deg");
       let bmcTipped = false;
       bmcLink.addEventListener("click", (_e) => {
         if (!bmcTipped) {
           bmcTipped = true;
-          bmcIcon.style.transform = "rotate(-60deg)";
+          setCssProps(bmcIcon, "--sprout-rotate", "-60deg");
           setTimeout(() => {
-            bmcIcon.style.transform = "rotate(-30deg)";
+            setCssProps(bmcIcon, "--sprout-rotate", "-30deg");
             setTimeout(() => {
-              bmcIcon.style.transform = "rotate(0deg)";
+              setCssProps(bmcIcon, "--sprout-rotate", "0deg");
               bmcTipped = false;
             }, 400);
           }, 400);

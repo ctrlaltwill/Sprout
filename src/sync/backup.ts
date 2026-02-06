@@ -227,7 +227,7 @@ async function pruneDataJsonBackups(plugin: SproutPlugin, maxCount = BACKUP_MAX_
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return;
 
-  const folder = joinPath(".obsidian/plugins", pluginId);
+  const folder = joinPath(plugin.app.vault.configDir, "plugins", pluginId);
   const files = await safeListFiles(adapter, folder);
   const backups = files
     .filter((p) => isBackupFileName(String(p).split("/").pop() || ""))
@@ -376,7 +376,7 @@ export async function listDataJsonBackups(plugin: SproutPlugin): Promise<DataJso
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return [];
 
-  const folder = joinPath(".obsidian/plugins", pluginId);
+  const folder = joinPath(plugin.app.vault.configDir, "plugins", pluginId);
   const files = await safeListFiles(adapter, folder);
 
   // Include data.json and any data.json.* (bak-*, prev, old, etc.)
@@ -455,7 +455,7 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return null;
 
-  const dataPath = joinPath(".obsidian/plugins", pluginId, "data.json");
+  const dataPath = joinPath(plugin.app.vault.configDir, "plugins", pluginId, "data.json");
   if (typeof adapter.exists !== "function" || typeof adapter.read !== "function" || typeof adapter.write !== "function") return null;
 
   try {
@@ -475,7 +475,7 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
       .replace(/^-|-$/g, "");
 
     const suffix = cleanLabel ? `-${cleanLabel}` : "";
-    const backupPath = joinPath(".obsidian/plugins", pluginId, `data.json.bak-${ts}${suffix}`);
+    const backupPath = joinPath(plugin.app.vault.configDir, "plugins", pluginId, `data.json.bak-${ts}${suffix}`);
     await adapter.write(backupPath, String(text));
     await pruneDataJsonBackups(plugin, BACKUP_MAX_COUNT);
     return backupPath;
@@ -555,7 +555,7 @@ export async function ensureRoutineBackupIfNeeded(plugin: SproutPlugin): Promise
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return;
 
-  const folder = joinPath(".obsidian/plugins", pluginId);
+  const folder = joinPath(plugin.app.vault.configDir, "plugins", pluginId);
   const files = await safeListFiles(adapter, folder);
   const backupFiles = files.filter((p) => isBackupFileName(String(p).split("/").pop() || ""));
   if (!backupFiles.length) {

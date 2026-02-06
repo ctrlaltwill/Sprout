@@ -12,6 +12,7 @@
 
 import { setIcon } from "obsidian";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 
 /* ------------------------------------------------------------------ */
 /*  Hover colour helper                                                */
@@ -236,9 +237,9 @@ export function attachWidgetMoreMenu(opts: {
       top = Math.max(margin, r.top - panelRect.height - 6);
     }
 
-    popover.style.setProperty("--sprout-popover-left", `${left}px`);
-    popover.style.setProperty("--sprout-popover-top", `${top}px`);
-    popover.style.setProperty("--sprout-popover-width", `${width}px`);
+    setCssProps(popover, "--sprout-popover-left", `${left}px`);
+    setCssProps(popover, "--sprout-popover-top", `${top}px`);
+    setCssProps(popover, "--sprout-popover-width", `${width}px`);
   };
 
   const close = () => {

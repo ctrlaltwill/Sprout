@@ -12,6 +12,7 @@
  */
 
 import type { ColKey } from "./browser-helpers";
+import { setCssProps } from "../core/ui";
 
 export interface ResizeContext {
   colWidths: Record<string, number>;
@@ -30,27 +31,14 @@ export function makeResizableTh(
   col: ColKey,
   ctx: ResizeContext,
 ): void {
-  th.style.position = "relative";
+  th.classList.add("sprout-col-resize-host");
 
   const RESIZE_ZONE_PX = 14;
 
   const handle = document.createElement("div");
-  handle.className = "sprout-col-resize";
+  handle.className = "sprout-col-resize sprout-col-resize-handle";
   handle.setAttribute("data-tooltip", "Drag to resize");
-
-  handle.style.position = "absolute";
-  handle.style.top = "0";
-  handle.style.right = "0";
-  handle.style.height = "100%";
-  handle.style.width = `${RESIZE_ZONE_PX}px`;
-  handle.style.cursor = "col-resize";
-  handle.style.userSelect = "none";
-  handle.style.touchAction = "none";
-  handle.style.zIndex = "20";
-
-  // Make sure pointer events only on the handle
-  handle.style.pointerEvents = "auto";
-  th.style.pointerEvents = "auto";
+  setCssProps(handle, "--sprout-resize-zone", `${RESIZE_ZONE_PX}px`);
 
   th.appendChild(handle);
 
@@ -75,7 +63,7 @@ export function makeResizableTh(
       ctx.colWidths[col] = next;
 
       const colEl = ctx.colEls[col];
-      if (colEl) colEl.style.width = `${next}px`;
+      if (colEl) setCssProps(colEl, "--sprout-col-width", `${next}px`);
     };
 
     const onUp = () => {

@@ -89,7 +89,7 @@ export function isEditableTarget(el: EventTarget | null): boolean {
 /** Empty an element using Obsidian's `.empty()` or `innerHTML`. */
 export function emptyEl(el: HTMLElement) {
   if (typeof (el as HTMLElement & { empty?: () => void }).empty === "function") (el as HTMLElement & { empty?: () => void }).empty();
-  else el.innerHTML = "";
+  else el.replaceChildren();
 }
 
 // ── ID / anchor helpers ─────────────────────────────────────────────────────

@@ -213,9 +213,10 @@ export function extractRawTextFromParagraph(el: HTMLElement): string {
   html = html.replace(/<br\s*\/?>/gi, '\n');
   
   // Now we need to extract text while handling <span class="math"> elements
-  // Create a temporary div to parse the HTML
-  const temp = document.createElement('div');
-  temp.innerHTML = html;
+  // Parse HTML without writing via innerHTML
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const temp = doc.body;
   
   // Replace math elements with LaTeX delimiters
   temp.querySelectorAll('.math.math-inline').forEach((mathEl) => {
@@ -528,7 +529,7 @@ export function buildClozeSectionHTML(clozeContent: string): string {
   return `
     <div class="sprout-card-section sprout-section-cloze">
       <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content" style="--p-spacing: 0px;">${processedHtml}</div>
+      <div class="sprout-section-content sprout-p-spacing-none">${processedHtml}</div>
     </div>
   `;
 }
@@ -568,7 +569,7 @@ export function buildMCQSectionHTML(question: string, options: string[], answer?
   return `
     <div class="sprout-card-section">
       <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content sprout-text-muted" style="--p-spacing: 0px;">${processMarkdownFeatures(question)}</div>
+      <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none">${processMarkdownFeatures(question)}</div>
     </div>
     ${optionsSection}
   `;
@@ -581,10 +582,10 @@ export function buildBasicSectionHTML(question: string, answer?: string): string
   const q = question ? `
     <div class="sprout-card-section">
       <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content sprout-text-muted" id="${qId}" style="--p-spacing: 0px;"></div>
+      <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none" id="${qId}"></div>
     </div>` : '';
 
-  const a = answer ? buildCollapsibleSectionHTML('Answer', `.sprout-answer-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-answer" id="${aId}" style="--p-spacing: 0px;"></div>`, aId) : '';
+  const a = answer ? buildCollapsibleSectionHTML('Answer', `.sprout-answer-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-answer sprout-p-spacing-none" id="${aId}"></div>`, aId) : '';
 
   return q + a;
 }
@@ -593,14 +594,14 @@ export function buildIOSectionHTML(ioContent: string): string {
   return `
     <div class="sprout-card-section sprout-section-io">
       <div class="sprout-section-label">Image Occlusion</div>
-      <div class="sprout-section-content" style="--p-spacing: 0px;">${processMarkdownFeatures(ioContent)}</div>
+      <div class="sprout-section-content sprout-p-spacing-none">${processMarkdownFeatures(ioContent)}</div>
     </div>
   `;
 }
 
 export function buildInfoSectionHTML(_infoContent: string): string {
   const iId = `sprout-i-${Math.random().toString(36).slice(2,8)}`;
-  return buildCollapsibleSectionHTML('Extra Information', `.sprout-info-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-info" id="${iId}" style="--p-spacing: 0px;"></div>`, iId);
+  return buildCollapsibleSectionHTML('Extra Information', `.sprout-info-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-info sprout-p-spacing-none" id="${iId}"></div>`, iId);
 }
 
 export function buildCollapsibleSectionHTML(label: string, targetSelector: string, innerHtml: string, _markdownId?: string) {
@@ -614,11 +615,11 @@ export function buildCollapsibleSectionHTML(label: string, targetSelector: strin
     <div class="sprout-card-section">
       <div class="sprout-section-label">
         <span>${escapeHtml(label)}</span>
-        <button class="sprout-toggle-btn" data-target=".${contentId}" aria-expanded="false" title="Toggle ${escapeHtml(label)}" style="padding:0px!important;">
+        <button class="sprout-toggle-btn sprout-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" title="Toggle ${escapeHtml(label)}">
           ${chevronSvg}
         </button>
       </div>
-      <div class="${contentId} sprout-collapsible collapsed" style="--p-spacing: 0px;">${innerHtml}</div>
+      <div class="${contentId} sprout-collapsible collapsed sprout-p-spacing-none">${innerHtml}</div>
     </div>
   `;
 }

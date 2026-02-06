@@ -271,3 +271,134 @@
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
+
+/* ---- Analytics utilities ---- */
+
+.sprout .sprout-ana-overflow-visible {
+  overflow: visible !important;
+}
+
+.sprout .sprout-ana-icon {
+  color: var(--text-normal) !important;
+}
+
+.sprout .sprout-ana-legend-dot {
+  background: var(--sprout-legend-color, var(--theme-accent)) !important;
+}
+
+.sprout .sprout-ana-legend-dot-square {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 3px !important;
+}
+
+.sprout .sprout-ana-legend-line {
+  width: 14px !important;
+  height: 2px !important;
+  border-radius: 3px !important;
+  background: var(--sprout-legend-color, var(--theme-accent)) !important;
+  display: inline-block !important;
+}
+
+.sprout .sprout-ana-popover {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  z-index: 1000 !important;
+}
+
+.sprout .sprout-ana-popover-right {
+  right: 0 !important;
+  left: auto !important;
+}
+
+.sprout .sprout-ana-popover-left {
+  left: 0 !important;
+  right: auto !important;
+}
+
+.sprout .sprout-ana-popover-md {
+  min-width: 280px !important;
+}
+
+.sprout .sprout-ana-popover-sm {
+  min-width: 250px !important;
+}
+
+.sprout .sprout-ana-min-320 {
+  min-height: 320px !important;
+}
+
+.sprout .sprout-ana-min-120 {
+  min-height: 120px !important;
+}
+
+.sprout .sprout-ana-heatmap-tooltip {
+  position: absolute !important;
+  left: var(--sprout-ana-x, 0px) !important;
+  top: var(--sprout-ana-y, 0px) !important;
+  transform: translate(-50%, -100%) !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  z-index: 10 !important;
+}
+
+.sprout .sprout-ana-chevron {
+  display: inline-flex !important;
+  transform: rotate(var(--sprout-rotate, 0deg)) scale(0.7) !important;
+}
+
+.sprout .sprout-ana-scroll-48 {
+  height: 48px !important;
+  overflow-y: auto !important;
+}
+
+.sprout .sprout-ana-pie-wrap {
+  position: relative !important;
+  min-height: 200px !important;
+}
+
+.sprout .sprout-ana-empty-center {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 12px !important;
+}
+
+.sprout .sprout-ana-min-20 {
+  min-height: 20px !important;
+}
+
+.sprout .sprout-ana-truncate-row {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.sprout .sprout-ana-truncate {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.sprout .sprout-ana-truncate-end {
+  direction: rtl !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
+}
+
+.sprout .sprout-ana-truncate-start {
+  direction: rtl !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
+}
+
+.sprout .is-disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}

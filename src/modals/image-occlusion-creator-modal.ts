@@ -18,11 +18,11 @@
 
 import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
 import { normaliseGroupKey } from "../imageocclusion/mask-tool";
-import { IO_EDITOR_STYLES } from "../imageocclusion/io-editor-styles";
 import { renderOverlay } from "../imageocclusion/io-overlay-renderer";
 import {
   buildToolbar,
@@ -151,41 +151,27 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "sprout-modals", "sprout-io-creator");
+    this.modalEl.addClass("bc", "sprout-modals", "sprout-io-creator", "sprout-io-creator-modal");
     this.contentEl.addClass("bc");
     this.modalEl.querySelector(".modal-header")?.remove();
     this.modalEl.querySelector(".modal-close-button")?.remove();
-
-    // Override default modal constraints for IO editor
-    this.modalEl.style.setProperty("width", "min(96vw, 750px)", "important");
-    this.modalEl.style.setProperty("max-width", "90%", "important");
-    this.modalEl.style.setProperty("height", "auto", "important");
-    this.modalEl.style.setProperty("max-height", "90%", "important");
-    this.modalEl.style.setProperty("overflow", "hidden", "important");
-    this.modalEl.style.setProperty("padding", "0", "important");
-    this.modalEl.style.setProperty("border", "none", "important");
-    this.modalEl.style.setProperty("background-color", "transparent", "important");
 
     const { contentEl } = this;
     contentEl.empty();
 
     const modalRoot = contentEl;
-    modalRoot.addClass("bc", "sprout-modal", "rounded-lg", "border", "border-border", "bg-popover", "text-popover-foreground");
-    modalRoot.style.setProperty("width", "100%", "important");
-    modalRoot.style.setProperty("height", "auto", "important");
-    modalRoot.style.setProperty("max-width", "800px", "important");
-    modalRoot.style.setProperty("max-height", "90%", "important");
-    modalRoot.style.setProperty("overflow-y", "scroll", "important");
-    modalRoot.style.setProperty("overflow-x", "hidden", "important");
-    modalRoot.style.setProperty("padding", "20px", "important");
-    modalRoot.style.setProperty("display", "flex", "important");
-    modalRoot.style.setProperty("flex-direction", "column", "important");
-    modalRoot.style.setProperty("gap", "16px", "important");
-    modalRoot.style.setProperty("box-sizing", "border-box", "important");
+    modalRoot.addClass(
+      "bc",
+      "sprout-modal",
+      "rounded-lg",
+      "border",
+      "border-border",
+      "bg-popover",
+      "text-popover-foreground",
+      "sprout-io-creator-root",
+    );
 
-    // Inject scoped IO-editor styles
-    const ioStyle = modalRoot.createEl("style");
-    ioStyle.textContent = IO_EDITOR_STYLES;
+    // IO-editor styles are loaded from styles.css (see src/styles/modals.css)
 
     // ── Header ──────────────────────────────────────────────────────────────
     buildHeader(modalRoot, headerTitle, () => this.close());
@@ -196,14 +182,11 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.imageLimitDialog = buildImageLimitDialog(modalRoot, () => this.deleteLoadedImage());
 
     // ── Title field ─────────────────────────────────────────────────────────
-    const titleField = body.createDiv({ cls: "bc flex flex-col gap-1" });
-    titleField.style.paddingTop = "15px";
+    const titleField = body.createDiv({ cls: "bc flex flex-col gap-1 sprout-io-title-field" });
     const titleLabel = titleField.createEl("label", { cls: "bc text-sm font-medium" });
     titleLabel.textContent = "Title";
-    const titleInput = titleField.createEl("textarea", { cls: "bc textarea w-full" });
+    const titleInput = titleField.createEl("textarea", { cls: "bc textarea w-full sprout-io-title-input" });
     titleInput.rows = 2;
-    titleInput.style.resize = "none";
-    titleInput.style.minHeight = "60px";
     this.titleInput = titleInput;
 
     // ── Canvas editor label ─────────────────────────────────────────────────
@@ -258,6 +241,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.stageEl = canvasRefs.stageEl;
     this.imgEl = canvasRefs.imgEl;
     this.overlayEl = canvasRefs.overlayEl;
+    if (this.canvasContainerEl) this.canvasContainerEl.classList.add("sprout-io-canvas");
+    if (this.stageEl) this.stageEl.classList.add("sprout-io-stage");
 
     // Global paste handler
     const handlePaste = async (ev: ClipboardEvent) => {
@@ -301,10 +286,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     const infoField = body.createDiv({ cls: "bc flex flex-col gap-1" });
     const infoLabel = infoField.createEl("label", { cls: "bc text-sm font-medium" });
     infoLabel.textContent = "Extra information";
-    const infoInput = infoField.createEl("textarea", { cls: "bc textarea w-full" });
+    const infoInput = infoField.createEl("textarea", { cls: "bc textarea w-full sprout-io-info-input" });
     infoInput.rows = 3;
-    infoInput.style.resize = "none";
-    infoInput.style.minHeight = "80px";
     this.infoInput = infoInput;
 
     // ── Groups field ────────────────────────────────────────────────────────
@@ -450,14 +433,11 @@ export class ImageOcclusionCreatorModal extends Modal {
 
   private updateCursor() {
     if (!this.viewportEl) return;
+    this.viewportEl.classList.remove("sprout-cursor-grab", "sprout-cursor-crosshair");
     if (this.currentTool === "transform") {
-      this.viewportEl.style.cursor = "grab";
-    } else if (this.currentTool === "text") {
-      this.viewportEl.style.cursor = "crosshair";
-    } else if (this.currentTool === "crop") {
-      this.viewportEl.style.cursor = "crosshair";
+      this.viewportEl.classList.add("sprout-cursor-grab");
     } else {
-      this.viewportEl.style.cursor = "crosshair";
+      this.viewportEl.classList.add("sprout-cursor-crosshair");
     }
   }
 
@@ -466,11 +446,12 @@ export class ImageOcclusionCreatorModal extends Modal {
   private updatePlaceholderVisibility() {
     if (!this.placeholderEl || !this.viewportEl) return;
     if (this.ioImageData) {
-      this.placeholderEl.style.display = "none";
-      this.viewportEl.style.display = "block";
+      this.placeholderEl.classList.add("sprout-is-hidden");
+      this.viewportEl.classList.remove("sprout-is-hidden");
     } else {
-      this.placeholderEl.style.display = "flex";
-      this.viewportEl.style.display = "none";
+      this.placeholderEl.classList.remove("sprout-is-hidden");
+      this.placeholderEl.classList.add("sprout-display-flex");
+      this.viewportEl.classList.add("sprout-is-hidden");
       this.updateCanvasHeightForImage();
     }
   }
@@ -478,9 +459,9 @@ export class ImageOcclusionCreatorModal extends Modal {
   private updateCanvasHeightForImage() {
     if (!this.canvasContainerEl) return;
     if (!this.ioImageData) {
-      this.canvasContainerEl.style.height = this.canvasHeightDefaults.height;
-      this.canvasContainerEl.style.minHeight = this.canvasHeightDefaults.minHeight;
-      this.canvasContainerEl.style.maxHeight = this.canvasHeightDefaults.maxHeight;
+      setCssProps(this.canvasContainerEl, "--sprout-io-canvas-height", this.canvasHeightDefaults.height);
+      setCssProps(this.canvasContainerEl, "--sprout-io-canvas-min-height", this.canvasHeightDefaults.minHeight);
+      setCssProps(this.canvasContainerEl, "--sprout-io-canvas-max-height", this.canvasHeightDefaults.maxHeight);
       return;
     }
     const width = this.canvasContainerEl.clientWidth || this.canvasContainerEl.getBoundingClientRect().width;
@@ -488,9 +469,9 @@ export class ImageOcclusionCreatorModal extends Modal {
     const maxHeight = 350;
     const desired = Math.max(1, Math.round((width * this.stageH) / this.stageW));
     const height = Math.min(desired, maxHeight);
-    this.canvasContainerEl.style.height = `${height}px`;
-    this.canvasContainerEl.style.minHeight = "0px";
-    this.canvasContainerEl.style.maxHeight = `${maxHeight}px`;
+    setCssProps(this.canvasContainerEl, "--sprout-io-canvas-height", `${height}px`);
+    setCssProps(this.canvasContainerEl, "--sprout-io-canvas-min-height", "0px");
+    setCssProps(this.canvasContainerEl, "--sprout-io-canvas-max-height", `${maxHeight}px`);
   }
 
   // ── Image limit / delete ──────────────────────────────────────────────────
@@ -514,8 +495,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.historyIndex = -1;
     if (this.imgEl) this.imgEl.src = "";
     if (this.stageEl) {
-      this.stageEl.style.width = "1px";
-      this.stageEl.style.height = "1px";
+      setCssProps(this.stageEl, "--sprout-io-stage-w", "1px");
+      setCssProps(this.stageEl, "--sprout-io-stage-h", "1px");
     }
     this.renderRects();
     this.updatePlaceholderVisibility();
@@ -544,12 +525,12 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.stageH = Math.max(1, this.imgEl.naturalHeight || 1);
 
     if (this.stageEl) {
-      this.stageEl.style.width = `${this.stageW}px`;
-      this.stageEl.style.height = `${this.stageH}px`;
+      setCssProps(this.stageEl, "--sprout-io-stage-w", `${this.stageW}px`);
+      setCssProps(this.stageEl, "--sprout-io-stage-h", `${this.stageH}px`);
     }
 
-    if (this.viewportEl) this.viewportEl.style.display = "block";
-    if (this.placeholderEl) this.placeholderEl.style.display = "none";
+    if (this.viewportEl) this.viewportEl.classList.remove("sprout-is-hidden");
+    if (this.placeholderEl) this.placeholderEl.classList.add("sprout-is-hidden");
 
     this.updateCanvasHeightForImage();
     this.fitToViewport();
@@ -624,7 +605,11 @@ export class ImageOcclusionCreatorModal extends Modal {
 
   private applyTransform() {
     if (!this.stageEl) return;
-    this.stageEl.style.transform = `translate(${this.t.tx}px, ${this.t.ty}px) scale(${this.t.scale})`;
+    setCssProps(
+      this.stageEl,
+      "--sprout-io-stage-transform",
+      `translate(${this.t.tx}px, ${this.t.ty}px) scale(${this.t.scale})`,
+    );
 
   }
 
@@ -704,7 +689,10 @@ export class ImageOcclusionCreatorModal extends Modal {
       if (this.currentTool === "transform") {
         panning = true;
         panStart = { x: e.clientX, y: e.clientY, tx: this.t.tx, ty: this.t.ty };
-        if (this.viewportEl) this.viewportEl.style.cursor = "grabbing";
+        if (this.viewportEl) {
+          this.viewportEl.classList.remove("sprout-cursor-grab");
+          this.viewportEl.classList.add("sprout-cursor-grabbing");
+        }
         e.preventDefault();
       } else if (isOcclusionTool) {
         if (isOnRect || isOnText || isOnForm) return;
@@ -748,7 +736,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.viewportEl.addEventListener("mouseup", (e: MouseEvent) => {
       if (panning) {
         panning = false;
-        if (this.viewportEl) this.viewportEl.style.cursor = "grab";
+        if (this.viewportEl) {
+          this.viewportEl.classList.remove("sprout-cursor-grabbing");
+          this.viewportEl.classList.add("sprout-cursor-grab");
+        }
       } else if (this.cropDrawing && this.cropStart) {
         const rect = this.viewportEl!.getBoundingClientRect();
         const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
@@ -861,28 +852,19 @@ export class ImageOcclusionCreatorModal extends Modal {
     const useY = box ? box.normY * this.stageH : stageY;
 
     const wrap = document.createElement("div");
-    wrap.className = "bc";
-    wrap.style.position = "absolute";
-    wrap.style.left = `${useX * this.t.scale + this.t.tx}px`;
-    wrap.style.top = `${useY * this.t.scale + this.t.ty}px`;
-    wrap.style.zIndex = "20";
+    wrap.className = "bc sprout-io-text-wrap";
+    setCssProps(wrap, "--sprout-io-text-x", `${useX * this.t.scale + this.t.tx}px`);
+    setCssProps(wrap, "--sprout-io-text-y", `${useY * this.t.scale + this.t.ty}px`);
 
     const input = document.createElement("textarea");
-    input.className = "bc textarea";
+    input.className = "bc textarea sprout-io-text-input";
     input.rows = 1;
     input.placeholder = "Type text";
-    input.style.width = `${Math.max(40, textW * this.t.scale)}px`;
-    input.style.height = `${Math.max(30, textH * this.t.scale)}px`;
-    input.style.padding = "6px 8px";
-    input.style.resize = "none";
-    input.style.fontSize = `${this.textFontSize}px`;
-    input.style.lineHeight = "1.3";
-    input.style.color = this.textColor;
-    input.style.border = "1px dashed rgba(16, 185, 129, 0.6)";
-    input.style.borderRadius = "6px";
-    input.style.outline = "none";
-    input.style.background = textBgCss(this.textBgColor, this.textBgOpacity);
-    input.style.boxShadow = "0 4px 10px rgba(0,0,0,0.12)";
+    setCssProps(input, "--sprout-io-text-w", `${Math.max(40, textW * this.t.scale)}px`);
+    setCssProps(input, "--sprout-io-text-h", `${Math.max(30, textH * this.t.scale)}px`);
+    setCssProps(input, "--sprout-io-text-size", `${this.textFontSize}px`);
+    setCssProps(input, "--sprout-io-text-color", this.textColor);
+    setCssProps(input, "--sprout-io-text-bg", textBgCss(this.textBgColor, this.textBgOpacity));
     wrap.appendChild(input);
 
     this.viewportEl.appendChild(wrap);
@@ -987,11 +969,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     if (!this.overlayEl) return;
     if (!this.textPreviewEl) {
       this.textPreviewEl = document.createElement("div");
-      this.textPreviewEl.style.position = "absolute";
-      this.textPreviewEl.style.border = "2px dashed #10b981";
-      this.textPreviewEl.style.backgroundColor = "rgba(16, 185, 129, 0.08)";
-      this.textPreviewEl.style.pointerEvents = "none";
-      this.textPreviewEl.style.borderRadius = "6px";
+      this.textPreviewEl.className = "sprout-io-text-preview";
       this.overlayEl.appendChild(this.textPreviewEl);
     }
 
@@ -1000,10 +978,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
 
-    this.textPreviewEl.style.left = `${left}px`;
-    this.textPreviewEl.style.top = `${top}px`;
-    this.textPreviewEl.style.width = `${Math.max(1, width)}px`;
-    this.textPreviewEl.style.height = `${Math.max(1, height)}px`;
+    setCssProps(this.textPreviewEl, "--sprout-io-preview-x", `${left}px`);
+    setCssProps(this.textPreviewEl, "--sprout-io-preview-y", `${top}px`);
+    setCssProps(this.textPreviewEl, "--sprout-io-preview-w", `${Math.max(1, width)}px`);
+    setCssProps(this.textPreviewEl, "--sprout-io-preview-h", `${Math.max(1, height)}px`);
   }
 
   private clearTextPreview() {
@@ -1017,10 +995,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     if (!this.overlayEl) return;
     if (!this.cropPreviewEl) {
       this.cropPreviewEl = document.createElement("div");
-      this.cropPreviewEl.style.position = "absolute";
-      this.cropPreviewEl.style.border = "2px dashed #10b981";
-      this.cropPreviewEl.style.backgroundColor = "rgba(16, 185, 129, 0.12)";
-      this.cropPreviewEl.style.pointerEvents = "none";
+      this.cropPreviewEl.className = "sprout-io-crop-preview";
       this.overlayEl.appendChild(this.cropPreviewEl);
     }
 
@@ -1029,11 +1004,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
 
-    this.cropPreviewEl.style.left = `${left}px`;
-    this.cropPreviewEl.style.top = `${top}px`;
-    this.cropPreviewEl.style.width = `${width}px`;
-    this.cropPreviewEl.style.height = `${height}px`;
-    this.cropPreviewEl.style.borderRadius = "4px";
+    setCssProps(this.cropPreviewEl, "--sprout-io-crop-x", `${left}px`);
+    setCssProps(this.cropPreviewEl, "--sprout-io-crop-y", `${top}px`);
+    setCssProps(this.cropPreviewEl, "--sprout-io-crop-w", `${width}px`);
+    setCssProps(this.cropPreviewEl, "--sprout-io-crop-h", `${height}px`);
   }
 
   private clearCropPreview() {
@@ -1057,10 +1031,7 @@ export class ImageOcclusionCreatorModal extends Modal {
 
     if (!this.previewEl) {
       this.previewEl = document.createElement("div");
-      this.previewEl.style.position = "absolute";
-      this.previewEl.style.border = "3px dashed #3b82f6";
-      this.previewEl.style.backgroundColor = "rgba(59, 130, 246, 0.12)";
-      this.previewEl.style.pointerEvents = "none";
+      this.previewEl.className = "sprout-io-mask-preview";
       this.overlayEl.appendChild(this.previewEl);
     }
 
@@ -1069,11 +1040,11 @@ export class ImageOcclusionCreatorModal extends Modal {
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
 
-    this.previewEl.style.left = `${left}px`;
-    this.previewEl.style.top = `${top}px`;
-    this.previewEl.style.width = `${width}px`;
-    this.previewEl.style.height = `${height}px`;
-    this.previewEl.style.borderRadius = shape === "circle" ? "50%" : "4px";
+    setCssProps(this.previewEl, "--sprout-io-mask-x", `${left}px`);
+    setCssProps(this.previewEl, "--sprout-io-mask-y", `${top}px`);
+    setCssProps(this.previewEl, "--sprout-io-mask-w", `${width}px`);
+    setCssProps(this.previewEl, "--sprout-io-mask-h", `${height}px`);
+    setCssProps(this.previewEl, "--sprout-io-mask-radius", shape === "circle" ? "50%" : "4px");
   }
 
   private clearPreview() {
@@ -1181,8 +1152,8 @@ export class ImageOcclusionCreatorModal extends Modal {
       if (!btn) return;
       btn.disabled = !enabled;
       btn.setAttribute("aria-disabled", enabled ? "false" : "true");
-      btn.style.opacity = enabled ? "1" : "0.35";
-      btn.style.pointerEvents = enabled ? "auto" : "none";
+      btn.classList.toggle("sprout-opacity-35", !enabled);
+      btn.classList.toggle("sprout-pointer-none", !enabled);
     };
     setBtnState(this.btnUndo, canUndo);
     setBtnState(this.btnRedo, canRedo);

@@ -11,7 +11,7 @@
 import * as React from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
-import { endTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { endTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
 import { MS_DAY } from "../core/constants";
 
 function InfoIcon(props: { text: string }) {
@@ -69,7 +69,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="bc svg-icon"
+      className="bc svg-icon sprout-ana-chevron"
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -79,10 +79,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{
-        display: "inline-flex",
-        transform: `${open ? "rotate(90deg)" : "rotate(0deg)"} scale(0.7)`,
-      }}
+      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -287,8 +284,8 @@ export function NewCardsPerDayChart(props: {
     const place = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.style.left = "auto";
-      popover.style.right = "0px";
+      popover.classList.remove("sprout-ana-popover-left");
+      popover.classList.add("sprout-ana-popover-right");
     };
     place();
     window.addEventListener("resize", place, true);
@@ -424,7 +421,7 @@ export function NewCardsPerDayChart(props: {
   const yTicks = React.useMemo(() => buildYAxisTicks(yMax), [yMax]);
 
   return (
-    <div className="card sprout-ana-card p-4 flex flex-col gap-3 h-full" style={{ overflow: "visible" }}>
+    <div className="card sprout-ana-card sprout-ana-overflow-visible p-4 flex flex-col gap-3 h-full">
       <div className="bc flex items-start justify-between gap-2">
         <div>
           <div className="bc flex items-center gap-1">
@@ -441,11 +438,10 @@ export function NewCardsPerDayChart(props: {
             className="bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
-            aria-controls="sprout-newcards-filter-listbox"
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
-              className="bc svg-icon lucide-filter"
+              className="bc svg-icon lucide-filter sprout-ana-icon"
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -455,7 +451,6 @@ export function NewCardsPerDayChart(props: {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ color: "var(--text-normal)" }}
             >
               <polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3" />
             </svg>
@@ -467,8 +462,7 @@ export function NewCardsPerDayChart(props: {
               id="sprout-newcards-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className="bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col"
-              style={{ position: "absolute", top: "calc(100% + 6px)", zIndex: 1000, minWidth: "250px" }}
+              className="bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"
             >
               <div className="bc p-1">
                 <div
@@ -600,7 +594,7 @@ export function NewCardsPerDayChart(props: {
                                 <span className="bc size-1.5 rounded-full bg-foreground" />
                               ) : null}
                             </span>
-                            <span className="bc truncate" style={endTruncateStyle}>
+                            <span className={`bc truncate ${endTruncateClass}`}>
                               {formatFilterPath(deck)}
                             </span>
                           </div>
@@ -646,7 +640,7 @@ export function NewCardsPerDayChart(props: {
                                 <span className="bc size-1.5 rounded-full bg-foreground" />
                               ) : null}
                             </span>
-                            <span className="bc truncate" style={endTruncateStyle}>
+                            <span className={`bc truncate ${endTruncateClass}`}>
                               {formatFilterPath(group)}
                             </span>
                           </div>

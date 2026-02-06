@@ -187,9 +187,11 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
 
   const candidateFiles = ["data.json", "data.json.bak", "data.json.prev", "data.json.old", "data.json.backup"];
 
+  const configDir = plugin.app.vault.configDir;
+
   if (pluginId) {
     for (const name of candidateFiles) {
-      const p = joinPath(".obsidian/plugins", pluginId, name);
+      const p = joinPath(configDir, "plugins", pluginId, name);
       const obj = await tryReadJson(adapter, p);
       const states = extractStatesFromDataJsonObject(obj);
       if (states && Object.keys(states).length > 0) return states;
@@ -197,7 +199,7 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
   }
 
   // Scan other plugin folders for potential scheduling data
-  const pluginRoot = ".obsidian/plugins";
+  const pluginRoot = joinPath(configDir, "plugins");
   const folderPaths = await safeListFolders(adapter, pluginRoot);
 
   type Cand = { states: StateMap; score: number; mtime: number; path: string };
@@ -274,7 +276,7 @@ function cardSignature(rec: CardRecord | null): string {
     base.clozeChildren = Array.isArray(rec.clozeChildren) ? rec.clozeChildren : [];
   } else if (rec.type === "io") {
     const legacy = rec as unknown as Record<string, unknown>;
-    base.imageRef = rec.imageRef ?? rec.ioSrc ?? rec.src ?? "";
+    base.imageRef = rec.imageRef ?? (legacy.ioSrc as string | undefined) ?? (legacy.src as string | undefined) ?? "";
     base.occlusions = (legacy.occlusions ?? legacy.rects ?? legacy.masks ?? []) as string[];
     base.maskMode = rec.maskMode ?? (legacy.mode as typeof rec.maskMode) ?? null;
   } else if (rec.type === "io-child") {
@@ -325,7 +327,7 @@ function quarantineIoCardsWithMissingImages(plugin: SproutPlugin): number {
   for (const [id, rec] of Object.entries(cards)) {
     if (!rec || String(rec.type) !== "io") continue;
 
-    const imageRef = normalizeIoImageRef(rec.imageRef || rec.ioSrc);
+    const imageRef = normalizeIoImageRef(rec.imageRef || (rec as unknown as Record<string, unknown>).ioSrc as string | undefined);
     if (!imageRef) continue;
 
     const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
@@ -427,7 +429,7 @@ function applyEditsToLines(lines: string[], edits: TextEdit[]): string[] {
     const dels = ops.filter((o) => o.deleteLine);
     const ins = ops.filter((o) => typeof o.insertText === "string" && o.insertText.length);
 
-    for (const _ of dels) {
+    for (let i = 0; i < dels.length; i++) {
       if (idx >= 0 && idx < lines.length) lines.splice(idx, 1);
     }
     for (const o of ins) {
@@ -451,7 +453,7 @@ async function deleteIoImage(plugin: SproutPlugin, imageRef: string): Promise<vo
   try {
     const vault = plugin.app.vault;
     const file = vault.getAbstractFileByPath(normalized);
-    if (file && file instanceof TFile) await vault.delete(file);
+    if (file && file instanceof TFile) await plugin.app.fileManager.trashFile(file);
   } catch (e) {
     log.warn(`Failed to delete IO image ${normalized}:`, e);
   }
@@ -643,7 +645,7 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
     if (ioCardIds.has(ioId)) continue;
 
     try {
-      await vault.delete(file);
+      await plugin.app.fileManager.trashFile(file);
       deleted += 1;
     } catch (e) {
       log.warn(`Failed to delete orphaned IO image ${file.path}:`, e);
@@ -987,7 +989,6 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
         ? (() => {
             const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
             return {
-              ioSrc: imageRef ?? null,
               imageRef: imageRef ?? null,
               occlusions: occlusions ?? null,
               maskMode: maskMode ?? null,
@@ -1022,7 +1023,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
     // IO: verify image exists, else quarantine
     if (c.type === "io") {
-      const imageRef = normalizeIoImageRef(record.imageRef || record.ioSrc);
+      const imageRef = normalizeIoImageRef(record.imageRef);
       if (imageRef) {
         const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
         if (!imageFile || !(imageFile instanceof TFile)) {
@@ -1260,7 +1261,6 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
         ? (() => {
             const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
             return {
-              ioSrc: imageRef ?? null,
               imageRef: imageRef ?? null,
               occlusions: occlusions ?? null,
               maskMode: maskMode ?? null,
@@ -1294,7 +1294,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
 
     if (c.type === "io") {
-      const imageRef = normalizeIoImageRef(record.imageRef || record.ioSrc);
+      const imageRef = normalizeIoImageRef(record.imageRef);
       if (imageRef) {
         const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
         if (!imageFile || !(imageFile instanceof TFile)) {

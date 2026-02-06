@@ -99,9 +99,7 @@ export class ParseErrorModal extends Modal {
       // Show error list if available
       const errs = (ref?.errors || []).filter(Boolean);
       if (errs.length) {
-        const ul = row.createEl("ul", { cls: "bc text-sm" });
-        ul.style.margin = "0";
-        ul.style.paddingLeft = "18px";
+        const ul = row.createEl("ul", { cls: "bc text-sm sprout-parse-errors-list" });
         for (const e of errs) ul.createEl("li", { text: e });
       } else {
         row.createDiv({ text: "No error details available.", cls: "bc text-muted-foreground text-sm" });

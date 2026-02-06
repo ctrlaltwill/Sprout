@@ -8,7 +8,7 @@
 
 import type { App } from "obsidian";
 import { setIcon } from "obsidian";
-import { el } from "../core/ui";
+import { el, setCssProps } from "../core/ui";
 import { buildDeckTree, type DeckNode } from "../deck/deck-tree";
 import type SproutPlugin from "../main";
 import type { Scope } from "./types";
@@ -132,15 +132,7 @@ function makeDisclosureChevron(isOpen: boolean, onToggle: () => void) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className =
-    "sprout-deck-disclosure inline-flex items-center justify-center text-muted-foreground hover:text-foreground focus-visible:text-foreground";
-  btn.style.setProperty("border", "none", "important");
-  btn.style.setProperty("background", "transparent", "important");
-  btn.style.setProperty("box-shadow", "none", "important");
-  btn.style.setProperty("padding", "0", "important");
-  btn.style.setProperty("width", "28px", "important");
-  btn.style.setProperty("height", "28px", "important");
-  btn.style.setProperty("min-width", "28px", "important");
-  btn.style.setProperty("min-height", "28px", "important");
+    "sprout-deck-disclosure sprout-deck-disclosure-btn inline-flex items-center justify-center text-muted-foreground hover:text-foreground focus-visible:text-foreground";
   btn.setAttribute("aria-label", isOpen ? "Collapse folder" : "Expand folder");
   btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   btn.dataset.open = isOpen ? "true" : "false";
@@ -148,7 +140,7 @@ function makeDisclosureChevron(isOpen: boolean, onToggle: () => void) {
   const iconWrap = document.createElement("span");
   iconWrap.className = "sprout-deck-expand-icon inline-flex items-center justify-center [&_svg]:size-4";
   const renderIcon = (open: boolean) => {
-    iconWrap.innerHTML = "";
+    iconWrap.replaceChildren();
     setIcon(iconWrap, open ? "minus" : "plus");
     iconWrap.querySelector("svg")?.classList.add("bc");
   };
@@ -183,8 +175,7 @@ export function renderDeckMode(args: Args) {
   const vaultName = app?.vault?.getName?.() || "Vault";
 
   const root = document.createElement("div");
-  root.className = "flex flex-col min-h-0";
-  root.style.gap = "10px";
+  root.className = "flex flex-col min-h-0 sprout-deck-root";
 
   const title = document.createElement("div");
   title.className = "text-xl font-semibold tracking-tight";
@@ -206,9 +197,8 @@ export function renderDeckMode(args: Args) {
 
   // ===== Header (badges -> controls -> table) =====
   const header = document.createElement("div");
-  header.className = "flex flex-col gap-2";
+  header.className = "flex flex-col gap-2 sprout-deck-header";
   applyAos(header, 200);
-  header.style.flex = "0 0 auto";
   root.appendChild(header);
 
   // Controls row
@@ -225,18 +215,17 @@ export function renderDeckMode(args: Args) {
     iconClassName: "sprout-deck-control-icon",
     onClick: () => args.openSession({ type: "vault", key: "", name: vaultName }),
   });
-  studyAllBtn.style.setProperty("padding", "7px 15px", "important");
+  studyAllBtn.classList.add("sprout-deck-control-btn");
 
   // ===== Group combobox (single select) =====
   const gx = getGroupIndex(plugin);
 
   const groupCombo = document.createElement("div");
-  groupCombo.className = "relative w-full md:w-auto";
-  groupCombo.style.flex = "0 1 auto";
+  groupCombo.className = "relative w-full md:w-auto sprout-deck-group-combo";
 
   const comboTrigger = document.createElement("button");
   comboTrigger.type = "button";
-  comboTrigger.className = "btn-outline h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn";
+  comboTrigger.className = "btn-outline h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-deck-control-btn";
   comboTrigger.setAttribute("aria-haspopup", "listbox");
   comboTrigger.setAttribute("aria-expanded", "false");
 
@@ -249,18 +238,10 @@ export function renderDeckMode(args: Args) {
   comboLabel.className = "truncate";
   comboLabel.textContent = "Study group";
   comboTrigger.appendChild(comboLabel);
-  comboTrigger.style.setProperty("padding", "7px 15px", "important");
   // Trigger will live inside a button-group wrapper
 
   const popover = document.createElement("div");
-  popover.className = "sprout-group-select-popover sprout-dropdown-shadow rounded-lg border border-border bg-popover text-popover-foreground";
-  popover.style.position = "absolute";
-  popover.style.left = "0";
-  popover.style.top = "calc(100% + 6px)";
-  popover.style.width = "360px";
-  popover.style.zIndex = "1000";
-  popover.style.display = "none";
-  popover.style.overflow = "hidden";
+  popover.className = "sprout-group-select-popover sprout-deck-group-popover sprout-dropdown-shadow rounded-lg border border-border bg-popover text-popover-foreground";
 
   const popHeader = document.createElement("div");
   popHeader.className = "sprout-group-select-header flex items-center gap-2 border-b border-border";
@@ -277,8 +258,7 @@ export function renderDeckMode(args: Args) {
   searchInput.autocomplete = "off";
   searchInput.setAttribute("autocorrect", "off");
   searchInput.spellcheck = false;
-  searchInput.className = "sprout-group-search-input text-sm flex-1 h-9";
-  searchInput.style.minWidth = "0";
+  searchInput.className = "sprout-group-search-input sprout-deck-search-input text-sm flex-1 h-9";
   popHeader.appendChild(searchInput);
 
   const listbox = document.createElement("div");
@@ -371,7 +351,7 @@ export function renderDeckMode(args: Args) {
   let cleanup: (() => void) | null = null;
 
   const closePopover = () => {
-    popover.style.display = "none";
+    popover.classList.remove("is-open");
     comboTrigger.setAttribute("aria-expanded", "false");
     try {
       cleanup?.();
@@ -380,7 +360,7 @@ export function renderDeckMode(args: Args) {
   };
 
   const openPopover = () => {
-    popover.style.display = "block";
+    popover.classList.add("is-open");
     comboTrigger.setAttribute("aria-expanded", "true");
     renderList();
     searchInput.focus();
@@ -425,9 +405,9 @@ export function renderDeckMode(args: Args) {
     });
   });
   searchInput.addEventListener("blur", () => {
-    if (popover.style.display !== "block") return;
+    if (!popover.classList.contains("is-open")) return;
     window.requestAnimationFrame(() => {
-      if (popover.style.display === "block") searchInput.focus();
+      if (popover.classList.contains("is-open")) searchInput.focus();
     });
   });
   const stopKey = (ev: KeyboardEvent) => {
@@ -505,12 +485,8 @@ export function renderDeckMode(args: Args) {
 
   // ===== Body (table) =====
   const bodyWrap = document.createElement("div");
-  bodyWrap.className = "mt-3";
+  bodyWrap.className = "mt-3 sprout-deck-body";
   applyAos(bodyWrap, 400);
-  bodyWrap.style.flex = "1 1 auto";
-  bodyWrap.style.minHeight = "0";
-  bodyWrap.style.overflow = "hidden";
-  bodyWrap.style.padding = "0";
   root.appendChild(bodyWrap);
 
   if (!cards.length) {
@@ -526,9 +502,7 @@ export function renderDeckMode(args: Args) {
   }
 
   const tableOuter = document.createElement("div");
-  tableOuter.className = "sprout-deck-table-wrap w-full overflow-auto rounded-lg border";
-  tableOuter.style.borderColor = "var(--background-modifier-border)";
-  tableOuter.style.height = "100%";
+  tableOuter.className = "sprout-deck-table-wrap sprout-deck-table-outer w-full overflow-auto rounded-lg border";
   bodyWrap.appendChild(tableOuter);
 
   const table = document.createElement("table");
@@ -579,10 +553,8 @@ export function renderDeckMode(args: Args) {
       flex.className = "flex items-center gap-2 min-w-0";
 
       const spacer = document.createElement("span");
-      spacer.className = "";
-      spacer.style.display = "inline-block";
-      spacer.style.width = "28px";
-      spacer.style.height = "28px";
+      spacer.className = "sprout-deck-spacer";
+      setCssProps(spacer, "--sprout-deck-spacer-size", "28px");
       flex.appendChild(spacer);
 
       const label = document.createElement("span");
@@ -613,17 +585,14 @@ export function renderDeckMode(args: Args) {
 
       for (const child of children) {
         const tr = document.createElement("tr");
-        tr.className = "deck-row";
-        tr.style.borderRadius = "8px";
-        tr.style.overflow = "hidden";
-        tr.style.cursor = "pointer";
+        tr.className = "deck-row sprout-deck-row";
 
         const tdName = document.createElement("td");
         tdName.className = "";
 
         const nameRow = document.createElement("div");
-        nameRow.className = "flex items-center gap-2 min-w-0";
-        nameRow.style.paddingLeft = `${depth * 14}px`;
+        nameRow.className = "flex items-center gap-2 min-w-0 sprout-deck-name-row";
+        setCssProps(nameRow, "--sprout-deck-indent", `${depth * 14}px`);
 
         let disclosureChevron = null;
         if (child.type === "folder") {
@@ -643,11 +612,9 @@ export function renderDeckMode(args: Args) {
           disclosureChevron = toggle;
         } else {
           const spacer = document.createElement("span");
-          spacer.className = "";
+          spacer.className = "sprout-deck-spacer";
           const toggleWidth = 28;
-          spacer.style.display = "inline-block";
-          spacer.style.width = `${toggleWidth}px`;
-          spacer.style.height = `${toggleWidth}px`;
+          setCssProps(spacer, "--sprout-deck-spacer-size", `${toggleWidth}px`);
           nameRow.appendChild(spacer);
         }
 

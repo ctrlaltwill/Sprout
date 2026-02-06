@@ -19,6 +19,7 @@ import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_ANALYTICS } from "../core/constants";
+import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
 import { StagePieCard } from "./pie-charts";
@@ -170,7 +171,7 @@ export class SproutAnalyticsView extends ItemView {
     if (!root) return;
 
     const maxWidth = this.plugin.isWideMode ? "none" : MAX_CONTENT_WIDTH_PX;
-    root.style.setProperty("--sprout-analytics-max-width", maxWidth);
+    setCssProps(root, "--sprout-analytics-max-width", maxWidth);
   }
 
   render() {
@@ -387,10 +388,10 @@ export class SproutAnalyticsView extends ItemView {
     const makeBadge = (opts: { text: string; bg?: string; color?: string; border?: string; live?: boolean; className?: string }) => {
       const badge = document.createElement("span");
       badge.className = `sprout-badge sprout-analytics-badge inline-flex items-center gap-1${opts.className ? ` ${opts.className}` : ""}`;
-      if (opts.bg) badge.style.setProperty("--sprout-badge-bg", opts.bg);
-      else if (!opts.className) badge.style.setProperty("--sprout-badge-bg", "var(--theme-accent)");
-      if (opts.color) badge.style.setProperty("--sprout-badge-color", opts.color);
-      if (opts.border) badge.style.setProperty("--sprout-badge-border", opts.border);
+      if (opts.bg) setCssProps(badge, "--sprout-badge-bg", opts.bg);
+      else if (!opts.className) setCssProps(badge, "--sprout-badge-bg", "var(--theme-accent)");
+      if (opts.color) setCssProps(badge, "--sprout-badge-color", opts.color);
+      if (opts.border) setCssProps(badge, "--sprout-badge-border", opts.border);
       if (opts.live) {
         const circle = document.createElement("span");
         circle.className = "inline-block w-1.5 h-1.5 rounded-full bg-white sprout-analytics-live-pulse";
@@ -440,10 +441,10 @@ export class SproutAnalyticsView extends ItemView {
         const currentVal = (trend.dir === 0 ? 0 : eased * Math.abs(target)) * (trend.dir >= 0 ? 1 : -1);
         valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(1)}%`;
         const angle = startAngle + (endAngle - startAngle) * eased;
-        (badge as HTMLElement).style.setProperty("--sprout-rotate", `${angle}deg`);
+        setCssProps(badge as HTMLElement, "--sprout-rotate", `${angle}deg`);
         if (p < 1) requestAnimationFrame(animate);
         else {
-          (badge as HTMLElement).style.setProperty("--sprout-rotate", "0deg");
+          setCssProps(badge as HTMLElement, "--sprout-rotate", "0deg");
           valueEl.textContent = trend.text;
         }
       };
@@ -899,9 +900,9 @@ export class SproutAnalyticsView extends ItemView {
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
       const panelRect = rowsPanel.getBoundingClientRect();
       const top = Math.max(margin, r.top - panelRect.height - 6);
-      rowsPopover.style.setProperty("--sprout-popover-left", `${left}px`);
-      rowsPopover.style.setProperty("--sprout-popover-top", `${top}px`);
-      rowsPopover.style.setProperty("--sprout-popover-width", `${width}px`);
+      setCssProps(rowsPopover, "--sprout-popover-left", `${left}px`);
+      setCssProps(rowsPopover, "--sprout-popover-top", `${top}px`);
+      setCssProps(rowsPopover, "--sprout-popover-width", `${width}px`);
     };
 
     const buildRowsOptions = () => {

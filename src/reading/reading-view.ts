@@ -13,6 +13,7 @@ import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import type { CardRecord } from "../core/store";
 import type SproutPlugin from "../main";
+import { replaceChildrenWithHTML } from "../core/ui";
 
 import {
   ANCHOR_RE,
@@ -102,9 +103,8 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
           const sourcePath = ctx.sourcePath;
           if (sourcePath && plugin.app.vault) {
             const file = plugin.app.vault.getAbstractFileByPath(sourcePath);
-            if (file && 'extension' in file && file.extension === 'md') {
-              // It's a TFile
-              const content = await plugin.app.vault.read(file as TFile);
+            if (file instanceof TFile && file.extension === 'md') {
+              const content = await plugin.app.vault.read(file);
               sourceContent = content;
             }
           }
@@ -186,46 +186,9 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
    Styles + helpers
    ========================= */
 
-let stylesInjected = false;
+// Styles are loaded from styles.css (see src/styles/pretty-cards.css)
 function injectStylesOnce() {
-  if (stylesInjected) return;
-  stylesInjected = true;
-  const s = document.createElement("style");
-  s.type = "text/css";
-  s.textContent = `
-  .sprout-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
-  .sprout-section-label{display:flex;align-items:center;gap:10px;}
-  .sprout-toggle-btn{background:none;border:none;padding:0 !important;padding:0;margin:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
-  .sprout-toggle-btn:focus{outline:none;box-shadow:none}
-  .sprout-toggle-chevron{display:inline-block;transition:transform 0.18s ease;will-change:transform;width:1em;height:1em;color:inherit;vertical-align:middle;}
-  .sprout-collapsible{overflow:hidden;transition:max-height 0.22s ease,padding 0.22s ease;}
-  .sprout-collapsible.collapsed{max-height:0;padding-top:0}
-  .sprout-collapsible.expanded{max-height:2000px}
-  .sprout-options-list { position: relative; }
-  .sprout-option {
-    position: relative;
-    padding-left: 1.7em;
-    color: var(--text-color);
-    opacity: .9;
-    font-size: .9rem;
-    line-height: 1.9;
-    margin-bottom: 6px;
-  }
-  .sprout-option-bullet {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1.7em;
-    display: inline-block;
-  }
-  /* masonry container styles */
-  .sprout-masonry-grid-wrapper{width:100%;}
-  .sprout-masonry-grid{display:flex;gap:16px;align-items:flex-start}
-  .sprout-masonry-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
-  .sprout-masonry-col > .sprout-pretty-card{width:100%;flex-shrink:0;box-sizing:border-box;}
-  mjx-container[jax="CHTML"][display="true"]{display:block;text-align:left;margin:0.5em 1em;}
-  `;
-  document.head.appendChild(s);
+  // no-op: CSS is now in styles.css via the Tailwind/PostCSS pipeline
 }
 
 /* =========================
@@ -530,7 +493,7 @@ function rebalanceExistingGrid(wrapper: HTMLElement) {
   debugLog(`[Masonry] Rebalancing grid: ${currentCols} -> ${newColCount} columns`);
   
   // Remove old columns
-  grid.innerHTML = '';
+  grid.replaceChildren();
   
   // Create new columns
   const columns: HTMLElement[] = [];
@@ -550,15 +513,14 @@ function rebalanceExistingGrid(wrapper: HTMLElement) {
       if (h < minH) { minH = h; minCol = c; }
     }
     minCol.appendChild(card);
-    card.style.removeProperty('break-inside');
-    card.style.removeProperty('page-break-inside');
+    card.classList.add('sprout-reading-break-reset');
   }
   
   // Add bottom margin to last card in each column
   for (const col of columns) {
     const lastCard = col.lastElementChild as HTMLElement;
     if (lastCard) {
-      lastCard.style.setProperty('margin-bottom', '20px', 'important');
+      lastCard.classList.add('sprout-reading-last-card');
     }
   }
 }
@@ -591,7 +553,7 @@ function layoutAllMasonryGrids(forceRebalance = false) {
     parents.get(parent)!.push(card);
   }
 
-  for (const [parent, _group] of parents.entries()) {
+  for (const parent of parents.keys()) {
     // iterate parent's children and collect consecutive .sprout-pretty-card nodes into subgroups
     const children = Array.from(parent.children);
     let current: HTMLElement[] = [];
@@ -658,15 +620,14 @@ function buildOrUpdateMasonryForGroup(parent: HTMLElement, group: HTMLElement[])
     }
     minCol.appendChild(card);
     // ensure card doesn't have leftover break styles
-    card.style.removeProperty('break-inside');
-    card.style.removeProperty('page-break-inside');
+    card.classList.add('sprout-reading-break-reset');
   }
 
   // Add bottom margin to last card in each column to push down content after
   for (const col of columns) {
     const lastCard = col.lastElementChild as HTMLElement;
     if (lastCard) {
-      lastCard.style.setProperty('margin-bottom', '20px', 'important');
+      lastCard.classList.add('sprout-reading-last-card');
     }
   }
 }
@@ -738,7 +699,7 @@ function hideAllMasonryGridSiblings() {
     
     // Hide all collected duplicates
     for (const el of toHide) {
-      (el as HTMLElement).style.setProperty('display', 'none', 'important');
+      (el as HTMLElement).classList.add('sprout-hidden-important');
       (el as HTMLElement).setAttribute('data-sprout-hidden', 'true');
     }
     
@@ -782,7 +743,7 @@ function hideAllMasonryGridSiblings() {
         const classes = next.className || '';
         
         // Skip hidden elements
-        if ((next as HTMLElement).style.display === 'none' || 
+        if ((next as HTMLElement).classList.contains('sprout-hidden-important') || 
             (next as HTMLElement).hasAttribute('data-sprout-hidden')) {
           next = next.nextElementSibling;
           continue;
@@ -791,10 +752,9 @@ function hideAllMasonryGridSiblings() {
         // Found first visible element - force it to repaint
         if (classes.match(/\bel-h[1-6]\b/) || classes.includes('el-')) {
           const el = next as HTMLElement;
-          const originalDisplay = el.style.display;
-          el.style.display = 'none';
+          el.classList.add('sprout-hidden-important');
           void el.offsetHeight; // Force reflow
-          el.style.display = originalDisplay || '';
+          el.classList.remove('sprout-hidden-important');
           void el.offsetHeight; // Force another reflow
           break;
         }
@@ -877,7 +837,7 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   
   // Hide collected elements with increased specificity
   for (const el of toHide) {
-    (el as HTMLElement).style.setProperty('display', 'none', 'important');
+    (el as HTMLElement).classList.add('sprout-hidden-important');
     (el as HTMLElement).setAttribute('data-sprout-hidden', 'true');
   }
 }
@@ -893,7 +853,7 @@ function enhanceCardElement(
   cardRawText?: string,
 ) {
   const originalContent = originalContentOverride ?? el.innerHTML;
-  el.innerHTML = '';
+  el.replaceChildren();
   // Determine prettify style from plugin instance (Obsidian context)
   let prettifyStyle: string = 'accent';
   try {
@@ -914,8 +874,8 @@ function enhanceCardElement(
   }
 
     const innerHTML = `
-      <div class="sprout-card-header" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5em;">
-        <div class="sprout-card-title" style="margin: 0; padding: 0; font-weight: 500; line-height: 1.15;">
+      <div class="sprout-card-header sprout-reading-card-header">
+        <div class="sprout-card-title sprout-reading-card-title">
           ${processMarkdownFeatures(card.title || '')}
         </div>
         <span class="sprout-card-edit-btn" role="button" aria-label="Edit card" data-tooltip="Edit card" tabindex="0"></span>
@@ -928,7 +888,7 @@ function enhanceCardElement(
       <div class="sprout-original-content" aria-hidden="true">${originalContent}</div>
     `;
 
-  el.innerHTML = innerHTML;
+  replaceChildrenWithHTML(el, innerHTML);
   el.classList.add('sprout-single-card');
 
   // Hide any sibling elements that were part of this card's content
@@ -1088,7 +1048,7 @@ function enhanceCardElement(
     btn.setAttribute('aria-expanded', 'false');
     const chevron = btn.querySelector<HTMLElement>('.sprout-toggle-chevron');
     // set initial chevron rotation to point right (collapsed)
-    if (chevron) chevron.style.transform = 'rotate(-90deg)';
+    if (chevron) chevron.classList.add('sprout-reading-chevron-collapsed');
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const expanded = btn.getAttribute('aria-expanded') === 'true';
@@ -1096,12 +1056,12 @@ function enhanceCardElement(
         content.classList.remove('expanded');
         content.classList.add('collapsed');
         btn.setAttribute('aria-expanded', 'false');
-        if (chevron) chevron.style.transform = 'rotate(-90deg)';
+        if (chevron) chevron.classList.add('sprout-reading-chevron-collapsed');
       } else {
         content.classList.remove('collapsed');
         content.classList.add('expanded');
         btn.setAttribute('aria-expanded', 'true');
-        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (chevron) chevron.classList.remove('sprout-reading-chevron-collapsed');
         // after expanding, reflow masonry because heights changed
         scheduleMasonryLayout();
       }

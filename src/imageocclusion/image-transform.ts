@@ -12,13 +12,15 @@
 // ImageTransform.ts - image stage transform helpers
 
 import type { StageTransform } from "./io-types";
+import { setCssProps } from "../core/ui";
 export type { StageTransform };
 
 /**
  * Applies a transform (scale, translate) to a stage element.
  */
 export function applyStageTransform(el: HTMLElement, t: StageTransform) {
-  el.style.transform = `translate(${t.tx}px, ${t.ty}px) scale(${t.scale})`;
+  el.classList.add("sprout-stage-transform");
+  setCssProps(el, "--sprout-stage-transform", `translate(${t.tx}px, ${t.ty}px) scale(${t.scale})`);
 }
 
 /**

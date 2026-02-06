@@ -41,7 +41,7 @@ const PLACEHOLDER_INFO = "Extra information shown on the back to add context";
 type ClozeShortcut = "new" | "same";
 
 function isMacLike(): boolean {
-  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform || "");
+  return /Mac|iPhone|iPad|iPod/i.test((navigator as any).userAgentData?.platform ?? navigator.userAgent);
 }
 
 function getClozeShortcut(ev: KeyboardEvent): ClozeShortcut | null {

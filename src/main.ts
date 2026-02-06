@@ -152,15 +152,20 @@ export default class SproutPlugin extends Plugin {
     this._basecoatStarted = false;
   }
 
-  private _getActiveLeafSafe(): WorkspaceLeaf | null {
+  private _isActiveHiddenViewType(): boolean {
     const ws = this.app.workspace;
-    if (typeof ws?.getActiveLeaf === "function") return ws.getActiveLeaf() ?? null;
-    return ws?.activeLeaf ?? null;
+    if (typeof ws?.getActiveViewOfType !== "function") return false;
+    for (const type of this._hideStatusBarViewTypes) {
+      if (ws.getActiveViewOfType(type)) return true;
+    }
+    return false;
   }
 
   private _updateStatusBarVisibility(leaf: WorkspaceLeaf | null) {
     const viewType = leaf?.view?.getViewType?.();
-    const hide = !!viewType && this._hideStatusBarViewTypes.has(viewType);
+    const hide = viewType
+      ? this._hideStatusBarViewTypes.has(viewType)
+      : this._isActiveHiddenViewType();
     document.body.classList.toggle("sprout-hide-status-bar", hide);
   }
 
@@ -269,21 +274,21 @@ export default class SproutPlugin extends Plugin {
 
       // Commands (hotkeys default to none; users can bind in Settings → Hotkeys)
       this.addCommand({
-        id: "sprout-sync-flashcards",
+        id: "sync-flashcards",
         name: "Sync Flashcards",
         hotkeys: [],
         callback: async () => this._runSync(),
       });
 
       this.addCommand({
-        id: "sprout-open",
+        id: "open",
         name: "Open Sprout",
         hotkeys: [],
         callback: async () => this.openHomeTab(),
       });
 
       this.addCommand({
-        id: "sprout-add-flashcard",
+        id: "add-flashcard",
         name: "Add flashcard to note",
         hotkeys: [],
         callback: () => this.openAddFlashcardModal(),
@@ -313,8 +318,8 @@ export default class SproutPlugin extends Plugin {
         if (this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET).length === 0) {
           void this.openWidgetSafe();
         }
-        // Ensure status bar class matches the active leaf after layout settles
-        this._updateStatusBarVisibility(this._getActiveLeafSafe());
+        // Ensure status bar class matches the active view after layout settles
+        this._updateStatusBarVisibility(null);
       });
 
       await this.saveAll();
@@ -677,7 +682,7 @@ export default class SproutPlugin extends Plugin {
 
     // Fix: Open new tab after current active tab, then select it
     const ws = this.app.workspace;
-    const activeLeaf = ws.getActiveLeaf?.() ?? ws.activeLeaf;
+    const activeLeaf = ws.getLeaf(false);
     const leaf = ws.getLeaf("tab");
     await leaf.setViewState({ type: VIEW_TYPE_HOME, active: true });
     // If possible, move the new tab after the active tab

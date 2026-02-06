@@ -17,6 +17,7 @@ import {
 
 import { AOS_DURATION, BRAND, MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_REVIEWER } from "../core/constants";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import { gradeFromRating } from "../scheduler/scheduler";
 import { syncOneFile } from "../sync/sync-engine";
 import { ParseErrorModal } from "../modals/parse-error-modal";
@@ -165,19 +166,13 @@ export class SproutReviewerView extends ItemView {
     const containerWidth = this.containerEl?.clientWidth ?? 0;
     const hideToggle = containerWidth > 0 ? containerWidth < MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth < MAX_CONTENT_WIDTH;
     if (this._widthToggleActionEl) {
-      this._widthToggleActionEl.style.display = hideToggle ? "none" : "";
+      this._widthToggleActionEl.classList.toggle("sprout-is-hidden", hideToggle);
     }
 
     if (this.plugin.isWideMode) {
-      root.style.setProperty("max-width", "none", "important");
-      root.style.setProperty("width", "100%", "important");
-      root.style.setProperty("margin-left", "auto", "important");
-      root.style.setProperty("margin-right", "auto", "important");
+      setCssProps(root, "--sprout-review-max-width", "none");
     } else {
-      root.style.setProperty("max-width", MAX_CONTENT_WIDTH_PX, "important");
-      root.style.setProperty("width", "100%", "important");
-      root.style.setProperty("margin-left", "auto", "important");
-      root.style.setProperty("margin-right", "auto", "important");
+      setCssProps(root, "--sprout-review-max-width", MAX_CONTENT_WIDTH_PX);
     }
 
     const btn = this._widthToggleActionEl;
@@ -1116,8 +1111,9 @@ export class SproutReviewerView extends ItemView {
 
   isActiveLeaf(): boolean {
     const ws = this.app.workspace;
-    const active = ws?.activeLeaf ?? ws?.getActiveLeaf?.() ?? null;
-    return !!active && active === this.leaf;
+    const activeView = ws?.getActiveViewOfType?.(VIEW_TYPE_REVIEWER) ?? null;
+    const activeLeaf = (activeView as unknown as { leaf?: WorkspaceLeaf }).leaf ?? null;
+    return !!activeLeaf && activeLeaf === this.leaf;
   }
 
   private handleKey(ev: KeyboardEvent) {
@@ -1426,13 +1422,13 @@ export class SproutReviewerView extends ItemView {
     this._moreBtnEl = null;
 
     root.classList.add("sprout-view-content");
+    root.classList.add("sprout-review-root");
     this.containerEl.addClass("sprout");
 
     let sessionColumn: HTMLElement | null = null;
     if (this.mode === "session") {
       sessionColumn = document.createElement("div");
-      sessionColumn.className = "sprout-study-column flex flex-col min-h-0";
-      sessionColumn.style.gap = "10px";
+      sessionColumn.className = "sprout-study-column sprout-session-column flex flex-col min-h-0";
       root.appendChild(sessionColumn);
     }
 

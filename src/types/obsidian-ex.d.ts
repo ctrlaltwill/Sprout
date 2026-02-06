@@ -2,7 +2,7 @@
  * @file src/types/obsidian-ex.d.ts
  * @summary Ambient module augmentations for Obsidian's undocumented internal APIs that
  * Sprout relies on (App.setting, App.commands, Vault.adapter, MenuItem.setSubmenu,
- * Workspace.getActiveLeaf, WorkspaceLeaf.setViewState, MarkdownView.getMode, etc.).
+ * WorkspaceLeaf.setViewState, MarkdownView.getMode, etc.).
  * Also declares global window augmentations for Basecoat, MathJax, and the Sprout
  * debug log handle. Only members actually used by the plugin are typed here.
  *
@@ -86,12 +86,6 @@ declare module "obsidian" {
   }
 
   interface Workspace {
-    /** @deprecated Replaced by getActiveViewOfType / getMostRecentLeaf. Still used by some APIs. */
-    getActiveLeaf(): WorkspaceLeaf | null;
-
-    /** @deprecated Pre-1.0 alias; still present at runtime. */
-    activeLeaf: WorkspaceLeaf | null;
-
     /** Internal event trigger for file-open, etc. */
     trigger(name: string, ...data: unknown[]): void;
 
@@ -162,7 +156,7 @@ interface SproutGlobals {
 }
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- intentionally extending Window with SproutGlobals via declaration merging
   interface Window extends SproutGlobals {}
 
   /** Sprout debug log handle, attached at init. */

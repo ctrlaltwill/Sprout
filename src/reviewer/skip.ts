@@ -42,12 +42,7 @@ class ConfirmBuryForTodayModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    const head = contentEl.createDiv();
-    head.style.display = "flex";
-    head.style.alignItems = "center";
-    head.style.justifyContent = "space-between";
-    head.style.gap = "10px";
-    head.style.marginBottom = "10px";
+    const head = contentEl.createDiv({ cls: "sprout-skip-modal-head" });
 
     head.createEl("h3", { text: "Bury for today?" });
 
@@ -65,17 +60,13 @@ class ConfirmBuryForTodayModal extends Modal {
       "You have skipped this card multiple times in this session. Burying will postpone it until tomorrow. Skipping does not change scheduling unless you confirm bury.",
     );
 
-    const row = contentEl.createDiv();
-    row.style.display = "flex";
-    row.style.gap = "8px";
-    row.style.marginTop = "12px";
+    const row = contentEl.createDiv({ cls: "sprout-skip-modal-actions" });
 
     const ignoreBtn = row.createEl("button", { text: "Ignore" });
     ignoreBtn.onclick = () => this.ignore();
 
     const buryBtn = row.createEl("button", { text: "Bury for today" });
-    buryBtn.style.background = "var(--background-modifier-error)";
-    buryBtn.style.color = "var(--text-on-accent)";
+    buryBtn.classList.add("sprout-skip-bury-btn");
     buryBtn.onclick = () => this.bury();
 
     this.scope.register([], "b", () => {

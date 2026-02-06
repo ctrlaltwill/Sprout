@@ -15,6 +15,7 @@ import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian"
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
 import { syncOneFile } from "../sync/sync-engine";
 
@@ -275,9 +276,9 @@ export class CardCreatorModal extends Modal {
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
       const panelRect = typePanel.getBoundingClientRect();
       const top = Math.max(margin, r.top - panelRect.height - 6);
-      typePopover.style.setProperty("--sprout-popover-left", `${left}px`);
-      typePopover.style.setProperty("--sprout-popover-top", `${top}px`);
-      typePopover.style.setProperty("--sprout-popover-width", `${width}px`);
+      setCssProps(typePopover, "--sprout-popover-left", `${left}px`);
+      setCssProps(typePopover, "--sprout-popover-top", `${top}px`);
+      setCssProps(typePopover, "--sprout-popover-width", `${width}px`);
     };
 
     const buildTypeMenu = () => {

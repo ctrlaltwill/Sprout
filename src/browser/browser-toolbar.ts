@@ -18,6 +18,7 @@ import type SproutPlugin from "../main";
 import {
   AOS_CASCADE_STEP,
 } from "../core/constants";
+import { setCssProps } from "../core/ui";
 import type {
   ColKey,
   SortKey,
@@ -342,7 +343,7 @@ export function buildBrowserLayout(
     const c = document.createElement("col");
     c.setAttribute("data-col", k);
     c.className = "sprout-browser-col";
-    c.style.setProperty("--sprout-col-width", `${ctx.colWidths[k] || 120}px`);
+    setCssProps(c, "--sprout-col-width", `${ctx.colWidths[k] || 120}px`);
     colgroup.appendChild(c);
     colEls[k] = c;
   });

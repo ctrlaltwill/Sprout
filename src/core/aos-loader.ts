@@ -32,7 +32,7 @@ export function removeAosErrorHandler(): void {
 
 // Load AOS (CJS require needed for sync bundled module)
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- AOS is a CJS module that must be loaded synchronously via require
   AOS = require("aos") as AOSModule;
   if (AOS?.default) AOS = AOS.default;
 } catch {

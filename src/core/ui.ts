@@ -12,6 +12,30 @@
 
 import { setIcon } from "obsidian";
 
+export type CssPropValue = string | number | null | undefined;
+
+function applyCssProp(el: HTMLElement, prop: string, value: CssPropValue): void {
+  if (value === null || value === undefined) {
+    el.style.removeProperty(prop);
+    return;
+  }
+  el.style.setProperty(prop, String(value));
+}
+
+export function setCssProps(
+  el: HTMLElement,
+  prop: string | Record<string, CssPropValue>,
+  value?: CssPropValue,
+): void {
+  if (typeof prop === "string") {
+    applyCssProp(el, prop, value);
+    return;
+  }
+  for (const [key, val] of Object.entries(prop)) {
+    applyCssProp(el, key, val);
+  }
+}
+
 export function el(tag: string, cls?: string, text?: string): HTMLElement {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -31,13 +55,10 @@ export function iconButton(
   b.title = title || "";
 
   const wrap = el("span");
-  wrap.style.display = "inline-flex";
-  wrap.style.alignItems = "center";
-  wrap.style.gap = "8px";
+  wrap.classList.add("sprout-inline-flex", "sprout-items-center", "sprout-gap-8");
 
   const ic = el("span");
-  ic.style.display = "inline-flex";
-  ic.style.alignItems = "center";
+  ic.classList.add("sprout-inline-flex", "sprout-items-center");
   setIcon(ic, iconName);
   wrap.appendChild(ic);
 
@@ -58,4 +79,21 @@ export function smallToggleButton(isOpen: boolean, onClick: () => void): HTMLBut
     onClick();
   });
   return b;
+}
+
+export function createFragmentFromHTML(html: string): DocumentFragment {
+  const frag = document.createDocumentFragment();
+  const safeHtml = String(html ?? "");
+  if (!safeHtml) return frag;
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(safeHtml, "text/html");
+  const nodes = Array.from(doc.body.childNodes);
+  for (const node of nodes) frag.appendChild(node);
+  return frag;
+}
+
+export function replaceChildrenWithHTML(el: HTMLElement, html: string): void {
+  const frag = createFragmentFromHTML(html);
+  el.replaceChildren(frag);
 }

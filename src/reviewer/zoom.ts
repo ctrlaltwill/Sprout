@@ -28,23 +28,12 @@ export class SproutImageZoomModal extends Modal {
     this.contentEl.addClass("sprout-img-zoom-content");
 
     const wrap = document.createElement("div");
-    wrap.style.display = "flex";
-    wrap.style.alignItems = "center";
-    wrap.style.justifyContent = "center";
-    wrap.style.width = "100%";
-    wrap.style.height = "100%";
+    wrap.className = "sprout-img-zoom-wrap";
 
     const img = document.createElement("img");
     img.className = "sprout-img-zoom-full";
     img.src = this.src;
     img.alt = this.alt;
-
-    // Safe defaults (CSS will enhance)
-    img.style.maxWidth = "92vw";
-    img.style.maxHeight = "86vh";
-    img.style.width = "auto";
-    img.style.height = "auto";
-    img.style.objectFit = "contain";
 
     wrap.appendChild(img);
     this.contentEl.appendChild(wrap);

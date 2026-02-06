@@ -52,14 +52,10 @@ import type { CardRecordType } from "../types/card";
 
 /** Renders a styled "danger callout" box (used by ParseErrorModal). */
 export function mkDangerCallout(parent: HTMLElement, text: string) {
-  const box = parent.createDiv({ cls: "bc rounded-lg border p-3 text-sm" });
-  box.style.borderColor = "rgba(220, 38, 38, 0.35)";
-  box.style.background = "rgba(220, 38, 38, 0.08)";
+  const box = parent.createDiv({ cls: "bc rounded-lg border p-3 text-sm sprout-danger-callout" });
 
   box.createEl("div", { text: "How to fix parse errors", cls: "bc font-medium mb-1" });
-  const body = box.createEl("div", { text, cls: "bc" });
-  body.style.whiteSpace = "pre-wrap";
-  body.style.lineHeight = "1.35";
+  box.createEl("div", { text, cls: "bc sprout-danger-callout-body" });
 
   return box;
 }
@@ -127,12 +123,8 @@ export function setDisabledUnder(root: HTMLElement, disabled: boolean) {
 export function parkBehind(modalEl: HTMLElement, behind: boolean) {
   if (behind) {
     modalEl.addClass("sprout-modal-behind-io-editor");
-    modalEl.style.pointerEvents = "none";
-    modalEl.style.zIndex = "0";
   } else {
     modalEl.removeClass("sprout-modal-behind-io-editor");
-    modalEl.style.pointerEvents = "";
-    modalEl.style.zIndex = "";
   }
 }
 
@@ -145,10 +137,10 @@ export function parkBehind(modalEl: HTMLElement, behind: boolean) {
 export function setVisible(el: HTMLElement, visible: boolean) {
   if (visible) {
     el.removeAttribute("hidden");
-    el.style.removeProperty("display");
+    el.classList.remove("sprout-hidden-important");
   } else {
     el.setAttribute("hidden", "");
-    el.style.setProperty("display", "none", "important");
+    el.classList.add("sprout-hidden-important");
   }
 }
 
@@ -492,11 +484,8 @@ export function createModalMcqSection() {
   correctWrapper.appendChild(correctLabel);
   const correctInput = document.createElement("input");
   correctInput.type = "text";
-  correctInput.className = "bc input w-full";
+  correctInput.className = "bc input w-full sprout-input-fixed";
   correctInput.placeholder = "Correct option";
-  correctInput.style.minHeight = "38px";
-  correctInput.style.maxHeight = "38px";
-  correctInput.style.height = "38px";
   correctWrapper.appendChild(correctInput);
   container.appendChild(correctWrapper);
 
@@ -518,8 +507,7 @@ export function createModalMcqSection() {
     for (const entry of wrongRows) {
       entry.removeBtn.disabled = disable;
       entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
-      entry.removeBtn.style.setProperty("opacity", disable ? "0.35" : "1", "important");
-      entry.removeBtn.style.cursor = disable ? "default" : "pointer";
+      entry.removeBtn.classList.toggle("is-disabled", disable);
     }
   };
 
@@ -528,34 +516,18 @@ export function createModalMcqSection() {
     row.className = "bc flex items-center gap-2";
     const input = document.createElement("input");
     input.type = "text";
-    input.className = "bc input flex-1 text-sm";
+    input.className = "bc input flex-1 text-sm sprout-input-fixed";
     input.placeholder = "Wrong option";
     input.value = value;
-    input.style.minHeight = "38px";
-    input.style.maxHeight = "38px";
-    input.style.height = "38px";
     row.appendChild(input);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "bc inline-flex items-center justify-center";
-    removeBtn.style.setProperty("border", "none", "important");
-    removeBtn.style.setProperty("background", "transparent", "important");
-    removeBtn.style.setProperty("padding", "0", "important");
-    removeBtn.style.setProperty("box-shadow", "none", "important");
-    removeBtn.style.setProperty("outline", "none", "important");
-    removeBtn.style.setProperty("color", "var(--muted-foreground)", "important");
+    removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
     const xIcon = document.createElement("span");
     xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-[0.8rem]";
     setIcon(xIcon, "x");
     removeBtn.appendChild(xIcon);
-    removeBtn.addEventListener("mouseenter", () => {
-      if (removeBtn.disabled) return;
-      removeBtn.style.setProperty("color", "var(--foreground)", "important");
-    });
-    removeBtn.addEventListener("mouseleave", () => {
-      removeBtn.style.setProperty("color", "var(--muted-foreground)", "important");
-    });
     removeBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -575,11 +547,8 @@ export function createModalMcqSection() {
 
   const addInput = document.createElement("input");
   addInput.type = "text";
-  addInput.className = "bc input flex-1 text-sm";
+  addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
   addInput.placeholder = "Add another wrong option";
-  addInput.style.minHeight = "38px";
-  addInput.style.maxHeight = "38px";
-  addInput.style.height = "38px";
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
       ev.preventDefault();

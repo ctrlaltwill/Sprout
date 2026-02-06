@@ -119,6 +119,84 @@
   transform: rotate(-30deg);
 }
 
+/* ---- Utility: cursors/opacity ---- */
+
+.sprout .sprout-cursor-grab {
+  cursor: grab !important;
+}
+
+.sprout .sprout-cursor-grabbing {
+  cursor: grabbing !important;
+}
+
+.sprout .sprout-cursor-crosshair {
+  cursor: crosshair !important;
+}
+
+.sprout .sprout-cursor-move {
+  cursor: move !important;
+}
+
+.sprout .sprout-cursor-nwse-resize {
+  cursor: nwse-resize !important;
+}
+
+.sprout .sprout-cursor-nesw-resize {
+  cursor: nesw-resize !important;
+}
+
+.sprout .sprout-display-flex {
+  display: flex !important;
+}
+
+.sprout .sprout-opacity-35 {
+  opacity: 0.35 !important;
+}
+
+.sprout .sprout-pointer-none {
+  pointer-events: none !important;
+}
+
+.sprout .sprout-hidden-important {
+  display: none !important;
+}
+
+/* ---- Utility: rotation/animations ---- */
+
+.sprout .sprout-rotate {
+  transform: rotate(var(--sprout-rotate, 0deg));
+}
+
+.sprout .sprout-star-spin {
+  transition: transform 0.3s cubic-bezier(.4,2,.6,1);
+}
+
+.sprout .sprout-star-spin.is-fast {
+  transition: transform 0.15s cubic-bezier(.4,2,.6,1);
+}
+
+.sprout .sprout-bmc-rotate {
+  transition: transform 0.4s cubic-bezier(.4,2,.6,1);
+}
+
+/* ---- Utility: inline flex ---- */
+
+.sprout .sprout-inline-flex {
+  display: inline-flex !important;
+}
+
+.sprout .sprout-items-center {
+  align-items: center !important;
+}
+
+.sprout .sprout-gap-8 {
+  gap: 8px !important;
+}
+
+.sprout .sprout-stage-transform {
+  transform: var(--sprout-stage-transform, none) !important;
+}
+
 /* ---- Image Occlusion review ---- */
 
 .sprout .sprout-io-container {

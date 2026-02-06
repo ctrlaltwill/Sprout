@@ -23,6 +23,7 @@
   max-width: 240px;
   border: none !important;
   box-shadow: none !important;
+  width: var(--sprout-home-name-width, auto) !important;
 }
 
 .sprout-home-name-input {
@@ -42,11 +43,26 @@
   pointer-events: none;
   height: 0;
   overflow: hidden;
+  font-family: var(--sprout-home-font-family, inherit);
+  font-size: var(--sprout-home-font-size, inherit);
+  font-weight: var(--sprout-home-font-weight, inherit);
+  letter-spacing: var(--sprout-home-letter-spacing, normal);
+  text-transform: var(--sprout-home-text-transform, none);
+  font-style: var(--sprout-home-font-style, normal);
+  font-variant: var(--sprout-home-font-variant, normal);
+  line-height: var(--sprout-home-line-height, normal);
 }
 
 /* Home: remove Obsidian card margins inside home layout */
 .sprout .sprout-home-root .card {
   margin: 0 !important;
+}
+
+.sprout .sprout-home-root {
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-width: var(--sprout-home-max-width, 100%) !important;
 }
 
 /* ---- Icon wrappers ---- */
@@ -157,6 +173,13 @@
 
 .sprout-deck-row-dragging {
   opacity: 0.5;
+  z-index: 10;
+}
+
+.sprout-deck-row-anim {
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(var(--sprout-deck-row-translate, 0px));
 }
 
 /* ---- Trend badge ---- */

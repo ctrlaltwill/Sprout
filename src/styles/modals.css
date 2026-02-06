@@ -73,6 +73,28 @@
   padding: 0;
 }
 
+/* ---- Modal utils ---- */
+
+.sprout .sprout-danger-callout {
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  background: rgba(220, 38, 38, 0.08) !important;
+}
+
+.sprout .sprout-danger-callout-body {
+  white-space: pre-wrap !important;
+  line-height: 1.35 !important;
+}
+
+.sprout .sprout-modal-behind-io-editor {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+.sprout .sprout-parse-errors-list {
+  margin: 0 !important;
+  padding-left: 18px !important;
+}
+
 /* ---- Card creator modal ---- */
 
 .sprout .sprout-card-creator-modal {
@@ -143,6 +165,8 @@
   position: fixed !important;
   inset: 0 !important;
   z-index: 1000000 !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  padding: 24px !important;
 }
 
 .sprout .sprout-bulk-edit-backdrop {
@@ -152,6 +176,12 @@
 
 .sprout .sprout-bulk-edit-panel {
   padding: 20px !important;
+  width: min(640px, 100%) !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
 }
 
 .sprout .sprout-bulk-edit-footer {
@@ -191,6 +221,298 @@
 
 .sprout .sprout-bulk-popover.is-open {
   display: block !important;
+}
+
+/* ---- Image occlusion creator modal ---- */
+
+.sprout .sprout-io-creator-modal {
+  width: min(96vw, 750px) !important;
+  max-width: 90% !important;
+  height: auto !important;
+  max-height: 90% !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+.sprout .sprout-io-creator-root {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 800px !important;
+  max-height: 90% !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  padding: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.sprout .sprout-io-title-field {
+  padding-top: 15px !important;
+}
+
+.sprout .sprout-io-title-input {
+  resize: none !important;
+  min-height: 60px !important;
+}
+
+.sprout .sprout-io-info-input {
+  resize: none !important;
+  min-height: 80px !important;
+}
+
+.sprout .sprout-io-canvas {
+  height: var(--sprout-io-canvas-height, auto) !important;
+  min-height: var(--sprout-io-canvas-min-height, 0px) !important;
+  max-height: var(--sprout-io-canvas-max-height, none) !important;
+}
+
+.sprout .sprout-io-toolbar {
+  width: fit-content !important;
+  max-width: 100% !important;
+  align-self: flex-start !important;
+}
+
+.sprout .sprout-io-file-input {
+  display: none !important;
+}
+
+.sprout .sprout-io-canvas-container {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 1500px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+.sprout .sprout-io-canvas-placeholder {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.sprout .sprout-io-viewport {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.sprout .sprout-io-stage {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform-origin: 0 0 !important;
+  width: var(--sprout-io-stage-w, 1px) !important;
+  height: var(--sprout-io-stage-h, 1px) !important;
+  transform: var(--sprout-io-stage-transform, none) !important;
+}
+
+.sprout .sprout-stage-transform {
+  transform: var(--sprout-stage-transform, none) !important;
+}
+
+.sprout .sprout-io-stage-image {
+  display: block !important;
+  user-select: none !important;
+  border: 1px solid var(--border) !important;
+  box-sizing: border-box !important;
+}
+
+.sprout .sprout-io-stage-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+.sprout .sprout-io-footer {
+  padding-top: 15px !important;
+}
+
+.sprout .sprout-io-hide-all {
+  background: var(--foreground) !important;
+  color: var(--background) !important;
+  border-color: var(--foreground) !important;
+}
+
+.sprout .sprout-io-dlg-cancel {
+  background-color: #000 !important;
+  color: #fff !important;
+  border: 1px solid #000 !important;
+}
+
+.sprout .sprout-io-dlg-delete {
+  background-color: #fff !important;
+  color: var(--foreground) !important;
+}
+
+.sprout .sprout-io-close-btn {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+}
+
+.sprout .sprout-io-text-wrap {
+  position: absolute !important;
+  left: var(--sprout-io-text-x, 0) !important;
+  top: var(--sprout-io-text-y, 0) !important;
+  z-index: 20 !important;
+}
+
+.sprout .sprout-io-text-input {
+  width: var(--sprout-io-text-w, 40px) !important;
+  height: var(--sprout-io-text-h, 30px) !important;
+  padding: 6px 8px !important;
+  resize: none !important;
+  font-size: var(--sprout-io-text-size, 14px) !important;
+  line-height: 1.3 !important;
+  color: var(--sprout-io-text-color, #111) !important;
+  border: 1px dashed rgba(16, 185, 129, 0.6) !important;
+  border-radius: 6px !important;
+  outline: none !important;
+  background: var(--sprout-io-text-bg, transparent) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+.sprout .sprout-io-text-preview {
+  position: absolute !important;
+  border: 2px dashed #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  pointer-events: none !important;
+  border-radius: 6px !important;
+  left: var(--sprout-io-preview-x, 0) !important;
+  top: var(--sprout-io-preview-y, 0) !important;
+  width: var(--sprout-io-preview-w, 1px) !important;
+  height: var(--sprout-io-preview-h, 1px) !important;
+}
+
+.sprout .sprout-io-crop-preview {
+  position: absolute !important;
+  border: 2px dashed #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  pointer-events: none !important;
+  border-radius: 4px !important;
+  left: var(--sprout-io-crop-x, 0) !important;
+  top: var(--sprout-io-crop-y, 0) !important;
+  width: var(--sprout-io-crop-w, 1px) !important;
+  height: var(--sprout-io-crop-h, 1px) !important;
+}
+
+.sprout .sprout-io-mask-preview {
+  position: absolute !important;
+  border: 3px dashed #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  pointer-events: none !important;
+  left: var(--sprout-io-mask-x, 0) !important;
+  top: var(--sprout-io-mask-y, 0) !important;
+  width: var(--sprout-io-mask-w, 1px) !important;
+  height: var(--sprout-io-mask-h, 1px) !important;
+  border-radius: var(--sprout-io-mask-radius, 4px) !important;
+}
+
+.sprout .sprout-io-overlay-item {
+  position: absolute !important;
+  left: var(--sprout-io-left, 0) !important;
+  top: var(--sprout-io-top, 0) !important;
+  width: var(--sprout-io-width, 1px) !important;
+  height: var(--sprout-io-height, 1px) !important;
+}
+
+.sprout .sprout-io-rect {
+  pointer-events: auto !important;
+  border: 3px dashed #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border-radius: 4px !important;
+}
+
+.sprout .sprout-io-rect.is-selected {
+  border: 3px dashed #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+.sprout .sprout-io-rect.is-circle {
+  border-radius: 50% !important;
+}
+
+.sprout .sprout-io-group-input {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 60px !important;
+  padding: 6px 12px !important;
+  font-size: 21px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  border: 2px solid rgba(0, 0, 0, 0.3) !important;
+  border-radius: 6px !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #000 !important;
+  cursor: text !important;
+  z-index: 10 !important;
+}
+
+.sprout .sprout-io-corner {
+  position: absolute !important;
+  width: var(--sprout-io-corner-size, 10px) !important;
+  height: var(--sprout-io-corner-size, 10px) !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-radius: 3px !important;
+  pointer-events: none !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+}
+
+.sprout .sprout-io-corner.is-left {
+  left: -5px !important;
+}
+
+.sprout .sprout-io-corner.is-right {
+  right: -5px !important;
+}
+
+.sprout .sprout-io-corner.is-top {
+  top: -5px !important;
+}
+
+.sprout .sprout-io-corner.is-bottom {
+  bottom: -5px !important;
+}
+
+.sprout .sprout-io-text-box {
+  pointer-events: auto !important;
+  border: var(--sprout-io-text-border, 1px dashed rgba(16, 185, 129, 0.6)) !important;
+  background-color: var(--sprout-io-text-bg, transparent) !important;
+  box-shadow: var(--sprout-io-text-shadow, none) !important;
+  border-radius: 6px !important;
+  padding: 6px 8px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+.sprout .sprout-io-text-content {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  font-size: var(--sprout-io-text-size, 14px) !important;
+  line-height: 1.3 !important;
+  color: var(--sprout-io-text-color, #111111) !important;
+  pointer-events: none !important;
 }
 
 /* ---- Close button ---- */
@@ -399,4 +721,341 @@
   align-items: center;
   gap: 8px;
   margin-top: 10px;
+}
+
+/* ---- IO Editor Modal (moved from inline <style> in image-mask-renderer.ts) ---- */
+
+.sprout-io-modal .modal-content {
+  padding-top: 10px;
+  overflow: hidden;
+}
+
+.sprout-io-editor-modal {
+  z-index: 3000;
+}
+
+.sprout-io-editor-modal .modal-bg {
+  z-index: 2999;
+}
+
+.sprout-io-editor-modal .modal {
+  z-index: 3000;
+  width: 90% !important;
+  max-width: 800px !important;
+}
+
+.sprout-io-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sprout-io-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sprout-io-viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  height: var(--sprout-io-viewport-h, auto);
+}
+
+.sprout-io-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  width: var(--sprout-io-stage-w, 1px);
+  height: var(--sprout-io-stage-h, 1px);
+}
+
+.sprout-io-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.sprout-io-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.sprout-io-preview {
+  position: absolute;
+  left: var(--sprout-io-left, 0);
+  top: var(--sprout-io-top, 0);
+  width: var(--sprout-io-width, 0);
+  height: var(--sprout-io-height, 0);
+  box-sizing: border-box;
+  border: 2px dashed var(--interactive-accent);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+}
+
+.sprout-io-rect {
+  position: absolute;
+  left: var(--sprout-io-left, 0);
+  top: var(--sprout-io-top, 0);
+  width: var(--sprout-io-width, 0);
+  height: var(--sprout-io-height, 0);
+  box-sizing: border-box;
+  border: 2px solid var(--interactive-accent);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sprout-io-rect.selected {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 1px;
+}
+
+.sprout-io-rect-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  pointer-events: none;
+}
+
+.sprout-io-pan {
+  cursor: grab;
+}
+
+.sprout-io-pan:active {
+  cursor: grabbing;
+}
+
+.sprout-io-canvas-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprout-io-ico svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sprout-io-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ---- IO Editor Toolbar Styles (moved from io-editor-styles.ts inline <style>) ---- */
+
+[data-sprout-toolbar] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 6px;
+  background: var(--background);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.sprout-io-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.sprout-io-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--background-modifier-border);
+  margin: 0 2px;
+}
+
+.sprout-io-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--foreground);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+
+.sprout-io-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.sprout-io-btn.is-active {
+  background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--theme-accent) 40%, transparent);
+  color: var(--theme-accent);
+}
+
+.sprout-io-btn.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.sprout-io-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sprout-io-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background);
+}
+
+.sprout-io-toolbar-label {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.sprout-io-input {
+  height: 26px;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.sprout-io-input[type="number"] {
+  appearance: textfield;
+}
+
+.sprout-io-input[type="number"]::-webkit-outer-spin-button,
+.sprout-io-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.sprout-io-color {
+  width: 26px;
+  height: 26px;
+  padding: 2px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background);
+  cursor: pointer;
+}
+
+.sprout-io-zoom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 70px;
+  height: 12px;
+  cursor: pointer;
+  background: transparent;
+  margin: 0;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.sprout-io-zoom-slider::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+  width: 70px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.sprout-io-zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--background);
+  border: 2px solid var(--theme-accent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  margin-left: -7px;
+}
+
+.sprout-io-zoom-slider::-moz-range-track {
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+  width: 70px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.sprout-io-zoom-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--background);
+  border: 2px solid var(--theme-accent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+}
+
+.sprout-io-zoom-slider:focus-visible {
+  outline: none;
+}
+
+.sprout-io-text-icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+
+.sprout-io-text-icon-svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.sprout-io-text-icon-letter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--foreground);
 }

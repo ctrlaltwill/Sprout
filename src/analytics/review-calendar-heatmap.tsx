@@ -66,7 +66,7 @@ type HeatCell = {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={"svg-icon"}
+      className="svg-icon sprout-ana-chevron"
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -76,10 +76,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{
-        display: "inline-flex",
-        transform: `${open ? "rotate(90deg)" : "rotate(0deg)"} scale(0.7)`,
-      }}
+      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -123,15 +120,9 @@ function usePopoverPlacement(
     const place = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.style.position = "absolute";
-      popover.style.top = "calc(100% + 6px)";
-      if (align === "right") {
-        popover.style.right = "0px";
-        popover.style.left = "auto";
-      } else {
-        popover.style.left = "0px";
-        popover.style.right = "auto";
-      }
+      popover.classList.add("sprout-ana-popover", "sprout-ana-popover-sm");
+      popover.classList.toggle("sprout-ana-popover-right", align === "right");
+      popover.classList.toggle("sprout-ana-popover-left", align !== "right");
     };
     place();
     window.addEventListener("resize", place);
@@ -381,7 +372,7 @@ export function ReviewCalendarHeatmap(props: {
   }
 
   return (
-    <div className={"bc card sprout-ana-card p-4 flex flex-col gap-3"} style={{ minHeight: "320px" }}>
+    <div className={"bc card sprout-ana-card sprout-ana-min-320 p-4 flex flex-col gap-3"}>
       <div className={"bc flex items-start justify-between gap-2"}>
         <div className={"bc"}>
           <div className={"bc flex items-center gap-1"}>
@@ -422,8 +413,7 @@ export function ReviewCalendarHeatmap(props: {
               id="sprout-heatmap-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className={"bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col"}
-              style={{ position: "absolute", top: "calc(100% + 6px)", zIndex: 1000, minWidth: "250px" }}
+              className={"bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm"}
             >
               <div className={"bc p-1"}>
                 <div
@@ -488,7 +478,7 @@ export function ReviewCalendarHeatmap(props: {
         </div>
       </div>
 
-      <div ref={chartWrapRef} className={"bc relative flex flex-1 items-center"} style={{ minHeight: "120px" }}>
+      <div ref={chartWrapRef} className={"bc relative flex flex-1 items-center sprout-ana-min-120"}>
         <svg className={"bc"} width="100%" height={gridHeight} viewBox={`0 0 ${gridWidth} ${gridHeight}`}>
           {cells.map((cell, idx) => {
             let col = Math.floor(idx / 7);
@@ -528,16 +518,8 @@ export function ReviewCalendarHeatmap(props: {
 
         {hovered ? (
           <div
-            className={"bc rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs"}
-            style={{
-              position: "absolute",
-              left: hovered.x,
-              top: hovered.y,
-              transform: "translate(-50%, -100%)",
-              pointerEvents: "none",
-              whiteSpace: "nowrap",
-              zIndex: 10,
-            }}
+            className={"bc rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs sprout-ana-heatmap-tooltip"}
+            style={{ "--sprout-ana-x": `${hovered.x}px`, "--sprout-ana-y": `${hovered.y}px` } as React.CSSProperties}
           >
             <div className={"bc text-sm font-medium text-background"}>{hovered.cell.dateLabel}</div>
             <div className={"bc text-background"}>Reviews: {hovered.cell.count}</div>
@@ -554,8 +536,8 @@ export function ReviewCalendarHeatmap(props: {
           {palette.slice(1).map((color, idx) => (
             <span
               key={`${color}-${idx}`}
-              className={"bc inline-block"}
-              style={{ width: "10px", height: "10px", borderRadius: "3px", backgroundColor: color }}
+              className={"bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"}
+              style={{ "--sprout-legend-color": color } as React.CSSProperties}
             />
           ))}
         </div>

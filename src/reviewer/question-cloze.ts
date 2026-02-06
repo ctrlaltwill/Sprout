@@ -6,7 +6,7 @@
  *   - renderClozeFront — Creates a DOM element rendering a cloze card's text with blanks or revealed answers
  */
 
-import { el } from "../core/ui";
+import { el, setCssProps } from "../core/ui";
 
 export function renderClozeFront(text: string, reveal: boolean, targetIndex?: number | null): HTMLElement {
   const container = el("div", "");
@@ -25,11 +25,8 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
 
   const measureChPx = (): number => {
     const probe = document.createElement("span");
-    probe.className = "bc";
+    probe.className = "bc sprout-cloze-probe";
     probe.textContent = "0000000000";
-    probe.style.position = "absolute";
-    probe.style.visibility = "hidden";
-    probe.style.whiteSpace = "pre";
     p.appendChild(probe);
     const px = probe.getBoundingClientRect().width / 10;
     probe.remove();
@@ -72,7 +69,7 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
         if (rgb && rgb.length >= 3) {
           const [r, g, b] = rgb;
           const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-          answerSpan.style.color = luminance > 0.7 ? "#111" : "#fff";
+          setCssProps(answerSpan, "--sprout-cloze-color", luminance > 0.7 ? "#111" : "#fff");
         }
       }, 0);
       p.appendChild(answerSpan);
@@ -89,7 +86,7 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
       // Clear text content and use border-bottom for visual indicator
       blank.textContent = "";
       // Width: approximately match the hidden text length (chars * px per char)
-      blank.style.width = `${Math.max(30, wAdj * chPx)}px`;
+      setCssProps(blank, "--sprout-cloze-width", `${Math.max(30, wAdj * chPx)}px`);
 
       p.appendChild(blank);
     }

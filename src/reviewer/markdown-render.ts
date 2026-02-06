@@ -7,6 +7,7 @@
  */
 
 import { MarkdownRenderer, TFile, type App, type Component } from "obsidian";
+import { setCssProps } from "../core/ui";
 
 type Opts = {
   app: App;
@@ -102,15 +103,7 @@ export class SproutMarkdownHelper {
       img.dataset.bcZoomBound = "1";
 
       img.classList.add("sprout-zoomable");
-
-      img.style.display = "block";
-      img.style.margin = "8px 0";
-      img.style.maxWidth = "100%";
-      img.style.height = "auto";
-      img.style.width = "auto";
-      img.style.maxHeight = `${this.maxHeightPx}px`;
-      img.style.objectFit = "contain";
-      img.style.cursor = "zoom-in";
+      setCssProps(img, "--sprout-md-image-max-h", `${this.maxHeightPx}px`);
 
       try {
         img.loading = "lazy";

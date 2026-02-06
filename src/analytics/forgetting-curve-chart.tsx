@@ -244,7 +244,10 @@ function CardCurveTooltip(props: { active?: boolean; payload?: Array<{ value?: n
         const idLabel = String(entry?.name ?? entry?.dataKey ?? "");
         return (
           <div key={entry.dataKey} className="bc flex items-center gap-2">
-            <span className="bc inline-block size-2 rounded-full" style={{ background: entry.color }} />
+            <span
+              className="bc inline-block size-2 rounded-full sprout-ana-legend-dot"
+              style={{ "--sprout-legend-color": entry.color } as React.CSSProperties}
+            />
             <span className="bc text-background">{idLabel}</span>
             <span className="bc text-background">{Math.round(value * 100)}%</span>
           </div>
@@ -286,21 +289,10 @@ export function ForgettingCurveChart(props: {
 
   React.useEffect(() => {
     if (!open) return undefined;
-    const place = () => {
-      const popover = popoverRef.current;
-      if (!popover) return;
-      popover.style.position = "absolute";
-      popover.style.top = "calc(100% + 6px)";
-      popover.style.right = "0px";
-      popover.style.left = "auto";
-    };
-    place();
-    window.addEventListener("resize", place, true);
-    window.addEventListener("scroll", place, true);
-    return () => {
-      window.removeEventListener("resize", place, true);
-      window.removeEventListener("scroll", place, true);
-    };
+    const popover = popoverRef.current;
+    if (!popover) return undefined;
+    popover.classList.add("sprout-ana-popover", "sprout-ana-popover-right", "sprout-ana-popover-md");
+    return undefined;
   }, [open]);
 
 
@@ -506,7 +498,7 @@ export function ForgettingCurveChart(props: {
     for (let day = 0; day <= maxDays; day += 1) {
       const row: DataRow = { day } as DataRow;
       for (const curve of curves) {
-        const { firstReviewAt, horizon: _horizon, timeline } = curve;
+        const { firstReviewAt, timeline } = curve;
         if (!Number.isFinite(firstReviewAt) || !timeline.length) {
           row[curve.id] = 0;
           continue;
@@ -575,8 +567,8 @@ export function ForgettingCurveChart(props: {
         {legendItems.map((item) => (
           <div key={item.id} className="bc inline-flex items-center gap-2">
             <span
-              className="bc inline-block"
-              style={{ width: "10px", height: "10px", borderRadius: "3px", background: item.color }}
+              className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
+              style={{ "--sprout-legend-color": item.color } as React.CSSProperties}
             />
             <span data-tooltip={item.tooltip || undefined}>{item.label}</span>
             {item.status ? <span className="bc text-muted-foreground">({item.status})</span> : null}
@@ -588,8 +580,7 @@ export function ForgettingCurveChart(props: {
 
   return (
     <div
-      className="card sprout-ana-card sprout-forgetting-curve-card p-4 flex flex-col gap-3 h-full"
-      style={{ overflow: "visible" }}
+      className="card sprout-ana-card sprout-forgetting-curve-card sprout-ana-overflow-visible p-4 flex flex-col gap-3 h-full"
     >
       <div className="bc flex items-start justify-between gap-2">
         <div>
@@ -609,7 +600,7 @@ export function ForgettingCurveChart(props: {
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
-              className="bc svg-icon lucide-filter"
+              className="bc svg-icon lucide-filter sprout-ana-icon"
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -619,7 +610,6 @@ export function ForgettingCurveChart(props: {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ color: "var(--text-normal)" }}
             >
               <polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3" />
             </svg>
@@ -630,8 +620,7 @@ export function ForgettingCurveChart(props: {
             <div
               aria-hidden="false"
               ref={popoverRef}
-              className="bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col"
-              style={{ position: "absolute", top: "calc(100% + 6px)", zIndex: 1000, minWidth: "280px" }}
+              className="bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-right sprout-ana-popover-md"
             >
               <div className="bc p-1">
                 <div className="bc text-sm text-muted-foreground px-2 py-1">Search cards</div>
@@ -674,16 +663,14 @@ export function ForgettingCurveChart(props: {
                           <div className="bc flex flex-col min-w-0">
                             <div className="bc flex items-center justify-between gap-2 text-xs text-muted-foreground">
                               <span
-                                className="bc truncate"
-                                style={{ minWidth: 0, flex: "1 1 auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                className="bc truncate sprout-ana-truncate-row"
                               >
                                 {result.location}
                               </span>
                               <span className="bc shrink-0">{result.label}</span>
                             </div>
                             <div
-                              className="bc truncate"
-                              style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                              className="bc truncate sprout-ana-truncate"
                             >
                               {result.preview}
                             </div>
@@ -709,8 +696,9 @@ export function ForgettingCurveChart(props: {
                                 role="menuitemradio"
                                 aria-checked="false"
                                 tabIndex={0}
-                                className="bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
-                                style={disabled ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+                                className={
+                                  `bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0${disabled ? " is-disabled" : ""}`
+                                }
                                 onClick={() => {
                                   if (disabled) return;
                                   toggleSelection(result.id);
@@ -727,16 +715,14 @@ export function ForgettingCurveChart(props: {
                                 <div className="bc flex flex-col min-w-0">
                                   <div className="bc flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                     <span
-                                      className="bc truncate"
-                                      style={{ minWidth: 0, flex: "1 1 auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                      className="bc truncate sprout-ana-truncate-row"
                                     >
                                       {result.location || "Unknown location"}
                                     </span>
                                     <span className="bc shrink-0">{result.label}</span>
                                   </div>
                                   <div
-                                    className="bc truncate"
-                                    style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                    className="bc truncate sprout-ana-truncate"
                                   >
                                     {result.preview || "No question text."}
                                   </div>
@@ -807,7 +793,7 @@ export function ForgettingCurveChart(props: {
         </div>
       )}
 
-      <div className="bc" style={{ height: "48px", overflowY: "auto" }}>
+      <div className="bc sprout-ana-scroll-48">
         {legendContent()}
       </div>
 

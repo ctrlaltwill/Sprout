@@ -14,6 +14,7 @@ import type { CardRecord } from "../types/card";
 import type { StoredIORect } from "./image-occlusion-types";
 import { resolveImageFile } from "./io-helpers";
 import type * as IoModule from "./image-occlusion-index";
+import { setCssProps } from "../core/ui";
 
 export function isIoParentCard(card: CardRecord): boolean {
   return card && card.type === "io";
@@ -39,23 +40,29 @@ export function renderImageOcclusionReviewInto(args: {
   const enableWidgetModal = args.enableWidgetModal !== false;
 
   // Clear container
-  containerEl.innerHTML = "";
+  containerEl.replaceChildren();
   containerEl.classList.add("sprout-io-container");
   if (widgetMode) {
     containerEl.classList.add("sprout-io-container--clip");
   }
 
   // Get image reference
-  const imageRef = String(card.imageRef || card.ioSrc || card.src || card.image || "").trim();
+  const imageRef = String(card.imageRef || "").trim();
   if (!imageRef) {
-    containerEl.innerHTML = '<div class="bc text-muted-foreground text-sm">IO card missing image reference.</div>';
+    const msg = document.createElement("div");
+    msg.className = "bc text-muted-foreground text-sm";
+    msg.textContent = "IO card missing image reference.";
+    containerEl.appendChild(msg);
     return;
   }
 
   // Resolve image file
   const imageFile = resolveImageFile(app, sourcePath, imageRef);
   if (!imageFile) {
-    containerEl.innerHTML = `<div class="bc text-muted-foreground text-sm">Image not found: ${imageRef}</div>`;
+    const msg = document.createElement("div");
+    msg.className = "bc text-muted-foreground text-sm";
+    msg.textContent = `Image not found: ${imageRef}`;
+    containerEl.appendChild(msg);
     return;
   }
 
@@ -174,13 +181,13 @@ export function renderImageOcclusionReviewInto(args: {
       const left = imgRect.left - hostRect.left;
       const top = imgRect.top - hostRect.top;
       const imgStyles = getComputedStyle(img);
-      overlay.style.setProperty("--sprout-io-left", `${left}px`);
-      overlay.style.setProperty("--sprout-io-top", `${top}px`);
-      overlay.style.setProperty("--sprout-io-width", `${imgRect.width}px`);
-      overlay.style.setProperty("--sprout-io-height", `${imgRect.height}px`);
-      overlay.style.setProperty("--sprout-io-max-width", imgStyles.maxWidth);
-      overlay.style.setProperty("--sprout-io-max-height", imgStyles.maxHeight);
-      overlay.style.setProperty("--sprout-io-radius", imgStyles.borderRadius);
+      setCssProps(overlay, "--sprout-io-left", `${left}px`);
+      setCssProps(overlay, "--sprout-io-top", `${top}px`);
+      setCssProps(overlay, "--sprout-io-width", `${imgRect.width}px`);
+      setCssProps(overlay, "--sprout-io-height", `${imgRect.height}px`);
+      setCssProps(overlay, "--sprout-io-max-width", imgStyles.maxWidth);
+      setCssProps(overlay, "--sprout-io-max-height", imgStyles.maxHeight);
+      setCssProps(overlay, "--sprout-io-radius", imgStyles.borderRadius);
     }
 
     // Add masks
@@ -202,10 +209,10 @@ export function renderImageOcclusionReviewInto(args: {
 
       const mask = document.createElement("div");
       mask.classList.add("sprout-io-mask");
-      mask.style.setProperty("--sprout-io-x", `${Math.max(0, Math.min(1, x)) * 100}%`);
-      mask.style.setProperty("--sprout-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
-      mask.style.setProperty("--sprout-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
-      mask.style.setProperty("--sprout-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
+      setCssProps(mask, "--sprout-io-x", `${Math.max(0, Math.min(1, x)) * 100}%`);
+      setCssProps(mask, "--sprout-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
+      setCssProps(mask, "--sprout-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
+      setCssProps(mask, "--sprout-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
       if (widgetMode) {
         if (isTarget) {
           mask.classList.add("sprout-io-mask-target");
@@ -217,7 +224,7 @@ export function renderImageOcclusionReviewInto(args: {
             const rect = mask.getBoundingClientRect();
             if (!rect.height) return;
             const size = Math.max(12, rect.height * 0.35);
-            hint.style.setProperty("--sprout-io-hint-size", `${size}px`);
+            setCssProps(hint, "--sprout-io-hint-size", `${size}px`);
           });
         } else {
           mask.classList.add("sprout-io-mask-other");

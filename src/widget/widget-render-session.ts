@@ -8,7 +8,7 @@
 
 import { setIcon } from "obsidian";
 
-import { el } from "../core/ui";
+import { el, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { renderClozeFront } from "../reviewer/question-cloze";
 
 import { isClozeLike } from "./widget-helpers";
@@ -116,7 +116,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   cardTitle = cardTitle.replace(/\s*[•·-]\s*c\d+\b/gi, "").trim();
 
   const titleEl = el("div", "bc text-xs font-semibold sprout-widget-text");
-  titleEl.innerHTML = processMarkdownFeatures(cardTitle);
+  replaceChildrenWithHTML(titleEl, processMarkdownFeatures(cardTitle));
   applySectionStyles(titleEl);
   body.appendChild(titleEl);
 
@@ -181,7 +181,7 @@ function renderBasicCard(
   } else {
     const qP = document.createElement("p");
     qP.className = "bc whitespace-pre-wrap break-words";
-    qP.innerHTML = processMarkdownFeatures(qText.replace(/\n/g, "<br>"));
+    replaceChildrenWithHTML(qP, processMarkdownFeatures(qText.replace(/\n/g, "<br>")));
     qEl.appendChild(qP);
   }
   qEl.classList.add("sprout-widget-text");
@@ -201,7 +201,7 @@ function renderBasicCard(
     } else {
       const aP = document.createElement("p");
       aP.className = "bc whitespace-pre-wrap break-words";
-      aP.innerHTML = processMarkdownFeatures(aText.replace(/\n/g, "<br>"));
+      replaceChildrenWithHTML(aP, processMarkdownFeatures(aText.replace(/\n/g, "<br>")));
       aEl.appendChild(aP);
     }
     aEl.classList.add("sprout-widget-text");
@@ -272,7 +272,7 @@ function renderMcqCard(
   makeDivider: () => HTMLElement,
 ) {
   const stemEl = el("div", "bc sprout-widget-text");
-  stemEl.innerHTML = processMarkdownFeatures(card.stem || "");
+  replaceChildrenWithHTML(stemEl, processMarkdownFeatures(card.stem || ""));
   applySectionStyles(stemEl);
   body.appendChild(stemEl);
 
@@ -305,12 +305,12 @@ function renderMcqCard(
     if (text && text.includes("\n")) {
       text.split(/\n+/).forEach((line: string) => {
         const p = document.createElement("div");
-        p.innerHTML = processMarkdownFeatures(line);
+        replaceChildrenWithHTML(p, processMarkdownFeatures(line));
         p.classList.add("sprout-widget-mcq-line");
         textEl.appendChild(p);
       });
     } else {
-      textEl.innerHTML = processMarkdownFeatures(text);
+      replaceChildrenWithHTML(textEl, processMarkdownFeatures(text));
     }
     left.appendChild(textEl);
     d.appendChild(left);
@@ -368,7 +368,7 @@ function renderInfoBlock(
   const infoEl = el("div", "bc sprout-widget-info");
   const infoP = document.createElement("p");
   infoP.className = "bc whitespace-pre-wrap break-words";
-  infoP.innerHTML = processMarkdownFeatures(infoText.replace(/\n/g, "<br>"));
+  replaceChildrenWithHTML(infoP, processMarkdownFeatures(infoText.replace(/\n/g, "<br>")));
   infoEl.appendChild(infoP);
   applySectionStyles(infoEl);
   body.appendChild(infoEl);
@@ -569,7 +569,7 @@ function renderProgressBar(view: WidgetViewLike, wrap: HTMLElement) {
   const barBg = el("div", "bc w-full rounded-full overflow-hidden sprout-widget-progress-track");
 
   const barFill = el("div", "bc h-full transition-all sprout-widget-progress-fill");
-  barFill.style.setProperty("--sprout-progress", `${progressPercent}%`);
+  setCssProps(barFill, "--sprout-progress", `${progressPercent}%`);
   barBg.appendChild(barFill);
   progressBar.appendChild(barBg);
   wrap.appendChild(progressBar);

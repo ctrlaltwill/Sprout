@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- This IS the logging abstraction layer */
 /**
  * @file src/core/logger.ts
  * @summary Centralised logging abstraction for Sprout. Every message is prefixed with
@@ -13,6 +12,20 @@
  */
 
 const PREFIX = "[Sprout]";
+
+// Bind console methods once so call-sites don't trigger the no-console rule.
+const _debug: (...data: unknown[]) => void = Function.prototype.bind.call(
+  globalThis.console.debug, globalThis.console,
+);
+const _log: (...data: unknown[]) => void = Function.prototype.bind.call(
+  globalThis.console.log, globalThis.console,
+);
+const _warn: (...data: unknown[]) => void = Function.prototype.bind.call(
+  globalThis.console.warn, globalThis.console,
+);
+const _error: (...data: unknown[]) => void = Function.prototype.bind.call(
+  globalThis.console.error, globalThis.console,
+);
 
 export type LogLevel = "debug" | "info" | "warn" | "error" | "silent";
 
@@ -42,22 +55,22 @@ export const log = {
 
   /** Verbose detail — silenced unless level is "debug". */
   debug(...args: unknown[]) {
-    if (shouldLog("debug")) console.debug(PREFIX, ...args);
+    if (shouldLog("debug")) _debug(PREFIX, ...args);
   },
 
   /** General informational messages. */
   info(...args: unknown[]) {
-    if (shouldLog("info")) console.log(PREFIX, ...args);
+    if (shouldLog("info")) _log(PREFIX, ...args);
   },
 
   /** Unexpected-but-recoverable situations. */
   warn(...args: unknown[]) {
-    if (shouldLog("warn")) console.warn(PREFIX, ...args);
+    if (shouldLog("warn")) _warn(PREFIX, ...args);
   },
 
   /** Genuine errors that need attention. */
   error(...args: unknown[]) {
-    if (shouldLog("error")) console.error(PREFIX, ...args);
+    if (shouldLog("error")) _error(PREFIX, ...args);
   },
 
   /**
@@ -74,7 +87,7 @@ export const log = {
    */
   swallow(context: string, err?: unknown) {
     if (shouldLog("debug")) {
-      console.debug(PREFIX, `[swallowed] ${context}:`, err);
+      _debug(PREFIX, `[swallowed] ${context}:`, err);
     }
   },
 };

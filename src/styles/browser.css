@@ -216,6 +216,74 @@
   position: relative !important;
 }
 
+/* ---- Browser helper utilities ---- */
+
+.sprout .sprout-force-wrap {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: keep-all !important;
+  hyphens: auto !important;
+}
+
+.sprout .sprout-cell-clip {
+  overflow: hidden !important;
+  text-overflow: clip !important;
+}
+
+.sprout .sprout-sticky-th {
+  position: sticky !important;
+  top: var(--sprout-sticky-top, 0px) !important;
+  z-index: 10 !important;
+  background: var(--background) !important;
+  box-shadow: 0 1px 0 var(--background-modifier-border) !important;
+  height: 44px !important;
+  vertical-align: middle !important;
+  padding: 0 !important;
+}
+
+.sprout .sprout-browser-io-wrap {
+  display: inline-block !important;
+}
+
+.sprout .sprout-browser-io-frame {
+  position: relative !important;
+  display: inline-block !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  background: var(--background-secondary) !important;
+}
+
+.sprout .sprout-browser-io-img {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: 140px !important;
+  object-fit: contain !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  background: var(--background-secondary) !important;
+}
+
+.sprout .sprout-browser-io-img-inner {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: 140px !important;
+  object-fit: contain !important;
+}
+
+.sprout .sprout-browser-io-overlay {
+  position: absolute !important;
+  left: var(--sprout-io-left, 0) !important;
+  top: var(--sprout-io-top, 0) !important;
+  width: var(--sprout-io-width, 0) !important;
+  height: var(--sprout-io-height, 0) !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid rgba(0, 0, 0, 0.25) !important;
+  border-radius: 6px !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
 .sprout .sprout-browser-th-inner {
   position: absolute !important;
   left: 0 !important;

@@ -18,6 +18,7 @@ import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
+import { replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { stageLabel } from "../reviewer/labels";
@@ -99,7 +100,7 @@ export function buildPageTableBody(
     const isQuarantined = !!quarantine[String(card.id)];
     const tr = document.createElement("tr");
     tr.className = "sprout-browser-row";
-    tr.style.setProperty("--sprout-row-height", `${ctx.rowHeightPx}px`);
+    setCssProps(tr, "--sprout-row-height", `${ctx.rowHeightPx}px`);
 
     // ── Checkbox cell ──
     const selTd = document.createElement("td");
@@ -192,7 +193,7 @@ export function buildPageTableBody(
     try {
       const scale = isSuspended || isQuarantined ? 0.7 : 0.75;
       linkIcon.classList.add("sprout-scale");
-      linkIcon.style.setProperty("--sprout-scale", String(scale));
+      setCssProps(linkIcon, "--sprout-scale", String(scale));
     } catch (e) { log.swallow("scale link icon", e); }
     idBtn.appendChild(linkIcon);
 
@@ -329,9 +330,9 @@ export function renderEmptyState(
     const availableHeight = Math.max(0, wrap.clientHeight - headerHeight);
     const top =
       wrap.scrollTop + headerHeight + Math.max(0, (availableHeight - msgRect.height) / 2);
-    msg.style.setProperty("--sprout-empty-left", `${wrap.scrollLeft}px`);
-    msg.style.setProperty("--sprout-empty-top", `${Math.round(top)}px`);
-    msg.style.setProperty("--sprout-empty-width", `${wrap.clientWidth}px`);
+    setCssProps(msg, "--sprout-empty-left", `${wrap.scrollLeft}px`);
+    setCssProps(msg, "--sprout-empty-top", `${Math.round(top)}px`);
+    setCssProps(msg, "--sprout-empty-width", `${wrap.clientWidth}px`);
   };
 
   const onScroll = () => place();
@@ -387,7 +388,7 @@ function makeReadOnlyFieldCell(
   if (title) ta.setAttribute("data-tooltip", title);
 
   const h = `${ctx.editorHeightPx}px`;
-  ta.style.setProperty("--sprout-editor-height", h);
+  setCssProps(ta, "--sprout-editor-height", h);
 
   td.appendChild(ta);
   return td;
@@ -448,7 +449,7 @@ function makeEditorCell(
   ta.value = initial;
 
   const h = `${ctx.editorHeightPx}px`;
-  ta.style.setProperty("--sprout-editor-height", h);
+  setCssProps(ta, "--sprout-editor-height", h);
 
   const key = `${card.id}:${col}`;
   let baseline = initial;
@@ -517,15 +518,18 @@ function makeIoCell(
         : rects;
     }
     const labelsCard = Array.isArray(maskedRects) ? { rects: maskedRects } : card;
-    td.innerHTML = buildIoOccludedHtml(
+    replaceChildrenWithHTML(
+      td,
+      buildIoOccludedHtml(
       io.src,
       io.displayRef,
       maskedRects,
       `IO (occluded) — ^sprout-${card.id}`,
       labelsCard,
+      ),
     );
   } else {
-    td.innerHTML = buildIoImgHtml(io.src, io.displayRef, `IO (original) — ^sprout-${card.id}`);
+    replaceChildrenWithHTML(td, buildIoImgHtml(io.src, io.displayRef, `IO (original) — ^sprout-${card.id}`));
   }
 
   td.addEventListener("dblclick", (ev) => {
@@ -565,7 +569,7 @@ function makeGroupsEditorCell(
 
   const tagBox = document.createElement("div");
   tagBox.className = `textarea w-full ${ctx.cellTextClass} sprout-browser-tag-box`;
-  tagBox.style.setProperty("--sprout-editor-height", `${ctx.editorHeightPx}px`);
+  setCssProps(tagBox, "--sprout-editor-height", `${ctx.editorHeightPx}px`);
   td.appendChild(tagBox);
 
   const renderBadges = () => {
@@ -710,9 +714,9 @@ function makeGroupsEditorCell(
     const downTop = tagRect.bottom + gap;
     const upTop = tagRect.top - popHeight - gap;
     const dropUp = shouldDropUp;
-    popover.style.setProperty("--sprout-popover-left", `${left}px`);
-    popover.style.setProperty("--sprout-popover-width", `${width}px`);
-    popover.style.setProperty("--sprout-popover-top", `${dropUp ? upTop : downTop}px`);
+    setCssProps(popover, "--sprout-popover-left", `${left}px`);
+    setCssProps(popover, "--sprout-popover-width", `${width}px`);
+    setCssProps(popover, "--sprout-popover-top", `${dropUp ? upTop : downTop}px`);
   };
 
   const renderList = () => {

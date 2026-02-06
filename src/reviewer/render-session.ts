@@ -8,6 +8,7 @@
 
 import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import { renderStudySessionHeader } from "./study-session-header";
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../core/store";
@@ -404,9 +405,9 @@ function makeHeaderMenu(opts: {
       top = Math.max(margin, r.top - panelRect.height - 6);
     }
 
-    popover.style.setProperty("--sprout-popover-left", `${left}px`);
-    popover.style.setProperty("--sprout-popover-top", `${top}px`);
-    popover.style.setProperty("--sprout-popover-width", `${width}px`);
+    setCssProps(popover, "--sprout-popover-left", `${left}px`);
+    setCssProps(popover, "--sprout-popover-top", `${top}px`);
+    setCssProps(popover, "--sprout-popover-width", `${width}px`);
   };
 
   const close = () => {
@@ -537,7 +538,33 @@ export function renderSessionMode(args: Args) {
   quitBtn.type = "button";
   quitBtn.className = "bc btn-icon sprout-quit-btn";
   quitBtn.setAttribute("data-tooltip", "Quit study session");
-  quitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  const quitSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  quitSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  quitSvg.setAttribute("width", "20");
+  quitSvg.setAttribute("height", "20");
+  quitSvg.setAttribute("viewBox", "0 0 24 24");
+  quitSvg.setAttribute("fill", "none");
+  quitSvg.setAttribute("stroke", "var(--foreground)");
+  quitSvg.setAttribute("stroke-width", "2");
+  quitSvg.setAttribute("stroke-linecap", "round");
+  quitSvg.setAttribute("stroke-linejoin", "round");
+  quitSvg.classList.add("lucide", "lucide-x");
+
+  const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line1.setAttribute("x1", "18");
+  line1.setAttribute("y1", "6");
+  line1.setAttribute("x2", "6");
+  line1.setAttribute("y2", "18");
+  quitSvg.appendChild(line1);
+
+  const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line2.setAttribute("x1", "6");
+  line2.setAttribute("y1", "6");
+  line2.setAttribute("x2", "18");
+  line2.setAttribute("y2", "18");
+  quitSvg.appendChild(line2);
+
+  quitBtn.appendChild(quitSvg);
   quitBtn.addEventListener("click", () => args.backToDecks());
 
   // Create section once for both empty and card-present states
@@ -859,7 +886,7 @@ export function renderSessionMode(args: Args) {
     if (typeof args.renderImageOcclusionInto === "function") {
       void args.renderImageOcclusionInto(ioHost, card, sourcePath, reveal);
     } else {
-      const md = String((card).ioSrc ?? (card).src ?? (card).image ?? (card).imageRef ?? "");
+      const md = String(card.imageRef ?? "");
       if (md.trim()) void args.renderMarkdownInto(ioHost, md, sourcePath).then(() => setupLinkHandlers(ioHost, sourcePath));
       else ioHost.appendChild(h("div", "text-muted-foreground text-sm", "IO card missing image source."));
     }

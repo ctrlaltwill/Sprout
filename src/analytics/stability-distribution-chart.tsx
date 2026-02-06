@@ -12,7 +12,7 @@
 
 import * as React from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { endTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { endTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
 import type { CardState } from "../types/scheduler";
 
 function InfoIcon(props: { text: string }) {
@@ -45,7 +45,7 @@ function InfoIcon(props: { text: string }) {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={"svg-icon"}
+      className="svg-icon sprout-ana-chevron"
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -55,10 +55,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{
-        display: "inline-flex",
-        transform: `${open ? "rotate(90deg)" : "rotate(0deg)"} scale(0.7)`,
-      }}
+      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -308,8 +305,8 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
       const wrap = wrapRef.current;
       const popover = popoverRef.current;
       if (!wrap || !popover) return;
-      popover.style.left = "auto";
-      popover.style.right = "0px";
+      popover.classList.remove("sprout-ana-popover-left");
+      popover.classList.add("sprout-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -397,7 +394,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
   };
 
   return (
-    <div className={"card sprout-ana-card p-4 flex flex-col gap-3 h-full"} style={{ overflow: "visible" }}>
+    <div className={"card sprout-ana-card sprout-ana-overflow-visible p-4 flex flex-col gap-3 h-full"}>
       <div className={"flex items-start justify-between gap-2"}>
         <div>
           <div className={"flex items-center gap-1"}>
@@ -417,7 +414,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
-              className={"svg-icon lucide-filter"}
+              className="svg-icon lucide-filter sprout-ana-icon"
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -427,7 +424,6 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ color: "var(--text-normal)" }}
             >
               <polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3" />
             </svg>
@@ -439,8 +435,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
               id="sprout-stability-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className={"rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col"}
-              style={{ position: "absolute", top: "calc(100% + 6px)", zIndex: 1000, minWidth: "250px" }}
+              className={"rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"}
             >
               <div className={"p-1"}>
                 <div
@@ -510,7 +505,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
                             <span className={"size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center"}>
                               {selectedDecks.includes(deck) ? <span className={"size-1.5 rounded-full bg-foreground"} /> : null}
                             </span>
-                            <span className={"truncate"} style={endTruncateStyle}>
+                            <span className={`truncate ${endTruncateClass}`}>
                               {formatFilterPath(deck)}
                             </span>
                           </div>
@@ -558,7 +553,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
                                 <span className={"size-1.5 rounded-full bg-foreground"} />
                               ) : null}
                             </span>
-                            <span className={"truncate"} style={endTruncateStyle}>
+                            <span className={`truncate ${endTruncateClass}`}>
                               {formatFilterPath(group)}
                             </span>
                           </div>

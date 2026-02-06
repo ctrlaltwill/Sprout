@@ -14,7 +14,7 @@
 import * as React from "react";
 import { Cell, Label, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
-import { startTruncateStyle, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { startTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
 
 type PieDatum = { name: string; value: number };
 
@@ -85,7 +85,7 @@ function PieTooltip(props: { active?: boolean; payload?: Array<{ name?: string; 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="svg-icon"
+      className="svg-icon sprout-ana-chevron"
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -95,10 +95,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{
-        display: "inline-flex",
-        transform: `${open ? "rotate(90deg)" : "rotate(0deg)"} scale(0.7)`,
-      }}
+      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -140,7 +137,7 @@ function PieCard(props: {
   const activeIndex = highlightIndex >= 0 ? highlightIndex : undefined;
 
   return (
-    <div className="card sprout-ana-card p-4 flex flex-col gap-3 h-full" style={{ overflow: "visible" }}>
+    <div className="card sprout-ana-card sprout-ana-overflow-visible p-4 flex flex-col gap-3 h-full">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-1">
@@ -152,20 +149,9 @@ function PieCard(props: {
         {props.headerSlot}
       </div>
 
-      <div className="w-full flex-1" style={{ position: "relative", minHeight: "200px" }}>
+      <div className="w-full flex-1 sprout-ana-pie-wrap">
         {total <= 0 ? (
-          <div
-            className="text-sm text-muted-foreground"
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              padding: "12px",
-            }}
-          >
+          <div className="text-sm text-muted-foreground sprout-ana-empty-center">
             No cards selected.
           </div>
         ) : null}
@@ -219,18 +205,13 @@ function PieCard(props: {
         ) : null}
       </div>
 
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground" style={{ minHeight: "20px" }}>
+      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-min-20">
         {total > 0
           ? props.data.map((entry, index) => (
               <div key={`legend-${entry.name}`} className="bc inline-flex items-center gap-2">
                 <span
-                  className="bc inline-block"
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "3px",
-                    backgroundColor: palette[index % palette.length],
-                  }}
+                  className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
+                  style={{ "--sprout-legend-color": palette[index % palette.length] } as React.CSSProperties}
                 />
                 <span className="bc">{entry.name}</span>
                 <span className="bc text-foreground">{entry.value}</span>
@@ -335,8 +316,8 @@ export function StagePieCard(props: {
       const wrap = wrapRef.current;
       const popover = popoverRef.current;
       if (!wrap || !popover) return;
-      popover.style.left = "auto";
-      popover.style.right = "0px";
+      popover.classList.remove("sprout-ana-popover-left");
+      popover.classList.add("sprout-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -432,7 +413,7 @@ export function StagePieCard(props: {
         onClick={() => setOpen((prev) => !prev)}
       >
         <svg
-          className="svg-icon lucide-filter"
+          className="svg-icon lucide-filter sprout-ana-icon"
           xmlns="http://www.w3.org/2000/svg"
           width="18"
           height="18"
@@ -442,7 +423,6 @@ export function StagePieCard(props: {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ color: "var(--text-normal)" }}
         >
           <polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3" />
         </svg>
@@ -454,8 +434,7 @@ export function StagePieCard(props: {
           id="sprout-stage-filter-popover"
           aria-hidden="false"
           ref={popoverRef}
-          className="rounded-lg w-72 border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col"
-          style={{ position: "absolute", top: "calc(100% + 6px)", zIndex: 1000, minWidth: "250px" }}
+          className="rounded-lg w-72 border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"
         >
           <div className="p-1">
             <div
@@ -538,7 +517,7 @@ export function StagePieCard(props: {
                         <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
                           {selectedDecks.includes(deck) ? <span className="size-1.5 rounded-full bg-foreground" /> : null}
                         </span>
-                        <span className="truncate" style={startTruncateStyle}>
+                        <span className={`truncate ${startTruncateClass}`}>
                           {formatFilterPath(deck)}
                         </span>
                       </div>
@@ -581,7 +560,7 @@ export function StagePieCard(props: {
                         <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
                           {selectedGroups.includes(group) ? <span className="size-1.5 rounded-full bg-foreground" /> : null}
                         </span>
-                        <span className="truncate" style={startTruncateStyle}>
+                        <span className={`truncate ${startTruncateClass}`}>
                           {formatFilterPath(group)}
                         </span>
                       </div>
@@ -670,8 +649,8 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
       const wrap = wrapRef.current;
       const popover = popoverRef.current;
       if (!wrap || !popover) return;
-      popover.style.left = "auto";
-      popover.style.right = "0px";
+      popover.classList.remove("sprout-ana-popover-left");
+      popover.classList.add("sprout-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -801,7 +780,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
         onClick={() => setOpen((prev) => !prev)}
       >
         <svg
-          className="svg-icon lucide-filter"
+          className="svg-icon lucide-filter sprout-ana-icon"
           xmlns="http://www.w3.org/2000/svg"
           width="18"
           height="18"
@@ -811,7 +790,6 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ color: "var(--text-normal)" }}
         >
           <polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3" />
         </svg>
@@ -824,8 +802,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
           aria-hidden="false"
           ref={popoverRef}
           data-popover="true"
-          className="sprout dropdown-menu w-72 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col"
-          style={{ position: "absolute", top: "calc(100% + 6px)", zIndex: 1000 }}
+          className="sprout dropdown-menu w-72 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-left"
         >
           <div className="p-1">
             <div className="text-sm text-muted-foreground px-2 py-1">Card type</div>
@@ -901,7 +878,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
                         <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
                           {selectedDecks.includes(deck) ? <span className="size-1.5 rounded-full bg-foreground" /> : null}
                         </span>
-                        <span className="truncate" style={startTruncateStyle}>
+                        <span className={`truncate ${startTruncateClass}`}>
                           {formatFilterPath(deck)}
                         </span>
                       </div>
@@ -950,7 +927,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
                         <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
                           {selectedGroups.includes(group) ? <span className="size-1.5 rounded-full bg-foreground" /> : null}
                         </span>
-                        <span className="truncate" style={startTruncateStyle}>
+                        <span className={`truncate ${startTruncateClass}`}>
                           {formatFilterPath(group)}
                         </span>
                       </div>

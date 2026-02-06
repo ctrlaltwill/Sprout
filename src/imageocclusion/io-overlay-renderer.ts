@@ -11,6 +11,7 @@
 import interact from "interactjs";
 import type { IORect, IOTextBox } from "./io-types";
 import { textBgCss } from "./io-image-ops";
+import { setCssProps } from "../core/ui";
 
 type DragMoveEvent = {
   dx: number;
@@ -92,56 +93,34 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
   // ── Helpers ─────────────────────────────────────────────────────────────
 
   const positionEl = (el: HTMLElement, normX: number, normY: number, normW: number, normH: number) => {
-    el.style.left = `${normX * stageW}px`;
-    el.style.top = `${normY * stageH}px`;
-    el.style.width = `${normW * stageW}px`;
-    el.style.height = `${normH * stageH}px`;
+    setCssProps(el, "--sprout-io-left", `${normX * stageW}px`);
+    setCssProps(el, "--sprout-io-top", `${normY * stageH}px`);
+    setCssProps(el, "--sprout-io-width", `${normW * stageW}px`);
+    setCssProps(el, "--sprout-io-height", `${normH * stageH}px`);
   };
 
   // ── Render occlusion rects ──────────────────────────────────────────────
 
   for (const rect of rects) {
     const el = document.createElement("div");
-    el.style.position = "absolute";
-    el.style.pointerEvents = isCropTool ? "none" : "auto";
+    el.className = "sprout-io-overlay-item sprout-io-rect sprout-cursor-move";
+    el.classList.toggle("sprout-pointer-none", isCropTool);
     el.setAttribute("data-rect-id", rect.rectId);
     positionEl(el, rect.normX, rect.normY, rect.normW, rect.normH);
 
     if (rect.shape === "circle") {
-      el.style.borderRadius = "50%";
-    } else {
-      el.style.borderRadius = "4px";
+      el.classList.add("is-circle");
     }
 
     const isSelected = rect.rectId === selectedRectId;
-    if (isSelected) {
-      el.style.border = "3px dashed #3b82f6";
-      el.style.backgroundColor = "rgba(59, 130, 246, 0.12)";
-    } else {
-      el.style.border = "3px dashed #ef4444";
-      el.style.backgroundColor = "rgba(239, 68, 68, 0.08)";
-    }
+    el.classList.toggle("is-selected", isSelected);
 
     // GroupKey input (centred on the rect)
     const groupInput = document.createElement("input");
     groupInput.type = "text";
     groupInput.value = rect.groupKey || "1";
-    groupInput.style.position = "absolute";
-    groupInput.style.left = "50%";
-    groupInput.style.top = "50%";
-    groupInput.style.transform = "translate(-50%, -50%)";
-    groupInput.style.width = "60px";
-    groupInput.style.padding = "6px 12px";
-    groupInput.style.fontSize = "21px";
-    groupInput.style.fontWeight = "700";
-    groupInput.style.textAlign = "center";
-    groupInput.style.border = "2px solid rgba(0, 0, 0, 0.3)";
-    groupInput.style.borderRadius = "6px";
-    groupInput.style.backgroundColor = "rgba(255, 255, 255, 0.95)";
-    groupInput.style.color = "#000";
-    groupInput.style.pointerEvents = isCropTool ? "none" : "auto";
-    groupInput.style.cursor = "text";
-    groupInput.style.zIndex = "10";
+    groupInput.className = "sprout-io-group-input";
+    groupInput.classList.toggle("sprout-pointer-none", isCropTool);
     groupInput.setAttribute("data-group-input", rect.rectId);
 
     groupInput.addEventListener("click", (e) => {
@@ -172,16 +151,10 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
       const cornerSize = 10;
       const addCorner = (cx: string, cy: string) => {
         const c = document.createElement("div");
-        c.style.position = "absolute";
-        c.style.width = `${cornerSize}px`;
-        c.style.height = `${cornerSize}px`;
-        c.style.background = "rgba(0,0,0,0.25)";
-        c.style.border = "1px solid rgba(255,255,255,0.7)";
-        c.style.borderRadius = "3px";
-        c.style[cx as "left" | "right"] = "-5px";
-        c.style[cy as "top" | "bottom"] = "-5px";
-        c.style.pointerEvents = "none";
-        c.style.boxShadow = "0 0 0 1px rgba(0,0,0,0.08)";
+        c.className = "sprout-io-corner";
+        c.classList.add(cx === "left" ? "is-left" : "is-right");
+        c.classList.add(cy === "top" ? "is-top" : "is-bottom");
+        setCssProps(c, "--sprout-io-corner-size", `${cornerSize}px`);
         el.appendChild(c);
       };
       addCorner("left", "top");
@@ -200,15 +173,19 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
       const nearTop = py <= 12;
       const nearBottom = py >= bounds.height - 12;
       if ((nearLeft && nearTop) || (nearRight && nearBottom)) {
-        el.style.cursor = "nwse-resize";
+        el.classList.remove("sprout-cursor-nesw-resize", "sprout-cursor-move");
+        el.classList.add("sprout-cursor-nwse-resize");
       } else if ((nearRight && nearTop) || (nearLeft && nearBottom)) {
-        el.style.cursor = "nesw-resize";
+        el.classList.remove("sprout-cursor-nwse-resize", "sprout-cursor-move");
+        el.classList.add("sprout-cursor-nesw-resize");
       } else {
-        el.style.cursor = "move";
+        el.classList.remove("sprout-cursor-nwse-resize", "sprout-cursor-nesw-resize");
+        el.classList.add("sprout-cursor-move");
       }
     });
     el.addEventListener("mouseleave", () => {
-      el.style.cursor = "move";
+      el.classList.remove("sprout-cursor-nwse-resize", "sprout-cursor-nesw-resize");
+      el.classList.add("sprout-cursor-move");
     });
 
     el.addEventListener("click", (e) => {
@@ -301,32 +278,35 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
 
   for (const textBox of textBoxes) {
     const el = document.createElement("div");
-    el.style.position = "absolute";
-    el.style.pointerEvents = isCropTool ? "none" : "auto";
+    el.className = "sprout-io-overlay-item sprout-io-text-box";
+    el.classList.toggle("sprout-pointer-none", isCropTool);
     el.setAttribute("data-text-id", textBox.textId);
     positionEl(el, textBox.normX, textBox.normY, textBox.normW, textBox.normH);
 
     const isSelected = textBox.textId === selectedTextId;
     const bgCss = textBgCss(textBox.bgColor, textBox.bgOpacity ?? 1);
     const hasBg = bgCss !== "transparent";
-    el.style.border = isSelected ? "2px dashed #10b981" : "1px dashed rgba(16, 185, 129, 0.6)";
-    el.style.backgroundColor = hasBg ? bgCss : isSelected ? "rgba(16, 185, 129, 0.08)" : "transparent";
-    el.style.boxShadow = isSelected ? "0 0 0 2px rgba(16, 185, 129, 0.12)" : "none";
-    el.style.borderRadius = "6px";
-    el.style.padding = "6px 8px";
-    el.style.boxSizing = "border-box";
-    el.style.display = "flex";
-    el.style.alignItems = "flex-start";
-    el.style.justifyContent = "flex-start";
+    setCssProps(
+      el,
+      "--sprout-io-text-border",
+      isSelected ? "2px dashed #10b981" : "1px dashed rgba(16, 185, 129, 0.6)",
+    );
+    setCssProps(
+      el,
+      "--sprout-io-text-bg",
+      hasBg ? bgCss : isSelected ? "rgba(16, 185, 129, 0.08)" : "transparent",
+    );
+    setCssProps(
+      el,
+      "--sprout-io-text-shadow",
+      isSelected ? "0 0 0 2px rgba(16, 185, 129, 0.12)" : "none",
+    );
 
     const textEl = document.createElement("div");
     textEl.textContent = textBox.text;
-    textEl.style.whiteSpace = "pre-wrap";
-    textEl.style.wordBreak = "break-word";
-    textEl.style.fontSize = `${Math.max(8, textBox.fontSize)}px`;
-    textEl.style.lineHeight = "1.3";
-    textEl.style.color = textBox.color || "#111111";
-    textEl.style.pointerEvents = "none";
+    textEl.className = "sprout-io-text-content";
+    setCssProps(textEl, "--sprout-io-text-size", `${Math.max(8, textBox.fontSize)}px`);
+    setCssProps(textEl, "--sprout-io-text-color", textBox.color || "#111111");
     el.appendChild(textEl);
 
     el.addEventListener("click", (e) => {

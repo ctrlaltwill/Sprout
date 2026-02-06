@@ -92,7 +92,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   const answerLabel = hasMcq ? "Answer / Options" : "Answer";
   const isClozeOnly = normalizedTypes.length > 0 && normalizedTypes.every((type) => type === "cloze");
 
-  const isMacLike = () => /Mac|iPhone|iPad|iPod/i.test(navigator.platform || "");
+  const isMacLike = () => /Mac|iPhone|iPad|iPod/i.test((navigator as any).userAgentData?.platform ?? navigator.userAgent);
   type ClozeShortcut = "new" | "same";
   const getClozeShortcut = (ev: KeyboardEvent): ClozeShortcut | null => {
     const key = String(ev.key || "").toLowerCase();
@@ -275,25 +275,21 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       clearNode(tagBox);
       if (selected.length === 0) {
         const empty = document.createElement("span");
-        empty.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6";
+        empty.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder sprout-badge-inline";
         empty.textContent = "No groups";
-        empty.style.display = "inline-flex";
-        empty.style.color = "#fff";
         tagBox.appendChild(empty);
         return;
       }
       for (const tag of selected) {
         const badge = document.createElement("span");
-        badge.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6";
-        badge.style.display = "inline-flex";
+        badge.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-inline";
 
         const txt = document.createElement("span");
         txt.textContent = formatGroupDisplay(tag);
         badge.appendChild(txt);
 
         const removeBtn = document.createElement("span");
-        removeBtn.className = "ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white";
-        removeBtn.style.transform = "scale(0.85)";
+        removeBtn.className = "ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white sprout-icon-scale-85";
         setIcon(removeBtn, "x");
         removeBtn.addEventListener("pointerdown", (ev) => {
           ev.preventDefault();
@@ -392,8 +388,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
       if (raw && !exact) addRow(`Add "${rawDisplay || rawTitle}"`, rawTitle || raw, true);
       if (allOptions.length === 0 && !raw && selected.length === 0) {
-        list.style.maxHeight = "none";
-        list.style.overflow = "visible";
+        list.classList.add("sprout-list-unbounded");
         const empty = document.createElement("div");
         empty.className = "px-2 py-2 text-sm text-muted-foreground whitespace-normal break-words";
         empty.textContent = "Type a keyword above to save this flashcard to a group.";
@@ -401,13 +396,15 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
         return;
       }
 
+      list.classList.remove("sprout-list-unbounded");
+
       for (const opt of options) addRow(formatGroupDisplay(opt), opt);
     };
 
     let cleanup: (() => void) | null = null;
     const closePopover = () => {
       popover.setAttribute("aria-hidden", "true");
-      popover.style.display = "none";
+      popover.classList.remove("is-open");
       if (cleanup) {
         try {
           cleanup();
@@ -418,7 +415,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
     const openPopover = () => {
       popover.setAttribute("aria-hidden", "false");
-      popover.style.display = "block";
+      popover.classList.add("is-open");
       renderList();
       search.focus();
 
@@ -446,7 +443,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       if ((ev).button !== 0) return;
       ev.preventDefault();
       ev.stopPropagation();
-      if (popover.style.display === "block") {
+      if (popover.classList.contains("is-open")) {
         closePopover();
       } else {
         openPopover();
@@ -510,11 +507,9 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     const value = sharedValue(field.key, predicate);
     if (field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")) {
       const textarea = document.createElement("textarea");
-      textarea.className = "textarea w-full";
+      textarea.className = "textarea w-full sprout-textarea-fixed";
       textarea.rows = 3;
       textarea.value = value;
-      textarea.style.resize = "none";
-      textarea.style.minHeight = "80px";
       if (field.key === "title") textarea.placeholder = PLACEHOLDER_TITLE;
       if (field.key === "question") textarea.placeholder = isClozeOnly ? PLACEHOLDER_CLOZE : PLACEHOLDER_QUESTION;
       if (field.key === "answer") textarea.placeholder = PLACEHOLDER_ANSWER;
@@ -535,12 +530,12 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       const cardCount = cards.length;
       const cardLabel = cardCount === 1 ? "card" : "cards";
       overwriteNotice.textContent = `You have selected ${cardCount} ${cardLabel}. Any input in this field will overwrite all ${cardCount} ${cardLabel}. To leave all cards in their current form, leave this field blank.`;
-      overwriteNotice.style.display = "none";
+      overwriteNotice.classList.add("sprout-is-hidden");
       wrapper.appendChild(overwriteNotice);
 
       const updateOverwriteNotice = () => {
         const value = String(input.value ?? "").trim();
-        overwriteNotice.style.display = value.length ? "" : "none";
+        overwriteNotice.classList.toggle("sprout-is-hidden", !value.length);
       };
       input.addEventListener("input", updateOverwriteNotice);
       updateOverwriteNotice();
@@ -585,12 +580,9 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     correctWrapper.appendChild(correctLabel);
     const correctInput = document.createElement("input");
     correctInput.type = "text";
-    correctInput.className = "input w-full";
+    correctInput.className = "input w-full sprout-input-fixed";
     correctInput.placeholder = "Correct option";
     correctInput.value = correctValue;
-    correctInput.style.minHeight = "38px";
-    correctInput.style.maxHeight = "38px";
-    correctInput.style.height = "38px";
     correctWrapper.appendChild(correctInput);
     container.appendChild(correctWrapper);
 
@@ -607,10 +599,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     const wrongRows: Array<{ row: HTMLElement; input: HTMLInputElement; removeBtn: HTMLButtonElement }> = [];
     const addInput = document.createElement("input");
     addInput.type = "text";
-    addInput.className = "input flex-1 text-sm";
-    addInput.style.minHeight = "38px";
-    addInput.style.maxHeight = "38px";
-    addInput.style.height = "38px";
+    addInput.className = "input flex-1 text-sm sprout-input-fixed";
     const updateAddPlaceholder = () => {
       const label = wrongRows.length ? "Add another wrong option" : "Add wrong option";
       addInput.placeholder = label;
@@ -626,8 +615,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       for (const entry of wrongRows) {
         entry.removeBtn.disabled = disable;
         entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
-        entry.removeBtn.style.setProperty("opacity", disable ? "0.35" : "1", "important");
-        entry.removeBtn.style.cursor = disable ? "default" : "pointer";
+        entry.removeBtn.classList.toggle("is-disabled", disable);
       }
     };
 
@@ -636,33 +624,17 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       row.className = "flex items-center gap-2";
       const input = document.createElement("input");
       input.type = "text";
-      input.className = "input flex-1 text-sm";
+      input.className = "input flex-1 text-sm sprout-input-fixed";
       input.placeholder = "Wrong option";
       input.value = value;
-      input.style.minHeight = "38px";
-      input.style.maxHeight = "38px";
-      input.style.height = "38px";
       row.appendChild(input);
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "inline-flex items-center justify-center";
-      removeBtn.style.setProperty("border", "none", "important");
-      removeBtn.style.setProperty("background", "transparent", "important");
-      removeBtn.style.setProperty("padding", "0", "important");
-      removeBtn.style.setProperty("box-shadow", "none", "important");
-      removeBtn.style.setProperty("outline", "none", "important");
-      removeBtn.style.setProperty("color", "var(--muted-foreground)", "important");
+      removeBtn.className = "inline-flex items-center justify-center sprout-remove-btn-ghost";
       const xIcon = document.createElement("span");
       xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
       setIcon(xIcon, "x");
       removeBtn.appendChild(xIcon);
-      removeBtn.addEventListener("mouseenter", () => {
-        if (removeBtn.disabled) return;
-        removeBtn.style.setProperty("color", "var(--foreground)", "important");
-      });
-      removeBtn.addEventListener("mouseleave", () => {
-        removeBtn.style.setProperty("color", "var(--muted-foreground)", "important");
-      });
       removeBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
@@ -754,8 +726,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   // ── Footer (Cancel / Save) ────────────────────────────────
 
   const footer = document.createElement("div");
-  footer.className = "flex items-center justify-end gap-4";
-  footer.style.marginTop = "20px";
+  footer.className = "flex items-center justify-end gap-4 sprout-bulk-edit-footer";
   const cancel = document.createElement("button");
   cancel.type = "button";
   cancel.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm";
@@ -769,10 +740,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   cancel.addEventListener("click", () => removeOverlay());
   const save = document.createElement("button");
   save.type = "button";
-  save.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm";
-  save.style.setProperty("background", "var(--foreground)", "important");
-  save.style.setProperty("color", "var(--background)", "important");
-  save.style.setProperty("border-color", "var(--foreground)", "important");
+  save.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm sprout-bulk-edit-save";
   const saveIcon = document.createElement("span");
   saveIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
   setIcon(saveIcon, "save");

@@ -9,6 +9,7 @@
 
 import { setIcon } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
+import { setCssProps } from "../core/ui";
 
 export interface TimerState {
   timerRunning: boolean;
@@ -28,9 +29,7 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
       studySessionHeader.removeAttribute("data-aos");
       studySessionHeader.removeAttribute("data-aos-delay");
       studySessionHeader.classList.remove("aos-init", "aos-animate");
-      studySessionHeader.style.removeProperty("opacity");
-      studySessionHeader.style.removeProperty("transform");
-      studySessionHeader.style.removeProperty("transition");
+      studySessionHeader.classList.add("sprout-aos-reset");
     }
     return; // Already created, nothing to do
   }
@@ -59,15 +58,13 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
 
   // Button group for timer controls
   const timerGroup = document.createElement("div");
-  timerGroup.className = "bc button-group";
+  timerGroup.className = "bc button-group sprout-session-timer-group";
   timerGroup.setAttribute("role", "group");
   timerGroup.setAttribute("data-tooltip", "Timer controls");
-  timerGroup.style.overflow = "visible !important";
 
   const timerDisplay = document.createElement("div");
-  timerDisplay.className = "bc btn-outline text-sm flex items-center justify-center";
-  timerDisplay.style.pointerEvents = "none";
-  timerDisplay.style.minWidth = "3.5rem";
+  timerDisplay.className = "bc btn-outline text-sm flex items-center justify-center sprout-session-timer-display";
+    setCssProps(timerDisplay, "--sprout-timer-min-width", "3.5rem");
   timerDisplay.textContent = "00:00";
   timerGroup.appendChild(timerDisplay);
 
@@ -84,12 +81,12 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
       const m = Math.floor((timerState.elapsedSeconds % 3600) / 60);
       const s = timerState.elapsedSeconds % 60;
       timerDisplay.textContent = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-      timerDisplay.style.minWidth = "5rem";
+        setCssProps(timerDisplay, "--sprout-timer-min-width", "5rem");
     } else {
       const m = Math.floor(timerState.elapsedSeconds / 60);
       const s = timerState.elapsedSeconds % 60;
       timerDisplay.textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-      timerDisplay.style.minWidth = "3.5rem";
+        setCssProps(timerDisplay, "--sprout-timer-min-width", "3.5rem");
     }
   };
 
@@ -116,8 +113,7 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
   // Play button
   const playBtn = document.createElement("button");
   playBtn.type = "button";
-  playBtn.className = "bc btn-outline inline-flex items-center gap-1";
-  playBtn.style.gap = "0.25rem !important";
+  playBtn.className = "bc btn-outline inline-flex items-center gap-1 sprout-session-timer-btn";
   playBtn.setAttribute("data-tooltip", "Play timer");
   const playIconWrap = document.createElement("span");
   playIconWrap.className = "bc inline-flex items-center justify-center [&_svg]:size-3.5 scale-60";
@@ -132,8 +128,7 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
   // Pause button
   const pauseBtn = document.createElement("button");
   pauseBtn.type = "button";
-  pauseBtn.className = "bc btn-outline inline-flex items-center gap-1";
-  pauseBtn.style.gap = "0.25rem !important";
+  pauseBtn.className = "bc btn-outline inline-flex items-center gap-1 sprout-session-timer-btn";
   pauseBtn.setAttribute("data-tooltip", "Pause timer");
   const pauseIconWrap = document.createElement("span");
   pauseIconWrap.className = "bc inline-flex items-center justify-center [&_svg]:size-3.5 scale-60";

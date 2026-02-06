@@ -5,6 +5,17 @@
 
 /* ---- Session card shell ---- */
 
+.sprout .sprout-review-root {
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-width: var(--sprout-review-max-width, 100%) !important;
+}
+
+.sprout .sprout-session-column {
+  gap: 10px !important;
+}
+
 .sprout-session-card.card {
   transition: height 0.2s ease-in-out;
   height: auto !important;
@@ -23,6 +34,95 @@
   align-self: flex-start;
   justify-self: flex-start;
   flex-basis: auto !important;
+}
+
+/* ---- Reviewer skip modal ---- */
+
+.sprout .sprout-skip-modal-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.sprout .sprout-skip-modal-actions {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+}
+
+.sprout .sprout-skip-bury-btn {
+  background: var(--background-modifier-error) !important;
+  color: var(--text-on-accent) !important;
+}
+
+/* ---- Study session header ---- */
+
+.sprout .sprout-session-timer-group {
+  overflow: visible !important;
+}
+
+.sprout .sprout-session-timer-display {
+  pointer-events: none !important;
+  min-width: var(--sprout-timer-min-width, 3.5rem) !important;
+}
+
+.sprout .sprout-session-timer-btn {
+  gap: 0.25rem !important;
+}
+
+.sprout .sprout-aos-reset {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* ---- Reviewer image zoom ---- */
+
+.sprout .sprout-img-zoom-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.sprout .sprout-img-zoom-full {
+  max-width: 92vw !important;
+  max-height: 86vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+/* ---- Markdown-rendered images ---- */
+
+.sprout .sprout-zoomable {
+  display: block !important;
+  margin: 8px 0 !important;
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: var(--sprout-md-image-max-h, 200px) !important;
+  object-fit: contain !important;
+  cursor: zoom-in !important;
+}
+
+/* ---- Cloze sizing helpers ---- */
+
+.sprout .sprout-cloze-probe {
+  position: absolute !important;
+  visibility: hidden !important;
+  white-space: pre !important;
+}
+
+.sprout .sprout-cloze-blank {
+  width: var(--sprout-cloze-width, auto) !important;
+}
+
+.sprout .sprout-cloze-revealed {
+  color: var(--sprout-cloze-color, inherit) !important;
 }
 
 .sprout-session-card header {

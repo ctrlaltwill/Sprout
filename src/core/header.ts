@@ -16,6 +16,7 @@
 import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
 import { MAX_CONTENT_WIDTH, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
 import { log } from "./logger";
+import { setCssProps } from "./ui";
 
 export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics";
 
@@ -177,7 +178,7 @@ export class SproutHeader {
             : VIEW_TYPE_BROWSER;
 
     await this.deps.leaf.setViewState?.({ type, active: true });
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; navigation completes asynchronously and errors are non-critical
     this.deps.app.workspace.revealLeaf(this.deps.leaf);
     this.deps.afterNavigate?.();
   }
@@ -305,8 +306,8 @@ export class SproutHeader {
       const width = 260;
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
       const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
-      root.style.setProperty("--sprout-popover-left", `${left}px`);
-      root.style.setProperty("--sprout-popover-top", `${top}px`);
+      setCssProps(root, "--sprout-popover-left", `${left}px`);
+      setCssProps(root, "--sprout-popover-top", `${top}px`);
     };
 
     place();
@@ -493,8 +494,8 @@ export class SproutHeader {
       const left = Math.max(margin, Math.min(r.right - popW, window.innerWidth - popW - margin));
       const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
 
-      root.style.setProperty("--sprout-popover-left", `${left}px`);
-      root.style.setProperty("--sprout-popover-top", `${top}px`);
+      setCssProps(root, "--sprout-popover-left", `${left}px`);
+      setCssProps(root, "--sprout-popover-top", `${top}px`);
     };
 
     // Place after layout to ensure correct width measurement

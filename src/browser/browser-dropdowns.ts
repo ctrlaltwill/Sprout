@@ -16,6 +16,7 @@
 import { setIcon } from "obsidian";
 import { log } from "../core/logger";
 import { type ColKey, type DropdownOption, clearNode } from "./browser-helpers";
+import { setCssProps } from "../core/ui";
 
 // ── Generic dropdown menu ──────────────────────────────────
 
@@ -176,9 +177,9 @@ export function makeDropdownMenu<T extends string>(
       top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
     }
 
-    popover.style.setProperty("--sprout-popover-left", `${left}px`);
-    popover.style.setProperty("--sprout-popover-top", `${top}px`);
-    popover.style.setProperty("--sprout-popover-width", `${width}px`);
+    setCssProps(popover, "--sprout-popover-left", `${left}px`);
+    setCssProps(popover, "--sprout-popover-top", `${top}px`);
+    setCssProps(popover, "--sprout-popover-width", `${width}px`);
   };
 
   let cleanup: (() => void) | null = null;
@@ -418,9 +419,9 @@ export function makeColumnsDropdown(
     const panelRect = panel.getBoundingClientRect();
     const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - panelRect.height - margin));
 
-    popover.style.setProperty("--sprout-popover-left", `${left}px`);
-    popover.style.setProperty("--sprout-popover-top", `${top}px`);
-    popover.style.setProperty("--sprout-popover-width", `${width}px`);
+    setCssProps(popover, "--sprout-popover-left", `${left}px`);
+    setCssProps(popover, "--sprout-popover-top", `${top}px`);
+    setCssProps(popover, "--sprout-popover-width", `${width}px`);
   };
 
   let cleanup: (() => void) | null = null;

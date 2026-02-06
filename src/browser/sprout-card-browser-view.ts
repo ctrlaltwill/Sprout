@@ -22,6 +22,7 @@ import { unsuspendCard, suspendCard } from "../scheduler/scheduler";
 import { ImageOcclusionCreatorModal } from "../modals/image-occlusion-creator-modal";
 import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
 
 // ✅ shared header
@@ -176,7 +177,7 @@ export class SproutCardBrowserView extends ItemView {
     const root = this._rootEl;
     if (root) {
       const maxWidth = this.plugin.isWideMode ? "none" : MAX_CONTENT_WIDTH_PX;
-      root.style.setProperty("--sprout-browser-max-width", maxWidth);
+      setCssProps(root, "--sprout-browser-max-width", maxWidth);
     }
 
     try { this._header?.updateWidthButtonLabel?.(); } catch (e) { log.swallow("update width button label", e); }
@@ -358,7 +359,7 @@ export class SproutCardBrowserView extends ItemView {
 
   private openSource(card: CardRecord) {
     const link = `${card.sourceNotePath}#^sprout-${card.id}`;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; Obsidian handles navigation errors internally
     this.app.workspace.openLinkText(link, card.sourceNotePath, true);
   }
 

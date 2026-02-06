@@ -14,6 +14,7 @@ import type { CardRecord } from "../core/store";
 import type { IOParentDef, StoredIORect, IOMaskMode } from "./image-occlusion-types";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints, type RectPx } from "./image-geometry";
 import { applyStageTransform, clientToStage, zoomAt, type StageTransform } from "./image-transform";
+import { setCssProps } from "../core/ui";
 import { 
   isMaskMode, 
   makeRectId, 
@@ -113,27 +114,6 @@ export class ImageOcclusionEditorModal extends Modal {
     this.modalEl.addClass("sprout-modals", "sprout-io-modal");
     this.containerEl.addClass("sprout-io-editor-modal");
 
-    // IMPORTANT inline sizing (requested): max-width 800px, width 90%
-    try {
-      const inner = this.containerEl.querySelector<HTMLElement>(".modal");
-      if (inner) {
-        inner.style.setProperty("width", "90%", "important");
-        inner.style.setProperty("max-width", "800px", "important");
-      }
-    } catch {
-      // ignore
-    }
-
-    try {
-      this.containerEl.style.zIndex = "3000";
-      const bg = this.containerEl.querySelector<HTMLElement>(".modal-bg");
-      if (bg) bg.style.zIndex = "2999";
-      const inner = this.containerEl.querySelector<HTMLElement>(".modal");
-      if (inner) inner.style.zIndex = "3000";
-    } catch {
-      // ignore
-    }
-
     if (Platform.isMobileApp) {
       new Notice("Boot Camp: Image Occlusion editor is desktop-only.");
       this.close();
@@ -148,7 +128,7 @@ export class ImageOcclusionEditorModal extends Modal {
     }
 
     this.sourceNotePath = String(parent.sourceNotePath || "");
-    this.imageRef = String(parent.imageRef || parent.ioSrc || "");
+    this.imageRef = String(parent.imageRef || "");
 
     const ioMap = this.plugin.store?.data?.io || {};
     const existing = ioMap[this.parentId] as IOParentDef | undefined;
@@ -221,116 +201,7 @@ export class ImageOcclusionEditorModal extends Modal {
   }
 
   private injectCssOnce() {
-    const style = this.contentEl.createEl("style");
-    style.textContent = `
-/* ======================================================================
-   Boot Camp IO — functional positioning only
-   ====================================================================== */
-
-.sprout-io-modal .modal-content {
-  padding-top: 10px;
-  overflow: hidden;
-}
-
-.sprout-io-root { display: flex; flex-direction: column; gap: 12px; }
-
-/* Toolbar */
-.sprout-io-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Canvas: height set dynamically */
-.sprout-io-viewport {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-}
-
-.sprout-io-stage {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform-origin: 0 0;
-  will-change: transform;
-}
-.sprout-io-img {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  user-select: none;
-  -webkit-user-drag: none;
-  pointer-events: none;
-  border: 1px solid var(--border);
-  box-sizing: border-box;
-}
-.sprout-io-overlay {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.sprout-io-preview {
-  position: absolute;
-  box-sizing: border-box;
-  border: 2px dashed var(--interactive-accent);
-  border-radius: 6px;
-  background: rgba(0,0,0,0.06);
-  pointer-events: none;
-}
-.sprout-io-rect {
-  position: absolute;
-  box-sizing: border-box;
-  border: 2px solid var(--interactive-accent);
-  border-radius: 6px;
-  background: rgba(0,0,0,0.06);
-}
-.sprout-io-rect.selected {
-  outline: 2px solid var(--text-accent);
-  outline-offset: 1px;
-}
-.sprout-io-rect-label {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-weight: 700;
-  font-size: 14px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.55);
-  color: white;
-  pointer-events: none;
-}
-
-.sprout-io-pan { cursor: grab; }
-.sprout-io-pan:active { cursor: grabbing; }
-
-/* In-image controls */
-.sprout-io-canvas-controls {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Icons */
-.sprout-io-ico svg { width: 16px; height: 16px; }
-
-/* Footer */
-.sprout-io-footer { display: flex; justify-content: flex-end; gap: 10px; align-items: center; flex-wrap: wrap; }
-`;
+    // CSS is now in styles.css (see src/styles/modals.css) — no-op
   }
 
   private setTool(mode: "occlusion" | "transform") {
@@ -367,7 +238,7 @@ export class ImageOcclusionEditorModal extends Modal {
     s = Math.max(0.05, Math.min(8, s));
 
     const vh = Math.max(1, Math.round(this.stageH * s));
-    this.viewportEl.style.height = `${vh}px`;
+    setCssProps(this.viewportEl, "--sprout-io-viewport-h", `${vh}px`);
 
     const fittedW = this.stageW * s;
     const tx = Math.round((vw - fittedW) / 2);
@@ -606,8 +477,8 @@ export class ImageOcclusionEditorModal extends Modal {
     this.stageW = Math.max(1, this.imgEl.naturalWidth || 1);
     this.stageH = Math.max(1, this.imgEl.naturalHeight || 1);
 
-    this.stageEl.style.width = `${this.stageW}px`;
-    this.stageEl.style.height = `${this.stageH}px`;
+    setCssProps(this.stageEl, "--sprout-io-stage-w", `${this.stageW}px`);
+    setCssProps(this.stageEl, "--sprout-io-stage-h", `${this.stageH}px`);
 
     requestAnimationFrame(() => {
       this.fitAndSizeViewport();
@@ -727,10 +598,10 @@ export class ImageOcclusionEditorModal extends Modal {
         const minStage = 8 / (this.t.scale || 1);
         const clamped = clampRectPx(r, this.stageW, this.stageH, minStage);
 
-        this.previewEl.style.left = `${clamped.x}px`;
-        this.previewEl.style.top = `${clamped.y}px`;
-        this.previewEl.style.width = `${clamped.w}px`;
-        this.previewEl.style.height = `${clamped.h}px`;
+        setCssProps(this.previewEl, "--sprout-io-left", `${clamped.x}px`);
+        setCssProps(this.previewEl, "--sprout-io-top", `${clamped.y}px`);
+        setCssProps(this.previewEl, "--sprout-io-width", `${clamped.w}px`);
+        setCssProps(this.previewEl, "--sprout-io-height", `${clamped.h}px`);
       }
     };
 
@@ -875,10 +746,10 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const px = normToPxRect(r, this.stageW, this.stageH);
 
-    el.style.left = `${px.x}px`;
-    el.style.top = `${px.y}px`;
-    el.style.width = `${px.w}px`;
-    el.style.height = `${px.h}px`;
+    setCssProps(el, "--sprout-io-left", `${px.x}px`);
+    setCssProps(el, "--sprout-io-top", `${px.y}px`);
+    setCssProps(el, "--sprout-io-width", `${px.w}px`);
+    setCssProps(el, "--sprout-io-height", `${px.h}px`);
 
     this.updateRectLabel(rectId);
   }
@@ -900,10 +771,10 @@ export class ImageOcclusionEditorModal extends Modal {
       const el = this.overlayEl.createDiv({ cls: "bc sprout-io-rect" });
       el.dataset.rectId = r.rectId;
 
-      el.style.left = `${px.x}px`;
-      el.style.top = `${px.y}px`;
-      el.style.width = `${px.w}px`;
-      el.style.height = `${px.h}px`;
+      setCssProps(el, "--sprout-io-left", `${px.x}px`);
+      setCssProps(el, "--sprout-io-top", `${px.y}px`);
+      setCssProps(el, "--sprout-io-width", `${px.w}px`);
+      setCssProps(el, "--sprout-io-height", `${px.h}px`);
 
       const label = el.createDiv({ cls: "bc sprout-io-rect-label", text: String(r.groupKey ?? "") });
 
