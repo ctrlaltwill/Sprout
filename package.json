@@ -1,6 +1,6 @@
 {
   "name": "sprout-flashcards",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "private": true,
   "type": "commonjs",
   "scripts": {

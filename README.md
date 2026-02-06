@@ -6,6 +6,8 @@
 
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
+> **Release 1.0.0** — major update with new UI, analytics dashboard, image occlusion, and reading view cards.
+
 📖 **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 
 ## Key features
@@ -23,7 +25,7 @@ We are waiting on approval to be listed in Obsidian community plugins – watch 
 
 ### Option 1 — BRAT (Beta Reviewers Auto-Update Tester – Recommended)
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) is a community plugin for Obsidian that lets you install beta plugins and receive updates automatically. Install BRAT, then add `ctrlaltwill/Sprout` as a beta plugin.
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) is a community plugin for Obsidian that lets you install community plugins and receive updates automatically. Install BRAT, then add `ctrlaltwill/Sprout` as a community plugin.
 
 ### Option 2 — Download a release
 
@@ -33,7 +35,7 @@ We are waiting on approval to be listed in Obsidian community plugins – watch 
    ```
    <Your Vault>/.obsidian/plugins/sprout/
    ```
-4. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
+3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
 
 ### Option 3 — Build from source
 

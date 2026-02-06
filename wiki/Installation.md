@@ -38,5 +38,5 @@ Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
 ## Option 3 — BRAT
 
 1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from the Obsidian community plugins
-2. In BRAT settings, add `ctrlaltwill/Sprout` as a beta plugin
+2. In BRAT settings, add `ctrlaltwill/Sprout` as a community plugin
 3. BRAT will install and keep the plugin updated automatically
