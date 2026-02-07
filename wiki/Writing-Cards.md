@@ -101,7 +101,7 @@ Standard Obsidian syntax works inside any field:
 
 ## Tables
 
-**Note:** Tables are not supported inside card fields. Tables use `|` characters, which will be interpreted as field delimiters and break card parsing.
+Tables are not supported inside card fields. Tables use `|` characters, which will be interpreted as field delimiters and break card parsing.
 
 ## Inline formatting
 
