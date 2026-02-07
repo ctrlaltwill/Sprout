@@ -115,7 +115,7 @@ Sprout supports standard Obsidian inline markdown in all card fields (question, 
 | `~~text~~` | ~~Strikethrough~~ | Cmd+Shift+S (Ctrl+Shift+S) |
 | `==text==` | Highlight | Cmd+Shift+H (Ctrl+Shift+H) |
 
-> **Note:** `_text_` is italic in Obsidian — it does **not** produce underline. If you need underline, subscript, or superscript, use raw HTML tags (`<u>`, `<sub>`, `<sup>`) which Obsidian renders natively.
+**Note:** `_text_` is italic in Obsidian — it does **not** produce underline. If you need underline, subscript, or superscript, use raw HTML tags (`<u>`, `<sub>`, `<sup>`) which Obsidian renders natively.
 
 ## Editing cards later
 
