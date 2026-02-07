@@ -14,7 +14,7 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 - FSRS-based scheduler for optimised spaced repitition 
 - Card types: cloze, basic, multiple choice, and image occlusion
-- Anki import/export (.apkg) with scheduling data and media support
+- Anki import/export _(experimental)_ with scheduling data and media support
 - Analytics dashboard with charts and heatmaps
 - Inline editor, card browser, and bulk edit tools
 - Markdown-first workflow with note-linked cards
