@@ -6,12 +6,13 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 1. [[Installation]]
 2. [[Writing Cards]]
-3. [[Study Sessions]]
-4. [[Card Browser]]
-5. [[Analytics]]
-6. [[Settings]]
-7. [[Keyboard Shortcuts]]
-8. [[Anki Export & Import]]
+3. [[Image Occlusion]]
+4. [[Study Sessions]]
+5. [[Card Browser]]
+6. [[Analytics]]
+7. [[Settings]]
+8. [[Keyboard Shortcuts]]
+9. [[Anki Export & Import]]
 
 ## Quick start
 
