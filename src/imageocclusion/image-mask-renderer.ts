@@ -137,7 +137,7 @@ export class ImageOcclusionEditorModal extends Modal {
     const imageRef = (this.imageRef || imageRefFromIo).trim();
 
     if (!imageRef) {
-      new Notice("Image occlusion card is missing an imageRef.");
+      new Notice("Image occlusion card is missing an image reference.");
       this.close();
       return;
     }
@@ -875,7 +875,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const imageRef = String(this.ioDef?.imageRef || this.imageRef || "").trim();
     if (!imageRef) {
-      new Notice("Image occlusion missing imageRef.");
+      new Notice("Image occlusion missing image reference.");
       return;
     }
 

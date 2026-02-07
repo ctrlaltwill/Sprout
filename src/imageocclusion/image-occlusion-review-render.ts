@@ -51,7 +51,7 @@ export function renderImageOcclusionReviewInto(args: {
   if (!imageRef) {
     const msg = document.createElement("div");
     msg.className = "bc text-muted-foreground text-sm";
-    msg.textContent = "IO card missing image reference.";
+    msg.textContent = "Image occlusion card missing image reference.";
     containerEl.appendChild(msg);
     return;
   }

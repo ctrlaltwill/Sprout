@@ -348,7 +348,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             new Notice("Sprout: could not create backup (no data.json or adapter cannot write).");
             return;
           }
-          new Notice("Settings updated\nBackup created");
+          new Notice("Settings updated – backup created");
           await scan();
         } catch (e) {
           log.error(e);
@@ -579,7 +579,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Options
     // ----------------------------
-    new Setting(wrapper).setName("Options").setHeading();
+    new Setting(wrapper).setName("Overrides").setHeading();
 
     new Setting(wrapper)
       .setName("Reset settings")
@@ -600,7 +600,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               this.plugin.settings = before;
               log.error(e);
               new Notice(
-                "Could not reset settings to defaults. Implement resetSettingsToDefaults() or expose default_settings on the plugin (see console).",
+                "Could not reset settings to defaults – implement reset settings to defaults or expose default_settings on the plugin (see console).",
               );
             }
           }).open();
@@ -684,7 +684,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         const cur =
           this.plugin.settings.imageOcclusion.attachmentFolderPath ?? "Attachments/Image Occlusion/";
-        t.setPlaceholder("attachments/image occlusion/");
+        t.setPlaceholder("Attachments/Image occlusion/");
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;
@@ -836,7 +836,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Delete orphaned image occlusion images")
-      .setDesc("Automatically delete image occlusion images during sync if  their corresponding cards are deleted from markdown")
+      .setDesc("Automatically delete image occlusion images during sync if their corresponding cards are deleted from markdown")
       .addToggle((t) =>
         t.setValue(this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true).onChange(async (v) => {
           const prev = this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true;
@@ -861,7 +861,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const allFolders = listVaultFolders(this.app);
 
         const cur = this.plugin.settings.cardAttachments.attachmentFolderPath ?? "Attachments/Cards/";
-        t.setPlaceholder("attachments/cards/");
+        t.setPlaceholder("Attachments/Image occlusion/");
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;
