@@ -9,7 +9,6 @@
 import { Modal, Notice, TFile, MarkdownView, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import { BRAND } from "../core/constants";
 import { parseCardsFromText, type ParsedCard } from "../parser/parser";
 import { CardEditModal, saveCardEdits } from "../reviewer/card-editor";
 
@@ -37,7 +36,7 @@ export class ParseErrorModal extends Modal {
   // ── Modal lifecycle ───────────────────────────────────────────────────────
 
   onOpen() {
-    setModalTitle(this, `${BRAND}: parse errors`);
+    setModalTitle(this, `Sync errors`);
 
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
@@ -215,13 +214,13 @@ export class ParseErrorModal extends Modal {
   private async openAtAnchor(id: string) {
     const ref = this.resolveCardRef(id);
     if (!ref?.sourceNotePath) {
-      new Notice(`${BRAND}: cannot resolve note path for ^sprout-${id}`);
+      new Notice(`Cannot resolve note path for ^sprout-${id}`);
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(ref.sourceNotePath);
     if (!(file instanceof TFile)) {
-      new Notice(`${BRAND}: note not found (${ref.sourceNotePath})`);
+      new Notice(`Note not found (${ref.sourceNotePath})`);
       return;
     }
 
@@ -269,13 +268,13 @@ export class ParseErrorModal extends Modal {
   private async openQuickEdit(id: string) {
     const ref = this.resolveCardRef(id);
     if (!ref?.sourceNotePath) {
-      new Notice(`${BRAND}: cannot resolve note path for ^sprout-${id}`);
+      new Notice(`Cannot resolve note path for ^sprout-${id}`);
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(ref.sourceNotePath);
     if (!(file instanceof TFile)) {
-      new Notice(`${BRAND}: note not found (${ref.sourceNotePath})`);
+      new Notice(`Note not found (${ref.sourceNotePath})`);
       return;
     }
 

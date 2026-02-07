@@ -185,7 +185,7 @@ function getCardStability(state?: CardState | null) {
   return 0;
 }
 
-function normalizeReviewResult(result: ReviewResult | null | undefined): ReviewResult | null {
+function normalizeReviewResult(result: ReviewResult | null | undefined): Exclude<ReviewResult, "skip"> | null {
   const r = String(result ?? "").toLowerCase();
   if (r === "pass" || r === "fail") return r;
   if (r === "again" || r === "hard" || r === "good" || r === "easy") return r;
@@ -211,7 +211,7 @@ function buildStabilityTimeline(
       scheduledDays: 0,
     },
     sorted[0].at,
-    { scheduler },
+    { scheduling: scheduler },
   );
 
   const timeline: Array<{ at: number; stability: number }> = [];
@@ -221,8 +221,8 @@ function buildStabilityTimeline(
     const now = Number(entry.at);
     const graded =
       rating === "pass" || rating === "fail"
-        ? gradeFromPassFail(state, rating, now, { scheduler })
-        : gradeFromRating(state, rating, now, { scheduler });
+        ? gradeFromPassFail(state, rating, now, { scheduling: scheduler })
+        : gradeFromRating(state, rating, now, { scheduling: scheduler });
     state = graded.nextState;
     const stability = getCardStability(state);
     timeline.push({ at: now, stability });

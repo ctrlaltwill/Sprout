@@ -159,9 +159,9 @@ export class SproutWidgetView extends ItemView {
     if (this.mode !== "session" || !this.session) {
       return;
     }
-    if (!this.plugin.settings.reviewer.autoAdvanceEnabled) return;
+    if (!this.plugin.settings.study.autoAdvanceEnabled) return;
 
-    const sec = Number(this.plugin.settings.reviewer.autoAdvanceSeconds);
+    const sec = Number(this.plugin.settings.study.autoAdvanceSeconds);
     if (!Number.isFinite(sec) || sec <= 0) return;
 
     this._timer = window.setTimeout(() => {
@@ -192,8 +192,8 @@ export class SproutWidgetView extends ItemView {
     );
     const news = cards.filter((c) => states[c.id] && states[c.id].stage === "new");
 
-    const reviewLimit = this.plugin.settings.reviewer.dailyReviewLimit ?? 200;
-    const newLimit = this.plugin.settings.reviewer.dailyNewLimit ?? 20;
+    const reviewLimit = this.plugin.settings.study.dailyReviewLimit ?? 200;
+    const newLimit = this.plugin.settings.study.dailyNewLimit ?? 20;
 
     const learnSorted = learnDue
       .sort(
@@ -412,7 +412,7 @@ export class SproutWidgetView extends ItemView {
         const displayIdx = Number(ev.key) - 1;
         if (displayIdx < 0 || displayIdx >= options.length) return;
 
-        const randomize = !!(this.plugin.settings.reviewer?.randomizeMcqOptions);
+        const randomize = !!(this.plugin.settings.study?.randomizeMcqOptions);
         const order = getWidgetMcqDisplayOrder(this.session, card, randomize);
         const origIdx = order[displayIdx];
         if (Number.isInteger(origIdx)) void this.answerMcq(origIdx);

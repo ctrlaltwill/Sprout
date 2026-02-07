@@ -1,9 +1,9 @@
 /**
  * @file src/types/settings.ts
  * @summary Plugin settings type definition. Describes the full shape of user-configurable
- * preferences grouped by feature area (reviewer, widget, scheduler, indexing,
- * imageOcclusion, cardAttachments, home, appearance). Only the type is defined here;
- * the DEFAULT_SETTINGS constant lives in src/core/default-settings.ts.
+ * preferences grouped by feature area (general, study, scheduling, indexing, storage).
+ * Only the type is defined here; the DEFAULT_SETTINGS constant lives in
+ * src/core/default-settings.ts.
  *
  * @exports
  *   - SproutSettings — type describing the complete plugin settings structure
@@ -14,8 +14,8 @@
  * Each top-level key groups settings by feature area.
  */
 export type SproutSettings = {
-  // Home
-  home: {
+  // General — user identity, greeting, appearance
+  general: {
     userName: string;
     showGreeting: boolean;
     hideSproutInfo: boolean;
@@ -25,17 +25,13 @@ export type SproutSettings = {
       count: number | null;
       fetchedAt: number | null;
     };
-  };
-
-  // Appearance
-  appearance: {
     enableAnimations: boolean;
     /** "accent" uses theme accent colour; "theme" uses background/text alt colours. */
     prettifyCards: string;
   };
 
-  // Study
-  reviewer: {
+  // Study — reviewer behaviour, limits, deck scope
+  study: {
     /** Whether the Info field is expanded by default on the card back. */
     showInfoByDefault: boolean;
 
@@ -54,23 +50,20 @@ export type SproutSettings = {
 
     enableSkipButton: boolean;
     randomizeMcqOptions: boolean;
-  };
 
-  // Widget
-  widget: {
     /** Treat folder notes (same name as parent folder) as deck roots. */
     treatFolderNotesAsDecks: boolean;
   };
 
-  // Scheduling
-  scheduler: {
+  // Scheduling — FSRS algorithm parameters
+  scheduling: {
     learningStepsMinutes: number[];
     relearningStepsMinutes: number[];
     /** Target recall probability (0.80 – 0.97). */
     requestRetention: number;
   };
 
-  // Indexing
+  // Indexing — card detection & anchor placement
   indexing: {
     /** Skip flashcard markers inside fenced code blocks. */
     ignoreInCodeFences: boolean;
@@ -78,17 +71,13 @@ export type SproutSettings = {
     idPlacement: "above" | "below";
   };
 
-  // Image occlusion
-  imageOcclusion: {
+  // Storage — attachment folder paths & cleanup
+  storage: {
     /** Vault-relative folder path for IO mask images. */
-    attachmentFolderPath: string;
+    imageOcclusionFolderPath: string;
     /** Delete orphaned mask images when their IO cards are removed. */
     deleteOrphanedImages: boolean;
-  };
-
-  // Attachments
-  cardAttachments: {
     /** Vault-relative folder path for images pasted into Q/A/Info fields. */
-    attachmentFolderPath: string;
+    cardAttachmentFolderPath: string;
   };
 };

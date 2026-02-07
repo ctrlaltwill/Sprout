@@ -81,14 +81,6 @@
 
 /* ---- Card editor — Quick-edit modal ---- */
 
-.sprout .sprout-edit-input-full {
-  width: 100%;
-}
-
-.sprout .sprout-edit-textarea-full {
-  width: 100%;
-}
-
 .sprout .sprout-edit-mcq-option-row {
   display: flex;
   align-items: center;
@@ -108,13 +100,6 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 6px;
-}
-
-.sprout .sprout-edit-btn-row {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 12px;
 }
 
 /* ---- Shared utility classes used across card-editor, bulk-edit, modals ---- */

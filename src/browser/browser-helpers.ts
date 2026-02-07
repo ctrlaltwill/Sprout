@@ -57,7 +57,8 @@
  */
 
 import type { CardRecord } from "../core/store";
-import type { App, TFile } from "obsidian";
+import type { App } from "obsidian";
+import { TFile } from "obsidian";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import { normaliseGroupPath } from "../indexes/group-index";

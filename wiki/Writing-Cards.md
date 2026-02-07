@@ -99,6 +99,10 @@ Standard Obsidian syntax works inside any field:
 - **Images**: `![[image.png]]` or `![[image.png|400]]` for a sized embed
 - **External images**: `![alt](https://...)`
 
+## Tables
+
+> **Note:** Tables are not supported inside card fields. Tables use `|` characters, which will be interpreted as field delimiters and break card parsing.
+
 ## Inline formatting
 
 Sprout supports standard Obsidian inline markdown in all card fields (question, answer, cloze text, extra info). Formatting is rendered in the reviewer, widget, and reading view, and is converted to HTML when exporting to Anki.
@@ -117,7 +121,7 @@ Sprout supports standard Obsidian inline markdown in all card fields (question, 
 
 Cards can be edited at any time:
 
-- **From the source note** — edit the pipe-delimited block directly in Markdown.
+- **From the source note** — edit the pipe-delimited block directly in Markdown or click the edit button in reading view.
 - **From the Card Browser** — select a card and click **Edit** to open the card editor.
 - **During a study session** — press `E` or choose **Edit** from the More menu (`M`) to edit the current card inline.
 
@@ -132,3 +136,4 @@ After syncing, each card block gets an anchor line:
 ```
 
 This is the only stable identifier for that card. **Do not edit or delete it** — it links the card to its scheduling data. If you accidentally delete it, you can copy the ID from the Card Browser, otherwise a new anchor will be assigned on next sync and learning progress will be lost.
+

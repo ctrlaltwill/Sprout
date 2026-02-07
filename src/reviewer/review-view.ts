@@ -15,7 +15,7 @@ import {
   setIcon,
 } from "obsidian";
 
-import { AOS_DURATION, BRAND, MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_REVIEWER } from "../core/constants";
+import { AOS_DURATION, MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_REVIEWER } from "../core/constants";
 import { log } from "../core/logger";
 import { queryFirst, setCssProps } from "../core/ui";
 import { gradeFromRating } from "../scheduler/scheduler";
@@ -66,7 +66,7 @@ import {
 import { type SproutHeader, createViewHeader } from "../core/header";
 
 function isFourButtonMode(plugin: SproutPlugin): boolean {
-  return !!(plugin.settings?.reviewer?.fourButtonMode);
+  return !!(plugin.settings?.study?.fourButtonMode);
 }
 
 type UndoFrame = {
@@ -306,7 +306,7 @@ export class SproutReviewerView extends ItemView {
       this.render();
     } catch (e) {
       log.error(`UNDO: failed`, e);
-      new Notice(`${BRAND}: undo failed. See console.`);
+      new Notice(`Undo failed. See console.`);
       this.render();
     }
   }
@@ -392,7 +392,7 @@ export class SproutReviewerView extends ItemView {
     if (!queue.length) queue = this.buildPracticeQueue(scope);
 
     if (!queue.length) {
-      new Notice(`${BRAND}: no cards available for practice in this scope.`);
+      new Notice(`No cards available for practice in this scope.`);
       return;
     }
 
@@ -616,9 +616,9 @@ export class SproutReviewerView extends ItemView {
   private armTimer() {
     this.clearTimer();
     if (this.mode !== "session") return;
-    if (!this.plugin.settings.reviewer.autoAdvanceEnabled) return;
+    if (!this.plugin.settings.study.autoAdvanceEnabled) return;
 
-    const sec = Number(this.plugin.settings.reviewer.autoAdvanceSeconds);
+    const sec = Number(this.plugin.settings.study.autoAdvanceSeconds);
     if (!Number.isFinite(sec) || sec <= 0) return;
 
     this._timer = window.setTimeout(() => {
@@ -783,7 +783,7 @@ export class SproutReviewerView extends ItemView {
       } catch (e: unknown) {
         log.error(e);
         const msg = e instanceof Error ? e.message : String(e);
-        new Notice(`${BRAND}: edit failed (${msg})`);
+        new Notice(`Edit failed (${msg})`);
       }
     });
   }
@@ -1363,7 +1363,7 @@ export class SproutReviewerView extends ItemView {
 
     const res = await syncOneFile(this.plugin, active);
     new Notice(
-      `${BRAND}: ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
+      `${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
     );
     if (res.quarantinedCount > 0)
       new ParseErrorModal(this.plugin.app, this.plugin, res.quarantinedIds).open();
@@ -1462,7 +1462,7 @@ export class SproutReviewerView extends ItemView {
 
     const infoPresent = activeCard ? this.hasInfoField(activeCard) : false;
     const showInfo =
-      !!this.plugin.settings.reviewer.showInfoByDefault || (this.showAnswer && infoPresent);
+      !!this.plugin.settings.study.showInfoByDefault || (this.showAnswer && infoPresent);
 
     const practiceMode = this.isPracticeSession();
     const canStartPractice = !practiceMode && !activeCard && this.canStartPractice(this.session.scope);
@@ -1520,7 +1520,7 @@ export class SproutReviewerView extends ItemView {
 
       openEditModal: () => this.openEditModalForCurrentCard(),
 
-      applyAOS: this.plugin.settings?.appearance?.enableAnimations ?? true,
+      applyAOS: this.plugin.settings?.general?.enableAnimations ?? true,
       aosDelayMs: this._firstSessionRender ? 100 : 0,
 
       rerender: () => this.render(),
@@ -1537,7 +1537,7 @@ export class SproutReviewerView extends ItemView {
 
     // Only arm timer on first render of session, not on card/reveal changes
     if (this._firstSessionRender) {
-      const animationsEnabled = this.plugin.settings?.appearance?.enableAnimations ?? true;
+      const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
       // Initialize AOS animations for reviewer cards
       if (animationsEnabled) {
         try {

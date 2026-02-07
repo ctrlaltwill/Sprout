@@ -11,7 +11,6 @@
  *   - VIEW_TYPE_BROWSER — view type string for the card browser view
  *   - VIEW_TYPE_ANALYTICS — view type string for the analytics view
  *   - VIEW_TYPE_HOME — view type string for the home view
- *   - BRAND — display brand name ("Sprout")
  *   - MAX_CONTENT_WIDTH — max content width in normal mode (px number)
  *   - MAX_CONTENT_WIDTH_PX — MAX_CONTENT_WIDTH as a CSS px string
  *   - POPOVER_Z_INDEX — z-index string for popovers and overlays

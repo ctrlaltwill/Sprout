@@ -173,25 +173,63 @@ export default class SproutPlugin extends Plugin {
     document.body.classList.toggle("sprout-hide-status-bar", hide);
   }
 
+  /**
+   * Migrate legacy settings keys from pre-1.1 structure to current layout.
+   * Runs once on load; safe to call multiple times (no-ops if already migrated).
+   */
+  private _migrateSettingsInPlace() {
+    const s = this.settings as Record<string, unknown>;
+
+    const move = (oldKey: string, newKey: string) => {
+      if (s[oldKey] != null && s[newKey] == null) {
+        s[newKey] = s[oldKey];
+      }
+      if (s[oldKey] != null) delete s[oldKey];
+    };
+
+    // Rename top-level groups
+    move("home", "general");
+    move("appearance", "general");
+    move("reviewer", "study");
+    move("widget", "study");
+    move("scheduler", "scheduling");
+
+    // Merge imageOcclusion + cardAttachments → storage
+    const io = s.imageOcclusion as Record<string, unknown> | undefined;
+    const ca = s.cardAttachments as Record<string, unknown> | undefined;
+    if (io || ca) {
+      const storage = (s.storage ?? {}) as Record<string, unknown>;
+      if (io?.attachmentFolderPath != null && storage.imageOcclusionFolderPath == null) {
+        storage.imageOcclusionFolderPath = io.attachmentFolderPath;
+      }
+      if (ca?.attachmentFolderPath != null && storage.cardAttachmentFolderPath == null) {
+        storage.cardAttachmentFolderPath = ca.attachmentFolderPath;
+      }
+      s.storage = storage;
+      delete s.imageOcclusion;
+      delete s.cardAttachments;
+    }
+  }
+
   private _normaliseSettingsInPlace() {
     const s = this.settings;
-    s.scheduler ??= {} as SproutSettings["scheduler"];
-    s.home ??= {} as SproutSettings["home"];
-    s.home.pinnedDecks ??= [];
-    s.home.githubStars ??= { count: null, fetchedAt: null };
+    s.scheduling ??= {} as SproutSettings["scheduling"];
+    s.general ??= {} as SproutSettings["general"];
+    s.general.pinnedDecks ??= [];
+    s.general.githubStars ??= { count: null, fetchedAt: null };
 
-    s.scheduler.learningStepsMinutes = cleanPositiveNumberArray(
-      s.scheduler.learningStepsMinutes,
-      DEFAULT_SETTINGS.scheduler.learningStepsMinutes,
+    s.scheduling.learningStepsMinutes = cleanPositiveNumberArray(
+      s.scheduling.learningStepsMinutes,
+      DEFAULT_SETTINGS.scheduling.learningStepsMinutes,
     );
 
-    s.scheduler.relearningStepsMinutes = cleanPositiveNumberArray(
-      s.scheduler.relearningStepsMinutes,
-      DEFAULT_SETTINGS.scheduler.relearningStepsMinutes,
+    s.scheduling.relearningStepsMinutes = cleanPositiveNumberArray(
+      s.scheduling.relearningStepsMinutes,
+      DEFAULT_SETTINGS.scheduling.relearningStepsMinutes,
     );
 
-    s.scheduler.requestRetention = clamp(
-      Number(s.scheduler.requestRetention ?? DEFAULT_SETTINGS.scheduler.requestRetention),
+    s.scheduling.requestRetention = clamp(
+      Number(s.scheduling.requestRetention ?? DEFAULT_SETTINGS.scheduling.requestRetention),
       0.8,
       0.97,
     );
@@ -207,7 +245,7 @@ export default class SproutPlugin extends Plugin {
       "easeDeltaEasy",
     ];
     for (const k of legacyKeys) {
-      if (k in s.scheduler) delete (s.scheduler as Record<string, unknown>)[k];
+      if (k in s.scheduling) delete (s.scheduling as Record<string, unknown>)[k];
     }
   }
 
@@ -261,6 +299,7 @@ export default class SproutPlugin extends Plugin {
         ? (rootObj.settings as Partial<SproutSettings>)
         : {};
       this.settings = deepMerge(DEFAULT_SETTINGS, rootSettings);
+      this._migrateSettingsInPlace();
       this._normaliseSettingsInPlace();
 
       this.store = new JsonStore(this);
@@ -341,7 +380,7 @@ export default class SproutPlugin extends Plugin {
       log.info(`loaded`);
     } catch (e) {
       log.error(`failed to load`, e);
-      new Notice(`${BRAND}: failed to load. See console for details.`);
+      new Notice(`Failed to load. See console for details.`);
     }
   }
 
@@ -545,7 +584,7 @@ export default class SproutPlugin extends Plugin {
 
     const tagsDeleted = Number((res as { tagsDeleted?: number }).tagsDeleted ?? 0);
     if (tagsDeleted > 0) {
-      new Notice(`${BRAND}: deleted ${tagsDeleted} unused tag${tagsDeleted === 1 ? "" : "s"}`);
+      new Notice(`Deleted ${tagsDeleted}, unused tag${tagsDeleted === 1 ? "" : "s"}`);
     }
 
     if (res.quarantinedCount > 0) {
@@ -614,10 +653,10 @@ export default class SproutPlugin extends Plugin {
 
   async refreshGithubStars(force = false) {
     const s = this.settings;
-    s.home ??= {} as SproutSettings["home"];
-    s.home.githubStars ??= { count: null, fetchedAt: null };
+    s.general ??= {} as SproutSettings["general"];
+    s.general.githubStars ??= { count: null, fetchedAt: null };
 
-    const lastAt = Number(s.home.githubStars.fetchedAt || 0);
+    const lastAt = Number(s.general.githubStars.fetchedAt || 0);
     const staleMs = 6 * 60 * 60 * 1000;
     if (!force && lastAt && Date.now() - lastAt < staleMs) return;
 
@@ -632,8 +671,8 @@ export default class SproutPlugin extends Plugin {
       const countRaw = jsonObj?.stargazers_count;
       const count = Number(countRaw);
       if (Number.isFinite(count)) {
-        s.home.githubStars.count = count;
-        s.home.githubStars.fetchedAt = Date.now();
+        s.general.githubStars.count = count;
+        s.general.githubStars.fetchedAt = Date.now();
         await this.saveAll();
         this._refreshOpenViews();
       }
@@ -728,7 +767,7 @@ export default class SproutPlugin extends Plugin {
     await this.saveAll();
     this._refreshOpenViews();
 
-    new Notice(`${BRAND}: reset scheduling for ${total} cards.`);
+    new Notice(`Reset scheduling for ${total} cards.`);
   }
 
   async resetAllAnalyticsData(): Promise<void> {
@@ -745,7 +784,7 @@ export default class SproutPlugin extends Plugin {
     await this.saveAll();
     this._refreshOpenViews();
 
-    new Notice(`${BRAND}: analytics data cleared.`);
+    new Notice("Analytics data cleared.");
   }
 
   async openReviewerTab(forceNew: boolean = false) {
@@ -818,7 +857,7 @@ export default class SproutPlugin extends Plugin {
       await this.openWidget();
     } catch (e) {
       log.error(`failed to open widget`, e);
-      new Notice(`${BRAND}: failed to open widget. See console for details.`);
+      new Notice(`Failed to open widget. See console for details.`);
     }
   }
 

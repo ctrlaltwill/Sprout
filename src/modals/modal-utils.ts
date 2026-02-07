@@ -420,14 +420,14 @@ export async function writeBinaryToVault(app: App, vaultPath: string, data: Arra
 /**
  * Determine the best vault path for saving an attachment.
  *
- * For IO images: uses `plugin.settings.imageOcclusion.attachmentFolderPath`.
- * For card attachments (Q/A/Info fields): uses `plugin.settings.cardAttachments.attachmentFolderPath`.
+ * For IO images: uses `plugin.settings.storage.imageOcclusionFolderPath`.
+ * For card attachments (Q/A/Info fields): uses `plugin.settings.storage.cardAttachmentFolderPath`.
  * Falls back to the Obsidian fileManager or the active note's parent folder.
  */
 export function bestEffortAttachmentPath(plugin: SproutPlugin, active: TFile, baseName: string, type: "io" | "card" = "io"): string {
   const folderRaw = type === "card"
-    ? (plugin.settings.cardAttachments.attachmentFolderPath ?? "")
-    : (plugin.settings.imageOcclusion.attachmentFolderPath ?? "");
+    ? (plugin.settings.storage.cardAttachmentFolderPath ?? "")
+    : (plugin.settings.storage.imageOcclusionFolderPath ?? "");
   const folder = normaliseFolderPath(folderRaw);
 
   if (folder) return normaliseVaultPath(`${folder}${baseName}`);

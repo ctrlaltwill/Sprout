@@ -9,7 +9,6 @@
 
 import { Modal, Notice, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import { previewApkg, importFromApkg, type ImportOptions, type ImportPreview, type ImportResult, type ModelFieldMapping } from "../anki/anki-import";
 import { setModalTitle, createThemedDropdown } from "./modal-utils";
@@ -155,7 +154,7 @@ export class AnkiImportModal extends Modal {
         this.renderPreviewStep(root);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        new Notice(`${BRAND}: Failed to read .apkg — ${msg}`);
+        new Notice(`Failed to read .apkg — ${msg}`);
         nextBtn.disabled = false;
         if (nextSpan) nextSpan.textContent = "Next";
       }
@@ -457,7 +456,7 @@ export class AnkiImportModal extends Modal {
       setCssProps(fill, "--sprout-anki-import-progress-color", "var(--text-error)");
       statusText.textContent = `Error: ${msg}`;
       log.error("Anki import failed", err);
-      new Notice(`${BRAND}: Import failed — ${msg}`);
+      new Notice(`Import failed — ${msg}`);
 
       const footer = this.buildFooter(root);
       const closeBtn = this.mkNavBtn(footer, "Close", "x");

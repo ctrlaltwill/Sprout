@@ -255,7 +255,7 @@ export function ReviewCalendarHeatmap(props: {
     return todayIndex - Math.max(1, durationDays) + 1;
   }, [durationDays, todayIndex, formatter]);
 
-  const cells = React.useMemo<HeatCell[]>(() => {
+  const cells = React.useMemo(() => {
     const endIndex = todayIndex;
     const totalDays = Math.max(1, endIndex - rangeStartIndex + 1);
     const dayMap = new Map<number, { count: number; totalMs: number }>();
@@ -326,7 +326,7 @@ export function ReviewCalendarHeatmap(props: {
           };
         }
       }
-      return grid;
+      return grid as HeatCell[];
     } else {
       // Default: calendar grid with padding
       const startDate = new Date(rangeStartIndex * MS_DAY);

@@ -13,7 +13,6 @@
 
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import { queryFirst, setCssProps } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
@@ -108,9 +107,9 @@ export class CardCreatorModal extends Modal {
         textarea.setSelectionRange(newPos, newPos);
         textarea.focus();
 
-        new Notice(`${BRAND}: Image will be saved when you add the card`);
+        new Notice(`Image will be saved when you add the card`);
       } catch (e: unknown) {
-        new Notice(`${BRAND}: Failed to process pasted image (${e instanceof Error ? e.message : String(e)})`);
+        new Notice(`Failed to process pasted image (${e instanceof Error ? e.message : String(e)})`);
       }
       return;
     }
@@ -134,7 +133,7 @@ export class CardCreatorModal extends Modal {
           `![[${actualPath}]]`,
         );
       } catch (e: unknown) {
-        new Notice(`${BRAND}: Failed to save image ${placeholder} (${e instanceof Error ? e.message : String(e)})`);
+        new Notice(`Failed to save image ${placeholder} (${e instanceof Error ? e.message : String(e)})`);
       }
     }
 
@@ -434,7 +433,7 @@ export class CardCreatorModal extends Modal {
         cardEditor = null;
         const msg = `Failed to render card fields (${e instanceof Error ? e.message : String(e)})`;
         editorContainer.createDiv({ text: msg, cls: "bc text-sm text-destructive" });
-        new Notice(`${BRAND}: ${msg}`);
+        new Notice(msg);
       }
     };
 
@@ -507,7 +506,7 @@ export class CardCreatorModal extends Modal {
           ioImageData = { mime: item.type, data };
           updateIOPreview();
         } catch (e: unknown) {
-          new Notice(`${BRAND}: Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
+          new Notice(`Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
         }
         return;
       }
@@ -585,14 +584,14 @@ export class CardCreatorModal extends Modal {
       try {
         const active = getActiveMarkdownFile();
         if (!active) {
-          new Notice(`${BRAND}: open a markdown note first`);
+          new Notice(`Open a markdown note first`);
           return;
         }
 
         const type = currentType;
 
         if (!cardEditor) {
-          new Notice(`${BRAND}: select a question type before adding`);
+          new Notice(`Select a question type before adding`);
           return;
         }
 
@@ -605,7 +604,7 @@ export class CardCreatorModal extends Modal {
 
         const requireNonEmpty = (val: string, message: string) => {
           if (String(val || "").trim().length === 0) {
-            new Notice(`${BRAND}: ${message}`);
+            new Notice(message);
             focusFirstField(cardEditor!.root);
             return false;
           }
@@ -624,7 +623,7 @@ export class CardCreatorModal extends Modal {
         } else if (type === "cloze") {
           if (!requireNonEmpty(questionVal, "Cloze requires text with at least one {{cN::...}} token")) return;
           if (!hasClozeToken(questionVal)) {
-            new Notice(`${BRAND}: Cloze requires at least one {{cN::...}} token`);
+            new Notice(`Cloze requires at least one {{cN::...}} token`);
             focusFirstField(cardEditor.root);
             return;
           }
@@ -647,7 +646,7 @@ export class CardCreatorModal extends Modal {
             .filter(Boolean);
           if (!requireNonEmpty(correct, "Multiple Choice requires a correct option")) return;
           if (wrongs.length < 1) {
-            new Notice(`${BRAND}: Multiple Choice requires at least one wrong option`);
+            new Notice(`Multiple choice requires at least one wrong option`);
             focusFirstField(cardEditor.root);
             return;
           }
@@ -656,7 +655,7 @@ export class CardCreatorModal extends Modal {
           for (const wrong of wrongs) block.push(...formatPipeField("O", wrong));
           block.push(...formatPipeField("A", correct));
         } else {
-          new Notice(`${BRAND}: unsupported card type`);
+          new Notice(`Unsupported card type`);
           return;
         }
 
@@ -679,17 +678,17 @@ export class CardCreatorModal extends Modal {
             try {
               const res = await syncOneFile(this.plugin, active);
               new Notice(
-                `${BRAND}: added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
+                `Added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
               );
             } catch (e: unknown) {
               log.error("sync failed", e);
-              new Notice(`${BRAND}: sync failed (${e instanceof Error ? e.message : String(e)})`);
+              new Notice(`Sync failed (${e instanceof Error ? e.message : String(e)})`);
             }
           })();
         }, 1000);
       } catch (e: unknown) {
         log.error("add failed", e);
-        new Notice(`${BRAND}: add failed (${e instanceof Error ? e.message : String(e)})`);
+        new Notice(`Add failed (${e instanceof Error ? e.message : String(e)})`);
       }
     };
 

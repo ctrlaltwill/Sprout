@@ -15,7 +15,7 @@
 // src/browser.ts
 import { ItemView, Notice, TFile, type WorkspaceLeaf, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../core/constants";
+import { MAX_CONTENT_WIDTH_PX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../core/constants";
 import type { CardRecord } from "../core/store";
 import { syncOneFile } from "../sync/sync-engine";
 import { unsuspendCard, suspendCard } from "../scheduler/scheduler";
@@ -410,7 +410,7 @@ export class SproutCardBrowserView extends ItemView {
         onClose: () => { this.onRefresh(); },
       });
     } catch (e: unknown) {
-      new Notice(`${BRAND}: Failed to open IO editor (${e instanceof Error ? e.message : String(e)})`);
+      new Notice(`Failed to open image occlusion editor (${e instanceof Error ? e.message : String(e)})`);
     }
   }
 
@@ -462,7 +462,7 @@ export class SproutCardBrowserView extends ItemView {
       new Notice(`${mode === "unsuspend" ? "Unsuspended" : "Suspended"} ${count} card${count === 1 ? "" : "s"}`);
       this.refreshTable();
     } catch (err: unknown) {
-      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
+      new Notice(`${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -594,7 +594,7 @@ export class SproutCardBrowserView extends ItemView {
     this._header.install("flashcards");
     this._applyWidthMode();
 
-    const animationsEnabled = this.plugin.settings?.appearance?.enableAnimations ?? true;
+    const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
 
     // Build the full layout via browser-toolbar.ts
     const refs: ToolbarRefs = buildBrowserLayout(root, {

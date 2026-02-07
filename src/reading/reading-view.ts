@@ -37,10 +37,10 @@ import {
 
 let sproutPluginRef: Plugin | null = null;
 
-/** Shape of a Sprout plugin instance for appearance-setting lookups. */
+/** Shape of a Sprout plugin instance for general-setting lookups. */
 type SproutPluginLike = Plugin & {
   store?: { data?: { cards?: Record<string, CardRecord> } };
-  settings?: { appearance?: { prettifyCards?: string } };
+  settings?: { general?: { prettifyCards?: string } };
   syncBank?(): Promise<void>;
   refreshAllViews?(): void;
 };
@@ -51,7 +51,7 @@ function getSproutPlugin(): SproutPluginLike | null {
     const plugin = Object.values(window?.app?.plugins?.plugins ?? {}).find(
       (p): p is SproutPluginLike => {
         const sp = p as SproutPluginLike;
-        return !!sp?.store && !!sp?.settings?.appearance;
+        return !!sp?.store && !!sp?.settings?.general;
       },
     );
     return plugin ?? null;
@@ -152,8 +152,8 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
     let prettifyStyle: string = "accent";
     try {
       const activePlugin = getSproutPlugin();
-      if (activePlugin?.settings?.appearance?.prettifyCards) {
-        prettifyStyle = activePlugin.settings.appearance.prettifyCards;
+      if (activePlugin?.settings?.general?.prettifyCards) {
+        prettifyStyle = activePlugin.settings.general.prettifyCards;
       }
     } catch (e) { log.swallow("read prettify plugin setting", e); }
     // Update all .sprout-pretty-card classes inside the event target
@@ -649,8 +649,8 @@ function enhanceCardElement(
   try {
     // Try to get the plugin instance from Obsidian global registry
     const activePlugin = getSproutPlugin();
-    if (activePlugin?.settings?.appearance?.prettifyCards) {
-      prettifyStyle = activePlugin.settings.appearance.prettifyCards;
+    if (activePlugin?.settings?.general?.prettifyCards) {
+      prettifyStyle = activePlugin.settings.general.prettifyCards;
     }
   } catch (e) { log.swallow("read prettify plugin setting", e); }
   el.classList.add('sprout-pretty-card', 'sprout-reading-card', 'sprout-reading-view-wrapper', prettifyStyle === 'theme' ? 'theme' : 'accent');

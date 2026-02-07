@@ -56,7 +56,7 @@ export class ConfirmResetSchedulingModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllCardScheduling();
-        new Notice("Settings updated – scheduling reset for all cards");
+        new Notice("Scheduling reset for all cards");
       } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset scheduling (see console).");
@@ -106,7 +106,7 @@ export class ConfirmResetAnalyticsModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllAnalyticsData();
-        new Notice("Settings updated – analytics data cleared");
+        new Notice("Analytics data cleared");
       } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset analytics (see console).");
@@ -315,7 +315,7 @@ export class BackupCompareModal extends Modal {
     });
 
     const note = contentEl.createEl("p", {
-      text: "Restore will overwrite the current database in-memory and persist it – it does not edit your markdown notes; run a sync afterward if you want to reconcile notes and database.",
+      text: "Restore will overwrite the current database scheduling by card anchor, it will not affect question wording or markdown.",
     });
     note.classList.add("sprout-confirm-muted");
 
@@ -373,7 +373,7 @@ export class ConfirmRestoreBackupModal extends Modal {
     new Setting(contentEl).setName("Restore from backup?").setHeading();
 
     contentEl.createEl("p", {
-      text: `This will overwrite your current Sprout database with: ${this.backup.name}`,
+      text: `This will restore scheduling data from: ${this.backup.name}`,
     });
 
     /* ── change summary ── */
@@ -386,13 +386,15 @@ export class ConfirmRestoreBackupModal extends Modal {
       });
     };
 
-    add("Cards", this.current.cards, this.backup.cards);
     add("States", this.current.states, this.backup.states);
     add("Review log", this.current.reviewLog, this.backup.reviewLog);
-    add("Quarantine", this.current.quarantine, this.backup.quarantine);
+    contentEl.createEl("p", {
+      text: `Note: Card content (${this.current.cards} cards) will NOT be affected – only scheduling data is restored.`,
+      cls: "sprout-confirm-muted",
+    });
 
     const warning = contentEl.createEl("p", {
-      text: "Note: restore does not edit markdown notes – after restoring, you can run sync to reconcile notes and database.",
+      text: "Restore does not edit markdown notes, it only restores scheduling data.",
     });
     warning.classList.add("sprout-confirm-muted");
 
@@ -430,7 +432,7 @@ export class ConfirmRestoreBackupModal extends Modal {
           restoreBtn.removeAttribute("disabled");
           return;
         }
-        new Notice("Settings updated – backup restored");
+        new Notice("Scheduling data restored from backup");
         this.close();
         this.onRestored();
       } catch (e) {
@@ -495,7 +497,7 @@ export class ConfirmDeleteBackupModal extends Modal {
           new Notice("Sprout: cannot delete backup (adapter does not support delete).");
           return;
         }
-        new Notice("Settings updated – backup deleted");
+        new Notice("Scheduling data backup deleted");
         this.onDone?.();
       } catch (e) {
         log.error(e);

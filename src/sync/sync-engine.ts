@@ -85,7 +85,7 @@ async function withLock<T>(lockMap: LockQueue, key: string, fn: () => Promise<T>
   try {
     return await fn();
   } finally {
-    if (release) release();
+    if (release) (release as () => void)();
     if (lockMap.get(key) === chained) lockMap.delete(key);
   }
 }
@@ -705,7 +705,7 @@ function countRemovedGroups(before: Set<string>, after: Set<string>): number {
  * An image is orphaned if it matches `sprout-io-*` but no IO card references it.
  */
 async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
-  if (!plugin.settings?.imageOcclusion?.deleteOrphanedImages) return 0;
+  if (!plugin.settings?.storage?.deleteOrphanedImages) return 0;
 
   const vault = plugin.app.vault;
   const allFiles = vault.getFiles();

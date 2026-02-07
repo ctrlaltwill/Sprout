@@ -409,7 +409,7 @@ function gradeCardFsrs(
   state: CardState,
   rating: ReviewRating,
   now: number,
-  settings: { scheduler: SchedulerSettings },
+  settings: { scheduling: SchedulerSettings },
 ): GradeResult {
   const prevDue = state.due;
 
@@ -431,7 +431,7 @@ function gradeCardFsrs(
     };
   }
 
-  const cfg = settings.scheduler;
+  const cfg = settings.scheduling;
 
   const params = buildFsrsParams(cfg);
   const engine = fsrs(params);
@@ -480,7 +480,7 @@ export function gradeFromRating(
   state: CardState,
   rating: ReviewRating,
   now: number,
-  settings: { scheduler: SchedulerSettings },
+  settings: { scheduling: SchedulerSettings },
 ) {
   return gradeCardFsrs(state, rating, now, settings);
 }
@@ -493,7 +493,7 @@ export function gradeFromPassFail(
   state: CardState,
   result: "pass" | "fail",
   now: number,
-  settings: { scheduler: SchedulerSettings },
+  settings: { scheduling: SchedulerSettings },
   passRating: "good" | "easy" = "good",
 ) {
   const rating: ReviewRating =
@@ -547,7 +547,7 @@ export function unsuspendCard(prev: CardState, now: number): CardState {
 export function resetCardScheduling(
   prev: CardState,
   now: number,
-  settings: { scheduler: SchedulerSettings },
+  settings: { scheduling: SchedulerSettings },
 ): CardState {
   void settings;
 

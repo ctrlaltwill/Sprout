@@ -16,7 +16,6 @@
 import { Notice, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { coerceGroups } from "../indexes/group-format";
@@ -476,7 +475,7 @@ function makeEditorCell(
         await ctx.writeCardToMarkdown(updated);
         baseline = nextVal;
       } catch (err: unknown) {
-        new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
+        new Notice(`${err instanceof Error ? err.message : String(err)}`);
         ta.value = baseline;
       } finally {
         ctx.saving.delete(key);
@@ -625,7 +624,7 @@ function makeGroupsEditorCell(
       ctx.plugin.store.upsertCard(updated);
       baseline = nextVal;
     } catch (err: unknown) {
-      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
+      new Notice(`${err instanceof Error ? err.message : String(err)}`);
       selected = parseGroupsInput(baseline);
       renderBadges();
     } finally {

@@ -13,7 +13,7 @@ import type { CardRecord } from "../types/card";
 import type { Session } from "./types";
 
 export function isMcqOptionRandomisationEnabled(plugin: SproutPlugin): boolean {
-  return !!plugin.settings.reviewer?.randomizeMcqOptions;
+  return !!plugin.settings.study?.randomizeMcqOptions;
 }
 
 export function initMcqOrderState(session: Session) {

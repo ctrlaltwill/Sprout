@@ -37,8 +37,8 @@ function newCardState(overrides: Partial<CardState> = {}): CardState {
   };
 }
 
-const DEFAULT_SETTINGS: { scheduler: SchedulerSettings } = {
-  scheduler: {
+const DEFAULT_SETTINGS: { scheduling: SchedulerSettings } = {
+  scheduling: {
     learningStepsMinutes: [1, 10],
     relearningStepsMinutes: [10],
     requestRetention: 0.9,

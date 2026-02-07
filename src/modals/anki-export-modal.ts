@@ -10,7 +10,6 @@
 
 import { Modal, Notice, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import { exportToApkg, type ExportOptions } from "../anki/anki-export";
 import { setModalTitle, createThemedDropdown } from "./modal-utils";
@@ -569,7 +568,7 @@ export class AnkiExportModal extends Modal {
         this.renderResult(root, result.apkgBytes, result.stats);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        new Notice(`${BRAND}: Export failed — ${msg}`);
+        new Notice(`Export failed — ${msg}`);
         log.error("Anki export failed", err);
         exportBtn.disabled = false;
         if (exportSpan) exportSpan.textContent = "Export";
@@ -633,7 +632,7 @@ export class AnkiExportModal extends Modal {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      new Notice(`${BRAND}: Download started`);
+      new Notice(`Download started`);
     };
 
     const saveBtn = footer.createEl("button", {
@@ -649,14 +648,14 @@ export class AnkiExportModal extends Modal {
       try {
         const createBinary = this.app.vault.createBinary?.bind(this.app.vault);
         if (!createBinary) {
-          new Notice(`${BRAND}: Export failed — binary vault write is unavailable.`);
+          new Notice(`Export failed — binary vault write is unavailable.`);
           return;
         }
         await createBinary(fileName, apkgBuffer);
-        new Notice(`${BRAND}: Saved ${fileName} to vault root`);
+        new Notice(`Saved ${fileName} to vault root`);
         this.close();
       } catch (err: unknown) {
-        new Notice(`${BRAND}: Failed to save — ${err instanceof Error ? err.message : String(err)}`);
+        new Notice(`Failed to save — ${err instanceof Error ? err.message : String(err)}`);
       }
     };
 

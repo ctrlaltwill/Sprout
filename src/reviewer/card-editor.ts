@@ -8,12 +8,12 @@
  *   - saveCardEdits — Async function that writes edited card fields back to the source Markdown file and re-syncs
  */
 
-import { Modal, Notice, TFile, type App } from "obsidian";
+import { Modal, Notice, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import { queryFirst } from "../core/ui";
+import { setModalTitle } from "../modals/modal-utils";
 import { syncOneFile } from "../sync/sync-engine";
-import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 
 export type CardEditPayload = {
@@ -214,9 +214,7 @@ function setTaggedSection(
 }
 
 function mkSectionTitle(parent: HTMLElement, text: string) {
-  const row = parent.createDiv({ cls: "sprout-edit-section-title" });
-  row.createEl("div", { text, cls: "sprout-muted" });
-  return row;
+  parent.createEl("label", { text, cls: "text-sm font-medium" });
 }
 
 export class CardEditModal extends Modal {
@@ -234,26 +232,11 @@ export class CardEditModal extends Modal {
   }
 
   onOpen() {
-    // Always wrap modalEl in a .sprout div for correct CSS scoping
-    let sproutWrapper: HTMLElement = document.createElement("div");
-    sproutWrapper.className = "sprout";
-    // Defensive: if modalEl is already in a .sprout wrapper, reuse it
-    if (this.modalEl.parentElement && this.modalEl.parentElement.classList.contains("sprout")) {
-      sproutWrapper = this.modalEl.parentElement;
-    } else {
-      this.modalEl.parentElement?.insertBefore(sproutWrapper, this.modalEl);
-      sproutWrapper.appendChild(this.modalEl);
-    }
+    this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
+    this.modalEl.addClass("bc", "sprout-modals", "sprout-edit-modal");
+    this.contentEl.addClass("bc");
 
-    // Add sprout-modal and sprout-edit-modal classes to the modal overlay
-    this.modalEl.addClass("sprout-edit-modal");
-    // If modalEl is the overlay, ensure it has both sprout-modal and overlay classes
-    if (this.modalEl.classList.contains("fixed") && this.modalEl.classList.contains("inset-0")) {
-      this.modalEl.classList.add("sprout-modal");
-    } else {
-      const overlay = queryFirst(sproutWrapper, ".fixed.inset-0");
-      if (overlay) overlay.classList.add("sprout-modal");
-    }
+    setModalTitle(this, "Quick edit flashcard");
 
     const { contentEl } = this;
     contentEl.empty();
@@ -261,13 +244,11 @@ export class CardEditModal extends Modal {
     const type = String((this.card).type || "basic");
     const id = String((this.card).id || "");
 
-    contentEl.createEl("h3", { text: `Quick edit flashcard ${id}` });
-
     const mkInput = (value: string) => {
       const input = contentEl.createEl("input");
       input.type = "text";
       input.value = value || "";
-      input.classList.add("sprout-edit-input-full");
+      input.classList.add("input", "w-full");
       return input;
     };
 
@@ -275,7 +256,7 @@ export class CardEditModal extends Modal {
       const ta = contentEl.createEl("textarea");
       ta.value = value || "";
       ta.rows = rows;
-      ta.classList.add("sprout-edit-textarea-full");
+      ta.classList.add("textarea", "w-full", "sprout-textarea-fixed");
       return ta;
     };
 
@@ -446,8 +427,6 @@ export class CardEditModal extends Modal {
   }
 
   onClose() {
-    this.modalEl.removeClass("sprout-edit-modal");
-    this.modalEl.removeClass("sprout-modal");
     this.contentEl.empty();
   }
 
@@ -470,14 +449,20 @@ export class CardEditModal extends Modal {
   ) {
     const { contentEl } = this;
 
-    const btnRow = contentEl.createDiv({ cls: "sprout-edit-btn-row" });
+    const footer = contentEl.createDiv({ cls: "bc flex items-center justify-end gap-4 sprout-modal-footer" });
 
-    const cancel = btnRow.createEl("button", { text: "Cancel" });
+    const cancel = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
     cancel.type = "button";
+    const cancelIcon = cancel.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    setIcon(cancelIcon, "x");
+    cancel.createSpan({ text: "Cancel" });
     cancel.onclick = () => this.close();
 
-    const save = btnRow.createEl("button", { text: "Save" });
+    const save = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
     save.type = "button";
+    const saveIcon = save.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    setIcon(saveIcon, "save");
+    save.createSpan({ text: "Save" });
     save.onclick = async () => {
       try {
         const payload: CardEditPayload = {
@@ -501,7 +486,7 @@ export class CardEditModal extends Modal {
         this.close();
       } catch (e: unknown) {
         log.error("edit failed", e);
-        new Notice(`${BRAND}: edit failed (${e instanceof Error ? e.message : String(e)})`);
+        new Notice(`Edit failed (${e instanceof Error ? e.message : String(e)})`);
       }
     };
   }
@@ -613,6 +598,6 @@ export async function saveCardEdits(
   // Resync that note so store + rendered card reflect changes
   const res = await syncOneFile(plugin, af);
   new Notice(
-    `${BRAND}: synced after edit — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
+    `Synced after edit — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
   );
 }

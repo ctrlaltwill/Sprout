@@ -292,7 +292,7 @@ function renderMcqCard(
   const chosen = graded?.meta?.mcqChoice;
 
   // Randomise MCQ options if setting enabled (stable per session)
-  const randomize = !!(view.plugin.settings.reviewer?.randomizeMcqOptions);
+  const randomize = !!(view.plugin.settings.study?.randomizeMcqOptions);
   const order = getWidgetMcqDisplayOrder(view.session, card, randomize);
   const opts = order.map((i) => options[i]);
 
@@ -430,7 +430,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
   // Grading buttons row – 2×2 grid layout (Again+Hard, Good+Easy)
   if (!graded) {
     if ((card.type === "basic" || isClozeLike(card) || ioLike) && view.showAnswer) {
-      const fourButton = !!view.plugin.settings.reviewer.fourButtonMode;
+      const fourButton = !!view.plugin.settings.study.fourButtonMode;
       let gradingGrid: HTMLElement;
       if (fourButton) {
         gradingGrid = el("div", "bc grid grid-cols-2 gap-2");

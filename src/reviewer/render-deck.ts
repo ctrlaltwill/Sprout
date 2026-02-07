@@ -161,7 +161,7 @@ export function renderDeckMode(args: Args) {
 
   ensureBasecoatStartedOnce();
 
-  const animationsEnabled = plugin.settings?.appearance?.enableAnimations ?? true;
+  const animationsEnabled = plugin.settings?.general?.enableAnimations ?? true;
   const shouldAnimateOnce = animationsEnabled && container.dataset.deckBrowserAosOnce !== "1";
   const applyAos = (el: HTMLElement, delay?: number, animation = "fade-up") => {
     if (!shouldAnimateOnce) return;

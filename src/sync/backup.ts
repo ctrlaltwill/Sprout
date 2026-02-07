@@ -18,13 +18,13 @@
  *  - listDataJsonBackups           — lists all available data.json backup files
  *  - getDataJsonBackupStats        — computes summary statistics for existing backups
  *  - createDataJsonBackupNow       — creates a new backup of the current data.json immediately
- *  - restoreFromDataJsonBackup     — restores the data store from a chosen backup file
+ *  - restoreFromDataJsonBackup     — restores scheduling data (states, reviewLog) from a backup, preserving card content
  *  - ensureRoutineBackupIfNeeded   — creates a routine backup if enough time has elapsed since the last one
  */
 
 import type SproutPlugin from "../main";
 import type { DataAdapter } from "obsidian";
-import { MS_DAY } from "../core/constants";
+// No longer using MS_DAY — backup interval is now 15 minutes
 
 /**
  * Minimal adapter-like interface for low-level vault filesystem access.
@@ -37,14 +37,14 @@ type AdapterLike = Partial<Pick<DataAdapter, "read" | "write" | "exists" | "remo
 // Module-level constants & mutable state
 // ────────────────────────────────────────────
 
-/** Maximum number of automatic backup files to keep on disk. */
-const BACKUP_MAX_COUNT = 12;
+/** Maximum number of scheduling data backup files to keep on disk. */
+const BACKUP_MAX_COUNT = 5;
 
-/** Minimum interval between automatic (routine) backups. */
-const ROUTINE_BACKUP_MIN_INTERVAL_MS = MS_DAY;
+/** Minimum interval between automatic (routine) scheduling data backups (15 minutes). */
+const ROUTINE_BACKUP_MIN_INTERVAL_MS = 15 * 60 * 1000;
 
 /** Cooldown to avoid re-checking backup necessity on every sync. */
-const ROUTINE_CHECK_COOLDOWN_MS = 5 * 60 * 1000;
+const ROUTINE_CHECK_COOLDOWN_MS = 2 * 60 * 1000;
 
 /** Tracks the last time we checked whether a routine backup was needed. */
 let lastRoutineBackupCheck = 0;
@@ -325,16 +325,6 @@ function clonePlain<T>(x: T): T {
   return JSON.parse(JSON.stringify(x)) as T;
 }
 
-/**
- * Replaces all keys in `target` with those from `source`.
- * Mutates in-place to preserve existing object references (important
- * for `plugin.store.data`).
- */
-function replaceObjectContents(target: Record<string, unknown>, source: Record<string, unknown>) {
-  if (!target || typeof target !== "object") return;
-  for (const k of Object.keys(target)) delete target[k];
-  for (const k of Object.keys(source || {})) target[k] = source[k];
-}
 
 // ────────────────────────────────────────────
 // Exported types
@@ -447,7 +437,8 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
 }
 
 /**
- * Creates a timestamped backup of the current data.json on disk.
+ * Creates a timestamped backup of the current scheduling data on disk.
+ * Only saves states and reviewLog — not card content, IO maps, or quarantine.
  * Returns the backup file path, or `null` on failure.
  */
 export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: string): Promise<string | null> {
@@ -455,16 +446,27 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
   const pluginId = getPluginId(plugin);
   if (!adapter || !pluginId) return null;
 
-  const dataPath = joinPath(plugin.app.vault.configDir, "plugins", pluginId, "data.json");
-  if (typeof adapter.exists !== "function" || typeof adapter.read !== "function" || typeof adapter.write !== "function") return null;
+  if (typeof adapter.exists !== "function" || typeof adapter.write !== "function") return null;
 
   try {
-    const exists = await adapter.exists(dataPath);
-    if (!exists) return null;
+    const data = plugin.store?.data;
+    if (!data) return null;
 
-    const text = await adapter.read(dataPath);
-    if (!text || !String(text).trim()) return null;
-    if (String(text).trim() === "{}") return null;
+    const states = data.states;
+    const reviewLog = data.reviewLog;
+    if (!isPlainObject(states) && !Array.isArray(reviewLog)) return null;
+
+    // Only persist scheduling data (states + reviewLog)
+    const schedulingSnapshot: Record<string, unknown> = {
+      _backupType: "scheduling-data",
+      _createdAt: Date.now(),
+      version: Number(data.version ?? 0) || 0,
+      states: states ?? {},
+      reviewLog: reviewLog ?? [],
+    };
+
+    const text = JSON.stringify(schedulingSnapshot);
+    if (!text || text === "{}") return null;
 
     const ts = new Date().toISOString().replace(/[:.]/g, "-");
     const cleanLabel = String(label ?? "")
@@ -476,7 +478,7 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
 
     const suffix = cleanLabel ? `-${cleanLabel}` : "";
     const backupPath = joinPath(plugin.app.vault.configDir, "plugins", pluginId, `data.json.bak-${ts}${suffix}`);
-    await adapter.write(backupPath, String(text));
+    await adapter.write(backupPath, text);
     await pruneDataJsonBackups(plugin, BACKUP_MAX_COUNT);
     return backupPath;
   } catch {
@@ -485,7 +487,8 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
 }
 
 /**
- * Restores the Sprout database from a backup file on disk.
+ * Restores scheduling data (states and reviewLog) from a backup file.
+ * Does NOT restore card content (cards, io) to preserve markdown changes.
  * Optionally creates a safety backup before overwriting.
  *
  * Mutates `plugin.store.data` in-place and persists.
@@ -508,19 +511,18 @@ export async function restoreFromDataJsonBackup(
     const root = getStoreLikeRoot(obj);
     if (!root) return { ok: false, message: "Backup JSON did not contain a recognisable store/database structure." };
 
-    // Only restore the store-like root (cards/states/reviewLog/quarantine/io/version/etc.)
+    // Only restore scheduling data (states, reviewLog) — NOT card content (cards, io)
+    // This prevents overwriting question wording/content changes made in markdown
     const snapshot = clonePlain(root);
 
-    // Ensure required keys exist (avoid undefined holes)
-    snapshot.cards ??= {};
-    snapshot.states ??= {};
-    snapshot.reviewLog ??= [];
-    snapshot.quarantine ??= {};
-    snapshot.io ??= snapshot.io ?? {};
-    snapshot.version = Math.max(Number(snapshot.version ?? 0) || 0, 1);
-
-    // Mutate-in-place to preserve references to plugin.store.data
-    replaceObjectContents(plugin.store.data as unknown as Record<string, unknown>, snapshot);
+    // Selectively restore only scheduling-related data
+    if (snapshot.states && typeof snapshot.states === "object") {
+      plugin.store.data.states = snapshot.states as typeof plugin.store.data.states;
+    }
+    if (Array.isArray(snapshot.reviewLog)) {
+      plugin.store.data.reviewLog = snapshot.reviewLog as typeof plugin.store.data.reviewLog;
+    }
+    // Note: cards, io, and quarantine are NOT restored to preserve markdown changes
 
     // Persist through the store
     await plugin.store.persist();

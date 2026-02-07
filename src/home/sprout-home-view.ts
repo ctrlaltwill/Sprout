@@ -70,7 +70,7 @@ export class SproutHomeView extends ItemView {
   async onOpen() {
     this.render();
     // Init AOS after render completes (DOM ready)
-    if (this.plugin.settings?.appearance?.enableAnimations ?? true) {
+    if (this.plugin.settings?.general?.enableAnimations ?? true) {
       // Delay init to ensure DOM is fully rendered
       setTimeout(() => {
         initAOS({
@@ -141,7 +141,7 @@ export class SproutHomeView extends ItemView {
     }
 
     // --- Hide Sprout info logic ---
-    const hideSproutInfo = this.plugin.settings.home.hideSproutInfo === true;
+    const hideSproutInfo = this.plugin.settings.general.hideSproutInfo === true;
 
     this._rootEl = root;
     root.classList.add("bc", "sprout-view-content", "flex", "flex-col", "sprout-home-root");
@@ -149,7 +149,7 @@ export class SproutHomeView extends ItemView {
     this.containerEl.addClass("sprout");
 
     // Animation control
-    const animationsEnabled = this.plugin.settings?.appearance?.enableAnimations ?? true;
+    const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
     const applyAos = (el: HTMLElement, delay: number = 0) => {
       if (!animationsEnabled) return;
       el.setAttribute("data-aos", "fade-up");
@@ -169,8 +169,8 @@ export class SproutHomeView extends ItemView {
 
 
     // Greeting logic: show greeting or just 'Home' based on settings
-    const showGreeting = this.plugin.settings.home.showGreeting !== false;
-    const nameSetting = this.plugin.settings.home.userName ?? "";
+    const showGreeting = this.plugin.settings.general.showGreeting !== false;
+    const nameSetting = this.plugin.settings.general.userName ?? "";
     const trimmedName = String(nameSetting || "").trim();
     const nowMs = Date.now();
 
@@ -244,10 +244,10 @@ export class SproutHomeView extends ItemView {
         syncNameWidth();
       };
 
-      const firstHomeOpen = !(this.plugin.settings.home.hasOpenedHome);
+      const firstHomeOpen = !(this.plugin.settings.general.hasOpenedHome);
       setGreetingText(trimmedName, firstHomeOpen);
       if (firstHomeOpen) {
-        this.plugin.settings.home.hasOpenedHome = true;
+        this.plugin.settings.general.hasOpenedHome = true;
         try { void this.plugin.saveAll(); } catch (e) { log.swallow("save settings", e); }
       }
 
@@ -307,7 +307,7 @@ export class SproutHomeView extends ItemView {
         saveTimer = window.setTimeout(() => {
           void (async () => {
             const next = nameInput.value.trim();
-            this.plugin.settings.home.userName = next;
+            this.plugin.settings.general.userName = next;
             await this.plugin.saveAll();
           })();
         }, 300);
@@ -333,7 +333,7 @@ export class SproutHomeView extends ItemView {
     const events = this.plugin.store.getAnalyticsEvents?.() ?? [];
     const cards = this.plugin.store.getAllCards?.() ?? [];
     const states = this.plugin.store.data.states ?? {};
-    const starData = this.plugin.settings.home.githubStars ?? {};
+    const starData = this.plugin.settings.general.githubStars ?? {};
     const starCount = Number(starData?.count);
 
     // Refresh GitHub stars (respects 6-hour cache unless forced)
@@ -367,7 +367,7 @@ export class SproutHomeView extends ItemView {
       if (recentDecks.length >= 5) break;
     }
 
-    const pinnedDecks: string[] = this.plugin.settings.home.pinnedDecks ?? [];
+    const pinnedDecks: string[] = this.plugin.settings.general.pinnedDecks ?? [];
 
     const dueCounts = new Map<string, number>();
     let totalOverdue = 0;
@@ -673,7 +673,7 @@ export class SproutHomeView extends ItemView {
     const currentPinned = pinnedDecks.slice(0, MAX_PINNED);
     
     const savePinnedDecks = async (decks: string[]) => {
-      this.plugin.settings.home.pinnedDecks = decks.slice(0, MAX_PINNED);
+      this.plugin.settings.general.pinnedDecks = decks.slice(0, MAX_PINNED);
       await this.plugin.saveData(this.plugin.settings);
     };
     

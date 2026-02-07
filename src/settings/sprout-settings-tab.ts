@@ -79,7 +79,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     const handle = window.setTimeout(() => {
       this._noticeTimers.delete(key);
-      new Notice(`Sprout – Settings updated\n${line}`);
+      new Notice(`Sprout: ${line}`);
     }, Math.max(0, delayMs));
 
     this._noticeTimers.set(key, handle);
@@ -170,7 +170,7 @@ export class SproutSettingsTab extends PluginSettingTab {
    * plus a "Create backup now" button.
    */
   private renderBackupsSection(wrapper: HTMLElement) {
-    new Setting(wrapper).setName("Backups").setHeading();
+    new Setting(wrapper).setName("Scheduling data backup").setHeading();
 
     {
       const createItem = wrapper.createDiv({ cls: "setting-item" });
@@ -178,7 +178,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       createInfo.createDiv({ cls: "setting-item-name", text: "Create backup" });
       createInfo.createDiv({
         cls: "setting-item-description",
-        text: "Create a fresh backup of your Sprout database. Backups let you restore scheduling progress. Routine backups are capped automatically.",
+        text: "Save a snapshot of your scheduling data (due dates, intervals, review history). Use this to recover if scheduling data is corrupted or lost during an update. Backups are created automatically every 15 minutes.",
       });
       const createControl = createItem.createDiv({ cls: "setting-item-control" });
       const btnCreate = createControl.createEl("button", { text: "Create backup now" });
@@ -235,19 +235,15 @@ export class SproutSettingsTab extends PluginSettingTab {
         )} review · ${formatCount(stats.mature)} mature`;
       };
 
-      let cachedRows: Array<{ stats: DataJsonBackupStats; ok: boolean }> = [];
-      let expanded = false;
-
       /**
-       * Renders the backup table rows.  Shows at most 3 rows unless
-       * the user clicks "See more" to expand.
+       * Renders the backup table rows. Shows all backups (max 5 kept on disk).
        */
       const renderTable = (rows: Array<{ stats: DataJsonBackupStats; ok: boolean }>) => {
         tableWrap.empty();
 
         const filtered = rows.filter((r) => r.stats?.name !== "data.json");
         if (!filtered.length) {
-          renderEmpty("No backups found. Click \u201CCreate backup now\u201D to generate one.");
+          renderEmpty("No scheduling data backups found. Click \u201CCreate backup now\u201D to create one.");
           return;
         }
 
@@ -271,9 +267,8 @@ export class SproutSettingsTab extends PluginSettingTab {
         currentTr.createEl("td", { cls: "sprout-backup-cell", text: summaryLabel(current) });
         currentTr.createEl("td", { cls: "sprout-backup-cell", text: "—" });
 
-        /* ── backup rows ── */
-        const visible = expanded ? filtered : filtered.slice(0, 3);
-        for (const r of visible) {
+        /* ── backup rows (show all — max 5 kept on disk) ── */
+        for (const r of filtered) {
           const s = r.stats;
           const tr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 last:border-0 sprout-backup-row--list" });
 
@@ -302,22 +297,12 @@ export class SproutSettingsTab extends PluginSettingTab {
 
           /* Delete button */
           const btnDelete = actionsTd.createEl("button", { cls: "sprout-settings-icon-btn sprout-settings-icon-btn--danger" });
-          btnDelete.setAttribute("data-tooltip", "Delete this backup from disk.");
+          btnDelete.setAttribute("data-tooltip", "Delete this scheduling data backup.");
           setIcon(btnDelete, "trash-2");
           btnDelete.onclick = () => {
             new ConfirmDeleteBackupModal(this.app, this.plugin, s, () => {
               void scan();
             }).open();
-          };
-        }
-
-        /* ── "See more / fewer" toggle ── */
-        if (filtered.length > 3) {
-          const more = tableWrap.createDiv({ cls: "sprout-settings-see-more-wrap" });
-          const btnMore = more.createEl("button", { text: expanded ? "See fewer" : "See more", cls: "sprout-settings-see-more-btn" });
-          btnMore.onclick = () => {
-            expanded = !expanded;
-            renderTable(cachedRows);
           };
         }
       };
@@ -333,7 +318,6 @@ export class SproutSettingsTab extends PluginSettingTab {
             const st = await getDataJsonBackupStats(this.plugin, e.path);
             if (st) rows.push({ stats: st, ok: true });
           }
-          cachedRows = rows;
           renderTable(rows);
         } catch (e) {
           log.error(e);
@@ -345,14 +329,14 @@ export class SproutSettingsTab extends PluginSettingTab {
         try {
           const p = await createDataJsonBackupNow(this.plugin, "manual");
           if (!p) {
-            new Notice("Sprout: could not create backup (no data.json or adapter cannot write).");
+            new Notice("Sprout: could not create backup (no scheduling data or adapter cannot write).");
             return;
           }
-          new Notice("Settings updated – backup created");
+          new Notice("Scheduling data backup created");
           await scan();
         } catch (e) {
           log.error(e);
-          new Notice("Sprout: failed to create backup (see console).");
+          new Notice("Sprout: failed to create scheduling data backup (see console).");
         }
       };
 
@@ -530,19 +514,18 @@ export class SproutSettingsTab extends PluginSettingTab {
     new Setting(wrapper).setName("Sprout").setHeading();
 
     // ----------------------------
-    // User details
+    // General
     // ----------------------------
-    new Setting(wrapper).setName("User details").setHeading();
+    new Setting(wrapper).setName("General").setHeading();
 
-    // User name field
     new Setting(wrapper)
       .setName("User name")
-      .setDesc("Your name for greetings and personalization.")
+      .setDesc("Your name for greetings and personalisation.")
       .addText((t) => {
         t.setPlaceholder("Your name");
-        t.setValue(String(this.plugin.settings.home.userName ?? ""));
+        t.setValue(String(this.plugin.settings.general.userName ?? ""));
         t.onChange(async (v) => {
-          this.plugin.settings.home.userName = v.trim();
+          this.plugin.settings.general.userName = v.trim();
           await this.plugin.saveAll();
           this.plugin.refreshAllViews();
         });
@@ -550,40 +533,38 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     // Hide Sprout info (About/Changelog/Roadmap) toggle
     new Setting(wrapper)
-      .setName("Show information about the plugin on the homepage")
+      .setName("Show plugin information on homepage")
       .setDesc("Show information about development and features on the homepage.")
       .addToggle((t) => {
         // ON by default
-        const showSproutInfo = this.plugin.settings.home.hideSproutInfo !== true;
+        const showSproutInfo = this.plugin.settings.general.hideSproutInfo !== true;
         t.setValue(showSproutInfo);
         t.onChange(async (v) => {
-          this.plugin.settings.home.hideSproutInfo = !v;
+          this.plugin.settings.general.hideSproutInfo = !v;
           await this.plugin.saveAll();
           this.plugin.refreshAllViews();
         });
       });
 
-    // Greeting toggle
     new Setting(wrapper)
       .setName("Show greeting text")
       .setDesc("Turn off to show only 'home' as the title on the home page.")
       .addToggle((t) => {
-        t.setValue(this.plugin.settings.home.showGreeting !== false);
+        t.setValue(this.plugin.settings.general.showGreeting !== false);
         t.onChange(async (v) => {
-          this.plugin.settings.home.showGreeting = !!v;
+          this.plugin.settings.general.showGreeting = !!v;
           await this.plugin.saveAll();
           this.plugin.refreshAllViews();
         });
       });
 
     // ----------------------------
-    // Options
+    // General (continued) — appearance & reset
     // ----------------------------
-    new Setting(wrapper).setName("Overrides").setHeading();
 
     new Setting(wrapper)
-      .setName("Reset settings")
-      .setDesc("Resets settings back to their defaults. Does not delete cards or change scheduling.")
+      .setName("Reset to defaults")
+      .setDesc("Resets all settings back to their defaults. Does not delete cards or change scheduling.")
       .addButton((b) =>
         b.setButtonText("Reset…").onClick(() => {
           new ConfirmResetDefaultsModal(this.app, async () => {
@@ -600,7 +581,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               this.plugin.settings = before;
               log.error(e);
               new Notice(
-                "Could not reset settings to defaults – implement reset settings to defaults or expose default_settings on the plugin (see console).",
+                "Sprout: could not reset settings (see console).",
               );
             }
           }).open();
@@ -611,9 +592,9 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setName("Enable animations")
       .setDesc("Enable fade-up animations when pages load. Disable for a more immediate interface.")
       .addToggle((t) =>
-        t.setValue(this.plugin.settings?.appearance?.enableAnimations ?? true).onChange(async (v) => {
-          if (!this.plugin.settings.appearance) this.plugin.settings.appearance = { enableAnimations: true, prettifyCards: "accent" };
-          this.plugin.settings.appearance.enableAnimations = v;
+        t.setValue(this.plugin.settings?.general?.enableAnimations ?? true).onChange(async (v) => {
+          if (!this.plugin.settings.general) this.plugin.settings.general = {} as typeof this.plugin.settings.general;
+          this.plugin.settings.general.enableAnimations = v;
           await this.plugin.saveAll();
           this.plugin.refreshAllViews();
         }),
@@ -621,20 +602,20 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Prettify cards")
-      .setDesc("Choose how pretty cards are colored: accent (uses the app accent color) or theme (uses theme coloring)")
+      .setDesc("Choose how cards are coloured: accent (uses the app accent colour) or theme (uses theme colouring).")
       .addDropdown((d) => {
         d.addOption("accent", "Accent");
         d.addOption("theme", "Theme");
-        const cur = (this.plugin.settings.appearance?.prettifyCards ?? "accent");
+        const cur = (this.plugin.settings.general?.prettifyCards ?? "accent");
         d.setValue(cur);
         d.onChange(async (v) => {
-          this.plugin.settings.appearance.prettifyCards = v;
+          this.plugin.settings.general.prettifyCards = v;
           await this.plugin.saveAll();
           // Refresh all Sprout views
           this.plugin.refreshAllViews();
 
           // Show alert when setting is changed
-          new Notice("Prettify cards setting changed: " + v);
+          new Notice("Prettify cards changed to " + v);
 
           // Force reload of all markdown reading views (note tabs)
           const ws = this.plugin.app.workspace;
@@ -671,20 +652,399 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
+
+    // Study
     // ----------------------------
-    // Image Occlusion
-    // ----------------------------
-    new Setting(wrapper).setName("Image occlusion").setHeading();
+    new Setting(wrapper).setName("Study").setHeading();
 
     new Setting(wrapper)
-      .setName("Default image occlusion attachment folder")
-      .setDesc("Where image occlusion images in flashcards are saved within your vault.")
+      .setName("Daily new limit")
+      .setDesc("Maximum new cards introduced per day (per deck). 0 disables new cards.")
+      .addText((t) =>
+        t.setValue(String(this.plugin.settings.study.dailyNewLimit)).onChange(async (v) => {
+          const prev = this.plugin.settings.study.dailyNewLimit;
+          const next = toNonNegInt(v, 20);
+          this.plugin.settings.study.dailyNewLimit = next;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+
+          if (prev !== next) {
+            this.queueSettingsNotice("study.dailyNewLimit", `Daily new limit: ${fmtSettingValue(next)}`);
+          }
+        }),
+      );
+
+    new Setting(wrapper)
+      .setName("Daily review limit")
+      .setDesc("Maximum due cards studied per day (per deck). 0 disables reviews.")
+      .addText((t) =>
+        t.setValue(String(this.plugin.settings.study.dailyReviewLimit)).onChange(async (v) => {
+          const prev = this.plugin.settings.study.dailyReviewLimit;
+          const next = toNonNegInt(v, 200);
+          this.plugin.settings.study.dailyReviewLimit = next;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+
+          if (prev !== next) {
+            this.queueSettingsNotice("study.dailyReviewLimit", `Daily review limit: ${fmtSettingValue(next)}`);
+          }
+        }),
+      );
+
+    let autoAdvanceSecondsSetting: Setting | null = null;
+
+    new Setting(wrapper)
+      .setName("Auto-advance")
+      .setDesc("Automatically fails unanswered cards and advances after the timer.")
+      .addToggle((t) =>
+        t.setValue(this.plugin.settings.study.autoAdvanceEnabled).onChange(async (v) => {
+          const prev = this.plugin.settings.study.autoAdvanceEnabled;
+          this.plugin.settings.study.autoAdvanceEnabled = v;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+
+          autoAdvanceSecondsSetting?.setDisabled(!v);
+
+          if (prev !== v) {
+            this.queueSettingsNotice("study.autoAdvanceEnabled", `Auto-advance: ${v ? "On" : "Off"}`);
+          }
+        }),
+      );
+
+    autoAdvanceSecondsSetting = new Setting(wrapper)
+      .setName("Auto-advance after")
+      .setDesc("Seconds (applies to the reviewer and widget).")
+      .addSlider((s) =>
+        s
+          .setLimits(3, 60, 1)
+          .setValue(Number(this.plugin.settings.study.autoAdvanceSeconds) || 10)
+          .setDynamicTooltip()
+          .onChange(async (v) => {
+            const prev = this.plugin.settings.study.autoAdvanceSeconds;
+            const next = Number(v) || 10;
+            this.plugin.settings.study.autoAdvanceSeconds = next;
+            await this.plugin.saveAll();
+            this.refreshReviewerViewsIfPossible();
+
+            if (prev !== next) {
+              this.queueSettingsNotice("study.autoAdvanceSeconds", `Auto-advance: ${fmtSettingValue(next)}s`);
+            }
+          }),
+      );
+
+    autoAdvanceSecondsSetting.setDisabled(!this.plugin.settings.study.autoAdvanceEnabled);
+
+    new Setting(wrapper)
+      .setName("Grading buttons")
+      .setDesc("Choose two buttons (again, good) or four buttons (again, hard, good, easy).")
+      .addDropdown((d) => {
+        d.addOption("two", "Two buttons");
+        d.addOption("four", "Four buttons");
+
+        const curFour = !!this.plugin.settings.study.fourButtonMode;
+        d.setValue(curFour ? "four" : "two");
+
+        d.onChange(async (key) => {
+          const prevFour = !!this.plugin.settings.study.fourButtonMode;
+          const nextFour = key === "four";
+
+          this.plugin.settings.study.fourButtonMode = nextFour;
+
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+          this.refreshAllWidgetViews();
+
+          if (prevFour !== nextFour) {
+            this.queueSettingsNotice("study.gradingSystem", `Grading buttons: ${nextFour ? "Four" : "Two"}`);
+          }
+        });
+      });
+
+    new Setting(wrapper)
+      .setName("Skip button")
+      .setDesc("Shows a skip button (enter). Skip postpones within the session and does not affect scheduling.")
+      .addToggle((t) => {
+        const cur = !!this.plugin.settings.study.enableSkipButton;
+        t.setValue(cur);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.study.enableSkipButton;
+          this.plugin.settings.study.enableSkipButton = v;
+
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+
+          if (prev !== v) {
+            this.queueSettingsNotice("study.enableSkipButton", `Skip button: ${v ? "On" : "Off"}`);
+          }
+        });
+      });
+
+    new Setting(wrapper)
+      .setName("Randomise multiple-choice options")
+      .setDesc("Shuffles multiple-choice options per card (stable during the session). Hotkeys follow the displayed order.")
+      .addToggle((t) => {
+        const cur = !!this.plugin.settings.study.randomizeMcqOptions;
+        t.setValue(cur);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.study.randomizeMcqOptions;
+          this.plugin.settings.study.randomizeMcqOptions = v;
+
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+
+          if (prev !== v) {
+            this.queueSettingsNotice("study.randomizeMcqOptions", `Randomise multiple-choice options: ${v ? "On" : "Off"}`);
+          }
+        });
+      });
+
+    new Setting(wrapper)
+      .setName("Treat folder notes as decks")
+      .setDesc("When enabled, a folder note studies cards from all notes in that folder and its subfolders.")
+      .addToggle((t) => {
+        const current = this.plugin.settings.study.treatFolderNotesAsDecks;
+        t.setValue(current !== false);
+        t.onChange(async (v) => {
+          const prev = this.plugin.settings.study.treatFolderNotesAsDecks;
+          this.plugin.settings.study.treatFolderNotesAsDecks = v;
+
+          await this.plugin.saveAll();
+          this.refreshAllWidgetViews();
+          this.refreshReviewerViewsIfPossible();
+
+          if (prev !== v) {
+            this.queueSettingsNotice("study.treatFolderNotesAsDecks", `Folder notes: ${v ? "On" : "Off"}`);
+          }
+        });
+      });
+
+    // ----------------------------
+    // Scheduling
+    // ----------------------------
+    new Setting(wrapper).setName("Scheduling").setHeading();
+
+    const sched = this.plugin.settings.scheduling;
+
+    /** Rounds a number to 2 decimal places. */
+    const round2 = (n: unknown) => {
+      const x = Number(n);
+      if (!Number.isFinite(x)) return NaN;
+      return Number(x.toFixed(2));
+    };
+
+    /** Compares two numeric arrays for equality. */
+    const arraysEqualNumbers = (a: unknown, b: unknown) => {
+      if (!Array.isArray(a) || !Array.isArray(b)) return false;
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (Number(a[i]) !== Number(b[i])) return false;
+      }
+      return true;
+    };
+
+    /* ── FSRS scheduling presets ── */
+    const presets: Array<{
+      key: string;
+      label: string;
+      desc: string;
+      learning: number[];
+      relearning: number[];
+      retention: number;
+    }> = [
+      { key: "custom", label: "Custom", desc: "Keep your current values.", learning: [], relearning: [], retention: 0.9 },
+      { key: "relaxed", label: "Relaxed", desc: "Learning: 20m | Relearning: 20m | Retention: 0.88", learning: [20], relearning: [20], retention: 0.88 },
+      { key: "balanced", label: "Balanced", desc: "Learning: 10m, 1d | Relearning: 10m | Retention: 0.90", learning: [10, 1440], relearning: [10], retention: 0.9 },
+      { key: "aggressive", label: "Aggressive", desc: "Learning: 5m, 30m, 1d | Relearning: 10m | Retention: 0.92", learning: [5, 30, 1440], relearning: [10], retention: 0.92 },
+    ];
+
+    /** Detects which preset matches the current scheduling parameters. */
+    const detectPresetKey = (): string => {
+      const curLearning = sched.learningStepsMinutes ?? [];
+      const curRelearning = sched.relearningStepsMinutes ?? [];
+      const curRetention = round2(sched.requestRetention);
+
+      for (const p of presets) {
+        if (p.key === "custom") continue;
+        if (
+          arraysEqualNumbers(curLearning, p.learning) &&
+          arraysEqualNumbers(curRelearning, p.relearning ?? []) &&
+          round2(p.retention) === curRetention
+        ) {
+          return p.key;
+        }
+      }
+      return "custom";
+    };
+
+    let presetDropdown: DropdownComponent | null = null;
+    let isSyncingPreset = false;
+
+    /** Programmatically syncs the preset dropdown to match current values. */
+    const syncPresetDropdown = () => {
+      if (!presetDropdown) return;
+      const desired = detectPresetKey();
+      const current = presetDropdown.getValue();
+      if (current === desired) return;
+
+      isSyncingPreset = true;
+      try {
+        presetDropdown.setValue(desired);
+      } finally {
+        isSyncingPreset = false;
+      }
+    };
+
+    new Setting(wrapper)
+      .setName("Preset")
+      .setDesc("Apply a recommended configuration, or choose custom to keep your current values.")
+      .addDropdown((d) => {
+        presetDropdown = d;
+        for (const p of presets) d.addOption(p.key, p.label);
+        d.setValue(detectPresetKey());
+
+        d.onChange(async (key) => {
+          if (isSyncingPreset) return;
+
+          const p = presets.find((x) => x.key === key);
+          if (!p) return;
+
+          if (p.key === "custom") {
+            this.queueSettingsNotice("scheduling.preset", "FSRS preset: custom");
+            return;
+          }
+
+          const prevLearning = (sched.learningStepsMinutes ?? []).slice();
+          const prevRelearning = (sched.relearningStepsMinutes ?? []).slice();
+          const prevRetention = sched.requestRetention;
+
+          sched.learningStepsMinutes = p.learning.slice();
+          sched.relearningStepsMinutes = (p.relearning ?? []).slice();
+          sched.requestRetention = p.retention;
+
+          await this.plugin.saveAll();
+
+          this.queueSettingsNotice("scheduling.preset", `FSRS preset: ${p.label}`, 0);
+
+          if (!arraysEqualNumbers(prevLearning, sched.learningStepsMinutes)) {
+            this.queueSettingsNotice(
+              "scheduler.learningStepsMinutes",
+              `Learning steps: ${fmtSettingValue(sched.learningStepsMinutes)}`,
+            );
+          }
+          if (!arraysEqualNumbers(prevRelearning, sched.relearningStepsMinutes)) {
+            this.queueSettingsNotice(
+              "scheduler.relearningStepsMinutes",
+              `Relearning steps: ${fmtSettingValue(sched.relearningStepsMinutes)}`,
+            );
+          }
+          if (round2(prevRetention) !== round2(sched.requestRetention)) {
+            this.queueSettingsNotice(
+              "scheduler.requestRetention",
+              `Requested retention: ${fmtSettingValue(sched.requestRetention)}`,
+            );
+          }
+
+          this.display();
+        });
+      });
+
+    new Setting(wrapper)
+      .setName("Learning steps")
+      .setDesc("Minutes, comma-separated. Examples: 10  |  10,1440")
+      .addText((t) =>
+        t.setValue(String((sched.learningStepsMinutes ?? []).join(","))).onChange(async (v) => {
+          const prev = (sched.learningStepsMinutes ?? []).slice();
+          const arr = parsePositiveNumberListCsv(v);
+          if (arr.length) sched.learningStepsMinutes = arr;
+          await this.plugin.saveAll();
+          syncPresetDropdown();
+
+          if (!arraysEqualNumbers(prev, sched.learningStepsMinutes ?? [])) {
+            this.queueSettingsNotice(
+              "scheduler.learningStepsMinutes",
+              `Learning steps: ${fmtSettingValue(sched.learningStepsMinutes)}`,
+            );
+          }
+        }),
+      );
+
+    new Setting(wrapper)
+      .setName("Relearning steps")
+      .setDesc("Minutes, comma-separated. Used after lapses.")
+      .addText((t) =>
+        t.setValue(String((sched.relearningStepsMinutes ?? []).join(","))).onChange(async (v) => {
+          const prev = (sched.relearningStepsMinutes ?? []).slice();
+          const arr = parsePositiveNumberListCsv(v);
+          if (arr.length) sched.relearningStepsMinutes = arr;
+          await this.plugin.saveAll();
+          syncPresetDropdown();
+
+          if (!arraysEqualNumbers(prev, sched.relearningStepsMinutes ?? [])) {
+            this.queueSettingsNotice(
+              "scheduler.relearningStepsMinutes",
+              `Relearning steps: ${fmtSettingValue(sched.relearningStepsMinutes)}`,
+            );
+          }
+        }),
+      );
+
+    new Setting(wrapper)
+      .setName("Requested retention")
+      .setDesc("Target recall probability at review time. Typical: 0.85–0.95.")
+      .addSlider((s) =>
+        s
+          .setLimits(0.8, 0.97, 0.01)
+          .setValue(clamp(Number(sched.requestRetention) || 0.9, 0.8, 0.97))
+          .setDynamicTooltip()
+          .onChange(async (v) => {
+            const prev = round2(sched.requestRetention);
+            sched.requestRetention = Number(Number(v).toFixed(2));
+            await this.plugin.saveAll();
+            syncPresetDropdown();
+
+            if (prev !== round2(sched.requestRetention)) {
+              this.queueSettingsNotice(
+                "scheduler.requestRetention",
+                `Requested retention: ${fmtSettingValue(sched.requestRetention)}`,
+              );
+            }
+          }),
+      );
+
+    new Setting(wrapper)
+      .setName("Reset scheduling")
+      .setDesc("Resets all cards to new and clears scheduling fields. Back up your data first if you may want to restore.")
+      .addButton((b) =>
+        b.setButtonText("Reset…").onClick(() => {
+          new ConfirmResetSchedulingModal(this.app, this.plugin).open();
+        }),
+      );
+
+    new Setting(wrapper)
+      .setName("Reset analytics")
+      .setDesc("Clears all review history, heatmaps, and statistics. Scheduling data (due dates, intervals) is preserved. Back up your data first if you may want to restore.")
+      .addButton((b) =>
+        b.setButtonText("Reset…").onClick(() => {
+          new ConfirmResetAnalyticsModal(this.app, this.plugin).open();
+        }),
+      );
+
+    this.renderBackupsSection(wrapper);
+
+    // ----------------------------
+    // Storage
+    // ----------------------------
+    new Setting(wrapper).setName("Storage").setHeading();
+
+    new Setting(wrapper)
+      .setName("Image occlusion folder")
+      .setDesc("Where image occlusion mask images are saved within your vault.")
       .addText((t) => {
         const allFolders = listVaultFolders(this.app);
 
         const cur =
-          this.plugin.settings.imageOcclusion.attachmentFolderPath ?? "Attachments/Image Occlusion/";
-        t.setPlaceholder("Attachments/Image occlusion/");
+          this.plugin.settings.storage.imageOcclusionFolderPath ?? "Attachments/Image Occlusion/";
+        t.setPlaceholder("Attachments/image occlusion/");
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;
@@ -715,7 +1075,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         /** Commits the chosen folder path to settings. */
         const commit = async (rawValue: string, fromPick: boolean) => {
-          const prev = String(this.plugin.settings.imageOcclusion.attachmentFolderPath ?? "");
+          const prev = String(this.plugin.settings.storage.imageOcclusionFolderPath ?? "");
           const next = normaliseFolderPath(rawValue || "Attachments/Image Occlusion/");
 
           inputEl.value = next;
@@ -725,7 +1085,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             return;
           }
 
-          this.plugin.settings.imageOcclusion.attachmentFolderPath = next;
+          this.plugin.settings.storage.imageOcclusionFolderPath = next;
 
           await this.plugin.saveAll();
 
@@ -836,11 +1196,11 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Delete orphaned image occlusion images")
-      .setDesc("Automatically delete image occlusion images during sync if their corresponding cards are deleted from markdown")
+      .setDesc("Automatically remove image occlusion files during sync when their corresponding cards in your notes have been deleted.")
       .addToggle((t) =>
-        t.setValue(this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true).onChange(async (v) => {
-          const prev = this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true;
-          this.plugin.settings.imageOcclusion.deleteOrphanedImages = v;
+        t.setValue(this.plugin.settings.storage?.deleteOrphanedImages ?? true).onChange(async (v) => {
+          const prev = this.plugin.settings.storage?.deleteOrphanedImages ?? true;
+          this.plugin.settings.storage.deleteOrphanedImages = v;
           await this.plugin.saveAll();
 
           if (prev !== v) {
@@ -849,19 +1209,14 @@ export class SproutSettingsTab extends PluginSettingTab {
         }),
       );
 
-    // ----------------------------
-    // Card Attachments
-    // ----------------------------
-    new Setting(wrapper).setName("Card attachments").setHeading();
-
     new Setting(wrapper)
       .setName("Card attachment folder")
       .setDesc("Where images and media in flashcards are saved within your vault.")
       .addText((t) => {
         const allFolders = listVaultFolders(this.app);
 
-        const cur = this.plugin.settings.cardAttachments.attachmentFolderPath ?? "Attachments/Cards/";
-        t.setPlaceholder("Attachments/Image occlusion/");
+        const cur = this.plugin.settings.storage.cardAttachmentFolderPath ?? "Attachments/Cards/";
+        t.setPlaceholder("Attachments/card attachments/");
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;
@@ -892,7 +1247,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         /** Commits the chosen folder path to settings. */
         const commit = async (rawValue: string, fromPick: boolean) => {
-          const prev = String(this.plugin.settings.cardAttachments.attachmentFolderPath ?? "");
+          const prev = String(this.plugin.settings.storage.cardAttachmentFolderPath ?? "");
           const next = normaliseFolderPath(rawValue || "Attachments/Cards/");
 
           inputEl.value = next;
@@ -902,7 +1257,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             return;
           }
 
-          this.plugin.settings.cardAttachments.attachmentFolderPath = next;
+          this.plugin.settings.storage.cardAttachmentFolderPath = next;
 
           await this.plugin.saveAll();
 
@@ -1011,389 +1366,6 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
-    // ----------------------------
-    // Study (Reviewer)
-    // ----------------------------
-    new Setting(wrapper).setName("Study").setHeading();
-
-    new Setting(wrapper)
-      .setName("Daily new limit")
-      .setDesc("Maximum new cards introduced per day (per deck). 0 disables new cards.")
-      .addText((t) =>
-        t.setValue(String(this.plugin.settings.reviewer.dailyNewLimit)).onChange(async (v) => {
-          const prev = this.plugin.settings.reviewer.dailyNewLimit;
-          const next = toNonNegInt(v, 20);
-          this.plugin.settings.reviewer.dailyNewLimit = next;
-          await this.plugin.saveAll();
-          this.refreshReviewerViewsIfPossible();
-
-          if (prev !== next) {
-            this.queueSettingsNotice("reviewer.dailyNewLimit", `Daily new limit: ${fmtSettingValue(next)}`);
-          }
-        }),
-      );
-
-    new Setting(wrapper)
-      .setName("Daily review limit")
-      .setDesc("Maximum due cards studied per day (per deck). 0 disables reviews.")
-      .addText((t) =>
-        t.setValue(String(this.plugin.settings.reviewer.dailyReviewLimit)).onChange(async (v) => {
-          const prev = this.plugin.settings.reviewer.dailyReviewLimit;
-          const next = toNonNegInt(v, 200);
-          this.plugin.settings.reviewer.dailyReviewLimit = next;
-          await this.plugin.saveAll();
-          this.refreshReviewerViewsIfPossible();
-
-          if (prev !== next) {
-            this.queueSettingsNotice("reviewer.dailyReviewLimit", `Daily review limit: ${fmtSettingValue(next)}`);
-          }
-        }),
-      );
-
-    let autoAdvanceSecondsSetting: Setting | null = null;
-
-    new Setting(wrapper)
-      .setName("Auto-advance")
-      .setDesc("Automatically fails unanswered cards and advances after the timer.")
-      .addToggle((t) =>
-        t.setValue(this.plugin.settings.reviewer.autoAdvanceEnabled).onChange(async (v) => {
-          const prev = this.plugin.settings.reviewer.autoAdvanceEnabled;
-          this.plugin.settings.reviewer.autoAdvanceEnabled = v;
-          await this.plugin.saveAll();
-          this.refreshReviewerViewsIfPossible();
-
-          autoAdvanceSecondsSetting?.setDisabled(!v);
-
-          if (prev !== v) {
-            this.queueSettingsNotice("reviewer.autoAdvanceEnabled", `Auto-advance: ${v ? "On" : "Off"}`);
-          }
-        }),
-      );
-
-    autoAdvanceSecondsSetting = new Setting(wrapper)
-      .setName("Auto-advance after")
-      .setDesc("Seconds (applies to the reviewer and widget).")
-      .addSlider((s) =>
-        s
-          .setLimits(3, 60, 1)
-          .setValue(Number(this.plugin.settings.reviewer.autoAdvanceSeconds) || 10)
-          .setDynamicTooltip()
-          .onChange(async (v) => {
-            const prev = this.plugin.settings.reviewer.autoAdvanceSeconds;
-            const next = Number(v) || 10;
-            this.plugin.settings.reviewer.autoAdvanceSeconds = next;
-            await this.plugin.saveAll();
-            this.refreshReviewerViewsIfPossible();
-
-            if (prev !== next) {
-              this.queueSettingsNotice("reviewer.autoAdvanceSeconds", `Auto-advance: ${fmtSettingValue(next)}s`);
-            }
-          }),
-      );
-
-    autoAdvanceSecondsSetting.setDisabled(!this.plugin.settings.reviewer.autoAdvanceEnabled);
-
-    new Setting(wrapper)
-      .setName("Grading buttons")
-      .setDesc("Choose two buttons (again, good) or four buttons (again, hard, good, easy).")
-      .addDropdown((d) => {
-        d.addOption("two", "Two buttons");
-        d.addOption("four", "Four buttons");
-
-        const curFour = !!this.plugin.settings.reviewer?.fourButtonMode;
-        d.setValue(curFour ? "four" : "two");
-
-        d.onChange(async (key) => {
-          const prevFour = !!this.plugin.settings.reviewer?.fourButtonMode;
-          const nextFour = key === "four";
-
-          this.plugin.settings.reviewer.fourButtonMode = nextFour;
-
-          await this.plugin.saveAll();
-          this.refreshReviewerViewsIfPossible();
-          this.refreshAllWidgetViews();
-
-          if (prevFour !== nextFour) {
-            this.queueSettingsNotice("reviewer.gradingSystem", `Grading buttons: ${nextFour ? "Four" : "Two"}`);
-          }
-        });
-      });
-
-    new Setting(wrapper)
-      .setName("Skip button")
-      .setDesc("Shows a skip button (enter). Skip postpones within the session and does not affect scheduling.")
-      .addToggle((t) => {
-        const cur = !!this.plugin.settings.reviewer?.enableSkipButton;
-        t.setValue(cur);
-        t.onChange(async (v) => {
-          const prev = !!this.plugin.settings.reviewer?.enableSkipButton;
-          this.plugin.settings.reviewer.enableSkipButton = v;
-
-          await this.plugin.saveAll();
-          this.refreshReviewerViewsIfPossible();
-
-          if (prev !== v) {
-            this.queueSettingsNotice("reviewer.enableSkipButton", `Skip button: ${v ? "On" : "Off"}`);
-          }
-        });
-      });
-
-    new Setting(wrapper)
-      .setName("Randomise multiple-choice options")
-      .setDesc("Shuffles multiple-choice options per card (stable during the session). Hotkeys follow the displayed order.")
-      .addToggle((t) => {
-        const cur = !!this.plugin.settings.reviewer?.randomizeMcqOptions;
-        t.setValue(cur);
-        t.onChange(async (v) => {
-          const prev = !!this.plugin.settings.reviewer?.randomizeMcqOptions;
-          this.plugin.settings.reviewer.randomizeMcqOptions = v;
-
-          await this.plugin.saveAll();
-          this.refreshReviewerViewsIfPossible();
-
-          if (prev !== v) {
-            this.queueSettingsNotice("reviewer.randomizeMcqOptions", `Randomise multiple-choice options: ${v ? "On" : "Off"}`);
-          }
-        });
-      });
-
-    // ----------------------------
-    // Widget
-    // ----------------------------
-    new Setting(wrapper).setName("Widget").setHeading();
-
-    new Setting(wrapper)
-      .setName("Treat folder notes as decks")
-      .setDesc("If enabled, a folder note studies cards from all notes in that folder and its subfolders.")
-      .addToggle((t) => {
-        const current = this.plugin.settings.widget.treatFolderNotesAsDecks;
-        t.setValue(current !== false);
-        t.onChange(async (v) => {
-          const prev = this.plugin.settings.widget.treatFolderNotesAsDecks;
-          this.plugin.settings.widget.treatFolderNotesAsDecks = v;
-
-          await this.plugin.saveAll();
-          this.refreshAllWidgetViews();
-          this.refreshReviewerViewsIfPossible();
-
-          if (prev !== v) {
-            this.queueSettingsNotice("widget.treatFolderNotesAsDecks", `Folder notes: ${v ? "On" : "Off"}`);
-          }
-        });
-      });
-
-    // ----------------------------
-    // Scheduling
-    // ----------------------------
-    new Setting(wrapper).setName("Scheduling").setHeading();
-
-    const sched = this.plugin.settings.scheduler;
-
-    /** Rounds a number to 2 decimal places. */
-    const round2 = (n: unknown) => {
-      const x = Number(n);
-      if (!Number.isFinite(x)) return NaN;
-      return Number(x.toFixed(2));
-    };
-
-    /** Compares two numeric arrays for equality. */
-    const arraysEqualNumbers = (a: unknown, b: unknown) => {
-      if (!Array.isArray(a) || !Array.isArray(b)) return false;
-      if (a.length !== b.length) return false;
-      for (let i = 0; i < a.length; i++) {
-        if (Number(a[i]) !== Number(b[i])) return false;
-      }
-      return true;
-    };
-
-    /* ── FSRS scheduling presets ── */
-    const presets: Array<{
-      key: string;
-      label: string;
-      desc: string;
-      learning: number[];
-      relearning: number[];
-      retention: number;
-    }> = [
-      { key: "custom", label: "Custom", desc: "Keep your current values.", learning: [], relearning: [], retention: 0.9 },
-      { key: "relaxed", label: "Relaxed", desc: "Learning: 20m | Relearning: 20m | Retention: 0.88", learning: [20], relearning: [20], retention: 0.88 },
-      { key: "balanced", label: "Balanced", desc: "Learning: 10m, 1d | Relearning: 10m | Retention: 0.90", learning: [10, 1440], relearning: [10], retention: 0.9 },
-      { key: "aggressive", label: "Aggressive", desc: "Learning: 5m, 30m, 1d | Relearning: 10m | Retention: 0.92", learning: [5, 30, 1440], relearning: [10], retention: 0.92 },
-    ];
-
-    /** Detects which preset matches the current scheduling parameters. */
-    const detectPresetKey = (): string => {
-      const curLearning = sched.learningStepsMinutes ?? [];
-      const curRelearning = sched.relearningStepsMinutes ?? [];
-      const curRetention = round2(sched.requestRetention);
-
-      for (const p of presets) {
-        if (p.key === "custom") continue;
-        if (
-          arraysEqualNumbers(curLearning, p.learning) &&
-          arraysEqualNumbers(curRelearning, p.relearning ?? []) &&
-          round2(p.retention) === curRetention
-        ) {
-          return p.key;
-        }
-      }
-      return "custom";
-    };
-
-    let presetDropdown: DropdownComponent | null = null;
-    let isSyncingPreset = false;
-
-    /** Programmatically syncs the preset dropdown to match current values. */
-    const syncPresetDropdown = () => {
-      if (!presetDropdown) return;
-      const desired = detectPresetKey();
-      const current = presetDropdown.getValue();
-      if (current === desired) return;
-
-      isSyncingPreset = true;
-      try {
-        presetDropdown.setValue(desired);
-      } finally {
-        isSyncingPreset = false;
-      }
-    };
-
-    new Setting(wrapper)
-      .setName("Preset")
-      .setDesc("Apply a recommended configuration, or choose custom to keep your current values.")
-      .addDropdown((d) => {
-        presetDropdown = d;
-        for (const p of presets) d.addOption(p.key, p.label);
-        d.setValue(detectPresetKey());
-
-        d.onChange(async (key) => {
-          if (isSyncingPreset) return;
-
-          const p = presets.find((x) => x.key === key);
-          if (!p) return;
-
-          if (p.key === "custom") {
-            this.queueSettingsNotice("scheduler.preset", "FSRS preset: custom");
-            return;
-          }
-
-          const prevLearning = (sched.learningStepsMinutes ?? []).slice();
-          const prevRelearning = (sched.relearningStepsMinutes ?? []).slice();
-          const prevRetention = sched.requestRetention;
-
-          sched.learningStepsMinutes = p.learning.slice();
-          sched.relearningStepsMinutes = (p.relearning ?? []).slice();
-          sched.requestRetention = p.retention;
-
-          await this.plugin.saveAll();
-
-          this.queueSettingsNotice("scheduler.preset", `FSRS preset: ${p.label}`, 0);
-
-          if (!arraysEqualNumbers(prevLearning, sched.learningStepsMinutes)) {
-            this.queueSettingsNotice(
-              "scheduler.learningStepsMinutes",
-              `Learning steps: ${fmtSettingValue(sched.learningStepsMinutes)}`,
-            );
-          }
-          if (!arraysEqualNumbers(prevRelearning, sched.relearningStepsMinutes)) {
-            this.queueSettingsNotice(
-              "scheduler.relearningStepsMinutes",
-              `Relearning steps: ${fmtSettingValue(sched.relearningStepsMinutes)}`,
-            );
-          }
-          if (round2(prevRetention) !== round2(sched.requestRetention)) {
-            this.queueSettingsNotice(
-              "scheduler.requestRetention",
-              `Requested retention: ${fmtSettingValue(sched.requestRetention)}`,
-            );
-          }
-
-          this.display();
-        });
-      });
-
-    new Setting(wrapper)
-      .setName("Learning steps")
-      .setDesc("Minutes, comma-separated. Examples: 10  |  10,1440")
-      .addText((t) =>
-        t.setValue(String((sched.learningStepsMinutes ?? []).join(","))).onChange(async (v) => {
-          const prev = (sched.learningStepsMinutes ?? []).slice();
-          const arr = parsePositiveNumberListCsv(v);
-          if (arr.length) sched.learningStepsMinutes = arr;
-          await this.plugin.saveAll();
-          syncPresetDropdown();
-
-          if (!arraysEqualNumbers(prev, sched.learningStepsMinutes ?? [])) {
-            this.queueSettingsNotice(
-              "scheduler.learningStepsMinutes",
-              `Learning steps: ${fmtSettingValue(sched.learningStepsMinutes)}`,
-            );
-          }
-        }),
-      );
-
-    new Setting(wrapper)
-      .setName("Relearning steps")
-      .setDesc("Minutes, comma-separated. Used after lapses.")
-      .addText((t) =>
-        t.setValue(String((sched.relearningStepsMinutes ?? []).join(","))).onChange(async (v) => {
-          const prev = (sched.relearningStepsMinutes ?? []).slice();
-          const arr = parsePositiveNumberListCsv(v);
-          if (arr.length) sched.relearningStepsMinutes = arr;
-          await this.plugin.saveAll();
-          syncPresetDropdown();
-
-          if (!arraysEqualNumbers(prev, sched.relearningStepsMinutes ?? [])) {
-            this.queueSettingsNotice(
-              "scheduler.relearningStepsMinutes",
-              `Relearning steps: ${fmtSettingValue(sched.relearningStepsMinutes)}`,
-            );
-          }
-        }),
-      );
-
-    new Setting(wrapper)
-      .setName("Requested retention")
-      .setDesc("Target recall probability at review time. Typical: 0.85–0.95.")
-      .addSlider((s) =>
-        s
-          .setLimits(0.8, 0.97, 0.01)
-          .setValue(clamp(Number(sched.requestRetention) || 0.9, 0.8, 0.97))
-          .setDynamicTooltip()
-          .onChange(async (v) => {
-            const prev = round2(sched.requestRetention);
-            sched.requestRetention = Number(Number(v).toFixed(2));
-            await this.plugin.saveAll();
-            syncPresetDropdown();
-
-            if (prev !== round2(sched.requestRetention)) {
-              this.queueSettingsNotice(
-                "scheduler.requestRetention",
-                `Requested retention: ${fmtSettingValue(sched.requestRetention)}`,
-              );
-            }
-          }),
-      );
-
-    new Setting(wrapper)
-      .setName("Reset scheduling")
-      .setDesc("Resets all cards to new and clears scheduling fields. Back up your data first if you may want to restore.")
-      .addButton((b) =>
-        b.setButtonText("Reset…").onClick(() => {
-          new ConfirmResetSchedulingModal(this.app, this.plugin).open();
-        }),
-      );
-
-    new Setting(wrapper)
-      .setName("Reset analytics")
-      .setDesc("Clears all review history, heatmaps, and statistics. Scheduling data (due dates, intervals) is preserved. Back up your data first if you may want to restore.")
-      .addButton((b) =>
-        b.setButtonText("Reset…").onClick(() => {
-          new ConfirmResetAnalyticsModal(this.app, this.plugin).open();
-        }),
-      );
-
-    this.renderBackupsSection(wrapper);
 
     // ----------------------------
     // Indexing
@@ -1436,7 +1408,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
             const secs = Math.max(0, Math.round((Date.now() - before) / 100) / 10);
             new Notice(
-              `Sprout – Settings updated\nDeleted ${cardsRemoved} cards and ${anchorsRemoved} anchors in ${filesTouched} files (${secs}s)`,
+              `Sprout: Deleted ${cardsRemoved} cards and ${anchorsRemoved} anchors in ${filesTouched} files (${secs}s)`,
             );
           }).open();
         }),

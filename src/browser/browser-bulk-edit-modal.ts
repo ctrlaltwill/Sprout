@@ -14,7 +14,6 @@
 import { Notice, Platform, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
 import { log } from "../core/logger";
-import { BRAND } from "../core/constants";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import type { ColKey } from "./browser-helpers";
 import {
@@ -47,41 +46,41 @@ const PLACEHOLDER_INFO = "Extra information (optional)";
 // ── Main function ──────────────────────────────────────────
 
 export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): void {
-  // Create a .sprout wrapper for the overlay
-  const sproutWrapper = document.createElement("div");
-  sproutWrapper.className = "sprout sprout-modal-container sprout-modal-dim";
-
-  const overlay = document.createElement("div");
-  overlay.className = "fixed inset-0 flex items-center justify-center sprout-bulk-edit-overlay";
+  // Container — matches Obsidian's native Modal DOM structure:
+  //   div.modal-container  >  div.modal-bg  +  div.modal
+  const container = document.createElement("div");
+  container.className = "modal-container sprout-modal-container sprout-modal-dim sprout mod-dim";
 
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-bg sprout-bulk-edit-backdrop";
-  overlay.appendChild(backdrop);
+  backdrop.className = "modal-bg";
+  backdrop.style.opacity = "0.85";
+  container.appendChild(backdrop);
 
   const panel = document.createElement("div");
-  panel.className = "sprout-modal rounded-lg border border-border bg-popover text-popover-foreground sprout-bulk-edit-panel";
-  overlay.appendChild(panel);
-  sproutWrapper.appendChild(overlay);
+  panel.className = "modal bc sprout-modals sprout-bulk-edit-panel";
+  container.appendChild(panel);
 
-  const header = document.createElement("div");
-  header.className = "flex items-center justify-between gap-3";
-  const heading = document.createElement("div");
-  heading.className = "text-lg font-semibold";
-  heading.textContent = `Edit ${cards.length} selected card${cards.length === 1 ? "" : "s"}`;
-  header.appendChild(heading);
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className = "inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground sprout-card-creator-close";
-  close.setAttribute("data-tooltip", "Close");
-  const closeIcon = document.createElement("span");
-  closeIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
-  setIcon(closeIcon, "x");
-  close.appendChild(closeIcon);
+  // Close button — direct child of panel, before header (matches Obsidian Modal layout)
+  const close = document.createElement("div");
+  close.className = "modal-close-button mod-raised clickable-icon";
+  close.setAttribute("aria-label", "Close");
+  setIcon(close, "x");
   close.addEventListener("click", () => {
     removeOverlay();
   });
-  header.appendChild(close);
+  panel.appendChild(close);
+
+  const header = document.createElement("div");
+  header.className = "modal-header";
+  const heading = document.createElement("div");
+  heading.className = "modal-title";
+  heading.textContent = cards.length === 1 ? "Edit flashcard" : `Edit ${cards.length} selected cards`;
+  header.appendChild(heading);
   panel.appendChild(header);
+
+  const contentWrap = document.createElement("div");
+  contentWrap.className = "modal-content bc sprout-bulk-edit-content";
+  panel.appendChild(contentWrap);
 
   const form = document.createElement("div");
   form.className = "flex flex-col gap-4";
@@ -721,7 +720,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     form.appendChild(mcqSection);
   }
 
-  panel.appendChild(form);
+  contentWrap.appendChild(form);
 
   // ── Footer (Cancel / Save) ────────────────────────────────
 
@@ -740,7 +739,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   cancel.addEventListener("click", () => removeOverlay());
   const save = document.createElement("button");
   save.type = "button";
-  save.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm sprout-bulk-edit-save";
+  save.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm";
   const saveIcon = document.createElement("span");
   saveIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
   setIcon(saveIcon, "save");
@@ -777,24 +776,20 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
         }
         await ctx.writeCardToMarkdown(updated);
       }
-      overlay.remove();
+      container.remove();
     } catch (err: unknown) {
-      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
+      new Notice(`${err instanceof Error ? err.message : String(err)}`);
     }
   })(); });
   footer.appendChild(cancel);
   footer.appendChild(save);
-  panel.appendChild(footer);
+  contentWrap.appendChild(footer);
 
   // ── Overlay lifecycle ─────────────────────────────────────
 
-  function cleanupOverlay() {
+  const removeOverlay = () => {
     document.removeEventListener("keydown", onKeyDown, true);
-  }
-
-  let removeOverlay = () => {
-    cleanupOverlay();
-    overlay.remove();
+    container.remove();
   };
 
   const onKeyDown = (ev: KeyboardEvent) => {
@@ -805,16 +800,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   };
   document.addEventListener("keydown", onKeyDown, true);
 
-  overlay.addEventListener("click", (ev) => {
-    if (ev.target === overlay) removeOverlay();
-  });
+  backdrop.addEventListener("click", () => removeOverlay());
 
-  // Wrap removeOverlay to also clean up the keydown listener
-  const originalRemoveOverlay = removeOverlay;
-  removeOverlay = () => {
-    document.removeEventListener("keydown", onKeyDown, true);
-    originalRemoveOverlay();
-  };
-
-  document.body.appendChild(sproutWrapper);
+  document.body.appendChild(container);
 }

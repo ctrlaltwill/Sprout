@@ -9,7 +9,6 @@
 import { Notice, setIcon } from "obsidian";
 import { log } from "../core/logger";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import type { CardRecord } from "../core/store";
 import {
   buildAnswerOrOptionsFor,
@@ -74,24 +73,20 @@ export function openBulkEditModalForCards(
   cards = cards.filter((c) => !["io", "io-child"].includes(String(c.type || "")));
   if (!cards.length) return;
 
-  // Always wrap overlay in a .sprout div for correct CSS scoping
-  let sproutWrapper = document.createElement("div");
-  sproutWrapper.className = "sprout";
+  // Container — matches Obsidian's native Modal DOM structure:
+  //   div.modal-container  >  div.modal-bg  +  div.modal
+  const container = document.createElement("div");
+  container.className = "modal-container sprout-modal-container sprout-modal-dim sprout mod-dim";
 
-  const overlay = document.createElement("div");
-  overlay.className = "bc fixed inset-0 flex items-center justify-center sprout-bulk-edit-overlay";
-
-  // Defensive: if overlay is ever created elsewhere, ensure only one .sprout wrapper
-  if (overlay.parentElement && overlay.parentElement.classList.contains("sprout")) {
-    sproutWrapper = overlay.parentElement as HTMLDivElement;
-  } else {
-    sproutWrapper.appendChild(overlay);
-  }
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-bg";
+  backdrop.style.opacity = "0.85";
+  container.appendChild(backdrop);
 
   // ── Panel container ─────────────────────────────────────────────────────
   const panel = document.createElement("div");
-  panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground sprout-bulk-edit-panel sprout-modals";
-  overlay.appendChild(panel);
+  panel.className = "modal bc sprout-modals sprout-bulk-edit-panel";
+  container.appendChild(panel);
 
   // ── Close button (matches Obsidian modal-close-button) ──────────────────
   const close = document.createElement("div");
@@ -371,10 +366,11 @@ export function openBulkEditModalForCards(
   footer.appendChild(save);
   contentWrap.appendChild(footer);
 
-  /** Remove the overlay from the DOM and clean up the Escape listener. */
+  /** Remove the container from the DOM and clean up the Escape listener. */
   function removeOverlay() {
+    document.removeEventListener("keydown", onKeyDown, true);
     try {
-      overlay.remove();
+      container.remove();
     } catch (e) { log.swallow("remove overlay", e); }
   }
 
@@ -467,14 +463,12 @@ export function openBulkEditModalForCards(
       await onSave(updatedCards);
       removeOverlay();
     } catch (err: unknown) {
-      new Notice(`${BRAND}: ${err instanceof Error ? err.message : String(err)}`);
+      new Notice(`${err instanceof Error ? err.message : String(err)}`);
     }
   })(); });
 
-  // Click outside panel = close
-  overlay.addEventListener("click", (ev) => {
-    if (ev.target === overlay) removeOverlay();
-  });
+  // Click backdrop = close
+  backdrop.addEventListener("click", () => removeOverlay());
 
   // Escape key = close
   const onKeyDown = (ev: KeyboardEvent) => {
@@ -485,6 +479,6 @@ export function openBulkEditModalForCards(
   };
   document.addEventListener("keydown", onKeyDown, true);
 
-  // Mount the overlay
-  document.body.appendChild(sproutWrapper);
+  // Mount the container
+  document.body.appendChild(container);
 }

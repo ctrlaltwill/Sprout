@@ -17,13 +17,26 @@ import type { SproutSettings } from "../types/settings";
 /** Factory-default values for every plugin setting. */
 export const DEFAULT_SETTINGS: SproutSettings = {
 
-  reviewer: {
+  general: {
+    userName: "",
+    showGreeting: true,
+    hideSproutInfo: false,
+    hasOpenedHome: false,
+    pinnedDecks: [],
+    githubStars: {
+      count: null,
+      fetchedAt: null,
+    },
+    enableAnimations: true,
+    prettifyCards: "accent", // default to 'accent', options: 'accent' | 'theme'
+  },
+
+  study: {
     showInfoByDefault: false,
 
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
 
-    // DEFAULTS requested:
     autoAdvanceEnabled: false,
     autoAdvanceSeconds: 60,
 
@@ -32,14 +45,12 @@ export const DEFAULT_SETTINGS: SproutSettings = {
 
     enableSkipButton: false,
     randomizeMcqOptions: false,
-  },
 
-  widget: {
     treatFolderNotesAsDecks: true,
   },
 
   // Reasonable “Balanced” defaults matching your UI copy
-  scheduler: {
+  scheduling: {
     learningStepsMinutes: [10, 1440],
     relearningStepsMinutes: [10],
     requestRetention: 0.9,
@@ -50,29 +61,9 @@ export const DEFAULT_SETTINGS: SproutSettings = {
     idPlacement: "above",
   },
 
-  imageOcclusion: {
-    attachmentFolderPath: "Attachments/Image Occlusion/",
+  storage: {
+    imageOcclusionFolderPath: "Attachments/Image Occlusion/",
     deleteOrphanedImages: true,
-  },
-
-  cardAttachments: {
-    attachmentFolderPath: "Attachments/Cards/",
-  },
-
-  home: {
-    userName: "",
-    showGreeting: true,
-    hideSproutInfo: false,
-    hasOpenedHome: false,
-    pinnedDecks: [],
-    githubStars: {
-      count: null,
-      fetchedAt: null,
-    },
-  },
-
-  appearance: {
-     enableAnimations: true,
-     prettifyCards: "accent", // default to 'accent', options: 'accent' | 'theme'
+    cardAttachmentFolderPath: "Attachments/Cards/",
   },
 };

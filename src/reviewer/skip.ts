@@ -14,7 +14,7 @@ import type { Session } from "./types";
 import type { SproutReviewerView } from "./review-view";
 
 export function isSkipEnabled(plugin: SproutPlugin): boolean {
-  return !!plugin.settings.reviewer?.enableSkipButton;
+  return !!plugin.settings.study?.enableSkipButton;
 }
 
 export function initSkipState(session: Session) {

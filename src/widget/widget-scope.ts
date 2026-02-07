@@ -23,7 +23,7 @@ import { filterReviewableCards } from "./widget-helpers";
 
 /** Whether the "treat folder notes as decks" setting is enabled (defaults ON). */
 export function folderNotesAsDecksEnabled(settings: SproutSettings): boolean {
-  const v = settings?.widget?.treatFolderNotesAsDecks;
+  const v = settings?.study?.treatFolderNotesAsDecks;
   return v !== false; // default ON
 }
 

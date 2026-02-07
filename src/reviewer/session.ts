@@ -206,10 +206,10 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
   const startToday = startOfTodayMs(now);
 
   const settings = plugin.settings;
-  const reviewer = settings?.reviewer ?? {};
+  const study = settings?.study ?? {};
 
-  const dailyNewLimit = toNonNegIntOrInfinity(reviewer.dailyNewLimit);
-  const dailyReviewLimit = toNonNegIntOrInfinity(reviewer.dailyReviewLimit);
+  const dailyNewLimit = toNonNegIntOrInfinity(study.dailyNewLimit);
+  const dailyReviewLimit = toNonNegIntOrInfinity(study.dailyReviewLimit);
 
   const cards = resolveCardsInScope(plugin, scope);
   const states = plugin.store.data.states || {};

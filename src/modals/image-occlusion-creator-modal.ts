@@ -20,7 +20,6 @@ import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
 import { normaliseGroupKey } from "../imageocclusion/mask-tool";
 import { renderOverlay } from "../imageocclusion/io-overlay-renderer";
@@ -195,7 +194,7 @@ export class ImageOcclusionCreatorModal extends Modal {
             await this.loadImageToCanvas();
             this.updatePlaceholderVisibility();
           } catch (e: unknown) {
-            new Notice(`${BRAND}: Failed to load image (${e instanceof Error ? e.message : String(e)})`);
+            new Notice(`Failed to load image (${e instanceof Error ? e.message : String(e)})`);
           }
         })();
       },
@@ -253,7 +252,7 @@ export class ImageOcclusionCreatorModal extends Modal {
           await this.loadImageToCanvas();
           this.updatePlaceholderVisibility();
         } catch (e: unknown) {
-          new Notice(`${BRAND}: Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
+          new Notice(`Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
         }
         return;
       }
@@ -372,7 +371,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         if (shouldClose) this.close();
       } catch (e: unknown) {
         log.error("add failed", e);
-        new Notice(`${BRAND}: add failed (${e instanceof Error ? e.message : String(e)})`);
+        new Notice(`Add failed (${e instanceof Error ? e.message : String(e)})`);
       }
     };
 
@@ -558,7 +557,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     try {
       const file = resolveIoImageFile(this.app, sourceNotePath, imageRef);
       if (!file) {
-        new Notice(`${BRAND}: IO image file not found for edit.`);
+        new Notice(`Image occlusion file not found for edit.`);
         return;
       }
       const data = await this.app.vault.readBinary?.(file);
@@ -567,7 +566,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       this.ioImageData = { mime, data };
       await this.loadImageToCanvas();
     } catch (e: unknown) {
-      new Notice(`${BRAND}: Failed to load IO image (${e instanceof Error ? e.message : String(e)})`);
+      new Notice(`Failed to load image occlusion image (${e instanceof Error ? e.message : String(e)})`);
     }
   }
 
@@ -813,7 +812,7 @@ export class ImageOcclusionCreatorModal extends Modal {
   private openTextInput(stageX: number, stageY: number, dims?: { w: number; h: number }) {
     if (!this.viewportEl) return;
     if (!this.ioImageData) {
-      new Notice(`${BRAND}: add an image first.`);
+      new Notice(`Add an image first.`);
       return;
     }
     this.clearTextInput(false);
@@ -1148,12 +1147,12 @@ export class ImageOcclusionCreatorModal extends Modal {
   /** Rotate the image 90° clockwise or counter-clockwise. */
   private async rotateImage(direction: "cw" | "ccw") {
     if (!this.ioImageData) {
-      new Notice(`${BRAND}: add an image first.`);
+      new Notice(`Add an image first.`);
       return;
     }
     const result = await rotateImageData(this.ioImageData, direction, this.rects, this.textBoxes);
     if (!result) {
-      new Notice(`${BRAND}: failed to load image for rotation.`);
+      new Notice(`Failed to load image for rotation.`);
       return;
     }
     this.ioImageData = result.imageData;
@@ -1168,12 +1167,12 @@ export class ImageOcclusionCreatorModal extends Modal {
   /** Crop the image to the specified stage-coordinate rectangle. */
   private async cropToRect(sx: number, sy: number, sw: number, sh: number) {
     if (!this.ioImageData) {
-      new Notice(`${BRAND}: add an image first.`);
+      new Notice(`Add an image first.`);
       return;
     }
     const result = await cropImageData(this.ioImageData, sx, sy, sw, sh, this.rects, this.textBoxes);
     if (!result) {
-      new Notice(`${BRAND}: failed to load image for crop.`);
+      new Notice(`Failed to load image for crop.`);
       return;
     }
     this.ioImageData = result.imageData;

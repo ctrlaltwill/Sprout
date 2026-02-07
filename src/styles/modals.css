@@ -263,22 +263,10 @@
 
 /* ---- Bulk edit modal (browser) ---- */
 
-.sprout .sprout-bulk-edit-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 1000000 !important;
-  background: rgba(0, 0, 0, 0.85) !important;
-  padding: 24px !important;
-}
-
-.sprout .sprout-bulk-edit-backdrop {
-  position: absolute !important;
-  inset: 0 !important;
-}
-
 .sprout .sprout-bulk-edit-panel {
   padding: 0 !important;
   width: min(640px, 100%) !important;
+  max-width: min(640px, 92vw) !important;
   max-height: 90vh !important;
   overflow: hidden !important;
   display: flex !important;
@@ -324,18 +312,6 @@
 .sprout .sprout-bulk-edit-panel input[type="text"].input {
   height: 36px !important;
   min-height: 36px !important;
-}
-
-.sprout .sprout-bulk-edit-footer {
-  margin-top: 16px !important;
-  padding-top: 16px !important;
-  border-top: 1px solid var(--border) !important;
-}
-
-.sprout .sprout-bulk-edit-save {
-  background: var(--foreground) !important;
-  color: var(--background) !important;
-  border-color: var(--foreground) !important;
 }
 
 .sprout .sprout-bulk-tag-box {

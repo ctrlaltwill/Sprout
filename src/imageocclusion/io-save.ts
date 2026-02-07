@@ -10,7 +10,6 @@
 
 import { Notice, MarkdownView, TFile, type App } from "obsidian";
 import type SproutPlugin from "../main";
-import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import type { CardRecord } from "../core/store";
 import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
@@ -115,7 +114,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     const cardsMap = (plugin.store?.data?.cards || {});
     const parent = cardsMap[parentId];
     if (!parent || String(parent.type) !== "io") {
-      new Notice(`${BRAND}: could not find IO parent to edit.`);
+      new Notice(`Could not find image occlusion parent to edit.`);
       return false;
     }
 
@@ -145,13 +144,13 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       try {
         await writeBinaryToVault(app, imagePath, ioImageData.data);
       } catch (e: unknown) {
-        new Notice(`${BRAND}: failed to save image (${e instanceof Error ? e.message : String(e)})`);
+        new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
         return false;
       }
     }
 
     if (!imagePath) {
-      new Notice(`${BRAND}: IO card is missing an image.`);
+      new Notice(`Image occlusion card is missing an image.`);
       return false;
     }
 
@@ -278,7 +277,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       log.warn("Failed to update IO markdown", e);
     }
 
-    new Notice(`${BRAND}: IO updated.`);
+    new Notice(`Image occlusion updated.`);
     return true;
   }
 
@@ -286,12 +285,12 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   const active = app.workspace.getActiveFile();
   if (!(active instanceof TFile)) {
-    new Notice(`${BRAND}: open a markdown note first`);
+    new Notice(`Open a markdown note first`);
     return false;
   }
 
   if (!getImageData()) {
-    new Notice(`${BRAND}: paste an image to create an IO card`);
+    new Notice(`Paste an image to create an image occlusion card`);
     return false;
   }
 
@@ -301,7 +300,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   const ioImageData = getImageData();
   if (!ioImageData) {
-    new Notice(`${BRAND}: paste an image to create an IO card`);
+    new Notice(`Paste an image to create an image occlusion card`);
     return false;
   }
 
@@ -314,7 +313,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   try {
     await writeBinaryToVault(app, vaultPath, ioImageData.data);
   } catch (e: unknown) {
-    new Notice(`${BRAND}: failed to save image (${e instanceof Error ? e.message : String(e)})`);
+    new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
     return false;
   }
 
@@ -456,6 +455,6 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     log.warn("Failed to insert IO markdown, but card saved to store", e);
   }
 
-  new Notice(`${BRAND}: IO saved.`);
+  new Notice(`Image occlusion saved.`);
   return true;
 }

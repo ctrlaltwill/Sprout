@@ -252,7 +252,7 @@ export async function exportToApkg(
   }
 
   const { fsrsParams, desiredRetention } = buildFsrsParamsFromSettings(
-    plugin.settings?.scheduler,
+    plugin.settings?.scheduling,
   );
 
   insertCollection(db, {

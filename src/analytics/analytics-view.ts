@@ -104,7 +104,7 @@ export class SproutAnalyticsView extends ItemView {
   async onOpen() {
     this.render();
     // Init AOS after render completes (DOM ready)
-    if (this.plugin.settings?.appearance?.enableAnimations ?? true) {
+    if (this.plugin.settings?.general?.enableAnimations ?? true) {
       // Delay init to ensure DOM is fully rendered
       setTimeout(() => {
         initAOS({
@@ -252,7 +252,7 @@ export class SproutAnalyticsView extends ItemView {
     this._header.install("analytics");
     this._applyWidthMode();
 
-    const animationsEnabled = this.plugin.settings?.appearance?.enableAnimations ?? true;
+    const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
     // AOS delay cascade: header.ts (external), then page title, then top 4 stat cards, then each row below that
     const headerDelay = 0; // header.ts is external, assumed to be 0
     const titleDelay = headerDelay + 100;
@@ -624,7 +624,7 @@ export class SproutAnalyticsView extends ItemView {
         cards,
         states,
         reviewLog,
-        scheduler: this.plugin.settings?.scheduler,
+        scheduler: this.plugin.settings?.scheduling,
         nowMs: now,
         enableAnimations: animationsEnabled,
       }),
