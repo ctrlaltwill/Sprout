@@ -51,6 +51,7 @@ import { SproutAnalyticsView } from "./analytics/analytics-view";
 import { SproutHomeView } from "./home/sprout-home-view";
 import { SproutSettingsTab } from "./settings/sprout-settings-tab";
 import { formatSyncNotice, syncQuestionBank } from "./sync/sync-engine";
+import { joinPath, safeStatMtime } from "./sync/backup";
 import { CardCreatorModal } from "./modals/card-creator-modal";
 import { ImageOcclusionCreatorModal } from "./modals/image-occlusion-creator-modal";
 import { ParseErrorModal } from "./modals/parse-error-modal";
@@ -560,7 +561,38 @@ export default class SproutPlugin extends Plugin {
     try { await this._saving; } finally { this._saving = null; }
   }
 
+  private _getDataJsonPath(): string | null {
+    const configDir = this.app?.vault?.configDir;
+    const pluginId = this.manifest?.id;
+    if (!configDir || !pluginId) return null;
+    return joinPath(configDir, "plugins", pluginId, "data.json");
+  }
+
   private async _doSave() {
+    const adapter = this.app?.vault?.adapter ?? null;
+    const dataPath = this._getDataJsonPath();
+    const canStat = !!(adapter && dataPath);
+    const maxAttempts = 3;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const mtimeBefore = canStat ? await safeStatMtime(adapter, dataPath as string) : 0;
+      const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
+      root.settings = this.settings;
+      root.store = this.store.data;
+
+      if (canStat) {
+        const mtimeBeforeWrite = await safeStatMtime(adapter, dataPath as string);
+        if (mtimeBefore && mtimeBeforeWrite && mtimeBeforeWrite !== mtimeBefore) {
+          // data.json changed during our read; retry with latest snapshot
+          continue;
+        }
+      }
+
+      await this.saveData(root);
+      return;
+    }
+
+    // Last resort: write latest snapshot even if the file is churny.
     const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
     root.settings = this.settings;
     root.store = this.store.data;

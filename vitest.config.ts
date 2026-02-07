@@ -4,6 +4,24 @@ import path from "path";
 export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      reportsDirectory: "./coverage",
+      all: true,
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.d.ts",
+        "src/**/__mocks__/**",
+        "src/**/__fixtures__/**",
+      ],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80,
+      },
+    },
   },
   resolve: {
     alias: {

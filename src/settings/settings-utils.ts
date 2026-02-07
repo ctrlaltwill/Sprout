@@ -35,16 +35,16 @@ export const ANCHOR_LINE_RE = /^\^sprout-(\d{9})\s*$/;
 
 /**
  * Card block detection: matches the opening line of a card block.
- * Covers colon + pipe formats for Q, MCQ, and CQ types.
+ * Covers colon + pipe formats for Q, MCQ, and CQ types, plus IO pipe blocks.
  */
-export const CARD_START_RE = /^(Q|MCQ|CQ)\s*(?::|\|)\s*.*$/;
+export const CARD_START_RE = /^(Q|MCQ|CQ)\s*(?::|\|)\s*.*$|^IO\s*\|\s*.*$/;
 
 /**
  * Matches a field line within a card block.
- * Covers T, A, I (colon/pipe), O (colon-only), and C/K (colon or pipe).
+ * Covers T, A, I, O, G (colon/pipe), and C/K (colon or pipe).
  */
 export const FIELD_LINE_RE =
-  /^(T|A|I)\s*(?::|\|)\s*.*$|^O:\s*.*$|^(C|K)\s*:\s*.*$|^(C|K)\s*\|\s*.*$/;
+  /^(T|A|I|O|G)\s*(?::|\|)\s*.*$|^(C|K)\s*(?::|\|)\s*.*$/;
 
 // ────────────────────────────────────────────
 // Numeric parsing / formatting helpers

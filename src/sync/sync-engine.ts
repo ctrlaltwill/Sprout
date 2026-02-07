@@ -25,8 +25,10 @@ import {
   extractStatesFromDataJsonObject,
   tryReadJson,
   safeListFolders,
+  safeListFiles,
   safeStatMtime,
   ensureRoutineBackupIfNeeded,
+  listDataJsonBackups,
 } from "./backup";
 
 // ────────────────────────────────────────────
@@ -58,6 +60,52 @@ type TextEdit = {
   deleteLine?: boolean;
   insertText?: string;
 };
+
+// ────────────────────────────────────────────
+// Concurrency guards (per-file + vault)
+// ────────────────────────────────────────────
+
+type LockQueue = Map<string, Promise<void>>;
+
+const FILE_SYNC_LOCKS: LockQueue = new Map();
+const VAULT_SYNC_LOCKS: LockQueue = new Map();
+const VAULT_LOCK_KEY = "__sprout-vault-sync__";
+
+async function withLock<T>(lockMap: LockQueue, key: string, fn: () => Promise<T>): Promise<T> {
+  const prev = lockMap.get(key) ?? Promise.resolve();
+  let release: (() => void) | null = null;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const chained = prev.then(() => current);
+
+  lockMap.set(key, chained);
+
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    if (release) release();
+    if (lockMap.get(key) === chained) lockMap.delete(key);
+  }
+}
+
+async function waitForLock(lockMap: LockQueue, key: string): Promise<void> {
+  const pending = lockMap.get(key);
+  if (pending) await pending;
+}
+
+async function withFileSyncLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
+  await waitForLock(VAULT_SYNC_LOCKS, VAULT_LOCK_KEY);
+  return withLock(FILE_SYNC_LOCKS, filePath, fn);
+}
+
+async function withVaultSyncLock<T>(fn: () => Promise<T>): Promise<T> {
+  return withLock(VAULT_SYNC_LOCKS, VAULT_LOCK_KEY, async () => {
+    if (FILE_SYNC_LOCKS.size > 0) await Promise.all([...FILE_SYNC_LOCKS.values()]);
+    return fn();
+  });
+}
 
 // ────────────────────────────────────────────
 // formatSyncNotice (exported)
@@ -200,19 +248,14 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
     }
   }
 
-  // Scan other plugin folders for potential scheduling data
-  const pluginRoot = joinPath(configDir, "plugins");
-  const folderPaths = await safeListFolders(adapter, pluginRoot);
-
+  // Scan backups within this plugin's folder
   type Cand = { states: StateMap; score: number; mtime: number; path: string };
   const cands: Cand[] = [];
 
-  for (const folderPath of folderPaths) {
-    const folderName = String(folderPath).split("/").filter(Boolean).pop() || "";
-    if (!folderName) continue;
-
-    for (const name of candidateFiles) {
-      const p = joinPath(pluginRoot, folderName, name);
+  if (pluginId) {
+    const entries = await listDataJsonBackups(plugin);
+    for (const entry of entries) {
+      const p = entry.path;
       const obj = await tryReadJson(adapter, p);
       const states = extractStatesFromDataJsonObject(obj);
       if (!states) continue;
@@ -224,10 +267,43 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
       const sproutish = keys.reduce((acc, k) => acc + (likelySproutStateKey(k) ? 1 : 0), 0);
       if (sproutish <= 0) continue;
 
-      const mtime = await safeStatMtime(adapter, p);
+      const mtime = entry.mtime || (await safeStatMtime(adapter, p));
       const score = stateCount * 10 + sproutish * 5 + Math.min(1000, mtime / 1000);
       cands.push({ states, score, mtime, path: p });
     }
+  }
+
+  // Scan foreign plugin data.json files for recovery
+  try {
+    const pluginsRoot = joinPath(configDir, "plugins");
+    const pluginFolders = await safeListFolders(adapter, pluginsRoot);
+    for (const folderPath of pluginFolders) {
+      const folderId = String(folderPath).split("/").pop() || "";
+      if (!folderId || folderId === pluginId) continue;
+
+      const files = await safeListFiles(adapter, String(folderPath));
+      const candidates = files.filter((p) => /(^|\/)data\.json(\..+)?$/.test(String(p)));
+      if (!candidates.length) continue;
+
+      for (const p of candidates) {
+        const obj = await tryReadJson(adapter, p);
+        const states = extractStatesFromDataJsonObject(obj);
+        if (!states) continue;
+
+        const keys = Object.keys(states);
+        const stateCount = keys.length;
+        if (stateCount <= 0) continue;
+
+        const sproutish = keys.reduce((acc, k) => acc + (likelySproutStateKey(k) ? 1 : 0), 0);
+        if (sproutish <= 0) continue;
+
+        const mtime = await safeStatMtime(adapter, p);
+        const score = stateCount * 10 + sproutish * 5 + Math.min(1000, mtime / 1000);
+        cands.push({ states, score, mtime, path: p });
+      }
+    }
+  } catch {
+    // ignore
   }
 
   if (!cands.length) return null;
@@ -862,344 +938,55 @@ function inferIoIdFromCard(c: ParsedCard): string | null {
  *  7. Manages IO / cloze child records
  */
 export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
-  const vault = plugin.app.vault;
-  const now = Date.now();
+  return withFileSyncLock(file.path, async () => {
+    const vault = plugin.app.vault;
+    const now = Date.now();
 
-  const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
+    const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
 
-  // Routine backups are throttled + capped; manual backups live in Settings → Backups.
-  await ensureRoutineBackupIfNeeded(plugin);
+    // Routine backups are throttled + capped; manual backups live in Settings → Backups.
+    await ensureRoutineBackupIfNeeded(plugin);
 
-  purgeDeprecatedTypes(plugin);
-  quarantineIoCardsWithMissingImages(plugin);
+    purgeDeprecatedTypes(plugin);
+    quarantineIoCardsWithMissingImages(plugin);
 
-  const originalText = await vault.read(file);
-  const lines = originalText.split(/\r?\n/);
+    const originalText = await vault.read(file);
+    const lines = originalText.split(/\r?\n/);
 
-  const parseText = normaliseTextForParsing(originalText);
-  const { cards } = parseCardsFromText(file.path, parseText, plugin.settings.indexing.ignoreInCodeFences);
-
-  // If store is empty but we parsed cards, attempt recovery of scheduling snapshot BEFORE we start creating states.
-  const schedulingSnapshot = isLikelyRecoveryScenario(plugin, cards.length) ? await loadBestSchedulingSnapshot(plugin) : null;
-
-  // Mark existing cards/quarantine from this note as unseen for this run
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec = plugin.store.data.cards[id];
-    if (!rec) continue;
-    if (rec.sourceNotePath !== file.path) continue;
-    if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
-    rec.lastSeenAt = 0;
-  }
-  for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q = plugin.store.data.quarantine[id];
-    if (q && q.notePath === file.path) q.lastSeenAt = 0;
-  }
-
-  const usedIds = new Set<string>([
-    ...Object.keys(plugin.store.data.cards || {}),
-    ...Object.keys(plugin.store.data.quarantine || {}),
-    ...collectAnchorIdsFromLines(lines),
-  ]);
-
-  const existingAnchorIds = collectAnchorIdsFromLines(lines);
-
-  const edits: TextEdit[] = [];
-  const keepIds = new Set<string>();
-
-  let idsInserted = 0;
-  let anchorsRemoved = 0;
-
-  // 1) Ensure every parsed card has an anchor ID
-  for (const c of cards as Array<ParsedCard & { assignedId?: string }>) {
-    let id: string | null = c.id ? String(c.id) : null;
-
-    if (!id) {
-      const inferred = inferIoIdFromCard(c);
-      if (inferred) {
-        const existing = plugin.store.data.cards?.[inferred] ?? plugin.store.data.quarantine?.[inferred];
-        const sameNote = existing && String((existing as { sourceNotePath?: string }).sourceNotePath || (existing as { notePath?: string }).notePath || "") === file.path;
-        id = !usedIds.has(inferred) || sameNote ? inferred : generateUniqueId(usedIds);
-      } else {
-        id = generateUniqueId(usedIds);
-      }
-      c.assignedId = id;
-    }
-
-    usedIds.add(id);
-    keepIds.add(id);
-
-    if (!existingAnchorIds.has(id)) {
-      const insertAt = findAnchorInsertLineIndex(lines, c.sourceStartLine);
-      const prefix = inferPrefixAt(lines, insertAt);
-      edits.push({ lineIndex: insertAt, insertText: `${prefix}^sprout-${id}` });
-      idsInserted += 1;
-      existingAnchorIds.add(id);
-    }
-  }
-
-  // 2) Remove orphan anchors
-  const orphanLineIdxs = collectAnchorLineIndicesToDelete(lines, keepIds);
-  for (const idx of orphanLineIdxs) {
-    edits.push({ lineIndex: idx, deleteLine: true });
-    anchorsRemoved += 1;
-  }
-
-  // 3) Apply file edits
-  if (edits.length) {
-    applyEditsToLines(lines, edits);
-    await vault.modify(file, lines.join("\n"));
-  }
-
-  // Recovery: if we found a snapshot, attach states for known IDs before we create defaults.
-  if (schedulingSnapshot && Object.keys(schedulingSnapshot).length) {
-    for (const id of keepIds) {
-      if (!hasState(plugin, id)) upsertStateIfPresent(plugin, schedulingSnapshot, id);
-    }
-  }
-
-  // 4) Upsert DB records for parsed cards
-  let newCount = 0;
-  let updatedCount = 0;
-  let sameCount = 0;
-  let quarantinedCount = 0;
-  const quarantinedIds: string[] = [];
-
-  for (const c of cards as Array<ParsedCard & { assignedId?: string }>) {
-    const id = String(c.id || c.assignedId || "");
-    if (!id) continue;
-
-    if (c.errors && c.errors.length) {
-      plugin.store.data.quarantine[id] = {
-        id,
-        notePath: c.sourceNotePath,
-        sourceStartLine: c.sourceStartLine,
-        reason: c.errors.join("; "),
-        lastSeenAt: now,
-      };
-      delete plugin.store.data.cards[id];
-      ensureStateIfMissing(plugin, id, now, 2.5);
-
-      quarantinedCount += 1;
-      quarantinedIds.push(id);
-      continue;
-    }
-
-    if (plugin.store.data.quarantine && plugin.store.data.quarantine[id]) delete plugin.store.data.quarantine[id];
-
-    const prev = plugin.store.data.cards[id];
-    const createdAt = prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0 ? Number(prev.createdAt) : now;
-
-    const clozeChildren = c.type === "cloze" ? extractClozeIndices(c.clozeText ?? "") : null;
-
-    const record: CardRecord = {
-      id,
-      type: c.type,
-
-      title: c.title ?? null,
-
-      q: c.type === "basic" ? (c.q ?? null) : null,
-      a: c.type === "basic" ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
-
-      stem: c.type === "mcq" ? (c.stem ?? null) : null,
-      ...(c.type === "mcq"
-        ? (() => {
-            const { options, correctIndex } = mcqLegacyFromParsed(c);
-            return { options: options.length ? options : [], correctIndex };
-          })()
-        : {}),
-
-      clozeText: c.type === "cloze" ? (c.clozeText ?? null) : null,
-      clozeChildren: c.type === "cloze" ? clozeChildren : null,
-
-      ...(c.type === "io"
-        ? (() => {
-            const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
-            return {
-              imageRef: imageRef ?? null,
-              occlusions: occlusions ?? null,
-              maskMode: maskMode ?? null,
-              prompt: c.prompt ?? null,
-            };
-          })()
-        : {}),
-
-      info: c.info ?? null,
-      groups: c.groups ?? null,
-
-      sourceNotePath: c.sourceNotePath,
-      sourceStartLine: c.sourceStartLine,
-
-      createdAt,
-      updatedAt: now,
-      lastSeenAt: now,
-    };
-
-    if (!prev) newCount += 1;
-    else if (cardSignature(prev) !== cardSignature(record)) updatedCount += 1;
-    else sameCount += 1;
-
-    plugin.store.upsertCard(record);
-
-    if (!hasState(plugin, id)) {
-      const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
-      if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
-    }
-
-    if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
-
-    // IO: verify image exists, else quarantine
-    if (c.type === "io") {
-      const imageRef = normalizeIoImageRef(record.imageRef);
-      if (imageRef) {
-        const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
-        if (!imageFile || !(imageFile instanceof TFile)) {
-          plugin.store.data.quarantine[id] = {
-            id,
-            notePath: c.sourceNotePath,
-            sourceStartLine: c.sourceStartLine,
-            reason: `Image file not found: ${imageRef}`,
-            lastSeenAt: now,
-          };
-          delete plugin.store.data.cards[id];
-
-          quarantinedCount += 1;
-          quarantinedIds.push(id);
-
-          ensureStateIfMissing(plugin, id, now, 2.5);
-        }
-      }
-    }
-  }
-
-  // 5) Remove stale cards/quarantine entries no longer present in this note
-  let removed = 0;
-  const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
-  const removedClozeParents: string[] = [];
-
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec = plugin.store.data.cards[id];
-    if (!rec) continue;
-    if (rec.sourceNotePath !== file.path) continue;
-    if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
-
-    if (rec.lastSeenAt === 0) {
-      if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null });
-      if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
-
-      delete plugin.store.data.cards[id];
-      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-      removed += 1;
-    }
-  }
-
-  for (const ioData of removedIoParentData) {
-    removed += deleteIoChildren(plugin, ioData.id);
-    if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
-    const ioMap = plugin.store.data.io || {};
-    if (ioMap[ioData.id]) delete ioMap[ioData.id];
-  }
-
-  for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
-
-  for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q = plugin.store.data.quarantine[id];
-    if (q && q.notePath === file.path && q.lastSeenAt === 0) {
-      delete plugin.store.data.quarantine[id];
-      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-      removed += 1;
-    }
-  }
-
-  removed += deleteOrphanIoChildren(plugin);
-  removed += deleteOrphanClozeChildren(plugin);
-
-  const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
-  const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
-
-  await plugin.store.persist();
-
-  return {
-    idsInserted,
-    anchorsRemoved,
-    newCount,
-    updatedCount,
-    sameCount,
-    quarantinedCount,
-    quarantinedIds,
-    removed,
-    tagsDeleted,
-  };
-}
-
-// ────────────────────────────────────────────
-// syncQuestionBank (exported)
-// ────────────────────────────────────────────
-
-/**
- * Full vault-wide sync: parses every markdown file, reconciles the
- * card database, inserts missing anchors, removes stale entries,
- * and cleans up orphaned IO images.
- */
-export async function syncQuestionBank(plugin: SproutPlugin) {
-  const now = Date.now();
-
-  const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
-
-  // NOTE: Backups are no longer created automatically here. Use Settings → Backups.
-
-  purgeDeprecatedTypes(plugin);
-  quarantineIoCardsWithMissingImages(plugin);
-
-  const vault = plugin.app.vault;
-  const mdFiles = vault.getMarkdownFiles();
-
-  const schedulingSnapshot = await loadBestSchedulingSnapshot(plugin);
-
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const c = plugin.store.data.cards[id];
-    if (!c) continue;
-    if (String(c.type) === "io-child" || String(c.type) === "cloze-child") continue;
-    c.lastSeenAt = 0;
-  }
-  for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q = plugin.store.data.quarantine[id];
-    if (q) q.lastSeenAt = 0;
-  }
-
-  let idsInserted = 0;
-  let anchorsRemoved = 0;
-
-  let newCount = 0;
-  let updatedCount = 0;
-  let sameCount = 0;
-  let quarantinedCount = 0;
-  const quarantinedIds: string[] = [];
-
-  let removed = 0;
-
-  const usedIds = new Set<string>([
-    ...Object.keys(plugin.store.data.cards || {}),
-    ...Object.keys(plugin.store.data.quarantine || {}),
-  ]);
-
-  const fileEdits: Array<{ file: TFile; originalLines: string[]; edits: TextEdit[] }> = [];
-  const parsedAll: Array<ParsedCard & { assignedId?: string }> = [];
-
-  for (const file of mdFiles) {
-    const text = await vault.read(file);
-    const lines = text.split(/\r?\n/);
-
-    const parseText = normaliseTextForParsing(text);
+    const parseText = normaliseTextForParsing(originalText);
     const { cards } = parseCardsFromText(file.path, parseText, plugin.settings.indexing.ignoreInCodeFences);
-    if (!cards.length) continue;
+
+    // If store is empty but we parsed cards, attempt recovery of scheduling snapshot BEFORE we start creating states.
+    const schedulingSnapshot = isLikelyRecoveryScenario(plugin, cards.length) ? await loadBestSchedulingSnapshot(plugin) : null;
+
+    // Mark existing cards/quarantine from this note as unseen for this run
+    for (const id of Object.keys(plugin.store.data.cards || {})) {
+      const rec = plugin.store.data.cards[id];
+      if (!rec) continue;
+      if (rec.sourceNotePath !== file.path) continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
+      rec.lastSeenAt = 0;
+    }
+    for (const id of Object.keys(plugin.store.data.quarantine || {})) {
+      const q = plugin.store.data.quarantine[id];
+      if (q && q.notePath === file.path) q.lastSeenAt = 0;
+    }
+
+    const usedIds = new Set<string>([
+      ...Object.keys(plugin.store.data.cards || {}),
+      ...Object.keys(plugin.store.data.quarantine || {}),
+      ...collectAnchorIdsFromLines(lines),
+    ]);
 
     const existingAnchorIds = collectAnchorIdsFromLines(lines);
-    for (const id of existingAnchorIds) usedIds.add(id);
-    for (const c of cards) if (c.id) usedIds.add(String(c.id));
 
-    const keepIds = new Set<string>();
     const edits: TextEdit[] = [];
+    const keepIds = new Set<string>();
 
+    let idsInserted = 0;
+    let anchorsRemoved = 0;
+
+    // 1) Ensure every parsed card has an anchor ID
     for (const c of cards as Array<ParsedCard & { assignedId?: string }>) {
       let id: string | null = c.id ? String(c.id) : null;
 
@@ -1225,186 +1012,515 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
         idsInserted += 1;
         existingAnchorIds.add(id);
       }
-
-      parsedAll.push(c);
     }
 
-    const orphanIdxs = collectAnchorLineIndicesToDelete(lines, keepIds);
-    for (const idx of orphanIdxs) {
+    // 2) Remove orphan anchors
+    const orphanLineIdxs = collectAnchorLineIndicesToDelete(lines, keepIds);
+    for (const idx of orphanLineIdxs) {
       edits.push({ lineIndex: idx, deleteLine: true });
       anchorsRemoved += 1;
     }
 
-    if (edits.length) fileEdits.push({ file, originalLines: lines, edits });
-  }
+    // 3) Apply file edits
+    if (edits.length) {
+      applyEditsToLines(lines, edits);
+      await vault.modify(file, lines.join("\n"));
+    }
 
-  for (const fe of fileEdits) {
-    const lines = fe.originalLines.slice();
-    applyEditsToLines(lines, fe.edits);
-    await vault.modify(fe.file, lines.join("\n"));
-  }
+    // Recovery: if we found a snapshot, attach states for known IDs before we create defaults.
+    if (schedulingSnapshot && Object.keys(schedulingSnapshot).length) {
+      for (const id of keepIds) {
+        if (!hasState(plugin, id)) upsertStateIfPresent(plugin, schedulingSnapshot, id);
+      }
+    }
 
-  for (const c of parsedAll) {
-    const id = String(c.id || c.assignedId || "");
-    if (!id) continue;
+    // 4) Upsert DB records for parsed cards
+    let newCount = 0;
+    let updatedCount = 0;
+    let sameCount = 0;
+    let quarantinedCount = 0;
+    const quarantinedIds: string[] = [];
 
-    if (c.errors && c.errors.length) {
-      plugin.store.data.quarantine[id] = {
+    for (const c of cards as Array<ParsedCard & { assignedId?: string }>) {
+      const id = String(c.id || c.assignedId || "");
+      if (!id) continue;
+
+      if (c.errors && c.errors.length) {
+        plugin.store.data.quarantine[id] = {
+          id,
+          notePath: c.sourceNotePath,
+          sourceStartLine: c.sourceStartLine,
+          reason: c.errors.join("; "),
+          lastSeenAt: now,
+        };
+        delete plugin.store.data.cards[id];
+        ensureStateIfMissing(plugin, id, now, 2.5);
+
+        quarantinedCount += 1;
+        quarantinedIds.push(id);
+        continue;
+      }
+
+      if (plugin.store.data.quarantine && plugin.store.data.quarantine[id]) delete plugin.store.data.quarantine[id];
+
+      const prev = plugin.store.data.cards[id];
+      const createdAt = prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0 ? Number(prev.createdAt) : now;
+
+      const clozeChildren = c.type === "cloze" ? extractClozeIndices(c.clozeText ?? "") : null;
+
+      const record: CardRecord = {
         id,
-        notePath: c.sourceNotePath,
+        type: c.type,
+
+        title: c.title ?? null,
+
+        q: c.type === "basic" ? (c.q ?? null) : null,
+        a: c.type === "basic" ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
+
+        stem: c.type === "mcq" ? (c.stem ?? null) : null,
+        ...(c.type === "mcq"
+          ? (() => {
+              const { options, correctIndex } = mcqLegacyFromParsed(c);
+              return { options: options.length ? options : [], correctIndex };
+            })()
+          : {}),
+
+        clozeText: c.type === "cloze" ? (c.clozeText ?? null) : null,
+        clozeChildren: c.type === "cloze" ? clozeChildren : null,
+
+        ...(c.type === "io"
+          ? (() => {
+              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
+              return {
+                imageRef: imageRef ?? null,
+                occlusions: occlusions ?? null,
+                maskMode: maskMode ?? null,
+                prompt: c.prompt ?? null,
+              };
+            })()
+          : {}),
+
+        info: c.info ?? null,
+        groups: c.groups ?? null,
+
+        sourceNotePath: c.sourceNotePath,
         sourceStartLine: c.sourceStartLine,
-        reason: c.errors.join("; "),
+
+        createdAt,
+        updatedAt: now,
         lastSeenAt: now,
       };
-      delete plugin.store.data.cards[id];
 
-      ensureStateIfMissing(plugin, id, now, 2.5);
+      if (!prev) newCount += 1;
+      else if (cardSignature(prev) !== cardSignature(record)) updatedCount += 1;
+      else sameCount += 1;
 
-      quarantinedCount += 1;
-      quarantinedIds.push(id);
-      continue;
-    }
+      plugin.store.upsertCard(record);
 
-    if (plugin.store.data.quarantine && plugin.store.data.quarantine[id]) delete plugin.store.data.quarantine[id];
+      if (!hasState(plugin, id)) {
+        const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
+        if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
+      }
 
-    const prev = plugin.store.data.cards[id];
-    const createdAt = prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0 ? Number(prev.createdAt) : now;
+      if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
 
-    const record: CardRecord = {
-      id,
-      type: c.type,
-
-      title: c.title ?? null,
-
-      q: c.type === "basic" ? (c.q ?? null) : null,
-      a: c.type === "basic" ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
-
-      stem: c.type === "mcq" ? (c.stem ?? null) : null,
-      ...(c.type === "mcq"
-        ? (() => {
-            const { options, correctIndex } = mcqLegacyFromParsed(c);
-            return { options: options.length ? options : [], correctIndex };
-          })()
-        : {}),
-
-      clozeText: c.type === "cloze" ? (c.clozeText ?? null) : null,
-
-      ...(c.type === "io"
-        ? (() => {
-            const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
-            return {
-              imageRef: imageRef ?? null,
-              occlusions: occlusions ?? null,
-              maskMode: maskMode ?? null,
-              prompt: c.prompt ?? null,
+      // IO: verify image exists, else quarantine
+      if (c.type === "io") {
+        const imageRef = normalizeIoImageRef(record.imageRef);
+        if (imageRef) {
+          const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
+          if (!imageFile || !(imageFile instanceof TFile)) {
+            plugin.store.data.quarantine[id] = {
+              id,
+              notePath: c.sourceNotePath,
+              sourceStartLine: c.sourceStartLine,
+              reason: `Image file not found: ${imageRef}`,
+              lastSeenAt: now,
             };
-          })()
-        : {}),
+            delete plugin.store.data.cards[id];
 
-      info: c.info ?? null,
-      groups: c.groups ?? null,
+            quarantinedCount += 1;
+            quarantinedIds.push(id);
 
-      sourceNotePath: c.sourceNotePath,
-      sourceStartLine: c.sourceStartLine,
-
-      createdAt,
-      updatedAt: now,
-      lastSeenAt: now,
-    };
-
-    if (!prev) newCount += 1;
-    else if (cardSignature(prev) !== cardSignature(record)) updatedCount += 1;
-    else sameCount += 1;
-
-    plugin.store.upsertCard(record);
-
-    if (!hasState(plugin, id)) {
-      const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
-      if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
-    }
-
-    if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
-
-    if (c.type === "io") {
-      const imageRef = normalizeIoImageRef(record.imageRef);
-      if (imageRef) {
-        const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
-        if (!imageFile || !(imageFile instanceof TFile)) {
-          plugin.store.data.quarantine[id] = {
-            id,
-            notePath: c.sourceNotePath,
-            sourceStartLine: c.sourceStartLine,
-            reason: `Image file not found: ${imageRef}`,
-            lastSeenAt: now,
-          };
-          delete plugin.store.data.cards[id];
-
-          quarantinedCount += 1;
-          quarantinedIds.push(id);
-
-          ensureStateIfMissing(plugin, id, now, 2.5);
+            ensureStateIfMissing(plugin, id, now, 2.5);
+          }
         }
       }
     }
-  }
 
-  const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
-  const removedClozeParents: string[] = [];
+    // 5) Remove stale cards/quarantine entries no longer present in this note
+    let removed = 0;
+    const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
+    const removedClozeParents: string[] = [];
 
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const card = plugin.store.data.cards[id];
-    if (!card) continue;
+    for (const id of Object.keys(plugin.store.data.cards || {})) {
+      const rec = plugin.store.data.cards[id];
+      if (!rec) continue;
+      if (rec.sourceNotePath !== file.path) continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
 
-    if (String(card.type) === "io-child" || String(card.type) === "cloze-child") continue;
+      if (rec.lastSeenAt === 0) {
+        if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null });
+        if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
 
-    if (card.lastSeenAt !== now) {
-      if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null });
-      if (String(card.type) === "cloze") removedClozeParents.push(String(id));
-
-      delete plugin.store.data.cards[id];
-      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-      removed += 1;
+        delete plugin.store.data.cards[id];
+        if (plugin.store.data.states) delete (plugin.store.data.states)[id];
+        removed += 1;
+      }
     }
-  }
 
-  for (const ioData of removedIoParentData) {
-    removed += deleteIoChildren(plugin, ioData.id);
-    if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
-    const ioMap = plugin.store.data.io || {};
-    if (ioMap[ioData.id]) delete ioMap[ioData.id];
-  }
-
-  for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
-
-  for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q = plugin.store.data.quarantine[id];
-    if (q && q.lastSeenAt !== now) {
-      delete plugin.store.data.quarantine[id];
-      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-      removed += 1;
+    for (const ioData of removedIoParentData) {
+      removed += deleteIoChildren(plugin, ioData.id);
+      if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
+      const ioMap = plugin.store.data.io || {};
+      if (ioMap[ioData.id]) delete ioMap[ioData.id];
     }
-  }
 
-  removed += deleteOrphanIoChildren(plugin);
-  removed += deleteOrphanClozeChildren(plugin);
+    for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
 
-  const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
-  const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
+    for (const id of Object.keys(plugin.store.data.quarantine || {})) {
+      const q = plugin.store.data.quarantine[id];
+      if (q && q.notePath === file.path && q.lastSeenAt === 0) {
+        delete plugin.store.data.quarantine[id];
+        if (plugin.store.data.states) delete (plugin.store.data.states)[id];
+        removed += 1;
+      }
+    }
 
-  const deletedImages = await deleteOrphanedIoImages(plugin);
-  if (deletedImages > 0) log.info(`Deleted ${deletedImages} orphaned IO image(s)`);
+    removed += deleteOrphanIoChildren(plugin);
+    removed += deleteOrphanClozeChildren(plugin);
 
-  await plugin.store.persist();
+    const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
+    const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
 
-  return {
-    idsInserted,
-    anchorsRemoved,
-    newCount,
-    updatedCount,
-    sameCount,
-    quarantinedCount,
-    quarantinedIds,
-    removed,
-    tagsDeleted,
-  };
+    await plugin.store.persist();
+
+    return {
+      idsInserted,
+      anchorsRemoved,
+      newCount,
+      updatedCount,
+      sameCount,
+      quarantinedCount,
+      quarantinedIds,
+      removed,
+      tagsDeleted,
+    };
+  });
+}
+
+// ────────────────────────────────────────────
+// syncQuestionBank (exported)
+// ────────────────────────────────────────────
+
+/**
+ * Full vault-wide sync: parses every markdown file, reconciles the
+ * card database, inserts missing anchors, removes stale entries,
+ * and cleans up orphaned IO images.
+ */
+export async function syncQuestionBank(plugin: SproutPlugin) {
+  return withVaultSyncLock(async () => {
+    const now = Date.now();
+
+    const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
+
+    // NOTE: Backups are no longer created automatically here. Use Settings → Backups.
+
+    purgeDeprecatedTypes(plugin);
+    quarantineIoCardsWithMissingImages(plugin);
+
+    const vault = plugin.app.vault;
+    const mdFiles = vault.getMarkdownFiles();
+
+    const schedulingSnapshot = await loadBestSchedulingSnapshot(plugin);
+
+    for (const id of Object.keys(plugin.store.data.cards || {})) {
+      const c = plugin.store.data.cards[id];
+      if (!c) continue;
+      if (String(c.type) === "io-child" || String(c.type) === "cloze-child") continue;
+      c.lastSeenAt = 0;
+    }
+    for (const id of Object.keys(plugin.store.data.quarantine || {})) {
+      const q = plugin.store.data.quarantine[id];
+      if (q) q.lastSeenAt = 0;
+    }
+
+    let idsInserted = 0;
+    let anchorsRemoved = 0;
+
+    let newCount = 0;
+    let updatedCount = 0;
+    let sameCount = 0;
+    let quarantinedCount = 0;
+    const quarantinedIds: string[] = [];
+
+    let removed = 0;
+
+    const usedIds = new Set<string>([
+      ...Object.keys(plugin.store.data.cards || {}),
+      ...Object.keys(plugin.store.data.quarantine || {}),
+    ]);
+
+    const parsedAll: Array<ParsedCard & { assignedId?: string }> = [];
+
+    const buildFilePlan = (file: TFile, text: string) => {
+      const addedIds: string[] = [];
+      const lines = text.split(/\r?\n/);
+
+      const parseText = normaliseTextForParsing(text);
+      const { cards } = parseCardsFromText(file.path, parseText, plugin.settings.indexing.ignoreInCodeFences);
+      if (!cards.length) {
+        return { cards: [], edits: [], lines, keepIds: new Set<string>(), idsInserted: 0, anchorsRemoved: 0, addedIds };
+      }
+
+      const existingAnchorIds = collectAnchorIdsFromLines(lines);
+      for (const id of existingAnchorIds) {
+        if (!usedIds.has(id)) {
+          usedIds.add(id);
+          addedIds.push(id);
+        }
+      }
+      for (const c of cards) {
+        if (c.id) {
+          const id = String(c.id);
+          if (!usedIds.has(id)) {
+            usedIds.add(id);
+            addedIds.push(id);
+          }
+        }
+      }
+
+      const keepIds = new Set<string>();
+      const edits: TextEdit[] = [];
+      let planInserted = 0;
+      let planRemoved = 0;
+
+      for (const c of cards as Array<ParsedCard & { assignedId?: string }>) {
+        let id: string | null = c.id ? String(c.id) : null;
+
+        if (!id) {
+          const inferred = inferIoIdFromCard(c);
+          if (inferred) {
+            const existing = plugin.store.data.cards?.[inferred] ?? plugin.store.data.quarantine?.[inferred];
+            const sameNote = existing && String((existing as { sourceNotePath?: string }).sourceNotePath || (existing as { notePath?: string }).notePath || "") === file.path;
+            id = !usedIds.has(inferred) || sameNote ? inferred : generateUniqueId(usedIds);
+          } else {
+            id = generateUniqueId(usedIds);
+          }
+          c.assignedId = id;
+        }
+
+        if (!usedIds.has(id)) {
+          usedIds.add(id);
+          addedIds.push(id);
+        }
+        keepIds.add(id);
+
+        if (!existingAnchorIds.has(id)) {
+          const insertAt = findAnchorInsertLineIndex(lines, c.sourceStartLine);
+          const prefix = inferPrefixAt(lines, insertAt);
+          edits.push({ lineIndex: insertAt, insertText: `${prefix}^sprout-${id}` });
+          planInserted += 1;
+          existingAnchorIds.add(id);
+        }
+      }
+
+      const orphanIdxs = collectAnchorLineIndicesToDelete(lines, keepIds);
+      for (const idx of orphanIdxs) {
+        edits.push({ lineIndex: idx, deleteLine: true });
+        planRemoved += 1;
+      }
+
+      return { cards, edits, lines, keepIds, idsInserted: planInserted, anchorsRemoved: planRemoved, addedIds };
+    };
+
+    for (const file of mdFiles) {
+      let text = await vault.read(file);
+      let plan = buildFilePlan(file, text);
+      if (!plan.cards.length) continue;
+
+      if (plan.edits.length) {
+        const latestText = await vault.read(file);
+        if (latestText !== text) {
+          for (const id of plan.addedIds) usedIds.delete(id);
+          text = latestText;
+          plan = buildFilePlan(file, text);
+        }
+
+        if (plan.edits.length) {
+          const lines = plan.lines.slice();
+          applyEditsToLines(lines, plan.edits);
+          await vault.modify(file, lines.join("\n"));
+        }
+      }
+
+      idsInserted += plan.idsInserted;
+      anchorsRemoved += plan.anchorsRemoved;
+      parsedAll.push(...plan.cards);
+    }
+
+    for (const c of parsedAll) {
+      const id = String(c.id || c.assignedId || "");
+      if (!id) continue;
+
+      if (c.errors && c.errors.length) {
+        plugin.store.data.quarantine[id] = {
+          id,
+          notePath: c.sourceNotePath,
+          sourceStartLine: c.sourceStartLine,
+          reason: c.errors.join("; "),
+          lastSeenAt: now,
+        };
+        delete plugin.store.data.cards[id];
+
+        ensureStateIfMissing(plugin, id, now, 2.5);
+
+        quarantinedCount += 1;
+        quarantinedIds.push(id);
+        continue;
+      }
+
+      if (plugin.store.data.quarantine && plugin.store.data.quarantine[id]) delete plugin.store.data.quarantine[id];
+
+      const prev = plugin.store.data.cards[id];
+      const createdAt = prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0 ? Number(prev.createdAt) : now;
+
+      const record: CardRecord = {
+        id,
+        type: c.type,
+
+        title: c.title ?? null,
+
+        q: c.type === "basic" ? (c.q ?? null) : null,
+        a: c.type === "basic" ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
+
+        stem: c.type === "mcq" ? (c.stem ?? null) : null,
+        ...(c.type === "mcq"
+          ? (() => {
+              const { options, correctIndex } = mcqLegacyFromParsed(c);
+              return { options: options.length ? options : [], correctIndex };
+            })()
+          : {}),
+
+        clozeText: c.type === "cloze" ? (c.clozeText ?? null) : null,
+
+        ...(c.type === "io"
+          ? (() => {
+              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
+              return {
+                imageRef: imageRef ?? null,
+                occlusions: occlusions ?? null,
+                maskMode: maskMode ?? null,
+                prompt: c.prompt ?? null,
+              };
+            })()
+          : {}),
+
+        info: c.info ?? null,
+        groups: c.groups ?? null,
+
+        sourceNotePath: c.sourceNotePath,
+        sourceStartLine: c.sourceStartLine,
+
+        createdAt,
+        updatedAt: now,
+        lastSeenAt: now,
+      };
+
+      if (!prev) newCount += 1;
+      else if (cardSignature(prev) !== cardSignature(record)) updatedCount += 1;
+      else sameCount += 1;
+
+      plugin.store.upsertCard(record);
+
+      if (!hasState(plugin, id)) {
+        const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
+        if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
+      }
+
+      if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
+
+      if (c.type === "io") {
+        const imageRef = normalizeIoImageRef(record.imageRef);
+        if (imageRef) {
+          const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
+          if (!imageFile || !(imageFile instanceof TFile)) {
+            plugin.store.data.quarantine[id] = {
+              id,
+              notePath: c.sourceNotePath,
+              sourceStartLine: c.sourceStartLine,
+              reason: `Image file not found: ${imageRef}`,
+              lastSeenAt: now,
+            };
+            delete plugin.store.data.cards[id];
+
+            quarantinedCount += 1;
+            quarantinedIds.push(id);
+
+            ensureStateIfMissing(plugin, id, now, 2.5);
+          }
+        }
+      }
+    }
+
+    const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
+    const removedClozeParents: string[] = [];
+
+    for (const id of Object.keys(plugin.store.data.cards || {})) {
+      const card = plugin.store.data.cards[id];
+      if (!card) continue;
+
+      if (String(card.type) === "io-child" || String(card.type) === "cloze-child") continue;
+
+      if (card.lastSeenAt !== now) {
+        if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null });
+        if (String(card.type) === "cloze") removedClozeParents.push(String(id));
+
+        delete plugin.store.data.cards[id];
+        if (plugin.store.data.states) delete (plugin.store.data.states)[id];
+        removed += 1;
+      }
+    }
+
+    for (const ioData of removedIoParentData) {
+      removed += deleteIoChildren(plugin, ioData.id);
+      if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
+      const ioMap = plugin.store.data.io || {};
+      if (ioMap[ioData.id]) delete ioMap[ioData.id];
+    }
+
+    for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
+
+    for (const id of Object.keys(plugin.store.data.quarantine || {})) {
+      const q = plugin.store.data.quarantine[id];
+      if (q && q.lastSeenAt !== now) {
+        delete plugin.store.data.quarantine[id];
+        if (plugin.store.data.states) delete (plugin.store.data.states)[id];
+        removed += 1;
+      }
+    }
+
+    removed += deleteOrphanIoChildren(plugin);
+    removed += deleteOrphanClozeChildren(plugin);
+
+    const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
+    const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
+
+    const deletedImages = await deleteOrphanedIoImages(plugin);
+    if (deletedImages > 0) log.info(`Deleted ${deletedImages} orphaned IO image(s)`);
+
+    await plugin.store.persist();
+
+    return {
+      idsInserted,
+      anchorsRemoved,
+      newCount,
+      updatedCount,
+      sameCount,
+      quarantinedCount,
+      quarantinedIds,
+      removed,
+      tagsDeleted,
+    };
+  });
 }

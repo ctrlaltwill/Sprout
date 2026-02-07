@@ -10,9 +10,12 @@
  *   - smallToggleButton — create a compact +/− toggle button
  */
 
+import createDOMPurify from "dompurify";
 import { setIcon } from "obsidian";
 
 export type CssPropValue = string | number | null | undefined;
+
+const domPurify = createDOMPurify(window);
 
 function applyCssProp(el: HTMLElement, prop: string, value: CssPropValue): void {
   if (value === null || value === undefined) {
@@ -82,12 +85,15 @@ export function smallToggleButton(isOpen: boolean, onClick: () => void): HTMLBut
 }
 
 export function createFragmentFromHTML(html: string): DocumentFragment {
-  const frag = document.createDocumentFragment();
   const safeHtml = String(html ?? "");
-  if (!safeHtml) return frag;
+  if (!safeHtml) return document.createDocumentFragment();
 
+  const sanitized = domPurify.sanitize(safeHtml, { RETURN_DOM_FRAGMENT: true });
+  if (sanitized instanceof DocumentFragment) return sanitized;
+
+  const frag = document.createDocumentFragment();
   const parser = new DOMParser();
-  const doc = parser.parseFromString(safeHtml, "text/html");
+  const doc = parser.parseFromString(String(sanitized ?? ""), "text/html");
   const nodes = Array.from(doc.body.childNodes);
   for (const node of nodes) frag.appendChild(node);
   return frag;

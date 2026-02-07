@@ -8,8 +8,24 @@
  *   - generateUniqueId — generate a unique 9-digit numeric ID string not present in the given set
  */
 
+const ID_MIN = 100000000;
+const ID_RANGE = 900000000;
+const UINT32_MAX = 0xffffffff;
+const REJECTION_THRESHOLD = UINT32_MAX - (UINT32_MAX % ID_RANGE);
+
 function random9(): string {
-  return String(Math.floor(100000000 + Math.random() * 900000000));
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error("Secure random generator unavailable.");
+  }
+
+  const buffer = new Uint32Array(1);
+  let value = UINT32_MAX;
+  while (value >= REJECTION_THRESHOLD) {
+    cryptoObj.getRandomValues(buffer);
+    value = buffer[0];
+  }
+  return String(ID_MIN + (value % ID_RANGE));
 }
 
 export function generateUniqueId(usedSet: Set<string>): string {

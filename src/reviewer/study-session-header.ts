@@ -110,6 +110,14 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
     pauseBtn.disabled = true;
   };
 
+  const disposeTimer = () => {
+    if (timerState.timerInterval !== null) {
+      clearInterval(timerState.timerInterval);
+      timerState.timerInterval = null;
+    }
+    timerState.timerRunning = false;
+  };
+
   // Play button
   const playBtn = document.createElement("button");
   playBtn.type = "button";
@@ -150,6 +158,15 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
 
   // Start timer automatically
   startTimer();
+
+  // Dispose interval when header is removed from the DOM
+  const removalObserver = new MutationObserver(() => {
+    if (!studySessionHeader.isConnected) {
+      disposeTimer();
+      removalObserver.disconnect();
+    }
+  });
+  removalObserver.observe(document.body, { childList: true, subtree: true });
 
   // Append to container at the very beginning
   container.insertAdjacentElement("afterbegin", studySessionHeader);

@@ -1,7 +1,7 @@
 /**
  * @file src/anki/anki-sql.ts
  * @summary SQLite operations for Anki database files using sql.js (WASM).
- * Provides lazy sql.js initialisation (WASM loaded from CDN on first use),
+ * Provides lazy sql.js initialisation (bundled WASM, no CDN),
  * empty Anki DB creation with the full schema v11, insert/read helpers for
  * notes, cards, revlog, models, decks, and collection metadata.
  *
@@ -14,7 +14,9 @@
  *  - readModels / readDecks / readCollectionCrt — read collection metadata
  */
 
+import initSqlJs from "sql.js";
 import type { Database, SqlJsStatic, SqlValue } from "sql.js";
+import wasmBinary from "sql.js/dist/sql-wasm.wasm";
 import {
   ANKI_SCHEMA_VERSION,
   DEFAULT_DECK_ID,
@@ -30,74 +32,31 @@ import {
 
 // ── Lazy sql.js loader ────────────────────────────────────────────────────────
 
-const SQL_JS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/sql-wasm.js";
-const WASM_CDN   = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/sql-wasm.wasm";
-
 let _sqlJs: SqlJsStatic | null = null;
 let _sqlJsPromise: Promise<SqlJsStatic> | null = null;
 
 /**
- * Lazily initialise sql.js. Downloads both the JS and WASM from CDN on first
- * call — this avoids esbuild CJS bundling mangling the sql.js factory function.
- * Subsequent calls return the cached instance immediately.
+ * Lazily initialise sql.js. Uses the bundled sql.js package and embedded WASM
+ * binary (no CDN fetch). Subsequent calls return the cached instance.
  */
 export async function getSqlJs(): Promise<SqlJsStatic> {
   if (_sqlJs) return _sqlJs;
   if (_sqlJsPromise) return _sqlJsPromise;
 
   _sqlJsPromise = (async () => {
-    // Fetch both JS + WASM from CDN in parallel
-    const [jsResponse, wasmResponse] = await Promise.all([
-      fetch(SQL_JS_CDN),
-      fetch(WASM_CDN),
-    ]);
-    if (!jsResponse.ok) {
-      throw new Error(
-        `Failed to download sql.js JS (HTTP ${jsResponse.status}). ` +
-          `Check your internet connection.`,
-      );
-    }
-    if (!wasmResponse.ok) {
-      throw new Error(
-        `Failed to download sql.js WASM (HTTP ${wasmResponse.status}). ` +
-          `Check your internet connection.`,
-      );
-    }
+    const wasmArray = wasmBinary instanceof Uint8Array
+      ? wasmBinary
+      : new Uint8Array(wasmBinary as ArrayBuffer);
+    const wasmBuffer = (
+      wasmArray.byteOffset === 0 && wasmArray.byteLength === wasmArray.buffer.byteLength
+        ? wasmArray.buffer
+        : wasmArray.buffer.slice(
+          wasmArray.byteOffset,
+          wasmArray.byteOffset + wasmArray.byteLength,
+        )
+    ) as ArrayBuffer;
 
-    const [jsText, wasmBinary] = await Promise.all([
-      jsResponse.text(),
-      wasmResponse.arrayBuffer(),
-    ]);
-
-    // sql-wasm.js is a UMD bundle. In Electron, the global `module` exists,
-    // so the UMD takes the CJS path (`module.exports = factory()`).
-    // We pass a *fake* module/exports so the factory is captured into our
-    // object instead of the real Node/Electron module global.
-    // We also pass `define` as undefined to skip the AMD path.
-    type SqlJsFactory = (config?: { wasmBinary?: ArrayBuffer }) => Promise<SqlJsStatic>;
-    const fakeModule: { exports: unknown } = { exports: {} };
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    const runUmd = new Function(
-      "module",
-      "exports",
-      "define",
-      jsText,
-    ) as (module: { exports: unknown }, exports: unknown, define?: unknown) => void;
-    runUmd(fakeModule, fakeModule.exports, undefined);
-
-    const exported = fakeModule.exports;
-    const initSqlJs: SqlJsFactory | null =
-      typeof exported === "function"
-        ? (exported as SqlJsFactory)
-        : (exported && typeof (exported as { default?: unknown }).default === "function"
-            ? ((exported as { default: SqlJsFactory }).default)
-            : null);
-
-    if (!initSqlJs) {
-      throw new Error("sql.js CDN script did not expose initSqlJs — unexpected module format.");
-    }
-
-    _sqlJs = await initSqlJs({ wasmBinary });
+    _sqlJs = await initSqlJs({ wasmBinary: wasmBuffer });
     return _sqlJs;
   })().catch((err) => {
     // Reset so the next call retries instead of returning a stale rejected promise

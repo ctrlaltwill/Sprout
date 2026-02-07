@@ -645,7 +645,9 @@ export class SproutHeader {
     };
 
     const splitLeft = () => {
-      const newLeaf = this.deps.app.workspace.getLeaf("split", "vertical");
+      const newLeaf =
+        this.deps.app.workspace.createLeafBySplit?.(this.deps.leaf, "vertical", true) ??
+        this.deps.app.workspace.getLeaf("split", "vertical");
       void this.deps.app.workspace.revealLeaf(newLeaf);
     };
 
