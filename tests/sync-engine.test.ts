@@ -50,6 +50,17 @@ function makePlugin(vault: MemoryVault) {
 }
 
 describe("sync engine", () => {
+  const setCryptoSequence = (values: number[]) => {
+    const seq = [...values];
+    if (!globalThis.crypto?.getRandomValues) return;
+    vi.spyOn(globalThis.crypto, "getRandomValues").mockImplementation((array) => {
+      const arr = array as Uint32Array;
+      const v = seq.length ? seq.shift()! : 0;
+      arr[0] = v;
+      return array;
+    });
+  };
+
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -63,7 +74,7 @@ describe("sync engine", () => {
     const file = await vault.create("Notes/Test.md", "Q | What is 2+2? |\nA | 4 |");
     const plugin = makePlugin(vault);
 
-    vi.spyOn(Math, "random").mockReturnValue(0);
+    setCryptoSequence([0]);
 
     const res = await syncOneFile(plugin, file);
     const content = await vault.read(file);
@@ -81,7 +92,7 @@ describe("sync engine", () => {
     await vault.create("Notes/Two.md", "Q | Q2 |\nA | A2 |");
     const plugin = makePlugin(vault);
 
-    vi.spyOn(Math, "random").mockImplementationOnce(() => 0.2);
+    setCryptoSequence([180000000]);
 
     const res = await syncQuestionBank(plugin);
     const fileTwo = vault.getAbstractFileByPath("Notes/Two.md") as TFile;
