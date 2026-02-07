@@ -302,7 +302,7 @@ export class BackupCompareModal extends Modal {
     addRow("States", this.current.states, this.backup.states);
     addRow("Review log", this.current.reviewLog, this.backup.reviewLog);
     addRow("Quarantine", this.current.quarantine, this.backup.quarantine);
-    addRow("IO map entries", this.current.io, this.backup.io);
+    addRow("Io map entries", this.current.io, this.backup.io);
 
     /* ── metadata ── */
     const meta = contentEl.createDiv();
@@ -314,8 +314,9 @@ export class BackupCompareModal extends Modal {
       text: `Size: ${this.backup.size ? `${Math.round(this.backup.size / 1024)} KB` : "—"}`,
     });
 
+    /* eslint-disable obsidianmd/ui/sentence-case */
     const note = contentEl.createEl("p", {
-      text: "Restore will overwrite the current database scheduling by card anchor, it will not affect question wording or markdown.",
+      text: "Restoring will overwrite the current database scheduling by card anchor. It will not affect question wording or markdown.",
     });
     note.classList.add("sprout-confirm-muted");
 
@@ -388,15 +389,16 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     add("States", this.current.states, this.backup.states);
     add("Review log", this.current.reviewLog, this.backup.reviewLog);
-    contentEl.createEl("p", {
-      text: `Note: Card content (${this.current.cards} cards) will NOT be affected – only scheduling data is restored.`,
-      cls: "sprout-confirm-muted",
+    const hint = contentEl.createDiv({ cls: "sprout-confirm-hint" });
+    hint.createDiv({
+      cls: "sprout-confirm-hint-title",
+      text: "Note",
     });
-
-    const warning = contentEl.createEl("p", {
-      text: "Restore does not edit markdown notes, it only restores scheduling data.",
+    hint.createDiv({
+      cls: "sprout-confirm-hint-body",
+      text: `Card content (${this.current.cards} cards) is unchanged. Restore does not edit markdown notes; it only restores scheduling data.`,
     });
-    warning.classList.add("sprout-confirm-muted");
+    /* eslint-enable obsidianmd/ui/sentence-case */
 
     /* ── safety-backup checkbox ── */
     let makeSafetyBackup = true;

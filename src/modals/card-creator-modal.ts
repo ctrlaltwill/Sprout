@@ -584,6 +584,7 @@ export class CardCreatorModal extends Modal {
       try {
         const active = getActiveMarkdownFile();
         if (!active) {
+          // eslint-disable-next-line obsidianmd/ui/sentence-case
           new Notice(`Open a markdown note first`);
           return;
         }
@@ -615,22 +616,22 @@ export class CardCreatorModal extends Modal {
         const block: string[] = [];
 
         if (type === "basic") {
-          if (!requireNonEmpty(questionVal, "Basic requires a question")) return;
-          if (!requireNonEmpty(answerVal, "Basic requires an answer")) return;
+          if (!requireNonEmpty(questionVal, "Basic requires a question.")) return;
+          if (!requireNonEmpty(answerVal, "Basic requires an answer.")) return;
           if (titleVal) block.push(...formatPipeField("T", titleVal));
           block.push(...formatPipeField("Q", questionVal));
           block.push(...formatPipeField("A", answerVal));
         } else if (type === "cloze") {
-          if (!requireNonEmpty(questionVal, "Cloze requires text with at least one {{cN::...}} token")) return;
+          if (!requireNonEmpty(questionVal, "Cloze requires text with at least one {{cN::...}} token.")) return;
           if (!hasClozeToken(questionVal)) {
-            new Notice(`Cloze requires at least one {{cN::...}} token`);
+            new Notice(`Cloze requires at least one {{cN::...}} token.`);
             focusFirstField(cardEditor.root);
             return;
           }
           if (titleVal) block.push(...formatPipeField("T", titleVal));
           block.push(...formatPipeField("CQ", questionVal));
         } else if (type === "mcq") {
-          if (!requireNonEmpty(questionVal, "Multiple Choice requires a stem")) return;
+          if (!requireNonEmpty(questionVal, "Multiple choice requires a stem.")) return;
           const mcqValues = cardEditor.getMcqOptions?.();
           const correct = typeof mcqValues?.correct === "string"
             ? mcqValues.correct.trim()

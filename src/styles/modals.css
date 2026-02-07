@@ -9,6 +9,10 @@
   background-color: rgba(0, 0, 0, 0.85) !important;
   backdrop-filter: none !important;
 }
+.sprout .modal-container.mod-dim .modal-bg {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: none !important;
+}
 .sprout-modal-dim .modal-bg {
   background-color: rgba(0, 0, 0, 0.85) !important;
   backdrop-filter: none !important;
@@ -30,9 +34,31 @@
   max-height: min(80vh, 720px);
 }
 
+.sprout .modal-container .modal {
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  overflow: hidden;
+  height: auto !important;
+  max-width: min(560px, 92vw);
+  max-height: min(80vh, 720px);
+  position: relative;
+}
+
 /* ---- Header + content spacing ---- */
 
 .sprout .sprout-modals.modal .modal-header {
+  padding: 0 20px 0;
+  border-bottom: none;
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sprout .modal-container .modal-header {
   padding: 0 20px 0;
   border-bottom: none;
   background: var(--background);
@@ -49,6 +75,26 @@
   border-radius: 0 !important;
   overflow-y: auto;
   overflow-x: hidden;
+  text-align: left;
+}
+
+.sprout .modal-container .modal-content {
+  padding: 16px 20px 20px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  text-align: left;
+}
+
+.sprout .modal-container .modal-title,
+.sprout .modal-container h1,
+.sprout .modal-container h2,
+.sprout .modal-container h3,
+.sprout .modal-container p {
+  text-align: left !important;
 }
 
 /* ---- Modal inputs & dropdowns: match browser 36px sizing ---- */
@@ -651,6 +697,31 @@
   cursor: pointer;
 }
 
+.sprout .modal-container .modal-close-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sprout .modal-container .modal-close-button:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .sprout .modal-container .modal-close-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
 .sprout .sprout-modals.modal .modal-close-button:hover {
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.08);
@@ -821,12 +892,14 @@
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  justify-content: flex-end;
 }
 
 .sprout-confirm-row-lg {
   display: flex;
   gap: 8px;
   margin-top: 14px;
+  justify-content: flex-end;
 }
 
 .sprout-btn-danger {
@@ -862,6 +935,8 @@
 .sprout-confirm-muted {
   margin-top: 10px;
   color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .sprout-confirm-summary {
@@ -869,6 +944,13 @@
   padding: 10px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
+  background: var(--background-secondary, var(--background));
+  font-size: 12px;
+  color: var(--text-normal);
+}
+
+.sprout-confirm-summary > div + div {
+  margin-top: 4px;
 }
 
 .sprout-confirm-check-row {
@@ -876,6 +958,41 @@
   align-items: center;
   gap: 8px;
   margin-top: 10px;
+  color: var(--text-normal);
+  font-size: 12px;
+}
+
+.sprout-confirm-hint {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-modifier-message);
+}
+
+.sprout-confirm-hint-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-normal);
+  font-size: 12px;
+}
+
+.sprout-confirm-hint-body {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sprout .modal-container .setting-item-heading {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 8px;
+}
+
+.sprout .modal-container .modal-content p {
+  margin: 8px 0;
+  line-height: 1.5;
+  color: var(--text-normal);
 }
 
 /* ---- IO Editor Modal (moved from inline <style> in image-mask-renderer.ts) ---- */

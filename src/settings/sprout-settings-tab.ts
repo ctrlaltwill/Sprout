@@ -178,7 +178,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       createInfo.createDiv({ cls: "setting-item-name", text: "Create backup" });
       createInfo.createDiv({
         cls: "setting-item-description",
-        text: "Save a snapshot of your scheduling data (due dates, intervals, review history). Use this to recover if scheduling data is corrupted or lost during an update. Backups are created automatically every 15 minutes.",
+        text: "Save a snapshot of your scheduling data (due dates, intervals, review history). Use this to recover if scheduling data is corrupted or lost during an update. Backups are created automatically every 15 minutes and capped at 5 to save disk space.",
       });
       const createControl = createItem.createDiv({ cls: "setting-item-control" });
       const btnCreate = createControl.createEl("button", { text: "Create backup now" });
@@ -516,7 +516,6 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // General
     // ----------------------------
-    new Setting(wrapper).setName("General").setHeading();
 
     new Setting(wrapper)
       .setName("User name")

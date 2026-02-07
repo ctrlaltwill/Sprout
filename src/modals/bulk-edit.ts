@@ -10,6 +10,7 @@ import { Notice, setIcon } from "obsidian";
 import { log } from "../core/logger";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import { setCssProps } from "../core/ui";
 import {
   buildAnswerOrOptionsFor,
   escapePipes,
@@ -80,7 +81,7 @@ export function openBulkEditModalForCards(
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-bg";
-  backdrop.style.opacity = "0.85";
+  setCssProps(backdrop, "opacity", "0.85");
   container.appendChild(backdrop);
 
   // ── Panel container ─────────────────────────────────────────────────────

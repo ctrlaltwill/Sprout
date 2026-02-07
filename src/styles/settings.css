@@ -5,13 +5,22 @@
 
 /* ---- Settings headings — remove double border between first heading and User details ---- */
 
+.sprout-settings .setting-item-heading {
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
 .sprout-settings .setting-item-heading:first-child {
   border-bottom: none;
 }
 
 .sprout-settings .setting-item-heading:first-child + .setting-item-heading {
-  border-top: none;
+  border-top: none !important;
   padding-top: 0;
+}
+
+.sprout-settings .setting-item:last-child {
+  border-bottom: none;
 }
 
 /* ---- Backup section layout ---- */
@@ -44,7 +53,7 @@
   border-radius: 6px;
   overflow-x: auto;
   overflow-y: hidden;
-  background: var(--background);
+  background: var(--background-secondary, var(--background));
   width: 100%;
 }
 
@@ -57,16 +66,17 @@
   border: none;
   border-radius: 0;
   overflow: visible;
-  background: var(--background);
+  background: transparent;
 }
 
 .sprout-backup-table thead tr {
-  background: var(--background);
+  background: var(--background-secondary, var(--background));
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .sprout-backup-table tbody tr {
-  background: var(--background);
+  background: transparent;
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .sprout-backup-table tbody {
@@ -80,7 +90,9 @@
 .sprout-backup-cell {
   padding: 8px 10px;
   border: none;
-  vertical-align: top;
+  vertical-align: middle;
+  text-align: left;
+  font-size: 11.5px;
 }
 
 .sprout-backup-table tbody td {
@@ -111,9 +123,9 @@
 
 /* Header cells */
 .sprout-backup-table th {
-  color: var(--text-color);
+  color: var(--text-muted);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   text-align: left;
@@ -123,7 +135,7 @@
 .sprout-backup-table td,
 .sprout-backup-cell {
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 11.5px;
 }
 
 /* Label cells (first column — Backup name) */
@@ -145,31 +157,6 @@
   word-break: break-word;
 }
 
-/* ---- Row hover (matches changelog table) ---- */
-
-.sprout .sprout-backup-table tbody tr:hover,
-.sprout-settings .sprout-backup-table tbody tr:hover {
-  background-color: var(--color-background) !important;
-}
-
-.sprout .sprout-backup-table tbody tr:hover td,
-.sprout-settings .sprout-backup-table tbody tr:hover td {
-  background-color: var(--color-background) !important;
-  border-color: var(--background-modifier-border) !important;
-}
-
-.sprout .sprout-backup-table tbody tr:hover td:first-child,
-.sprout-settings .sprout-backup-table tbody tr:hover td:first-child {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-
-.sprout .sprout-backup-table tbody tr:hover td:last-child,
-.sprout-settings .sprout-backup-table tbody tr:hover td:last-child {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
 /* ---- Backup row action buttons ---- */
 
 .sprout-backup-actions {
@@ -182,11 +169,51 @@
 .sprout .sprout-settings-icon-btn,
 .sprout-settings .sprout-settings-icon-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
   box-shadow: none;
   outline: none;
   padding: 0 !important;
   cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-normal);
+}
+
+.sprout .sprout-settings-icon-btn svg,
+.sprout-settings .sprout-settings-icon-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  min-height: 16px;
+  display: block;
+  stroke: currentColor;
+  fill: none;
+  pointer-events: none;
+}
+
+.sprout .sprout-settings-icon-btn .svg-icon,
+.sprout-settings .sprout-settings-icon-btn .svg-icon {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  min-height: 16px;
+  display: block;
+}
+
+.sprout .sprout-settings-icon-btn:hover,
+.sprout-settings .sprout-settings-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .sprout .sprout-settings-icon-btn:hover,
+.theme-dark .sprout-settings .sprout-settings-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.10);
 }
 
 .sprout .sprout-settings-icon-btn--danger,
@@ -229,6 +256,7 @@
   color: var(--text-muted);
   padding: 14px;
   font-size: 13px;
+  text-align: center;
 }
 
 /* ---- Utility: opacity flicker for repaint ---- */

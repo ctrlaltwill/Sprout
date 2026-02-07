@@ -1,9 +1,9 @@
-import eslint from "@eslint/js";
-import regexp from "eslint-plugin-regexp";
-import tseslint from "typescript-eslint";
+import tsparser from "@typescript-eslint/parser";
+import { defineConfig } from "eslint/config";
+import obsidianmd from "eslint-plugin-obsidianmd";
+import globals from "globals";
 
-export default tseslint.config(
-  // ── Global ignores ──────────────────────────────────────────────
+export default defineConfig([
   {
     ignores: [
       "dist/**",
@@ -15,79 +15,26 @@ export default tseslint.config(
       "src/tailwind.config.js",
     ],
   },
-
-  // ── Base JS recommended rules ───────────────────────────────────
-  eslint.configs.recommended,
-
-  // ── TypeScript recommended (type-aware) ─────────────────────────
-  ...tseslint.configs.recommendedTypeChecked,
-
-  // ── TypeScript project settings ─────────────────────────────────
   {
     languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
       },
     },
   },
-
-  // ── Custom rules ────────────────────────────────────────────────
+  ...obsidianmd.configs.recommended,
   {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
-    plugins: {
-      regexp,
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     rules: {
-      // ── Unused variables ──────────────────────────────────────
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-        },
-      ],
-
-      // ── Flag `as any` and explicit `any` ──────────────────────
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
-      "@typescript-eslint/no-unsafe-call": "warn",
-      "@typescript-eslint/no-unsafe-return": "warn",
-      "@typescript-eslint/no-unsafe-argument": "warn",
-
-      // ── Consistency ───────────────────────────────────────────
-      "@typescript-eslint/consistent-type-imports": [
-        "warn",
-        { prefer: "type-imports", fixStyle: "inline-type-imports" },
-      ],
-      "@typescript-eslint/no-import-type-side-effects": "warn",
-      "no-console": ["warn", { allow: ["warn", "error"] }],
-
-      // ── Async safety ──────────────────────────────────────────
-      "@typescript-eslint/no-floating-promises": "error",
-      "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/require-await": "warn",
-
-      // ── Relax rules that are too noisy for an existing codebase
-      "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-redundant-type-constituents": "off",
-
-      // ── UI text sentence-case enforcement ─────────────────────
-      "no-restricted-syntax": [
-        "warn",
-        {
-          selector:
-            "CallExpression[callee.property.name=/^(setName|setDesc|setText)$/] > Literal[value=/^[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+$/]",
-          message: "Use sentence case for UI text",
-        },
-        {
-          selector:
-            "NewExpression[callee.name='Notice'] > Literal[value=/^[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+$/]",
-          message: "Use sentence case for UI text",
-        },
-      ],
+      "no-undef": "off",
     },
   },
-);
+]);

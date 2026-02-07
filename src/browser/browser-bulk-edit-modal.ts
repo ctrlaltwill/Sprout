@@ -14,6 +14,7 @@
 import { Notice, Platform, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import type { ColKey } from "./browser-helpers";
 import {
@@ -53,7 +54,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-bg";
-  backdrop.style.opacity = "0.85";
+  setCssProps(backdrop, "opacity", "0.85");
   container.appendChild(backdrop);
 
   const panel = document.createElement("div");
