@@ -1,4 +1,4 @@
-# Settings
+## Overview
 
 Open **Settings → Community plugins → Sprout** to configure the plugin.
 

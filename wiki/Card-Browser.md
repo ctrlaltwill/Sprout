@@ -1,4 +1,4 @@
-# Card Browser
+## Overview
 
 The Card Browser is a searchable, sortable table of every flashcard in your vault. Open it from the **Flashcards** leaf in the sidebar.
 

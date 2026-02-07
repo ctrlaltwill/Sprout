@@ -1,6 +1,10 @@
-# Writing Cards
+## Overview
 
-Cards are written as pipe-delimited lines (or multiple lines) in any Markdown note. Each line starts and ends with a pipe `|`.
+You can use the built-in flashcard creation forms instead of writing Markdown by hand (see below). If you want to write cards in Markdown, use pipe-delimited lines (or multiple lines) in any Markdown note. Each line starts and ends with a pipe `|`.
+
+## Creating cards from the context menu
+
+You don't have to write the pipe syntax by hand. **Right-click** in any note (or use the command palette) and choose one of the **Add flashcard** options to open a modal where you can fill in the fields. Sprout will insert the formatted card block into your note automatically.
 
 ## Fields
 
@@ -8,10 +12,10 @@ Cards are written as pipe-delimited lines (or multiple lines) in any Markdown no
 |-------|---------|----------|
 | `T` | Title | Optional |
 | `Q` | Question | Required for basic |
-| `A` | Answer | Required for basic & MCQ |
+| `A` | Answer | Required for basic & MCQ (for the correct answer option) |
 | `CQ` | Cloze question | Required for cloze |
 | `MCQ` | MCQ question stem | Required for MCQ |
-| `O` | MCQ option | Required for MCQ (repeat for each option) |
+| `O` | MCQ option | One is required for an MCQ (repeat for each incorrect option) |
 | `I` | Extra info | Optional |
 | `G` | Groups/tags | Optional |
 
@@ -35,6 +39,8 @@ CQ | The capital of France is {{c1::Paris}} |
 I | Extra info |
 G | Geography |
 ```
+
+In the input fields or the note these can be created using keyboard shortcuts.
 
 ## MCQ card
 
@@ -106,16 +112,6 @@ Sprout supports standard Obsidian inline markdown in all card fields (question, 
 | `==text==` | Highlight | Cmd+Shift+H (Ctrl+Shift+H) |
 
 > **Note:** `_text_` is italic in Obsidian — it does **not** produce underline. If you need underline, subscript, or superscript, use raw HTML tags (`<u>`, `<sub>`, `<sup>`) which Obsidian renders natively.
-
-### Anki import/export
-
-When **exporting** to Anki, markdown formatting is converted to the corresponding HTML tags (`<b>`, `<i>`, `<s>`, `<mark>`).
-
-When **importing** from Anki, HTML formatting tags are converted to Obsidian markdown. Tags without a native Obsidian syntax (`<u>`, `<sub>`, `<sup>`) are kept as raw HTML so they still render correctly. If a field already contains raw markdown (e.g. `**bold**` without `<b>` tags), it is imported as-is.
-
-## Creating cards from the context menu
-
-You don't have to write the pipe syntax by hand. Right-click in any note (or use the command palette) and choose one of the **Add flashcard** options to open a modal where you can fill in the fields. Sprout will insert the formatted card block into your note automatically.
 
 ## Editing cards later
 

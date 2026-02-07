@@ -1,4 +1,4 @@
-# Image Occlusion
+## Overview
 
 Image Occlusion lets you create flashcards by masking regions of an image. During review you see the image with masks — recall what's hidden, then reveal.
 

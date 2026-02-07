@@ -1,4 +1,4 @@
-# Keyboard Shortcuts
+## Overview
 
 ## Cloze creation (Cloze modal)
 

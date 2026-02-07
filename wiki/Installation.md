@@ -1,4 +1,4 @@
-# Installation
+## Overview
 
 ## Option 1 — Download a release
 

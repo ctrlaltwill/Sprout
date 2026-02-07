@@ -1,6 +1,6 @@
 # Study Sessions
 
-## Starting a session
+## Overview
 
 There are several ways to start studying:
 
