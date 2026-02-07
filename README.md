@@ -2,6 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/ctrlaltwill/Sprout?display_name=tag)](https://github.com/ctrlaltwill/Sprout/releases)
 [![License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/blob/main/LICENSE)
+![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/Sprout)
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
 
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
@@ -12,7 +13,7 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 ## Key features
 
-- FSRS-based scheduler for optimised spaced repitition 
+- FSRS-based scheduler for optimised spaced repetition 
 - Card types: cloze, basic, multiple choice, and image occlusion
 - Anki import/export _(experimental)_ with scheduling data and media support
 - Analytics dashboard with charts and heatmaps
