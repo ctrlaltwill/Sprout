@@ -15,7 +15,13 @@ import { setIcon } from "obsidian";
 
 export type CssPropValue = string | number | null | undefined;
 
-const domPurify = createDOMPurify(window);
+const hasDom = typeof window !== "undefined" && typeof document !== "undefined";
+let domPurify: ReturnType<typeof createDOMPurify> | null = hasDom ? createDOMPurify(window) : null;
+
+function getDomPurify() {
+  if (!domPurify && hasDom) domPurify = createDOMPurify(window);
+  return domPurify;
+}
 
 function applyCssProp(el: HTMLElement, prop: string, value: CssPropValue): void {
   if (value === null || value === undefined) {
@@ -86,9 +92,14 @@ export function smallToggleButton(isOpen: boolean, onClick: () => void): HTMLBut
 
 export function createFragmentFromHTML(html: string): DocumentFragment {
   const safeHtml = String(html ?? "");
-  if (!safeHtml) return document.createDocumentFragment();
+  if (!safeHtml) return hasDom ? document.createDocumentFragment() : ({} as DocumentFragment);
 
-  const sanitized = domPurify.sanitize(safeHtml, { RETURN_DOM_FRAGMENT: true });
+  if (!hasDom) return {} as DocumentFragment;
+
+  const sanitizer = getDomPurify();
+  if (!sanitizer) return document.createDocumentFragment();
+
+  const sanitized = sanitizer.sanitize(safeHtml, { RETURN_DOM_FRAGMENT: true });
   if (sanitized instanceof DocumentFragment) return sanitized;
 
   const frag = document.createDocumentFragment();

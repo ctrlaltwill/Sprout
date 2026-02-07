@@ -2,20 +2,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TFile } from "obsidian";
 import type { AnkiNoteRow, AnkiCardRow, AnkiModel, AnkiDeck } from "../src/anki/anki-constants";
 
-let mockNotes: AnkiNoteRow[] = [];
-let mockCards: AnkiCardRow[] = [];
-let mockModels = new Map<number, AnkiModel>();
-let mockDecks = new Map<number, AnkiDeck>();
-
-const insertCollection = vi.fn();
-const insertNote = vi.fn();
-const insertCard = vi.fn();
-const insertRevlogEntry = vi.fn();
-
-const fakeDb = {
-  export: () => new Uint8Array([1, 2, 3]),
-  close: vi.fn(),
-};
+const ankiSqlMock = vi.hoisted(() => ({
+  mockNotes: [] as AnkiNoteRow[],
+  mockCards: [] as AnkiCardRow[],
+  mockModels: new Map<number, AnkiModel>(),
+  mockDecks: new Map<number, AnkiDeck>(),
+  insertCollection: vi.fn(),
+  insertNote: vi.fn(),
+  insertCard: vi.fn(),
+  insertRevlogEntry: vi.fn(),
+  fakeDb: {
+    export: () => new Uint8Array([1, 2, 3]),
+    close: vi.fn(),
+  },
+}));
 
 vi.mock("../src/anki/anki-sql", () => {
   return {
@@ -25,16 +25,16 @@ vi.mock("../src/anki/anki-sql", () => {
         close() {}
       },
     })),
-    readNotes: vi.fn(() => mockNotes),
-    readCards: vi.fn(() => mockCards),
-    readModels: vi.fn(() => mockModels),
-    readDecks: vi.fn(() => mockDecks),
+    readNotes: vi.fn(() => ankiSqlMock.mockNotes),
+    readCards: vi.fn(() => ankiSqlMock.mockCards),
+    readModels: vi.fn(() => ankiSqlMock.mockModels),
+    readDecks: vi.fn(() => ankiSqlMock.mockDecks),
     readCollectionCrt: vi.fn(() => 1700000000),
-    createEmptyAnkiDb: vi.fn(async () => fakeDb),
-    insertCollection,
-    insertNote,
-    insertCard,
-    insertRevlogEntry,
+    createEmptyAnkiDb: vi.fn(async () => ankiSqlMock.fakeDb),
+    insertCollection: ankiSqlMock.insertCollection,
+    insertNote: ankiSqlMock.insertNote,
+    insertCard: ankiSqlMock.insertCard,
+    insertRevlogEntry: ankiSqlMock.insertRevlogEntry,
   };
 });
 
@@ -119,18 +119,18 @@ function makePlugin(vault: MemoryVault) {
 
 describe("anki import/export pipelines", () => {
   beforeEach(() => {
-    mockNotes = [];
-    mockCards = [];
-    mockModels = new Map<number, AnkiModel>();
-    mockDecks = new Map<number, AnkiDeck>();
-    insertCollection.mockClear();
-    insertNote.mockClear();
-    insertCard.mockClear();
-    insertRevlogEntry.mockClear();
+    ankiSqlMock.mockNotes = [];
+    ankiSqlMock.mockCards = [];
+    ankiSqlMock.mockModels = new Map<number, AnkiModel>();
+    ankiSqlMock.mockDecks = new Map<number, AnkiDeck>();
+    ankiSqlMock.insertCollection.mockClear();
+    ankiSqlMock.insertNote.mockClear();
+    ankiSqlMock.insertCard.mockClear();
+    ankiSqlMock.insertRevlogEntry.mockClear();
   });
 
   it("imports a basic note into markdown", async () => {
-    mockNotes = [
+    ankiSqlMock.mockNotes = [
       {
         id: 10,
         guid: "g",
@@ -146,7 +146,7 @@ describe("anki import/export pipelines", () => {
       },
     ];
 
-    mockCards = [
+    ankiSqlMock.mockCards = [
       {
         id: 20,
         nid: 10,
@@ -169,7 +169,7 @@ describe("anki import/export pipelines", () => {
       },
     ];
 
-    mockModels.set(1, {
+    ankiSqlMock.mockModels.set(1, {
       id: 1,
       name: "Basic",
       type: 0,
@@ -190,7 +190,7 @@ describe("anki import/export pipelines", () => {
       vers: [],
     });
 
-    mockDecks.set(DEFAULT_DECK_ID, {
+    ankiSqlMock.mockDecks.set(DEFAULT_DECK_ID, {
       id: DEFAULT_DECK_ID,
       name: "Deck::Sub",
       mod: 0,
