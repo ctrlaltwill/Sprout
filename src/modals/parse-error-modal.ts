@@ -40,12 +40,17 @@ export class ParseErrorModal extends Modal {
     setModalTitle(this, `${BRAND}: parse errors`);
 
     this.containerEl.addClass("sprout-modal-container");
+    this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
     this.modalEl.addClass("bc", "sprout-modals");
     this.contentEl.addClass("bc");
 
+    // Escape key closes modal
+    this.scope.register([], "Escape", () => { this.close(); return false; });
+
     const { contentEl } = this;
     contentEl.empty();
+
 
     const root = contentEl.createDiv({ cls: "bc flex flex-col gap-4" });
 
@@ -106,14 +111,20 @@ export class ParseErrorModal extends Modal {
       }
     }
 
-    const footer = root.createDiv({ cls: "bc flex justify-end" });
-    const closeBtn = footer.createEl("button", { text: "Close", cls: "bc btn-outline" });
-    closeBtn.type = "button";
+    const footer = root.createDiv({ cls: "bc flex items-center justify-end gap-4 sprout-modal-footer" });
+    const closeBtn = footer.createEl("button", {
+      cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
+      attr: { type: "button", "data-tooltip": "Close this dialog" },
+    });
+    const closeBtnIcon = closeBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    setIcon(closeBtnIcon, "x");
+    closeBtn.createSpan({ text: "Close" });
     closeBtn.onclick = () => this.close();
   }
 
   onClose() {
     this.containerEl.removeClass("sprout-modal-container");
+    this.containerEl.removeClass("sprout-modal-dim");
     this.modalEl.removeClass("bc", "sprout-modals");
     this.contentEl.removeClass("bc");
     this.contentEl.empty();

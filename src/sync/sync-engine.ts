@@ -15,6 +15,7 @@ import type SproutPlugin from "../main";
 import type { CardRecord } from "../types/card";
 import type { CardState } from "../types/scheduler";
 import { loadSchedulingFromDataJson } from "../core/store";
+import { expandGroupPrefixes, normaliseGroupPath } from "../indexes/group-index";
 import { log } from "../core/logger";
 
 import {
@@ -39,6 +40,7 @@ type SyncNoticeCounts = {
   sameCount?: number;
   idsInserted?: number;
   removed?: number;
+  tagsDeleted?: number;
 };
 
 /** Options controlling which parts of the notice are shown. */
@@ -600,6 +602,28 @@ function deleteOrphanClozeChildren(plugin: SproutPlugin): number {
   return removed;
 }
 
+/** Collects all normalised group keys (including prefixes) across cards. */
+function collectGroupKeys(cards: Record<string, CardRecord> | null | undefined): Set<string> {
+  const out = new Set<string>();
+  for (const card of Object.values(cards || {})) {
+    if (!card) continue;
+    const groups = Array.isArray(card.groups) ? card.groups : [];
+    for (const raw of groups) {
+      const norm = normaliseGroupPath(raw);
+      if (!norm) continue;
+      for (const k of expandGroupPrefixes(norm)) out.add(k);
+    }
+  }
+  return out;
+}
+
+/** Returns the number of group keys removed between two snapshots. */
+function countRemovedGroups(before: Set<string>, after: Set<string>): number {
+  let removed = 0;
+  for (const k of before) if (!after.has(k)) removed += 1;
+  return removed;
+}
+
 /**
  * Deletes orphaned IO images from the vault.
  * An image is orphaned if it matches `sprout-io-*` but no IO card references it.
@@ -840,6 +864,8 @@ function inferIoIdFromCard(c: ParsedCard): string | null {
 export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
   const vault = plugin.app.vault;
   const now = Date.now();
+
+  const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
 
   // Routine backups are throttled + capped; manual backups live in Settings → Backups.
   await ensureRoutineBackupIfNeeded(plugin);
@@ -1087,6 +1113,9 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
   removed += deleteOrphanIoChildren(plugin);
   removed += deleteOrphanClozeChildren(plugin);
 
+  const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
+  const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
+
   await plugin.store.persist();
 
   return {
@@ -1098,6 +1127,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     quarantinedCount,
     quarantinedIds,
     removed,
+    tagsDeleted,
   };
 }
 
@@ -1112,6 +1142,8 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
  */
 export async function syncQuestionBank(plugin: SproutPlugin) {
   const now = Date.now();
+
+  const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
 
   // NOTE: Backups are no longer created automatically here. Use Settings → Backups.
 
@@ -1356,6 +1388,9 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
   removed += deleteOrphanIoChildren(plugin);
   removed += deleteOrphanClozeChildren(plugin);
 
+  const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
+  const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
+
   const deletedImages = await deleteOrphanedIoImages(plugin);
   if (deletedImages > 0) log.info(`Deleted ${deletedImages} orphaned IO image(s)`);
 
@@ -1370,5 +1405,6 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     quarantinedCount,
     quarantinedIds,
     removed,
+    tagsDeleted,
   };
 }

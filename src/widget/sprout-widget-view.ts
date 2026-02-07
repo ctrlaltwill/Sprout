@@ -17,7 +17,7 @@ import type SproutPlugin from "../main";
 
 import type { Session, UndoFrame, ReviewMeta } from "./widget-helpers";
 import type { CardRecord } from "../types/card";
-import { filterReviewableCards, isClozeLike } from "./widget-helpers";
+import { filterReviewableCards, getWidgetMcqDisplayOrder, isClozeLike } from "./widget-helpers";
 import { getCardsInActiveScope } from "./widget-scope";
 import {
   gradeCurrentRating as _gradeCurrentRating,
@@ -388,6 +388,10 @@ export class SproutWidgetView extends ItemView {
 
     if (ev.key === "Enter" || ev.key === " " || ev.code === "Space" || ev.key === "ArrowRight") {
       ev.preventDefault();
+      if (card.type === "mcq") {
+        if (graded) void this.nextCard();
+        return;
+      }
       if (card.type === "basic" || isClozeLike(card) || ioLike) {
         if (!this.showAnswer) {
           this.showAnswer = true;
@@ -403,6 +407,17 @@ export class SproutWidgetView extends ItemView {
 
     if (ev.key === "1" || ev.key === "2" || ev.key === "3" || ev.key === "4") {
       ev.preventDefault();
+      if (card.type === "mcq") {
+        const options = Array.isArray(card.options) ? card.options : [];
+        const displayIdx = Number(ev.key) - 1;
+        if (displayIdx < 0 || displayIdx >= options.length) return;
+
+        const randomize = !!(this.plugin.settings.reviewer?.randomizeMcqOptions);
+        const order = getWidgetMcqDisplayOrder(this.session, card, randomize);
+        const origIdx = order[displayIdx];
+        if (Number.isInteger(origIdx)) void this.answerMcq(origIdx);
+        return;
+      }
       if (isPractice) return;
 
       if (card.type === "basic" || isClozeLike(card) || ioLike) {

@@ -47,16 +47,15 @@
 
 .sprout-collapsible {
   overflow: hidden;
-  transition: max-height 0.22s ease, padding 0.22s ease;
 }
 
 .sprout-collapsible.collapsed {
-  max-height: 0;
+  max-height: 0 !important;
   padding-top: 0;
 }
 
 .sprout-collapsible.expanded {
-  max-height: 2000px;
+  max-height: none;
 }
 
 .sprout-options-list {
@@ -87,40 +86,70 @@ mjx-container[jax="CHTML"][display="true"] {
   margin: 0.5em 1em;
 }
 
-/* ---- Masonry grid wrapper ---- */
+/* ---- FOUC prevention: hide unprocessed card elements ---- */
 
-.sprout-masonry-grid-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-start;
-  margin: 20px 0;
-  width: 100%;
-  box-sizing: border-box;
-  break-inside: avoid;
-  page-break-inside: avoid;
+/*
+ * Hide raw card .el-p elements that are direct siblings of processed
+ * sprout cards and haven't been processed themselves. These are the
+ * duplicate text fragments Obsidian creates from multi-line card blocks.
+ *
+ * We only hide elements explicitly marked by the JS processor
+ * (data-sprout-hidden="true") so normal note content is never affected,
+ * even when Obsidian recycles DOM sections during scroll.
+ */
+.markdown-preview-section > [data-sprout-hidden="true"] {
+  display: none !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Already-processed cards are always visible */
+.markdown-preview-section > .el-p[data-sprout-processed] {
+  opacity: 1;
+  max-height: none;
+}
+
+/* ---- CSS multi-column masonry layout on preview sections ---- */
+
+/*
+ * True masonry card layout using CSS multi-column.
+ * Cards flow top-to-bottom within each column, so shorter cards
+ * pack tightly without row-height gaps (unlike CSS Grid).
+ *
+ * Non-card siblings use `column-span: all` so headings, lists,
+ * and other content stay full-width and create natural column
+ * break-points between card groups.
+ */
+.markdown-preview-section:has(.sprout-pretty-card) {
+  column-width: 280px;
+  column-gap: 16px;
+}
+
+/* Non-card siblings span all columns so they render normally */
+.markdown-preview-section:has(.sprout-pretty-card) > :not(.sprout-pretty-card) {
+  column-span: all;
+}
+
+/* Vertical gap between cards matches the horizontal column-gap.
+   !important needed to override .sprout .sprout-pretty-card.accent base margins */
+.markdown-preview-section:has(.sprout-pretty-card) > .sprout-pretty-card {
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+}
+
+/* Hidden duplicates must not take space */
+.markdown-preview-section:has(.sprout-pretty-card) > .sprout-hidden-important,
+.markdown-preview-section:has(.sprout-pretty-card) > [data-sprout-hidden="true"] {
+  display: none !important;
 }
 
 /* ---- Reading view utilities ---- */
 
-.sprout .sprout-reading-break-reset {
-  break-inside: auto !important;
-  page-break-inside: auto !important;
-}
-
-.sprout .sprout-reading-last-card {
-  margin-bottom: 20px !important;
-}
-
 .sprout .sprout-reading-chevron-collapsed {
   transform: rotate(-90deg) !important;
-}
-
-/* Card sizing */
-.sprout-masonry-grid-wrapper > .sprout-pretty-card {
-  flex: 1 1 300px;
-  max-width: 400px;
-  margin: 0;
 }
 
 /* ---- Card surface ---- */
@@ -487,15 +516,14 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card figure,
 .sprout-pretty-card img {
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
-/* Responsive: allow full width on narrow screens */
+/* Responsive: single column on narrow screens */
 @media (max-width: 520px) {
-  .sprout-masonry-grid-wrapper > .sprout-pretty-card {
-    flex-basis: 100%;
-    max-width: 100%;
+  .markdown-preview-section:has(.sprout-pretty-card) {
+    column-count: 1 !important;
   }
 }
 
@@ -534,6 +562,26 @@ mjx-container[jax="CHTML"][display="true"] {
   color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
 }
 
+/* When cloze contains only an image, use border instead of background span */
+.sprout-reading-view-cloze img,
+.sprout-cloze img {
+  border: 2px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.5);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+/* Remove background on cloze span when it contains only an image */
+.sprout-reading-view-cloze:has(> .sprout-cloze-text > img:only-child),
+.sprout-reading-view-cloze:has(> img:only-child) {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.sprout-cloze-text:has(> img:only-child) {
+  display: block;
+}
+
 /* Internal links in reading view cards */
 .sprout-pretty-card a.internal-link {
   color: var(--link-color);
@@ -546,38 +594,104 @@ mjx-container[jax="CHTML"][display="true"] {
   text-decoration: underline;
 }
 
-/* ---- Flexbox masonry grid (JS creates columns, CSS handles card sizing) ---- */
 
-.sprout-masonry-grid-wrapper {
-  width: 100% !important;
-  margin-bottom: 1.5rem !important;
+/* ---- Images inside reading-view cards ---- */
+
+.sprout-pretty-card img:not(.sprout-io-image) {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+  margin: 6px 0 !important;
+  display: block !important;
 }
 
-.sprout-masonry-grid {
+.sprout-pretty-card .internal-embed.image-embed {
+  max-width: 100% !important;
+  display: block !important;
+}
+
+.sprout-pretty-card .internal-embed.image-embed img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+}
+
+/* ---- IO cards in reading view ---- */
+
+.sprout-pretty-card .sprout-io-reading-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.sprout-pretty-card .sprout-io-reading-img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 5px !important;
+}
+
+.sprout-pretty-card .sprout-io-reading-overlay {
+  position: absolute !important;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.sprout-pretty-card .sprout-io-reading-mask {
+  position: absolute !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
   display: flex !important;
-  gap: 16px !important;
-  align-items: flex-start !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.sprout-masonry-col {
-  flex: 1 !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 16px !important;
+.sprout-pretty-card .sprout-io-reading-mask-rect {
+  border-radius: 3px !important;
 }
 
-/* Cards inside columns fill the width */
-.sprout-masonry-col > .sprout-pretty-card {
-  width: 100% !important;
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
-  margin-bottom: 0 !important;
+.sprout-pretty-card .sprout-io-reading-mask-circle {
+  border-radius: 50% !important;
 }
 
-/* Last card in grid should have bottom margin */
-.sprout-masonry-grid-wrapper:last-child {
-  margin-bottom: 20px !important;
+.sprout-pretty-card .sprout-io-reading-mask-filled {
+  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.75) !important;
+  border: 2px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l)) !important;
+}
+
+.sprout-pretty-card.theme .sprout-io-reading-mask-filled {
+  background: var(--alt-accent-color) !important;
+  border: 2px solid var(--color) !important;
+}
+
+.sprout-pretty-card .sprout-io-reading-mask-hint {
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+/* ---- Missing image placeholder ---- */
+
+.sprout-pretty-card .sprout-missing-image {
+  display: block;
+  padding: 8px 12px;
+  margin: 4px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--background-modifier-error-hover, rgba(255, 0, 0, 0.05));
+  border: 1px dashed var(--text-error, #e34040);
+  border-radius: 6px;
+  font-style: italic;
 }
 
 /* ---- Content wrapping ---- */

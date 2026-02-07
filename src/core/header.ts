@@ -680,10 +680,20 @@ export class SproutHeader {
       }
     };
 
+    const runCommand = (commandId: string, label: string) => {
+      const ok = this.deps.app.commands?.executeCommandById?.(commandId);
+      if (!ok) new Notice(`${label} command is not available.`);
+    };
+
+    const openAnkiImport = () => runCommand("sprout:import-anki", "Import from Anki");
+    const openAnkiExport = () => runCommand("sprout:export-anki", "Export to Anki");
+
     const menuItems: SproutHeaderMenuItem[] = [
       { label: "Split left pane", icon: "panel-left", onActivate: splitLeft },
       { label: "Split right pane", icon: "panel-right", onActivate: splitRight },
       { label: "Split down pane", icon: "panel-bottom", onActivate: splitDown },
+      { label: "Import from Anki", icon: "folder-down", onActivate: openAnkiImport },
+      { label: "Export to Anki", icon: "folder-up", onActivate: openAnkiExport },
       { label: "Open settings", icon: "settings", onActivate: openSettings },
       { label: "Close tab", icon: "x", onActivate: closeTab },
     ];

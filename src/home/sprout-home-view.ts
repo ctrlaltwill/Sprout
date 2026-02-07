@@ -961,6 +961,7 @@ export class SproutHomeView extends ItemView {
     if (!hideSproutInfo) {
       const infoCard = document.createElement("div");
       infoCard.className = "card sprout-ana-card p-4 flex flex-col gap-6";
+      applyAos(infoCard, 800);
       bottomRow.appendChild(infoCard);
       const aboutHeader = infoCard.createDiv({ cls: "flex items-center justify-between gap-2" });
       aboutHeader.createDiv({ cls: "font-semibold", text: "About Sprout" });
@@ -1080,6 +1081,7 @@ export class SproutHomeView extends ItemView {
    if (!hideSproutInfo) {
      const placeholderCard = document.createElement("div")
      placeholderCard.className = "card sprout-ana-card p-4 flex flex-col gap-6"
+     applyAos(placeholderCard, 1000)
      bottomRow.appendChild(placeholderCard)
 
      const changelogHeader = placeholderCard.createDiv({ cls: "flex items-center justify-between gap-2" })

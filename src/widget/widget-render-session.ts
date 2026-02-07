@@ -11,7 +11,7 @@ import { setIcon } from "obsidian";
 import { el, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { renderClozeFront } from "../reviewer/question-cloze";
 
-import { isClozeLike } from "./widget-helpers";
+import { getWidgetMcqDisplayOrder, isClozeLike } from "./widget-helpers";
 import type { WidgetViewLike, ReviewMeta } from "./widget-helpers";
 import type { CardRecord } from "../types/card";
 import type { ReviewRating } from "../types/scheduler";
@@ -288,29 +288,24 @@ function renderMcqCard(
   applySectionStyles(stemEl);
   body.appendChild(stemEl);
 
-  let opts = card.options || [];
+  const options = Array.isArray(card.options) ? card.options : [];
   const chosen = graded?.meta?.mcqChoice;
 
-  // Randomise MCQ options if setting enabled
+  // Randomise MCQ options if setting enabled (stable per session)
   const randomize = !!(view.plugin.settings.reviewer?.randomizeMcqOptions);
-  const order = opts.map((_: string, i: number) => i);
-  if (randomize) {
-    for (let i = order.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    opts = order.map((i: number) => opts[i]);
-  }
+  const order = getWidgetMcqDisplayOrder(view.session, card, randomize);
+  const opts = order.map((i) => options[i]);
 
   const optsContainer = el("div", "bc flex flex-col gap-2 sprout-widget-section");
 
-  opts.forEach((opt: string, idx: number) => {
+  opts.forEach((opt: string, displayIdx: number) => {
     const text = typeof opt === "string" ? opt : opt && typeof (opt as Record<string, unknown>).text === "string" ? (opt as Record<string, unknown>).text as string : "";
     const d = el("div", "bc px-3 py-2 rounded border border-border cursor-pointer hover:bg-secondary sprout-widget-text sprout-widget-mcq-option");
+    const origIdx = order[displayIdx];
 
     const left = el("span", "bc inline-flex items-center gap-2 min-w-0");
     const key = el("kbd", "bc kbd");
-    key.textContent = String(idx + 1);
+    key.textContent = String(displayIdx + 1);
     left.appendChild(key);
 
     const textEl = el("span", "bc min-w-0 whitespace-pre-wrap break-words sprout-widget-mcq-text");
@@ -327,11 +322,10 @@ function renderMcqCard(
     left.appendChild(textEl);
     d.appendChild(left);
 
-    if (!graded) d.addEventListener("click", () => void view.answerMcq(idx));
+    if (!graded) d.addEventListener("click", () => void view.answerMcq(origIdx));
     if (graded) {
-      const origIdx = randomize ? order[idx] : idx;
       if (origIdx === card.correctIndex) d.classList.add("border-green-600", "bg-green-50");
-      if (typeof chosen === "number" && chosen === idx && origIdx !== card.correctIndex)
+      if (typeof chosen === "number" && chosen === origIdx && origIdx !== card.correctIndex)
         d.classList.add("border-red-600", "bg-red-50");
     }
     optsContainer.appendChild(d);

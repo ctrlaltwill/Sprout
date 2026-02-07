@@ -81,7 +81,7 @@ export class SproutCardBrowserView extends ItemView {
   colWidths: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
 
   private _colMin: Record<ColKey, number> = {
-    id: 100, type: 110, stage: 80, due: 90,
+    id: 120, type: 110, stage: 80, due: 90,
     title: 140, question: 140, answer: 140,
     info: 150, location: 150, groups: 200,
   };

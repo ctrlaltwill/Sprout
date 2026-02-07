@@ -7,6 +7,7 @@
  */
 
 import { el, setCssProps } from "../core/ui";
+import { applyInlineMarkdown } from "../anki/anki-mapper";
 
 export function renderClozeFront(text: string, reveal: boolean, targetIndex?: number | null): HTMLElement {
   const container = el("div", "");
@@ -19,7 +20,7 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
   p.className = "bc whitespace-pre-wrap break-words";
   container.appendChild(p);
 
-  const re = /\{\{c(\d+)::(.*?)\}\}/g;
+  const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
   let last = 0;
   let m: RegExpExecArray | null;
 
@@ -47,9 +48,16 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
     if (lastNode) p.appendChild(document.createTextNode(" "));
   };
 
+  /** Append a text segment with inline markdown formatting (bold, italic, etc.) */
+  const appendFormattedText = (parent: HTMLElement, text: string) => {
+    const span = document.createElement("span");
+    applyInlineMarkdown(span, text);
+    parent.appendChild(span);
+  };
+
   while ((m = re.exec(text))) {
     if (m.index > last) {
-      p.appendChild(document.createTextNode(text.slice(last, m.index)));
+      appendFormattedText(p, text.slice(last, m.index));
     }
 
     const idx = Number(m[1]);
@@ -57,11 +65,11 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
     const isTarget = typeof targetIndex === "number" ? idx === targetIndex : true;
 
     if (!isTarget) {
-      p.appendChild(document.createTextNode(ans));
+      appendFormattedText(p, ans);
     } else if (reveal) {
       const answerSpan = document.createElement("span");
       answerSpan.className = "sprout-cloze-revealed";
-      answerSpan.textContent = ans;
+      applyInlineMarkdown(answerSpan, ans);
       // Ensure contrast for very light backgrounds
       setTimeout(() => {
         const bg = getComputedStyle(answerSpan).backgroundColor;
@@ -95,7 +103,7 @@ export function renderClozeFront(text: string, reveal: boolean, targetIndex?: nu
   }
 
   if (last < text.length) {
-    p.appendChild(document.createTextNode(text.slice(last)));
+    appendFormattedText(p, text.slice(last));
   }
 
   return container;

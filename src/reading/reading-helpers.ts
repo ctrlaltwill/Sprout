@@ -119,13 +119,27 @@ export function escapeHtml(text: unknown): string {
 }
 
 /**
- * Process wiki links [[Link]] and LaTeX $...$ and $$...$$ for reading view.
- * Converts wiki links to clickable links and preserves LaTeX for rendering.
+ * Process wiki links [[Link]], image embeds ![[image]], and inline formatting
+ * for reading view.
+ *
+ * Inline formatting uses standard Obsidian markdown conventions:
+ *   **text**   → <strong>   (bold)
+ *   *text*     → <em>       (italic)
+ *   _text_     → <em>       (italic — same as *text* in Obsidian)
+ *   ~~text~~   → <s>        (strikethrough)
+ *   ==text==   → <mark>     (highlight)
  */
 export function processMarkdownFeatures(text: string): string {
   if (!text) return '';
   let result = String(text);
-  
+
+  // Convert image embeds ![[image.ext]] or ![[path/image.ext|alt]] to placeholder <img> tags
+  // Must come BEFORE [[link]] handling to avoid partial matches
+  result = result.replace(/!\[\[([^\]|]+?)(?:\|([^\]]*?))?\]\]/g, (_match: string, target: string, alt?: string) => {
+    const altText = alt || target.split('/').pop() || target;
+    return `<img class="sprout-reading-embed-img" data-embed-path="${escapeHtml(target.trim())}" alt="${escapeHtml(altText)}" />`;
+  });
+
   // Convert wiki links [[Page]] or [[Page|Display]] to HTML links
   result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match: string, target: string, display?: string) => {
     const linkText = display || target;
@@ -133,6 +147,26 @@ export function processMarkdownFeatures(text: string): string {
     return `<a href="#" class="internal-link" data-href="${escapeHtml(target)}">${escapeHtml(linkText)}</a>`;
   });
   
+  // ── Inline formatting (standard Obsidian markdown) ──
+  // Order matters: bold (**) before italic (*)
+
+  // Convert bold **text** to <strong>text</strong>
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Convert italic *text* to <em>text</em>  (single asterisk)
+  // Must come AFTER bold to avoid partial matches
+  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+
+  // Convert italic _text_ to <em>text</em>  (underscore — standard Obsidian italic)
+  // Only match underscores at word boundaries to avoid matching things like variable_names
+  result = result.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, '<em>$1</em>');
+
+  // Convert strikethrough ~~text~~ to <s>text</s>
+  result = result.replace(/~~(.+?)~~/g, '<s>$1</s>');
+
+  // Convert highlight ==text== to <mark>text</mark>
+  result = result.replace(/==(.+?)==/g, '<mark>$1</mark>');
+
   // Preserve LaTeX by escaping the content but keeping delimiters
   // This allows MathJax or similar to process it later
   return result;
@@ -507,7 +541,7 @@ export function buildCardContentHTML(card: SproutCard): string {
 export function buildClozeSectionHTML(clozeContent: string): string {
   let lastIndex = 0;
   let processedHtml = '';
-  const clozeRegex = /\{\{c\d+::(.*?)\}\}/g;
+  const clozeRegex = /\{\{c\d+::([\s\S]*?)\}\}/g;
   let match;
   while ((match = clozeRegex.exec(clozeContent)) !== null) {
     if (match.index > lastIndex) {
@@ -591,12 +625,23 @@ export function buildBasicSectionHTML(question: string, answer?: string): string
   return q + a;
 }
 
-export function buildIOSectionHTML(ioContent: string): string {
+export function buildIOSectionHTML(_ioContent: string): string {
+  const ioQuestionId = `sprout-io-question-${Math.random().toString(36).slice(2,8)}`;
+  const ioAnswerId = `sprout-io-answer-${Math.random().toString(36).slice(2,8)}`;
+
+  const answerSection = buildCollapsibleSectionHTML(
+    'Answer (full image)',
+    `.sprout-io-answer-${Math.random().toString(36).slice(2,8)}`,
+    `<div class="sprout-io-answer-wrap sprout-p-spacing-none" id="${ioAnswerId}"></div>`,
+    ioAnswerId,
+  );
+
   return `
     <div class="sprout-card-section sprout-section-io">
       <div class="sprout-section-label">Image Occlusion</div>
-      <div class="sprout-section-content sprout-p-spacing-none">${processMarkdownFeatures(ioContent)}</div>
+      <div class="sprout-section-content sprout-p-spacing-none" id="${ioQuestionId}"></div>
     </div>
+    ${answerSection}
   `;
 }
 

@@ -52,7 +52,7 @@ import type { CardRecordType } from "../types/card";
 
 /** Renders a styled "danger callout" box (used by ParseErrorModal). */
 export function mkDangerCallout(parent: HTMLElement, text: string) {
-  const box = parent.createDiv({ cls: "bc rounded-lg border p-3 text-sm sprout-danger-callout" });
+  const box = parent.createDiv({ cls: "bc rounded-lg p-3 text-sm sprout-danger-callout" });
 
   box.createEl("div", { text: "How to fix parse errors", cls: "bc font-medium mb-1" });
   box.createEl("div", { text, cls: "bc sprout-danger-callout-body" });
@@ -523,9 +523,9 @@ export function createModalMcqSection() {
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
+    removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 sprout-remove-btn-ghost";
     const xIcon = document.createElement("span");
-    xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-[0.8rem]";
+    xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(xIcon, "x");
     removeBtn.appendChild(xIcon);
     removeBtn.addEventListener("click", (ev) => {
@@ -579,4 +579,182 @@ export function createModalMcqSection() {
   });
 
   return { element: container, getOptions };
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Themed dropdown (replaces native <select> with styled popover)
+// ──────────────────────────────────────────────────────────────────────────────
+
+export interface DropdownOption {
+  value: string;
+  label: string;
+}
+
+export interface ThemedDropdownResult {
+  /** The outer container element to append to the DOM. */
+  element: HTMLElement;
+  /** Get the currently selected value. */
+  getValue: () => string;
+  /** Programmatically set the value and update the label. */
+  setValue: (value: string) => void;
+  /** Register a change callback. */
+  onChange: (cb: (value: string) => void) => void;
+}
+
+/**
+ * Build a themed popover dropdown that replaces a native `<select>`.
+ * Opens below the trigger button with radio-dot indicators.
+ */
+export function createThemedDropdown(
+  options: DropdownOption[],
+  initialValue?: string,
+  extraCls?: string,
+): ThemedDropdownResult {
+  let currentValue = initialValue ?? options[0]?.value ?? "";
+  let changeCb: ((value: string) => void) | null = null;
+
+  const container = document.createElement("div");
+  container.className = `bc sprout relative inline-flex w-full ${extraCls ?? ""}`.trim();
+
+  // Trigger button
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "bc btn-outline h-9 px-3 text-sm inline-flex items-center gap-2 w-full justify-between";
+  btn.setAttribute("aria-haspopup", "menu");
+  btn.setAttribute("aria-expanded", "false");
+  container.appendChild(btn);
+
+  const btnText = document.createElement("span");
+  btnText.className = "bc truncate";
+  btn.appendChild(btnText);
+
+  const btnIcon = document.createElement("span");
+  btnIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3";
+  setIcon(btnIcon, "chevron-down");
+  btn.appendChild(btnIcon);
+
+  // Popover dropdown
+  const popover = document.createElement("div");
+  popover.className = "sprout-popover-dropdown sprout-popover-dropdown-below";
+  popover.setAttribute("aria-hidden", "true");
+  container.appendChild(popover);
+
+  const panel = document.createElement("div");
+  panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
+  panel.style.backgroundColor = "var(--background-primary, var(--background, #fff))";
+  popover.appendChild(panel);
+
+  const menu = document.createElement("div");
+  menu.setAttribute("role", "menu");
+  menu.className = "bc flex flex-col";
+  panel.appendChild(menu);
+
+  const updateLabel = () => {
+    const opt = options.find((o) => o.value === currentValue);
+    btnText.textContent = opt?.label ?? currentValue;
+  };
+
+  let isOpen = false;
+
+  const close = () => {
+    btn.setAttribute("aria-expanded", "false");
+    popover.setAttribute("aria-hidden", "true");
+    popover.classList.remove("is-open");
+    isOpen = false;
+  };
+
+  const buildMenu = () => {
+    while (menu.firstChild) menu.removeChild(menu.firstChild);
+    for (const opt of options) {
+      const item = document.createElement("div");
+      item.setAttribute("role", "menuitemradio");
+      item.setAttribute("aria-checked", opt.value === currentValue ? "true" : "false");
+      item.tabIndex = 0;
+      item.className =
+        "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+
+      const dotWrap = document.createElement("div");
+      dotWrap.className = "bc size-4 flex items-center justify-center";
+      item.appendChild(dotWrap);
+
+      const dot = document.createElement("div");
+      dot.className = "bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
+      dot.setAttribute("aria-hidden", "true");
+      dotWrap.appendChild(dot);
+
+      const txt = document.createElement("span");
+      txt.className = "bc";
+      txt.textContent = opt.label;
+      item.appendChild(txt);
+
+      const activate = () => {
+        currentValue = opt.value;
+        updateLabel();
+        close();
+        changeCb?.(currentValue);
+      };
+
+      item.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        activate();
+      });
+
+      item.addEventListener("keydown", (ev: KeyboardEvent) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          activate();
+        }
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          close();
+          btn.focus();
+        }
+      });
+
+      menu.appendChild(item);
+    }
+  };
+
+  const open = () => {
+    buildMenu();
+    btn.setAttribute("aria-expanded", "true");
+    popover.setAttribute("aria-hidden", "false");
+    popover.classList.add("is-open");
+    isOpen = true;
+
+    const onDocPointerDown = (ev: PointerEvent) => {
+      const t = ev.target as Node | null;
+      if (!t) return;
+      if (container.contains(t)) return;
+      close();
+      document.removeEventListener("pointerdown", onDocPointerDown, true);
+    };
+
+    window.setTimeout(() => {
+      document.addEventListener("pointerdown", onDocPointerDown, true);
+    }, 0);
+  };
+
+  btn.addEventListener("pointerdown", (ev: PointerEvent) => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (isOpen) close();
+    else open();
+  });
+
+  updateLabel();
+
+  return {
+    element: container,
+    getValue: () => currentValue,
+    setValue: (value: string) => {
+      currentValue = value;
+      updateLabel();
+    },
+    onChange: (cb) => { changeCb = cb; },
+  };
 }

@@ -18,7 +18,7 @@
 
 import { Modal, Notice, type App } from "obsidian";
 import { log } from "../core/logger";
-import { queryFirst, setCssProps } from "../core/ui";
+import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import { BRAND } from "../core/constants";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
@@ -28,7 +28,6 @@ import {
   buildToolbar,
   buildCanvasContainer,
   buildFooter,
-  buildHeader,
   buildImageLimitDialog,
 } from "../imageocclusion/io-modal-ui";
 
@@ -97,9 +96,9 @@ export class ImageOcclusionCreatorModal extends Modal {
   private imageLimitDialog?: HTMLDialogElement;
   private t: StageTransform = { scale: 1, tx: 0, ty: 0 };
   private canvasHeightDefaults = {
-    height: "240px",
-    minHeight: "200px",
-    maxHeight: "350px",
+    height: "300px",
+    minHeight: "240px",
+    maxHeight: "450px",
   };
 
   // Drawing state
@@ -152,31 +151,18 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-io-creator", "sprout-io-creator-modal");
-    this.contentEl.addClass("bc");
-    queryFirst(this.modalEl, ".modal-header")?.remove();
-    queryFirst(this.modalEl, ".modal-close-button")?.remove();
+    this.contentEl.addClass("bc", "sprout-io-creator-content");
+
+    // Escape key closes modal
+    this.scope.register([], "Escape", () => { this.close(); return false; });
 
     const { contentEl } = this;
     contentEl.empty();
 
     const modalRoot = contentEl;
-    modalRoot.addClass(
-      "bc",
-      "sprout-modal",
-      "rounded-lg",
-      "border",
-      "border-border",
-      "bg-popover",
-      "text-popover-foreground",
-      "sprout-io-creator-root",
-    );
+    modalRoot.addClass("bc", "sprout-io-creator-root");
 
-    // IO-editor styles are loaded from styles.css (see src/styles/modals.css)
-
-    // ── Header ──────────────────────────────────────────────────────────────
-    buildHeader(modalRoot, headerTitle, () => this.close());
-
-    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-3" });
+    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-4" });
 
     // ── Image limit dialog ──────────────────────────────────────────────────
     this.imageLimitDialog = buildImageLimitDialog(modalRoot, () => this.deleteLoadedImage());
@@ -466,7 +452,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     }
     const width = this.canvasContainerEl.clientWidth || this.canvasContainerEl.getBoundingClientRect().width;
     if (!width || !this.stageW || !this.stageH) return;
-    const maxHeight = 350;
+    const maxHeight = 450;
     const desired = Math.max(1, Math.round((width * this.stageH) / this.stageW));
     const height = Math.min(desired, maxHeight);
     setCssProps(this.canvasContainerEl, "--sprout-io-canvas-height", `${height}px`);
@@ -1295,7 +1281,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.containerEl.removeClass("sprout-modal-container");
     this.containerEl.removeClass("sprout-modal-dim");
     this.modalEl.removeClass("bc", "sprout-modals", "sprout-io-creator");
-    this.contentEl.removeClass("bc");
+    this.contentEl.removeClass("bc", "sprout-io-creator-content");
     this.contentEl.empty();
   }
 }

@@ -37,8 +37,15 @@ export function escapeHtml(s: unknown): string {
 /* ------------------------------------------------------------------ */
 
 /**
- * Process wiki links `[[Link]]` and LaTeX for widget display.
- * Converts wiki links to clickable links and preserves LaTeX for rendering.
+ * Process wiki links `[[Link]]`, LaTeX, and inline formatting for widget display.
+ * Converts wiki links to clickable links, preserves LaTeX for rendering, and
+ * applies standard Obsidian inline markdown formatting.
+ *
+ *   **text**   → <strong>   (bold)
+ *   *text*     → <em>       (italic)
+ *   _text_     → <em>       (italic — same as *text* in Obsidian)
+ *   ~~text~~   → <s>        (strikethrough)
+ *   ==text==   → <mark>     (highlight)
  */
 export function processMarkdownFeatures(text: string): string {
   if (!text) return "";
@@ -49,6 +56,24 @@ export function processMarkdownFeatures(text: string): string {
     const linkText = display || target;
     return `<a href="#" class="internal-link" data-href="${escapeHtml(target)}">${escapeHtml(linkText)}</a>`;
   });
+
+  // ── Inline formatting (standard Obsidian markdown) ──
+  // Order matters: bold (**) before italic (*)
+
+  // Bold: **text** → <strong>text</strong>
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Italic: *text* → <em>text</em>
+  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+
+  // Italic: _text_ → <em>text</em>  (Obsidian standard)
+  result = result.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, '<em>$1</em>');
+
+  // Strikethrough: ~~text~~ → <s>text</s>
+  result = result.replace(/~~(.+?)~~/g, '<s>$1</s>');
+
+  // Highlight: ==text== → <mark>text</mark>
+  result = result.replace(/==(.+?)==/g, '<mark>$1</mark>');
 
   // Preserve LaTeX for MathJax
   return result;

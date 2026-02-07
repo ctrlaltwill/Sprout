@@ -18,9 +18,11 @@ import {
   TFile,
   type ItemView,
   type MenuItem,
+  type Editor,
   MarkdownView,
   type Menu,
   type WorkspaceLeaf,
+  Platform,
   requestUrl,
 } from "obsidian";
 
@@ -52,6 +54,8 @@ import { formatSyncNotice, syncQuestionBank } from "./sync/sync-engine";
 import { CardCreatorModal } from "./modals/card-creator-modal";
 import { ImageOcclusionCreatorModal } from "./modals/image-occlusion-creator-modal";
 import { ParseErrorModal } from "./modals/parse-error-modal";
+import { AnkiImportModal } from "./modals/anki-import-modal";
+import { AnkiExportModal } from "./modals/anki-export-modal";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
 
 function clamp(n: number, lo: number, hi: number) {
@@ -155,7 +159,7 @@ export default class SproutPlugin extends Plugin {
 
   private _isActiveHiddenViewType(): boolean {
     const ws = this.app.workspace;
-    const activeLeaf = ws?.activeLeaf ?? ws?.getMostRecentLeaf?.() ?? null;
+    const activeLeaf = ws?.getMostRecentLeaf?.() ?? null;
     const viewType = activeLeaf?.view?.getViewType?.();
     return viewType ? this._hideStatusBarViewTypes.has(viewType) : false;
   }
@@ -290,9 +294,22 @@ export default class SproutPlugin extends Plugin {
         callback: () => this.openAddFlashcardModal(),
       });
 
+      this.addCommand({
+        id: "import-anki",
+        name: "Import from Anki (.apkg)",
+        callback: () => new AnkiImportModal(this).open(),
+      });
+
+      this.addCommand({
+        id: "export-anki",
+        name: "Export to Anki (.apkg)",
+        callback: () => new AnkiExportModal(this).open(),
+      });
+
       // Replace dropdown with separate ribbon icons (desktop + mobile)
       this._registerRibbonIcons();
       this._registerEditorContextMenu();
+      this._registerMarkdownSourceClozeShortcuts();
 
       // Hide status bar when Boot Camp views are active
       this.registerEvent(
@@ -371,6 +388,47 @@ export default class SproutPlugin extends Plugin {
     const editor = view.editor;
     if (!editor) return null;
     return { view, editor };
+  }
+
+  private _applyClozeShortcutToEditor(editor: Editor, clozeIndex = 1) {
+    const selection = String(editor.getSelection?.() ?? "");
+    const tokenStart = `{{c${clozeIndex}::`;
+
+    if (selection.length > 0) {
+      editor.replaceSelection(`${tokenStart}${selection}}}`);
+      return;
+    }
+
+    const cursor = editor.getCursor();
+    editor.replaceSelection(`{{c${clozeIndex}::}}`);
+    editor.setCursor({ line: cursor.line, ch: cursor.ch + tokenStart.length });
+  }
+
+  private _registerMarkdownSourceClozeShortcuts() {
+    this.registerDomEvent(
+      document,
+      "keydown",
+      (ev: KeyboardEvent) => {
+        const key = String(ev.key || "").toLowerCase();
+        if (key !== "c" && ev.code !== "KeyC") return;
+
+        const primary = Platform.isMacOS ? ev.metaKey : ev.ctrlKey;
+        if (!primary || !ev.shiftKey) return;
+
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view || view.getMode() !== "source" || !view.editor) return;
+
+        const target = ev.target as HTMLElement | null;
+        if (!target) return;
+        if (!view.contentEl?.contains(target)) return;
+        if (!target.closest(".cm-editor")) return;
+
+        ev.preventDefault();
+        ev.stopPropagation();
+        this._applyClozeShortcutToEditor(view.editor, 1);
+      },
+      { capture: true },
+    );
   }
 
   openAddFlashcardModal(forcedType?: "basic" | "cloze" | "mcq" | "io") {
@@ -483,6 +541,11 @@ export default class SproutPlugin extends Plugin {
 
     const notice = formatSyncNotice("Sync complete", res, { includeDeleted: true });
     new Notice(notice);
+
+    const tagsDeleted = Number((res as { tagsDeleted?: number }).tagsDeleted ?? 0);
+    if (tagsDeleted > 0) {
+      new Notice(`${BRAND}: deleted ${tagsDeleted} unused tag${tagsDeleted === 1 ? "" : "s"}`);
+    }
 
     if (res.quarantinedCount > 0) {
       new ParseErrorModal(this.app, this, res.quarantinedIds).open();

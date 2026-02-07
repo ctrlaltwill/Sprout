@@ -388,7 +388,7 @@
 /* 1) Keep ONLY the top-level sprout-content-view constrained */
 .sprout .sprout-view-content {
   width: 100%;
-  padding: 40px 0 80px;
+  padding: 40px 0 40px;
   margin-left: auto;
   margin-right: auto;
 

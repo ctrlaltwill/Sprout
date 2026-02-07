@@ -10,6 +10,7 @@ import { Setting } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
+import { applyInlineMarkdown } from "../anki/anki-mapper";
 import { renderStudySessionHeader } from "./study-session-header";
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../core/store";
@@ -543,7 +544,7 @@ export function renderSessionMode(args: Args) {
   quitSvg.setAttribute("height", "20");
   quitSvg.setAttribute("viewBox", "0 0 24 24");
   quitSvg.setAttribute("fill", "none");
-  quitSvg.setAttribute("stroke", "var(--foreground)");
+  quitSvg.setAttribute("stroke", "currentColor");
   quitSvg.setAttribute("stroke-width", "2");
   quitSvg.setAttribute("stroke-linecap", "round");
   quitSvg.setAttribute("stroke-linejoin", "round");
@@ -584,14 +585,13 @@ export function renderSessionMode(args: Args) {
     const location = formatNotePathForHeader(locationRaw);
 
     const locationRow = document.createElement("div");
-    locationRow.className = "bc flex items-center justify-center gap-2 min-w-0 px-4";
+    locationRow.className = "bc flex items-center gap-2 min-w-0 px-4";
     header.appendChild(locationRow);
 
     const locationEl = document.createElement("div");
     locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
     locationEl.textContent = location || "Home";
     locationRow.appendChild(locationEl);
-    // Always append quit button to header row for correct positioning
     locationRow.appendChild(quitBtn);
 
     const titleSetting = new Setting(header)
@@ -605,7 +605,6 @@ export function renderSessionMode(args: Args) {
       "whitespace-pre-wrap",
       "break-words",
       "text-center",
-      "px-4",
       "bc-question-title",
     );
 
@@ -734,7 +733,6 @@ export function renderSessionMode(args: Args) {
     "whitespace-pre-wrap",
     "break-words",
     "text-center",
-    "px-4",
     "bc-question-title",
   );
   const titleEl = titleSetting.nameEl;
@@ -743,7 +741,7 @@ export function renderSessionMode(args: Args) {
   if (titleMd.includes('[[') || titleMd.includes('$')) {
     void args.renderMarkdownInto(titleEl, titleMd, sourcePath).then(() => setupLinkHandlers(titleEl, sourcePath));
   } else {
-    titleEl.textContent = titleMd;
+    applyInlineMarkdown(titleEl, titleMd);
   }
 
   // ===== Content =====
@@ -871,12 +869,12 @@ export function renderSessionMode(args: Args) {
       } else if (text && text.includes("\n")) {
         text.split(/\n+/).forEach((line: string) => {
           const p = document.createElement("div");
-          p.textContent = line;
+          applyInlineMarkdown(p, line);
           p.classList.add("sprout-mcq-option-line");
           textEl.appendChild(p);
         });
       } else {
-        textEl.textContent = text;
+        applyInlineMarkdown(textEl, text);
       }
       left.appendChild(textEl);
 

@@ -201,7 +201,7 @@ export class ConfirmResetDefaultsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Reset Sprout settings to defaults?").setHeading();
+    new Setting(contentEl).setName("Reset Sprout to defaults?").setHeading();
     contentEl.createEl("p", {
       text: "This resets Sprout settings back to their defaults. It does not delete cards or change scheduling. This cannot be undone.",
     });

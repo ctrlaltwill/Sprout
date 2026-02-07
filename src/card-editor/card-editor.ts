@@ -31,6 +31,8 @@ export type CardType = "basic" | "cloze" | "mcq" | "io";
 
 const CLOZE_TOOLTIP =
   "Cloze syntax: {{c1::hidden text}}.\nNew cloze: Cmd+Shift+C (Ctrl+Shift+C).\nSame cloze #: Cmd+Shift+Option+C (Ctrl+Shift+Alt+C).";
+const FORMAT_TOOLTIP =
+  "Formatting: Cmd+B (bold), Cmd+I (italic).";
 const PLACEHOLDER_TITLE = "Flashcard title";
 const PLACEHOLDER_CLOZE =
   "Example: This is a {{c1::cloze}} and this is the same {{c1::group}}. This {{c2::cloze}} is hidden separately.";
@@ -98,6 +100,73 @@ function attachClozeShortcuts(textarea: HTMLTextAreaElement) {
     ev.preventDefault();
     ev.stopPropagation();
     applyClozeShortcut(textarea, shortcut);
+  });
+}
+
+// ── Inline formatting shortcuts ────────────────────────────────────────────
+// Wrap selected text (or insert empty markers) for standard Obsidian markdown:
+//   Cmd/Ctrl+B  → **bold**
+//   Cmd/Ctrl+I  → *italic*
+
+type FormatMarker = { marker: string };
+
+const FORMAT_SHORTCUTS: Array<{
+  key: string;
+  shift: boolean;
+  marker: string;
+}> = [
+  { key: "b", shift: false, marker: "**" },
+  { key: "i", shift: false, marker: "*" },
+];
+
+function getFormatShortcut(ev: KeyboardEvent): FormatMarker | null {
+  const key = String(ev.key || "").toLowerCase();
+  const primary = isMacLike() ? ev.metaKey : ev.ctrlKey;
+  if (!primary) return null;
+  for (const s of FORMAT_SHORTCUTS) {
+    if (key === s.key && ev.shiftKey === s.shift) return { marker: s.marker };
+  }
+  return null;
+}
+
+function applyFormatShortcut(textarea: HTMLTextAreaElement, fmt: FormatMarker) {
+  const value = String(textarea.value ?? "");
+  const start = Number.isFinite(textarea.selectionStart) ? textarea.selectionStart : value.length;
+  const end = Number.isFinite(textarea.selectionEnd) ? textarea.selectionEnd : value.length;
+
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const selected = value.slice(start, end);
+  const m = fmt.marker;
+
+  if (selected.length > 0) {
+    // If already wrapped, unwrap; otherwise wrap
+    if (selected.startsWith(m) && selected.endsWith(m) && selected.length > m.length * 2) {
+      const unwrapped = selected.slice(m.length, -m.length);
+      textarea.value = before + unwrapped + after;
+      textarea.setSelectionRange(start, start + unwrapped.length);
+    } else {
+      const wrapped = m + selected + m;
+      textarea.value = before + wrapped + after;
+      textarea.setSelectionRange(start, start + wrapped.length);
+    }
+  } else {
+    // No selection — insert empty markers and place cursor between them
+    textarea.value = before + m + m + after;
+    const pos = start + m.length;
+    textarea.setSelectionRange(pos, pos);
+  }
+
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function attachFormatShortcuts(textarea: HTMLTextAreaElement) {
+  textarea.addEventListener("keydown", (ev: KeyboardEvent) => {
+    const fmt = getFormatShortcut(ev);
+    if (!fmt) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    applyFormatShortcut(textarea, fmt);
   });
 }
 
@@ -270,7 +339,14 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
       label.className = "bc text-sm font-medium inline-flex items-center gap-1";
       const infoIcon = document.createElement("span");
       infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
-      infoIcon.setAttribute("data-tooltip", CLOZE_TOOLTIP);
+      infoIcon.setAttribute("data-tooltip", CLOZE_TOOLTIP + "\n" + FORMAT_TOOLTIP);
+      setIcon(infoIcon, "info");
+      label.appendChild(infoIcon);
+    } else if (field.editable && ["title", "question", "answer", "info"].includes(field.key)) {
+      label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+      const infoIcon = document.createElement("span");
+      infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+      infoIcon.setAttribute("data-tooltip", FORMAT_TOOLTIP);
       setIcon(infoIcon, "info");
       label.appendChild(infoIcon);
     }
@@ -330,8 +406,11 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
 
     wrapper.appendChild(input);
     inputEls[field.key] = input;
-    if (field.key === "question" && input instanceof HTMLTextAreaElement && isClozeOnly) {
-      attachClozeShortcuts(input);
+    if (input instanceof HTMLTextAreaElement) {
+      attachFormatShortcuts(input);
+      if (field.key === "question" && isClozeOnly) {
+        attachClozeShortcuts(input);
+      }
     }
     root.appendChild(wrapper);
   };

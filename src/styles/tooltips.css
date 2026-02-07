@@ -45,6 +45,15 @@
 
 /* ---- Modal info tooltips: place to the right ---- */
 
+/* ---- Modal tooltips: show above to avoid clipping in scrollable modals ---- */
+
+.sprout .sprout-modal [data-tooltip]::after,
+.sprout .sprout-modals [data-tooltip]::after {
+  bottom: calc(100% + 8px);
+  top: auto;
+  z-index: 10000;
+}
+
 .sprout .sprout-modal [data-tooltip]:has(.lucide-info)::after,
 .sprout .sprout-modals [data-tooltip]:has(.lucide-info)::after {
   bottom: auto;

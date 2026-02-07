@@ -96,7 +96,7 @@ export type DropdownMenuController<T extends string> = {
 // ─── Constants ───────────────────────────────────────────────────────
 
 export const DEFAULT_COL_WIDTHS: Record<ColKey, number> = {
-  id: 100,
+  id: 130,
   type: 110,
   stage: 80,
   due: 90,

@@ -90,32 +90,32 @@ export function openBulkEditModalForCards(
 
   // ── Panel container ─────────────────────────────────────────────────────
   const panel = document.createElement("div");
-  panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground sprout-bulk-edit-panel";
+  panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground sprout-bulk-edit-panel sprout-modals";
   overlay.appendChild(panel);
 
-  // ── Header ──────────────────────────────────────────────────────────────
+  // ── Close button (matches Obsidian modal-close-button) ──────────────────
+  const close = document.createElement("div");
+  close.className = "modal-close-button mod-raised clickable-icon";
+  setIcon(close, "x");
+  panel.appendChild(close);
+
+  // ── Header (matches Obsidian modal-header) ──────────────────────────────
   const header = document.createElement("div");
-  header.className = "bc flex items-center justify-between";
+  header.className = "modal-header";
   const heading = document.createElement("div");
-  heading.className = "bc text-lg font-semibold";
+  heading.className = "modal-title";
   heading.textContent = "Edit flashcard";
   header.appendChild(heading);
-
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className =
-    "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground sprout-io-close-btn";
-  close.setAttribute("data-tooltip", "Close");
-  const closeIcon = document.createElement("span");
-  closeIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
-  setIcon(closeIcon, "x");
-  close.appendChild(closeIcon);
-  header.appendChild(close);
   panel.appendChild(header);
+
+  // ── Content wrapper (matches Obsidian modal-content) ────────────────────
+  const contentWrap = document.createElement("div");
+  contentWrap.className = "modal-content bc sprout-bulk-edit-content";
+  panel.appendChild(contentWrap);
 
   // ── Form body ─────────────────────────────────────────────────────────────
   const form = document.createElement("div");
-  form.className = "bc flex flex-col gap-3";
+  form.className = "bc flex flex-col gap-4";
 
   const normalizedTypes = cards.map((c) => String(c?.type ?? "").toLowerCase());
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
@@ -339,11 +339,11 @@ export function openBulkEditModalForCards(
   // Location (read-only)
   form.appendChild(createReadonlyField("Location", fmtLocation(card0.sourceNotePath)));
 
-  panel.appendChild(form);
+  contentWrap.appendChild(form);
 
   // ── Footer buttons ────────────────────────────────────────────────────────
   const footer = document.createElement("div");
-  footer.className = "bc flex items-center justify-end gap-4";
+  footer.className = "bc flex items-center justify-end gap-4 sprout-modal-footer";
 
   const cancel = document.createElement("button");
   cancel.type = "button";
@@ -369,7 +369,7 @@ export function openBulkEditModalForCards(
 
   footer.appendChild(cancel);
   footer.appendChild(save);
-  panel.appendChild(footer);
+  contentWrap.appendChild(footer);
 
   /** Remove the overlay from the DOM and clean up the Escape listener. */
   function removeOverlay() {

@@ -161,6 +161,62 @@ describe("cloze cards", () => {
 
     expect(card.errors.length).toBeGreaterThan(0);
   });
+
+  it("parses a multi-line cloze deletion", () => {
+    const card = parseOne(
+      `CQ | What findings indicate a hemorrhagic stroke?
+
+{{c1::
+Pinpoint pupils
+Loss of horizontal gaze
+}} |`
+    );
+
+    expect(card.type).toBe("cloze");
+    expect(card.clozeText).toContain("{{c1::");
+    expect(card.clozeText).toContain("Pinpoint pupils");
+    expect(card.clozeText).toContain("Loss of horizontal gaze");
+    expect(card.errors).toHaveLength(0);
+  });
+
+  it("parses a multi-line cloze with anchor and title", () => {
+    const card = parseOne(
+      `^sprout-837047008
+T| Neurology |
+CQ| In addition to scopolamine, which drugs treat vestibular nausea?
+
+{{c1::
+Meclizine
+Dimenhydrinate
+Diphenhydramine
+}} |`
+    );
+
+    expect(card.type).toBe("cloze");
+    expect(card.id).toBe("837047008");
+    expect(card.title).toBe("Neurology");
+    expect(card.clozeText).toContain("Meclizine");
+    expect(card.clozeText).toContain("Dimenhydrinate");
+    expect(card.clozeText).toContain("Diphenhydramine");
+    expect(card.errors).toHaveLength(0);
+  });
+
+  it("parses multiple multi-line cloze deletions in one card", () => {
+    const card = parseOne(
+      `CQ | Symptom A: {{c1::
+line1
+line2
+}} and Symptom B: {{c2::
+line3
+line4
+}} |`
+    );
+
+    expect(card.type).toBe("cloze");
+    expect(card.clozeText).toContain("line1");
+    expect(card.clozeText).toContain("line4");
+    expect(card.errors).toHaveLength(0);
+  });
 });
 
 // ── IO cards ────────────────────────────────────────────────────────────────

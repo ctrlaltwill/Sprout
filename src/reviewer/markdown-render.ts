@@ -136,7 +136,7 @@ export class SproutMarkdownHelper {
     const srcPath = String(sourcePath || "");
     const expanded = this.expandImagesToRealMarkdown(md ?? "", srcPath);
 
-    await MarkdownRenderer.render(this.owner, expanded, containerEl, srcPath);
+    await MarkdownRenderer.renderMarkdown(expanded, containerEl, srcPath, this.owner);
 
     if ((containerEl.dataset.bcMdRid || "") !== rid) return;
 

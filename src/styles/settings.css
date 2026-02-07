@@ -3,40 +3,59 @@
    Replaces ~80 inline styles in sprout-settings-tab.ts.
    ========================================================================== */
 
+/* ---- Settings headings — remove double border between first heading and User details ---- */
+
+.sprout-settings .setting-item-heading:first-child {
+  border-bottom: none;
+}
+
+.sprout-settings .setting-item-heading:first-child + .setting-item-heading {
+  border-top: none;
+  padding-top: 0;
+}
+
 /* ---- Backup table wrapper ---- */
 
 .sprout .sprout-settings-table-wrap {
   border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 0;
   overflow: hidden;
+  width: 100%;
 }
 
 /* ---- Grid row (shared by header, current, and list rows) ---- */
 
 .sprout .sprout-settings-grid-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(130px, 0.8fr) minmax(220px, 1.8fr) minmax(140px, 0.8fr);
-  gap: 8px;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(140px, 0.9fr) 1fr auto;
+  gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--background-modifier-border);
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
 }
 
 /* Header row variant */
 .sprout .sprout-settings-grid-row--header {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
-  padding: 6px 4px 8px 4px;
+  background: var(--background-secondary);
+  padding: 8px 14px;
 }
 
 /* Current (active) row variant */
 .sprout .sprout-settings-grid-row--current {
-  padding: 6px 4px 10px 4px;
+  background: var(--background-primary-alt, var(--background-modifier-hover));
 }
 
 /* List row variant */
 .sprout .sprout-settings-grid-row--list {
-  padding: 8px 4px;
+  background: transparent;
 }
 
 /* ---- Grid cell labels ---- */
@@ -84,6 +103,12 @@
 
 /* ---- Backup section layout ---- */
 
+.sprout-settings .setting-item:has(.sprout-settings-backup-control) {
+  display: block;
+  border: none;
+  padding: 0;
+}
+
 .sprout .sprout-settings-backup-control {
   display: flex;
   flex-direction: column;
@@ -93,10 +118,12 @@
 
 .sprout .sprout-settings-text-muted {
   color: var(--text-muted);
+  padding: 14px;
+  font-size: 13px;
 }
 
 .sprout .sprout-settings-cell-header {
-  font-weight: 600;
+  font-weight: inherit;
   text-align: left;
 }
 
@@ -116,13 +143,22 @@
   max-height: 720px;
 }
 
+.sprout .sprout-settings-backup-list .sprout-settings-grid-row--list:nth-child(odd) {
+  background: var(--background-secondary-alt, rgba(0, 0, 0, 0.03));
+}
+
+.sprout .sprout-settings-grid-row:last-child,
+.sprout .sprout-settings-backup-list:last-child .sprout-settings-grid-row--list:last-child {
+  border-bottom: 0;
+}
+
 /* ---- Backup row actions ---- */
 
 .sprout .sprout-settings-actions-wrap {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .sprout .sprout-settings-icon-btn {
@@ -142,17 +178,25 @@
 
 .sprout .sprout-settings-see-more-wrap {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
+  justify-content: center;
+  padding: 6px 14px 10px;
 }
 
 .sprout .sprout-settings-see-more-btn {
   background: transparent;
   border: none;
   box-shadow: none;
-  padding: 0;
-  color: var(--text-normal);
+  padding: 2px 12px;
+  color: var(--text-muted);
   cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sprout .sprout-settings-see-more-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 /* ---- Utility: opacity flicker for repaint ---- */

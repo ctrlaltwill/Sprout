@@ -6,14 +6,16 @@
  *  - registerReadingViewPrettyCards — registers the markdown post-processor that renders pretty cards in reading view
  */
 
-import type { Plugin, MarkdownPostProcessorContext } from "obsidian";
+import type { App, Plugin, MarkdownPostProcessorContext } from "obsidian";
 import { Component, MarkdownRenderer, Notice, setIcon, TFile } from "obsidian";
 import { log } from "../core/logger";
 import { openBulkEditModalForCards } from "../modals/bulk-edit";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import type { CardRecord } from "../core/store";
 import type SproutPlugin from "../main";
-import { queryFirst, replaceChildrenWithHTML } from "../core/ui";
+import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
+import { resolveImageFile } from "../imageocclusion/io-helpers";
+import type { StoredIORect } from "../imageocclusion/image-occlusion-types";
 
 import {
   ANCHOR_RE,
@@ -26,9 +28,6 @@ import {
   processMarkdownFeatures,
   buildCardContentHTML,
   renderMathInElement,
-  checkForNonCardContent,
-  parseMarkdownToElements,
-  createMarkdownElement,
   type SproutCard,
 } from "./reading-helpers";
 
@@ -115,9 +114,6 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
 
         // Parse and enhance any new .el-p nodes in this root
         await processCardElements(rootEl, ctx, sourceContent);
-
-        // Masonry layout pass shortly after
-        scheduleMasonryLayout();
       } catch (err) {
         log.error("readingView prettifier error", err);
       }
@@ -170,10 +166,8 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
         card.classList.remove("theme", "accent");
         card.classList.add(prettifyStyle === "theme" ? "theme" : "accent");
       }
-      scheduleMasonryLayout();
     } else {
       void processCardElements(document.documentElement, undefined, '');
-      scheduleMasonryLayout();
     }
   }
 
@@ -200,50 +194,14 @@ function setupManualTrigger() {
   window.sproutApplyMasonryGrid = () => {
     debugLog('[Sprout] Manual sproutApplyMasonryGrid() called');
     requestAnimationFrame(() => {
-      setTimeout(() => {
-        void processCardElements(document.documentElement, undefined, '');
-        scheduleMasonryLayout();
-      }, 40);
+      void processCardElements(document.documentElement, undefined, '');
     });
   };
 
   addTrackedWindowListener('sprout-cards-inserted', () => {
-    debugLog('[Sprout] Received sprout-cards-inserted event — applying masonry');
+    debugLog('[Sprout] Received sprout-cards-inserted event — re-processing cards');
     window.sproutApplyMasonryGrid?.();
   });
-
-  // Re-layout on window resize (smooth + throttled)
-  addTrackedWindowListener('resize', () => {
-    if (masonryResizeRaf) return;
-    masonryResizeRaf = window.requestAnimationFrame(() => {
-      masonryResizeRaf = null;
-      scheduleMasonryLayout();
-    });
-
-    if (masonryResizeTimer) window.clearTimeout(masonryResizeTimer);
-    masonryResizeTimer = window.setTimeout(() => {
-      scheduleMasonryLayout();
-    }, 180);
-  });
-
-  // Avoid relayout thrash while scrolling
-  let st: number | null = null;
-  addTrackedWindowListener(
-    'scroll',
-    () => {
-      masonryIsScrolling = true;
-      if (st) window.clearTimeout(st);
-      st = window.setTimeout(() => {
-        masonryIsScrolling = false;
-        if (pendingScrollWork) {
-          pendingScrollWork = false;
-          void processCardElements(document.documentElement, undefined, '');
-        }
-        scheduleMasonryLayout();
-      }, 250);
-    },
-    true,
-  );
 
   debugLog('[Sprout] Manual trigger and event hook installed');
 }
@@ -255,7 +213,6 @@ function setupManualTrigger() {
 let mutationObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 120;
-let pendingScrollWork = false;
 
 // Registered window listeners (stored for cleanup)
 let registeredWindowListeners: Array<{ event: string; handler: EventListenerOrEventListenerObject; options?: boolean | AddEventListenerOptions }> = [];
@@ -297,7 +254,8 @@ function setupDebouncedMutationObserver() {
   }
 
   mutationObserver = new MutationObserver((mutations) => {
-    let sawRelevant = false;
+    // Collect specific containers that have new unprocessed .el-p elements
+    const dirtyContainers = new Set<HTMLElement>();
     for (const m of mutations) {
       // Only watch for added nodes (new content), ignore removals and repositioning
       if (m.type === 'childList' && m.addedNodes.length > 0) {
@@ -306,32 +264,33 @@ function setupDebouncedMutationObserver() {
             const el = n as Element;
             // Only trigger if we see actual NEW .el-p or sprout cards
             // Skip if the added node is just being moved (check if it already has sprout-processed)
-            if (el.matches && (
-              (el.matches('.el-p') && !el.hasAttribute('data-sprout-processed')) || 
-              (el.querySelectorAll && queryFirst(el as ParentNode, '.el-p:not([data-sprout-processed])'))
-            )) {
-              sawRelevant = true;
-              break;
+            if (el.matches && el.matches('.el-p') && !el.hasAttribute('data-sprout-processed')) {
+              // Find the closest section or reading view container
+              const section = el.closest('.markdown-preview-section') as HTMLElement;
+              if (section) dirtyContainers.add(section);
+              else dirtyContainers.add(el as HTMLElement);
+            } else if (queryFirst(el as ParentNode, '.el-p:not([data-sprout-processed])')) {
+              dirtyContainers.add(el as HTMLElement);
             }
           }
         }
       }
-      if (sawRelevant) break;
     }
 
-    if (!sawRelevant) return;
-
-    if (masonryIsScrolling) {
-      pendingScrollWork = true;
-      return;
-    }
+    if (dirtyContainers.size === 0) return;
 
     if (debounceTimer) window.clearTimeout(debounceTimer);
+    // Capture the containers before the timeout (they're DOM nodes, so references stay valid)
+    const containers = Array.from(dirtyContainers);
     debounceTimer = window.setTimeout(() => {
       try {
-        debugLog('[Sprout] MutationObserver triggered — processing new nodes');
-        void processCardElements(document.documentElement, undefined, '');
-        scheduleMasonryLayout();
+        debugLog('[Sprout] MutationObserver triggered — processing', containers.length, 'dirty containers');
+        for (const container of containers) {
+          // Only process if the container is still in the DOM
+          if (container.isConnected) {
+            void processCardElements(container, undefined, '');
+          }
+        }
       } catch (err) {
         log.error('MutationObserver handler error', err);
       } finally {
@@ -360,6 +319,21 @@ function setupDebouncedMutationObserver() {
    ========================= */
 
 async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostProcessorContext, sourceContent?: string) {
+  // If no source content provided, try to read it from the active file
+  if (!sourceContent) {
+    try {
+      const plugin = getSproutPlugin();
+      if (plugin) {
+        const activeFile = plugin.app.workspace?.getActiveFile?.();
+        if (activeFile instanceof TFile && activeFile.extension === 'md') {
+          sourceContent = await plugin.app.vault.read(activeFile);
+        }
+      }
+    } catch (e) {
+      debugLog('[Sprout] Could not read source file in processCardElements:', e);
+    }
+  }
+
   const found: HTMLElement[] = [];
 
   try {
@@ -410,227 +384,76 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
   }
 
   await Promise.resolve();
+
 }
 
 /* =========================
-   True Masonry layout
+   FLIP animation for masonry reflow
    ========================= */
 
-let masonryLayoutTimer: number | null = null;
-let masonryLayoutRaf: number | null = null;
-let masonryLayoutRunning = false;
-let masonryIsScrolling = false;
-let masonryResizeRaf: number | null = null;
-let masonryResizeTimer: number | null = null;
+const FLIP_DURATION = 280; // ms
 
-// Track last known widths to avoid unnecessary relayouts
-let lastKnownViewportWidth = 0;
-
-function scheduleMasonryLayout(forceRebalance = false) {
-  if (masonryIsScrolling) {
-    if (masonryLayoutTimer) window.clearTimeout(masonryLayoutTimer);
-    masonryLayoutTimer = window.setTimeout(() => scheduleMasonryLayout(forceRebalance), 120);
-    return;
-  }
-
-  if (masonryLayoutTimer) window.clearTimeout(masonryLayoutTimer);
-  masonryLayoutTimer = window.setTimeout(() => {
-    if (masonryLayoutRaf) window.cancelAnimationFrame(masonryLayoutRaf);
-    masonryLayoutRaf = window.requestAnimationFrame(() => {
-      masonryLayoutTimer = null;
-      if (masonryLayoutRunning) return;
-      masonryLayoutRunning = true;
-      try {
-        layoutAllMasonryGrids(forceRebalance);
-      } finally {
-        masonryLayoutRunning = false;
-      }
-    });
-  }, 60);
+/**
+ * scheduleMasonryLayout stub — CSS multi-column handles layout.
+ */
+function _scheduleMasonryLayout(_forceRebalance = false) {
+  /* intentional no-op — CSS multi-column handles column layout */
 }
 
 /**
- * Check if existing masonry grids need column rebalancing based on new width
+ * Snapshot the bounding rect of every visible `.sprout-pretty-card` inside
+ * the closest masonry section.  Returns a Map keyed by element.
  */
-function shouldRebalanceGrids(): boolean {
-  const currentWidth = window.innerWidth;
-  const minColWidth = 280;
-  
-  const oldCols = Math.max(1, Math.min(2, Math.floor(lastKnownViewportWidth / minColWidth)));
-  const newCols = Math.max(1, Math.min(2, Math.floor(currentWidth / minColWidth)));
-  
-  if (oldCols !== newCols) {
-    debugLog(`[Masonry] Column count changed: ${oldCols} -> ${newCols}`);
-    lastKnownViewportWidth = currentWidth;
-    return true;
-  }
-  
-  return false;
+function snapshotCardPositions(cardEl: HTMLElement): Map<HTMLElement, DOMRect> {
+  const section = cardEl.closest('.markdown-preview-section');
+  if (!section) return new Map();
+  const positions = new Map<HTMLElement, DOMRect>();
+  section.querySelectorAll<HTMLElement>('.sprout-pretty-card').forEach(card => {
+    if (card.offsetParent !== null) { // visible
+      positions.set(card, card.getBoundingClientRect());
+    }
+  });
+  return positions;
 }
 
 /**
- * Rebalance an existing masonry grid's columns without rebuilding
+ * FLIP animate cards from their old positions to their new positions.
+ * Call this AFTER the DOM change has been made and the browser has reflowed.
+ *
+ * @param before — Map returned by `snapshotCardPositions()` before the change
  */
-function rebalanceExistingGrid(wrapper: HTMLElement) {
-  const grid = queryFirst<HTMLElement>(wrapper, ".sprout-masonry-grid");
-  if (!grid) return;
-  
-  // Get all cards from all columns
-  const allCards = Array.from(grid.querySelectorAll<HTMLElement>('.sprout-pretty-card'));
-  if (allCards.length === 0) return;
-  
-  // Calculate new column count
-  const parent = wrapper.parentElement;
-  const parentWidth = parent?.getBoundingClientRect().width || wrapper.getBoundingClientRect().width || 800;
-  const minColWidth = 280;
-  const newColCount = Math.max(1, Math.min(2, Math.floor(parentWidth / minColWidth)));
-  
-  // Get current column count
-  const currentCols = grid.querySelectorAll('.sprout-masonry-col').length;
-  
-  // If column count hasn't changed, no need to rebalance
-  if (currentCols === newColCount) return;
-  
-  debugLog(`[Masonry] Rebalancing grid: ${currentCols} -> ${newColCount} columns`);
-  
-  // Remove old columns
-  grid.replaceChildren();
-  
-  // Create new columns
-  const columns: HTMLElement[] = [];
-  for (let i = 0; i < newColCount; i++) {
-    const col = document.createElement('div');
-    col.className = 'sprout-masonry-col';
-    grid.appendChild(col);
-    columns.push(col);
+function flipAnimateCards(before: Map<HTMLElement, DOMRect>) {
+  if (before.size === 0) return;
+
+  // "Last" — read the new positions
+  for (const [card, oldRect] of before) {
+    const newRect = card.getBoundingClientRect();
+    const dx = oldRect.left - newRect.left;
+    const dy = oldRect.top - newRect.top;
+
+    // Skip cards that haven't moved
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+
+    // "Invert" — move card back to where it was
+    card.style.transition = 'none';
+    card.style.transform = `translate(${dx}px, ${dy}px)`;
+
+    // Force reflow so the inverted position is painted
+    void card.offsetHeight;
+
+    // "Play" — animate from inverted position to final (transform: none)
+    card.style.transition = `transform ${FLIP_DURATION}ms ease`;
+    card.style.transform = '';
   }
-  
-  // Redistribute cards into shortest column
-  for (const card of allCards) {
-    let minCol = columns[0];
-    let minH = minCol.scrollHeight;
-    for (const c of columns) {
-      const h = c.scrollHeight;
-      if (h < minH) { minH = h; minCol = c; }
+
+  // Clean up transition style after animation ends
+  const cleanup = () => {
+    for (const [card] of before) {
+      card.style.transition = '';
+      card.style.transform = '';
     }
-    minCol.appendChild(card);
-    card.classList.add('sprout-reading-break-reset');
-  }
-  
-  // Add bottom margin to last card in each column
-  for (const col of columns) {
-    const lastCard = col.lastElementChild as HTMLElement;
-    if (lastCard) {
-      lastCard.classList.add('sprout-reading-last-card');
-    }
-  }
-}
-
-function layoutAllMasonryGrids(forceRebalance = false) {
-  // First, check if existing grids need rebalancing (e.g., after resize)
-  if (forceRebalance || shouldRebalanceGrids()) {
-    const existingWrappers = Array.from(document.querySelectorAll<HTMLElement>('.sprout-masonry-grid-wrapper[data-sprout-masonry="true"]'));
-    for (const wrapper of existingWrappers) {
-      rebalanceExistingGrid(wrapper);
-    }
-  }
-  
-  // Gather only unwrapped cards to avoid double-wrapping
-  const allCards = Array.from(document.querySelectorAll<HTMLElement>('.sprout-pretty-card'));
-  const cards = allCards.filter(c => !c.closest('.sprout-masonry-grid-wrapper'));
-  if (cards.length === 0) {
-    // Even if no new cards, hide siblings for existing grids
-    hideAllMasonryGridSiblings();
-    return;
-  }
-
-  // Group by parent and consecutive nodes
-  const parents = new Map<HTMLElement, HTMLElement[]>();
-
-  for (const card of cards) {
-    const parent = card.parentElement;
-    if (!parent) continue;
-    if (!parents.has(parent)) parents.set(parent, []);
-    parents.get(parent)!.push(card);
-  }
-
-  for (const parent of parents.keys()) {
-    // iterate parent's children and collect consecutive .sprout-pretty-card nodes into subgroups
-    const children = Array.from(parent.children);
-    let current: HTMLElement[] = [];
-    for (const child of children) {
-      if ((child as HTMLElement).classList && (child as HTMLElement).classList.contains('sprout-pretty-card')) {
-        current.push(child as HTMLElement);
-      } else {
-        if (current.length > 0) {
-          buildOrUpdateMasonryForGroup(parent, current);
-          current = [];
-        }
-      }
-    }
-    if (current.length > 0) buildOrUpdateMasonryForGroup(parent, current);
-  }
-  
-  // After all grids are built/updated, hide duplicate siblings
-  // Run immediately and again after a short delay to catch everything
-  hideAllMasonryGridSiblings();
-  window.setTimeout(() => hideAllMasonryGridSiblings(), 0);
-  window.setTimeout(() => hideAllMasonryGridSiblings(), 50);
-}
-
-function buildOrUpdateMasonryForGroup(parent: HTMLElement, group: HTMLElement[]) {
-  if (group.length === 0) return;
-
-  // If these cards are already inside our masonry wrapper (or an ancestor wrapper), skip
-  const first = group[0];
-  if (first.closest('.sprout-masonry-grid-wrapper')) return;
-
-  // Create wrapper
-  const wrapper = document.createElement('div');
-  wrapper.className = 'sprout-masonry-grid-wrapper';
-  wrapper.setAttribute('data-sprout-masonry', 'true');
-
-  const grid = document.createElement('div');
-  grid.className = 'sprout-masonry-grid';
-  wrapper.appendChild(grid);
-
-  // Insert wrapper before the first card
-  parent.insertBefore(wrapper, first);
-
-  // Decide columns based on available width
-  const parentRect = parent.getBoundingClientRect();
-  const parentWidth = parentRect.width || parent.clientWidth || 800;
-  const minColWidth = 280; // tweak as needed
-  const cols = Math.max(1, Math.min(2, Math.floor(parentWidth / minColWidth)));
-
-  const columns: HTMLElement[] = [];
-  for (let i = 0; i < cols; i++) {
-    const col = document.createElement('div');
-    col.className = 'sprout-masonry-col';
-    grid.appendChild(col);
-    columns.push(col);
-  }
-
-  // Append cards into shortest column
-  for (const card of group) {
-    let minCol = columns[0];
-    let minH = minCol.scrollHeight;
-    for (const c of columns) {
-      const h = c.scrollHeight;
-      if (h < minH) { minH = h; minCol = c; }
-    }
-    minCol.appendChild(card);
-    // ensure card doesn't have leftover break styles
-    card.classList.add('sprout-reading-break-reset');
-  }
-
-  // Add bottom margin to last card in each column to push down content after
-  for (const col of columns) {
-    const lastCard = col.lastElementChild as HTMLElement;
-    if (lastCard) {
-      lastCard.classList.add('sprout-reading-last-card');
-    }
-  }
+  };
+  setTimeout(cleanup, FLIP_DURATION + 20);
 }
 
 /* =========================
@@ -638,157 +461,111 @@ function buildOrUpdateMasonryForGroup(parent: HTMLElement, group: HTMLElement[])
    ========================= */
 
 /**
- * Hide duplicate siblings after all masonry grid wrappers
- * Called after layout completes to ensure DOM is settled
- * Strategy: Hide el-div and el-p elements that are duplicates, but NOT content after cards
+ * Strip markdown formatting characters so that raw source text and
+ * Obsidian-rendered DOM text can be compared reliably.
+ * Removes: bold (**), italic (*), cloze delimiters ({{c1:: … }}),
+ *          wiki-link brackets ([[…]]), image embeds (![[…]]),
+ *          and normalises whitespace.
  */
-function hideAllMasonryGridSiblings() {
-  const wrappers = Array.from(document.querySelectorAll<HTMLElement>('.sprout-masonry-grid-wrapper[data-sprout-masonry="true"]'));
-  
-  debugLog('[Hide Siblings] Found', wrappers.length, 'masonry grids');
-  
-  for (const wrapper of wrappers) {
-    let next = wrapper.nextElementSibling;
-    const toHide: Element[] = [];
-    let extractedContent: { element: Element; content: string } | null = null;
-    
-    // Hide el-div and el-p elements that are card duplicates, until we hit non-card content
-    while (next) {
-      const classes = next.className || '';
-      
-      // STOP if we hit a header - this is new content after flashcards
-      if (classes.match(/\bel-h[1-6]\b/)) {
-        debugLog('[Hide Siblings] Stopped at header:', (next.textContent || '').substring(0, 50));
-        break;
-      }
-      
-      // STOP if we hit major structural elements (new content)
-      if (classes.includes('el-ul') ||
-          classes.includes('el-ol') ||
-          classes.includes('el-blockquote') ||
-          classes.includes('el-table')) {
-        debugLog('[Hide Siblings] Stopped at structural element');
-        break;
-      }
-      
-      // Check if this el-div or el-p contains content that should NOT be hidden
-      if (classes.includes('el-div') || classes.includes('el-p')) {
-        // Check if this element contains non-card content (like a header merged with card content)
-        const check = checkForNonCardContent(next);
-        if (check.hasNonCardContent) {
-          if (check.contentAfterPipe) {
-            // This element has BOTH card content AND non-card content
-            // We'll hide it but need to extract and render the non-card content
-            debugLog('[Hide Siblings] Element has mixed content, extracting:', check.contentAfterPipe);
-            extractedContent = { element: next, content: check.contentAfterPipe };
-            toHide.push(next);
-          } else {
-            debugLog('[Hide Siblings] Stopped - element contains non-card content');
-          }
-          break;
-        }
-        toHide.push(next);
-        next = next.nextElementSibling;
-        continue;
-      }
-      
-      // Unknown element - stop to be safe
-      break;
-    }
-    
-    debugLog('[Hide Siblings] Hiding', toHide.length, 'duplicate elements after masonry grid');
-    
-    // Hide all collected duplicates
-    for (const el of toHide) {
-      (el as HTMLElement).classList.add('sprout-hidden-important');
-      (el as HTMLElement).setAttribute('data-sprout-hidden', 'true');
-    }
-    
-    // If we extracted content that should be visible, create new elements for it
-    if (extractedContent) {
-      const { element, content } = extractedContent;
-      
-      // Check if we already created replacements for this content
-      const existingReplacement = element.nextElementSibling;
-      if (existingReplacement?.hasAttribute('data-sprout-extracted')) {
-        debugLog('[Hide Siblings] Replacement already exists, skipping');
-        continue;
-      }
-      
-      // Parse the content into separate markdown elements
-      // Split on common patterns: headers, numbered lists, bullet lists
-      const elements = parseMarkdownToElements(content);
-      
-      // Insert all parsed elements after the hidden element
-      let insertAfter: Element = element;
-      for (const elemData of elements) {
-        const newEl = createMarkdownElement(elemData);
-        if (newEl) {
-          insertAfter.parentNode?.insertBefore(newEl, insertAfter.nextSibling);
-          insertAfter = newEl;
-          debugLog('[Hide Siblings] Created replacement element:', elemData.type);
-        }
-      }
-    }
-  }
-  
-  // Force a reflow to ensure hidden elements are painted correctly
-  // This prevents the "only shows after inspect element" issue
-  if (wrappers.length > 0) {
-    void document.body.offsetHeight;
-    
-    // Force repaint of the first visible element after each wrapper
-    for (const wrapper of wrappers) {
-      let next = wrapper.nextElementSibling;
-      while (next) {
-        const classes = next.className || '';
-        
-        // Skip hidden elements
-        if ((next as HTMLElement).classList.contains('sprout-hidden-important') || 
-            (next as HTMLElement).hasAttribute('data-sprout-hidden')) {
-          next = next.nextElementSibling;
-          continue;
-        }
-        
-        // Found first visible element - force it to repaint
-        if (classes.match(/\bel-h[1-6]\b/) || classes.includes('el-')) {
-          const el = next as HTMLElement;
-          el.classList.add('sprout-hidden-important');
-          void el.offsetHeight; // Force reflow
-          el.classList.remove('sprout-hidden-important');
-          void el.offsetHeight; // Force another reflow
-          break;
-        }
-        next = next.nextElementSibling;
-      }
-    }
-  }
+function stripMarkdownFormatting(s: string): string {
+  let out = s;
+  // Remove cloze wrappers: {{c1:: … }} → content
+  out = out.replace(/\{\{c\d+::/g, "");
+  out = out.replace(/\}\}/g, "");
+  // Remove image embeds ![[...]]
+  out = out.replace(/!\[\[[^\]]*\]\]/g, "");
+  // Remove wiki-link brackets [[target|display]] → display, [[target]] → target
+  out = out.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2");
+  out = out.replace(/\[\[([^\]]+)\]\]/g, "$1");
+  // Remove bold / italic markers (must strip ** before * to avoid leftovers)
+  out = out.replace(/\*{2,}/g, "");
+  out = out.replace(/\*/g, "");
+  // Remove underscore italic markers (word-boundary only to avoid variable_names)
+  out = out.replace(/(?<!\w)_|_(?!\w)/g, "");
+  // Remove strikethrough ~~, highlight ==
+  out = out.replace(/~~/g, "");
+  out = out.replace(/==/g, "");
+  // Remove pipe field terminators and field keys like "I|" at the start
+  out = out.replace(/\|/g, "");
+  // Collapse whitespace
+  out = out.replace(/\s+/g, " ").trim();
+  return out;
 }
 
 /**
- * Hide duplicate siblings after individual cards
+ * Check if a sibling's text is part of the card's raw source.
+ * Compares stripped-markdown versions of both to account for Obsidian
+ * rendering bold/italic/cloze markers into styled HTML.
+ */
+function siblingTextBelongsToCard(
+  siblingText: string,
+  cardTextStripped: string,
+  cardTextNorm: string,
+  cardMathSig: string,
+  siblingEl: Element,
+): boolean {
+  const rawNorm = clean(siblingText).replace(/\s+/g, " ").trim();
+  if (!rawNorm) return true; // Empty siblings between card paragraphs — safe to hide
+
+  // Direct substring match (handles cases without formatting)
+  if (cardTextNorm && cardTextNorm.includes(rawNorm)) {
+    return true;
+  }
+
+  // Stripped-markdown comparison: strip formatting from both sides
+  const sibStripped = stripMarkdownFormatting(rawNorm);
+  if (cardTextStripped && sibStripped && cardTextStripped.includes(sibStripped)) {
+    return true;
+  }
+
+  // MathJax comparison
+  const hasMath = !!queryFirst(siblingEl, '.math, mjx-container, mjx-math');
+  if (hasMath && cardMathSig) {
+    const rawMathSig = normalizeMathSignature(rawNorm);
+    if (rawMathSig && cardMathSig.includes(rawMathSig)) {
+      return true;
+    }
+  }
+
+  // Heuristic: if the sibling text looks like card field remnants
+  // (contains pipe-delimited fields, cloze syntax, or field keys),
+  // it's almost certainly leftover from the card being split.
+  const looksLikeCardContent =
+    /\{\{c\d+::/.test(siblingText) ||
+    /^\s*[A-Z]{1,3}\s*\|/.test(siblingText) ||
+    /\}\}\s*\|/.test(siblingText);
+  if (looksLikeCardContent) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Hide duplicate siblings after individual cards.
+ * Obsidian's reading-view renderer splits card blocks at blank lines,
+ * creating sibling `.el-p` / `.el-ol` / `.el-ul` elements that duplicate
+ * content already rendered inside the pretty-card.
  */
 function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   const cardTextNorm = cardRawText ? clean(cardRawText).replace(/\s+/g, " ").trim() : "";
+  const cardTextStripped = cardTextNorm ? stripMarkdownFormatting(cardTextNorm) : "";
   const cardMathSig = cardTextNorm ? normalizeMathSignature(cardTextNorm) : "";
   
-  // Get the actual position in DOM to find siblings
-  // If card is in masonry, we need to check its wrapper's siblings
-  let searchRoot: Element = cardEl;
-  const masonryWrapper = cardEl.closest('.sprout-masonry-grid-wrapper');
-  if (masonryWrapper) {
-    searchRoot = masonryWrapper;
-  }
-  
-  let next = searchRoot.nextElementSibling;
+  let next = cardEl.nextElementSibling;
   const toHide: Element[] = [];
   
-  // Collect consecutive el-div and el-p elements until we hit significant content
   while (next) {
     const classes = next.className || '';
     
-    // Stop if we hit another sprout card
-    if (classes.includes('sprout-pretty-card')) {
+    // Skip siblings already hidden by a previous run
+    if (next.hasAttribute('data-sprout-hidden')) {
+      next = next.nextElementSibling;
+      continue;
+    }
+    
+    // Stop if we hit another sprout card (already processed)
+    if (classes.includes('sprout-pretty-card') || next.hasAttribute('data-sprout-processed')) {
       break;
     }
     
@@ -797,42 +574,50 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
       break;
     }
     
-    // Stop if we hit major structural elements
-    if (classes.includes('el-ul') ||
-        classes.includes('el-ol') ||
-        classes.includes('el-blockquote') ||
-        classes.includes('el-pre') ||
-        classes.includes('el-table')) {
-      break;
+    // Stop if we hit an anchor for the NEXT card (unprocessed .el-p with ^sprout-)
+    if (classes.includes('el-p') && !classes.includes('sprout-pretty-card')) {
+      const txt = extractRawTextFromParagraph(next as HTMLElement);
+      const cleanTxt = clean(txt);
+      if (ANCHOR_RE.test(cleanTxt) && !cleanTxt.includes(`^sprout-${cardEl.dataset.sproutId}`)) {
+        break;
+      }
     }
-    
-    // Hide math blocks and paragraphs that are part of this card's source block
-    if (classes.includes('el-div') || classes.includes('el-p')) {
-      let raw = "";
-      if (classes.includes('el-p')) raw = extractRawTextFromParagraph(next as HTMLElement);
-      else raw = extractTextWithLaTeX(next as HTMLElement);
 
-      const rawNorm = clean(raw).replace(/\s+/g, " ").trim();
-      const hasMath = !!queryFirst(next as HTMLElement, '.math, mjx-container, mjx-math');
-      const rawMathSig = rawNorm ? normalizeMathSignature(rawNorm) : "";
-
-      if (cardTextNorm && rawNorm && cardTextNorm.includes(rawNorm)) {
+    // Extract text from the sibling, regardless of its element type
+    let raw = "";
+    if (classes.includes('el-p')) {
+      raw = extractRawTextFromParagraph(next as HTMLElement);
+    } else if (classes.includes('el-div')) {
+      raw = extractTextWithLaTeX(next as HTMLElement);
+    } else if (
+      classes.includes('el-ol') ||
+      classes.includes('el-ul') ||
+      classes.includes('el-blockquote') ||
+      classes.includes('el-table')
+    ) {
+      // For structural elements, check if their text belongs to the card
+      raw = (next as HTMLElement).innerText || (next as HTMLElement).textContent || '';
+    } else if (classes.includes('el-pre')) {
+      // Code blocks — stop unless text is part of card
+      raw = (next as HTMLElement).textContent || '';
+    } else {
+      // Unknown element type — try text content before giving up
+      raw = (next as HTMLElement).textContent || '';
+      if (!raw.trim()) {
+        // Empty unknown elements — safe to hide
         toHide.push(next);
         next = next.nextElementSibling;
         continue;
       }
-
-      if (hasMath && cardMathSig && rawMathSig && cardMathSig.includes(rawMathSig)) {
-        toHide.push(next);
-        next = next.nextElementSibling;
-        continue;
-      }
-
-      // If we don't have a match, stop hiding so normal content can render
-      break;
     }
-    
-    // Unknown element type - stop
+
+    if (siblingTextBelongsToCard(raw, cardTextStripped, cardTextNorm, cardMathSig, next)) {
+      toHide.push(next);
+      next = next.nextElementSibling;
+      continue;
+    }
+
+    // No match — stop hiding so normal content can render
     break;
   }
   
@@ -1005,7 +790,6 @@ function enhanceCardElement(
               sproutCard.fields.O = options;
             }
             enhanceCardElement(el, sproutCard, original);
-            scheduleMasonryLayout();
           } catch (e) {
             log.warn("Failed to refresh pretty-card DOM after edit", e);
           }
@@ -1053,6 +837,10 @@ function enhanceCardElement(
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const expanded = btn.getAttribute('aria-expanded') === 'true';
+
+      // FLIP step 1: snapshot all sibling card positions before the change
+      const before = snapshotCardPositions(el);
+
       if (expanded) {
         content.classList.remove('expanded');
         content.classList.add('collapsed');
@@ -1063,9 +851,13 @@ function enhanceCardElement(
         content.classList.add('expanded');
         btn.setAttribute('aria-expanded', 'true');
         if (chevron) chevron.classList.remove('sprout-reading-chevron-collapsed');
-        // after expanding, reflow masonry because heights changed
-        scheduleMasonryLayout();
       }
+
+      // FLIP step 2: after the browser reflows, animate cards
+      // from their old positions to their new ones
+      requestAnimationFrame(() => {
+        flipAnimateCards(before);
+      });
     });
   });
 
@@ -1085,6 +877,9 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
   const plugin = getSproutPlugin();
   if (!plugin) return;
   
+  // Source path for resolving images/links
+  const sourcePath = app.workspace?.getActiveFile?.()?.path ?? '';
+
   // Create a temporary component for rendering to avoid memory leaks
   const component = plugin.addChild(new Component());
   
@@ -1100,7 +895,8 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       
       if (qEl && qText) {
         try {
-          await MarkdownRenderer.render(component, qText, qEl as HTMLElement, "");
+          await MarkdownRenderer.renderMarkdown(qText, qEl as HTMLElement, sourcePath, component);
+          resolveUnloadedEmbeds(qEl as HTMLElement, app, sourcePath);
         } catch {
           qEl.textContent = qText;
         }
@@ -1108,11 +904,17 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       
       if (aEl && aText) {
         try {
-          await MarkdownRenderer.render(component, aText, aEl as HTMLElement, "");
+          await MarkdownRenderer.renderMarkdown(aText, aEl as HTMLElement, sourcePath, component);
+          resolveUnloadedEmbeds(aEl as HTMLElement, app, sourcePath);
         } catch {
           aEl.textContent = aText;
         }
       }
+    }
+
+    // Render IO cards: masked image (question) + full image (answer)
+    if (card.type === 'io') {
+      renderIoInReadingCard(el, card, plugin, sourcePath);
     }
     
     // Render markdown for Info fields (all card types)
@@ -1121,7 +923,10 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       const iEl = queryFirst(el, '[id^="sprout-i-"]');
       if (iEl) {
         try {
-          await MarkdownRenderer.render(component, iText, iEl as HTMLElement, "");
+          await MarkdownRenderer.renderMarkdown(iText, iEl as HTMLElement, sourcePath, component);
+          // Resolve any unloaded internal-embed spans that MarkdownRenderer
+          // created but didn't fully load (common for images in detached components)
+          resolveUnloadedEmbeds(iEl as HTMLElement, app, sourcePath);
         } catch {
           iEl.textContent = iText;
         }
@@ -1131,9 +936,179 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
     // Remove the component to clean up any registered event handlers
     plugin.removeChild(component);
   }
+
+  // Resolve any ![[image]] embed placeholders produced by processMarkdownFeatures
+  // These appear in cloze, MCQ, and title fields as <img data-embed-path="...">
+  resolveEmbeddedImages(el, app, sourcePath);
   
   // Render MathJax after markdown is processed
   renderMathInElement(el);
+}
+
+/**
+ * Resolve unloaded internal-embed spans created by MarkdownRenderer.
+ * When MarkdownRenderer.renderMarkdown runs in a detached component,
+ * image embeds are created as <span class="internal-embed"> with src/alt
+ * attributes but never get the `is-loaded` class or an actual <img> child.
+ * This function finds those orphaned spans and converts them to real images.
+ */
+function resolveUnloadedEmbeds(
+  container: HTMLElement,
+  app: App,
+  sourcePath: string,
+) {
+  const embeds = container.querySelectorAll<HTMLElement>('span.internal-embed:not(.is-loaded)');
+  for (const embed of Array.from(embeds)) {
+    const embedSrc = embed.getAttribute('src') || embed.getAttribute('alt') || '';
+    if (!embedSrc) continue;
+
+    // Check if this looks like an image path
+    const ext = embedSrc.split('.').pop()?.toLowerCase() || '';
+    const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp', 'avif', 'tiff'];
+    if (!imageExts.includes(ext)) continue;
+
+    try {
+      const imageFile = resolveImageFile(app, sourcePath, embedSrc);
+      if (imageFile) {
+        const img = document.createElement('img');
+        img.src = app.vault.getResourcePath(imageFile);
+        img.alt = embedSrc.split('/').pop() || embedSrc;
+        img.className = 'sprout-reading-embed-img';
+        embed.replaceChildren(img);
+        embed.classList.add('media-embed', 'image-embed', 'is-loaded');
+      } else {
+        // Image not found — show a comment-like placeholder
+        embed.textContent = `⚠️ Image not found: ${embedSrc}`;
+        embed.classList.add('sprout-missing-image');
+      }
+    } catch (err) {
+      log.warn('Failed to resolve internal embed:', embedSrc, err);
+      embed.textContent = `⚠️ Image not found: ${embedSrc}`;
+      embed.classList.add('sprout-missing-image');
+    }
+  }
+}
+
+/**
+ * Find all `<img data-embed-path="...">` placeholders inside an element
+ * and resolve them to actual vault resource URLs.
+ */
+function resolveEmbeddedImages(el: HTMLElement, app: App, sourcePath: string) {
+  const imgs = el.querySelectorAll<HTMLImageElement>('img[data-embed-path]');
+  for (const img of Array.from(imgs)) {
+    const embedPath = img.getAttribute('data-embed-path');
+    if (!embedPath) continue;
+
+    try {
+      const imageFile = resolveImageFile(app, sourcePath, embedPath);
+      if (imageFile) {
+        img.src = app.vault.getResourcePath(imageFile);
+        img.removeAttribute('data-embed-path');
+      } else {
+        // Fallback: show the path as alt text
+        img.alt = embedPath;
+        img.title = `Image not found: ${embedPath}`;
+      }
+    } catch (err) {
+      log.warn('Failed to resolve embedded image:', embedPath, err);
+    }
+  }
+}
+
+/* =========================
+   IO image rendering for reading-view cards
+   ========================= */
+
+/**
+ * Render an IO parent card's masked image (question) and full image (answer)
+ * directly inside the reading-view pretty card.
+ * Shows ALL masks (parent view) so the user can see every occlusion zone.
+ */
+function renderIoInReadingCard(
+  el: HTMLElement,
+  card: SproutCard,
+  plugin: SproutPluginLike,
+  sourcePath: string,
+) {
+  const app = plugin.app;
+  const anchorId = card.anchorId;
+
+  // Resolve IO data from store
+  const ioMap = (plugin.store?.data as unknown as { io?: Record<string, { imageRef: string; rects: StoredIORect[]; maskMode?: string }> })?.io ?? {};
+  const ioDef = ioMap[anchorId];
+  if (!ioDef) return;
+
+  const imageRef = String(ioDef.imageRef || '').trim();
+  if (!imageRef) return;
+
+  // Resolve image file to get a vault resource URL
+  const imageFile = resolveImageFile(app, sourcePath, imageRef);
+  if (!imageFile) return;
+  const imageSrc = app.vault.getResourcePath(imageFile);
+
+  const occlusions: StoredIORect[] = Array.isArray(ioDef.rects) ? ioDef.rects : [];
+
+  // ---- Question container: image with mask overlays ----
+  const questionEl = queryFirst<HTMLElement>(el, '[id^="sprout-io-question-"]');
+  if (questionEl) {
+    questionEl.replaceChildren();
+    const container = document.createElement('div');
+    container.className = 'sprout-io-reading-container';
+
+    const img = document.createElement('img');
+    img.src = imageSrc;
+    img.alt = card.title || 'Image Occlusion';
+    img.className = 'sprout-io-reading-img';
+    container.appendChild(img);
+
+    if (occlusions.length > 0) {
+      const overlay = document.createElement('div');
+      overlay.className = 'sprout-io-reading-overlay';
+
+      for (const rect of occlusions) {
+        const x = Number.isFinite(rect.x) ? Number(rect.x) : 0;
+        const y = Number.isFinite(rect.y) ? Number(rect.y) : 0;
+        const w = Number.isFinite(rect.w) ? Number(rect.w) : 0;
+        const h = Number.isFinite(rect.h) ? Number(rect.h) : 0;
+
+        const mask = document.createElement('div');
+        mask.className = 'sprout-io-reading-mask sprout-io-reading-mask-filled';
+        mask.classList.add(rect.shape === 'circle' ? 'sprout-io-reading-mask-circle' : 'sprout-io-reading-mask-rect');
+
+        setCssProps(mask, 'left', `${Math.max(0, Math.min(1, x)) * 100}%`);
+        setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
+        setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
+        setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
+
+        const hint = document.createElement('span');
+        hint.textContent = '?';
+        hint.className = 'sprout-io-reading-mask-hint';
+        mask.appendChild(hint);
+
+        overlay.appendChild(mask);
+      }
+
+      container.appendChild(overlay);
+    }
+
+    questionEl.appendChild(container);
+  }
+
+  // ---- Answer container: clean image (no masks) ----
+  const answerEl = queryFirst<HTMLElement>(el, '[id^="sprout-io-answer-"]');
+  if (answerEl) {
+    answerEl.replaceChildren();
+    const container = document.createElement('div');
+    container.className = 'sprout-io-reading-container';
+
+    const img = document.createElement('img');
+    img.src = imageSrc;
+    img.alt = card.title || 'Image Occlusion — Answer';
+    img.className = 'sprout-io-reading-img';
+    container.appendChild(img);
+
+    answerEl.appendChild(container);
+  }
 }
 
 /* =========================
@@ -1145,5 +1120,4 @@ declare global { interface Window { sproutApplyMasonryGrid?: () => void; } }
 window.sproutApplyMasonryGrid = window.sproutApplyMasonryGrid || (() => {
   debugLog('[Sprout] sproutApplyMasonryGrid placeholder invoked');
   void processCardElements(document.documentElement, undefined, '');
-  scheduleMasonryLayout();
 });

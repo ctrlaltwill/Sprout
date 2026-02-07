@@ -43,6 +43,7 @@ export type Session = {
   graded: Record<string, { rating: ReviewRating; at: number; meta: ReviewMeta | null }>;
   stats: { total: number; done: number };
   mode: "scheduled" | "practice";
+  mcqOrderMap?: Record<string, number[]>;
 };
 
 /** Snapshot saved before grading so the user can undo. */
@@ -126,6 +127,77 @@ export function filterReviewableCards(cards: CardRecord[]): CardRecord[] {
     if (t === "cloze" || t === "io" || t === "io-parent") return false;
     return !isClozeParentCard(c) && !isIoParentCard(c);
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  MCQ option order helpers                                          */
+/* ------------------------------------------------------------------ */
+
+function ensureMcqOrderMap(session: Session): Record<string, number[]> {
+  if (!session.mcqOrderMap || typeof session.mcqOrderMap !== "object") session.mcqOrderMap = {};
+  return session.mcqOrderMap;
+}
+
+function isPermutation(arr: unknown, n: number): boolean {
+  if (!Array.isArray(arr) || arr.length !== n) return false;
+  const seen = new Array<boolean>(n).fill(false);
+  for (const raw of arr) {
+    const x = Number(raw);
+    if (!Number.isInteger(x) || x < 0 || x >= n) return false;
+    if (seen[x]) return false;
+    seen[x] = true;
+  }
+  return true;
+}
+
+function shuffleInPlace(a: number[]) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i];
+    a[i] = a[j];
+    a[j] = tmp;
+  }
+}
+
+export function getWidgetMcqDisplayOrder(
+  session: Session | null,
+  card: CardRecord,
+  enabled: boolean,
+): number[] {
+  const opts = card?.options || [];
+  const n = Array.isArray(opts) ? opts.length : 0;
+  const identity = Array.from({ length: n }, (_, i) => i);
+
+  if (!enabled) return identity;
+  if (!session) return identity;
+
+  const id = String(card?.id ?? "");
+  if (!id) return identity;
+
+  const map = ensureMcqOrderMap(session);
+  const existing = map[id];
+  if (isPermutation(existing, n)) return existing;
+
+  const next = identity.slice();
+  shuffleInPlace(next);
+
+  if (n >= 2) {
+    let same = true;
+    for (let i = 0; i < n; i++) {
+      if (next[i] !== i) {
+        same = false;
+        break;
+      }
+    }
+    if (same) {
+      const tmp = next[0];
+      next[0] = next[1];
+      next[1] = tmp;
+    }
+  }
+
+  map[id] = next;
+  return next;
 }
 
 /* ------------------------------------------------------------------ */

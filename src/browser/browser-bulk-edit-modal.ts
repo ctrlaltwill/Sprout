@@ -64,7 +64,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   sproutWrapper.appendChild(overlay);
 
   const header = document.createElement("div");
-  header.className = "flex items-center justify-between gap-3 mb-6";
+  header.className = "flex items-center justify-between gap-3";
   const heading = document.createElement("div");
   heading.className = "text-lg font-semibold";
   heading.textContent = `Edit ${cards.length} selected card${cards.length === 1 ? "" : "s"}`;
@@ -84,7 +84,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   panel.appendChild(header);
 
   const form = document.createElement("div");
-  form.className = "flex flex-col gap-3";
+  form.className = "flex flex-col gap-4";
 
   const normalizedTypes = cards.map((card) => String(card?.type ?? "").toLowerCase());
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
@@ -726,7 +726,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   // ── Footer (Cancel / Save) ────────────────────────────────
 
   const footer = document.createElement("div");
-  footer.className = "flex items-center justify-end gap-4 sprout-bulk-edit-footer";
+  footer.className = "flex items-center justify-end gap-4 sprout-modal-footer";
   const cancel = document.createElement("button");
   cancel.type = "button";
   cancel.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm";

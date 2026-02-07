@@ -10,7 +10,7 @@ const entry = path.join(__dirname, "src", "main.ts");
 
 // Obsidian provides the "obsidian" module at runtime.
 // Mark it external so esbuild doesn't try to bundle it.
-const external = ["obsidian"];
+const external = ["obsidian", "sql.js"];
 
 async function build() {
   const ctx = await esbuild.context({

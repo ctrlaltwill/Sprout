@@ -164,24 +164,24 @@ export function buildPageTableBody(
     setColAttr(idTd, "id");
 
     const isSuspended = String(state?.stage || "") === "suspended";
+    const sourceLink = `${card.sourceNotePath}#^sprout-${card.id}`;
 
-    const idBtn = document.createElement("button");
-    idBtn.type = "button";
-    let buttonClass = "btn";
-    if (isQuarantined) buttonClass = "btn-destructive";
-    else if (isSuspended) buttonClass = "btn-destructive";
-    idBtn.className = buttonClass + " h-6 px-2 py-0.5 rounded-full inline-flex items-center gap-1 leading-none text-sm";
+    const idLink = document.createElement("a");
+    idLink.href = sourceLink;
+    idLink.className = "sprout-browser-id-link";
 
     if (isSuspended) {
-      idBtn.classList.add("sprout-browser-id-btn--suspended");
+      idLink.classList.add("sprout-browser-id-link--suspended");
+    }
+    if (isQuarantined) {
+      idLink.classList.add("sprout-browser-id-link--quarantined");
     }
 
-    idBtn.setAttribute("data-tooltip", `Open card ^sprout-${card.id}`);
-    idBtn.classList.add("sprout-browser-id-btn");
+    idLink.setAttribute("data-tooltip", `Open card ^sprout-${card.id}`);
 
     const idValue = document.createElement("span");
     idValue.textContent = String(card.id);
-    idBtn.appendChild(idValue);
+    idLink.appendChild(idValue);
 
     const linkIcon = document.createElement("span");
     linkIcon.setAttribute("aria-hidden", "true");
@@ -195,15 +195,15 @@ export function buildPageTableBody(
       linkIcon.classList.add("sprout-scale");
       setCssProps(linkIcon, "--sprout-scale", String(scale));
     } catch (e) { log.swallow("scale link icon", e); }
-    idBtn.appendChild(linkIcon);
+    idLink.appendChild(linkIcon);
 
-    idBtn.addEventListener("click", (ev) => {
+    idLink.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       void ctx.openSource(card);
     });
 
-    idTd.appendChild(idBtn);
+    idTd.appendChild(idLink);
     tr.appendChild(idTd);
 
     // ── Type cell ──

@@ -521,8 +521,8 @@ export class SproutSettingsTab extends PluginSettingTab {
     // Create a wrapper for all settings (everything should render inside this)
     const wrapper = containerEl.createDiv({ cls: "sprout-settings-wrapper sprout-settings" });
 
-    // Sprout Settings title above user details
-    new Setting(wrapper).setName("Sprout Settings").setHeading();
+    // Sprout title above user details
+    new Setting(wrapper).setName("Sprout").setHeading();
 
     // ----------------------------
     // User details
@@ -571,13 +571,10 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
-    // Add Sprout Settings title at the top
-    new Setting(wrapper).setName("Sprout Settings").setHeading();
-
     // ----------------------------
-    // General
+    // Options
     // ----------------------------
-    new Setting(wrapper).setName("General").setHeading();
+    new Setting(wrapper).setName("Options").setHeading();
 
     new Setting(wrapper)
       .setName("Reset settings")

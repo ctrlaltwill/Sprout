@@ -107,7 +107,7 @@ function makeAosFn(animationsEnabled: boolean) {
     el.setAttribute("data-aos", animation);
     el.setAttribute("data-aos-anchor", '[data-sprout-browser-root="1"]');
     el.setAttribute("data-aos-anchor-placement", "top-bottom");
-    el.setAttribute("data-aos-duration", "450");
+    el.setAttribute("data-aos-duration", "600");
     el.setAttribute("data-aos-offset", "0");
     if (Number.isFinite(delay)) el.setAttribute("data-aos-delay", String(delay));
   };
@@ -127,14 +127,14 @@ export function buildBrowserLayout(
   root: HTMLElement,
   ctx: ToolbarContext,
 ): ToolbarRefs {
-  const { applyAos, nextDelay, getCascadeDelay } = makeAosFn(ctx.animationsEnabled);
+  const { applyAos } = makeAosFn(ctx.animationsEnabled);
 
   const uiCleanups: Array<() => void> = [];
 
   // ── Title ──
   const title = document.createElement("div");
   title.className = "bc text-xl font-semibold tracking-tight";
-  applyAos(title, getCascadeDelay());
+  applyAos(title, 0);
   title.textContent = "Flashcard Browser";
   root.appendChild(title);
 
@@ -150,7 +150,7 @@ export function buildBrowserLayout(
   // Search input
   const searchGroup = document.createElement("div");
   searchGroup.className = "flex flex-row items-stretch gap-2 flex-1 min-w-[300px]";
-  applyAos(searchGroup, nextDelay());
+  applyAos(searchGroup, 200);
   toolbarRow.appendChild(searchGroup);
 
   const q = document.createElement("input");
@@ -197,7 +197,7 @@ export function buildBrowserLayout(
   // Controls row
   const controlsRow = document.createElement("div");
   controlsRow.className = "flex flex-row flex-wrap items-center gap-2";
-  applyAos(controlsRow, nextDelay());
+  applyAos(controlsRow, 200);
   toolbarRow.appendChild(controlsRow);
 
   // Type filter
@@ -320,7 +320,7 @@ export function buildBrowserLayout(
   const tableWrap = document.createElement("div");
   tableWrap.className =
     "bc rounded-lg border border-border overflow-auto flex-1 min-h-0 sprout-browser-table-wrap";
-  applyAos(tableWrap, nextDelay());
+  applyAos(tableWrap, 400);
   root.appendChild(tableWrap);
 
   const table = document.createElement("table");
@@ -453,7 +453,7 @@ export function buildBrowserLayout(
   // ── Bottom controls ──
   const bottom = document.createElement("div");
   bottom.className = "flex flex-row flex-wrap items-center justify-between gap-2 mt-4";
-  applyAos(bottom, nextDelay());
+  applyAos(bottom, 600);
   root.appendChild(bottom);
 
   const summaryWrap = document.createElement("div");

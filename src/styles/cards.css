@@ -129,7 +129,7 @@
 /* Textarea (no resize, 80px min) */
 .sprout-textarea-fixed {
   resize: none;
-  min-height: 80px;
+  min-height: 80px !important;
 }
 
 /* Hidden/shown toggle via class */
@@ -169,6 +169,12 @@
   display: block;
 }
 
+/* Popover dropdown: opens below trigger */
+.sprout-popover-dropdown.sprout-popover-dropdown-below {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+
 /* Badge placeholder (no-group state) */
 .sprout-badge-placeholder {
   display: inline-flex;
@@ -188,10 +194,14 @@
   box-shadow: none !important;
   outline: none !important;
   color: var(--muted-foreground) !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease, background-color 0.15s ease !important;
 }
 
 .sprout-remove-btn-ghost:hover:not(:disabled) {
   color: var(--foreground) !important;
+  background-color: var(--accent, rgba(0, 0, 0, 0.06)) !important;
 }
 
 .sprout-remove-btn-ghost:disabled,

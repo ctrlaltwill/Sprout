@@ -178,7 +178,7 @@ function parseGroups(raw: string | null): string[] | null {
 
 function validateClozeText(text: string): string[] {
   const errors: string[] = [];
-  const re = /\{\{c(\d+)::(.*?)\}\}/g;
+  const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
 
   let m: RegExpExecArray | null;
   let count = 0;

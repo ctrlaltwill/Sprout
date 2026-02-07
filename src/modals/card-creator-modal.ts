@@ -29,6 +29,7 @@ import {
   hasClozeToken,
   formatPipeField,
   createModalCardEditor,
+  setModalTitle,
   type ModalCardFieldKey,
   type ModalCardEditorResult,
   type ClipboardImage,
@@ -143,14 +144,16 @@ export class CardCreatorModal extends Modal {
   // ── Modal lifecycle ───────────────────────────────────────────────────────
 
   onOpen() {
+    setModalTitle(this, "Add Flashcard");
+
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-card-creator-modal");
     this.contentEl.addClass("bc", "sprout-card-creator-content");
-    queryFirst(this.modalEl, ".modal-header")?.remove();
-    queryFirst(this.modalEl, ".modal-close-button")?.remove();
 
+    // Escape key closes modal
+    this.scope.register([], "Escape", () => { this.close(); return false; });
 
     const { contentEl } = this;
     contentEl.empty();
@@ -161,19 +164,7 @@ export class CardCreatorModal extends Modal {
     const modalRoot = contentEl;
     modalRoot.classList.add("sprout-card-creator-root");
 
-    // ── Header ──────────────────────────────────────────────────────────────
-    const headerRow = modalRoot.createDiv({ cls: "bc flex items-center justify-between gap-3 mb-1" });
-    headerRow.createDiv({ text: "Add Flashcard", cls: "bc text-lg font-semibold" });
-    const headerClose = headerRow.createEl("button", {
-      cls: "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",
-      attr: { type: "button", "data-tooltip": "Close" },
-    });
-    headerClose.classList.add("sprout-card-creator-close");
-    const headerCloseIcon = headerClose.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
-    setIcon(headerCloseIcon, "x");
-    headerClose.onclick = () => this.close();
-
-    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-3 sprout-card-creator-body" });
+    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-4" });
 
     // ── Type selector (dropdown + popover menu) ─────────────────────────────
     const typeField = body.createDiv({ cls: "bc flex flex-col gap-1" });
@@ -274,8 +265,7 @@ export class CardCreatorModal extends Modal {
       const margin = 8;
       const width = 180;
       const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
-      const panelRect = typePanel.getBoundingClientRect();
-      const top = Math.max(margin, r.top - panelRect.height - 6);
+      const top = r.bottom + 6;
       setCssProps(typePopover, "--sprout-popover-left", `${left}px`);
       setCssProps(typePopover, "--sprout-popover-top", `${top}px`);
       setCssProps(typePopover, "--sprout-popover-width", `${width}px`);
@@ -466,7 +456,7 @@ export class CardCreatorModal extends Modal {
     ioImagePreview.classList.add("sprout-is-hidden");
 
     const ioImageContainer = ioImagePreview.createDiv({ cls: "bc flex flex-col gap-2" });
-    const ioImgElement = ioImageContainer.createEl("img", { cls: "bc w-full rounded-lg border border-border" });
+    const ioImgElement = ioImageContainer.createEl("img", { cls: "bc w-full rounded-lg" });
     ioImgElement.classList.add("sprout-io-preview-image");
 
     const ioImageInfo = ioImageContainer.createDiv({ cls: "bc text-xs text-muted-foreground" });
@@ -577,17 +567,16 @@ export class CardCreatorModal extends Modal {
     };
 
     // ── Footer buttons ──────────────────────────────────────────────────────
-    const footer = modalRoot.createDiv({ cls: "bc flex flex-col sprout-card-creator-footer" });
-    const footerRow = footer.createDiv({ cls: "bc flex items-center justify-end gap-4" });
+    const footer = modalRoot.createDiv({ cls: "bc flex items-center justify-end gap-4 sprout-modal-footer" });
 
-    const cancelBtn = footerRow.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
+    const cancelBtn = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm", attr: { "data-tooltip": "Cancel" } });
     cancelBtn.type = "button";
     const cancelIcon = cancelBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(cancelIcon, "x");
     cancelBtn.createSpan({ text: "Cancel" });
     cancelBtn.onclick = () => this.close();
 
-    const addBtn = footerRow.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
+    const addBtn = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm", attr: { "data-tooltip": "Add card to the active note" } });
     addBtn.type = "button";
     const addIcon = addBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(addIcon, "plus");
@@ -713,7 +702,7 @@ export class CardCreatorModal extends Modal {
     this.containerEl.removeClass("sprout-modal-container");
     this.containerEl.removeClass("sprout-modal-dim");
     this.modalEl.removeClass("bc", "sprout-modals");
-    this.contentEl.removeClass("bc");
+    this.contentEl.removeClass("bc", "sprout-card-creator-content");
     this.contentEl.empty();
   }
 }

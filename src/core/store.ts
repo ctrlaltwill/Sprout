@@ -409,6 +409,10 @@ export class JsonStore {
     return Object.values(this.data.cards || {}).filter((c) => !q[String(c.id)]);
   }
 
+  getAllStates() {
+    return this.data.states || {};
+  }
+
   getCardsByNote(notePath: string) {
     return this.getAllCards().filter((c) => c.sourceNotePath === notePath);
   }

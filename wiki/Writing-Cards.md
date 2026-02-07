@@ -93,6 +93,26 @@ Standard Obsidian syntax works inside any field:
 - **Images**: `![[image.png]]` or `![[image.png|400]]` for a sized embed
 - **External images**: `![alt](https://...)`
 
+## Inline formatting
+
+Sprout supports standard Obsidian inline markdown in all card fields (question, answer, cloze text, extra info). Formatting is rendered in the reviewer, widget, and reading view, and is converted to HTML when exporting to Anki.
+
+| Syntax | Result | Shortcut |
+|--------|--------|----------|
+| `**text**` | **Bold** | Cmd+B (Ctrl+B) |
+| `*text*` | *Italic* | Cmd+I (Ctrl+I) |
+| `_text_` | *Italic* | — |
+| `~~text~~` | ~~Strikethrough~~ | Cmd+Shift+S (Ctrl+Shift+S) |
+| `==text==` | Highlight | Cmd+Shift+H (Ctrl+Shift+H) |
+
+> **Note:** `_text_` is italic in Obsidian — it does **not** produce underline. If you need underline, subscript, or superscript, use raw HTML tags (`<u>`, `<sub>`, `<sup>`) which Obsidian renders natively.
+
+### Anki import/export
+
+When **exporting** to Anki, markdown formatting is converted to the corresponding HTML tags (`<b>`, `<i>`, `<s>`, `<mark>`).
+
+When **importing** from Anki, HTML formatting tags are converted to Obsidian markdown. Tags without a native Obsidian syntax (`<u>`, `<sub>`, `<sup>`) are kept as raw HTML so they still render correctly. If a field already contains raw markdown (e.g. `**bold**` without `<b>` tags), it is imported as-is.
+
 ## Creating cards from the context menu
 
 You don't have to write the pipe syntax by hand. Right-click in any note (or use the command palette) and choose one of the **Add flashcard** options to open a modal where you can fill in the fields. Sprout will insert the formatted card block into your note automatically.

@@ -80,16 +80,23 @@
   accent-color: var(--text-normal) !important;
 }
 
-.sprout .sprout-browser-id-btn {
+.sprout .sprout-browser-id-link {
   font-size: 10px !important;
-  padding: 2px 8px !important;
-  height: 24px !important;
   line-height: 1 !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  color: var(--text-normal) !important;
 }
 
-.sprout .sprout-browser-id-btn--suspended {
-  background-color: rgb(239, 68, 68) !important;
-  color: white !important;
+.sprout .sprout-browser-id-link:hover {
+  text-decoration: underline !important;
+}
+
+.sprout .sprout-browser-id-link--suspended,
+.sprout .sprout-browser-id-link--quarantined {
+  color: rgb(239, 68, 68) !important;
 }
 
 .sprout .sprout-scale {
@@ -195,10 +202,7 @@
 .sprout .sprout-browser-select-th {
   vertical-align: middle !important;
   width: 42px !important;
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  text-align: center !important;
 }
 
 .sprout .sprout-browser-select-all {

@@ -1,6 +1,6 @@
 {
   "name": "sprout-flashcards",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -23,6 +23,7 @@
     "@types/node": "^20.11.30",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
+    "@types/sql.js": "^1.4.9",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "concurrently": "^9.2.1",
@@ -44,10 +45,12 @@
     "basecoat-css": "^0.3.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "fflate": "^0.8.2",
     "interactjs": "^1.10.27",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^2.12.4",
+    "sql.js": "^1.13.0",
     "tailwind-merge": "^3.4.0",
     "ts-fsrs": "^5.2.3"
   }

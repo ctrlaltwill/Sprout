@@ -90,7 +90,7 @@ export function parseMcqOptionsFromCell(raw: string): { options: string[]; corre
 export function validateClozeText(text: string) {
   const t = (text || "").trim();
   if (!t) throw new Error("Cloze question (CQ) is required.");
-  if (!/\{\{c\d+::.*?\}\}/.test(t))
+  if (!/\{\{c\d+::[\s\S]*?\}\}/.test(t))
     throw new Error("Cloze must include at least one {{cN::...}} token.");
 }
 

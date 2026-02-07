@@ -1111,7 +1111,7 @@ export class SproutReviewerView extends ItemView {
 
   isActiveLeaf(): boolean {
     const ws = this.app.workspace;
-    const activeLeaf = ws?.activeLeaf ?? ws?.getMostRecentLeaf?.() ?? null;
+    const activeLeaf = ws?.getMostRecentLeaf?.() ?? null;
     return !!activeLeaf && activeLeaf === this.leaf;
   }
 

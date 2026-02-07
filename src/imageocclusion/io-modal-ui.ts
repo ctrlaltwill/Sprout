@@ -207,7 +207,7 @@ export interface FooterCallbacks {
 /** Build the modal footer with Cancel / Hide All / Hide One buttons. */
 export function buildFooter(parent: HTMLElement, cb: FooterCallbacks): HTMLElement {
   const footer = parent.createDiv({ cls: "bc flex items-center justify-end gap-4" });
-  footer.classList.add("sprout-io-footer");
+  footer.classList.add("sprout-io-footer", "sprout-modal-footer");
 
   const cancelBtn = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
   cancelBtn.type = "button";
@@ -273,7 +273,7 @@ export function buildImageLimitDialog(
 // ── Header ──────────────────────────────────────────────────────────────────
 
 export function buildHeader(parent: HTMLElement, title: string, onClose: () => void): HTMLElement {
-  const headerRow = parent.createDiv({ cls: "bc flex items-center justify-between gap-3 mb-1" });
+  const headerRow = parent.createDiv({ cls: "bc flex items-center justify-between gap-3" });
   headerRow.createDiv({ text: title, cls: "bc text-lg font-semibold" });
   const headerClose = headerRow.createEl("button", {
     cls: "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",

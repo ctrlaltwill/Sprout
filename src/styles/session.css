@@ -282,11 +282,6 @@
   margin-left: auto;
   margin-top: 10px;
 }
-/* Add 35px padding from edge for quit button */
-.bc-session-card > .absolute[data-tooltip="Quit study session (Q)"] {
-  top: 35px !important;
-  right: 35px !important;
-}
 
 /* ---- Timer controls ---- */
 
@@ -346,17 +341,56 @@
 /* ---- Quit button ---- */
 
 .sprout-quit-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  padding: 8px;
+  flex-shrink: 0;
   z-index: 10;
-  background: none;
-  border: none;
-  outline: none;
-  box-shadow: none;
-  border-radius: 6px;
   cursor: pointer;
+  margin-left: auto;
+
+  /* Theme-aware styling (matches btn-icon-outline) */
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  border-radius: var(--radius) !important;
+  padding: 0.375rem !important;
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sprout-quit-btn:hover,
+.sprout-quit-btn:focus-visible {
+  background: var(--color-base-25) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-30) !important;
+}
+
+.sprout-quit-btn:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+.theme-dark .sprout-quit-btn {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.theme-dark .sprout-quit-btn:hover,
+.theme-dark .sprout-quit-btn:focus-visible {
+  background: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-35) !important;
+}
+
+.theme-dark .sprout-quit-btn:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
 }
 
 /* ---- Markdown block text (Q/A/cloze/info) ---- */
