@@ -151,8 +151,8 @@ interface SproutGlobals {
   sproutApplyMasonryGrid?: () => void;
   /** Sprout widget view reference. */
   SproutWidgetView?: unknown;
-  /** Basecoat boot flag. */
-  __bc_bootcamp_started?: boolean;
+  /** Sprout boot flag. */
+  __sprout_started?: boolean;
 }
 
 declare global {

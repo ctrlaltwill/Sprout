@@ -144,7 +144,7 @@ export class CardCreatorModal extends Modal {
   // ── Modal lifecycle ───────────────────────────────────────────────────────
 
   onOpen() {
-    setModalTitle(this, "Add Flashcard");
+    setModalTitle(this, "Add flashcard");
 
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
@@ -172,18 +172,18 @@ export class CardCreatorModal extends Modal {
     const typeId = `sprout-type-${Math.floor(Math.random() * 1e9)}`;
 
     const typeLabel = typeField.createEl("label", { cls: "bc text-sm font-medium", attr: { for: typeId } });
-    typeLabel.textContent = "Question Type";
+    typeLabel.textContent = "Question type";
 
     const typeSel = typeField.createEl("select", { cls: "bc w-full", attr: { id: typeId } });
     typeSel.createEl("option", { text: "Basic", value: "basic" });
     typeSel.createEl("option", { text: "Cloze", value: "cloze" });
-    typeSel.createEl("option", { text: "Multiple Choice", value: "mcq" });
+    typeSel.createEl("option", { text: "Multiple choice", value: "mcq" });
 
     let cardEditor: ModalCardEditorResult | null = null;
     let currentType: CardType = this.forcedType || "basic";
     const typeLabelFor = (type: CardType) => {
       if (type === "cloze") return "Cloze";
-      if (type === "mcq") return "Multiple Choice";
+      if (type === "mcq") return "Multiple choice";
       return "Basic";
     };
     const isTypeMenuOption = (type: CardType) => type === "basic" || type === "cloze" || type === "mcq";
@@ -443,7 +443,7 @@ export class CardCreatorModal extends Modal {
 
     const ioWrap = body.createDiv({ cls: "bc fieldset", attr: { role: "group" } });
     setVisible(ioWrap, false);
-    ioWrap.createEl("legend", { text: "Image Occlusion", cls: "bc" });
+    ioWrap.createEl("legend", { text: "Image occlusion", cls: "bc" });
 
     const ioPasteZone = ioWrap.createDiv({ cls: "bc flex flex-col gap-3" });
 

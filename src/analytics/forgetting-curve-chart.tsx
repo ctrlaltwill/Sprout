@@ -185,7 +185,7 @@ function getCardStability(state?: CardState | null) {
   return 0;
 }
 
-function normalizeReviewResult(result: ReviewResult | string): ReviewResult | null {
+function normalizeReviewResult(result: ReviewResult | null | undefined): ReviewResult | null {
   const r = String(result ?? "").toLowerCase();
   if (r === "pass" || r === "fail") return r;
   if (r === "again" || r === "hard" || r === "good" || r === "easy") return r;

@@ -9,9 +9,9 @@
 
 export function typeLabel(t: string): string {
   if (t === "basic") return "Basic";
-  if (t === "mcq") return "MCQ";
+  if (t === "mcq") return "Multiple choice";
   if (t === "cloze" || t === "cloze-child") return "Cloze";
-  if (t === "io-child") return "Image Occlusion";
+  if (t === "io-child") return "Image occlusion";
   return t;
 }
 

@@ -217,9 +217,9 @@ function createStabilityDistribution(
 const typeLabels: Record<string, string> = {
   all: "All",
   basic: "Basic",
-  mcq: "MCQ",
+  mcq: "Multiple choice",
   "cloze-child": "Cloze (child)",
-  "io-child": "IO (child)",
+  "io-child": "Image occlusion (child)",
 };
 
 export function StabilityDistributionChart(props: StabilityDistributionChartProps) {

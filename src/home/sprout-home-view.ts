@@ -994,7 +994,7 @@ export class SproutHomeView extends ItemView {
       );
 
       const starsLabel = document.createElement("span");
-      starsLabel.textContent = "GitHub Stars";
+      starsLabel.textContent = "GitHub stars";
 
       const starIcon = document.createElement("span");
       starIcon.className = "sprout-github-stars-star sprout-rotate sprout-star-spin";

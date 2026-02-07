@@ -279,7 +279,7 @@ export default class SproutPlugin extends Plugin {
       // Commands (hotkeys default to none; users can bind in Settings → Hotkeys)
       this.addCommand({
         id: "sync-flashcards",
-        name: "Sync Flashcards",
+        name: "Sync flashcards",
         callback: async () => this._runSync(),
       });
 
@@ -312,7 +312,7 @@ export default class SproutPlugin extends Plugin {
       this._registerEditorContextMenu();
       this._registerMarkdownSourceClozeShortcuts();
 
-      // Hide status bar when Boot Camp views are active
+      // Hide status bar when Sprout views are active
       this.registerEvent(
         this.app.workspace.on("active-leaf-change", (leaf) => {
           this._updateStatusBarVisibility(leaf ?? null);
@@ -464,7 +464,7 @@ export default class SproutPlugin extends Plugin {
         let itemDom: HTMLElement | null = null;
 
         menu.addItem((item) => {
-          item.setTitle("Add Flashcard").setIcon("plus");
+          item.setTitle("Add flashcard").setIcon("plus");
 
           // Create submenu
           const submenu = item.setSubmenu?.();
@@ -476,10 +476,10 @@ export default class SproutPlugin extends Plugin {
               subItem.setTitle("Cloze").setIcon("file-minus").onClick(() => this.openAddFlashcardModal("cloze"));
             });
             submenu.addItem((subItem: MenuItem) => {
-              subItem.setTitle("Multiple Choice").setIcon("list").onClick(() => this.openAddFlashcardModal("mcq"));
+              subItem.setTitle("Multiple choice").setIcon("list").onClick(() => this.openAddFlashcardModal("mcq"));
             });
             submenu.addItem((subItem: MenuItem) => {
-              subItem.setTitle("Image Occlusion").setIcon("image").onClick(() => this.openAddFlashcardModal("io"));
+              subItem.setTitle("Image occlusion").setIcon("image").onClick(() => this.openAddFlashcardModal("io"));
             });
           }
 

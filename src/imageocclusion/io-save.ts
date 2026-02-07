@@ -162,7 +162,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       ...parent,
       id: parentId,
       type: "io",
-      title: titleVal || parent.title || "Image Occlusion",
+      title: titleVal || parent.title || "Image occlusion",
       prompt: parent.prompt ?? null,
       info: infoVal || null,
       groups: groupsArr && groupsArr.length ? groupsArr : null,
@@ -201,7 +201,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
     const cards = (plugin.store.data.cards || {});
     const keepChildIds = new Set<string>();
-    const titleBase = parentRec.title || "Image Occlusion";
+    const titleBase = parentRec.title || "Image occlusion";
 
     for (const [groupKey, rectIds] of groupToRectIds.entries()) {
       const childId = stableIoChildId(parentId, groupKey);
@@ -326,7 +326,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   const parentRec: CardRecord = {
     id,
     type: "io",
-    title: titleVal || "Image Occlusion",
+    title: titleVal || "Image occlusion",
     prompt: null,
     info: infoVal || null,
     groups: groupsArr && groupsArr.length ? groupsArr : null,
@@ -372,7 +372,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   const cards = (plugin.store.data.cards || {});
   const keepChildIds = new Set<string>();
-  const titleBase = parentRec.title || "Image Occlusion";
+  const titleBase = parentRec.title || "Image occlusion";
 
   for (const [groupKey, rectIds] of groupToRectIds.entries()) {
     const childId = stableIoChildId(id, groupKey);

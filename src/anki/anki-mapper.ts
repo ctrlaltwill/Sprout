@@ -453,30 +453,84 @@ export function markdownToHtml(md: string): string {
  * Used by the reviewer and widget to render formatted text in cloze segments, titles, etc.
  */
 export function applyInlineMarkdown(el: HTMLElement, text: string): void {
-  if (!text) { el.textContent = ""; return; }
+  if (!text) {
+    el.textContent = "";
+    return;
+  }
 
-  // Escape HTML entities first so user text is safe
-  let html = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  while (el.firstChild) {
+    el.removeChild(el.firstChild);
+  }
 
-  // Bold: **text** → <strong>text</strong>
-  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  type InlineToken = { type: "bold" | "italic" | "strike" | "mark"; regex: RegExp };
+  const tokens: InlineToken[] = [
+    { type: "bold", regex: /\*\*(.+?)\*\*/ },
+    { type: "italic", regex: /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/ },
+    { type: "italic", regex: /(?<![\w\\])_(.+?)_(?![\w])/ },
+    { type: "strike", regex: /~~(.+?)~~/ },
+    { type: "mark", regex: /==(.+?)==/ },
+  ];
 
-  // Italic: *text* → <em>text</em>
-  html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
+  const appendText = (parent: HTMLElement, value: string) => {
+    if (!value) return;
+    parent.appendChild(document.createTextNode(value));
+  };
 
-  // Italic: _text_ → <em>text</em>  (Obsidian standard)
-  html = html.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, "<em>$1</em>");
+  const appendInline = (parent: HTMLElement, value: string) => {
+    let remaining = value;
+    while (remaining) {
+      let nextMatch: RegExpExecArray | null = null;
+      let nextToken: InlineToken | null = null;
+      let nextIndex = Infinity;
 
-  // Strikethrough: ~~text~~ → <s>text</s>
-  html = html.replace(/~~(.+?)~~/g, "<s>$1</s>");
+      for (const token of tokens) {
+        const match = token.regex.exec(remaining);
+        if (match && typeof match.index === "number" && match.index < nextIndex) {
+          nextIndex = match.index;
+          nextMatch = match;
+          nextToken = token;
+        }
+      }
 
-  // Highlight: ==text== → <mark>text</mark>
-  html = html.replace(/==(.+?)==/g, "<mark>$1</mark>");
+      if (!nextMatch || !nextToken || nextIndex === Infinity) {
+        appendText(parent, remaining);
+        break;
+      }
 
-  el.innerHTML = html;
+      if (nextIndex > 0) {
+        appendText(parent, remaining.slice(0, nextIndex));
+      }
+
+      const content = nextMatch[1] ?? "";
+      let wrapper: HTMLElement;
+      switch (nextToken.type) {
+        case "bold":
+          wrapper = document.createElement("strong");
+          break;
+        case "italic":
+          wrapper = document.createElement("em");
+          break;
+        case "strike":
+          wrapper = document.createElement("s");
+          break;
+        case "mark":
+          wrapper = document.createElement("mark");
+          break;
+      }
+      appendInline(wrapper, content);
+      parent.appendChild(wrapper);
+
+      remaining = remaining.slice(nextIndex + nextMatch[0].length);
+    }
+  };
+
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    appendInline(el, lines[i]);
+    if (i < lines.length - 1) {
+      el.appendChild(document.createElement("br"));
+    }
+  }
 }
 
 /** Strip HTML tags and convert to Markdown text (bold, italic, code, lists, etc.). */

@@ -70,7 +70,7 @@ export class SproutSettingsTab extends PluginSettingTab {
   // ── Notice helpers ────────────────────────
 
   /**
-   * Debounced notice: queues a "Settings Updated" notice so that rapid
+   * Debounced notice: queues a "Settings updated" notice so that rapid
    * slider / text changes don't spam the user.
    */
   private queueSettingsNotice(key: string, line: string, delayMs = 200) {
@@ -79,7 +79,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     const handle = window.setTimeout(() => {
       this._noticeTimers.delete(key);
-      new Notice(`Sprout – Settings Updated\n${line}`);
+      new Notice(`Sprout – Settings updated\n${line}`);
     }, Math.max(0, delayMs));
 
     this._noticeTimers.set(key, handle);
@@ -251,39 +251,44 @@ export class SproutSettingsTab extends PluginSettingTab {
           return;
         }
 
-        /* ── header row ── */
-        const headerRow = tableWrap.createDiv({ cls: "sprout-settings-grid-row sprout-settings-grid-row--header" });
-        ["Backup", "Date", "Scheduling data", "Actions"].forEach((label) => {
-          headerRow.createDiv({ text: label, cls: "sprout-settings-cell-header" });
+        const table = tableWrap.createEl("table", {
+          cls: "table w-full text-sm sprout-backup-table",
         });
 
-        /* ── "current data" row ── */
-        const currentRow = tableWrap.createDiv({ cls: "sprout-settings-grid-row sprout-settings-grid-row--current" });
+        /* ── header ── */
+        const thead = table.createEl("thead");
+        const headRow = thead.createEl("tr", { cls: "text-left border-b border-border" });
+        for (const label of ["Backup", "Date", "Scheduling data", "Actions"]) {
+          headRow.createEl("th", { cls: "font-medium sprout-backup-cell", text: label });
+        }
 
-        currentRow.createDiv({ text: "Current data", cls: "sprout-settings-cell-label" });
-        currentRow.createDiv({ text: "Now", cls: "sprout-settings-cell-value" });
-        currentRow.createDiv({ text: summaryLabel(current), cls: "sprout-settings-cell-value" });
-        currentRow.createDiv({ text: "—", cls: "sprout-settings-cell-value" });
+        const tbody = table.createEl("tbody");
+
+        /* ── "current data" row ── */
+        const currentTr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 sprout-backup-row--current" });
+        currentTr.createEl("td", { cls: "sprout-backup-cell sprout-backup-cell--label", text: "Current data" });
+        currentTr.createEl("td", { cls: "sprout-backup-cell", text: "Now" });
+        currentTr.createEl("td", { cls: "sprout-backup-cell", text: summaryLabel(current) });
+        currentTr.createEl("td", { cls: "sprout-backup-cell", text: "—" });
 
         /* ── backup rows ── */
-        const listWrap = tableWrap.createDiv({ cls: `sprout-settings-backup-list${expanded ? " sprout-settings-backup-list--expanded" : ""}` });
-
         const visible = expanded ? filtered : filtered.slice(0, 3);
         for (const r of visible) {
           const s = r.stats;
-          const row = listWrap.createDiv({ cls: "sprout-settings-grid-row sprout-settings-grid-row--list" });
+          const tr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 last:border-0 sprout-backup-row--list" });
 
-          const labelCell = row.createDiv();
-          labelCell.createDiv({ text: describeBackup(s.name), cls: "sprout-settings-cell-label" });
+          tr.createEl("td", { cls: "sprout-backup-cell sprout-backup-cell--label", text: describeBackup(s.name) });
+          tr.createEl("td", { cls: "sprout-backup-cell", text: formatBackupDate(s.mtime) });
 
-          row.createDiv({ text: formatBackupDate(s.mtime), cls: "sprout-settings-cell-value" });
+          const summaryTd = tr.createEl("td", {
+            cls: `sprout-backup-cell${s.states > 0 ? " sprout-backup-cell--active" : ""}`,
+            text: summaryLabel(s),
+          });
 
-          row.createDiv({ text: summaryLabel(s), cls: `sprout-settings-cell-value${s.states > 0 ? " sprout-settings-cell-value--active" : ""}` });
-
-          const actions = row.createDiv({ cls: "sprout-settings-actions-wrap" });
+          const actionsTd = tr.createEl("td", { cls: "sprout-backup-cell sprout-backup-actions" });
 
           /* Restore button */
-          const btnRestore = actions.createEl("button", { cls: "sprout-settings-icon-btn" });
+          const btnRestore = actionsTd.createEl("button", { cls: "sprout-settings-icon-btn" });
           btnRestore.setAttribute("data-tooltip", "Restore this backup and replace current scheduling data.");
           setIcon(btnRestore, "archive-restore");
           btnRestore.onclick = () => {
@@ -296,7 +301,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           };
 
           /* Delete button */
-          const btnDelete = actions.createEl("button", { cls: "sprout-settings-icon-btn sprout-settings-icon-btn--danger" });
+          const btnDelete = actionsTd.createEl("button", { cls: "sprout-settings-icon-btn sprout-settings-icon-btn--danger" });
           btnDelete.setAttribute("data-tooltip", "Delete this backup from disk.");
           setIcon(btnDelete, "trash-2");
           btnDelete.onclick = () => {
@@ -343,7 +348,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             new Notice("Sprout: could not create backup (no data.json or adapter cannot write).");
             return;
           }
-          new Notice("Sprout – Settings Updated\nBackup created");
+          new Notice("Sprout – Settings updated\nBackup created");
           await scan();
         } catch (e) {
           log.error(e);
@@ -1134,8 +1139,8 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
     new Setting(wrapper)
-      .setName("Randomise MCQ options")
-      .setDesc("Shuffles MCQ options per card (stable during the session). Hotkeys follow the displayed order.")
+      .setName("Randomise multiple-choice options")
+      .setDesc("Shuffles multiple-choice options per card (stable during the session). Hotkeys follow the displayed order.")
       .addToggle((t) => {
         const cur = !!this.plugin.settings.reviewer?.randomizeMcqOptions;
         t.setValue(cur);
@@ -1147,7 +1152,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== v) {
-            this.queueSettingsNotice("reviewer.randomizeMcqOptions", `Randomise MCQ options: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("reviewer.randomizeMcqOptions", `Randomise multiple-choice options: ${v ? "On" : "Off"}`);
           }
         });
       });
@@ -1255,7 +1260,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Preset")
-      .setDesc("Apply a recommended configuration, or choose Custom to keep your current values.")
+      .setDesc("Apply a recommended configuration, or choose custom to keep your current values.")
       .addDropdown((d) => {
         presetDropdown = d;
         for (const p of presets) d.addOption(p.key, p.label);
@@ -1268,7 +1273,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (!p) return;
 
           if (p.key === "custom") {
-            this.queueSettingsNotice("scheduler.preset", "FSRS preset: Custom");
+            this.queueSettingsNotice("scheduler.preset", "FSRS preset: custom");
             return;
           }
 
@@ -1372,7 +1377,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Reset scheduling")
-      .setDesc("Resets all cards to New and clears scheduling fields. Back up your data first if you may want to restore.")
+      .setDesc("Resets all cards to new and clears scheduling fields. Back up your data first if you may want to restore.")
       .addButton((b) =>
         b.setButtonText("Reset…").onClick(() => {
           new ConfirmResetSchedulingModal(this.app, this.plugin).open();
@@ -1431,7 +1436,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
             const secs = Math.max(0, Math.round((Date.now() - before) / 100) / 10);
             new Notice(
-              `Sprout – Settings Updated\nDeleted ${cardsRemoved} cards and ${anchorsRemoved} anchors in ${filesTouched} files (${secs}s)`,
+              `Sprout – Settings updated\nDeleted ${cardsRemoved} cards and ${anchorsRemoved} anchors in ${filesTouched} files (${secs}s)`,
             );
           }).open();
         }),

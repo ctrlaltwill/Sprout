@@ -49,7 +49,7 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
 
   const studySessionLabel = document.createElement("div");
   studySessionLabel.className = "bc text-xl font-semibold tracking-tight";
-  studySessionLabel.textContent = "Study Session";
+  studySessionLabel.textContent = "Study session";
   leftColumn.appendChild(studySessionLabel);
 
   // Timer and controls

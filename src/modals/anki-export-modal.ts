@@ -147,7 +147,6 @@ export class AnkiExportModal extends Modal {
 
     const panel = document.createElement("div");
     panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
-    panel.style.backgroundColor = "var(--background-primary, var(--background, #fff))";
     popover.appendChild(panel);
 
     const list = document.createElement("div");
@@ -261,7 +260,6 @@ export class AnkiExportModal extends Modal {
 
     const panel = document.createElement("div");
     panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
-    panel.style.backgroundColor = "var(--background-primary, var(--background, #fff))";
     popover.appendChild(panel);
 
     const searchWrap = document.createElement("div");
@@ -494,10 +492,10 @@ export class AnkiExportModal extends Modal {
     updateCount();
 
     // ── MCQ Strategy ──────────────────────────────────────────────────────────
-    const mcqField = this.mkField(body, "MCQ handling", "Anki has no native MCQ type");
+    const mcqField = this.mkField(body, "Multiple-choice handling", "Anki has no native multiple-choice type");
     const mcqDropdown = createThemedDropdown([
       { value: "convert-to-basic", label: "Convert to Basic" },
-      { value: "skip", label: "Skip MCQ cards" },
+      { value: "skip", label: "Skip multiple-choice cards" },
     ], "convert-to-basic");
     mcqField.appendChild(mcqDropdown.element);
 
@@ -590,7 +588,7 @@ export class AnkiExportModal extends Modal {
     root.addClass("sprout-export-result");
 
     // Update Obsidian modal header for result
-    setModalTitle(this, "Export Complete");
+    setModalTitle(this, "Export complete");
 
     const apkgBuffer = apkgBytes.buffer.slice(
       apkgBytes.byteOffset,
@@ -608,8 +606,8 @@ export class AnkiExportModal extends Modal {
 
     addRow("Notes exported", stats.notesExported);
     addRow("Cards exported", stats.cardsExported);
-    if (stats.mcqConverted > 0) addRow("MCQ → Basic", stats.mcqConverted);
-    if (stats.mcqSkipped > 0) addRow("MCQ skipped", stats.mcqSkipped);
+    if (stats.mcqConverted > 0) addRow("Multiple-choice → basic", stats.mcqConverted);
+    if (stats.mcqSkipped > 0) addRow("Multiple-choice skipped", stats.mcqSkipped);
     if (stats.ioSkipped > 0) addRow("IO skipped", stats.ioSkipped);
     if (stats.revlogEntries > 0) addRow("Review log entries", stats.revlogEntries);
     if (stats.mediaFiles > 0) addRow("Media files", stats.mediaFiles);

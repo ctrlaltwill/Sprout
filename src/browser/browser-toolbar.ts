@@ -135,7 +135,7 @@ export function buildBrowserLayout(
   const title = document.createElement("div");
   title.className = "bc text-xl font-semibold tracking-tight";
   applyAos(title, 0);
-  title.textContent = "Flashcard Browser";
+  title.textContent = "Flashcard browser";
   root.appendChild(title);
 
   // ── Toolbar / filters ──
@@ -208,8 +208,8 @@ export function buildBrowserLayout(
       { v: "all", label: "All types" },
       { v: "basic", label: "Basic" },
       { v: "cloze", label: "Cloze" },
-      { v: "io", label: "Image Occlusion" },
-      { v: "mcq", label: "Multiple Choice" },
+      { v: "io", label: "Image occlusion" },
+      { v: "mcq", label: "Multiple choice" },
     ],
     onChange: (v) => { ctx.setTypeFilter(v); ctx.refreshTable(); ctx.markFiltersDirty(); },
     onBeforeChange: () => ctx.setPageIndex(0),
@@ -440,7 +440,7 @@ export function buildBrowserLayout(
   hr.appendChild(headCell("Title", "title"));
   hr.appendChild(headCell("Question", "question"));
   hr.appendChild(headCell("Answer / Options", "answer"));
-  hr.appendChild(headCell("Extra Information", "info"));
+  hr.appendChild(headCell("Extra information", "info"));
   hr.appendChild(headCell("Location", "location"));
   hr.appendChild(headCell("Groups", "groups"));
 

@@ -405,7 +405,7 @@ export function openBulkEditModalForCards(
       const correctEl = inputEls["mcq_correct"] as HTMLInputElement;
       const correct = (correctEl?.value ?? "").trim();
       if (!correct) {
-        new Notice("Correct MCQ answer cannot be empty.");
+        new Notice("Correct multiple-choice answer cannot be empty.");
         return;
       }
 
@@ -415,7 +415,7 @@ export function openBulkEditModalForCards(
         .filter((v) => v.length > 0);
 
       if (wrongs.length < 1) {
-        new Notice("MCQ requires at least one wrong option.");
+        new Notice("Multiple-choice cards require at least one wrong option.");
         return;
       }
 

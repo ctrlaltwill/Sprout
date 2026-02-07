@@ -35,5 +35,5 @@ export class ItemView {
 }
 
 export class MarkdownRenderer {
-  static renderMarkdown() { return Promise.resolve(); }
+  static render() { return Promise.resolve(); }
 }

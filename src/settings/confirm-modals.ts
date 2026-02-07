@@ -42,7 +42,7 @@ export class ConfirmResetSchedulingModal extends Modal {
 
     new Setting(contentEl).setName("Reset scheduling for all cards?").setHeading();
     contentEl.createEl("p", {
-      text: "This resets all cards to New and clears scheduling fields. This cannot be undone. Consider creating a backup first.",
+      text: "This resets all cards to new and clears scheduling fields. This cannot be undone. Consider creating a backup first.",
     });
 
     const row = contentEl.createDiv();
@@ -56,7 +56,7 @@ export class ConfirmResetSchedulingModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllCardScheduling();
-        new Notice("Sprout – Settings Updated\nScheduling reset for all cards");
+        new Notice("Sprout – Settings updated\nScheduling reset for all cards");
       } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset scheduling (see console).");
@@ -106,7 +106,7 @@ export class ConfirmResetAnalyticsModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllAnalyticsData();
-        new Notice("Sprout – Settings Updated\nAnalytics data cleared");
+        new Notice("Sprout – Settings updated\nAnalytics data cleared");
       } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset analytics (see console).");
@@ -430,7 +430,7 @@ export class ConfirmRestoreBackupModal extends Modal {
           restoreBtn.removeAttribute("disabled");
           return;
         }
-        new Notice("Sprout – Settings Updated\nBackup restored");
+        new Notice("Sprout – Settings updated\nBackup restored");
         this.close();
         this.onRestored();
       } catch (e) {
@@ -495,7 +495,7 @@ export class ConfirmDeleteBackupModal extends Modal {
           new Notice("Sprout: cannot delete backup (adapter does not support delete).");
           return;
         }
-        new Notice("Sprout – Settings Updated\nBackup deleted");
+        new Notice("Sprout – Settings updated\nBackup deleted");
         this.onDone?.();
       } catch (e) {
         log.error(e);

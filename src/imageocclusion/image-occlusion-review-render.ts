@@ -104,7 +104,7 @@ export function renderImageOcclusionReviewInto(args: {
 
   const img = document.createElement("img");
   img.src = imageSrc;
-  img.alt = card.title || "Image Occlusion";
+  img.alt = card.title || "Image occlusion";
   img.classList.add("sprout-io-image");
   // Modal mode: larger image, zoom-out cursor, fit modal
   if (args.enableWidgetModal) {

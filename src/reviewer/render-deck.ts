@@ -42,7 +42,7 @@ function ensureBasecoatStartedOnce() {
   const bc = window?.basecoat;
   if (!bc) return;
 
-  if (window.__bc_bootcamp_started) return;
+  if (window.__sprout_started) return;
 
   try {
     if (typeof bc.start === "function") bc.start();
@@ -50,7 +50,7 @@ function ensureBasecoatStartedOnce() {
     // ignore
   }
 
-  window.__bc_bootcamp_started = true;
+  window.__sprout_started = true;
 }
 
 function titleCaseToken(token: string): string {
@@ -180,7 +180,7 @@ export function renderDeckMode(args: Args) {
   const title = document.createElement("div");
   title.className = "text-xl font-semibold tracking-tight";
   applyAos(title, 0);
-  title.textContent = "Deck Browser";
+  title.textContent = "Deck browser";
   root.appendChild(title);
 
   // Tree early (needed for badges + expand/collapse all)

@@ -677,12 +677,12 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     const buildValue = () => {
       const correct = correctInput.value.trim();
       if (!correct) {
-        new Notice("Correct MCQ answer cannot be empty.");
+        new Notice("Correct multiple-choice answer cannot be empty.");
         return null;
       }
       const wrongs = wrongRows.map((entry) => entry.input.value.trim()).filter((opt) => opt.length > 0);
       if (wrongs.length < 1) {
-        new Notice("MCQ requires at least one wrong option.");
+        new Notice("Multiple-choice cards require at least one wrong option.");
         return null;
       }
       const optionsList = [correct, ...wrongs];

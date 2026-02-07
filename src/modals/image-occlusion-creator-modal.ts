@@ -178,7 +178,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     // ── Canvas editor label ─────────────────────────────────────────────────
     const canvasSection = body.createDiv({ cls: "bc flex flex-col gap-2" });
     const canvasLabel = canvasSection.createEl("label", { cls: "bc text-sm font-medium" });
-    canvasLabel.textContent = "Image Occlusion Editor";
+    canvasLabel.textContent = "Image occlusion editor";
     canvasLabel.createSpan({ text: "*", cls: "bc text-destructive ml-1" });
 
     // ── Toolbar ─────────────────────────────────────────────────────────────

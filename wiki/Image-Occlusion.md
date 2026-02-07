@@ -61,7 +61,7 @@ During review the image is displayed with coloured mask overlays. After you reve
 - Click the image to **zoom** into a full-screen overlay.
 - If the source image is missing you'll see an error message in place of the image.
 
-## Settings
+## Options
 
 | Setting | Default | Description |
 |---------|---------|-------------|

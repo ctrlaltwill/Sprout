@@ -152,6 +152,18 @@ mjx-container[jax="CHTML"][display="true"] {
   transform: rotate(-90deg) !important;
 }
 
+/* ---- FLIP animation helpers ---- */
+
+.sprout-pretty-card.sprout-flip-animating {
+  transform: translate(var(--sprout-flip-x, 0px), var(--sprout-flip-y, 0px));
+  transition: transform var(--sprout-flip-duration, 280ms) ease;
+  will-change: transform;
+}
+
+.sprout-pretty-card.sprout-flip-no-transition {
+  transition: none !important;
+}
+
 /* ---- Card surface ---- */
 
 /* Accent style (default) */

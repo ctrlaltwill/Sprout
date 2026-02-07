@@ -102,8 +102,8 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
 
   // Move, Rectangle, Ellipse
   const btnTransform = createIconBtn(toolbarGroup, "move", "Pan / Move", () => cb.onSetTool("transform"));
-  const btnRectTool = createIconBtn(toolbarGroup, "square", "Draw Rectangle", () => cb.onSetTool("occlusion-rect"));
-  const btnCircleTool = createIconBtn(toolbarGroup, "circle", "Draw Ellipse", () => cb.onSetTool("occlusion-circle"));
+  const btnRectTool = createIconBtn(toolbarGroup, "square", "Draw rectangle", () => cb.onSetTool("occlusion-rect"));
+  const btnCircleTool = createIconBtn(toolbarGroup, "circle", "Draw ellipse", () => cb.onSetTool("occlusion-circle"));
 
   createSep();
 
@@ -218,19 +218,19 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks): HTMLEleme
 
   const hideAllBtn = footer.createEl("button", {
     cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
-    attr: { "data-tooltip": "Hide All: study with all masks hidden; no context clues." },
+    attr: { "data-tooltip": "Hide all: study with all masks hidden; no context clues." },
   });
   hideAllBtn.type = "button";
   hideAllBtn.classList.add("sprout-io-hide-all");
-  hideAllBtn.createSpan({ text: "Hide All" });
+  hideAllBtn.createSpan({ text: "Hide all" });
   hideAllBtn.onclick = () => cb.onSaveAll();
 
   const hideOneBtn = footer.createEl("button", {
     cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
-    attr: { "data-tooltip": "Hide One: hide only the active mask; keeps context visible." },
+    attr: { "data-tooltip": "Hide one: hide only the active mask; keeps context visible." },
   });
   hideOneBtn.type = "button";
-  hideOneBtn.createSpan({ text: "Hide One" });
+  hideOneBtn.createSpan({ text: "Hide one" });
   hideOneBtn.onclick = () => cb.onSaveSolo();
 
   return footer;

@@ -478,7 +478,7 @@ export class SproutReviewerView extends ItemView {
         },
       });
     } catch (e) {
-      log.warn("Boot Camp: failed to log skip", e);
+      log.warn("Sprout: failed to log skip", e);
     }
 
     if (this.isPracticeSession()) {

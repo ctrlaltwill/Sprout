@@ -742,6 +742,12 @@
 .sprout-anki-import-modal .sprout-popover-dropdown {
   z-index: 999999 !important;
 }
+
+/* ---- Anki import progress bar ---- */
+.sprout .sprout-anki-import-progress-fill {
+  width: var(--sprout-anki-import-progress, 0%) !important;
+  background-color: var(--sprout-anki-import-progress-color, var(--theme-accent)) !important;
+}
 /* IO modal content: match outer modal width */
 .sprout-io-creator .modal-content {
   max-width: 100% !important;

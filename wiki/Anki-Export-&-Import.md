@@ -2,6 +2,9 @@
 
 Sprout can exchange cards with Anki using .apkg packages. Use the command palette and run **Import from Anki (.apkg)** or **Export to Anki (.apkg)**.
 
+> [!WARNING]
+> Anki import/export is experimental and currently in testing.
+
 ## Export to Anki (.apkg)
 
 1. Open the command palette and run **Export to Anki (.apkg)**.

@@ -13,6 +13,7 @@ import { BRAND } from "../core/constants";
 import { log } from "../core/logger";
 import { previewApkg, importFromApkg, type ImportOptions, type ImportPreview, type ImportResult, type ModelFieldMapping } from "../anki/anki-import";
 import { setModalTitle, createThemedDropdown } from "./modal-utils";
+import { setCssProps } from "../core/ui";
 
 export class AnkiImportModal extends Modal {
   private plugin: SproutPlugin;
@@ -92,7 +93,7 @@ export class AnkiImportModal extends Modal {
     const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
 
     body.createDiv({
-      text: "Select an Anki .apkg file to import. Image Occlusion cards will be skipped.",
+      text: "Select an Anki .apkg file to import. Image occlusion cards will be skipped.",
       cls: "bc text-sm text-muted-foreground",
     });
 
@@ -101,7 +102,7 @@ export class AnkiImportModal extends Modal {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = ".apkg";
-    fileInput.style.display = "none";
+    fileInput.classList.add("sprout-hidden-important");
     fileRow.appendChild(fileInput);
 
     const pickBtn = fileRow.createEl("button", {
@@ -419,8 +420,8 @@ export class AnkiImportModal extends Modal {
     const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
 
     const bar = body.createDiv({ cls: "bc w-full h-2 rounded-full bg-secondary overflow-hidden" });
-    const fill = bar.createDiv({ cls: "bc h-full bg-primary rounded-full transition-all duration-300" });
-    fill.style.width = "2%";
+    const fill = bar.createDiv({ cls: "bc h-full bg-primary rounded-full transition-all duration-300 sprout-anki-import-progress-fill" });
+    setCssProps(fill, "--sprout-anki-import-progress", "2%");
 
     const statusText = body.createEl("p", {
       text: `Processing ${this.apkgFileName}…`,
@@ -429,7 +430,7 @@ export class AnkiImportModal extends Modal {
 
     /** Update the bar and status text, yielding to the browser so the repaint is visible. */
     const setProgress = async (pct: number, phase: string) => {
-      fill.style.width = `${Math.min(pct, 100)}%`;
+      setCssProps(fill, "--sprout-anki-import-progress", `${Math.min(pct, 100)}%`);
       statusText.textContent = phase;
       // Yield so the browser can repaint the bar
       await new Promise((r) => requestAnimationFrame(r));
@@ -452,8 +453,8 @@ export class AnkiImportModal extends Modal {
       this.renderResultStep(root, result);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      fill.style.width = "100%";
-      fill.style.backgroundColor = "var(--text-error)";
+      setCssProps(fill, "--sprout-anki-import-progress", "100%");
+      setCssProps(fill, "--sprout-anki-import-progress-color", "var(--text-error)");
       statusText.textContent = `Error: ${msg}`;
       log.error("Anki import failed", err);
       new Notice(`${BRAND}: Import failed — ${msg}`);

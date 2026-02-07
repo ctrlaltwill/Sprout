@@ -62,7 +62,7 @@ Sprout uses the **FSRS** algorithm. Choose a preset or fine-tune manually.
 | Aggressive | 5 min, 30 min, 1 day | 10 min | 0.92 |
 | Custom | *(user-defined)* | *(user-defined)* | *(user-defined)* |
 
-### Manual settings
+### Manual options
 
 | Setting | Default | Description |
 |---------|---------|-------------|

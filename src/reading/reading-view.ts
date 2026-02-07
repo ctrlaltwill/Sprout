@@ -394,13 +394,6 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
 const FLIP_DURATION = 280; // ms
 
 /**
- * scheduleMasonryLayout stub — CSS multi-column handles layout.
- */
-function _scheduleMasonryLayout(_forceRebalance = false) {
-  /* intentional no-op — CSS multi-column handles column layout */
-}
-
-/**
  * Snapshot the bounding rect of every visible `.sprout-pretty-card` inside
  * the closest masonry section.  Returns a Map keyed by element.
  */
@@ -435,22 +428,33 @@ function flipAnimateCards(before: Map<HTMLElement, DOMRect>) {
     if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
 
     // "Invert" — move card back to where it was
-    card.style.transition = 'none';
-    card.style.transform = `translate(${dx}px, ${dy}px)`;
+    card.classList.add('sprout-flip-animating', 'sprout-flip-no-transition');
+    setCssProps(card, {
+      '--sprout-flip-x': `${dx}px`,
+      '--sprout-flip-y': `${dy}px`,
+      '--sprout-flip-duration': `${FLIP_DURATION}ms`,
+    });
 
     // Force reflow so the inverted position is painted
     void card.offsetHeight;
 
     // "Play" — animate from inverted position to final (transform: none)
-    card.style.transition = `transform ${FLIP_DURATION}ms ease`;
-    card.style.transform = '';
+    card.classList.remove('sprout-flip-no-transition');
+    setCssProps(card, {
+      '--sprout-flip-x': '0px',
+      '--sprout-flip-y': '0px',
+    });
   }
 
   // Clean up transition style after animation ends
   const cleanup = () => {
     for (const [card] of before) {
-      card.style.transition = '';
-      card.style.transform = '';
+      card.classList.remove('sprout-flip-animating', 'sprout-flip-no-transition');
+      setCssProps(card, {
+        '--sprout-flip-x': null,
+        '--sprout-flip-y': null,
+        '--sprout-flip-duration': null,
+      });
     }
   };
   setTimeout(cleanup, FLIP_DURATION + 20);
@@ -862,14 +866,14 @@ function enhanceCardElement(
   });
 
   // Render MathJax if present
-  void renderMarkdownInElements(el, card);
+  void renderMdInElements(el, card);
 }
 
 /* =========================
    Markdown rendering in card elements
    ========================= */
 
-async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
+async function renderMdInElements(el: HTMLElement, card: SproutCard) {
   const app = window.app;
   if (!app) return;
   
@@ -895,7 +899,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       
       if (qEl && qText) {
         try {
-          await MarkdownRenderer.renderMarkdown(qText, qEl as HTMLElement, sourcePath, component);
+          await MarkdownRenderer.render(app, qText, qEl as HTMLElement, sourcePath, component);
           resolveUnloadedEmbeds(qEl as HTMLElement, app, sourcePath);
         } catch {
           qEl.textContent = qText;
@@ -904,7 +908,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       
       if (aEl && aText) {
         try {
-          await MarkdownRenderer.renderMarkdown(aText, aEl as HTMLElement, sourcePath, component);
+          await MarkdownRenderer.render(app, aText, aEl as HTMLElement, sourcePath, component);
           resolveUnloadedEmbeds(aEl as HTMLElement, app, sourcePath);
         } catch {
           aEl.textContent = aText;
@@ -923,7 +927,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
       const iEl = queryFirst(el, '[id^="sprout-i-"]');
       if (iEl) {
         try {
-          await MarkdownRenderer.renderMarkdown(iText, iEl as HTMLElement, sourcePath, component);
+          await MarkdownRenderer.render(app, iText, iEl as HTMLElement, sourcePath, component);
           // Resolve any unloaded internal-embed spans that MarkdownRenderer
           // created but didn't fully load (common for images in detached components)
           resolveUnloadedEmbeds(iEl as HTMLElement, app, sourcePath);
@@ -947,7 +951,7 @@ async function renderMarkdownInElements(el: HTMLElement, card: SproutCard) {
 
 /**
  * Resolve unloaded internal-embed spans created by MarkdownRenderer.
- * When MarkdownRenderer.renderMarkdown runs in a detached component,
+ * When MarkdownRenderer.render runs in a detached component,
  * image embeds are created as <span class="internal-embed"> with src/alt
  * attributes but never get the `is-loaded` class or an actual <img> child.
  * This function finds those orphaned spans and converts them to real images.

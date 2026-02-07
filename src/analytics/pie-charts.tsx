@@ -31,9 +31,9 @@ const palette = [
 const typeLabels: Record<string, string> = {
   all: "All cards",
   basic: "Basic",
-  mcq: "Multiple Choice",
+  mcq: "Multiple choice",
   "cloze-child": "Cloze",
-  "io-child": "Image Occlusion",
+  "io-child": "Image occlusion",
 };
 
 function InfoIcon(props: { text: string }) {

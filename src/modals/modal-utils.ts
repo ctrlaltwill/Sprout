@@ -149,8 +149,8 @@ export function typeLabelBrowser(t: string): string {
   const ty = String(t ?? "").toLowerCase();
   if (ty === "basic") return "Basic";
   if (ty === "cloze") return "Cloze";
-  if (ty === "mcq") return "MCQ";
-  if (ty === "io") return "Image Occlusion";
+  if (ty === "mcq") return "Multiple choice";
+  if (ty === "io") return "Image occlusion";
   return ty;
 }
 
@@ -641,7 +641,6 @@ export function createThemedDropdown(
 
   const panel = document.createElement("div");
   panel.className = "bc rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
-  panel.style.backgroundColor = "var(--background-primary, var(--background, #fff))";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");

@@ -338,10 +338,10 @@ export function endOfTodayMs(): number {
 export function typeLabelBrowser(t: string): string {
   const tt = String(t || "").toLowerCase();
   if (tt === "basic") return "Basic";
-  if (tt === "mcq") return "MCQ";
+  if (tt === "mcq") return "Multiple choice";
   if (tt === "cloze" || tt === "cloze-child") return "Cloze";
-  if (tt === "io") return "Image Occlusion";
-  if (tt === "io-child") return "Image Occlusion";
+  if (tt === "io") return "Image occlusion";
+  if (tt === "io-child") return "Image occlusion";
   return tt || "—";
 }
 

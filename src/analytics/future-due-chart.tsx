@@ -55,8 +55,8 @@ const TYPE_LABELS: Record<string, string> = {
   all: "All cards",
   basic: "Basic",
   "cloze-child": "Cloze",
-  "io-child": "Image Occlusion",
-  mcq: "Multiple Choice",
+  "io-child": "Image occlusion",
+  mcq: "Multiple choice",
 };
 
 type Filters = {

@@ -5,7 +5,7 @@
 
 /* ---- Basecoat accent tokens passthrough ---- */
 
-/* Boot Camp: force Basecoat accent tokens on all Basecoat-scoped nodes */
+/* Sprout: force Basecoat accent tokens on all Basecoat-scoped nodes */
 :where(.bc) {
   --color-accent: var(--accent) !important;
   --color-accent-foreground: var(--accent-foreground) !important;

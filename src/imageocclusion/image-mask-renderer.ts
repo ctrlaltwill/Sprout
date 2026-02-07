@@ -115,14 +115,14 @@ export class ImageOcclusionEditorModal extends Modal {
     this.containerEl.addClass("sprout-io-editor-modal");
 
     if (Platform.isMobileApp) {
-      new Notice("Boot Camp: Image Occlusion editor is desktop-only.");
+      new Notice("Sprout: image occlusion editor is desktop-only.");
       this.close();
       return;
     }
 
     const parent = (this.plugin.store?.data?.cards || {})[this.parentId];
     if (!parent || String(parent.type) !== "io") {
-      new Notice("Boot Camp: select an IO parent card to edit.");
+      new Notice("Sprout: select an IO parent card to edit.");
       this.close();
       return;
     }
@@ -137,7 +137,7 @@ export class ImageOcclusionEditorModal extends Modal {
     const imageRef = (this.imageRef || imageRefFromIo).trim();
 
     if (!imageRef) {
-      new Notice("Boot Camp: IO card is missing an imageRef.");
+      new Notice("Sprout: IO card is missing an imageRef.");
       this.close();
       return;
     }
@@ -289,14 +289,14 @@ export class ImageOcclusionEditorModal extends Modal {
     this.btnOcclusion = toolbar.createEl("button", {
       cls: "bc btn",
       attr: { type: "button" },
-      text: "Draw Occlusion",
+      text: "Draw occlusion",
     });
     this.btnOcclusion.onclick = () => this.setTool("occlusion");
 
     this.btnTransform = toolbar.createEl("button", {
       cls: "bc btn-outline",
       attr: { type: "button" },
-      text: "Move Image",
+      text: "Move image",
     });
     this.btnTransform.onclick = () => this.setTool("transform");
 
@@ -367,7 +367,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.stageEl = this.viewportEl.createDiv({ cls: "bc sprout-io-stage" });
 
     this.imgEl = this.stageEl.createEl("img", { cls: "bc sprout-io-img" });
-    this.imgEl.alt = "Image Occlusion";
+    this.imgEl.alt = "Image occlusion";
     this.imgEl.draggable = false;
 
     this.overlayEl = this.stageEl.createDiv({ cls: "bc sprout-io-overlay" });
@@ -438,14 +438,14 @@ export class ImageOcclusionEditorModal extends Modal {
     this.btnSaveSolo = saveWrap.createEl("button", {
       cls: "bc btn-outline",
       attr: { type: "button" },
-      text: "Save (Hide One)",
+      text: "Save (hide one)",
     });
     this.btnSaveSolo.onclick = () => void this.saveAndClose("solo");
 
     this.btnSaveAll = saveWrap.createEl("button", {
       cls: "bc btn",
       attr: { type: "button" },
-      text: "Save (Hide All)",
+      text: "Save (hide all)",
     });
     this.btnSaveAll.onclick = () => void this.saveAndClose("all");
 
@@ -459,7 +459,7 @@ export class ImageOcclusionEditorModal extends Modal {
   private async loadImageAndInit() {
     const file = resolveImageFile(this.app, this.sourceNotePath, this.ioDef?.imageRef || "");
     if (!(file instanceof TFile)) {
-      new Notice("Boot Camp: could not resolve IO image in vault.");
+      new Notice("Sprout: could not resolve IO image in vault.");
       this.close();
       return;
     }
@@ -869,13 +869,13 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const parent = (this.plugin.store?.data?.cards || {})[this.parentId];
     if (!parent) {
-      new Notice("Boot Camp: IO parent missing.");
+      new Notice("Sprout: IO parent missing.");
       return;
     }
 
     const imageRef = String(this.ioDef?.imageRef || this.imageRef || "").trim();
     if (!imageRef) {
-      new Notice("Boot Camp: IO missing imageRef.");
+      new Notice("Sprout: IO missing imageRef.");
       return;
     }
 
@@ -913,7 +913,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.syncChildrenFromRects(parent, ioMap[this.parentId], now);
 
     await this.plugin.store.persist();
-    new Notice("Boot Camp: IO saved.");
+    new Notice("Sprout: IO saved.");
     this.close();
   }
 
@@ -942,7 +942,7 @@ export class ImageOcclusionEditorModal extends Modal {
       const childId = stableIoChildId(this.parentId, groupKey);
       keepChildIds.add(childId);
 
-      const titleBase = parent?.title ? String(parent.title) : "Image Occlusion";
+      const titleBase = parent?.title ? String(parent.title) : "Image occlusion";
       const childTitle = titleBase;
 
       const rec = {
