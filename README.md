@@ -24,7 +24,7 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 We are waiting on approval to be listed in Obsidian community plugins – watch this space!
 
-### Option 1 — BRAT (Beta Reviewers Auto-Update Tester – Recommended)
+### Option 1 — BRAT (Recommended)
 
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) is a community plugin for Obsidian that lets you install community plugins and receive updates automatically. Install BRAT, then add `ctrlaltwill/Sprout` as a community plugin.
 
