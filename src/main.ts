@@ -575,13 +575,13 @@ export default class SproutPlugin extends Plugin {
     const maxAttempts = 3;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const mtimeBefore = canStat ? await safeStatMtime(adapter, dataPath as string) : 0;
+      const mtimeBefore = canStat ? await safeStatMtime(adapter, dataPath) : 0;
       const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
       root.settings = this.settings;
       root.store = this.store.data;
 
       if (canStat) {
-        const mtimeBeforeWrite = await safeStatMtime(adapter, dataPath as string);
+        const mtimeBeforeWrite = await safeStatMtime(adapter, dataPath);
         if (mtimeBefore && mtimeBeforeWrite && mtimeBeforeWrite !== mtimeBefore) {
           // data.json changed during our read; retry with latest snapshot
           continue;

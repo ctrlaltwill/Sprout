@@ -46,15 +46,8 @@ export async function getSqlJs(): Promise<SqlJsStatic> {
   _sqlJsPromise = (async () => {
     const wasmArray = wasmBinary instanceof Uint8Array
       ? wasmBinary
-      : new Uint8Array(wasmBinary as ArrayBuffer);
-    const wasmBuffer = (
-      wasmArray.byteOffset === 0 && wasmArray.byteLength === wasmArray.buffer.byteLength
-        ? wasmArray.buffer
-        : wasmArray.buffer.slice(
-          wasmArray.byteOffset,
-          wasmArray.byteOffset + wasmArray.byteLength,
-        )
-    ) as ArrayBuffer;
+      : new Uint8Array(wasmBinary);
+    const wasmBuffer = wasmArray.slice().buffer;
 
     _sqlJs = await initSqlJs({ wasmBinary: wasmBuffer });
     return _sqlJs;
