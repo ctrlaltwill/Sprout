@@ -245,8 +245,8 @@ describe("joinPath", () => {
   });
 
   it("builds a plugin data.json path correctly", () => {
-    expect(joinPath(".obsidian/plugins", "sprout-flashcards", "data.json")).toBe(
-      ".obsidian/plugins/sprout-flashcards/data.json",
+    expect(joinPath(".obsidian/plugins", "sprout", "data.json")).toBe(
+      ".obsidian/plugins/sprout/data.json",
     );
   });
 });

@@ -252,7 +252,7 @@ async function pruneDataJsonBackups(plugin: SproutPlugin, maxCount = BACKUP_MAX_
 // Plugin ID helper
 // ────────────────────────────────────────────
 
-/** Reads the plugin manifest ID (e.g. "sprout-flashcards"). */
+/** Reads the plugin manifest ID (e.g. "sprout"). */
 export function getPluginId(plugin: SproutPlugin): string | null {
   const id = String(plugin.manifest?.id ?? "").trim();
   return id ? id : null;
