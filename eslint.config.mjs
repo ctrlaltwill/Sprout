@@ -1,4 +1,5 @@
 import eslint from "@eslint/js";
+import regexp from "eslint-plugin-regexp";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -34,6 +35,9 @@ export default tseslint.config(
   // ── Custom rules ────────────────────────────────────────────────
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
+    plugins: {
+      regexp,
+    },
     rules: {
       // ── Unused variables ──────────────────────────────────────
       "@typescript-eslint/no-unused-vars": [
@@ -69,6 +73,21 @@ export default tseslint.config(
       // ── Relax rules that are too noisy for an existing codebase
       "@typescript-eslint/unbound-method": "off",
       "@typescript-eslint/no-redundant-type-constituents": "off",
+
+      // ── UI text sentence-case enforcement ─────────────────────
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "CallExpression[callee.property.name=/^(setName|setDesc|setText)$/] > Literal[value=/^[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+$/]",
+          message: "Use sentence case for UI text",
+        },
+        {
+          selector:
+            "NewExpression[callee.name='Notice'] > Literal[value=/^[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+$/]",
+          message: "Use sentence case for UI text",
+        },
+      ],
     },
   },
 );

@@ -669,7 +669,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Image Occlusion
     // ----------------------------
-    new Setting(wrapper).setName("Image Occlusion").setHeading();
+    new Setting(wrapper).setName("Image occlusion").setHeading();
 
     new Setting(wrapper)
       .setName("Default IO attachment folder")
@@ -847,7 +847,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Card Attachments
     // ----------------------------
-    new Setting(wrapper).setName("Card Attachments").setHeading();
+    new Setting(wrapper).setName("Card attachments").setHeading();
 
     new Setting(wrapper)
       .setName("Card attachment folder")

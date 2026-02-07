@@ -160,7 +160,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.initialMaskMode = maskMode;
 
     try {
-      this.titleEl?.setText?.("Image Occlusion");
+      this.titleEl?.setText?.("Image occlusion");
     } catch {
       // ignore
     }
