@@ -14,6 +14,27 @@
  * Each top-level key groups settings by feature area.
  */
 export type SproutSettings = {
+  // Home
+  home: {
+    userName: string;
+    showGreeting: boolean;
+    hideSproutInfo: boolean;
+    hasOpenedHome: boolean;
+    pinnedDecks: string[];
+    githubStars: {
+      count: number | null;
+      fetchedAt: number | null;
+    };
+  };
+
+  // Appearance
+  appearance: {
+    enableAnimations: boolean;
+    /** "accent" uses theme accent colour; "theme" uses background/text alt colours. */
+    prettifyCards: string;
+  };
+
+  // Study
   reviewer: {
     /** Whether the Info field is expanded by default on the card back. */
     showInfoByDefault: boolean;
@@ -35,11 +56,13 @@ export type SproutSettings = {
     randomizeMcqOptions: boolean;
   };
 
+  // Widget
   widget: {
     /** Treat folder notes (same name as parent folder) as deck roots. */
     treatFolderNotesAsDecks: boolean;
   };
 
+  // Scheduling
   scheduler: {
     learningStepsMinutes: number[];
     relearningStepsMinutes: number[];
@@ -47,6 +70,7 @@ export type SproutSettings = {
     requestRetention: number;
   };
 
+  // Indexing
   indexing: {
     /** Skip flashcard markers inside fenced code blocks. */
     ignoreInCodeFences: boolean;
@@ -54,6 +78,7 @@ export type SproutSettings = {
     idPlacement: "above" | "below";
   };
 
+  // Image occlusion
   imageOcclusion: {
     /** Vault-relative folder path for IO mask images. */
     attachmentFolderPath: string;
@@ -61,26 +86,9 @@ export type SproutSettings = {
     deleteOrphanedImages: boolean;
   };
 
+  // Attachments
   cardAttachments: {
     /** Vault-relative folder path for images pasted into Q/A/Info fields. */
     attachmentFolderPath: string;
-  };
-
-  home: {
-    userName: string;
-    showGreeting: boolean;
-    hideSproutInfo: boolean;
-    hasOpenedHome: boolean;
-    pinnedDecks: string[];
-    githubStars: {
-      count: number | null;
-      fetchedAt: number | null;
-    };
-  };
-
-  appearance: {
-    enableAnimations: boolean;
-    /** "accent" uses theme accent colour; "theme" uses background/text alt colours. */
-    prettifyCards: string;
   };
 };

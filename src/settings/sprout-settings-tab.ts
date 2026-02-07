@@ -280,7 +280,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           tr.createEl("td", { cls: "sprout-backup-cell sprout-backup-cell--label", text: describeBackup(s.name) });
           tr.createEl("td", { cls: "sprout-backup-cell", text: formatBackupDate(s.mtime) });
 
-          const summaryTd = tr.createEl("td", {
+          tr.createEl("td", {
             cls: `sprout-backup-cell${s.states > 0 ? " sprout-backup-cell--active" : ""}`,
             text: summaryLabel(s),
           });
@@ -348,7 +348,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             new Notice("Sprout: could not create backup (no data.json or adapter cannot write).");
             return;
           }
-          new Notice("Sprout – Settings updated\nBackup created");
+          new Notice("Settings updated\nBackup created");
           await scan();
         } catch (e) {
           log.error(e);
@@ -550,8 +550,8 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     // Hide Sprout info (About/Changelog/Roadmap) toggle
     new Setting(wrapper)
-      .setName("Show Sprout information on the homepage")
-      .setDesc("Show information about Sprout development and features on the homepage.")
+      .setName("Show information about the plugin on the homepage")
+      .setDesc("Show information about development and features on the homepage.")
       .addToggle((t) => {
         // ON by default
         const showSproutInfo = this.plugin.settings.home.hideSproutInfo !== true;
@@ -566,7 +566,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // Greeting toggle
     new Setting(wrapper)
       .setName("Show greeting text")
-      .setDesc("Turn off to show only 'Home' as the title on the home page.")
+      .setDesc("Turn off to show only 'home' as the title on the home page.")
       .addToggle((t) => {
         t.setValue(this.plugin.settings.home.showGreeting !== false);
         t.onChange(async (v) => {
@@ -583,7 +583,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Reset settings")
-      .setDesc("Resets Sprout settings back to their defaults. Does not delete cards or change scheduling.")
+      .setDesc("Resets settings back to their defaults. Does not delete cards or change scheduling.")
       .addButton((b) =>
         b.setButtonText("Reset…").onClick(() => {
           new ConfirmResetDefaultsModal(this.app, async () => {
@@ -600,7 +600,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               this.plugin.settings = before;
               log.error(e);
               new Notice(
-                "Sprout: could not reset settings to defaults. Implement resetSettingsToDefaults() or expose DEFAULT_SETTINGS on the plugin (see console).",
+                "Could not reset settings to defaults. Implement resetSettingsToDefaults() or expose default_settings on the plugin (see console).",
               );
             }
           }).open();
@@ -621,7 +621,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Prettify cards")
-      .setDesc("Choose how pretty cards are colored: Accent (uses theme accent color) or Theme (uses background/text/alt accent colors)")
+      .setDesc("Choose how pretty cards are colored: accent (uses the app accent color) or theme (uses theme coloring)")
       .addDropdown((d) => {
         d.addOption("accent", "Accent");
         d.addOption("theme", "Theme");
@@ -677,14 +677,14 @@ export class SproutSettingsTab extends PluginSettingTab {
     new Setting(wrapper).setName("Image occlusion").setHeading();
 
     new Setting(wrapper)
-      .setName("Default IO attachment folder")
-      .setDesc("Where Image Occlusion images in flashcards are saved within your vault.")
+      .setName("Default image occlusion attachment folder")
+      .setDesc("Where image occlusion images in flashcards are saved within your vault.")
       .addText((t) => {
         const allFolders = listVaultFolders(this.app);
 
         const cur =
           this.plugin.settings.imageOcclusion.attachmentFolderPath ?? "Attachments/Image Occlusion/";
-        t.setPlaceholder("Attachments/Image Occlusion/");
+        t.setPlaceholder("attachments/image occlusion/");
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;
@@ -835,8 +835,8 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
     new Setting(wrapper)
-      .setName("Delete orphaned IO images")
-      .setDesc("Automatically delete Image Occlusion images during sync if  their corresponding cards are deleted from markdown")
+      .setName("Delete orphaned image occlusion images")
+      .setDesc("Automatically delete image occlusion images during sync if  their corresponding cards are deleted from markdown")
       .addToggle((t) =>
         t.setValue(this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true).onChange(async (v) => {
           const prev = this.plugin.settings.imageOcclusion?.deleteOrphanedImages ?? true;
@@ -861,7 +861,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const allFolders = listVaultFolders(this.app);
 
         const cur = this.plugin.settings.cardAttachments.attachmentFolderPath ?? "Attachments/Cards/";
-        t.setPlaceholder("Attachments/Cards/");
+        t.setPlaceholder("attachments/cards/");
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;
@@ -1095,7 +1095,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Grading buttons")
-      .setDesc("Choose two buttons (Again, Good) or four buttons (Again, Hard, Good, Easy).")
+      .setDesc("Choose two buttons (again, good) or four buttons (again, hard, good, easy).")
       .addDropdown((d) => {
         d.addOption("two", "Two buttons");
         d.addOption("four", "Four buttons");
@@ -1121,7 +1121,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Skip button")
-      .setDesc("Shows a Skip button (Enter). Skip postpones within the session and does not affect scheduling.")
+      .setDesc("Shows a skip button (enter). Skip postpones within the session and does not affect scheduling.")
       .addToggle((t) => {
         const cur = !!this.plugin.settings.reviewer?.enableSkipButton;
         t.setValue(cur);
@@ -1422,7 +1422,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Delete all flashcards")
-      .setDesc("Deletes Sprout flashcards from notes and clears Sprout data. Irreversible.")
+      .setDesc("Deletes flashcards from notes and clears all plugin data. Irreversible.")
       .addButton((b) =>
         b.setButtonText("Delete…").onClick(() => {
           new ConfirmDeleteAllFlashcardsModal(this.app, this.plugin, async () => {

@@ -285,7 +285,7 @@ export default class SproutPlugin extends Plugin {
 
       this.addCommand({
         id: "open",
-        name: "Open Sprout",
+        name: "Sprout",
         callback: async () => this.openHomeTab(),
       });
 

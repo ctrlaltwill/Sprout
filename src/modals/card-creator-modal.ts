@@ -389,7 +389,7 @@ export class CardCreatorModal extends Modal {
           input.disabled = true;
           const displayPath = path ? formatLocationPath(path) : "";
           input.value = displayPath;
-          input.placeholder = "Folder / Note";
+          input.placeholder = "Location";
           input.title = displayPath;
           input.classList.add("sprout-location-input");
           wrapper.appendChild(label);

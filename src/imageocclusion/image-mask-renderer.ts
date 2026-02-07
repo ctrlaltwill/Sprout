@@ -122,7 +122,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const parent = (this.plugin.store?.data?.cards || {})[this.parentId];
     if (!parent || String(parent.type) !== "io") {
-      new Notice("Sprout: select an IO parent card to edit.");
+      new Notice("Select an image occlusion parent card to edit.");
       this.close();
       return;
     }
@@ -137,7 +137,7 @@ export class ImageOcclusionEditorModal extends Modal {
     const imageRef = (this.imageRef || imageRefFromIo).trim();
 
     if (!imageRef) {
-      new Notice("Sprout: IO card is missing an imageRef.");
+      new Notice("Image occlusion card is missing an imageRef.");
       this.close();
       return;
     }
@@ -423,7 +423,7 @@ export class ImageOcclusionEditorModal extends Modal {
         type: "button",
         "data-tooltip": "What do the save options mean?",
         title:
-          "Save (Hide One): each rectangle becomes its own card.\nSave (Hide All): all rectangles in the same group are hidden together.",
+          "Save (hide one): each rectangle becomes its own card.\nSave (hide all): all rectangles in the same group are hidden together.",
       },
     });
     {
@@ -459,7 +459,7 @@ export class ImageOcclusionEditorModal extends Modal {
   private async loadImageAndInit() {
     const file = resolveImageFile(this.app, this.sourceNotePath, this.ioDef?.imageRef || "");
     if (!(file instanceof TFile)) {
-      new Notice("Sprout: could not resolve IO image in vault.");
+      new Notice("Could not resolve image occlusion image in vault.");
       this.close();
       return;
     }
@@ -675,7 +675,7 @@ export class ImageOcclusionEditorModal extends Modal {
     if (r) {
       this.groupInput.disabled = false;
       this.groupInput.value = String(r.groupKey ?? "");
-      this.groupInput.placeholder = "Type a group key (e.g. A, B, 1, 2)…";
+      this.groupInput.placeholder = "Type a group key (e.g. 1, 2, 3)…";
     } else {
       this.clearSelection();
     }
@@ -869,13 +869,13 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const parent = (this.plugin.store?.data?.cards || {})[this.parentId];
     if (!parent) {
-      new Notice("Sprout: IO parent missing.");
+      new Notice("Image occlusion parent missing.");
       return;
     }
 
     const imageRef = String(this.ioDef?.imageRef || this.imageRef || "").trim();
     if (!imageRef) {
-      new Notice("Sprout: IO missing imageRef.");
+      new Notice("Image occlusion missing imageRef.");
       return;
     }
 
@@ -913,7 +913,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.syncChildrenFromRects(parent, ioMap[this.parentId], now);
 
     await this.plugin.store.persist();
-    new Notice("Sprout: IO saved.");
+    new Notice("Image occlusion saved.");
     this.close();
   }
 

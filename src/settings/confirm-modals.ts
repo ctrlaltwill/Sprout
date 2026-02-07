@@ -56,7 +56,7 @@ export class ConfirmResetSchedulingModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllCardScheduling();
-        new Notice("Sprout – Settings updated\nScheduling reset for all cards");
+        new Notice("Settings updated\nScheduling reset for all cards");
       } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset scheduling (see console).");
@@ -106,7 +106,7 @@ export class ConfirmResetAnalyticsModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllAnalyticsData();
-        new Notice("Sprout – Settings updated\nAnalytics data cleared");
+        new Notice("Settings updated\nAnalytics data cleared");
       } catch (e) {
         log.error(e);
         new Notice("Sprout: failed to reset analytics (see console).");
@@ -143,7 +143,7 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Delete ALL Sprout flashcards in this vault?").setHeading();
+    new Setting(contentEl).setName("Delete all flashcards in this vault?").setHeading();
 
     const p = contentEl.createEl("p");
     p.setText(
@@ -201,9 +201,9 @@ export class ConfirmResetDefaultsModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Reset Sprout to defaults?").setHeading();
+    new Setting(contentEl).setName("Reset settings to defaults?").setHeading();
     contentEl.createEl("p", {
-      text: "This resets Sprout settings back to their defaults. It does not delete cards or change scheduling. This cannot be undone.",
+      text: "This resets settings back to their defaults. It does not delete cards or change scheduling. This cannot be undone.",
     });
 
     const row = contentEl.createDiv();
@@ -315,7 +315,7 @@ export class BackupCompareModal extends Modal {
     });
 
     const note = contentEl.createEl("p", {
-      text: "Restore will overwrite the current Sprout database in-memory and persist it. It does not edit your markdown notes; run a sync afterward if you want to reconcile notes and DB.",
+      text: "Restore will overwrite the current database in-memory and persist it. It does not edit your markdown notes; run a sync afterward if you want to reconcile notes and database.",
     });
     note.classList.add("sprout-confirm-muted");
 
@@ -392,7 +392,7 @@ export class ConfirmRestoreBackupModal extends Modal {
     add("Quarantine", this.current.quarantine, this.backup.quarantine);
 
     const warning = contentEl.createEl("p", {
-      text: "Note: restore does not edit markdown notes. After restoring, you can run Sync to reconcile notes and database.",
+      text: "Note: restore does not edit markdown notes. After restoring, you can run sync to reconcile notes and database.",
     });
     warning.classList.add("sprout-confirm-muted");
 
@@ -430,7 +430,7 @@ export class ConfirmRestoreBackupModal extends Modal {
           restoreBtn.removeAttribute("disabled");
           return;
         }
-        new Notice("Sprout – Settings updated\nBackup restored");
+        new Notice("Settings updated\nBackup restored");
         this.close();
         this.onRestored();
       } catch (e) {
@@ -495,7 +495,7 @@ export class ConfirmDeleteBackupModal extends Modal {
           new Notice("Sprout: cannot delete backup (adapter does not support delete).");
           return;
         }
-        new Notice("Sprout – Settings updated\nBackup deleted");
+        new Notice("Settings updated\nBackup deleted");
         this.onDone?.();
       } catch (e) {
         log.error(e);

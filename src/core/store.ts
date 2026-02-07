@@ -576,6 +576,6 @@ export async function restoreSchedulingFromBackup(plugin: SproutPlugin): Promise
   if (!obj.states || typeof obj.states !== "object") return false;
   plugin.store.data.states = obj.states as typeof plugin.store.data.states;
   await plugin.store.persist();
-  new Notice("Sprout: Scheduling restored from backup.");
+  new Notice("Scheduling restored from backup.");
   return true;
 }

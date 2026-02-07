@@ -192,7 +192,7 @@ export class SproutHomeView extends ItemView {
       const nameInput = document.createElement("input");
       nameInput.className = "sprout-home-name-input text-xl font-semibold tracking-tight";
       nameInput.type = "text";
-      nameInput.placeholder = "your name";
+      nameInput.placeholder = "Your name";
       nameInput.value = trimmedName;
 
       const greetingSuffixEl = document.createElement("div");
@@ -466,7 +466,7 @@ export class SproutHomeView extends ItemView {
           new Notice("Study view not ready yet. Try again.");
         }
       } catch {
-        new Notice("Unable to open Study.");
+        new Notice("Unable to open study.");
       }
     };
 

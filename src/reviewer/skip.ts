@@ -50,7 +50,7 @@ class ConfirmBuryForTodayModal extends Modal {
     xBtn.type = "button";
     xBtn.className = "clickable-icon";
     xBtn.setAttribute("data-tooltip", "Close");
-    xBtn.title = "Close (Esc)";
+    xBtn.title = "Close (esc)";
     setIcon(xBtn, "x");
     xBtn.onclick = () => this.ignore();
     head.appendChild(xBtn);
