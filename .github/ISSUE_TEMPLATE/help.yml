@@ -1,0 +1,45 @@
+name: Help / Question
+description: Ask a question or get help using Sprout
+title: "[Help]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help with Sprout? Ask your question below. For general questions, please check the [Wiki](https://github.com/ctrlaltwill/Sprout/wiki) first!
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What do you need help with?
+      placeholder: "Example: How do I create image occlusion cards?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What Have You Tried?
+      description: What have you tried so far or where did you look for an answer?
+      placeholder: "I checked the wiki and tried..."
+    validations:
+      required: false
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Sprout Version
+      description: What version of Sprout are you using?
+      placeholder: "e.g., 1.0.3"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any screenshots or additional details here.
+      placeholder: "Screenshots, examples, etc."
+    validations:
+      required: false

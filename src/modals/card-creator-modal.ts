@@ -584,8 +584,7 @@ export class CardCreatorModal extends Modal {
       try {
         const active = getActiveMarkdownFile();
         if (!active) {
-          // eslint-disable-next-line obsidianmd/ui/sentence-case
-          new Notice(`Open a markdown note first`);
+          new Notice("Open a Markdown note first");
           return;
         }
 

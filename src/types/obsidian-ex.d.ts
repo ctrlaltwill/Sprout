@@ -156,8 +156,10 @@ interface SproutGlobals {
 }
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- intentionally extending Window with SproutGlobals via declaration merging
-  interface Window extends SproutGlobals {}
+  interface Window extends SproutGlobals {
+    /** Sprout debug globals merged via declaration merging. */
+    readonly __sproutGlobals?: true;
+  }
 
   /** Sprout debug log handle, attached at init. */
    

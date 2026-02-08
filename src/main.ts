@@ -55,8 +55,9 @@ import { joinPath, safeStatMtime } from "./sync/backup";
 import { CardCreatorModal } from "./modals/card-creator-modal";
 import { ImageOcclusionCreatorModal } from "./modals/image-occlusion-creator-modal";
 import { ParseErrorModal } from "./modals/parse-error-modal";
-import { AnkiImportModal } from "./modals/anki-import-modal";
-import { AnkiExportModal } from "./modals/anki-export-modal";
+// Anki modals are lazy-loaded to defer sql.js WASM parsing until needed
+// import { AnkiImportModal } from "./modals/anki-import-modal";
+// import { AnkiExportModal } from "./modals/anki-export-modal";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
 
 function clamp(n: number, lo: number, hi: number) {
@@ -337,13 +338,19 @@ export default class SproutPlugin extends Plugin {
       this.addCommand({
         id: "import-anki",
         name: "Import from Anki (.apkg)",
-        callback: () => new AnkiImportModal(this).open(),
+        callback: async () => {
+          const { AnkiImportModal } = await import("./modals/anki-import-modal");
+          new AnkiImportModal(this).open();
+        },
       });
 
       this.addCommand({
         id: "export-anki",
         name: "Export to Anki (.apkg)",
-        callback: () => new AnkiExportModal(this).open(),
+        callback: async () => {
+          const { AnkiExportModal } = await import("./modals/anki-export-modal");
+          new AnkiExportModal(this).open();
+        },
       });
 
       // Replace dropdown with separate ribbon icons (desktop + mobile)

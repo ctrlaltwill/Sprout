@@ -43,6 +43,10 @@
   color: var(--color-base-100) !important;
   border-color: var(--color-base-30) !important
 }
+.sprout .btn-icon-outline:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+}
 .sprout .btn-icon-outline:active {
   background: var(--muted) !important;
   color: var(--foreground) !important;
@@ -86,6 +90,11 @@
   color: var(--text-normal) !important;
   opacity: 0.8;
 }
+.sprout .btn-icon-ghost:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .sprout .btn-icon-ghost:active {
   opacity: 0.6;
 }
@@ -106,6 +115,10 @@
   background: var(--color-base-25) !important;
   color: var(--color-base-100) !important;
   border-color: var(--color-base-30) !important;
+}
+.sprout .btn-outline:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
 }
 
 .sprout .btn-outline:active {

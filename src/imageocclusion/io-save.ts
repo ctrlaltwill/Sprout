@@ -285,8 +285,7 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   const active = app.workspace.getActiveFile();
   if (!(active instanceof TFile)) {
-    // eslint-disable-next-line obsidianmd/ui/sentence-case
-    new Notice(`Open a markdown note first`);
+    new Notice("Open a Markdown note first");
     return false;
   }
 

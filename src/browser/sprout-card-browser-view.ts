@@ -359,8 +359,7 @@ export class SproutCardBrowserView extends ItemView {
 
   private openSource(card: CardRecord) {
     const link = `${card.sourceNotePath}#^sprout-${card.id}`;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; Obsidian handles navigation errors internally
-    this.app.workspace.openLinkText(link, card.sourceNotePath, true);
+    void this.app.workspace.openLinkText(link, card.sourceNotePath, true);
   }
 
   private async writeCardToMarkdown(card: CardRecord) {

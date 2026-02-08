@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/ctrlaltwill/Sprout/wiki
+    about: Check the wiki for guides and documentation
+  - name: 💬 Discussions
+    url: https://github.com/ctrlaltwill/Sprout/discussions
+    about: Ask questions and discuss ideas with the community

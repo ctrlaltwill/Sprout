@@ -29,6 +29,7 @@ import { StackedReviewButtonsChart } from "./stacked-review-buttons-chart";
 import { ReviewCalendarHeatmap } from "./review-calendar-heatmap";
 import { StabilityDistributionChart } from "./stability-distribution-chart";
 import { ForgettingCurveChart } from "./forgetting-curve-chart";
+import { ChartErrorBoundary } from "./error-boundary";
 
 /**
  * IMPORTANT:
@@ -518,12 +519,14 @@ export class SproutAnalyticsView extends ItemView {
     this._heatmapRoot = createRoot(heatmapHost);
     const reviewEvents = events.filter((ev) => ev && ev.kind === "review");
     this._heatmapRoot.render(
-      React.createElement(ReviewCalendarHeatmap, {
-        revlog: reviewEvents,
-        timezone,
-        rangeDays: 365,
-        filters: {},
-      }),
+      React.createElement(ChartErrorBoundary, { chartName: "Review Calendar Heatmap" },
+        React.createElement(ReviewCalendarHeatmap, {
+          revlog: reviewEvents,
+          timezone,
+          rangeDays: 365,
+          filters: {},
+        }),
+      ),
     );
 
     // 2x2 graphs grid
@@ -537,7 +540,11 @@ export class SproutAnalyticsView extends ItemView {
     stagePieHost.className = "h-full";
     graphsGrid.appendChild(stagePieHost);
     this._stagePieRoot = createRoot(stagePieHost);
-    this._stagePieRoot.render(React.createElement(StagePieCard, { cards, states, enableAnimations: animationsEnabled }));
+    this._stagePieRoot.render(
+      React.createElement(ChartErrorBoundary, { chartName: "Card Stage Distribution" },
+        React.createElement(StagePieCard, { cards, states, enableAnimations: animationsEnabled }),
+      ),
+    );
 
     // Top-right: Study forecast
     const futureDueHost = document.createElement("div");
@@ -559,13 +566,15 @@ export class SproutAnalyticsView extends ItemView {
     });
 
     this._futureDueRoot.render(
-      React.createElement(FutureDueChart, {
-        cards: futureCards,
-        nowMs: now,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        horizonDays: 30,
-        enableAnimations: animationsEnabled,
-      }),
+      React.createElement(ChartErrorBoundary, { chartName: "Study Forecast" },
+        React.createElement(FutureDueChart, {
+          cards: futureCards,
+          nowMs: now,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          horizonDays: 30,
+          enableAnimations: animationsEnabled,
+        }),
+      ),
     );
 
     // Bottom-left: Answer buttons histogram
@@ -574,13 +583,15 @@ export class SproutAnalyticsView extends ItemView {
     graphsGrid.appendChild(stackedButtonsHost);
     this._stackedButtonsRoot = createRoot(stackedButtonsHost);
     this._stackedButtonsRoot.render(
-      React.createElement(StackedReviewButtonsChart, {
-        events,
-        cards,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        days: 30,
-        enableAnimations: animationsEnabled,
-      }),
+      React.createElement(ChartErrorBoundary, { chartName: "Answer Buttons" },
+        React.createElement(StackedReviewButtonsChart, {
+          events,
+          cards,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          days: 30,
+          enableAnimations: animationsEnabled,
+        }),
+      ),
     );
 
     // Bottom-right: New cards per day
@@ -589,12 +600,14 @@ export class SproutAnalyticsView extends ItemView {
     graphsGrid.appendChild(newCardsHost);
     this._newCardsRoot = createRoot(newCardsHost);
     this._newCardsRoot.render(
-      React.createElement(NewCardsPerDayChart, {
-        cards,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        days: 30,
-        enableAnimations: animationsEnabled,
-      }),
+      React.createElement(ChartErrorBoundary, { chartName: "New Cards Per Day" },
+        React.createElement(NewCardsPerDayChart, {
+          cards,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          days: 30,
+          enableAnimations: animationsEnabled,
+        }),
+      ),
     );
 
     // Stability Distribution + Placeholder
@@ -608,11 +621,13 @@ export class SproutAnalyticsView extends ItemView {
     stabilityRow.appendChild(stabilityDistributionHost);
     this._stabilityDistributionRoot = createRoot(stabilityDistributionHost);
     this._stabilityDistributionRoot.render(
-      React.createElement(StabilityDistributionChart, {
-        cards: cards.map(c => ({ ...c, groups: c.groups ?? undefined })),
-        states,
-        enableAnimations: animationsEnabled,
-      }),
+      React.createElement(ChartErrorBoundary, { chartName: "Stability Distribution" },
+        React.createElement(StabilityDistributionChart, {
+          cards: cards.map(c => ({ ...c, groups: c.groups ?? undefined })),
+          states,
+          enableAnimations: animationsEnabled,
+        }),
+      ),
     );
 
     const forgettingCurveHost = document.createElement("div");
@@ -620,14 +635,16 @@ export class SproutAnalyticsView extends ItemView {
     stabilityRow.appendChild(forgettingCurveHost);
     this._forgettingCurveRoot = createRoot(forgettingCurveHost);
     this._forgettingCurveRoot.render(
-      React.createElement(ForgettingCurveChart, {
-        cards,
-        states,
-        reviewLog,
-        scheduler: this.plugin.settings?.scheduling,
-        nowMs: now,
-        enableAnimations: animationsEnabled,
-      }),
+      React.createElement(ChartErrorBoundary, { chartName: "Forgetting Curve" },
+        React.createElement(ForgettingCurveChart, {
+          cards,
+          states,
+          reviewLog,
+          scheduler: this.plugin.settings?.scheduling,
+          nowMs: now,
+          enableAnimations: animationsEnabled,
+        }),
+      ),
     );
 
     // Daily stats table card

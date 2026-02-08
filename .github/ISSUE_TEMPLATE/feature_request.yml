@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Sprout
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please provide as much detail as possible.
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature Description
+      description: What feature would you like to see?
+      placeholder: "Example: Add ability to export cards to PDF..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem It Solves
+      description: What problem does this feature solve?
+      placeholder: "I want to print my flashcards for offline study..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How do you envision this feature working?
+      placeholder: "A button in the card browser that exports selected cards to PDF..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: "I currently screenshot each card manually..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or examples here.
+      placeholder: "Screenshots, links to similar features in other apps, etc."
+    validations:
+      required: false

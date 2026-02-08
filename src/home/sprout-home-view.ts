@@ -702,7 +702,7 @@ export class SproutHomeView extends ItemView {
           // Hamburger menu for reordering
           const hamburger = left.createEl("span", { 
             cls: "sprout-drag-handle inline-flex items-center justify-center",
-            attr: { "data-action": "drag" }
+            attr: { "data-action": "drag", "data-tooltip": "Drag to reorder" }
           });
           setIcon(hamburger, "grip-vertical");
           
@@ -718,7 +718,7 @@ export class SproutHomeView extends ItemView {
           
           const removeBtn = right.createEl("span", { 
             cls: "sprout-deck-remove-btn inline-flex items-center justify-center cursor-pointer",
-            attr: { "data-action": "delete" }
+            attr: { "data-action": "delete", "data-tooltip": "Remove from pinned decks" }
           });
           setIcon(removeBtn, "x");
           removeBtn.addEventListener("click", (e) => {
@@ -1125,10 +1125,79 @@ export class SproutHomeView extends ItemView {
        })
      }
 
-    addRow("0.04", "Added dark theme, updated the widget, added the forgetting curve, and added backups for scheduling data.")
-    addRow("0.03", "Rebranded as Sprout, with image occlusion, flashcard browser and analytics introduced.")
-    addRow("0.02", "Rapid hotfix cycle focused on deck and session stability.")
-    addRow("0.01", "Initial release as Boot Camp for public testing.")
+     const changelogEntries = [
+       {
+         version: "1.0.3",
+         summary: "Maintenance release - fixes and updates to Sprout settings page.",
+       },
+       {
+         version: "1.0.2",
+         summary: "Maintenance release - code refinements prior for submission to Obsidian community plugins.",
+       },
+       {
+         version: "1.0.1",
+         summary: "Stability hotfixes and Anki import/export functionality (experimental).",
+       },
+       {
+         version: "1.0.0",
+         summary: "First stable release - code refactored and source shared publicly on Github.",
+       },
+       {
+         version: "0.04",
+         summary: "Fourth beta release - improved CSS styling (dark mode and reading-view) and added scheduling data backups.",
+       },
+       {
+         version: "0.03",
+         summary: "Third beta release - rebranded as Sprout and new features including image occlusion cards and analytics.",
+       },
+       {
+         version: "0.02",
+         summary: "Second beta release - with fixes focused on deck and session stability.",
+       },
+       {
+         version: "0.01",
+         summary: "First beta release - named Boot Camp.",
+       },
+     ]
+
+     const maxVisible = 3
+     let showAll = false
+
+     const renderChangelog = () => {
+       tbody.empty()
+       const visible = showAll ? changelogEntries : changelogEntries.slice(0, maxVisible)
+       for (const entry of visible) addRow(entry.version, entry.summary)
+     }
+
+     renderChangelog()
+
+     if (changelogEntries.length > maxVisible) {
+       const toggleWrap = changelogBody.createDiv({ cls: "flex justify-between sprout-changelog-footer" })
+       
+       const githubBtn = toggleWrap.createEl("button", {
+         cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
+       })
+       githubBtn.type = "button"
+       const githubIcon = document.createElement("span")
+       githubIcon.className = "inline-flex items-center justify-center [&_svg]:size-4"
+       setIcon(githubIcon, "github")
+       githubBtn.appendChild(githubIcon)
+       githubBtn.createSpan({ text: "View in GitHub" })
+       githubBtn.addEventListener("click", () => {
+         window.open("https://github.com/ctrlaltwill/Sprout/releases/", "_blank")
+       })
+       
+       const toggleBtn = toggleWrap.createEl("button", {
+         cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
+         text: "Show more",
+       })
+       toggleBtn.type = "button"
+       toggleBtn.addEventListener("click", () => {
+         showAll = !showAll
+         toggleBtn.textContent = showAll ? "Show less" : "Show more"
+         renderChangelog()
+       })
+     }
    }
 
     // Refresh AOS for any animated elements

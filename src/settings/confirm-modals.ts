@@ -314,9 +314,8 @@ export class BackupCompareModal extends Modal {
       text: `Size: ${this.backup.size ? `${Math.round(this.backup.size / 1024)} KB` : "—"}`,
     });
 
-    /* eslint-disable obsidianmd/ui/sentence-case */
     const note = contentEl.createEl("p", {
-      text: "Restoring will overwrite the current database scheduling by card anchor. It will not affect question wording or markdown.",
+      text: "Restoring will overwrite the current database scheduling by card anchor. It will not affect question wording or Markdown.",
     });
     note.classList.add("sprout-confirm-muted");
 
@@ -398,7 +397,6 @@ export class ConfirmRestoreBackupModal extends Modal {
       cls: "sprout-confirm-hint-body",
       text: `Card content (${this.current.cards} cards) is unchanged. Restore does not edit markdown notes; it only restores scheduling data.`,
     });
-    /* eslint-enable obsidianmd/ui/sentence-case */
 
     /* ── safety-backup checkbox ── */
     let makeSafetyBackup = true;

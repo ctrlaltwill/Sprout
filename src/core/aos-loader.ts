@@ -30,14 +30,15 @@ export function removeAosErrorHandler(): void {
   window.removeEventListener('error', aosErrorHandler);
 }
 
-// Load AOS (CJS require needed for sync bundled module)
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- AOS is a CJS module that must be loaded synchronously via require
-  AOS = require("aos") as AOSModule;
-  if (AOS?.default) AOS = AOS.default;
-} catch {
-  log.warn("AOS not available");
-}
+// Load AOS via dynamic import (resolves before plugin onload)
+void (async () => {
+  try {
+    const mod = (await import("aos")) as { default?: AOSModule } & Partial<AOSModule>;
+    AOS = mod.default ?? (mod as unknown as AOSModule);
+  } catch {
+    log.warn("AOS not available");
+  }
+})();
 
 export function initAOS(config?: Record<string, unknown>): void {
   if (AOS_INITIALIZED || !AOS) return;

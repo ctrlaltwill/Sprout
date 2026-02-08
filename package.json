@@ -12,8 +12,10 @@
     "build:js": "node esbuild.config.js --prod",
     "build:css": "npx @tailwindcss/cli -i ./src/styles.tailwind.css -o ./dist/styles.tmp.css --minify && npx postcss ./dist/styles.tmp.css -o ./dist/styles.css && rm -f ./dist/styles.tmp.css",
     "build": "npm run build:js && npm run build:css && cp manifest.json dist/manifest.json",
+    "analyze": "node esbuild.config.js --prod --metafile=meta.json --analyze",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },

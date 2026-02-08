@@ -178,8 +178,7 @@ export class SproutHeader {
             : VIEW_TYPE_BROWSER;
 
     await this.deps.leaf.setViewState?.({ type, active: true });
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fire-and-forget; navigation completes asynchronously and errors are non-critical
-    this.deps.app.workspace.revealLeaf(this.deps.leaf);
+    void this.deps.app.workspace.revealLeaf(this.deps.leaf);
     this.deps.afterNavigate?.();
   }
 

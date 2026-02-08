@@ -146,3 +146,10 @@
 .sprout-changelog-cell {
     border-radius: 0px;
 }
+
+/* Changelog footer with buttons */
+.sprout-changelog-footer {
+  border-top: var(--border-width) solid var(--background-modifier-border);
+  margin-top: 8px;
+  padding-top: 8px;
+}

@@ -10,3 +10,4 @@ sprout-latest/
 
 # Source maps in root (if any)
 *.js.map
+coverage/
