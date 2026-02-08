@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
-    "@types/node": "^20.11.30",
+    "@types/node": "^25.2.2",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "@types/sql.js": "^1.4.9",
