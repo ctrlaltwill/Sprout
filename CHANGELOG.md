@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reading view cards for excerpts and highlights
 - Markdown-first workflow with note-linked cards
 
-## [0.04] - 2024-01-26
+## [0.0.4] - 2024-01-26
 
 ### Added
 - Scheduling data backups
@@ -63,19 +63,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved CSS styling (dark mode and reading-view)
 
-## [0.03] - 2024-01-19
+## [0.0.3] - 2024-01-19
 
 ### Added
 - Rebranded as Sprout
 - Image occlusion cards
 - Analytics dashboard
 
-## [0.02] - 2024-01-12
+## [0.0.2] - 2024-01-12
 
 ### Fixed
 - Fixes focused on deck and session stability
 
-## [0.01] - 2024-01-05
+## [0.0.1] - 2024-01-05
 
 ### Added
 - First beta release (named Boot Camp)
