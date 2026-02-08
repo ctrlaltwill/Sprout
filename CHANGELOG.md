@@ -8,54 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.3] - 2026-02-08
 
 ### Added
-- Scheduling-data-only backups (smaller file sizes)
-- Automatic backup interval (15 minutes)
-- Automatic retention limit (keeps 5 most recent backups)
+- Automatic backups with scheduling-data-only option (15-minute intervals, keeps 5 most recent)
 
 ### Changed
-- Reorganized settings into clearer sections: General, Study, Scheduling, and Storage
-- Improved labels and descriptions for all settings
-- Automatic migration of existing settings on first load
-- Consistent overlay across all modals (Add Card, Edit Flashcard, Bulk Edit, Quick Edit)
-- Unified layout, header, and button styling
+- Reorganized settings into clearer sections with improved labels and descriptions
+- Unified modal styling and overlay consistency
 
 ### Fixed
-- Proper DOM cleanup when closing modals
-- Fixed type issues in forgetting-curve chart and review-calendar heatmap
-- Fixed import statements in browser-helpers and title-markdown
-- Removed unused variables and dead CSS classes
+- Modal DOM cleanup and rendering improvements
+- Code quality and type safety improvements
 
 ## [1.0.2] - 2026-02-07
 
 ### Changed
-- Improved grouping and section titles for better settings clarity
-- Enhanced documentation for each setting
-- Code refinements for Obsidian community plugin standards
-- Better TypeScript organization and type system improvements
+- Improved settings organization and documentation
+- Code quality improvements for Obsidian community plugin standards
 
 ## [1.0.1] - 2026-02-06
 
 ### Added
-- Anki import (.apkg): Import cards with scheduling data, deck/tag mapping, and duplicate handling
-- Anki export (.apkg): Export cards with FSRS state, review history, and media files
+- Anki import/export (.apkg) with scheduling data, media files, and duplicate handling
 
 ### Fixed
-- Reading view rendering fixes
-- Various stability improvements
+- Reading view rendering and stability improvements
 
 ## [1.0.0] - 2026-02-05
 
-### Added
+### Note
 - First stable release - code refactored and source shared publicly on Github
-- FSRS-based spaced repetition scheduler
-- Multiple card types: basic, cloze, multiple choice, and image occlusion
-- Analytics dashboard with charts and heatmaps
-- Card browser with search, filter, and bulk edit tools
-- Inline editor for creating and editing cards directly in notes
-- Reading view cards for excerpts and highlights
-- Markdown-first workflow with note-linked cards
 
-## [0.0.4] - 2024-01-26
+## [0.0.4] - 2026-01-26
 
 ### Added
 - Scheduling data backups
@@ -63,19 +45,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved CSS styling (dark mode and reading-view)
 
-## [0.0.3] - 2024-01-19
+## [0.0.3] - 2026-01-19
 
 ### Added
 - Rebranded as Sprout
 - Image occlusion cards
 - Analytics dashboard
 
-## [0.0.2] - 2024-01-12
+## [0.0.2] - 2026-01-12
 
 ### Fixed
 - Fixes focused on deck and session stability
 
-## [0.0.1] - 2024-01-05
+## [0.0.1] - 2026-01-05
 
 ### Added
 - First beta release (named Boot Camp)
