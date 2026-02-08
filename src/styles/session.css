@@ -267,9 +267,9 @@
 
 /* ---- Session card header / quit button positioning ---- */
 
-/* Ensure session card header is relative for quit button positioning */
-.bc-session-card > header,
-.sprout-session-card > header {
+/* Ensure session card is relative for quit button positioning */
+.bc-session-card,
+.sprout-session-card {
   position: relative !important;
 }
 
@@ -341,10 +341,11 @@
 /* ---- Quit button ---- */
 
 .sprout-quit-btn {
-  flex-shrink: 0;
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
   z-index: 10;
   cursor: pointer;
-  margin-left: auto;
 
   /* Theme-aware styling (matches btn-icon-outline) */
   background: var(--background) !important;

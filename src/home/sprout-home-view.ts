@@ -1143,19 +1143,19 @@ export class SproutHomeView extends ItemView {
          summary: "First stable release - code refactored and source shared publicly on Github.",
        },
        {
-         version: "0.04",
+         version: "0.0.4",
          summary: "Fourth beta release - improved CSS styling (dark mode and reading-view) and added scheduling data backups.",
        },
        {
-         version: "0.03",
+         version: "0.0.3",
          summary: "Third beta release - rebranded as Sprout and new features including image occlusion cards and analytics.",
        },
        {
-         version: "0.02",
+         version: "0.0.2",
          summary: "Second beta release - with fixes focused on deck and session stability.",
        },
        {
-         version: "0.01",
+         version: "0.0.1",
          summary: "First beta release - named Boot Camp.",
        },
      ]

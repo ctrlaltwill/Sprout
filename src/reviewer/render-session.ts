@@ -592,7 +592,8 @@ export function renderSessionMode(args: Args) {
     locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
     locationEl.textContent = location || "Home";
     locationRow.appendChild(locationEl);
-    locationRow.appendChild(quitBtn);
+
+    wrap.appendChild(quitBtn);
 
     const titleSetting = new Setting(header)
       .setName(practiceMode ? "Practice complete" : "No cards are due")
@@ -698,7 +699,8 @@ export function renderSessionMode(args: Args) {
   locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
   locationEl.textContent = location || "Note";
   locationRow.appendChild(locationEl);
-  locationRow.appendChild(quitBtn);
+
+  wrap.appendChild(quitBtn);
 
   // Title below location
   const ioLike = isIoCard(card);
