@@ -12,7 +12,7 @@
  */
 
 import * as React from "react";
-import { Cell, Label, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
+import { Label, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import { startTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
 
@@ -136,6 +136,15 @@ function PieCard(props: {
     : -1;
   const activeIndex = highlightIndex >= 0 ? highlightIndex : undefined;
 
+  // Add colors to data for recharts v3
+  const dataWithColors = React.useMemo(() => 
+    props.data.map((item, index) => ({
+      ...item,
+      fill: palette[index % palette.length]
+    })),
+    [props.data]
+  );
+
   return (
     <div className="card sprout-ana-card sprout-ana-overflow-visible p-4 flex flex-col gap-3 h-full">
       <div className="flex items-start justify-between gap-2">
@@ -162,7 +171,7 @@ function PieCard(props: {
             <PieChart>
               <Tooltip content={<PieTooltip />} />
               <Pie
-                data={props.data}
+                data={dataWithColors}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={55}
@@ -170,15 +179,16 @@ function PieCard(props: {
                 paddingAngle={2}
                 stroke="var(--background)"
                 activeIndex={activeIndex}
-                activeShape={({ outerRadius = 0, ...sectorProps }: PieSectorDataItem) => (
-                  <Sector {...sectorProps} outerRadius={outerRadius + 10} />
-                )}
+                shape={(sectorProps: PieSectorDataItem & { isActive?: boolean }) => {
+                  const { outerRadius = 0, isActive, ...restProps } = sectorProps;
+                  return <Sector {...restProps} outerRadius={isActive ? outerRadius + 10 : outerRadius} />;
+                }}
               >
                 <Label
                   content={({ viewBox }) => {
                     if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) return null;
-                    const cx = viewBox.cx as number;
-                    const cy = viewBox.cy as number;
+                    const cx = viewBox.cx;
+                    const cy = viewBox.cy;
                     const value = props.centerValue ?? total.toLocaleString();
                     const label = props.centerLabel ?? "";
                     return (
@@ -195,9 +205,6 @@ function PieCard(props: {
                     );
                   }}
                 />
-                {props.data.map((entry, index) => (
-                  <Cell key={`cell-${entry.name}`} fill={palette[index % palette.length]} />
-                ))}
               </Pie>
             </PieChart>
             </ResponsiveContainer>
