@@ -45,6 +45,9 @@
   column-gap: 6px;
   row-gap: 2px;
   align-content: flex-start;
+  background: var(--background-modifier-form-field) !important;
+  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  box-shadow: none !important;
 }
 
 /* Tag pill (individual tag badge inside the box) */

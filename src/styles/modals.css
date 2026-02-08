@@ -165,6 +165,9 @@
   row-gap: 2px !important;
   align-content: flex-start !important;
   cursor: pointer !important;
+  background: var(--background-modifier-form-field) !important;
+  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  box-shadow: none !important;
 }
 
 /* Dark mode modal text: force readable foreground */
@@ -372,6 +375,9 @@
   column-gap: 6px !important;
   row-gap: 2px !important;
   align-content: flex-start !important;
+  background: var(--background-modifier-form-field) !important;
+  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  box-shadow: none !important;
 }
 
 .sprout .sprout-bulk-popover {

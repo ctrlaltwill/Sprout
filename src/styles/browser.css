@@ -155,6 +155,9 @@
   column-gap: 6px !important;
   row-gap: 2px !important;
   align-content: flex-start !important;
+  background: var(--background-modifier-form-field) !important;
+  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  box-shadow: none !important;
 }
 
 .sprout .sprout-browser-tag-empty {
