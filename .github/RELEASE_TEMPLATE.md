@@ -37,8 +37,6 @@ Version [X.Y.Z] is a [describe type: e.g., "quality-of-life release focused on..
 
 ---
 
-## Example Release Notes (v1.0.3)
-
 ### Release Date
 
 February 8, 2026
