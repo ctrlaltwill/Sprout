@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.4] - 2026-02-08
 
+### Changed
+- Updated Recharts from 2.15.4 to 3.7.0
+- Updated @types/node to latest version
+- Updated globals from 15.15.0 to latest
+
 ### Fixed
+- Recharts v3 compatibility in analytics charts (forgetting curve, review calendar heatmap)
+- Chart component type definitions
 - Tag box styling consistency across browser, modals, and card editor
 
 ## [1.0.3] - 2026-02-08
