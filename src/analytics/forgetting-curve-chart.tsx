@@ -211,7 +211,6 @@ function buildStabilityTimeline(
       scheduledDays: 0,
     },
     sorted[0].at,
-    { scheduling: scheduler },
   );
 
   const timeline: Array<{ at: number; stability: number }> = [];

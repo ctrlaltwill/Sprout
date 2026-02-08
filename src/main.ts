@@ -735,7 +735,7 @@ export default class SproutPlugin extends Plugin {
       if (!this._isCardStateLike(raw)) continue;
 
       const prev: CardState = { id, ...(raw as Record<string, unknown>) } as CardState;
-      map[id] = resetCardScheduling(prev, now, this.settings);
+      map[id] = resetCardScheduling(prev, now);
       count++;
     }
 

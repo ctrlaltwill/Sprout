@@ -135,10 +135,10 @@ describe("buryCard", () => {
     const card = newCardState({ due: NOW });
     const buried = buryCard(card, NOW);
 
-    // Should be at start of tomorrow or later
+    // Should be at start of tomorrow UTC or later
     const tomorrow = new Date(NOW);
-    tomorrow.setHours(0, 0, 0, 0);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
     expect(buried.due).toBeGreaterThanOrEqual(tomorrow.getTime());
   });
@@ -219,7 +219,7 @@ describe("resetCardScheduling", () => {
       lastReviewed: NOW - 86400000,
     });
 
-    const reset = resetCardScheduling(card, NOW, DEFAULT_SETTINGS);
+    const reset = resetCardScheduling(card, NOW);
 
     expect(reset.stage).toBe("new");
     expect(reset.fsrsState).toBe(State.New);
@@ -233,7 +233,7 @@ describe("resetCardScheduling", () => {
 
   it("preserves the card id", () => {
     const card = newCardState({ id: "my-card-42" });
-    const reset = resetCardScheduling(card, NOW, DEFAULT_SETTINGS);
+    const reset = resetCardScheduling(card, NOW);
 
     expect(reset.id).toBe("my-card-42");
   });
@@ -271,6 +271,30 @@ describe("shuffleCardsWithinTimeWindow", () => {
     expect(result[0].id).toBe("early");
     expect(result[1].id).toBe("late");
   });
+
+  it("produces deterministic results with seeded RNG", () => {
+    // Simple seeded RNG for testing
+    const seededRng = () => {
+      let seed = 12345;
+      return () => {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        return seed / 0x7fffffff;
+      };
+    };
+
+    const cards = [
+      { due: 100, id: "a" },
+      { due: 101, id: "b" },
+      { due: 102, id: "c" },
+      { due: 103, id: "d" },
+    ];
+
+    const result1 = shuffleCardsWithinTimeWindow(cards, 30 * 60 * 1000, seededRng());
+    const result2 = shuffleCardsWithinTimeWindow(cards, 30 * 60 * 1000, seededRng());
+
+    // Same seed should produce same output
+    expect(result1.map(c => c.id)).toEqual(result2.map(c => c.id));
+  });
 });
 
 describe("shuffleCardsWithParentAwareness", () => {
@@ -295,5 +319,28 @@ describe("shuffleCardsWithParentAwareness", () => {
     // Should not throw
     const result = shuffleCardsWithParentAwareness(cards);
     expect(result).toHaveLength(2);
+  });
+
+  it("produces deterministic results with seeded RNG", () => {
+    const seededRng = () => {
+      let seed = 54321;
+      return () => {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        return seed / 0x7fffffff;
+      };
+    };
+
+    const cards = [
+      { due: 100, id: "a1", parentId: "p1" },
+      { due: 101, id: "a2", parentId: "p1" },
+      { due: 102, id: "b1", parentId: "p2" },
+      { due: 103, id: "b2", parentId: "p2" },
+    ];
+
+    const result1 = shuffleCardsWithParentAwareness(cards, 30 * 60 * 1000, seededRng());
+    const result2 = shuffleCardsWithParentAwareness(cards, 30 * 60 * 1000, seededRng());
+
+    // Same seed should produce same output
+    expect(result1.map(c => c.id)).toEqual(result2.map(c => c.id));
   });
 });

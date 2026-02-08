@@ -47,12 +47,30 @@ function daysToMs(d: number) {
   return d * MS_DAY;
 }
 
-function startOfTomorrowMs(now: number): number {
+/**
+ * Returns the start of tomorrow in local timezone.
+ * Use this when bury behavior should respect user's local day boundary.
+ */
+export function startOfTomorrowLocalMs(now: number): number {
   const d = new Date(now);
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 1);
   return d.getTime();
 }
+
+/**
+ * Returns the start of tomorrow in UTC.
+ * Use this if the system operates on UTC time.
+ */
+export function startOfTomorrowUtcMs(now: number): number {
+  const d = new Date(now);
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.getTime();
+}
+
+// Use UTC so card scheduling remains consistent when traveling across timezones
+const startOfTomorrowMs = startOfTomorrowUtcMs;
 
 // Push suspended cards far into the future as a belt-and-suspenders safety net
 // (so they don't accidentally appear in any due-based queues).
@@ -71,11 +89,13 @@ function farFutureMs(now: number): number {
  * 
  * @param cards Array of cards with due times and optional parentId for child cards
  * @param windowSizeMs Size of the time window in milliseconds (default: 30 minutes)
+ * @param rng Random number generator function (0-1). Defaults to Math.random. Injectable for deterministic testing.
  * @returns Cards grouped and shuffled within time windows
  */
 export function shuffleCardsWithinTimeWindow<T extends { due: number; parentId?: string }>(
   cards: T[],
-  windowSizeMs: number = 30 * 60 * 1000 // 30 minutes default
+  windowSizeMs: number = 30 * 60 * 1000, // 30 minutes default
+  rng: () => number = Math.random
 ): T[] {
   if (cards.length <= 1) return cards;
 
@@ -114,10 +134,10 @@ export function shuffleCardsWithinTimeWindow<T extends { due: number; parentId?:
   const shuffledWindows = windows.map(window => {
     if (window.length <= 1) return window;
     
-    // Fisher-Yates shuffle
+    // Fisher-Yates shuffle with injectable RNG
     const shuffled = [...window];
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rng() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
@@ -130,10 +150,16 @@ export function shuffleCardsWithinTimeWindow<T extends { due: number; parentId?:
 /**
  * Enhanced version that specifically targets breaking up sequences of child cards
  * from the same parent while maintaining time-based grouping.
+ * 
+ * @param cards Array of cards with due times, ids, and optional parentId for child cards
+ * @param windowSizeMs Size of the time window in milliseconds (default: 30 minutes)
+ * @param rng Random number generator function (0-1). Defaults to Math.random. Injectable for deterministic testing.
+ * @returns Cards grouped and shuffled with parent-aware interleaving
  */
 export function shuffleCardsWithParentAwareness<T extends { due: number; parentId?: string; id: string }>(
   cards: T[],
-  windowSizeMs: number = 30 * 60 * 1000
+  windowSizeMs: number = 30 * 60 * 1000,
+  rng: () => number = Math.random
 ): T[] {
   if (cards.length <= 1) return cards;
 
@@ -185,7 +211,7 @@ export function shuffleCardsWithParentAwareness<T extends { due: number; parentI
     if (parentGroups.size <= 1 && nonChildCards.length === 0) {
       const shuffled = [...window];
       for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(rng() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       return shuffled;
@@ -201,7 +227,7 @@ export function shuffleCardsWithParentAwareness<T extends { due: number; parentI
     // Shuffle each group internally first
     allGroups.forEach(group => {
       for (let i = group.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(rng() * (i + 1));
         [group[i], group[j]] = [group[j], group[i]];
       }
     });
@@ -276,7 +302,15 @@ function inferFsrsState(s: CardState): State {
   if (s.stage === "new") return State.New;
   if (s.stage === "review") return State.Review;
 
-  return (s.lapses ?? 0) > 0 ? State.Relearning : State.Learning;
+  // Infer learning vs relearning based on lapses
+  const inferred = (s.lapses ?? 0) > 0 ? State.Relearning : State.Learning;
+  if ((s.reps ?? 0) > 0 || (s.lapses ?? 0) > 0) {
+    log.warn(
+      `inferFsrsState: missing fsrsState for card with history ` +
+      `(stage=${s.stage}, reps=${s.reps}, lapses=${s.lapses}), inferred as ${inferred}`
+    );
+  }
+  return inferred;
 }
 
 function toFsrsCard(s: CardState, nowMs: number): FsrsCard {
@@ -311,12 +345,22 @@ function toFsrsCard(s: CardState, nowMs: number): FsrsCard {
 
   // If we can't establish review history, don't pretend we have one.
   if (!last_review && state !== State.New) {
+    log.warn(
+      `toFsrsCard: coercing card to State.New due to missing last_review ` +
+      `(state=${state}, reps=${s.reps}, lapses=${s.lapses})`
+    );
     state = State.New;
     last_review = undefined;
   }
 
-  const difficulty =
-    Number.isFinite(s.difficulty) ? clamp(Number(s.difficulty), 1, 10) : 5;
+  let difficulty = 5;
+  if (Number.isFinite(s.difficulty)) {
+    const original = Number(s.difficulty);
+    difficulty = clamp(original, 1, 10);
+    if (original !== difficulty) {
+      log.warn(`toFsrsCard: clamped difficulty from ${original} to ${difficulty}`);
+    }
+  }
 
   const stability =
     state === State.New
@@ -501,6 +545,11 @@ export function gradeFromPassFail(
   return gradeCardFsrs(state, rating, now, settings);
 }
 
+/**
+ * Buries a card until the next day (UTC).
+ * The card will be due at midnight UTC tomorrow, ensuring consistent
+ * scheduling across timezones when traveling.
+ */
 export function buryCard(prev: CardState, now: number): CardState {
   const tomorrow = startOfTomorrowMs(now);
   const nextDue = Math.max(Number(prev.due ?? 0), tomorrow);
@@ -544,13 +593,14 @@ export function unsuspendCard(prev: CardState, now: number): CardState {
   };
 }
 
+/**
+ * Resets a card's scheduling state back to New, clearing all review history.
+ * This is equivalent to starting the card from scratch.
+ */
 export function resetCardScheduling(
   prev: CardState,
   now: number,
-  settings: { scheduling: SchedulerSettings },
 ): CardState {
-  void settings;
-
   const empty = createEmptyCard(new Date(now));
 
   return {
