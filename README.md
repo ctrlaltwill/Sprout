@@ -9,6 +9,8 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 📖 **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 
+<img src="https://github.com/user-attachments/assets/a45794d2-ce29-4743-a912-1cba9b233b85" width="480">
+
 ## Key features
 
 - FSRS-based scheduler for optimised spaced repetition 
@@ -56,10 +58,6 @@ ln -s "$(pwd)/dist" "<Your Vault>/.obsidian/plugins/sprout"
 
 Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
 
-
-## Screenshots
-<img width="3476" height="1069" alt="Row 1" src="https://github.com/user-attachments/assets/3d1bd95d-a14f-4dec-915b-2d11a475fa94" />
-<img width="3476" height="1069" alt="Row 2" src="https://github.com/user-attachments/assets/c6ca005e-547a-4b03-9641-5404494839ba" />
 
 ## License
 
