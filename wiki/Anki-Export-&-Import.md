@@ -1,6 +1,10 @@
+# Anki Export & Import
+
+Last updated: 13/02/2026
+
 ## Overview
 
-Sprout can exchange cards with Anki using .apkg packages. Use the command palette and run **Import from Anki (.apkg)** or **Export to Anki (.apkg)**.
+Sprout can exchange cards with Anki using `.apkg` packages. Use the command palette and run **Import from Anki (.apkg)** or **Export to Anki (.apkg)**.
 
 > [!WARNING]
 > Anki import/export is experimental and currently in testing.
@@ -57,3 +61,4 @@ Your desired retention and FSRS parameters from Sprout will already be pre-confi
 
 - If you plan to continue studying in Anki, keep **Include scheduling data** enabled on export.
 - When importing into Sprout, consider **Preserve scheduling** if you want to keep review history intact.
+- See [[Backups]] before doing large imports — create a backup first.

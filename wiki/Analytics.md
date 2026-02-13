@@ -1,10 +1,14 @@
 # Analytics
 
-The Analytics dashboard gives you a visual overview of your study habits and card data. Open it from the **Analytics** leaf in the sidebar.
+Last updated: 13/02/2026
+
+## Overview
+
+The Analytics dashboard gives you a visual overview of your study habits and card data. Open it from the **Analytics** leaf in the sidebar or via the command palette.
 
 ## KPI cards
 
-Four summary cards appear at the top of the dashboard.
+Four summary cards appear at the top of the dashboard:
 
 | Card | Description |
 |------|-------------|
@@ -13,36 +17,28 @@ Four summary cards appear at the top of the dashboard.
 | **Daily time** | Average minutes per day over the last 7 days, with a trend arrow comparing to the prior 7 days. |
 | **Daily cards** | Average cards per day over the last 7 days, with a trend arrow comparing to the prior 7 days. |
 
-## Charts
+## Charts overview
 
-### Review Calendar Heatmap
+The dashboard includes several charts to help you understand your study patterns. See [[Charts]] for a detailed explanation of each chart, what it measures, and how to interpret the data.
 
-A 365-day grid (7 rows × 52 weeks) coloured by review activity. Darker cells = more reviews. Hover over a cell to see the date and count.
-
-### Stage Distribution
-
-A pie chart showing how your cards are distributed across stages: New, Learning, Review, Relearning, and Suspended.
-
-### Future Due (Study Forecast)
-
-A 30-day bar chart forecasting how many cards will become due each day.
-
-### Answer Buttons
-
-A 30-day stacked bar chart showing how many times you pressed Again, Hard, Good, and Easy each day.
-
-### New Cards Per Day
-
-A 30-day chart of how many new cards were introduced each day.
-
-### Stability Distribution
-
-A histogram of card stability values across your collection — higher stability means longer intervals.
-
-### Forgetting Curve
-
-Plots your actual retention against the theoretical forgetting curve to show how well the scheduler is calibrated.
+Charts included:
+- Review Calendar Heatmap
+- Stage Distribution (pie chart)
+- Future Due (study forecast)
+- Answer Buttons
+- New Cards Per Day
+- Stability Distribution
+- Forgetting Curve
 
 ## Layout
 
 The dashboard is responsive — KPI cards and charts reflow from 1 to 2 to 4 columns depending on window width. Use the **Expand / Collapse** toggle to switch between full-width and a constrained layout.
+
+## Filters
+
+Use the filter controls at the top of the dashboard to narrow the data:
+
+- **Time range** — Filter by date range (last 7 days, 30 days, 90 days, all time).
+- **Scope** — Filter by deck, folder, or group.
+
+Filters apply to all charts simultaneously.

@@ -1,20 +1,37 @@
+# Image Occlusion
+
+Last updated: 13/02/2026
+
 ## Overview
 
-Image Occlusion lets you create flashcards by masking regions of an image. During review you see the image with masks — recall what's hidden, then reveal.
+Image Occlusion lets you create flashcards by masking regions of an image. During review you see the image with coloured masks — recall what's hidden, then reveal to check. This is ideal for diagrams, anatomy charts, maps, and any visual material.
 
 ## Creating an IO card
 
-1. In any note, add a card block with an `IO` field pointing to an image:
-   ```
-   T | Anatomy — Bones of the hand |
-   IO | ![[hand_diagram.png]] |
-   ```
-2. Sync your cards (Sprout will detect the IO block).
-3. Open the **Image Occlusion Editor** from the card browser or reviewer (Edit → IO editor).
+### Using the modal (recommended)
 
-> **Note:** The IO editor is desktop-only. On mobile a notice will appear.
+1. Right-click in a note → **Add flashcard → Image Occlusion Card**.
+2. Choose an image from your vault or drag one into the modal.
+3. The **IO Editor** opens with the image on a canvas.
+4. Use the toolbar to draw mask regions over the areas you want to test.
+5. Choose a save mode (Solo or All) and click **Save**.
 
-## Editor
+### Writing in Markdown
+
+Add a card block with an `IO` field pointing to an image:
+
+```
+T | Anatomy — Bones of the hand |
+IO | ![[hand_diagram.png]] |
+G | Anatomy |
+```
+
+After syncing, open the IO editor from the Card Browser or reviewer to add mask regions.
+
+> [!NOTE]
+> The IO editor is desktop-only. On mobile a notice will appear.
+
+## IO Editor
 
 The editor opens as a modal with the image centred on a canvas.
 
@@ -22,50 +39,76 @@ The editor opens as a modal with the image centred on a canvas.
 
 | Tool | Description |
 |------|-------------|
-| **Occlusion** | Draw new mask rectangles over the image |
+| **Occlusion** | Draw new mask rectangles/circles over the image |
 | **Transform** | Move or resize existing masks |
 | **Delete** | Remove the selected mask |
 | **Reset** | Revert all masks to their saved state |
 
-### Group input
-
-Each mask has a **group key**. Masks with the same group key are revealed together during review. Type a key in the group input to assign the selected mask to that group.
-
-### Zoom controls
-
-Use **Zoom In**, **Zoom Out**, and **Fit** to navigate large images. You can also hold **Spacebar** and drag to pan.
-
 ### Shapes
 
-Masks can be **rectangles** or **circles**.
+Masks can be **rectangles** or **circles**. Select the shape type in the toolbar before drawing.
 
-## Mask modes
+### Zoom & pan
 
-When saving, choose one of two modes:
+Use **Zoom In**, **Zoom Out**, and **Fit** to navigate large images. Hold **Spacebar** and drag to pan across the image.
+
+## Groups (mask groups)
+
+Each mask has a **group key**. Masks with the same group key are revealed together during review.
+
+- Type a key in the **group input** to assign the selected mask to a group.
+- Masks without a group key are treated as individual items.
+- During review, grouped masks are hidden/revealed as a unit.
+
+### Hide all / Hide one / Group mode
+
+When creating IO cards in the modal, you can choose how masks behave:
+
+| Mode | Behaviour |
+|------|-----------|
+| **Hide All** | All masks are hidden at once — you recall everything |
+| **Hide One** | Only one mask (or group) is hidden per card — others remain visible |
+| **Group** | Masks are grouped — each group becomes one review card |
+
+## Save modes
+
+When saving from the editor, choose one of two modes:
 
 | Mode | Button | Behaviour |
 |------|--------|-----------|
 | **Solo** | Save Solo | Each mask (or group) becomes its own review card — only that region is hidden |
 | **All** | Save All | All masks are hidden at once and revealed together |
 
+## Reveal settings
+
+In **Settings → Cards**, you can configure how IO cards are revealed during review:
+
+| Setting | Options | Description |
+|---------|---------|-------------|
+| **Reveal mode** | Reveal All / Reveal Group / Reveal One | Controls how many masks are shown when you reveal the answer |
+
+- **Reveal All** — All masks are removed at once.
+- **Reveal Group** — Only masks in the same group are revealed.
+- **Reveal One** — Only the target mask is revealed.
+
 ## How cards are generated
 
-- The original `IO` card block becomes a **parent** card (not reviewable).
-- Sprout generates one **child** card per mask group (or per individual mask in solo mode).
+- The original `IO` card block becomes a **parent** card (not reviewable itself).
+- Sprout generates one **child** card per mask or group (depending on save mode).
 - Children inherit the parent's title and info fields.
 
 ## Review
 
-During review the image is displayed with coloured mask overlays. After you reveal the answer the masks are removed so you can check your recall.
+During review the image is displayed with coloured mask overlays. After revealing, the masks are removed so you can check your recall.
 
 - Click the image to **zoom** into a full-screen overlay.
-- If the source image is missing you'll see an error message in place of the image.
+- If the source image is missing you'll see an error message.
 
-## Options
+## Settings
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | Default IO attachment folder | `Attachments/Image Occlusion/` | Where IO images are stored |
 | Delete orphaned IO images | On | Auto-delete images when their IO cards are removed |
 
-Configure these in **Settings → Image Occlusion**.
+Configure these in **Settings → Storage → Image Occlusion**.
