@@ -2,9 +2,10 @@
 
 [![Release](https://img.shields.io/github/v/release/ctrlaltwill/Sprout?display_name=tag)](https://github.com/ctrlaltwill/Sprout/releases)
 [![License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/blob/main/LICENSE)
-![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/Sprout)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ctrlaltwill/sprout/total)
+[![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/issues)
+[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ctrlaltwill/Sprout/total)](https://github.com/ctrlaltwill/Sprout)
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
+
 
 > [!Note]
 > Thank you for all of your support following Sprout’s stable release. I am actively working through early issues. Please raise bugs or feature requests via GitHub Issues.
