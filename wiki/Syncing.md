@@ -1,26 +1,29 @@
 # Syncing
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Syncing is how Sprout detects new, changed, and deleted flashcard blocks in your notes and updates the internal card database. Whenever you add or edit cards in Markdown, you need to sync for the changes to take effect.
+Syncing updates Sprout's card database from your Markdown notes.
+
+After creating, editing, or deleting card blocks, sync so changes take effect in your card database.
 
 ## How to sync
 
-- **Automatic sync** — Sprout syncs automatically when Obsidian starts and when files are saved.
-- **Manual sync** — Use the command palette and run **Sprout: Sync cards** to trigger a sync manually.
-- **Ribbon icon** — Click the Sprout sync icon in the left ribbon bar.
+- **Header button:** click the Sprout sync button in any view when Sprout is open.
+- **Manual command:** run **Sprout: Sync cards** from the command palette.
+- **Automatic sync:** runs when editing cards in [[Card-Browser|Card Browser]] or edit modals.
+
 
 ## What happens during sync
 
-1. **Scanning** — Sprout scans all Markdown files in your vault (respecting any excluded folders) for card blocks.
-2. **Parsing** — Each card block is parsed according to the configured card delimiter (pipe `|` by default).
-3. **Matching** — Cards with existing `^sprout-#########` anchors are matched to their stored scheduling data.
-4. **Creating** — New card blocks without anchors are assigned a unique ID and added to the database as new cards.
-5. **Updating** — Cards whose content has changed are updated in the database.
-6. **Removing** — Cards whose blocks have been deleted from notes are removed from the database.
-7. **Anchoring** — A `^sprout-#########` anchor line is inserted above or below each card block (configurable in Settings → Indexing → ID placement).
+1. **Scan:** find card blocks in Markdown files.
+2. **Parse:** read fields using the configured delimiter (default `|`).
+3. **Match:** connect blocks with existing `^sprout-#########` anchors to stored scheduling data.
+4. **Create:** add new blocks that do not yet have anchors.
+5. **Update:** refresh stored data for changed blocks.
+6. **Remove:** delete cards whose source blocks were removed.
+7. **Anchor:** insert `^sprout-#########` above or below blocks (based on settings).
 
 ## Card anchors
 
@@ -30,16 +33,20 @@ After syncing, each card block gets an anchor line:
 ^sprout-#########
 ```
 
-This is the unique identifier that links the card to its scheduling data. **Do not edit or delete it** — if the anchor is lost, a new one will be assigned on next sync and learning progress will be lost.
+This anchor links note content to scheduling data.
+
+Do not edit or delete it. If it is removed, next sync creates a new ID and previous progress is not linked to that block.
 
 > [!TIP]
-> If you accidentally delete an anchor, you can find the card's ID in the [[Card Browser]] and manually re-add the anchor line.
+> If you remove an anchor by mistake, find the card ID in [[Card-Browser|Card Browser]] and re-add the line.
 
 ## Quarantined cards
 
-If a card block has a syntax error and cannot be parsed, it is **quarantined** rather than deleted. Quarantined cards appear in **Settings → Storage → Quarantined cards** with their error messages. Open the source note to fix the syntax and re-sync.
+If a card block has invalid syntax, Sprout quarantines it instead of deleting it.
+
+See quarantined entries in Settings with error details, fix the note, then sync again.
 
 ## Excluded content
 
-- **Fenced code blocks** — By default, card syntax inside `` ``` `` code blocks is ignored. Toggle this in Settings → Indexing → Ignore fenced code blocks.
-- Cards are scoped to Markdown files only — other file types are not scanned.
+- **Fenced code blocks:** ignored by default (can be changed in Settings → Indexing).
+- **Non-Markdown files:** not scanned.

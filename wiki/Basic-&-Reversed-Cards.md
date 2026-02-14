@@ -1,58 +1,52 @@
 # Basic & Reversed Cards
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Basic cards are the simplest card type — a question on the front and an answer on the back. Reversed cards automatically create a second card with the question and answer swapped.
+Basic cards show a question first, then an answer.
+Reversed cards add a second card automatically so you study both directions.
 
-## Writing a basic card
+## Basic card format
 
 ```
 T | Title |
 Q | What is the capital of France? |
 A | Paris |
-I | Located on the River Seine |
+I | Extra context |
 G | Geography |
 ```
 
-Only `Q` (question) and `A` (answer) are required. Title (`T`), info (`I`), and groups (`G`) are optional.
+- Required fields: `Q` and `A`
+- Optional fields: `T`, `I`, `G`
 
-## Using the modal
+## Create with the modal
 
-1. Right-click in a note → **Add flashcard → Basic Card**.
-2. Fill in the question and answer fields.
-3. Optionally add a title, extra info, and groups.
-4. Click **Save** to insert the card block.
+1. Right-click in a note.
+2. Choose **Add flashcard → Basic Card**.
+3. Fill in fields and save.
 
-## Reversed cards
+## Reversed behavior
 
-A reversed card generates two review cards from one block:
+With reverse enabled, Sprout creates:
 
-1. **Forward**: Question → Answer
-2. **Reverse**: Answer → Question
+1. Question → Answer
+2. Answer → Question
 
-To create a reversed card, use the `QA` field type or toggle the **Reversed** option in the creation modal:
-
-```
-T | Capital of France |
-Q | What is the capital of France? |
-A | Paris |
-```
-
-When the reversed option is enabled in the modal, Sprout will generate both directions automatically.
+Use the reverse option in the modal to enable this.
 
 ## Grading
 
-Basic cards use manual grading — after revealing the answer, you rate your recall:
+After revealing the answer, grade your recall:
 
-- **Two-button mode** (default): Again / Good
-- **Four-button mode**: Again / Hard / Good / Easy
+- two-button mode: Again / Good
+- four-button mode: Again / Hard / Good / Easy
 
-See [[Grading]] for details on grading modes and recommendations.
+See [[Grading]].
 
-## Tips
+## Edge cases and tips
 
-- Keep questions specific and atomic — one fact per card.
-- Use the `I` (info) field for context, mnemonics, or source references rather than putting everything into the answer.
-- Add [[Groups|groups]] to organise cards into decks.
+- If `Q` or `A` is missing, the card cannot work correctly.
+- Keep one fact per card for better retention.
+- Use `I` for hints or references instead of making `A` too long.
+- Use [[Groups|groups]] to organize by topic.

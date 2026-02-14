@@ -1,33 +1,25 @@
 # Card Formatting
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Sprout supports rich formatting inside card fields. Formatting is rendered in the reviewer, the widget, and reading view, and is converted to HTML when exporting to Anki.
+Card fields support common formatting so cards are easier to read.
+Formatting appears in review and reading views, and is exported to Anki as HTML.
 
-## Inline Markdown
+## Supported formatting
 
-Standard Obsidian inline Markdown works in all card fields (question, answer, cloze text, extra info):
+- Markdown inline styles (bold, italic, strike, highlight)
+- LaTeX math (`$...$` and `$$...$$`)
+- wikilinks and image embeds
+- simple HTML tags like `<u>`, `<sub>`, `<sup>`
 
-| Syntax | Result | Shortcut |
-|--------|--------|----------|
-| `**text**` | **Bold** | Cmd+B (Ctrl+B) |
-| `*text*` | *Italic* | Cmd+I (Ctrl+I) |
-| `_text_` | *Italic* | — |
-| `~~text~~` | ~~Strikethrough~~ | Cmd+Shift+S (Ctrl+Shift+S) |
-| `==text==` | Highlight | Cmd+Shift+H (Ctrl+Shift+H) |
+## LaTeX rule you must follow
 
-> [!NOTE]
-> `_text_` is italic in Obsidian — it does **not** produce underline. For underline, subscript, or superscript, use HTML tags (`<u>`, `<sub>`, `<sup>`) which Obsidian renders natively.
+If a field contains LaTeX with `|` characters, keep delimiters on separate lines.
 
-## LaTeX
+Correct:
 
-LaTeX equations are supported in card fields. Use `$...$` for inline math and `$$...$$` for display math.
-
-When a field ends with LaTeX, the opening and closing pipes **must** be on their own lines — otherwise the parser will break on the `|` characters inside LaTeX expressions.
-
-✅ Correct:
 ```
 Q
 |
@@ -35,29 +27,30 @@ What is $\frac{a}{b}$?
 |
 ```
 
-❌ Incorrect:
+Incorrect:
+
 ```
 Q | What is $\frac{a}{b}$? |
 ```
 
-> [!TIP]
-> Leave a blank line between the last line of LaTeX and the closing pipe for best rendering.
+If delimiters are not separated, parsing can fail.
 
-## Links & images
+## Links and images
 
-Standard Obsidian syntax works inside any field:
+You can use:
 
-- **Wikilinks**: `[[note name]]` or `[[note name|display text]]`
-- **Images**: `![[image.png]]` or `![[image.png|400]]` for a sized embed
-- **External images**: `![alt](https://...)`
+- `[[note]]` and `[[note|label]]`
+- `![[image.png]]` and `![[image.png|400]]`
+- `![alt](https://...)`
 
-## Tables
+## Important limit: tables
 
-Tables are **not supported** inside card fields. Tables use `|` characters, which will be interpreted as field delimiters and break card parsing.
+Markdown tables are not supported in card fields.
+They use `|`, which conflicts with Sprout field delimiters and can break card parsing.
 
-> [!TIP]
-> If you need tabular data in a card, consider using a code block or an image instead.
+If you need tabular content, use an image or code block instead.
 
-## Custom delimiters
+## Delimiter conflicts
 
-If pipe `|` conflicts with your note content, you can switch to an alternative delimiter. See [[Custom Delimiters]] for details.
+If your content often needs `|`, switch delimiter style.
+See [[Custom Delimiters]].

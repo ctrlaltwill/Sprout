@@ -1,40 +1,31 @@
 # Burying Cards
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## What burying does
 
-Burying a card postpones it until the next day. The card is removed from the current session and will reappear tomorrow. Burying does **not** affect the card's scheduling data — its stability, difficulty, and interval remain unchanged.
+Burying removes a card from today’s session and brings it back tomorrow.
+It does **not** reset or change scheduling values (interval, stability, difficulty).
 
-## How to bury a card
+## How to bury
 
-### During a study session
+During review:
 
-- Press **`B`** on your keyboard, or
-- Open the **More menu** (press `M` or tap **⋮**) and choose **Bury**.
+- press `B`, or
+- open the More menu and choose **Bury**.
 
-### From the skip prompt
+If you skip the same card three times in one session, Sprout offers a **Bury for today?** prompt.
 
-If you skip a card three times in one session, Sprout offers a **"Bury for today?"** prompt:
+## When cards return
 
-- Press **`B`** to bury the card.
-- Press **`Escape`** to dismiss the prompt and keep the card in the queue.
+Buried cards are automatically unburied at local midnight.
 
-## When buried cards return
+## Check buried cards
 
-Buried cards are automatically un-buried at **midnight** (local time). They will appear in your next study session as normal.
+Open [[Card Browser]] and filter **Stage = Buried**.
 
-## Checking buried cards
+## Limits and related behavior
 
-You can see which cards are buried in the [[Card Browser]] by filtering with the **Stage** filter set to **Buried**.
-
-## When to bury
-
-Burying is useful when:
-
-- You keep seeing a card you can't recall and want a fresh attempt tomorrow.
-- A card is interfering with your current session (e.g. you're frustrated or distracted).
-- You want to skip a card temporarily without affecting its scheduling.
-
-> [!NOTE]
-> Burying only lasts until midnight. If you want to remove a card from reviews permanently, use [[Suspending Cards|Suspend]] instead.
+- Burying is temporary (today only).
+- Burying does not delete cards.
+- For long-term removal from review, use [[Suspending Cards|Suspend]].

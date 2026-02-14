@@ -1,10 +1,10 @@
 # Image Occlusion
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## What it does
 
-Image Occlusion lets you create flashcards by masking regions of an image. During review you see the image with coloured masks — recall what's hidden, then reveal to check. This is ideal for diagrams, anatomy charts, maps, and any visual material.
+Image Occlusion (IO) hides parts of an image so you recall the hidden label or structure during review.
 
 ## Creating an IO card
 
@@ -26,19 +26,19 @@ IO | ![[hand_diagram.png]] |
 G | Anatomy |
 ```
 
-After syncing, open the IO editor from the Card Browser or reviewer to add mask regions.
+After sync, open the IO Editor from review or the Card Browser to add masks.
 
 > [!NOTE]
-> The IO editor is desktop-only. On mobile a notice will appear.
+> The IO Editor is desktop-only. On mobile, a notice is shown.
 
 ## IO Editor
 
-The editor opens as a modal with the image centred on a canvas.
+The editor opens in a modal canvas.
 
 ### Toolbar
 
 | Tool | Description |
-|------|-------------|
+|---|---|
 | **Occlusion** | Draw new mask rectangles/circles over the image |
 | **Transform** | Move or resize existing masks |
 | **Delete** | Remove the selected mask |
@@ -46,7 +46,7 @@ The editor opens as a modal with the image centred on a canvas.
 
 ### Shapes
 
-Masks can be **rectangles** or **circles**. Select the shape type in the toolbar before drawing.
+Masks can be rectangles or circles.
 
 ### Zoom & pan
 
@@ -65,7 +65,7 @@ Each mask has a **group key**. Masks with the same group key are revealed togeth
 When creating IO cards in the modal, you can choose how masks behave:
 
 | Mode | Behaviour |
-|------|-----------|
+|---|---|
 | **Hide All** | All masks are hidden at once — you recall everything |
 | **Hide One** | Only one mask (or group) is hidden per card — others remain visible |
 | **Group** | Masks are grouped — each group becomes one review card |
@@ -75,7 +75,7 @@ When creating IO cards in the modal, you can choose how masks behave:
 When saving from the editor, choose one of two modes:
 
 | Mode | Button | Behaviour |
-|------|--------|-----------|
+|---|---|---|
 | **Solo** | Save Solo | Each mask (or group) becomes its own review card — only that region is hidden |
 | **All** | Save All | All masks are hidden at once and revealed together |
 
@@ -84,7 +84,7 @@ When saving from the editor, choose one of two modes:
 In **Settings → Cards**, you can configure how IO cards are revealed during review:
 
 | Setting | Options | Description |
-|---------|---------|-------------|
+|---|---|---|
 | **Reveal mode** | Reveal All / Reveal Group / Reveal One | Controls how many masks are shown when you reveal the answer |
 
 - **Reveal All** — All masks are removed at once.
@@ -102,12 +102,12 @@ In **Settings → Cards**, you can configure how IO cards are revealed during re
 During review the image is displayed with coloured mask overlays. After revealing, the masks are removed so you can check your recall.
 
 - Click the image to **zoom** into a full-screen overlay.
-- If the source image is missing you'll see an error message.
+- If the source image is missing, an error is shown and the card cannot render correctly.
 
 ## Settings
 
 | Setting | Default | Description |
-|---------|---------|-------------|
+|---|---|---|
 | Default IO attachment folder | `Attachments/Image Occlusion/` | Where IO images are stored |
 | Delete orphaned IO images | On | Auto-delete images when their IO cards are removed |
 

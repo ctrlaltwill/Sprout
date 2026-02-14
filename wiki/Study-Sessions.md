@@ -1,22 +1,26 @@
 # Study Sessions
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Study sessions are where you review your flashcards. Sprout uses FSRS (Free Spaced Repetition Scheduler) to present cards at optimal intervals for long-term retention.
+Study sessions are where you review cards.
+
+Sprout uses FSRS to decide when cards are due.
 
 ## Starting a session
 
-There are several ways to start studying:
+You can start from:
 
-- **Study page** — Open the deck tree, pick a scope, and start.
-- **Home page** — Open recent decks or pinned decks for quick access.
-- **Deck-tree widget** — Tap a deck in the sidebar widget.
+- **Study page** — open the deck tree, pick a scope, and start.
+- **Home page** — start from recent or pinned decks.
+- **Deck widget (sidebar)** — starts from the currently open file context:
+	- If the open file is a regular note, the session scope is that single note only.
+	- If the open file is a folder note (a note which has the same name as its parent folder — for example if you are using the [Folder Notes](https://github.com/LostPaul/obsidian-folder-notes) plugin), the scope is all notes in that folder and includes any subfolders and their notes.
 
 ## Study scopes
 
-Choose what to study:
+Choose a scope (the set of cards to study):
 
 | Scope | Covers |
 |-------|--------|
@@ -27,7 +31,9 @@ Choose what to study:
 
 ## Card order
 
-Sprout loads cards in priority order: **learning → relearning → review → new**. Cloze siblings and IO children from the same parent are automatically spaced apart so you don't see related cards back-to-back.
+Sprout queues cards in this order: **learning → relearning → review → new**.
+
+Related siblings (for example cloze siblings and IO children) are spaced apart so they do not appear back-to-back.
 
 ## Daily limits
 
@@ -36,29 +42,35 @@ Sprout loads cards in priority order: **learning → relearning → review → n
 | Daily new limit | 20 | Max new cards introduced per scope per day |
 | Daily review limit | 200 | Max due cards shown per scope per day |
 
-Limits are tracked independently for each scope and reset at midnight.
+Limits reset at midnight and are tracked separately per scope.
 
 ## Answering cards
 
-Press **Space** or **Enter** to reveal the answer, then grade your recall. See [[Grading]] for details on grading modes.
+Press **Space** or **Enter** to reveal the answer, then grade recall. See [[Grading]].
 
 ## Practice mode
 
-Practice mode lets you review cards that are **not yet due** — useful for extra revision before an exam.
+Practice mode shows cards that are **not due yet**.
 
-Cards are sorted closest-to-due first. **Ratings in practice mode do not update scheduling** — your intervals and stability are unaffected, so you can practise freely without consequences.
+Cards are sorted by closest due date first.
+
+Grades in Practice mode do **not** change scheduling.
 
 ## Timer
 
-A session timer runs in the header showing elapsed time as `MM:SS` (or `HH:MM:SS` after one hour). Use the play / pause buttons to control it.
+A session timer in the header shows elapsed time. Use play/pause controls to manage it.
 
 ## Auto-advance
 
-When enabled (Settings → Study), unanswered cards are automatically marked **Again** and advanced after a configurable delay (3–60 seconds, default 60). A countdown appears on screen.
+If enabled in Settings, unanswered cards are auto-graded **Again** and advanced after a delay.
+
+Allowed delay is 3 to 60 seconds (default 60). A countdown is shown.
 
 ## Skip
 
-Enable the **Skip** button in Settings → Study. Pressing **Enter** skips the current card and pushes it further back in the queue. Skipping does **not** affect scheduling.
+Enable **Skip** in Settings → Study.
+
+Skipping pushes the card back in the queue and does **not** change scheduling.
 
 | Skip count | Behaviour |
 |------------|-----------|
@@ -66,7 +78,7 @@ Enable the **Skip** button in Settings → Study. Pressing **Enter** skips the c
 | 2nd | Card moves further back |
 | 3rd | A **"Bury for today?"** prompt appears |
 
-At the bury prompt: press `B` to bury or `Escape` to dismiss.
+At that prompt: press `B` to bury, or `Escape` to dismiss.
 
 ## More menu
 
@@ -74,11 +86,11 @@ Press `M` or tap the **⋮** button to open the More menu:
 
 | Action | Shortcut | Description |
 |--------|----------|-------------|
-| Bury | `B` | Postpone card until tomorrow (see [[Burying Cards]]) |
-| Suspend | `S` | Remove card from future reviews (see [[Suspending Cards]]) |
+| Bury | `B` | Postpone card until tomorrow (see [[Burying-Cards|Burying Cards]]) |
+| Suspend | `S` | Remove card from future reviews (see [[Suspending-Cards|Suspending Cards]]) |
 | Undo | `U` | Revert the previous rating (only available on the next card) |
 | Open note | `O` | Jump to the source note |
-| Edit | `E` | Open the inline card editor (see [[Editing Cards]]) |
+| Edit | `E` | Open the inline card editor (see [[Editing-Cards|Editing Cards]]) |
 
 ## Zoom
 
@@ -86,4 +98,4 @@ Click any image during a review to open it in a full-screen overlay. Click again
 
 ## Time tracking
 
-Sprout records how long you spend on each card (capped at 5 minutes) and uses it for analytics.
+Sprout records time spent per card (capped at 5 minutes) for analytics.

@@ -1,24 +1,23 @@
 # Installation
 
-Last updated: 13/02/2026
-
+Last modified: 13/02/2026
 
 ## Option 1 — BRAT (recommended)
 
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from the Obsidian community plugins
-2. In BRAT settings, add `ctrlaltwill/Sprout` as a community plugin
-3. BRAT will install and keep the plugin updated automatically
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from Obsidian Community Plugins.
+2. In BRAT settings, add `ctrlaltwill/Sprout`.
+3. BRAT installs Sprout and keeps it updated.
 
 
 ## Option 2 — Download a release
 
-1. Go to [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release
+1. Open [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release.
 2. Copy `main.js`, `styles.css`, and `manifest.json` into:
 
    ```
    <Your Vault>/.obsidian/plugins/sprout/
    ```
-3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
+3. Restart Obsidian, then enable **Sprout** in **Settings → Community Plugins**.
 
 ## Option 3 — Build from source
 
@@ -39,9 +38,9 @@ ln -s "$(pwd)/dist" "<Your Vault>/.obsidian/plugins/sprout"
 
 Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
 
-### Development scripts
+## Development scripts
 
 | Script | What it does |
-|--------|-------------|
+|---|---|
 | `npm run dev` | Watch mode — rebuilds JS + CSS on every file change |
 | `npm run build` | Production build (minified JS + CSS), copies manifest into `dist/` |

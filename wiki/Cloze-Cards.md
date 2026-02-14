@@ -1,14 +1,14 @@
 # Cloze Cards
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Cloze cards test recall by hiding parts of a sentence. During review you see the text with blanks — fill in the missing words, then reveal the hidden content to check.
+Cloze cards hide words inside a sentence so you recall missing parts in context.
 
-## Writing a cloze card
+## Basic cloze format
 
-Use `CQ` (cloze question) with cloze markers `{{c1::...}}`:
+Use `CQ` with markers like `{{c1::...}}`:
 
 ```
 T | French Geography |
@@ -17,50 +17,37 @@ I | Located on the River Seine |
 G | Geography |
 ```
 
-### Multiple deletions
+## Numbering rules
 
-Use different cloze numbers to create separate cards from one block:
+- Different numbers (`c1`, `c2`) create separate cards.
+- Same number hides multiple parts on the same card.
+
+Example with two cards:
 
 ```
 CQ | {{c1::Paris}} is the capital of {{c2::France}} |
 ```
 
-This generates two review cards:
-- Card 1: hides "Paris", shows "France"
-- Card 2: shows "Paris", hides "France"
-
-### Same-number deletions
-
-Use the same cloze number to hide multiple parts on the same card:
+Example with one card hiding two words:
 
 ```
 CQ | The {{c1::heart}} pumps {{c1::blood}} through the body |
 ```
 
-Both "heart" and "blood" are hidden together on one card.
-
-## Using the modal
+## Create with the modal
 
 1. Right-click in a note → **Add flashcard → Cloze Card**.
-2. Type your text in the cloze question field.
-3. Select the text you want to hide and press:
-   - **New cloze (next number)**: `Cmd+Shift+C` (Mac) / `Ctrl+Shift+C` (Windows/Linux)
-   - **Same cloze number**: `Cmd+Shift+Option+C` (Mac) / `Ctrl+Shift+Alt+C` (Windows/Linux)
-4. Click **Save**.
-
-## Appearance settings
-
-You can customise how cloze deletions look during review in **Settings → Cards**:
-
-- **Cloze style** — Choose how hidden text appears (e.g. blank line, hint text, typed input).
-- **Show context** — Whether surrounding text is dimmed or fully visible.
+2. Enter text.
+3. Mark text as new cloze or same-number cloze.
+4. Save.
 
 ## Grading
 
-Cloze cards use manual grading — rate your recall after revealing the hidden text. See [[Grading]] for details.
+Cloze cards use the same manual grading flow as other cards.
+See [[Grading]].
 
-## Tips
+## Edge cases and limits
 
-- Cloze cards work best for facts embedded in context — e.g. definitions, sequences, fill-in-the-blank.
-- Use `c1` for single-deletion cards unless you specifically want multiple cards from one block.
-- Combine with the `I` field to add hints or references.
+- Invalid cloze syntax can stop a card from rendering correctly.
+- Overlapping or inconsistent numbering can create unexpected card counts.
+- Very large numbers of deletions in one sentence can hurt readability and recall quality.

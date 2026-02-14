@@ -1,69 +1,38 @@
 # Card Browser
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-The Card Browser is a searchable, sortable table of every flashcard in your vault. Open it from the **Flashcards** leaf in the sidebar or via the command palette.
+Card Browser is a table view of all cards in your vault.
+Use it to find, filter, edit, and manage cards in bulk.
 
-## Columns
+## Main controls
 
-| Column | Description |
-|--------|-------------|
-| ID | Internal card identifier |
-| Type | Basic, Cloze, MCQ, IO, or Ordered |
-| Stage | New, Learning, Review, Relearning, Suspended, Buried |
-| Due | Next review date |
-| Title | Card title field |
-| Question | Question text |
-| Answer | Answer text |
-| Info | Extra info field |
-| Location | Source note (shown as `Folder / Note`) |
-| Groups | Card groups, displayed as `Group / Subgroup` |
+- **Sort**: click a column header to sort; click again to reverse order.
+- **Search**: text search across card fields.
+- **Filters**:
+	- Type (Basic, Cloze, MCQ, IO, Ordered)
+	- Stage (New, Learning, Review, Relearning, Suspended, Buried)
+	- Due status (Due, Today, Later)
+- **Reset**: clears filters back to default.
 
-Click any column header to sort. Click again to reverse the sort order. You can adjust which columns are visible using the column settings.
+## Edit and bulk actions
 
-## Filters
+- Select one or more rows.
+- Use actions to edit, suspend/unsuspend, or clear selection.
+- Changes from edit actions appear in the table immediately.
 
-### Type filter
+See [[Suspending Cards]] for suspend behavior.
 
-Filter by card type: **All**, **Basic**, **MCQ**, **Cloze**, **IO**, **Ordered**.
+## Pagination and layout
 
-### Stage filter
+- Move through pages using controls at the bottom.
+- Change rows per page from the page-size selector.
+- Use **Expand table / Collapse table** to switch width.
 
-Filter by scheduling stage: **All**, **New**, **Learning**, **Review**, **Relearning**, **Suspended**, **Buried**.
+## Edge cases
 
-### Due filter
-
-Filter by due status: **All**, **Due** (due now), **Today** (due today), **Later** (future).
-
-### Search
-
-Free-text search across all card fields. Type in the search box and results update live.
-
-### Reset filters
-
-The **Reset** button clears all active filters back to their defaults.
-
-## Live editing
-
-Select a card and click **Edit** to modify its fields. Changes are reflected **immediately** in the browser table — no need to close and reopen.
-
-## Selection & bulk actions
-
-- Check the box on individual rows, or use the **Select All** checkbox in the header.
-- The selection count is shown below the filters.
-
-| Action | Description |
-|--------|-------------|
-| **Edit** | Open the card editor for the selected cards |
-| **Suspend / Unsuspend** | Toggle suspension on the selected cards (see [[Suspending Cards]]) |
-| **Clear selection** | Deselect all |
-
-## Pagination
-
-Cards are displayed in pages. Use the page controls at the bottom to navigate. Change the number of cards per page from the dropdown.
-
-## Table width
-
-Toggle **Expand table** / **Collapse table** to switch between full-width and a constrained 1080px layout.
+- If no rows appear, check active filters and search text first.
+- Some columns may be hidden if column visibility was changed.
+- Bulk actions only apply to selected rows.

@@ -1,10 +1,10 @@
 # Groups
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## What groups are
 
-Groups are how you organise flashcards into decks and categories in Sprout. Every card can belong to one or more groups, and groups can be nested to create a hierarchy.
+Groups organize cards into deck-like categories. A card can belong to one or more groups. Groups can be nested.
 
 ## Assigning groups
 
@@ -18,7 +18,7 @@ G | Geography |
 
 ### Multiple groups
 
-Separate group names with commas to assign a card to multiple groups:
+Separate names with commas:
 
 ```
 G | Anatomy, Cardiology |
@@ -26,34 +26,33 @@ G | Anatomy, Cardiology |
 
 ### Nested groups
 
-Use `/` within a group name to create a hierarchy:
+Use `/` to create hierarchy levels:
 
 ```
 G | Medicine/Cardiology/Valves |
 ```
 
-This creates a nested deck structure: **Medicine → Cardiology → Valves**.
+This becomes a nested structure: Medicine → Cardiology → Valves.
 
 ## Using groups
 
 ### In the deck tree
 
-Groups appear as decks in the study page's deck tree. Nested groups create a collapsible tree structure. Selecting a parent group includes all cards in its child groups.
+Groups appear as decks in the study tree. Selecting a parent includes its child groups.
 
 ### In the widget
 
-The sidebar widget uses groups as the deck structure for quick-start sessions.
+The widget uses groups as its deck structure.
 
 ### In the Card Browser
 
-You can filter cards by group in the [[Card Browser]]. The **Groups** column shows each card's assigned groups in `Group / Subgroup` format.
+You can filter by group in the [[Card Browser]].
 
 ### As study scopes
 
-When starting a study session, you can choose **Group** as the scope to study only cards tagged with a specific group or group prefix.
+You can start sessions scoped to a specific group or group prefix.
 
-## Tips
+## Important details
 
-- Keep group names consistent — `Anatomy` and `anatomy` are treated as the same group (case-insensitive matching).
-- Use groups for both subject organisation (e.g. `Biology/Cell`) and study goals (e.g. `Exam Prep`).
-- Cards without a `G` field are still part of your vault and can be studied via folder or note scopes.
+- Matching is case-insensitive (`Anatomy` and `anatomy` are the same group).
+- Cards without `G` are still studyable through folder or note scopes.

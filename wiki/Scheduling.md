@@ -1,41 +1,43 @@
 # Scheduling
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Sprout uses **FSRS** (Free Spaced Repetition Scheduler), a modern algorithm that models how your memory decays over time. It replaces fixed multipliers with a mathematical model that adapts to each card individually.
+Sprout uses **FSRS** (Free Spaced Repetition Scheduler).
+
+FSRS chooses future review dates per card, based on your past answers and elapsed time.
 
 ## How FSRS works
 
-Every card tracks three key values:
+Each card tracks 3 values:
 
 | Value | Meaning |
 |-------|---------|
-| **Stability** | How many days until your recall probability drops to the requested retention. Higher = longer intervals. |
-| **Difficulty** | How inherently hard the card is for you (0–10). Updated with each review. |
-| **Retrievability** | Your estimated probability of recalling the card right now (0–1). Decays over time. |
+| **Stability** | How long memory lasts before dropping to target retention |
+| **Difficulty** | How hard the card is for you (0–10) |
+| **Retrievability** | Estimated chance (0–1) you can recall it right now |
 
-When you rate a card:
+When you rate a card, FSRS:
 
-1. FSRS updates **difficulty** and **stability** based on your rating and the time elapsed since the last review.
-2. It calculates the next interval so that your **retrievability** will equal your **requested retention** on the due date.
-3. The card is scheduled for that many days in the future.
+1. Updates difficulty and stability.
+2. Calculates a next interval to meet your requested retention.
+3. Schedules the due date.
 
-In short: cards you find easy get longer intervals; cards you forget get shorter ones.
+In practice, easy cards get longer intervals; forgotten cards get shorter intervals.
 
 ## Card stages
 
 | Stage | Description |
 |-------|-------------|
-| **New** | Never reviewed — enters the learning queue when first seen |
-| **Learning** | In initial learning steps (short intervals) |
-| **Review** | Graduated to the review queue (longer intervals) |
-| **Relearning** | Failed a review — back in short-interval learning steps |
+| **New** | Never reviewed |
+| **Learning** | Early short-interval steps |
+| **Review** | Main long-interval stage |
+| **Relearning** | Short steps after a failed review |
 
 ## Presets
 
-Choose a preset in **Settings → Study → Scheduling** or fine-tune manually:
+Choose a preset in **Settings → Study → Scheduling** or set values manually:
 
 | Preset | Learning steps | Relearning steps | Retention |
 |--------|----------------|------------------|-----------|
@@ -54,28 +56,30 @@ Choose a preset in **Settings → Study → Scheduling** or fine-tune manually:
 
 ### What the settings mean
 
-- **Learning steps** — When a new card is first seen, it goes through these short-interval steps before graduating to the review queue. `10, 1440` means: first see again after 10 minutes, then after 1 day (1440 minutes).
-- **Relearning steps** — When you forget a card (press Again), it re-enters these steps before returning to the review queue.
-- **Requested retention** — Your target probability of remembering a card when it's due. Higher values (e.g. 0.95) mean shorter intervals but more reviews per day. Lower values (e.g. 0.85) mean longer intervals but more forgetting.
+- **Learning steps**: short intervals for new cards before they move to Review.
+- **Relearning steps**: short intervals after an Again on a Review card.
+- **Requested retention**: target recall when card is due.
+
+Higher retention increases workload (more frequent reviews). Lower retention reduces workload but increases forgetting.
 
 > [!TIP]
-> **0.90** (90% retention) is a good default. Only adjust if you have a specific reason — e.g. raise it before exams, lower it for low-stakes material.
+> **0.90** is a strong default for most users.
 
 ## FSRS console / log
 
-You can view the internal FSRS scheduling log for any card to understand how its parameters were calculated:
+You can inspect a card's FSRS history:
 
-1. Open the [[Card Browser]].
+1. Open the [[Card-Browser|Card Browser]].
 2. Select a card.
-3. Open the card's detail view — the FSRS log shows the full history of ratings, stability changes, difficulty updates, and interval calculations.
+3. Open card details to see ratings, stability, difficulty, and interval calculations.
 
-This is useful for debugging why a card has a particular interval or for understanding the algorithm's behaviour.
+Use this if a due date looks unexpected.
 
 ## Reset options
 
 | Button | Effect |
 |--------|--------|
-| Reset scheduling | Reset all cards back to **New** (clears all intervals, stability, difficulty) |
+| Reset scheduling | Reset all cards to **New** (clears intervals, stability, difficulty) |
 | Reset analytics | Clear review history and heatmap data |
 
-These are found in **Settings → Reset**. Use with caution — both are irreversible.
+Both options are in **Settings → Reset** and cannot be undone.

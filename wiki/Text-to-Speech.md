@@ -1,10 +1,12 @@
 # Text to Speech
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Sprout includes text-to-speech (TTS) support that can read your card content aloud. This is useful for language learning, auditory reinforcement, or accessibility.
+Text to Speech (TTS) can read card content aloud.
+
+This helps with language study, listening practice, and accessibility.
 
 ## Supported card types
 
@@ -16,9 +18,11 @@ Sprout includes text-to-speech (TTS) support that can read your card content alo
 | **Ordered** | ✅ | Question stem and items |
 | **Image Occlusion** | ❌ | Not supported (visual cards) |
 
+If a card type is unsupported, no TTS audio is generated for that card.
+
 ## Cloze TTS options
 
-For cloze cards, you can choose what the TTS reads on the **answer** side:
+For cloze cards, choose what is read on the answer side:
 
 | Option | Behaviour |
 |--------|-----------|
@@ -31,7 +35,7 @@ Configure this in **Settings → Audio → Cloze TTS mode**.
 
 1. Go to **Settings → Audio**.
 2. Toggle **Enable text-to-speech** on.
-3. Choose your preferred voice and language (see [[Language Settings]]).
+3. Choose voice and language (see [[Language-Settings|Language Settings]]).
 4. TTS controls will appear in the study session interface.
 
 ## During a session
@@ -44,12 +48,14 @@ When TTS is enabled:
 
 ## Audio quality
 
-TTS uses your device's built-in speech synthesis engine. Voice quality and available voices depend on your operating system:
+TTS uses your device's built-in speech engine. Voice quality and available voices depend on your OS:
 
 - **macOS** — High-quality voices available via System Preferences → Accessibility → Spoken Content.
 - **Windows** — Voices available via Settings → Time & Language → Speech.
 - **Linux** — Depends on the installed speech synthesis packages.
 - **Mobile** — Uses the device's built-in TTS engine.
+
+If no suitable voice is installed for your chosen language, pronunciation quality may be poor.
 
 ## Tips
 

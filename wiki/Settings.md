@@ -1,10 +1,12 @@
 # Settings
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Open **Settings → Community plugins → Sprout** to configure the plugin. Settings are organised into tabs.
+Open **Settings → Community plugins → Sprout** to configure the plugin.
+
+Settings are grouped by tab.
 
 ## User details
 
@@ -46,15 +48,19 @@ Open **Settings → Community plugins → Sprout** to configure the plugin. Sett
 | Randomise MCQ options | Off | Shuffle MCQ option order each time |
 | Show info by default | Off | Expand the info field on the card back |
 
+Daily limits reset at midnight and are tracked per scope.
+
 ## Widget
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Treat folder notes as decks | On | Folder notes act as the deck root for their folder. See [[Widget]]. |
+| Treat folder notes as decks | On | Folder notes act as deck roots for their folder. See [[Widget]]. |
 
 ## Scheduling (FSRS)
 
-Sprout uses the **FSRS** algorithm. Choose a preset or fine-tune manually. See [[Scheduling]] for a detailed explanation of each option.
+Sprout uses **FSRS**. Choose a preset or edit values manually.
+
+See [[Scheduling]] for details.
 
 ### Presets
 
@@ -77,9 +83,11 @@ Sprout uses the **FSRS** algorithm. Choose a preset or fine-tune manually. See [
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Ignore fenced code blocks | On | Skip card syntax inside ``` blocks |
-| Card delimiter | Pipe `\|` | Character used to separate card fields. See [[Custom Delimiters]]. |
+| Ignore fenced code blocks | On | Skip card syntax inside fenced code blocks |
+| Card delimiter | Pipe `\|` | Character used to separate card fields. See [[Custom-Delimiters|Custom Delimiters]]. |
 | ID placement | Above | Place card anchors above or below the card block |
+
+If the delimiter is changed, card parsing behavior changes on next sync.
 
 ## Danger zone
 
@@ -89,4 +97,6 @@ Sprout uses the **FSRS** algorithm. Choose a preset or fine-tune manually. See [
 
 ## Quarantined cards
 
-If a card cannot be parsed (e.g. malformed syntax), it appears here with its ID and error message. Click **Open note** to jump to the problem card and fix it. See [[Syncing]].
+If a card cannot be parsed (for example, malformed syntax), it is listed here with its ID and error.
+
+Use **Open note** to jump to the source, fix the syntax, then sync again. See [[Syncing]].

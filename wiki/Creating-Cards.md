@@ -1,60 +1,54 @@
 # Creating Cards
 
-Last updated: 13/02/2026
+Last modified: 14/02/2026
 
-## Overview
+## Two ways to create cards
 
-There are two ways to create flashcards in Sprout: writing Markdown syntax directly in your notes, or using the built-in creation modals.
+You can create cards by:
+- using Sprout modals, or
+- writing card fields directly in Markdown.
 
-## Using the creation modals
+Modals are usually faster, especially for [[Image Occlusion]] and [[Multiple Choice Questions]].
 
-The fastest way to get started. You don't need to memorise any syntax.
+## Create cards with a modal
 
-1. **Right-click** in any note to open the context menu, or use the **command palette** (`Cmd/Ctrl+P`).
-2. Choose one of the **Add flashcard** options:
-   - Add Basic Card
-   - Add Cloze Card
-   - Add MCQ Card
-   - Add Image Occlusion Card
-   - Add Ordered Question Card
-3. Fill in the fields in the modal and click **Save**.
-4. Sprout inserts the formatted card block into your note at the cursor position.
+1. Right-click in a note, or open the command palette (`Cmd/Ctrl+P`).
+2. Choose an **Add flashcard** option.
+3. Fill in the fields and select **Save**.
 
-> [!TIP]
-> Modals are particularly useful for complex card types like Image Occlusion and MCQ where the syntax is more involved.
+Sprout inserts the card block at your cursor.
 
-## Writing cards in Markdown
+## Write cards in Markdown
 
-Use pipe-delimited lines in any Markdown note. Each field starts and ends with a pipe `|` (or your configured [[Custom Delimiters|delimiter]]).
+Card fields use the delimiter `|` by default (or your configured [[Custom Delimiters|delimiter]]).
 
-### Fields
-
-| Field | Purpose | Required |
-|-------|---------|----------|
-| `T` | Title | Optional |
-| `Q` | Question | Required for basic |
-| `A` | Answer | Required for basic & MCQ (for the correct answer option) |
-| `CQ` | Cloze question | Required for cloze |
-| `MCQ` | MCQ question stem | Required for MCQ |
-| `O` | MCQ option | One required for MCQ (repeat for each incorrect option) |
-| `OQ` | Ordered question stem | Required for ordered |
-| `I` | Extra info | Optional |
-| `G` | Groups/tags (comma-separated) | Optional |
+| Field | Use | Required |
+|---|---|---|
+| `T` | Title | No |
+| `Q` | Basic question | Yes (basic) |
+| `A` | Answer / correct option | Yes (basic, MCQ) |
+| `CQ` | Cloze text | Yes (cloze) |
+| `MCQ` | MCQ stem | Yes (MCQ) |
+| `O` | Incorrect MCQ option | At least one (MCQ) |
+| `OQ` | Ordered-question stem | Yes (ordered) |
+| `1`, `2`, `3`, ... | Ordered items (in correct sequence) | At least two (ordered) |
+| `I` | Extra info | No |
+| `G` | Groups (comma-separated) | No |
 
 ### Minimal examples
 
-**Basic card:**
+**Basic**
 ```
 Q | What is the capital of France? |
 A | Paris |
 ```
 
-**Cloze card:**
+**Cloze**
 ```
 CQ | The capital of France is {{c1::Paris}} |
 ```
 
-**MCQ card:**
+**MCQ**
 ```
 MCQ | What is the capital of France? |
 A | Paris |
@@ -62,7 +56,7 @@ O | London |
 O | Berlin |
 ```
 
-See the dedicated pages for each card type for full details:
+See also:
 - [[Basic & Reversed Cards]]
 - [[Cloze Cards]]
 - [[Image Occlusion]]
@@ -71,7 +65,7 @@ See the dedicated pages for each card type for full details:
 
 ## Multi-line fields
 
-Fields can span multiple lines — the pipe `|` at the end marks the end of the field. This is useful for longer answers or including images.
+Fields can span multiple lines. The field ends at the closing delimiter.
 
 ```
 Q | List three key features of X and include a diagram. |
@@ -83,12 +77,12 @@ Feature two
 I | Keep answers structured. |
 ```
 
-## Card identity & anchors
+## Card anchors
 
-After syncing, each card block gets an anchor line:
+After sync, each card block gets an anchor like:
 
 ```
 ^sprout-#########
 ```
 
-This is the unique identifier for that card — **do not edit or delete it**. It links the card to its scheduling data. See [[Syncing]] for more details.
+Do not edit or delete this line. It links the card to its scheduling data. If you remove it, the card is treated as new on sync and previous progress is lost. See [[Syncing]].

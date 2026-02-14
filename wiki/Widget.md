@@ -1,14 +1,16 @@
 # Widget
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-The Sprout widget is a sidebar panel that gives you quick access to your decks and study sessions without navigating to the full study page. It shows a tree of your decks with card counts and lets you start a session with one click.
+The Sprout widget is a sidebar panel for quick access to decks and study sessions.
+
+It shows a deck tree with counts and lets you start studying in one click.
 
 ## Opening the widget
 
-The widget lives in Obsidian's sidebar. Click the Sprout icon in the left sidebar to open (or close) the widget panel.
+Click the Sprout icon in Obsidian's left sidebar to open or close the widget.
 
 ## Deck tree
 
@@ -22,18 +24,20 @@ Click a deck to start a study session for that scope.
 
 ## Scope modes
 
-The widget supports two scope modes, configurable in the widget header:
+Choose a mode in the widget header:
 
 | Mode | Behaviour |
 |------|-----------|
 | **Folder** | Decks are organised by the folder structure of your vault. Each folder containing notes with cards becomes a deck. |
 | **Note** | Each note with cards is shown as a separate deck. |
 
-Toggle between modes using the scope selector at the top of the widget.
+Switching mode changes how decks are grouped, but does not change card data.
 
 ## Folder notes as decks
 
-When **Treat folder notes as decks** is enabled (Settings → Study → Widget), folder notes act as the deck root for their containing folder. This means the folder note's cards are grouped with the folder's other notes into one deck.
+When **Treat folder notes as decks** is enabled, a folder note becomes the deck root for that folder.
+
+Its cards are grouped with other cards from the same folder.
 
 ## Starting a session
 

@@ -1,44 +1,39 @@
 # Analytics
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## What this page shows
 
-The Analytics dashboard gives you a visual overview of your study habits and card data. Open it from the **Analytics** leaf in the sidebar or via the command palette.
+Analytics gives you a quick view of your study activity and card health.
+Open it from the **Analytics** sidebar item or the command palette.
 
-## KPI cards
+## Top summary cards
 
-Four summary cards appear at the top of the dashboard:
+At the top, Sprout shows four key metrics:
 
-| Card | Description |
-|------|-------------|
-| **Longest streak** | Your all-time longest run of consecutive study days. Shows a **Live** badge if your current streak equals the longest. |
-| **Current streak** | Consecutive study days including today. Shows **Live** if you've reviewed today. |
-| **Daily time** | Average minutes per day over the last 7 days, with a trend arrow comparing to the prior 7 days. |
-| **Daily cards** | Average cards per day over the last 7 days, with a trend arrow comparing to the prior 7 days. |
+- **Longest streak**: Your best run of consecutive study days. Shows **Live** if you are currently matching it.
+- **Current streak**: How many days in a row you have studied, including today.
+- **Daily time**: Average minutes per day for the last 7 days, plus trend vs the previous 7 days.
+- **Daily cards**: Average cards reviewed per day for the last 7 days, plus trend vs the previous 7 days.
 
-## Charts overview
+## Charts
 
-The dashboard includes several charts to help you understand your study patterns. See [[Charts]] for a detailed explanation of each chart, what it measures, and how to interpret the data.
-
-Charts included:
-- Review Calendar Heatmap
-- Stage Distribution (pie chart)
-- Future Due (study forecast)
-- Answer Buttons
-- New Cards Per Day
-- Stability Distribution
-- Forgetting Curve
-
-## Layout
-
-The dashboard is responsive — KPI cards and charts reflow from 1 to 2 to 4 columns depending on window width. Use the **Expand / Collapse** toggle to switch between full-width and a constrained layout.
+Analytics includes charts for workload, recall, and scheduling trends.
+For chart-by-chart details, see [[Charts]].
 
 ## Filters
 
-Use the filter controls at the top of the dashboard to narrow the data:
+Use filters at the top to narrow data:
 
-- **Time range** — Filter by date range (last 7 days, 30 days, 90 days, all time).
-- **Scope** — Filter by deck, folder, or group.
+- **Time range**: last 7, 30, 90 days, or all time.
+- **Scope**: specific deck, folder, or group.
 
-Filters apply to all charts simultaneously.
+Important behavior:
+
+- Filters apply to all charts at the same time.
+- If filters are too narrow, charts can appear empty. This is expected.
+
+## Layout
+
+The page adapts to window size.
+Use **Expand / Collapse** to switch between full-width and constrained layout.

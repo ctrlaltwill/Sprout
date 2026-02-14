@@ -1,56 +1,51 @@
 # Backups
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## What backups are for
 
-Sprout can create backups of your scheduling data — card states, review history, and FSRS parameters. Use backups to protect against data loss or to roll back after experimenting with settings.
+Backups save your **scheduling data** so you can recover from mistakes or bad imports.
+They do not back up your note text.
 
-## Creating a backup
+## Create a backup
 
-1. Go to **Settings → Reset**.
+1. Open **Settings → Reset**.
 2. Click **Create backup now**.
 
-A snapshot of your current scheduling data is saved immediately.
+The backup is saved immediately.
 
-## Backup table
+## Restore a backup
 
-The backup section in Settings shows a table of all backups:
-
-| Column | Description |
-|--------|-------------|
-| **Date** | When the backup was created |
-| **Cards** | Summary of card states at the time (new, learning, review, etc.) |
-| **Actions** | Restore or Delete buttons |
-
-A **"Current data"** row always appears at the top for reference, showing your live card counts.
-
-## Restoring a backup
-
-1. Find the backup you want in the table.
+1. In the backup table, find the backup you want.
 2. Click **Restore**.
-3. Confirm the action.
+3. Confirm.
 
-Restoring replaces your current scheduling data (intervals, stability, difficulty, review history) with the data from the backup. Your card content in Markdown notes is **not affected** — only the scheduling database is rolled back.
+Restoring replaces current scheduling data with older data.
 
 > [!WARNING]
-> Restoring a backup overwrites your current scheduling data. Any reviews since the backup was created will be lost.
+> Restore overwrites your current scheduling state and review history.
+> Reviews done after that backup was made are lost.
 
-## Deleting a backup
+## Delete a backup
 
-Click **Delete** next to any backup to remove it permanently. This cannot be undone.
+Click **Delete** next to a backup to remove it permanently.
+This action cannot be undone.
 
-## When to back up
+## What is included
 
-- **Before resetting scheduling** — If you're about to reset all cards to New, back up first in case you change your mind.
-- **Before large imports** — Before importing a large Anki `.apkg`, create a backup so you can roll back if the import doesn't go as expected (see [[Anki Export & Import]]).
-- **Periodically** — Consider making a backup every week or two for peace of mind.
+- card stages, intervals, stability, difficulty
+- review history
+- FSRS parameters
+- card-to-note mappings
 
-## What's included
+## What is not included
 
-| Included | Not included |
-|----------|-------------|
-| Card scheduling states (stability, difficulty, interval, stage) | Card content (Markdown text) |
-| Review history | Note files |
-| FSRS parameters | Plugin settings |
-| Card-to-note mappings | Image files |
+- Markdown note content
+- media files
+- plugin settings
+
+## When to create backups
+
+- before reset actions
+- before large imports (see [[Anki Export & Import]])
+- regularly as a safety habit

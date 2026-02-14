@@ -1,55 +1,59 @@
 # Sprout Wiki
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Welcome to Sprout
+## What is Sprout?
 
-Sprout is an Obsidian plugin for creating and studying flashcards directly inside your Markdown notes. It uses the FSRS spaced-repetition algorithm to schedule reviews so you spend your time on the cards that need it most.
+Sprout is an Obsidian plugin for making flashcards in your notes and reviewing them with spaced repetition (a system that shows cards again at the right time).
 
-## Getting started
+With Sprout, you can:
 
-New to Sprout? Start here:
+- Create flashcards directly in Markdown notes
+- Review cards in study sessions
+- Track progress in analytics
+- Browse and edit cards in one place
 
-1. [[Installation]] — install the plugin and get set up
-2. [[Creating Cards]] — learn how to write your first flashcard
-3. [[Study Sessions]] — start reviewing your cards
+## Start here
 
-## What can Sprout do?
+1. [[Installation]]
+2. [[Creating Cards]]
+3. [[Study Sessions]]
 
-### Cards
+## Card types
 
-Write flashcards in Markdown using a simple pipe-delimited syntax, or use the built-in creation modals. Sprout supports several card types:
+- [[Basic & Reversed Cards]]
+- [[Cloze Cards]]
+- [[Image Occlusion]]
+- [[Multiple Choice Questions]]
+- [[Ordered Questions]]
 
-- **Basic & Reversed** — classic question-and-answer cards
-- **Cloze** — fill-in-the-blank deletion cards
-- **Image Occlusion** — mask regions of an image and recall what's hidden
-- **Multiple Choice** — choose the correct option from a list
-- **Ordered Questions** — arrange items in the correct sequence
+See [[Cards]] for the full overview.
 
-See [[Cards]] for a full overview.
+## Study basics
 
-### Studying
+- Reviews are scheduled automatically using FSRS.
+- You can study by vault, folder, note, or group.
+- Daily new and review limits are applied per study scope and reset each day.
+- Practice mode does not change scheduling.
 
-Review cards with intelligent scheduling powered by FSRS. Choose from two-button or four-button grading, practice mode, auto-advance, and more. See [[Study Sessions]].
+See [[Study Sessions]], [[Scheduling]], and [[Grading]].
 
-### Analytics
+## Other tools
 
-Track your progress with streak counters, heatmaps, stage distribution charts, forgetting curves, and study forecasts. See [[Analytics]].
+- [[Card Browser]] for search, filters, sorting, and bulk actions
+- [[Analytics]] and [[Charts]] for progress tracking
+- [[Text to Speech|Text to Speech]] for spoken cards
+- [[Reading View]] for reviewing extracted content
 
-### Browsing
+## Important notes
 
-Search, filter, sort, and bulk-edit your entire card collection in the [[Card Browser]].
+- If card syntax is invalid, the card is quarantined until fixed.
+- Some actions are permanent, including **Delete all flashcards** and reset actions.
 
-### Audio
+Before large imports or resets, create a backup (see [[Backups]]).
 
-Enable text-to-speech to have your cards read aloud. Configure voices and languages in [[Text to Speech|Text to Speech]].
+## Need help?
 
-### Import & Export
-
-Exchange cards with Anki using `.apkg` files. See [[Anki Export & Import]].
-
-## Quick start
-
-1. Write cards in any note using pipe-delimited syntax (see [[Creating Cards]])
-2. Sync to create/update cards — anchors are added automatically
-3. Open a study session, choose a deck or scope, and start reviewing
+- [[Settings]] for all options
+- [[Syncing]] for indexing and parse issues
+- [[Widget]] for deck tree behaviour

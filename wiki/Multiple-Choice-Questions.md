@@ -1,10 +1,10 @@
 # Multiple Choice Questions
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Multiple Choice Question (MCQ) cards present a question with several options. You select the correct answer from the list. MCQs are useful for recognition-based learning and for topics where distinguishing between similar options is important.
+MCQ cards show one question with multiple options. You choose one answer.
 
 ## Writing an MCQ card
 
@@ -21,9 +21,9 @@ I | Remember: it's on the Seine |
 G | Geography |
 ```
 
-- **`MCQ`** — The question stem (required).
-- **`A`** — The correct answer (required, exactly one).
-- **`O`** — Incorrect options (at least one required, add as many as needed).
+- `MCQ`: required question stem.
+- `A`: required correct answer (one).
+- `O`: required incorrect options (one or more).
 
 ## Using the modal
 
@@ -36,24 +36,24 @@ G | Geography |
 
 ## How MCQs are reviewed
 
-During review, the question is shown with all options displayed as buttons. Tap or click the option you think is correct.
+During review, options are shown as buttons. Select one option.
 
-- **Correct answer** — The option turns green and the card is graded as **Good**.
-- **Incorrect answer** — Your chosen option turns red, the correct answer is highlighted green, and the card is graded as **Again**.
+- Correct: selected option turns green, grade is **Good**.
+- Incorrect: selected option turns red, correct option is highlighted, grade is **Again**.
 
 > [!NOTE]
-> MCQ grading is automatic — you don't need to press a separate grade button. Your choice determines the grade.
+> MCQ grading is automatic. You do not press a separate grade button.
 
 ### Option randomisation
 
-By default, options are displayed in the order you wrote them. Enable **Randomise MCQ options** in **Settings → Study** to shuffle the order each time the card appears. This prevents you from memorising option positions instead of content.
+By default, options stay in the order you wrote. Enable **Randomise MCQ options** in **Settings → Study** to shuffle order each time.
 
 ## Grading behaviour
 
 MCQs are **auto-graded** based on your selection:
 
 | Your choice | Grade applied |
-|-------------|--------------|
+|---|---|
 | Correct option | **Good** |
 | Incorrect option | **Again** |
 

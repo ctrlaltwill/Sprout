@@ -1,48 +1,45 @@
 # Cards
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Flashcards in Sprout live inside your Markdown notes as structured text blocks. You can create them by writing the syntax directly or by using the built-in creation modals. Sprout supports several card types to suit different kinds of knowledge.
+Cards in Sprout are written inside your Markdown notes.
+You can create cards by writing syntax directly or by using add-card forms.
 
 ## Card types
 
-| Type | Best for | See |
-|------|----------|-----|
-| **Basic & Reversed** | Simple question → answer recall | [[Basic & Reversed Cards]] |
-| **Cloze** | Fill-in-the-blank / active recall within context | [[Cloze Cards]] |
-| **Image Occlusion** | Visual recall — diagrams, anatomy, maps | [[Image Occlusion]] |
-| **Multiple Choice** | Recognition-based testing with options | [[Multiple Choice Questions]] |
-| **Ordered Questions** | Sequence recall — steps, rankings, lists | [[Ordered Questions]] |
+- [[Basic & Reversed Cards]]: direct question/answer recall
+- [[Cloze Cards]]: fill-in-the-blank recall in context
+- [[Image Occlusion]]: hide parts of images
+- [[Multiple Choice Questions]]: choose the correct option
+- [[Ordered Questions]]: remember sequences
 
-## Creating cards
+## Create cards
 
-There are two ways to create cards:
+Two methods:
 
-1. **Markdown syntax** — Write pipe-delimited card blocks directly in your notes. Great for speed and bulk creation.
-2. **Creation modals** — Right-click in a note (or use the command palette) and choose **Add flashcard** to open a guided form. The modal inserts the formatted block for you.
+1. write card syntax in notes
+2. use **Add flashcard** from the context menu or command palette
 
-See [[Creating Cards]] for full details on both methods.
+See [[Creating Cards]] and [[Reading View]].
 
-## Editing cards
+## Edit cards
 
-Cards can be edited in several ways:
+You can edit cards:
 
-- **In the source note** — Edit the Markdown directly or click the edit button in reading view.
-- **From the Card Browser** — Select a card and click Edit.
-- **During study** — Press `E` or choose Edit from the More menu to edit the card you're reviewing.
+- in the source note
+- in [[Card Browser]]
+- during review (edit action)
 
-See [[Editing Cards]] for more.
+See [[Editing Cards]].
 
-## Formatting
+## Organize and format
 
-Cards support inline Markdown (bold, italic, highlights), LaTeX equations, images, wikilinks, and more. See [[Card Formatting]].
+- Use [[Groups]] to organize cards.
+- Use [[Card Formatting]] for markdown, math, links, and images.
 
-## Organising cards
+## Important behavior
 
-Use **groups** to tag and organise your cards into decks and sub-decks. Groups can be nested with commas for hierarchical organisation. See [[Groups]].
-
-## Browsing
-
-The [[Card Browser]] provides a searchable, sortable table of every card in your vault with filtering, bulk actions, and live editing.
+- Broken or incomplete card syntax can cause cards to be skipped or parsed incorrectly.
+- Card scheduling data is separate from note text (see [[Backups]]).

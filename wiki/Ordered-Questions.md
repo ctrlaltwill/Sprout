@@ -1,62 +1,66 @@
 # Ordered Questions
 
-Last updated: 13/02/2026
+Last modified: 14/02/2026
 
 ## Overview
 
-Ordered Question cards test your ability to arrange items in the correct sequence. During review, you're presented with a list of items in a scrambled order and must drag or select them into the right position. This is ideal for learning steps in a process, rankings, timelines, or any ordered list.
+Ordered Question cards test whether you can place items in the correct sequence. Sprout stores your list in the right order, then scrambles it during review.
+
+Use this card type for steps, timelines, rankings, and other ordered lists.
 
 ## Writing an ordered question card
 
-Use `OQ` for the question stem, followed by the items in **correct order**. Sprout will scramble them during review:
+Use `OQ` for the prompt and numbered fields (`1`, `2`, `3`, …) for items in the correct order:
 
 ```
 T | Cardiac cycle |
 OQ | Arrange the phases of the cardiac cycle in order |
-O | Atrial systole |
-O | Isovolumetric contraction |
-O | Ventricular ejection |
-O | Isovolumetric relaxation |
-O | Ventricular filling |
+1 | Atrial systole |
+2 | Isovolumetric contraction |
+3 | Ventricular ejection |
+4 | Isovolumetric relaxation |
+5 | Ventricular filling |
 I | The cycle repeats with each heartbeat |
 G | Cardiology |
 ```
 
-- **`OQ`** — The question stem (required).
-- **`O`** — Each item in the correct sequence (at least two required, listed in correct order).
+- `OQ`: required question prompt.
+- `1`, `2`, `3`, ...: ordered items. Add at least 2 items.
+
+If item order is wrong in the note, Sprout will treat that wrong order as the answer key.
 
 ## Using the modal
 
 1. Right-click in a note → **Add flashcard → Ordered Question Card**.
-2. Enter the question stem.
-3. Add items in the correct order (click **Add item** for more).
+2. Enter the prompt.
+3. Add items in the correct order.
 4. Optionally add title, info, and groups.
 5. Click **Save**.
 
-The modal makes it easy to reorder items before saving — drag items up or down to adjust the sequence.
+You can drag items up or down before saving.
 
 ## How ordered questions are reviewed
 
-During review, the items are displayed in a **scrambled order**. You arrange them into what you believe is the correct sequence by dragging or selecting items.
+During review, items appear in a scrambled order. Arrange them into the correct sequence.
 
-Once you confirm your order:
+After you submit:
 
-- **All correct** — Items turn green and the card is graded as **Good**.
-- **Any incorrect** — Incorrectly placed items are highlighted, the correct order is shown, and the card is graded as **Again**.
+- If all positions are correct, the card is graded **Good**.
+- If any position is wrong, the card is graded **Again** and the correct order is shown.
 
 ## Grading behaviour
 
-Ordered questions are **auto-graded** based on whether your sequence matches the correct order:
+Ordered Questions are auto-graded:
 
 | Your arrangement | Grade applied |
 |------------------|--------------|
 | Fully correct order | **Good** |
 | Any items out of order | **Again** |
 
-The FSRS scheduler updates the card based on the grade. See [[Grading]] for more details.
+The scheduler then updates the card from that grade. See [[Grading]].
 
 ## Tips
 
-- Keep lists to a reasonable length (3–7 items) — very long sequences are hard to memorise and frustrating to arrange.
-- Use clear, distinct item text so items aren't easily confused.
-- Combine with the `I` field to provide context or a mnemonic for the sequence.
+- Keep lists short (about 3 to 7 items) so reviews stay manageable.
+- Use clear item text so similar options are not easy to confuse.
+- Add context in `I` if the order needs explanation.

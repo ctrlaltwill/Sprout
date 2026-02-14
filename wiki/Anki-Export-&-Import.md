@@ -1,64 +1,72 @@
 # Anki Export & Import
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-Sprout can exchange cards with Anki using `.apkg` packages. Use the command palette and run **Import from Anki (.apkg)** or **Export to Anki (.apkg)**.
+Sprout can import from and export to Anki using `.apkg` files.
+Use the command palette:
+
+- **Export to Anki (.apkg)**
+- **Import from Anki (.apkg)**
 
 > [!WARNING]
-> Anki import/export is experimental and currently in testing.
+> Anki import/export is experimental.
 
 ## Export to Anki (.apkg)
 
-1. Open the command palette and run **Export to Anki (.apkg)**.
-2. Choose the export scope:
-   - **All cards**
-   - **Cards in group…** (group name or prefix)
-   - **Current note**
-3. Configure export options:
-   - **MCQ handling**: convert to Basic or skip MCQ cards.
-   - **Include scheduling data**: exports FSRS state so cards arrive in Anki with progress intact.
-   - **Include review history**: exports review log entries for Anki statistics.
-   - **Include media files**: bundles referenced images in the .apkg.
-   - **Default deck name**: used for cards without a Sprout group.
-4. Export and either **Save to vault** or **Download** the .apkg file.
+1. Run **Export to Anki (.apkg)**.
+2. Choose what to export:
+   - all cards
+   - cards in a group
+   - current note
+3. Choose options:
+   - MCQ handling (convert to Basic or skip)
+   - include scheduling data
+   - include review history
+   - include media files
+   - default deck name
+4. Save or download the `.apkg`.
 
-### Notes
+### Important limits
 
-- Image Occlusion and cloze child cards are not exported.
-- If you skip MCQ cards, they will be omitted from the package.
+- Image Occlusion cards are not exported.
+- Cloze child cards are not exported.
+- If you skip MCQ cards, they are not included in the package.
 
-### Enabling FSRS in Anki after import
+## FSRS after export
 
-Sprout exports your FSRS parameters, desired retention, and per-card memory state (stability & difficulty) into the .apkg file. However, the FSRS toggle in Anki is a **global collection setting** that .apkg imports cannot set automatically.
+Sprout includes FSRS parameters and card memory state in the export.
+Anki still requires you to manually enable FSRS because that switch is global in Anki.
 
-After importing the .apkg into Anki:
+After import into Anki:
 
-1. Open **Deck Options** (click the gear icon next to any deck).
-2. Scroll to the **FSRS** section at the bottom.
-3. Toggle **FSRS** on.
-
-Your desired retention and FSRS parameters from Sprout will already be pre-configured in the deck preset — you just need to flip the switch. All card scheduling data (intervals, stability, difficulty) will be preserved.
+1. Open deck options.
+2. Find **FSRS**.
+3. Turn FSRS on.
 
 ## Import from Anki (.apkg)
 
-1. Open the command palette and run **Import from Anki (.apkg)**.
-2. Choose an .apkg file and review the import preview.
-3. Configure import options:
-   - **Target folder**: where Sprout will create deck folders and files.
-   - **Scheduling**: import as new cards or preserve Anki scheduling data.
-   - **Groups**: map Anki decks and/or tags to Sprout groups.
-   - **Duplicates**: skip duplicates or import anyway.
-4. Run the import and review the results summary.
+1. Run **Import from Anki (.apkg)**.
+2. Select the `.apkg` and review preview details.
+3. Set options:
+   - target folder
+   - import as new vs preserve scheduling
+   - deck/tag to group mapping
+   - duplicate handling
+4. Start import and check the summary.
 
-### Notes
+### Important limits and conversions
 
-- Image Occlusion cards are skipped during import.
-- Anki note types that are not Basic or Cloze are imported as Basic.
+- Image Occlusion cards are skipped on import.
+- Note types other than Basic/Cloze are imported as Basic.
 
-## Tips
+### Failure cases to watch
 
-- If you plan to continue studying in Anki, keep **Include scheduling data** enabled on export.
-- When importing into Sprout, consider **Preserve scheduling** if you want to keep review history intact.
-- See [[Backups]] before doing large imports — create a backup first.
+- Invalid or damaged `.apkg` files can fail to import.
+- Duplicate handling can skip cards you expected to see.
+- If deck/tag mapping is wrong, cards may end up in unexpected groups.
+
+## Before large imports
+
+Create a backup first in [[Backups]] so you can roll back if needed.

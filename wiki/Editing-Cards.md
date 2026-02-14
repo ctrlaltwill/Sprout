@@ -1,46 +1,48 @@
 # Editing Cards
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## Where you can edit cards
 
-Cards can be edited at any time and from several different places in Sprout. Changes are picked up on the next sync.
+You can edit cards in:
+- the source note,
+- an active study session, or
+- the [[Card Browser]].
+
+Changes are applied when saved and then picked up by sync.
 
 ## Editing in the source note
 
-The most direct method. Open the Markdown note containing your card and edit the pipe-delimited block directly.
+Open the note that contains the card block and edit the fields directly.
 
-- In **source/editing view**, edit the raw Markdown text.
-- In **reading view**, click the **edit button** that appears on the card block to switch to editing for that card.
+- In source/editing view, edit raw Markdown.
+- In reading view, use the card edit button to jump into editing.
 
-After editing, save the file and Sprout will detect the changes on the next sync.
+Save the file after changes.
 
 ## Editing while studying
 
-You can edit the card you're currently reviewing without leaving the study session:
+You can edit the current card without leaving review:
 
 1. Press **`E`** on your keyboard, or
 2. Open the **More menu** (press **`M`** or tap the **⋮** button) and choose **Edit**.
 
-This opens the inline card editor where you can modify any field. Changes are saved immediately and the card is updated in the session.
-
-> [!TIP]
-> This is useful for fixing typos, improving answers, or adding extra info as you study — you'll notice what needs fixing most when you're actively reviewing.
+This opens the inline editor. Changes save immediately and update the current session.
 
 ## Editing from the Card Browser
 
 1. Open the [[Card Browser]].
-2. Select a card (or multiple cards for bulk editing).
+2. Select one card or multiple cards.
 3. Click **Edit** to open the card editor.
 
-The Card Browser supports **live updating** — changes you make to card fields in the editor are reflected immediately in the browser table.
+The browser table updates as you edit.
 
 ## What can be edited
 
 All card fields can be changed:
 
 | Field | Editable |
-|-------|----------|
+|---|---|
 | Title | ✅ |
 | Question / Cloze text | ✅ |
 | Answer | ✅ |
@@ -48,12 +50,14 @@ All card fields can be changed:
 | Extra info | ✅ |
 | Groups | ✅ |
 
+## Critical warning
+
 > [!WARNING]
-> Do not edit or delete the `^sprout-#########` anchor line. This links the card to its scheduling data. If the anchor is removed, the card will be treated as new on the next sync and all learning progress will be lost.
+> Do not edit or delete `^sprout-#########` anchors. If an anchor is removed, that card is treated as new at sync and previous learning progress is lost.
 
 ## Editing Image Occlusion cards
 
-Image Occlusion cards have a special editor — the **IO Editor** — which opens as a modal with the image canvas. You can add, move, resize, and delete mask regions. See [[Image Occlusion]] for details.
+Image Occlusion cards use the IO Editor modal. You can add, move, resize, and delete masks there. See [[Image Occlusion]].
 
 > [!NOTE]
-> The IO editor is desktop-only. On mobile, a notice will appear.
+> The IO Editor is desktop-only. On mobile, you will see a notice.

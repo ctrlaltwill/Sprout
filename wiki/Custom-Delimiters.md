@@ -1,16 +1,16 @@
 # Custom Delimiters
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
-## Overview
+## What this setting does
 
-By default, Sprout uses the pipe `|` character to delimit card fields. If pipe conflicts with your note content (e.g. heavy use of LaTeX or tables outside of card blocks), you can switch to an alternative delimiter.
+Sprout uses `|` as the default card-field delimiter. If that conflicts with your note content (for example, heavy LaTeX), you can choose another delimiter.
 
 ## Available delimiters
 
 | Option | Character |
-|--------|-----------|
-| Pipe *(default)* | `\|` |
+|---|---|
+| Pipe (default) | `\|` |
 | At sign | `@` |
 | Tilde | `~` |
 | Semicolon | `;` |
@@ -40,19 +40,19 @@ Q ~ What is the capital of France? ~
 A ~ Paris ~
 ```
 
-## Important warning
+## Important limit
 
 > [!WARNING]
-> Changing the delimiter does **not** migrate existing cards. Cards written with the previous delimiter will stop parsing and their scheduling data will be lost on the next sync.
+> Changing the delimiter does not migrate existing cards. Cards written with the old delimiter stop parsing. On the next sync, those cards can lose scheduling linkage/progress.
 
-Only change this setting on a **fresh vault** or after **manually converting all your cards** to the new delimiter.
+Only change this on a fresh vault, or after manually converting all existing cards.
 
 ## When to change
 
-You rarely need to change the delimiter. The most common reasons:
+Most users should keep `|`. Consider changing only when needed:
 
-- Your notes contain heavy **LaTeX** with `|` characters (see [[Card Formatting]] for the multi-line workaround first).
-- You have other Obsidian plugins or content that conflicts with pipes.
+- Your notes use many `|` characters in content (for example LaTeX).
+- Another workflow or plugin conflicts with pipe-delimited fields.
 
 > [!TIP]
-> Before changing the delimiter, try the multi-line syntax for LaTeX fields (pipe on its own line). This avoids the `|` conflict without needing to change the delimiter globally.
+> Before changing globally, try the multi-line pattern in [[Card Formatting]]. That often avoids delimiter conflicts without breaking existing cards.

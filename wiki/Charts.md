@@ -1,79 +1,57 @@
 # Charts
 
-Last updated: 13/02/2026
+Last modified: 13/02/2026
 
 ## Overview
 
-The [[Analytics]] dashboard includes several charts to visualise your study data. This page explains what each chart shows, how to read it, and how filter settings affect the displayed data.
+Charts in [[Analytics]] help you understand workload, progress, and retention.
+Use filters first, then interpret chart changes.
 
 ## Review Calendar Heatmap
 
-A 365-day grid (7 rows × 52 weeks) coloured by review activity. Each cell is one day.
+Shows one year of daily review activity.
 
-- **Darker cells** = more reviews that day.
-- **Hover** over a cell to see the exact date and review count.
-- Use this to spot study patterns, gaps, and consistency.
+- darker day = more reviews
+- hover for exact date and count
+
+Use it to spot streaks and missed days.
 
 ## Stage Distribution
 
-A pie chart showing how your cards are distributed across scheduling stages:
+Shows how cards are split across stages (New, Learning, Review, Relearning, Suspended).
+More cards in Review usually means the collection is maturing.
 
-| Segment | Meaning |
-|---------|---------|
-| **New** | Cards never reviewed |
-| **Learning** | Cards in initial learning steps |
-| **Review** | Cards graduated to the review queue |
-| **Relearning** | Cards that were forgotten and re-entered learning |
-| **Suspended** | Cards removed from reviews |
+## Future Due
 
-This gives you a snapshot of your collection's health — a high proportion of Review cards means your collection is maturing.
-
-## Future Due (Study Forecast)
-
-A 30-day bar chart forecasting how many cards will become due each day. Use this to:
-
-- Anticipate heavy review days.
-- Plan when to add new cards.
-- Spot if your workload is growing unsustainably.
+Forecast of due cards over the next 30 days.
+Use it to spot upcoming heavy days before they happen.
 
 ## Answer Buttons
 
-A 30-day stacked bar chart showing how many times you pressed each grade button per day:
-
-- **Again** (red) — Forgotten cards
-- **Hard** (orange) — Difficult recalls (four-button mode only)
-- **Good** (green) — Successful recalls
-- **Easy** (blue) — Effortless recalls (four-button mode only)
-
-A high proportion of Again presses may indicate cards that need rewriting or difficulty settings that need adjusting.
+30-day stacked view of grade choices (Again/Hard/Good/Easy).
+Frequent **Again** can signal unclear cards or too much difficulty.
 
 ## New Cards Per Day
 
-A 30-day chart of how many new cards were introduced each day. Useful for tracking your card creation pace and ensuring you're not overwhelming yourself with new material.
+Shows how many new cards were added each day in the last 30 days.
+Useful for balancing input rate vs review load.
 
 ## Stability Distribution
 
-A histogram of card stability values across your collection.
+Histogram of stability values:
 
-- **X-axis**: Stability in days.
-- **Y-axis**: Number of cards.
-- Higher stability means the card has longer intervals and is well-learned.
-- Cards clustered at low stability values may need more frequent review or better content.
+- low stability = short intervals
+- high stability = longer intervals
+
+Large low-stability clusters can indicate fragile recall.
 
 ## Forgetting Curve
 
-Plots your actual retention (percentage of correct recalls) against the theoretical FSRS forgetting curve.
+Compares your real retention with the FSRS expected curve.
+If real retention stays below expected, review [[Scheduling]] settings.
 
-- **Theoretical curve** — Shows the expected recall probability at each interval.
-- **Actual data points** — Shows your real performance at different intervals.
+## Filter behavior and empty states
 
-If your actual retention consistently falls below the curve, consider raising your requested retention in [[Scheduling|scheduling settings]]. If it's consistently above, you could lower retention to reduce workload.
-
-## Filter effects
-
-All charts respond to the dashboard's global filters:
-
-- **Time range** filters — Limit data to a specific period.
-- **Scope filters** — Show data only for specific decks or groups.
-
-When filters are active, a badge appears in the filter bar showing the active filter count.
+- Time and scope filters affect every chart.
+- Narrow filters can make charts look empty.
+- Empty charts usually mean no matching data, not data loss.
