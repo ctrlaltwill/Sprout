@@ -30,7 +30,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "concurrently": "^9.2.1",
     "esbuild": "^0.27.3",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0",
     "eslint-plugin-obsidianmd": "^0.1.9",
     "globals": "^17.3.0",
     "obsidian": "^1.12.0",
