@@ -23,6 +23,7 @@ import { syncOneFile } from "../sync/sync-engine";
 
 import type { UndoFrame, WidgetViewLike, ReviewMeta } from "./widget-helpers";
 import type { CardRecord } from "../types/card";
+import { getCorrectIndices, isMultiAnswerMcq } from "../types/card";
 import type SproutPlugin from "../main";
 
 /* ------------------------------------------------------------------ */
@@ -237,6 +238,8 @@ export async function suspendCurrentCard(view: WidgetViewLike): Promise<void> {
 export async function answerMcq(view: WidgetViewLike, choiceIdx: number): Promise<void> {
   const card = currentCard(view);
   if (!card || card.type !== "mcq" || !view.session) return;
+  // Multi-answer MCQs use answerMcqMulti instead
+  if (isMultiAnswerMcq(card)) return;
 
   const id = String(card.id);
   if (view.session.graded[id]) return;
@@ -260,6 +263,79 @@ export async function answerMcq(view: WidgetViewLike, choiceIdx: number): Promis
     mcqChoice: choiceIdx,
     mcqCorrect: card.correctIndex ?? undefined,
   });
+  view.render();
+}
+
+/**
+ * Grade a multi-answer MCQ: all-or-nothing set comparison.
+ * All correct indices selected and no wrong ones → good, otherwise → again.
+ */
+export async function answerMcqMulti(view: WidgetViewLike, selectedIndices: number[]): Promise<void> {
+  const card = currentCard(view);
+  if (!card || card.type !== "mcq" || !view.session) return;
+
+  const id = String(card.id);
+  if (view.session.graded[id]) return;
+
+  const correctSet = new Set(getCorrectIndices(card));
+  const chosenSet = new Set(selectedIndices);
+  const pass = correctSet.size === chosenSet.size && [...correctSet].every((i) => chosenSet.has(i));
+
+  const meta: Record<string, unknown> = {
+    mcqChoices: [...chosenSet].sort(),
+    mcqCorrectIndices: [...correctSet].sort(),
+    mcqPass: pass,
+  };
+
+  if (view.session.mode === "practice") {
+    view.session.graded[id] = {
+      rating: pass ? "good" : "again",
+      at: Date.now(),
+      meta: { ...meta, practice: true } as ReviewMeta,
+    };
+    view.session.stats.done = Object.keys(view.session.graded).length;
+    view.showAnswer = true;
+    view.render();
+    return;
+  }
+
+  await gradeCurrentRating(view, pass ? "good" : "again", meta as ReviewMeta);
+  view.render();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Answer OQ (Ordering Question)                                      */
+/* ------------------------------------------------------------------ */
+
+export async function answerOq(view: WidgetViewLike, userOrder: number[]): Promise<void> {
+  const card = currentCard(view);
+  if (!card || card.type !== "oq" || !view.session) return;
+
+  const id = String(card.id);
+  if (view.session.graded[id]) return;
+
+  const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+  const correctOrder = Array.from({ length: steps.length }, (_, i) => i);
+  const pass = userOrder.length === correctOrder.length &&
+    userOrder.every((v, i) => v === correctOrder[i]);
+
+  if (view.session.mode === "practice") {
+    view.session.graded[id] = {
+      rating: pass ? "good" : "again",
+      at: Date.now(),
+      meta: { oqUserOrder: userOrder, oqPass: pass, practice: true },
+    };
+    view.session.stats.done = Object.keys(view.session.graded).length;
+    view.showAnswer = true;
+    view.render();
+    return;
+  }
+
+  await gradeCurrentRating(view, pass ? "good" : "again", {
+    oqUserOrder: userOrder,
+    oqPass: pass,
+  });
+  view.showAnswer = true;
   view.render();
 }
 
@@ -327,18 +403,18 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
   // Skip IO cards – they have their own editor
   if (["io", "io-child"].includes(cardType)) return;
 
-  // If this is a cloze child, edit the parent cloze instead so changes persist
+  // If this is a cloze child or reversed child, edit the parent instead so changes persist
   let targetCard = card;
-  if (cardType === "cloze-child") {
+  if (cardType === "cloze-child" || cardType === "reversed-child") {
     const parentId = String((card).parentId || "");
     if (!parentId) {
-      new Notice("Cannot edit cloze child: missing parent card.");
+      new Notice(`Cannot edit ${cardType}: missing parent card.`);
       return;
     }
 
     const parentCard = (view.plugin.store.data.cards || {})[parentId];
     if (!parentCard) {
-      new Notice("Cannot edit cloze child: parent card not found.");
+      new Notice(`Cannot edit ${cardType}: parent card not found.`);
       return;
     }
 
@@ -353,7 +429,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
 
       // Update the card in the session if it exists
       if (view.session) {
-        if (cardType !== "cloze-child") {
+        if (cardType !== "cloze-child" && cardType !== "reversed-child") {
           view.session.queue[view.session.index] = updatedCard;
         }
       }
@@ -380,8 +456,8 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
         new Notice("Saved changes to flashcard");
       }
 
-      // If we edited a cloze parent, refresh the current child from the store
-      if (view.session && cardType === "cloze-child") {
+      // If we edited a cloze or reversed parent, refresh the current child from the store
+      if (view.session && (cardType === "cloze-child" || cardType === "reversed-child")) {
         const refreshed = (view.plugin.store.data.cards || {})[String(card.id)];
         if (refreshed) view.session.queue[view.session.index] = refreshed;
       }

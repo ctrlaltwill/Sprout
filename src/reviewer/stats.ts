@@ -7,41 +7,7 @@
  */
 
 import type SproutPlugin from "../main";
-import type { CardRecord } from "../types/card";
-
-function ioChildKeyFromId(id: string): string | null {
-  const m = String(id ?? "").match(/::io::(.+)$/);
-  if (!m) return null;
-  const k = String(m[1] ?? "").trim();
-  return k ? k : null;
-}
-
-function getGroupKey(card: CardRecord): string | null {
-  if (!card) return null;
-  const raw = typeof card.groupKey === "string" ? card.groupKey.trim() : "";
-  return raw ? raw : null;
-}
-
-function cardHasIoChildKey(card: CardRecord): boolean {
-  if (!card) return false;
-  if (getGroupKey(card)) return true;
-  const id = String(card.id ?? "");
-  return !!ioChildKeyFromId(id);
-}
-
-function isIoParentCard(card: CardRecord): boolean {
-  const t = String(card?.type ?? "").toLowerCase();
-  if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
-  if (t === "io") return !cardHasIoChildKey(card);
-  return false;
-}
-
-function isClozeParentCard(card: CardRecord): boolean {
-  const t = String(card?.type ?? "").toLowerCase();
-  if (t !== "cloze") return false;
-  const children = (card)?.clozeChildren;
-  return Array.isArray(children) && children.length > 0;
-}
+import { isParentCard } from "../core/card-utils";
 
 export function getStageCountsAll(plugin: SproutPlugin): {
   new: number;
@@ -54,7 +20,8 @@ export function getStageCountsAll(plugin: SproutPlugin): {
 
   const cards = plugin.store.getAllCards();
   for (const c of cards) {
-    if (isIoParentCard(c) || isClozeParentCard(c)) continue;
+    // Skip all parent cards — reversed, cloze, and IO parents
+    if (isParentCard(c)) continue;
     const st = plugin.store.getState(String(c.id));
     const stage = st?.stage ?? "new";
 

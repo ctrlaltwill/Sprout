@@ -16,8 +16,9 @@
 import { Notice, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
 import { log } from "../core/logger";
-import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
+import { placePopover, queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { stageLabel } from "../reviewer/labels";
@@ -40,6 +41,8 @@ import {
   buildIoImgHtml,
   buildIoOccludedHtml,
   getIoResolvedImage,
+  extractImageRefs,
+  renderMarkdownWithImages,
 } from "./browser-helpers";
 
 // ── Context interface ─────────────────────────────────────
@@ -175,8 +178,6 @@ export function buildPageTableBody(
     if (isQuarantined) {
       idLink.classList.add("sprout-browser-id-link--quarantined");
     }
-
-    idLink.setAttribute("data-tooltip", `Open card ^sprout-${card.id}`);
 
     const idValue = document.createElement("span");
     idValue.textContent = String(card.id);
@@ -393,6 +394,498 @@ function makeReadOnlyFieldCell(
   return td;
 }
 
+function makeImageEditorCell(
+  col: ColKey,
+  card: CardRecord,
+  ctx: RowRendererContext,
+  initial: string,
+): HTMLTableCellElement {
+  const td = document.createElement("td");
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell sprout-browser-cell-with-images`;
+  forceCellClip(td);
+  setColAttr(td, col);
+
+  const h = `${ctx.editorHeightPx}px`;
+  const sourcePath = String(card.sourceNotePath || "");
+
+  /* ── wrapper that stacks textarea behind overlay ── */
+  const wrap = document.createElement("div");
+  wrap.className = "sprout-browser-img-editor-wrap";
+  setCssProps(wrap, "--sprout-editor-height", h);
+
+  /* ── real textarea (holds raw markdown, shown when focused) ── */
+  const ta = document.createElement("textarea");
+  ta.className = `textarea w-full ${ctx.cellTextClass} sprout-browser-textarea sprout-browser-textarea--editable sprout-browser-img-textarea`;
+  ta.value = initial;
+  setCssProps(ta, "--sprout-editor-height", h);
+
+  /* ── overlay (rendered HTML with images, shown when NOT focused) ── */
+  const overlay = document.createElement("div");
+  overlay.className = `sprout-browser-img-overlay`;
+  const renderOverlay = (md: string) => {
+    replaceChildrenWithHTML(
+      overlay,
+      renderMarkdownWithImages(ctx.app, md, sourcePath).replace(/\n/g, "<br>"),
+    );
+  };
+  renderOverlay(initial);
+
+  /* Click on the overlay focuses the textarea */
+  overlay.addEventListener("click", () => { ta.focus(); });
+
+  const key = `${card.id}:${col}`;
+  let baseline = initial;
+
+  ta.addEventListener("focus", () => {
+    baseline = ta.value;
+    wrap.classList.add("sprout-browser-img-editor--focused");
+  });
+
+  ta.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ta.value = baseline;
+      renderOverlay(baseline);
+      ta.blur();
+    }
+  });
+
+  ta.addEventListener("blur", () => {
+    wrap.classList.remove("sprout-browser-img-editor--focused");
+    void (async () => {
+      const nextVal = ta.value;
+      if (nextVal === baseline) {
+        renderOverlay(baseline);
+        return;
+      }
+      if (ctx.saving.has(key)) return;
+
+      ctx.saving.add(key);
+      try {
+        const updated = ctx.applyValueToCard(card, col, nextVal);
+        await ctx.writeCardToMarkdown(updated);
+        baseline = nextVal;
+        renderOverlay(nextVal);
+      } catch (err: unknown) {
+        new Notice(`${err instanceof Error ? err.message : String(err)}`);
+        ta.value = baseline;
+        renderOverlay(baseline);
+      } finally {
+        ctx.saving.delete(key);
+      }
+    })();
+  });
+
+  wrap.appendChild(ta);
+  wrap.appendChild(overlay);
+  td.appendChild(wrap);
+  return td;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MCQ answer cell — multiple inputs for correct + wrong options
+// ──────────────────────────────────────────────────────────────────────────────
+
+function makeMcqAnswerCell(
+  card: CardRecord,
+  isQuarantined: boolean,
+  ctx: RowRendererContext,
+): HTMLTableCellElement {
+  const td = document.createElement("td");
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
+  forceCellClip(td);
+  setColAttr(td, "answer");
+
+  if (isQuarantined) {
+    td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground sprout-browser-cell`;
+    td.textContent = buildAnswerOrOptionsFor(card) || "—";
+    forceWrapStyles(td);
+    return td;
+  }
+
+  const options = normalizeCardOptions(card.options);
+  const correctIndex = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : 0;
+
+  const wrap = document.createElement("div");
+  wrap.className = "bc flex flex-col gap-1 sprout-browser-mcq-cell";
+  const h = `${ctx.editorHeightPx}px`;
+  setCssProps(wrap, "--sprout-editor-height", h);
+
+  type McqRow = { row: HTMLElement; input: HTMLInputElement; isCorrect: boolean };
+  const rows: McqRow[] = [];
+
+  const key = `${card.id}:answer`;
+  let saving = false;
+
+  const commitMcq = async () => {
+    if (saving) return;
+    if (ctx.saving.has(key)) return;
+
+    // Collect current values
+    const liveOptions: string[] = [];
+    let liveCorrectIndex = 0;
+    for (const r of rows) {
+      const val = r.input.value.trim();
+      if (!val) continue;
+      if (r.isCorrect) liveCorrectIndex = liveOptions.length;
+      liveOptions.push(val);
+    }
+
+    // Must have at least 1 option
+    if (liveOptions.length < 1) return;
+
+    // Check if anything changed
+    const origOptions = normalizeCardOptions(card.options);
+    const origCorrect = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : 0;
+    if (
+      liveOptions.length === origOptions.length &&
+      liveOptions.every((v, i) => v === origOptions[i]) &&
+      liveCorrectIndex === origCorrect
+    ) return;
+
+    saving = true;
+    ctx.saving.add(key);
+    try {
+      const draft = JSON.parse(JSON.stringify(card)) as CardRecord;
+      draft.options = liveOptions;
+      draft.correctIndex = liveCorrectIndex;
+      await ctx.writeCardToMarkdown(draft);
+    } catch (err: unknown) {
+      new Notice(`${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      saving = false;
+      ctx.saving.delete(key);
+    }
+  };
+
+  const pruneEmptyRows = () => {
+    // Remove empty non-focused rows (but keep min 1 option total)
+    const toRemove: McqRow[] = [];
+    for (const r of rows) {
+      if (r.input === document.activeElement) continue;
+      if (r.input.value.trim() === "") toRemove.push(r);
+    }
+    // Keep at least 1 row (the correct one)
+    const remaining = rows.length - toRemove.length;
+    if (remaining < 1) {
+      // Keep the first empty row to meet minimum
+      if (toRemove.length > 0) toRemove.shift();
+    }
+    for (const r of toRemove) {
+      const idx = rows.indexOf(r);
+      if (idx < 0) continue;
+      rows.splice(idx, 1);
+      r.row.remove();
+    }
+    // Renumber labels
+    let wrongNum = 1;
+    for (const r of rows) {
+      const label = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
+      if (label) label.textContent = r.isCorrect ? "✓" : String(wrongNum++);
+    }
+  };
+
+  const addMcqInputRow = (value: string, isCorrect: boolean) => {
+    const row = document.createElement("div");
+    row.className = "bc flex items-center gap-1 sprout-browser-mcq-row";
+
+    const label = document.createElement("span");
+    label.className = "bc text-xs font-medium shrink-0 w-4 text-center sprout-mcq-cell-label";
+    label.textContent = isCorrect ? "✓" : "";
+    if (isCorrect) label.classList.add("text-green-600", "sprout-mcq-correct-label");
+    row.appendChild(label);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "bc input flex-1 text-sm sprout-input-fixed sprout-browser-mcq-input";
+    input.placeholder = isCorrect ? "Correct answer" : "Wrong option";
+    input.value = value;
+    if (isCorrect) input.classList.add("sprout-mcq-correct-input");
+    row.appendChild(input);
+
+    const entry: McqRow = { row, input, isCorrect };
+    rows.push(entry);
+
+    input.addEventListener("blur", () => {
+      // Defer so we can check if focus moved to another input in this cell
+      setTimeout(() => {
+        pruneEmptyRows();
+        const focusedInCell = rows.some((r) => r.input === document.activeElement);
+        if (!focusedInCell) void commitMcq();
+      }, 0);
+    });
+
+    wrap.appendChild(row);
+    return entry;
+  };
+
+  // Seed with existing options
+  for (let i = 0; i < options.length; i++) {
+    addMcqInputRow(options[i] || "", i === correctIndex);
+  }
+  if (options.length === 0) {
+    addMcqInputRow("", true);
+  }
+
+  // "Add option" input at bottom
+  const addInput = document.createElement("input");
+  addInput.type = "text";
+  addInput.className = "bc input w-full text-xs sprout-input-fixed sprout-browser-mcq-add";
+  addInput.placeholder = "+ add wrong option";
+  addInput.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      const val = addInput.value.trim();
+      if (!val) return;
+      const entry = addMcqInputRow(val, false);
+      // Renumber
+      let wrongNum = 1;
+      for (const r of rows) {
+        const lbl = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
+        if (lbl) lbl.textContent = r.isCorrect ? "✓" : String(wrongNum++);
+      }
+      addInput.value = "";
+      entry.input.focus();
+    }
+  });
+  addInput.addEventListener("blur", () => {
+    const val = addInput.value.trim();
+    if (!val) return;
+    addMcqInputRow(val, false);
+    let wrongNum = 1;
+    for (const r of rows) {
+      const lbl = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
+      if (lbl) lbl.textContent = r.isCorrect ? "✓" : String(wrongNum++);
+    }
+    addInput.value = "";
+    // Commit since focus left the cell
+    setTimeout(() => {
+      const focusedInCell = rows.some((r) => r.input === document.activeElement);
+      if (!focusedInCell) void commitMcq();
+    }, 0);
+  });
+  wrap.appendChild(addInput);
+
+  // Set initial labels
+  let wrongNum = 1;
+  for (const r of rows) {
+    const lbl = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
+    if (lbl && !r.isCorrect) lbl.textContent = String(wrongNum++);
+  }
+
+  td.appendChild(wrap);
+  return td;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// OQ steps cell — numbered draggable inputs for ordered question steps
+// ──────────────────────────────────────────────────────────────────────────────
+
+function makeOqStepsCell(
+  card: CardRecord,
+  isQuarantined: boolean,
+  ctx: RowRendererContext,
+): HTMLTableCellElement {
+  const td = document.createElement("td");
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
+  forceCellClip(td);
+  setColAttr(td, "answer");
+
+  if (isQuarantined) {
+    td.className = `align-top ${ctx.readonlyTextClass} ${ctx.cellWrapClass} text-muted-foreground sprout-browser-cell`;
+    td.textContent = buildAnswerOrOptionsFor(card) || "—";
+    forceWrapStyles(td);
+    return td;
+  }
+
+  const steps = Array.isArray(card.oqSteps)
+    ? card.oqSteps.filter((step): step is string => typeof step === "string")
+    : [];
+
+  const wrap = document.createElement("div");
+  wrap.className = "bc flex flex-col gap-1 sprout-browser-oq-cell";
+  const h = `${ctx.editorHeightPx}px`;
+  setCssProps(wrap, "--sprout-editor-height", h);
+
+  type OqRow = { row: HTMLElement; input: HTMLInputElement; badge: HTMLElement };
+  const oqRows: OqRow[] = [];
+
+  const key = `${card.id}:answer`;
+  let saving = false;
+
+  const renumber = () => {
+    oqRows.forEach((entry, i) => {
+      entry.badge.textContent = String(i + 1);
+      entry.input.placeholder = `Step ${i + 1}`;
+    });
+  };
+
+  const commitOq = async () => {
+    if (saving) return;
+    if (ctx.saving.has(key)) return;
+
+    const liveSteps = oqRows.map((r) => r.input.value.trim()).filter(Boolean);
+    if (liveSteps.length < 2) return;
+
+    // Check if changed
+    const orig = Array.isArray(card.oqSteps)
+      ? card.oqSteps.filter((step): step is string => typeof step === "string")
+      : [];
+    if (liveSteps.length === orig.length && liveSteps.every((v, i) => v === orig[i])) return;
+
+    saving = true;
+    ctx.saving.add(key);
+    try {
+      const draft = JSON.parse(JSON.stringify(card)) as CardRecord;
+      draft.oqSteps = liveSteps;
+      await ctx.writeCardToMarkdown(draft);
+    } catch (err: unknown) {
+      new Notice(`${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      saving = false;
+      ctx.saving.delete(key);
+    }
+  };
+
+  const pruneEmptyRows = () => {
+    const toRemove: OqRow[] = [];
+    for (const r of oqRows) {
+      if (r.input === document.activeElement) continue;
+      if (r.input.value.trim() === "") toRemove.push(r);
+    }
+    // Keep at least 2 rows
+    const remaining = oqRows.length - toRemove.length;
+    const deficit = 2 - remaining;
+    if (deficit > 0) {
+      // Keep some empties to meet minimum
+      toRemove.splice(0, deficit);
+    }
+    for (const r of toRemove) {
+      const idx = oqRows.indexOf(r);
+      if (idx < 0) continue;
+      oqRows.splice(idx, 1);
+      r.row.remove();
+    }
+    renumber();
+  };
+
+  const addOqInputRow = (value: string) => {
+    const idx = oqRows.length;
+
+    const row = document.createElement("div");
+    row.className = "bc flex items-center gap-1 sprout-browser-oq-row";
+    row.draggable = true;
+
+    // Drag grip
+    const grip = document.createElement("span");
+    grip.className = "bc inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip-sm";
+    setIcon(grip, "grip-vertical");
+    row.appendChild(grip);
+
+    // Number badge
+    const badge = document.createElement("span");
+    badge.className = "bc text-xs font-medium text-muted-foreground w-4 shrink-0 text-center";
+    badge.textContent = String(idx + 1);
+    row.appendChild(badge);
+
+    // Text input
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "bc input flex-1 text-sm sprout-input-fixed sprout-browser-oq-input";
+    input.placeholder = `Step ${idx + 1}`;
+    input.value = value;
+    row.appendChild(input);
+
+    const entry: OqRow = { row, input, badge };
+    oqRows.push(entry);
+
+    // ── DnD reordering ──
+    row.addEventListener("dragstart", (ev) => {
+      const fromIdx = oqRows.findIndex((e) => e.row === row);
+      ev.dataTransfer?.setData("text/plain", String(fromIdx));
+      row.classList.add("sprout-oq-row-dragging");
+    });
+    row.addEventListener("dragend", () => {
+      row.classList.remove("sprout-oq-row-dragging");
+    });
+    row.addEventListener("dragover", (ev) => {
+      ev.preventDefault();
+      ev.dataTransfer!.dropEffect = "move";
+    });
+    row.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      const fromStr = ev.dataTransfer?.getData("text/plain");
+      if (fromStr === undefined || fromStr === null) return;
+      const fromIdx = parseInt(fromStr, 10);
+      const toIdx = oqRows.findIndex((e) => e.row === row);
+      if (isNaN(fromIdx) || fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+      const [moved] = oqRows.splice(fromIdx, 1);
+      oqRows.splice(toIdx, 0, moved);
+      // Reorder DOM
+      const listEl = wrap;
+      const addEl = listEl.querySelector<HTMLElement>(".sprout-browser-oq-add");
+      for (const entry of oqRows) listEl.insertBefore(entry.row, addEl);
+      renumber();
+      void commitOq();
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(() => {
+        pruneEmptyRows();
+        const focusedInCell = oqRows.some((r) => r.input === document.activeElement);
+        if (!focusedInCell && !wrap.contains(document.activeElement)) void commitOq();
+      }, 0);
+    });
+
+    // Insert before the "add" input
+    const addEl = wrap.querySelector<HTMLElement>(".sprout-browser-oq-add");
+    if (addEl) wrap.insertBefore(row, addEl);
+    else wrap.appendChild(row);
+
+    return entry;
+  };
+
+  // Seed with existing steps (min 2 rows)
+  const seed: string[] = steps.length >= 2 ? steps : [...steps, ...Array<string>(2 - steps.length).fill("")];
+  for (const s of seed) addOqInputRow(s);
+  renumber();
+
+  // "Add step" input
+  const addInput = document.createElement("input");
+  addInput.type = "text";
+  addInput.className = "bc input w-full text-xs sprout-input-fixed sprout-browser-oq-add";
+  addInput.placeholder = "+ add step";
+  addInput.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      const val = addInput.value.trim();
+      if (!val) return;
+      if (oqRows.length >= 20) { new Notice("Maximum 20 steps."); return; }
+      const entry = addOqInputRow(val);
+      renumber();
+      addInput.value = "";
+      entry.input.focus();
+    }
+  });
+  addInput.addEventListener("blur", () => {
+    const val = addInput.value.trim();
+    if (!val) return;
+    if (oqRows.length >= 20) return;
+    addOqInputRow(val);
+    renumber();
+    addInput.value = "";
+    setTimeout(() => {
+      const focusedInCell = oqRows.some((r) => r.input === document.activeElement);
+      if (!focusedInCell && !wrap.contains(document.activeElement)) void commitOq();
+    }, 0);
+  });
+  wrap.appendChild(addInput);
+
+  td.appendChild(wrap);
+  return td;
+}
+
 function makeEditorCell(
   col: ColKey,
   card: CardRecord,
@@ -423,14 +916,17 @@ function makeEditorCell(
     return td;
   }
 
+  if (col === "answer" && card.type === "mcq") {
+    return makeMcqAnswerCell(card, isQuarantined, ctx);
+  }
+
+  if (col === "answer" && card.type === "oq") {
+    return makeOqStepsCell(card, isQuarantined, ctx);
+  }
+
   if ((card.type === "io" || card.type === "io-child") && (col === "question" || col === "answer")) {
     return makeIoCell(col, card, ctx);
   }
-
-  const td = document.createElement("td");
-  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
-  forceCellClip(td);
-  setColAttr(td, col);
 
   const initial =
     col === "title"
@@ -442,6 +938,17 @@ function makeEditorCell(
           : col === "info"
             ? (card.info || "")
             : "";
+
+  // Check if content has images - if so, use contenteditable with image rendering
+  const hasImages = extractImageRefs(initial).length > 0;
+  if (hasImages && (col === "question" || col === "answer" || col === "info")) {
+    return makeImageEditorCell(col, card, ctx, initial);
+  }
+
+  const td = document.createElement("td");
+  td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell`;
+  forceCellClip(td);
+  setColAttr(td, col);
 
   const ta = document.createElement("textarea");
   ta.className = `textarea w-full ${ctx.cellTextClass} sprout-browser-textarea sprout-browser-textarea--editable`;
@@ -494,7 +1001,6 @@ function makeIoCell(
 ): HTMLTableCellElement {
   const td = document.createElement("td");
   td.className = `align-top ${ctx.cellWrapClass} sprout-browser-cell sprout-browser-io-cell`;
-  forceWrapStyles(td);
   forceCellClip(td);
   setColAttr(td, col);
 
@@ -502,6 +1008,12 @@ function makeIoCell(
   if (!io.src || !io.displayRef) {
     return makeReadOnlyFieldCell("— (IO image not resolved)", col, ctx);
   }
+
+  /* Textarea-styled wrapper so the IO preview matches other cells */
+  const box = document.createElement("div");
+  box.className = "sprout-browser-io-box";
+  const h = `${ctx.editorHeightPx}px`;
+  setCssProps(box, "--sprout-editor-height", h);
 
   if (col === "question") {
     const ioMap = ctx.plugin.store.data?.io || {};
@@ -518,25 +1030,33 @@ function makeIoCell(
     }
     const labelsCard = Array.isArray(maskedRects) ? { rects: maskedRects } : card;
     replaceChildrenWithHTML(
-      td,
+      box,
       buildIoOccludedHtml(
-      io.src,
-      io.displayRef,
-      maskedRects,
-      `IO (occluded) — ^sprout-${card.id}`,
-      labelsCard,
+        io.src,
+        io.displayRef,
+        maskedRects,
+        `IO (occluded) — ^sprout-${card.id}`,
+        labelsCard,
       ),
     );
   } else {
-    replaceChildrenWithHTML(td, buildIoImgHtml(io.src, io.displayRef, `IO (original) — ^sprout-${card.id}`));
+    replaceChildrenWithHTML(box, buildIoImgHtml(io.src, io.displayRef, `IO (original) — ^sprout-${card.id}`));
   }
 
-  td.addEventListener("dblclick", (ev) => {
+  /* DOMPurify strips app:// protocol URLs from src attributes.
+     Re-apply the resolved src directly via DOM so Obsidian vault
+     resource paths survive sanitisation. */
+  for (const img of Array.from(box.querySelectorAll("img"))) {
+    if (!img.getAttribute("src")) img.src = io.src;
+  }
+
+  box.addEventListener("dblclick", (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
     ctx.openIoEditor(card.id);
   });
 
+  td.appendChild(box);
   return td;
 }
 
@@ -643,12 +1163,12 @@ function makeGroupsEditorCell(
   popover.appendChild(panel);
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 sprout-browser-search-wrap";
+  searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 sprout-browser-search-wrap min-h-[38px]";
   panel.appendChild(searchWrap);
 
   const searchIcon = document.createElement("span");
   searchIcon.className =
-    "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+    "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
   searchIcon.setAttribute("aria-hidden", "true");
   setIcon(searchIcon, "search");
   searchWrap.appendChild(searchIcon);
@@ -699,24 +1219,11 @@ function makeGroupsEditorCell(
 
   const shouldDropUp = rowIndex >= Math.max(0, pageRowCount - 2);
 
-  const place = () => {
-    const tagRect = tagBox.getBoundingClientRect();
-    const width = Math.round(tagRect.width || tagBox.clientWidth || 240);
-    const gap = 6;
-    const popHeight = Math.max(
-      panel.getBoundingClientRect().height || 0,
-      popover.scrollHeight || 0,
-      panel.scrollHeight || 0,
-    );
-
-    const left = Math.max(8, Math.min(tagRect.left, window.innerWidth - width - 8));
-    const downTop = tagRect.bottom + gap;
-    const upTop = tagRect.top - popHeight - gap;
-    const dropUp = shouldDropUp;
-    setCssProps(popover, "--sprout-popover-left", `${left}px`);
-    setCssProps(popover, "--sprout-popover-width", `${width}px`);
-    setCssProps(popover, "--sprout-popover-top", `${dropUp ? upTop : downTop}px`);
-  };
+  const place = () => placePopover({
+    trigger: tagBox, panel, popoverEl: popover,
+    width: Math.round(tagBox.getBoundingClientRect().width || tagBox.clientWidth || 240),
+    dropUp: shouldDropUp,
+  });
 
   const renderList = () => {
     clearNode(list);

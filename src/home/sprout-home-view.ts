@@ -12,12 +12,13 @@ import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
-import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
+import { queryFirst, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import type { Scope } from "../reviewer/types";
+import { isParentCard } from "../core/card-utils";
 import { ReviewCalendarHeatmap } from "../analytics/review-calendar-heatmap";
-import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
+import { cascadeAOSOnLoad, initAOS, resetAOS } from "../core/aos-loader";
 
 import {
   MS_DAY,
@@ -27,6 +28,7 @@ import {
   formatCountdownToMidnight,
   formatDeckLabel,
   formatPinnedDeckLabel,
+  getDeckLeafName,
 } from "./home-helpers";
 
 /**
@@ -49,6 +51,9 @@ export class SproutHomeView extends ItemView {
   private _heatmapRoot: ReactRoot | null = null;
   private _streakTimer: number | null = null;
   private _liveTimer: number | null = null;
+  private _typingTimer: number | null = null;
+  private _nameObserver: ResizeObserver | null = null;
+  private _themeObserver: MutationObserver | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
@@ -97,6 +102,18 @@ export class SproutHomeView extends ItemView {
       window.clearInterval(this._liveTimer);
       this._liveTimer = null;
     }
+    if (this._typingTimer) {
+      window.clearTimeout(this._typingTimer);
+      this._typingTimer = null;
+    }
+    if (this._nameObserver) {
+      this._nameObserver.disconnect();
+      this._nameObserver = null;
+    }
+    if (this._themeObserver) {
+      this._themeObserver.disconnect();
+      this._themeObserver = null;
+    }
     try {
       this._heatmapRoot?.unmount();
     } catch (e) { log.swallow("unmount heatmap root", e); }
@@ -140,9 +157,6 @@ export class SproutHomeView extends ItemView {
       this._heatmapRoot = null;
     }
 
-    // --- Hide Sprout info logic ---
-    const hideSproutInfo = this.plugin.settings.general.hideSproutInfo === true;
-
     this._rootEl = root;
     root.classList.add("bc", "sprout-view-content", "flex", "flex-col", "sprout-home-root");
 
@@ -150,9 +164,11 @@ export class SproutHomeView extends ItemView {
 
     // Animation control
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
+    root.classList.toggle("sprout-no-animate", !animationsEnabled);
     const applyAos = (el: HTMLElement, delay: number = 0) => {
       if (!animationsEnabled) return;
       el.setAttribute("data-aos", "fade-up");
+      el.setAttribute("data-aos-anchor-placement", "top-top");
       if (delay > 0) el.setAttribute("data-aos-delay", delay.toString());
     };
 
@@ -207,8 +223,6 @@ export class SproutHomeView extends ItemView {
       const syncNameWidth = () => {
         const value = nameInput.value || nameInput.placeholder || "";
         const computed = window.getComputedStyle(nameInput);
-        const fontSizePx = Number.parseFloat(computed.fontSize || "16") || 16;
-        const paddingBuffer = fontSizePx * 0.3;
         setCssProps(nameSizer, "--sprout-home-font-family", computed.fontFamily);
         setCssProps(nameSizer, "--sprout-home-font-size", computed.fontSize);
         setCssProps(nameSizer, "--sprout-home-font-weight", computed.fontWeight);
@@ -218,9 +232,14 @@ export class SproutHomeView extends ItemView {
         setCssProps(nameSizer, "--sprout-home-font-variant", computed.fontVariant);
         setCssProps(nameSizer, "--sprout-home-line-height", computed.lineHeight);
         nameSizer.textContent = value;
-        const measured = nameSizer.getBoundingClientRect().width;
-        const next = Math.max(32, measured + paddingBuffer);
-        setCssProps(nameInput, "--sprout-home-name-width", `${Math.min(next, 240)}px`);
+        const measured = Math.ceil(nameSizer.getBoundingClientRect().width);
+        const paddingLeft = Number.parseFloat(computed.paddingLeft || "0") || 0;
+        const paddingRight = Number.parseFloat(computed.paddingRight || "0") || 0;
+        const borderLeft = Number.parseFloat(computed.borderLeftWidth || "0") || 0;
+        const borderRight = Number.parseFloat(computed.borderRightWidth || "0") || 0;
+        const chromeWidth = paddingLeft + paddingRight + borderLeft + borderRight;
+        const next = Math.max(1, measured + chromeWidth + 2);
+        setCssProps(nameInput, "--sprout-home-name-width", `${next}px`);
       };
 
       const setGreetingText = (_name: string, firstOpen: boolean) => {
@@ -255,8 +274,6 @@ export class SproutHomeView extends ItemView {
       const typingText = "your name";
       let typingIdx = 0;
       let typingDir: 1 | -1 = 1;
-      let typingTimer: number | null = null;
-
       const typingStep = () => {
         try {
           nameInput.placeholder = typingText.slice(0, typingIdx);
@@ -267,20 +284,20 @@ export class SproutHomeView extends ItemView {
         } catch {
           // ignore
         }
-        typingTimer = window.setTimeout(typingStep, typingDir === 1 ? 220 : 120);
+        this._typingTimer = window.setTimeout(typingStep, typingDir === 1 ? 220 : 120);
       };
 
       const startTypingEffect = () => {
-        if (typingTimer) return;
+        if (this._typingTimer) return;
         typingIdx = 0;
         typingDir = 1 as const;
         typingStep();
       };
 
       const stopTypingEffect = () => {
-        if (typingTimer) {
-          window.clearTimeout(typingTimer);
-          typingTimer = null;
+        if (this._typingTimer) {
+          window.clearTimeout(this._typingTimer);
+          this._typingTimer = null;
         }
         nameInput.placeholder = typingText;
         syncNameWidth();
@@ -290,13 +307,13 @@ export class SproutHomeView extends ItemView {
       const onNameResize = () => syncNameWidth();
       nameInput.addEventListener("input", onNameResize);
       nameInput.addEventListener("change", onNameResize);
-      const nameObserver =
+      this._nameObserver =
         typeof ResizeObserver !== "undefined"
           ? new ResizeObserver(() => {
               syncNameWidth();
             })
           : null;
-      if (nameObserver) nameObserver.observe(title);
+      if (this._nameObserver) this._nameObserver.observe(title);
       window.requestAnimationFrame(() => syncNameWidth());
       if (!trimmedName) startTypingEffect();
 
@@ -317,10 +334,8 @@ export class SproutHomeView extends ItemView {
       });
     } else {
       // Greeting is off: just show 'Home' as the title
-      const homeTitle = document.createElement("div");
-      homeTitle.className = "text-xl font-semibold tracking-tight";
-      homeTitle.textContent = "Home";
-      title.appendChild(homeTitle);
+      title.className += " text-xl font-semibold tracking-tight";
+      title.textContent = "Home"
     }
 
     // (greeting input logic is now only inside the showGreeting block)
@@ -333,8 +348,6 @@ export class SproutHomeView extends ItemView {
     const events = this.plugin.store.getAnalyticsEvents?.() ?? [];
     const cards = this.plugin.store.getAllCards?.() ?? [];
     const states = this.plugin.store.data.states ?? {};
-    const starData = this.plugin.settings.general.githubStars ?? {};
-    const starCount = Number(starData?.count);
 
     // Refresh GitHub stars (respects 6-hour cache unless forced)
     void this.plugin.refreshGithubStars(false);
@@ -378,6 +391,10 @@ export class SproutHomeView extends ItemView {
     for (const card of cards) {
       const id = String(card?.id ?? "");
       if (!id) continue;
+
+      // Skip parent cards — only children (the ones actually studied) should be counted
+      if (isParentCard(card)) continue;
+
       const st = states?.[id];
       if (!st || String(st.stage ?? "") === "suspended") continue;
       const due = Number(st.due);
@@ -545,12 +562,12 @@ export class SproutHomeView extends ItemView {
 
     const formatTrend = (current: number, previous: number, previousDaysWithData: number) => {
       if (previousDaysWithData <= 0 || previous <= 0) {
-        return { value: 0, text: "0.0%", dir: 0 };
+        return { value: 0, text: "0%", dir: 0 };
       }
       const raw = ((current - previous) / previous) * 100;
       const capped = Math.min(Math.max(raw, -1000), 1000);
       const dir = capped > 0 ? 1 : capped < 0 ? -1 : 0;
-      return { value: capped, text: `${capped > 0 ? "+" : ""}${capped.toFixed(1)}%`, dir };
+      return { value: capped, text: `${capped > 0 ? "+" : ""}${capped.toFixed(0)}%`, dir };
     };
 
     const buildTrendBadge = (trend: { value: number; text: string; dir: number }) => {
@@ -562,7 +579,7 @@ export class SproutHomeView extends ItemView {
       setIcon(icon, iconName);
       badge.appendChild(icon);
       const valueEl = document.createElement("span");
-      valueEl.textContent = trend.dir === 0 ? "0.0%" : `${trend.dir > 0 ? "+" : ""}0.0%`;
+      valueEl.textContent = trend.dir === 0 ? "0%" : `${trend.dir > 0 ? "+" : ""}0%`;
       badge.appendChild(valueEl);
 
       // Animate count-up with subtle spin
@@ -576,7 +593,7 @@ export class SproutHomeView extends ItemView {
         const p = Math.min(Math.max(elapsed / durationMs, 0), 1);
         const eased = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p; // easeInOut
         const currentVal = (trend.dir === 0 ? 0 : (eased * Math.abs(target))) * (trend.dir >= 0 ? 1 : -1);
-        valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(1)}%`;
+        valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(0)}%`;
         const angle = startAngle + (endAngle - startAngle) * eased;
         setCssProps(badge as HTMLElement, "--sprout-rotate", `${angle}deg`);
         if (p < 1) requestAnimationFrame(animate);
@@ -688,6 +705,9 @@ export class SproutHomeView extends ItemView {
           const row = pinnedList.createDiv({ 
             cls: "sprout-deck-row flex items-center justify-between gap-3 p-2 rounded-lg border border-border bg-background cursor-pointer hover:bg-accent/50"
           });
+          const pinnedLeafName = getDeckLeafName(path);
+          const pinnedTooltip = `Study ${pinnedLeafName || "deck"}`;
+          row.setAttr("data-tooltip", pinnedTooltip);
           
           // Make row clickable to open deck
           row.addEventListener("click", (e) => {
@@ -709,7 +729,6 @@ export class SproutHomeView extends ItemView {
           const name = left.createDiv({ cls: "sprout-text-truncate-rtl truncate font-medium min-w-0 flex-1" });
           const pinnedLabel = formatPinnedDeckLabel(path);
           name.textContent = pinnedLabel;
-          name.setAttr("title", pinnedLabel);
           
           const right = row.createDiv({ cls: "flex items-center gap-2 shrink-0" });
           
@@ -823,6 +842,8 @@ export class SproutHomeView extends ItemView {
             cls: "sprout-deck-search-input w-full text-sm text-center text-muted-foreground", 
               attr: { type: "text", placeholder: "Search to add a pinned deck" }
           });
+          searchInputEl.setAttr("data-tooltip", "Search for decks");
+          searchInputEl.setAttr("title", "Search for decks");
           
           searchInputEl.addEventListener("focus", () => {
             searchInputEl!.classList.add("sprout-deck-search-input-focused");
@@ -890,11 +911,15 @@ export class SproutHomeView extends ItemView {
         const item = dropdownEl!.createDiv({ 
           cls: "flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground" 
         });
+        const deckLeafName = getDeckLeafName(deck);
+        const addPinnedTooltip = `Add ${deckLeafName || "deck"} pinned decks`;
+        item.setAttr("data-tooltip", addPinnedTooltip);
+        item.setAttr("title", addPinnedTooltip);
         
         const label = item.createDiv({ cls: "sprout-text-truncate-rtl truncate flex-1" });
         const pinnedLabel = formatPinnedDeckLabel(deck);
         label.textContent = pinnedLabel;
-        label.setAttr("title", pinnedLabel);
+        label.setAttr("title", addPinnedTooltip);
         
         item.addEventListener("mousedown", (e) => {
           e.preventDefault();
@@ -921,6 +946,10 @@ export class SproutHomeView extends ItemView {
         const row = recentList.createDiv({ 
           cls: "sprout-deck-row flex items-center justify-between gap-3 cursor-pointer p-2 rounded-lg border border-border bg-background hover:bg-accent/30"
         });
+        const recentLeafName = deck.scope.type === "vault" ? "All cards" : getDeckLeafName(deck.label);
+        const recentTooltip = `Study ${recentLeafName || "deck"}`;
+        row.setAttr("data-tooltip", recentTooltip);
+        row.setAttr("data-tooltip-position", "bottom");
         row.addEventListener("click", () => void openStudyForScope(deck.scope));
         
         const left = row.createDiv({ cls: "flex flex-col min-w-0 flex-1" });
@@ -954,259 +983,35 @@ export class SproutHomeView extends ItemView {
       }),
     );
 
-    const bottomRow = document.createElement("div");
-    bottomRow.className = "sprout-ana-grid grid grid-cols-1 lg:grid-cols-2 gap-4";
-    body.appendChild(bottomRow);
-
-    if (!hideSproutInfo) {
-      const infoCard = document.createElement("div");
-      infoCard.className = "card sprout-ana-card p-4 flex flex-col gap-6";
-      applyAos(infoCard, 800);
-      bottomRow.appendChild(infoCard);
-      const aboutHeader = infoCard.createDiv({ cls: "flex items-center justify-between gap-2" });
-      aboutHeader.createDiv({ cls: "font-semibold", text: "About Sprout" });
-      const aboutIcon = document.createElement("span");
-      aboutIcon.className = "inline-flex items-center justify-center text-muted-foreground [&_svg]:size-4";
-      setIcon(aboutIcon, "sprout");
-      aboutHeader.appendChild(aboutIcon);
-      const aboutText = infoCard.createDiv({ cls: "text-sm text-muted-foreground" });
-      aboutText.createSpan({
-        text:
-          "Sprout minimises friction by keeping flashcards right next to your notes, so the path from learning content to revision is seamless. It keeps card writing human and organisation simple, so you spend less time creating and sorting, and more time studying.",
-      });
-      aboutText.createEl("br");
-      aboutText.createEl("br");
-      aboutText.createSpan({ text: "Developed by William Guy (@ctrlaltwill)." });
-      const infoLinks = infoCard.createDiv({ cls: "flex flex-col gap-2 text-sm" });
-      const infoButtons = infoLinks.createDiv({ cls: "flex flex-wrap items-center gap-2" });
-      const starsLink = infoButtons.createEl("a", {
-        href: "https://github.com/ctrlaltwill/sprout",
-      });
-      starsLink.className = "sprout-github-stars";
-      starsLink.setAttr("target", "_blank");
-      starsLink.setAttr("rel", "noopener");
-
-      const githubIcon = document.createElement("span");
-      githubIcon.className = "sprout-github-stars-icon";
-      replaceChildrenWithHTML(
-        githubIcon,
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C6.477 2 2 6.484 2 12.019c0 4.423 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.866-.014-1.7-2.782.605-3.369-1.344-3.369-1.344-.454-1.158-1.109-1.467-1.109-1.467-.907-.62.069-.608.069-.608 1.003.07 1.53 1.035 1.53 1.035.892 1.53 2.341 1.088 2.91.833.091-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.094.39-1.989 1.029-2.69-.103-.254-.446-1.27.098-2.647 0 0 .84-.27 2.75 1.026A9.566 9.566 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.748-1.026 2.748-1.026.546 1.377.203 2.393.1 2.647.64.701 1.028 1.596 1.028 2.69 0 3.848-2.338 4.695-4.566 4.943.359.31.679.92.679 1.856 0 1.34-.012 2.419-.012 2.748 0 .268.18.58.688.481A10.019 10.019 0 0 0 22 12.02C22 6.484 17.523 2 12 2z"/></svg>',
-      );
-
-      const starsLabel = document.createElement("span");
-      starsLabel.textContent = "GitHub stars";
-
-      const starIcon = document.createElement("span");
-      starIcon.className = "sprout-github-stars-star sprout-rotate sprout-star-spin";
-      // Set star color based on theme
-      function setStarIconColor() {
-        const isDark = document.body.classList.contains("theme-dark");
-        const fill = isDark ? "#fff" : "#f4b400";
-        replaceChildrenWithHTML(
-          starIcon,
-          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="${fill}" d="m12 3 2.84 5.75 6.35.92-4.6 4.48 1.08 6.33L12 17.77 6.33 20.48l1.08-6.33-4.6-4.48 6.35-.92L12 3z"/></svg>`,
-        );
-      }
-      setStarIconColor();
-      // Listen for theme changes
-      const observer = new MutationObserver(setStarIconColor);
-      observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-      // Add smooth transition for spin
-      setCssProps(starIcon, "--sprout-rotate", "0deg");
-      let spinning = false;
-      starsLink.addEventListener("click", (_e) => {
-        if (spinning) return;
-        spinning = true;
-        // Spin backwards (opposite direction), twice as fast
-        starIcon.classList.add("is-fast");
-        setCssProps(starIcon, "--sprout-rotate", "-360deg");
-        setTimeout(() => {
-          starIcon.classList.remove("is-fast");
-          setCssProps(starIcon, "--sprout-rotate", "0deg");
-          spinning = false;
-        }, 150);
-      });
-
-      starsLink.appendChild(githubIcon);
-      starsLink.appendChild(starsLabel);
-      starsLink.appendChild(starIcon);
-      if (Number.isFinite(starCount)) {
-        const starsValue = document.createElement("span");
-        starsValue.className = "sprout-github-stars-value";
-        starsValue.textContent = starCount.toLocaleString();
-        starsLink.appendChild(starsValue);
-      }
-      const bmcLink = infoButtons.createEl("a", {
-        href: "https://buymeacoffee.com/williamguy",
-      });
-      bmcLink.className = "sprout-bmc";
-      bmcLink.setAttr("target", "_blank");
-      bmcLink.setAttr("rel", "noopener");
-      const bmcIcon = document.createElement("span");
-      bmcIcon.className = "sprout-bmc-icon sprout-rotate sprout-bmc-rotate";
-      setIcon(bmcIcon, "coffee");
-      // Force the coffee SVG color to #111
-      const coffeeSvg = queryFirst(bmcIcon, "svg");
-      if (coffeeSvg) {
-        coffeeSvg.setAttribute("fill", "#111");
-        // Also set path fill if needed
-        const coffeePath = queryFirst(coffeeSvg, "path");
-        if (coffeePath) coffeePath.setAttribute("fill", "#111");
-      }
-      // Add smooth transition for rotation
-      setCssProps(bmcIcon, "--sprout-rotate", "0deg");
-      let bmcTipped = false;
-      bmcLink.addEventListener("click", (_e) => {
-        if (!bmcTipped) {
-          bmcTipped = true;
-          setCssProps(bmcIcon, "--sprout-rotate", "-60deg");
-          setTimeout(() => {
-            setCssProps(bmcIcon, "--sprout-rotate", "-30deg");
-            setTimeout(() => {
-              setCssProps(bmcIcon, "--sprout-rotate", "0deg");
-              bmcTipped = false;
-            }, 400);
-          }, 400);
-        }
-      });
-      const bmcText = document.createElement("span");
-      bmcText.textContent = "Buy me a coffee";
-      bmcLink.appendChild(bmcIcon);
-      bmcLink.appendChild(bmcText);
-      const credits = infoLinks.createDiv({ cls: "text-muted-foreground", text: "" });
-      credits.classList.add("bc");
-    }
-
-
-   if (!hideSproutInfo) {
-     const placeholderCard = document.createElement("div")
-     placeholderCard.className = "card sprout-ana-card p-4 flex flex-col gap-6"
-     applyAos(placeholderCard, 1000)
-     bottomRow.appendChild(placeholderCard)
-
-     const changelogHeader = placeholderCard.createDiv({ cls: "flex items-center justify-between gap-2" })
-     changelogHeader.createDiv({ cls: "font-semibold", text: "Changelog" })
-
-     const changelogIcon = document.createElement("span")
-     changelogIcon.className = "inline-flex items-center justify-center text-muted-foreground [&_svg]:size-4"
-     setIcon(changelogIcon, "code")
-     changelogHeader.appendChild(changelogIcon)
-
-     const changelogBody = placeholderCard.createDiv({
-       cls: "sprout-changelog-scroll text-sm overflow-y-scroll overflow-x-hidden",
-     })
-
-     const changelogTable = changelogBody.createEl("table", {
-       cls: "table w-full text-sm sprout-changelog-table",
-     })
-
-     const thead = changelogTable.createEl("thead")
-     const headRow = thead.createEl("tr", { cls: "text-left border-b border-border" })
-     headRow.createEl("th", {
-       cls: "font-medium sprout-changelog-cell",
-       text: "Version"
-     })
-     headRow.createEl("th", {
-       cls: "font-medium sprout-changelog-cell",
-       text: "Summary"
-     })
-
-     const tbody = changelogTable.createEl("tbody")
-
-     const addRow = (version: string, summary: string) => {
-       const tr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 last:border-0" })
-       tr.createEl("td", {
-         cls: "sprout-changelog-cell",
-         text: version
-       })
-       tr.createEl("td", {
-         cls: "sprout-changelog-cell",
-         text: summary
-       })
-     }
-
-     const changelogEntries = [
-       {
-         version: "1.0.3",
-         summary: "Maintenance release - fixes and updates to Sprout settings page.",
-       },
-       {
-         version: "1.0.2",
-         summary: "Maintenance release - code refinements prior for submission to Obsidian community plugins.",
-       },
-       {
-         version: "1.0.1",
-         summary: "Stability hotfixes and Anki import/export functionality (experimental).",
-       },
-       {
-         version: "1.0.0",
-         summary: "First stable release - code refactored and source shared publicly on Github.",
-       },
-       {
-         version: "0.0.4",
-         summary: "Fourth beta release - improved CSS styling (dark mode and reading-view) and added scheduling data backups.",
-       },
-       {
-         version: "0.0.3",
-         summary: "Third beta release - rebranded as Sprout and new features including image occlusion cards and analytics.",
-       },
-       {
-         version: "0.0.2",
-         summary: "Second beta release - with fixes focused on deck and session stability.",
-       },
-       {
-         version: "0.0.1",
-         summary: "First beta release - named Boot Camp.",
-       },
-     ]
-
-     const maxVisible = 3
-     let showAll = false
-
-     const renderChangelog = () => {
-       tbody.empty()
-       const visible = showAll ? changelogEntries : changelogEntries.slice(0, maxVisible)
-       for (const entry of visible) addRow(entry.version, entry.summary)
-     }
-
-     renderChangelog()
-
-     if (changelogEntries.length > maxVisible) {
-       const toggleWrap = changelogBody.createDiv({ cls: "flex justify-between sprout-changelog-footer" })
-       
-       const githubBtn = toggleWrap.createEl("button", {
-         cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
-       })
-       githubBtn.type = "button"
-       const githubIcon = document.createElement("span")
-       githubIcon.className = "inline-flex items-center justify-center [&_svg]:size-4"
-       setIcon(githubIcon, "github")
-       githubBtn.appendChild(githubIcon)
-       githubBtn.createSpan({ text: "View in GitHub" })
-       githubBtn.addEventListener("click", () => {
-         window.open("https://github.com/ctrlaltwill/Sprout/releases/", "_blank")
-       })
-       
-       const toggleBtn = toggleWrap.createEl("button", {
-         cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
-         text: "Show more",
-       })
-       toggleBtn.type = "button"
-       toggleBtn.addEventListener("click", () => {
-         showAll = !showAll
-         toggleBtn.textContent = showAll ? "Show less" : "Show more"
-         renderChangelog()
-       })
-     }
-   }
-
-    // Refresh AOS for any animated elements
-    // Use double requestAnimationFrame to ensure DOM is fully rendered
+    // Animate-on-load cascade (not scroll-triggered).
+    // Obsidian view content scrolls inside a container, so window-scroll AOS can
+    // fail to ever add `aos-animate`.
     if (animationsEnabled) {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          refreshAOS();
+      const maxDelay = cascadeAOSOnLoad(root, {
+        // Home: use a larger gap so the load sequence feels intentionally staged.
+        stepMs: 200,
+        baseDelayMs: 0,
+        durationMs: AOS_DURATION,
+        overwriteDelays: true,
+      });
+
+      // Fallback: force elements visible only after the cascade *should* have finished.
+      const fallbackAfterMs = Math.max(600, Math.floor(maxDelay + AOS_DURATION + 250));
+      setTimeout(() => {
+        const aosElements = root.querySelectorAll('[data-aos]');
+        aosElements.forEach((el) => {
+          if (!el.isConnected) return;
+          const style = getComputedStyle(el);
+          if (style.opacity === '0' || style.visibility === 'hidden') {
+            el.classList.add('sprout-aos-fallback');
+          }
         });
+      }, fallbackAfterMs);
+    } else {
+      // If animations disabled, ensure all AOS elements are immediately visible
+      const aosElements = root.querySelectorAll('[data-aos]');
+      aosElements.forEach((el) => {
+        el.classList.add('sprout-aos-fallback');
       });
     }
   }

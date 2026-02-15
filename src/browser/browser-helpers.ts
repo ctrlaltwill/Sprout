@@ -54,20 +54,26 @@
  *   - buildIoOccludedHtml — builds HTML for an IO image preview with occlusion overlays
  *   - searchText — builds a searchable text blob from all card fields
  *   - parseSearchQuery — parses a search query string extracting group and type filters
+ *   - extractImageRefs — parses markdown for image references (both ![[wiki]] and ![alt](path))
+ *   - renderMarkdownWithImages — builds HTML string with images resolved and plain text preserved
  */
 
 import type { CardRecord } from "../core/store";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { cssClassForProps, setCssProps } from "../core/ui";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
+import {
+  escapeDelimiterText,
+  pushDelimitedField,
+} from "../core/delimiter";
 
 // ─── Filter / column types ──────────────────────────────────────────
 
-export type TypeFilter = "all" | "basic" | "mcq" | "cloze" | "io";
+export type TypeFilter = "all" | "basic" | "reversed" | "mcq" | "cloze" | "io" | "oq";
 export type StageFilter = "all" | "new" | "learning" | "relearning" | "review" | "suspended" | "quarantined";
 export type DueFilter = "all" | "due" | "today" | "later";
 
@@ -244,28 +250,16 @@ export function groupsToInput(groups: unknown): string {
     .join(", ");
 }
 
-// ─── Pipe-delimited card block building ──────────────────────────────
+// ─── Delimited card block building ───────────────────────────────────
 
-/** Escape pipe characters for pipe-delimited card block syntax. */
+/** Escape delimiter characters for delimited card block syntax. */
 export function escapePipeText(s: string): string {
-  return String(s ?? "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+  return escapeDelimiterText(s);
 }
 
-/** Push a key-value field to a pipe-delimited card block (handles multi-line). */
+/** Push a key-value field to a delimited card block (handles multi-line). */
 export function pushPipeField(out: string[], key: string, value: string) {
-  const raw = String(value ?? "");
-  const lines = raw.split(/\r?\n/);
-  if (lines.length === 0) {
-    out.push(`${key} | |`);
-    return;
-  }
-  if (lines.length === 1) {
-    out.push(`${key} | ${escapePipeText(lines[0])} |`);
-    return;
-  }
-  out.push(`${key} | ${escapePipeText(lines[0])}`);
-  for (let i = 1; i < lines.length - 1; i++) out.push(escapePipeText(lines[i]));
-  out.push(`${escapePipeText(lines[lines.length - 1])} |`);
+  pushDelimitedField(out, key, value);
 }
 
 /**
@@ -279,8 +273,8 @@ export function buildCardBlockPipeMarkdown(id: string, rec: CardRecord): string[
   const title = (rec.title || "").trim();
   if (title) pushPipeField(out, "T", title);
 
-  if (rec.type === "basic") {
-    pushPipeField(out, "Q", (rec.q || "").trim());
+  if (rec.type === "basic" || rec.type === "reversed") {
+    pushPipeField(out, rec.type === "reversed" ? "RQ" : "Q", (rec.q || "").trim());
     pushPipeField(out, "A", (rec.a || "").trim());
   } else if (rec.type === "cloze") {
     pushPipeField(out, "CQ", (rec.clozeText || "").trim());
@@ -301,6 +295,13 @@ export function buildCardBlockPipeMarkdown(id: string, rec: CardRecord): string[
     if (prompt) pushPipeField(out, "Q", prompt);
     const mask = String(rec.maskMode || "").trim();
     if (mask) pushPipeField(out, "C", mask);
+  } else if (rec.type === "oq") {
+    pushPipeField(out, "OQ", (rec.q || "").trim());
+    const steps = Array.isArray(rec.oqSteps) ? rec.oqSteps : [];
+    steps.forEach((step, idx) => {
+      const txt = (step || "").trim();
+      if (txt) pushPipeField(out, String(idx + 1), txt);
+    });
   }
 
   const info = (rec.info || "").trim();
@@ -339,10 +340,12 @@ export function endOfTodayMs(): number {
 export function typeLabelBrowser(t: string): string {
   const tt = String(t || "").toLowerCase();
   if (tt === "basic") return "Basic";
+  if (tt === "reversed" || tt === "reversed-child") return "Basic (reversed)";
   if (tt === "mcq") return "Multiple choice";
   if (tt === "cloze" || tt === "cloze-child") return "Cloze";
   if (tt === "io") return "Image occlusion";
   if (tt === "io-child") return "Image occlusion";
+  if (tt === "oq") return "Ordered question";
   return tt || "—";
 }
 
@@ -532,12 +535,14 @@ export function buildIoOccludedHtml(
       const width = Math.max(0, Math.min(1, w)) * 100;
       const height = Math.max(0, Math.min(1, h)) * 100;
 
-      return `<div class="bc" style="
-        --sprout-io-left:${left}%;
-        --sprout-io-top:${top}%;
-        --sprout-io-width:${width}%;
-        --sprout-io-height:${height}%;
-      " class="sprout-browser-io-overlay"></div>`;
+      const cls = cssClassForProps({
+        "--sprout-io-left": `${left}%`,
+        "--sprout-io-top": `${top}%`,
+        "--sprout-io-width": `${width}%`,
+        "--sprout-io-height": `${height}%`,
+      });
+
+      return `<div class="bc sprout-browser-io-overlay${cls ? ` ${cls}` : ""}"></div>`;
     })
     .join("");
 
@@ -595,7 +600,7 @@ export function parseSearchQuery(raw: string): ParsedSearch {
     if (lower.startsWith("g:")) {
       const rest = tok.slice(2);
       const parts = rest
-        .split(/[,;|]+/g)
+        .split(/[,|]+/g)
         .map((s) => s.trim())
         .filter(Boolean);
 
@@ -609,7 +614,7 @@ export function parseSearchQuery(raw: string): ParsedSearch {
     if (lower.startsWith("type:")) {
       const rest = tok.slice(5);
       const parts = rest
-        .split(/[,;|]+/g)
+        .split(/[,|]+/g)
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
 
@@ -627,4 +632,85 @@ export function parseSearchQuery(raw: string): ParsedSearch {
   const uniqGroups = Array.from(new Set(groups));
   const uniqTypes = Array.from(new Set(types));
   return { text: textToks.join(" "), groups: uniqGroups, types: uniqTypes };
+}
+
+// ─── Image parsing and rendering ─────────────────────────────────────
+
+/** Parse markdown for image references (both ![[wiki]] and ![alt](path)). */
+export function extractImageRefs(markdown: string): Array<{ match: string; linkpath: string; alt: string; start: number; end: number }> {
+  const results: Array<{ match: string; linkpath: string; alt: string; start: number; end: number }> = [];
+  const s = String(markdown ?? "");
+
+  // Match ![[wikilink]] or ![[wikilink|display]]
+  const wikiRegex = /!\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = wikiRegex.exec(s)) !== null) {
+    results.push({
+      match: m[0],
+      linkpath: m[1].trim(),
+      alt: (m[2] || m[1]).trim(),
+      start: m.index,
+      end: m.index + m[0].length,
+    });
+  }
+
+  // Match ![alt](path) markdown images
+  const mdRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  while ((m = mdRegex.exec(s)) !== null) {
+    results.push({
+      match: m[0],
+      linkpath: m[2].trim(),
+      alt: m[1].trim(),
+      start: m.index,
+      end: m.index + m[0].length,
+    });
+  }
+
+  // Sort by position
+  results.sort((a, b) => a.start - b.start);
+
+  return results;
+}
+
+/** Build HTML string with images resolved and plain text preserved. */
+export function renderMarkdownWithImages(
+  app: App,
+  markdown: string,
+  sourcePath: string,
+): string {
+  const images = extractImageRefs(markdown);
+  if (images.length === 0) {
+    return escapeHtml(markdown);
+  }
+
+  let html = "";
+  let lastEnd = 0;
+
+  for (const img of images) {
+    // Add text before the image
+    const beforeText = markdown.substring(lastEnd, img.start);
+    if (beforeText) {
+      html += escapeHtml(beforeText);
+    }
+
+    // Resolve and add the image
+    const resolvedSrc = tryResolveToResourceSrc(app, img.linkpath, sourcePath);
+    if (resolvedSrc) {
+      const safeAlt = escapeHtml(img.alt);
+      const safeSrc = escapeHtml(resolvedSrc);
+      html += `<img src="${safeSrc}" alt="${safeAlt}" class="sprout-browser-inline-img" data-img-ref="${escapeHtml(img.match)}" />`;
+    } else {
+      // Image couldn't be resolved, keep as text
+      html += escapeHtml(img.match);
+    }
+
+    lastEnd = img.end;
+  }
+
+  // Add remaining text
+  if (lastEnd < markdown.length) {
+    html += escapeHtml(markdown.substring(lastEnd));
+  }
+
+  return html;
 }

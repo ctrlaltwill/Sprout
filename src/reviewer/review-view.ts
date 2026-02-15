@@ -26,9 +26,11 @@ import type SproutPlugin from "../main";
 
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../types/card";
+import { getCorrectIndices, isMultiAnswerMcq } from "../types/card";
 import { buildSession, getNextDueInScope } from "./session";
 import { formatCountdown } from "./timers";
 import { renderClozeFront } from "./question-cloze";
+import type { ClozeRenderOptions } from "./question-cloze";
 import { renderDeckMode } from "./render-deck";
 import { renderSessionMode } from "./render-session";
 import { initAOS } from "../core/aos-loader";
@@ -49,6 +51,7 @@ import {
 import { logFsrsIfNeeded, logUndoIfNeeded } from "./fsrs-log";
 import { renderTitleMarkdownIfNeeded } from "./title-markdown";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "./markdown-block";
+import { getTtsService } from "../tts/tts-service";
 
 import type { CardState } from "../core/store";
 
@@ -130,6 +133,17 @@ export class SproutReviewerView extends ItemView {
   // Add shared header instance
   private _header: SproutHeader | null = null;
 
+  // Typed cloze state: stores what the user typed for each cloze index on the current card
+  private _typedClozeAnswers = new Map<number, string>();
+  private _typedClozeCardId = "";
+
+  // TTS: track what we've already spoken to avoid duplicate reads
+  private _ttsLastSpokenKey = "";
+
+  // Multi-answer MCQ: tracks which options the user has toggled
+  private _mcqMultiSelected = new Set<number>();
+  private _mcqMultiCardId = "";
+
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
     this.plugin = plugin;
@@ -200,6 +214,12 @@ export class SproutReviewerView extends ItemView {
     const id = String((card)?.id ?? "");
     if (!id) return;
 
+    // Reset typed cloze answers when a new card is shown
+    if (this._typedClozeCardId !== id) {
+      this._typedClozeAnswers.clear();
+      this._typedClozeCardId = id;
+    }
+
     // If this card is already graded in-session, do not start a timer.
     if (this.session.graded?.[id]) {
       this._timing = { stamp, cardId: id, startedAt: 0 };
@@ -208,6 +228,114 @@ export class SproutReviewerView extends ItemView {
 
     if (this._timing.stamp !== stamp || this._timing.cardId !== id) {
       this._timing = { stamp, cardId: id, startedAt: Date.now() };
+    }
+
+    // TTS: speak front of card when first presented (skip if answer already revealed)
+    if (!this.showAnswer) this._speakCardFront(card);
+  }
+
+  // ── TTS helpers ─────────────────────────────
+
+  /**
+   * Speak the front (question) side of a card if audio is enabled for that card type.
+   * Gated on the autoplay setting — only fires automatically when autoplay is on.
+   * Uses a dedup key so re-renders of the same front don't repeat.
+   */
+  private _speakCardFront(card: CardRecord) {
+    const audio = this.plugin.settings?.audio;
+    if (!audio?.autoplay) return;
+    this._doSpeakFront(card);
+  }
+
+  /**
+   * Speak the back (answer) side of a card if audio is enabled for that card type.
+   * Called when the answer is revealed. Gated on autoplay.
+   */
+  private _speakCardBack(card: CardRecord) {
+    const audio = this.plugin.settings?.audio;
+    if (!audio?.autoplay) return;
+    this._doSpeakBack(card);
+  }
+
+  /** Replay the front of the current card (manual, ignores autoplay). */
+  private _replayFront() {
+    const card = this.currentCard();
+    if (card) this._doSpeakFront(card, true);
+  }
+
+  /** Replay the back of the current card (manual, ignores autoplay). */
+  private _replayBack() {
+    const card = this.currentCard();
+    if (card) this._doSpeakBack(card, true);
+  }
+
+  /**
+   * Internal: actually speak the front of the card.
+   * @param force When true, skip the dedup key check (used for replay).
+   */
+  private _doSpeakFront(card: CardRecord, force = false) {
+    const audio = this.plugin.settings?.audio;
+    if (!audio) return;
+
+    const groupFilter = (audio.limitToGroup || "").trim().toLowerCase();
+    if (groupFilter) {
+      const groups = Array.isArray(card.groups) ? card.groups : [];
+      if (!groups.some((g) => g.trim().toLowerCase() === groupFilter)) return;
+    }
+
+    const tts = getTtsService();
+    if (!tts.isSupported) return;
+
+    const key = `front:${card.id}`;
+    if (!force && this._ttsLastSpokenKey === key) return;
+
+    if (card.type === "basic" && card.q) {
+      this._ttsLastSpokenKey = key;
+      tts.speakBasicCard(card.q, audio);
+    } else if ((card.type === "reversed" || card.type === "reversed-child") && (card.q || card.a)) {
+      this._ttsLastSpokenKey = key;
+      const isBackDir = card.type === "reversed-child" && (card as unknown).reversedDirection === "back";
+      const frontText = (isBackDir || card.type === "reversed") ? (card.a || "") : (card.q || "");
+      tts.speakBasicCard(frontText, audio);
+    } else if ((card.type === "cloze" || card.type === "cloze-child") && card.clozeText) {
+      this._ttsLastSpokenKey = key;
+      const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
+      tts.speakClozeCard(card.clozeText, false, targetIndex, audio);
+    }
+  }
+
+  /**
+   * Internal: actually speak the back of the card.
+   * @param force When true, skip the dedup key check (used for replay).
+   */
+  private _doSpeakBack(card: CardRecord, force = false) {
+    const audio = this.plugin.settings?.audio;
+    if (!audio) return;
+
+    const groupFilter = (audio.limitToGroup || "").trim().toLowerCase();
+    if (groupFilter) {
+      const groups = Array.isArray(card.groups) ? card.groups : [];
+      if (!groups.some((g) => g.trim().toLowerCase() === groupFilter)) return;
+    }
+
+    const tts = getTtsService();
+    if (!tts.isSupported) return;
+
+    const key = `back:${card.id}`;
+    if (!force && this._ttsLastSpokenKey === key) return;
+
+    if (card.type === "basic" && card.a) {
+      this._ttsLastSpokenKey = key;
+      tts.speakBasicCard(card.a, audio);
+    } else if ((card.type === "reversed" || card.type === "reversed-child") && (card.q || card.a)) {
+      this._ttsLastSpokenKey = key;
+      const isBackDir = card.type === "reversed-child" && (card as unknown).reversedDirection === "back";
+      const backText = (isBackDir || card.type === "reversed") ? (card.q || "") : (card.a || "");
+      tts.speakBasicCard(backText, audio);
+    } else if ((card.type === "cloze" || card.type === "cloze-child") && card.clozeText) {
+      this._ttsLastSpokenKey = key;
+      const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
+      tts.speakClozeCard(card.clozeText, true, targetIndex, audio);
     }
   }
 
@@ -535,7 +663,20 @@ export class SproutReviewerView extends ItemView {
     this.containerEl.tabIndex = 0;
     this.ensureMarkdownHelper();
 
-    const focusSelf = () => this.containerEl.focus();
+    const focusSelf = (ev?: Event) => {
+      // Don't steal focus from inputs / textareas / selects / editable elements
+      const t = ev?.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable ||
+          t.closest("input, textarea, select, [contenteditable]"))
+      )
+        return;
+      this.containerEl.focus();
+    };
     this.containerEl.addEventListener("mousedown", focusSelf);
     this.containerEl.addEventListener("click", focusSelf);
     queueMicrotask(() => focusSelf());
@@ -580,6 +721,8 @@ export class SproutReviewerView extends ItemView {
     this.clearCountdown();
     closeMoreMenuImpl(this);
     this.clearUndo();
+    // Stop any ongoing TTS
+    getTtsService().stop();
     await Promise.resolve();
   }
 
@@ -715,21 +858,29 @@ export class SproutReviewerView extends ItemView {
 
     const cardType = String(card.type || "").toLowerCase();
     
-    // Skip IO cards - they have their own editor
-    if (["io", "io-child"].includes(cardType)) return;
+    // Open the IO editor for image-occlusion cards
+    if (["io", "io-child"].includes(cardType)) {
+      const parentId = cardType === "io" ? card.id : String(card.parentId || "");
+      if (!parentId) {
+        new Notice("Cannot edit image occlusion card: missing parent card.");
+        return;
+      }
+      IO.ImageOcclusionEditorModal.openForParent(this.plugin, parentId);
+      return;
+    }
 
-    // If this is a cloze child, edit the parent cloze instead so changes persist to the source note
+    // If this is a cloze child or reversed child, edit the parent instead so changes persist to the source note
     let targetCard = card;
-    if (cardType === "cloze-child") {
+    if (cardType === "cloze-child" || cardType === "reversed-child") {
       const parentId = String(card.parentId || "");
       if (!parentId) {
-        new Notice("Cannot edit cloze child: missing parent card.");
+        new Notice(`Cannot edit ${cardType}: missing parent card.`);
         return;
       }
 
       const parentCard = (this.plugin.store.data.cards || {})[parentId];
       if (!parentCard) {
-        new Notice("Cannot edit cloze child: parent card not found.");
+        new Notice(`Cannot edit ${cardType}: parent card not found.`);
         return;
       }
 
@@ -745,8 +896,8 @@ export class SproutReviewerView extends ItemView {
         
         // Update the card in the session if it exists
         if (this.session) {
-          // For cloze-child, defer replacing the child until after sync so we keep the correct child record
-          if (cardType !== "cloze-child") {
+          // For cloze-child or reversed-child, defer replacing the child until after sync so we keep the correct child record
+          if (cardType !== "cloze-child" && cardType !== "reversed-child") {
             this.session.queue[this.session.index] = updatedCard;
           }
         }
@@ -773,8 +924,8 @@ export class SproutReviewerView extends ItemView {
           new Notice("Saved changes to flashcard");
         }
 
-        // If we edited a cloze parent, refresh the current child from the store so session stays in sync
-        if (this.session && cardType === "cloze-child") {
+        // If we edited a cloze or reversed parent, refresh the current child from the store so session stays in sync
+        if (this.session && (cardType === "cloze-child" || cardType === "reversed-child")) {
           const refreshed = (this.plugin.store.data.cards || {})[String(card.id)];
           if (refreshed) this.session.queue[this.session.index] = refreshed;
         }
@@ -992,12 +1143,19 @@ export class SproutReviewerView extends ItemView {
   }
 
 
+  /**
+   * Answer a single-answer MCQ (legacy: one click selects).
+   * Also called by the multi-answer submit path.
+   */
   private async answerMcq(choiceIdx: number) {
     const card = this.currentCard();
     if (!card || card.type !== "mcq" || !this.session) return;
 
     const id = String(card.id);
     if (this.session.graded[id]) return;
+
+    // If this is a multi-answer MCQ, delegate to answerMcqMulti
+    if (isMultiAnswerMcq(card)) return;
 
     const pass = choiceIdx === card.correctIndex;
 
@@ -1016,11 +1174,86 @@ export class SproutReviewerView extends ItemView {
       mcqPass: pass,
     });
 
+    // TTS: speak correct answer after MCQ is answered
+    this._speakCardBack(card);
+
+    this.render();
+  }
+
+  /**
+   * Answer a multi-answer MCQ. All-or-nothing grading:
+   * pass = selected set exactly matches correct set.
+   */
+  private async answerMcqMulti(selectedIndices: number[]) {
+    const card = this.currentCard();
+    if (!card || card.type !== "mcq" || !this.session) return;
+
+    const id = String(card.id);
+    if (this.session.graded[id]) return;
+
+    const correctSet = new Set(getCorrectIndices(card));
+    const selectedSet = new Set(selectedIndices);
+
+    // All-or-nothing: exact set match required
+    const pass = correctSet.size === selectedSet.size &&
+      [...correctSet].every(i => selectedSet.has(i));
+
+    const four = isFourButtonMode(this.plugin);
+    const rating: Rating = pass ? (four ? "easy" : "good") : "again";
+
+    const st = this.plugin.store.getState(id);
+    if (!st && !this.isPracticeSession()) {
+      log.warn(`MCQ multi: missing state for id=${id}; cannot grade/FSRS`);
+      return;
+    }
+
+    await this.gradeCurrentRating(rating, {
+      mcqChoices: selectedIndices,
+      mcqCorrectIndices: [...correctSet],
+      mcqPass: pass,
+    });
+
+    this._speakCardBack(card);
+    this.render();
+  }
+
+  private async answerOq(userOrder: number[]) {
+    const card = this.currentCard();
+    if (!card || card.type !== "oq" || !this.session) return;
+
+    const id = String(card.id);
+    if (this.session.graded[id]) return;
+
+    // Check if the user's order matches the correct order (0, 1, 2, ...)
+    const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+    const correctOrder = Array.from({ length: steps.length }, (_, i) => i);
+    const pass = userOrder.length === correctOrder.length &&
+      userOrder.every((v, i) => v === correctOrder[i]);
+
+    const four = isFourButtonMode(this.plugin);
+    const rating: Rating = pass ? (four ? "easy" : "good") : "again";
+
+    const st = this.plugin.store.getState(id);
+    if (!st && !this.isPracticeSession()) {
+      log.warn(`OQ: missing state for id=${id}; cannot grade/FSRS`);
+      return;
+    }
+
+    await this.gradeCurrentRating(rating, {
+      oqUserOrder: userOrder,
+      oqPass: pass,
+    });
+
+    this.showAnswer = true;
     this.render();
   }
 
   private async nextCard(_userInitiated: boolean) {
     if (!this.session) return;
+
+    // Stop any ongoing TTS before moving to next card
+    getTtsService().stop();
+    this._ttsLastSpokenKey = "";
 
     const card = this.currentCard();
     if (card) {
@@ -1098,6 +1331,8 @@ export class SproutReviewerView extends ItemView {
   private backToDecks() {
     this.clearUndo();
     this.resetTiming();
+    getTtsService().stop();
+    this._ttsLastSpokenKey = "";
 
     this.clearTimer();
     this.clearCountdown();
@@ -1198,7 +1433,7 @@ export class SproutReviewerView extends ItemView {
       ev.stopPropagation();
       const trigger = queryFirst(
         this.contentEl,
-        'button[data-sprout-action="reviewer-more-trigger"]',
+        'button[data-sprout-action="reviewer-more-trigger"], button[data-bc-action="reviewer-more-trigger"]',
       );
       if (trigger) {
         trigger.dispatchEvent(new PointerEvent("pointerdown", { button: 0, bubbles: true }));
@@ -1242,6 +1477,8 @@ export class SproutReviewerView extends ItemView {
 
       if (
         ((card.type === "basic" ||
+          card.type === "reversed" ||
+          card.type === "reversed-child" ||
           card.type === "cloze" ||
           card.type === "cloze-child" ||
           isIoRevealableType(card)) &&
@@ -1265,19 +1502,136 @@ export class SproutReviewerView extends ItemView {
     }
 
     if (card.type === "mcq") {
-      if (/^[1-9]$/.test(ev.key)) {
+      // Reset multi-select state if card changed
+      if (this._mcqMultiCardId !== id) {
+        this._mcqMultiSelected.clear();
+        this._mcqMultiCardId = id;
+      }
+
+      const multiAnswer = isMultiAnswerMcq(card);
+
+      if (multiAnswer) {
+        // Multi-answer MCQ: 1-9 toggles selection, Enter submits
+        if (/^[1-9]$/.test(ev.key) && !graded) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeMoreMenuImpl(this);
+
+          const displayIdx = Number(ev.key) - 1;
+          const opts = card.options || [];
+          if (displayIdx < 0 || displayIdx >= opts.length) return;
+
+          const order = getMcqOptionOrder(this.plugin, this.session, card);
+          const origIdx = order[displayIdx];
+          if (!Number.isInteger(origIdx) || origIdx < 0 || origIdx >= opts.length) return;
+
+          // Toggle selection
+          if (this._mcqMultiSelected.has(origIdx)) {
+            this._mcqMultiSelected.delete(origIdx);
+          } else {
+            this._mcqMultiSelected.add(origIdx);
+          }
+          // In-place DOM update: toggle the button class and update submit button
+          const optionList = this.contentEl.querySelector(".sprout-mcq-options");
+          if (optionList) {
+            const buttons = optionList.querySelectorAll<HTMLButtonElement>(":scope > button.btn-outline");
+            if (buttons[displayIdx]) {
+              buttons[displayIdx].classList.toggle("sprout-mcq-selected", this._mcqMultiSelected.has(origIdx));
+            }
+            const submitBtnEl = optionList.querySelector<HTMLButtonElement>("button.btn-primary");
+            if (submitBtnEl) {
+              submitBtnEl.disabled = this._mcqMultiSelected.size === 0;
+              submitBtnEl.classList.toggle("opacity-50", this._mcqMultiSelected.size === 0);
+              submitBtnEl.classList.toggle("cursor-not-allowed", this._mcqMultiSelected.size === 0);
+              // Reset empty-attempt counter when selection changes via keyboard
+              if (this._mcqMultiSelected.size > 0) {
+                delete submitBtnEl.dataset.emptyAttempt;
+                submitBtnEl.removeAttribute("data-tooltip");
+                submitBtnEl.classList.remove("sprout-mcq-submit-tooltip-visible");
+              }
+            }
+          }
+        } else if (isEnter && !graded && this._mcqMultiSelected.size > 0) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeMoreMenuImpl(this);
+          void this.answerMcqMulti([...this._mcqMultiSelected]);
+        } else if (isEnter && !graded && this._mcqMultiSelected.size === 0) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeMoreMenuImpl(this);
+          // Shake the submit button and show tooltip on second empty Enter
+          const submitBtnEl = this.contentEl.querySelector<HTMLButtonElement>(".sprout-mcq-submit-btn");
+          if (submitBtnEl) {
+            submitBtnEl.classList.add("sprout-mcq-submit-shake");
+            submitBtnEl.addEventListener("animationend", () => {
+              submitBtnEl.classList.remove("sprout-mcq-submit-shake");
+            }, { once: true });
+            if (submitBtnEl.dataset.emptyAttempt === "1") {
+              submitBtnEl.setAttribute("data-tooltip", "Choose at least one answer to proceed");
+              submitBtnEl.setAttribute("data-tooltip-position", "top");
+              submitBtnEl.classList.add("sprout-mcq-submit-tooltip-visible");
+              setTimeout(() => {
+                submitBtnEl.classList.remove("sprout-mcq-submit-tooltip-visible");
+              }, 2500);
+            }
+            submitBtnEl.dataset.emptyAttempt = String(Number(submitBtnEl.dataset.emptyAttempt || "0") + 1);
+          }
+        } else if (isEnter && graded) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeMoreMenuImpl(this);
+          void this.nextCard(true);
+        }
+      } else {
+        // Single-answer MCQ: immediate answer on key press
+        if (/^[1-9]$/.test(ev.key)) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeMoreMenuImpl(this);
+
+          const displayIdx = Number(ev.key) - 1;
+          const opts = card.options || [];
+          if (displayIdx < 0 || displayIdx >= opts.length) return;
+
+          const order = getMcqOptionOrder(this.plugin, this.session, card);
+          const origIdx = order[displayIdx];
+          if (Number.isInteger(origIdx) && origIdx >= 0 && origIdx < opts.length) {
+            void this.answerMcq(origIdx);
+          }
+        }
+      }
+      return;
+    }
+
+    // OQ: Enter key submits order (ungraded) or acts like "Next" (graded)
+    if (card.type === "oq") {
+      if (isEnter && !graded) {
         ev.preventDefault();
         ev.stopPropagation();
         closeMoreMenuImpl(this);
-
-        const displayIdx = Number(ev.key) - 1;
-        const opts = card.options || [];
-        if (displayIdx < 0 || displayIdx >= opts.length) return;
-
-        const order = getMcqOptionOrder(this.plugin, this.session, card);
-        const origIdx = order[displayIdx];
-        if (Number.isInteger(origIdx) && origIdx >= 0 && origIdx < opts.length) {
-          void this.answerMcq(origIdx);
+        // Read the current order from the session oqOrderMap
+        const s = this.session as unknown as { oqOrderMap?: Record<string, number[]> };
+        const oqMap = s.oqOrderMap || {};
+        const currentOrder = oqMap[id];
+        if (Array.isArray(currentOrder) && currentOrder.length > 0) {
+          void this.answerOq(currentOrder.slice());
+        }
+        return;
+      }
+      if (isEnter && graded) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeMoreMenuImpl(this);
+        void this.nextCard(true);
+      }
+      // Grade keys after reveal
+      if (graded) {
+        if (isEnter) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeMoreMenuImpl(this);
+          void this.nextCard(true);
         }
       }
       return;
@@ -1285,6 +1639,8 @@ export class SproutReviewerView extends ItemView {
 
     const isRevealable =
       card.type === "basic" ||
+      card.type === "reversed" ||
+      card.type === "reversed-child" ||
       card.type === "cloze" ||
       card.type === "cloze-child" ||
       isIoRevealableType(card);
@@ -1297,6 +1653,9 @@ export class SproutReviewerView extends ItemView {
 
         if (!this.showAnswer) {
           this.showAnswer = true;
+          // TTS: speak back of card when answer is revealed via keyboard
+          const revealCard = this.currentCard();
+          if (revealCard) this._speakCardBack(revealCard);
           this.render();
           return;
         }
@@ -1330,6 +1689,9 @@ export class SproutReviewerView extends ItemView {
 
         if (!this.showAnswer) {
           this.showAnswer = true;
+          // TTS: speak back of card when answer is revealed via grade key
+          const gradeCard = this.currentCard();
+          if (gradeCard) this._speakCardBack(gradeCard);
           this.render();
           return;
         }
@@ -1472,7 +1834,14 @@ export class SproutReviewerView extends ItemView {
 
       session: this.session,
       showAnswer: this.showAnswer,
-      setShowAnswer: (v: boolean) => (this.showAnswer = v),
+      setShowAnswer: (v: boolean) => {
+        this.showAnswer = v;
+        // TTS: speak back of card when answer is revealed
+        if (v) {
+          const card = this.currentCard();
+          if (card) this._speakCardBack(card);
+        }
+      },
 
       currentCard: () => this.currentCard(),
 
@@ -1481,6 +1850,26 @@ export class SproutReviewerView extends ItemView {
 
       gradeCurrentRating: (rating: Rating, meta: Record<string, unknown> | null) => this.gradeCurrentRating(rating, meta),
       answerMcq: (idx: number) => this.answerMcq(idx),
+      answerMcqMulti: (indices: number[]) => this.answerMcqMulti(indices),
+      mcqMultiSelected: this._mcqMultiSelected,
+      mcqMultiCardId: this._mcqMultiCardId,
+      syncMcqMultiSelect: (origIdx: number, selected: boolean) => {
+        const card = this.currentCard();
+        if (!card) return;
+        const id = String(card.id);
+        if (this._mcqMultiCardId !== id) {
+          this._mcqMultiSelected.clear();
+          this._mcqMultiCardId = id;
+        }
+        if (selected) {
+          this._mcqMultiSelected.add(origIdx);
+        } else {
+          this._mcqMultiSelected.delete(origIdx);
+        }
+        // No full re-render — the click handler in render-session
+        // updates the DOM in-place for instant feedback.
+      },
+      answerOq: (userOrder: number[]) => this.answerOq(userOrder),
 
       enableSkipButton: isSkipEnabled(this.plugin),
       skipCurrentCard: (meta?: Record<string, unknown>) => this.doSkipCurrentCard(meta),
@@ -1502,7 +1891,28 @@ export class SproutReviewerView extends ItemView {
       getNextDueInScope: (scope: Scope) => this.getNextDueInScope(scope),
       startCountdown: (nextDue: number, lineEl: HTMLElement) => this.startCountdown(nextDue, lineEl),
 
-      renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null) => renderClozeFront(text, reveal, targetIndex),
+      renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null) => {
+        const clozeSettings = this.plugin.settings?.cards;
+        const clozeOpts: ClozeRenderOptions = {
+          mode: clozeSettings?.clozeMode ?? "standard",
+          clozeBgColor: clozeSettings?.clozeBgColor || "",
+          clozeTextColor: clozeSettings?.clozeTextColor || "",
+          typedAnswers: this._typedClozeAnswers,
+          onTypedInput: (idx, val) => {
+            this._typedClozeAnswers.set(idx, val);
+          },
+          onTypedSubmit: () => {
+            if (!this.showAnswer) {
+              this.showAnswer = true;
+              // TTS: speak back of card when answer is revealed via typed cloze submit
+              const typedCard = this.currentCard();
+              if (typedCard) this._speakCardBack(typedCard);
+              this.render();
+            }
+          },
+        };
+        return renderClozeFront(text, reveal, targetIndex, clozeOpts);
+      },
 
       renderMarkdownInto: (containerEl: HTMLElement, md: string, sourcePath: string) =>
         this.renderMarkdownInto(containerEl, md, sourcePath),
@@ -1515,6 +1925,7 @@ export class SproutReviewerView extends ItemView {
       ) => this.renderImageOcclusionInto(containerEl, card2, sourcePath2, reveal2),
 
       randomizeMcqOptions: isMcqOptionRandomisationEnabled(this.plugin),
+      randomizeOqOrder: this.plugin.settings.study?.randomizeOqOrder ?? true,
 
       fourButtonMode: isFourButtonMode(this.plugin),
 
@@ -1522,6 +1933,10 @@ export class SproutReviewerView extends ItemView {
 
       applyAOS: this.plugin.settings?.general?.enableAnimations ?? true,
       aosDelayMs: this._firstSessionRender ? 100 : 0,
+
+      ttsEnabled: !!(this.plugin.settings?.audio?.enabled),
+      ttsReplayFront: () => this._replayFront(),
+      ttsReplayBack: () => this._replayBack(),
 
       rerender: () => this.render(),
     });

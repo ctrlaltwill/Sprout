@@ -27,6 +27,7 @@
 
 .sprout .sprout-analytics-root {
   min-height: 0;
+  max-height: 100%;
   gap: 12px;
 }
 
@@ -71,6 +72,19 @@
   margin-top: 10px !important;
 }
 
+.sprout .sprout-analytics-controls {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprout .sprout-analytics-rows-btn {
+  min-width: 44px;
+  justify-content: center;
+}
+
 .sprout .sprout-analytics-center {
   margin-left: auto !important;
   margin-right: auto !important;
@@ -82,7 +96,7 @@
   box-shadow: none !important;
   padding: 0 !important;
   color: var(--text-muted) !important;
-  font-size: 12.25px !important;
+  font-size: var(--sprout-font-2xs) !important;
 }
 
 .sprout .sprout-analytics-export-btn:hover,
@@ -103,7 +117,7 @@
 }
 .sprout .sprout-analytics-root .recharts-cartesian-axis-tick-value {
   fill: var(--text-muted) !important;
-  font-size: 11px !important;
+  font-size: var(--sprout-font-2xs) !important;
 }
 .sprout .sprout-analytics-root .recharts-label tspan {
   fill: var(--text-muted) !important;
@@ -127,6 +141,11 @@
 
 .sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info) {
   cursor: pointer;
+  z-index: 1000003 !important;
+}
+
+.sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info):is(:hover, :focus-visible) {
+  z-index: 1000004 !important;
 }
 
 /* Keep forgetting curve card height steady even when empty */
@@ -139,10 +158,7 @@
   margin-left: 3px;
 }
 
-/* Nudge info tooltips a bit lower */
-.sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info)::after {
-  bottom: -48px;
-}
+/* Info tooltips in analytics: no extra nudge needed with absolute positioning */
 
 /* ---- Filter popover z-index stacking ---- */
 
@@ -232,7 +248,7 @@
 .sprout .sprout-legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-s);
   flex-shrink: 0;
   display: inline-block;
 }
@@ -250,7 +266,7 @@
 .sprout .sprout-analytics-table-wrap {
   padding: 8px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   overflow: auto;
   background: var(--background);
 }
@@ -264,12 +280,12 @@
   border-spacing: 0;
 }
 .sprout .sprout-analytics-root .table tbody tr:hover td:first-child {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
+  border-top-left-radius: var(--radius-m);
+  border-bottom-left-radius: var(--radius-m);
 }
 .sprout .sprout-analytics-root .table tbody tr:hover td:last-child {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
+  border-top-right-radius: var(--radius-m);
+  border-bottom-right-radius: var(--radius-m);
 }
 
 /* ---- Analytics utilities ---- */
@@ -289,13 +305,13 @@
 .sprout .sprout-ana-legend-dot-square {
   width: 10px !important;
   height: 10px !important;
-  border-radius: 3px !important;
+  border-radius: 2px !important;
 }
 
 .sprout .sprout-ana-legend-line {
   width: 14px !important;
   height: 2px !important;
-  border-radius: 3px !important;
+  border-radius: var(--radius-s) !important;
   background: var(--sprout-legend-color, var(--theme-accent)) !important;
   display: inline-block !important;
 }
@@ -328,6 +344,10 @@
   min-height: 320px !important;
 }
 
+.sprout .sprout-ana-min-300 {
+  min-height: 300px !important;
+}
+
 .sprout .sprout-ana-min-120 {
   min-height: 120px !important;
 }
@@ -344,7 +364,11 @@
 
 .sprout .sprout-ana-chevron {
   display: inline-flex !important;
-  transform: rotate(var(--sprout-rotate, 0deg)) scale(0.7) !important;
+  transform: rotate(0deg) scale(0.7) !important;
+}
+
+.sprout .sprout-ana-chevron.is-open {
+  transform: rotate(90deg) scale(0.7) !important;
 }
 
 .sprout .sprout-ana-scroll-48 {

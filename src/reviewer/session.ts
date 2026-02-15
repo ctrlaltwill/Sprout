@@ -31,8 +31,11 @@ export function inScope(scope: Scope | null, notePath: string) {
 
   if (scope.type === "note") return notePath === scope.key;
 
-  // group scope is handled by resolveCardsInScope()
-  return true;
+  // group scope is resolved by resolveCardsInScope(); path-based match N/A
+  if (scope.type === "group") return false;
+
+  // Unknown scope type — fail closed
+  return false;
 }
 
 function startOfTodayMs(now: number): number {
@@ -47,48 +50,12 @@ function toNonNegIntOrInfinity(x: unknown): number {
   return Math.max(0, Math.floor(n));
 }
 
-// --- IO parent exclusion -----------------------------------------------------
+// --- Parent-card exclusion (parents are not reviewable) ----------------------
 
-function ioChildKeyFromId(id: string): string | null {
-  const m = String(id ?? "").match(/::io::(.+)$/);
-  if (!m) return null;
-  const k = String(m[1] ?? "").trim();
-  return k ? k : null;
-}
-
-function cardHasIoChildKey(card: CardRecord): boolean {
-  if (!card) return false;
-  if (typeof card.groupKey === "string" && card.groupKey.trim()) return true;
-  const id = String(card.id ?? "");
-  return !!ioChildKeyFromId(id);
-}
-
-function isIoParentCard(card: CardRecord): boolean {
-  const t = String(card?.type ?? "").toLowerCase();
-
-  if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
-
-  // If your project uses type "io" for both parent + children, detect parent by absence of a child key.
-  if (t === "io") {
-    return !cardHasIoChildKey(card);
-  }
-
-  return false;
-}
-
-function isClozeParentCard(card: CardRecord): boolean {
-  const t = String(card?.type ?? "").toLowerCase();
-  if (t !== "cloze") return false;
-  const children = card?.clozeChildren;
-  return Array.isArray(children) && children.length > 0;
-}
+import { isParentCard } from "../core/card-utils";
 
 function filterReviewable(cards: CardRecord[]): CardRecord[] {
-  return (cards || []).filter((c) => {
-    const t = String(c?.type ?? "").toLowerCase();
-    if (t === "cloze") return false;
-    return !isIoParentCard(c) && !isClozeParentCard(c);
-  });
+  return (cards || []).filter((c) => !isParentCard(c));
 }
 
 /**
@@ -153,6 +120,12 @@ export function isAvailableNow(st: CardState | undefined, now: number): boolean 
   if (!st) return false;
 
   if (st.stage === "suspended") return false;
+
+  // Buried cards are excluded until the bury expires
+  if (typeof st.buriedUntil === "number" && Number.isFinite(st.buriedUntil) && st.buriedUntil > now) {
+    return false;
+  }
+
   if (st.stage === "new") return true;
 
   if (st.stage === "learning" || st.stage === "relearning" || st.stage === "review") {
@@ -210,6 +183,7 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
 
   const dailyNewLimit = toNonNegIntOrInfinity(study.dailyNewLimit);
   const dailyReviewLimit = toNonNegIntOrInfinity(study.dailyReviewLimit);
+  const siblingMode: string = (study as Record<string, unknown>).siblingMode as string ?? "standard";
 
   const cards = resolveCardsInScope(plugin, scope);
   const states = plugin.store.data.states || {};
@@ -230,7 +204,12 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
       ? Number.POSITIVE_INFINITY
       : Math.max(0, dailyReviewLimit - reviewDoneToday);
 
-  // Filter to available now
+  // ── Bury mode: bury extra siblings before filtering ────────────────────
+  if (siblingMode === "bury") {
+    burySiblings(plugin, cards, states, now);
+  }
+
+  // Filter to available now (respects buriedUntil)
   const available = cards.filter((c) => {
     const st = states[c.id];
     return isAvailableNow(st, now);
@@ -254,7 +233,6 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
     }
   }
 
-
   // Sort due-like by due (invalid due sorts first)
   dueLike.sort((a, b) => {
     const sa = states[a.id];
@@ -264,80 +242,25 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
     return da - db;
   });
 
-  // Round-robin interleaving for cloze/IO children by parent
-  function isChildCard(card: CardRecord) {
-    const t = String(card?.type ?? "").toLowerCase();
-    return t === "cloze-child" || t === "io-child";
-  }
-  function getParentKey(card: CardRecord) {
-    // For cloze-child: parentId or id up to ::cloze::
-    if (card.parentId) return card.parentId;
-    const id = String(card.id || "");
-    const clozeMatch = id.match(/^(.*)::cloze::/);
-    if (clozeMatch) return clozeMatch[1];
-    // For io-child: parentId or groupKey
-    if (card.groupKey) return card.groupKey;
-    return id;
-  }
-  const childCards = dueLike.filter(isChildCard);
-  const otherCards = dueLike.filter((c) => !isChildCard(c));
-  // Group child cards by parent
-  const parentGroups: Record<string, CardRecord[]> = {};
-  for (const card of childCards) {
-    const key = getParentKey(card);
-    if (!parentGroups[key]) parentGroups[key] = [];
-    parentGroups[key].push(card);
-  }
-  // Shuffle each parent group
-  for (const key in parentGroups) {
-    const arr = parentGroups[key];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-  // Round-robin pick from each parent group
-  const parentKeys = Object.keys(parentGroups);
-  // Shuffle parentKeys for more mixing
-  for (let i = parentKeys.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [parentKeys[i], parentKeys[j]] = [parentKeys[j], parentKeys[i]];
-  }
-  const rrChildCards: CardRecord[] = [];
-  let added;
-  do {
-    added = false;
-    for (const key of parentKeys) {
-      if (parentGroups[key].length) {
-        const shifted = parentGroups[key].shift();
-        if (shifted) rrChildCards.push(shifted);
-        added = true;
-      }
-    }
-  } while (added);
-  // Shuffle other cards (optional, for more mixing)
-  for (let i = otherCards.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [otherCards[i], otherCards[j]] = [otherCards[j], otherCards[i]];
-  }
-  // Interleave round-robin child cards and others
-  const shuffledDueLike: CardRecord[] = [];
-  let i = 0, j = 0;
-  while (i < otherCards.length || j < rrChildCards.length) {
-    if (i < otherCards.length) shuffledDueLike.push(otherCards[i++]);
-    if (j < rrChildCards.length) shuffledDueLike.push(rrChildCards[j++]);
-  }
-
   // Sort new by id (stable)
   news.sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
+  // Apply daily limits
   const dueTake =
-    remainingReview === Number.POSITIVE_INFINITY ? shuffledDueLike : shuffledDueLike.slice(0, remainingReview);
+    remainingReview === Number.POSITIVE_INFINITY ? dueLike : dueLike.slice(0, remainingReview);
 
   const newTake =
     remainingNew === Number.POSITIVE_INFINITY ? news : news.slice(0, remainingNew);
 
-  const queue = [...dueTake, ...newTake];
+  // ── Combine and apply sibling mode ─────────────────────────────────────
+  let queue: CardRecord[];
+
+  if (siblingMode === "disperse") {
+    queue = disperseSiblings([...dueTake, ...newTake]);
+  } else {
+    // "standard" and "bury" (bury already removed extras above)
+    queue = [...dueTake, ...newTake];
+  }
 
   return {
     scope,
@@ -346,6 +269,153 @@ export function buildSession(plugin: SproutPlugin, scope: Scope): Session {
     graded: {},
     stats: { total: queue.length, done: 0 },
   };
+}
+
+// ── Sibling helpers ───────────────────────────────────────────────────────────
+
+/** Returns true for child card types that have siblings. */
+function isChildCard(card: CardRecord): boolean {
+  const t = String(card?.type ?? "").toLowerCase();
+  return t === "cloze-child" || t === "io-child" || t === "reversed-child";
+}
+
+/** Resolves the parent key for a child card. */
+function getParentKey(card: CardRecord): string {
+  if (card.parentId) return card.parentId;
+  const id = String(card.id || "");
+  const clozeMatch = id.match(/^(.*)::cloze::/);
+  if (clozeMatch) return clozeMatch[1];
+  const reversedMatch = id.match(/^(.*)::reversed::/);
+  if (reversedMatch) return reversedMatch[1];
+  if (card.groupKey) return card.groupKey;
+  return id;
+}
+
+/**
+ * Disperse mode: spreads sibling child cards evenly across the queue.
+ *
+ * 1. Separate children from non-children.
+ * 2. Group children by parent and round-robin across parent groups to produce
+ *    an interleaved sequence where same-parent siblings are maximally spaced.
+ * 3. Insert children at evenly-spaced positions among the non-child cards.
+ */
+function disperseSiblings(cards: CardRecord[]): CardRecord[] {
+  const children: CardRecord[] = [];
+  const others: CardRecord[] = [];
+
+  for (const c of cards) {
+    if (isChildCard(c)) children.push(c);
+    else others.push(c);
+  }
+
+  if (children.length === 0) return cards;
+
+  // Group by parent
+  const groups: Record<string, CardRecord[]> = {};
+  for (const c of children) {
+    const key = getParentKey(c);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  }
+
+  // Round-robin across parents so siblings from the same parent are maximally apart
+  const parentKeys = Object.keys(groups);
+  const interleaved: CardRecord[] = [];
+  let added: boolean;
+  do {
+    added = false;
+    for (const key of parentKeys) {
+      if (groups[key].length > 0) {
+        interleaved.push(groups[key].shift()!);
+        added = true;
+      }
+    }
+  } while (added);
+
+  // Insert interleaved children at evenly-spaced positions among others
+  if (others.length === 0) return interleaved;
+
+  const result: CardRecord[] = [];
+  const totalSlots = others.length + interleaved.length;
+  // Evenly distribute: place each child at position i * (total / childCount)
+  const step = totalSlots / interleaved.length;
+  const childPositions = new Set<number>();
+  for (let i = 0; i < interleaved.length; i++) {
+    childPositions.add(Math.round(i * step));
+  }
+
+  let ci = 0;
+  let oi = 0;
+  for (let pos = 0; pos < totalSlots; pos++) {
+    if (childPositions.has(pos) && ci < interleaved.length) {
+      result.push(interleaved[ci++]);
+    } else if (oi < others.length) {
+      result.push(others[oi++]);
+    } else if (ci < interleaved.length) {
+      result.push(interleaved[ci++]);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Bury mode: for each parent with multiple available children, keep the most
+ * overdue child and set `buriedUntil` on the rest to start-of-tomorrow.
+ *
+ * Mutates the `states` object directly (caller's reference) and persists
+ * the changes so buried cards are excluded from subsequent sessions today.
+ */
+function burySiblings(
+  plugin: SproutPlugin,
+  cards: CardRecord[],
+  states: Record<string, CardState>,
+  now: number,
+): void {
+  const tomorrow = startOfTodayMs(now) + 24 * 60 * 60 * 1000;
+
+  // Group available child cards by parent
+  const parentGroups: Record<string, CardRecord[]> = {};
+  for (const c of cards) {
+    if (!isChildCard(c)) continue;
+    const st = states[c.id];
+    if (!st) continue;
+    // Skip already-buried or suspended cards
+    if (st.stage === "suspended") continue;
+    if (typeof st.buriedUntil === "number" && Number.isFinite(st.buriedUntil) && st.buriedUntil > now) continue;
+
+    const key = getParentKey(c);
+    if (!parentGroups[key]) parentGroups[key] = [];
+    parentGroups[key].push(c);
+  }
+
+  for (const key of Object.keys(parentGroups)) {
+    const group = parentGroups[key];
+    if (group.length <= 1) continue;
+
+    // Pick the most overdue card (lowest due); for new cards use Infinity so they lose to due cards
+    group.sort((a, b) => {
+      const sa = states[a.id];
+      const sb = states[b.id];
+      const da =
+        sa && sa.stage !== "new" && typeof sa.due === "number" && Number.isFinite(sa.due)
+          ? sa.due
+          : Infinity;
+      const db =
+        sb && sb.stage !== "new" && typeof sb.due === "number" && Number.isFinite(sb.due)
+          ? sb.due
+          : Infinity;
+      return da - db;
+    });
+
+    // Keep the first (most overdue), bury the rest
+    for (let i = 1; i < group.length; i++) {
+      const id = group[i].id;
+      const st = states[id];
+      if (!st) continue;
+      st.buriedUntil = tomorrow;
+    }
+  }
 }
 
 export function getNextDueInScope(plugin: SproutPlugin, scope: Scope): number | null {

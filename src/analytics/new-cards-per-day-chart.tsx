@@ -19,6 +19,7 @@ function InfoIcon(props: { text: string }) {
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -69,7 +70,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="bc svg-icon sprout-ana-chevron"
+      className={`bc svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -79,7 +80,6 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -100,6 +100,7 @@ function formatFilterPath(raw: string, maxChars = 30) {
 const TYPE_LABELS: Record<string, string> = {
   all: "All cards",
   basic: "Basic",
+  "reversed-child": "Basic (Reversed)",
   "cloze-child": "Cloze",
   "io-child": "Image occlusion",
   mcq: "Multiple choice",
@@ -109,6 +110,7 @@ function normalizeCardType(raw: string) {
   const t = String(raw ?? "").toLowerCase();
   if (t === "cloze") return "cloze-child";
   if (t === "io") return "io-child";
+  if (t === "reversed") return "reversed-child";
   return t;
 }
 
@@ -208,7 +210,7 @@ function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: u
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;
   return (
-    <div className="bc rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs">
+    <div className="bc sprout-data-tooltip-surface">
       <div className="bc text-sm font-medium text-background">{datum.date}</div>
       <div className="bc text-background">Created: {datum.created}</div>
     </div>
@@ -295,7 +297,7 @@ export function NewCardsPerDayChart(props: {
   const todayIndex = React.useMemo(() => localDayIndex(Date.now(), formatter), [formatter]);
   const startIndex = todayIndex - (durationDays - 1);
 
-  const availableTypes = React.useMemo(() => ["all", "basic", "cloze-child", "io-child", "mcq"], []);
+  const availableTypes = React.useMemo(() => ["all", "basic", "reversed-child", "cloze-child", "io-child", "mcq"], []);
 
   const allDecks = React.useMemo(() => {
     const decks = new Set<string>();
@@ -318,9 +320,12 @@ export function NewCardsPerDayChart(props: {
   const matchedGroups = React.useMemo(() => rankFilterMatches(allGroups, groupQuery, 5), [allGroups, groupQuery]);
 
   const typeCounts = React.useMemo(() => {
+    const PARENT_TYPES = new Set(["cloze", "reversed", "io", "io-parent", "io_parent", "ioparent"]);
     const counts = new Map<string, number>();
     for (const type of availableTypes) counts.set(type, 0);
     for (const card of props.cards ?? []) {
+      const raw = String(card?.type ?? "").toLowerCase();
+      if (PARENT_TYPES.has(raw)) continue;
       const t = normalizeCardType(card?.type ?? "");
       if (!t) continue;
       counts.set(t, (counts.get(t) ?? 0) + 1);
@@ -378,7 +383,11 @@ export function NewCardsPerDayChart(props: {
       map.set(dayIndex, datum);
     }
 
+    const PARENT_TYPES = new Set(["cloze", "reversed", "io", "io-parent", "io_parent", "ioparent"]);
+
     for (const card of props.cards ?? []) {
+      const raw = String(card?.type ?? "").toLowerCase();
+      if (PARENT_TYPES.has(raw)) continue;
       const t = normalizeCardType(card?.type ?? "");
       if (selectedType !== "all" && t !== selectedType) continue;
 

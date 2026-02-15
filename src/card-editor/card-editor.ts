@@ -13,7 +13,10 @@
 import { Notice, Platform, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
+import { getCorrectIndices } from "../types/card";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
+import { escapeDelimiterText, getDelimiter } from "../core/delimiter";
 
 export type ColKey =
   | "id"
@@ -27,18 +30,18 @@ export type ColKey =
   | "location"
   | "groups";
 
-export type CardType = "basic" | "cloze" | "mcq" | "io";
+export type CardType = "basic" | "reversed" | "reversed-child" | "cloze" | "mcq" | "io" | "oq";
 
 const CLOZE_TOOLTIP =
   "Cloze syntax: {{c1::hidden text}}.\nNew cloze: Cmd+Shift+C (Ctrl+Shift+C).\nSame cloze #: Cmd+Shift+Option+C (Ctrl+Shift+Alt+C).";
 const FORMAT_TOOLTIP =
   "Formatting: Cmd+B (bold), Cmd+I (italic).";
-const PLACEHOLDER_TITLE = "Flashcard title";
+const PLACEHOLDER_TITLE = "Enter a descriptive title for this flashcard";
 const PLACEHOLDER_CLOZE =
-  "Example: This is a {{c1::cloze}} and this is the same {{c1::group}}. This {{c2::cloze}} is hidden separately.";
-const PLACEHOLDER_QUESTION = "Write the question prompt";
-const PLACEHOLDER_ANSWER = "Write the answer";
-const PLACEHOLDER_INFO = "Extra information shown on the back to add context";
+  "Type your text and wrap parts to hide with {{c1::text}}. Use {{c2::text}} for separate deletions, or {{c1::text}} again to hide together.";
+const PLACEHOLDER_QUESTION = "Enter the question you want to answer";
+const PLACEHOLDER_ANSWER = "Enter the answer to your question";
+const PLACEHOLDER_INFO = "Optional: Add extra context or explanation shown on the back of the card";
 
 type ClozeShortcut = "new" | "same";
 
@@ -236,9 +239,8 @@ function groupsToInput(groups: unknown): string {
     .join(", ");
 }
 
-function escapePipeText(s: string): string {
-  return String(s ?? "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
-}
+// Delegate to shared delimiter utility
+const escapePipeText = escapeDelimiterText;
 
 interface CardEditorConfig {
   plugin: SproutPlugin;
@@ -256,8 +258,10 @@ export interface CardEditorResult {
   getGroupInputValue: () => string;
   fields: Array<{ key: ColKey; editable: boolean }>;
   isSingleMcq: boolean;
+  isSingleOq: boolean;
   mcqOriginalString?: string;
-  getMcqOptions?: () => { correct: string; wrongs: string[] };
+  getMcqOptions?: () => { correct: string; corrects: string[]; wrongs: string[] };
+  getOqSteps?: () => string[];
 }
 
 export function createCardEditor(config: CardEditorConfig): CardEditorResult {
@@ -271,6 +275,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
   const isClozeOnly = normalizedTypes.length > 0 && normalizedTypes.every((type) => type === "cloze");
 
   const isSingleMcq = safeCards.length === 1 && normalizedTypes[0] === "mcq";
+  const isSingleOq = safeCards.length === 1 && normalizedTypes[0] === "oq";
   const showReadOnlyFields = config.showReadOnlyFields ?? true;
 
   const root = document.createElement("div");
@@ -300,7 +305,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
   formFields.push({ key: "info", label: "Extra information", editable: true });
   formFields.push({ key: "groups", label: "Groups", editable: true });
 
-  if (isSingleMcq) {
+  if (isSingleMcq || isSingleOq) {
     const answerIdx = formFields.findIndex((f) => f.key === "answer");
     if (answerIdx >= 0) formFields.splice(answerIdx, 1);
   }
@@ -415,16 +420,36 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
     root.appendChild(wrapper);
   };
 
-  formFields.forEach(appendField);
+  // Track field wrappers by key for insertion ordering
+  const fieldWrappers = new Map<string, HTMLElement>();
+  formFields.forEach((field) => {
+    appendField(field);
+    // The last child of root is the wrapper just appended
+    fieldWrappers.set(field.key, root.lastElementChild as HTMLElement);
+  });
 
   let buildMcqValue: (() => string | null) | undefined;
-  let getMcqOptions: (() => { correct: string; wrongs: string[] }) | undefined;
+  let getMcqOptions: (() => { correct: string; corrects: string[]; wrongs: string[] }) | undefined;
+  let getOqSteps: (() => string[]) | undefined;
   if (isSingleMcq) {
     const mcqSection = createMcqEditor(safeCards[0]);
     if (mcqSection) {
-      root.appendChild(mcqSection.element);
+      // Insert MCQ section right after the question field
+      const questionWrapper = fieldWrappers.get("question");
+      if (questionWrapper && questionWrapper.nextSibling) {
+        root.insertBefore(mcqSection.element, questionWrapper.nextSibling);
+      } else {
+        root.appendChild(mcqSection.element);
+      }
       buildMcqValue = mcqSection.buildValue;
       getMcqOptions = mcqSection.getOptions;
+    }
+  }
+  if (isSingleOq) {
+    const oqSection = createOqEditor(safeCards[0]);
+    if (oqSection) {
+      root.appendChild(oqSection.element);
+      getOqSteps = oqSection.getSteps;
     }
   }
 
@@ -433,12 +458,14 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
     inputEls,
     buildMcqValue,
     getMcqOptions,
+    getOqSteps,
     getGroupInputValue: () => {
       const el = inputEls.groups;
       return el ? (el.value ?? "") : "";
     },
     fields: formFields.map((field) => ({ key: field.key, editable: field.editable })),
     isSingleMcq,
+    isSingleOq,
     mcqOriginalString: isSingleMcq ? buildAnswerOrOptionsFor(safeCards[0]) : undefined,
   };
 }
@@ -460,20 +487,25 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
     case "title":
       return (card.title || "").split(/\r?\n/)[0] || "";
     case "question":
-      if (card.type === "basic") return card.q || "";
+      if (card.type === "basic" || card.type === "reversed") return card.q || "";
       if (card.type === "mcq") return card.stem || "";
+      if (card.type === "oq") return card.q || "";
       return card.clozeText || "";
     case "answer":
-      if (card.type === "basic") return card.a || "";
+      if (card.type === "basic" || card.type === "reversed") return card.a || "";
       if (card.type === "mcq") {
-        const options = Array.isArray(card.options) ? card.options : [];
+        const options = normalizeCardOptions(card.options);
         const correct = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : -1;
         return options
           .map((opt, idx) => {
             const t = escapePipes((opt || "").trim());
             return idx === correct ? `**${t}**` : t;
           })
-          .join(" | ");
+          .join(` ${getDelimiter()} `);
+      }
+      if (card.type === "oq") {
+        const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+        return steps.map((s, i) => `${i + 1}. ${(s || "").trim()}`).join("\n");
       }
       return "";
     case "info":
@@ -530,10 +562,10 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   list.className = "bc flex flex-col max-h-60 overflow-auto p-1";
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full";
+  searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full min-h-[38px]";
 
   const searchIcon = document.createElement("span");
-  searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+  searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
   searchIcon.setAttribute("aria-hidden", "true");
   setIcon(searchIcon, "search");
   searchWrap.appendChild(searchIcon);
@@ -741,60 +773,245 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   };
 }
 
-function createMcqEditor(card: CardRecord) {
-  const options = Array.isArray(card.options) ? [...card.options] : [];
-  const correctIndex: number = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : 0;
-  const correctValue = options[correctIndex] ?? "";
-  const wrongValues = options.filter((_, idx) => idx !== correctIndex);
+// ──────────────────────────────────────────────────────────────────────────────
+// OQ editor (reorderable numbered steps)
+// ──────────────────────────────────────────────────────────────────────────────
+
+function createOqEditor(card: CardRecord) {
+  const initialSteps = Array.isArray(card.oqSteps) ? [...card.oqSteps] : ["", ""];
 
   const container = document.createElement("div");
   container.className = "bc flex flex-col gap-1";
 
   const label = document.createElement("label");
-  label.className = "bc text-sm font-medium";
-  label.textContent = "Answer";
+  label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+  label.textContent = "Steps (correct order)";
+  label.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
   container.appendChild(label);
 
-  const correctWrapper = document.createElement("div");
-  correctWrapper.className = "bc flex flex-col gap-1";
-  const correctLabel = document.createElement("div");
-  correctLabel.className = "bc text-xs text-muted-foreground inline-flex items-center gap-1";
-  correctLabel.textContent = "Correct answer";
-  correctLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
-  correctWrapper.appendChild(correctLabel);
-  const correctInput = document.createElement("input");
-  correctInput.type = "text";
-  correctInput.className = "bc input w-full sprout-input-fixed";
-  correctInput.placeholder = "Correct option";
-  correctInput.value = correctValue;
-  correctWrapper.appendChild(correctInput);
-  container.appendChild(correctWrapper);
+  const hint = document.createElement("div");
+  hint.className = "bc text-xs text-muted-foreground";
+  hint.textContent = "Enter the steps in their correct order. Drag the grip handles to reorder. Steps are shuffled during review.";
+  container.appendChild(hint);
 
-  const wrongLabel = document.createElement("div");
-  wrongLabel.className = "bc text-xs text-muted-foreground inline-flex items-center gap-1";
-  wrongLabel.textContent = "Wrong options";
-  wrongLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
-  container.appendChild(wrongLabel);
+  const listContainer = document.createElement("div");
+  listContainer.className = "bc flex flex-col gap-2 sprout-oq-editor-list";
+  container.appendChild(listContainer);
 
-  const wrongContainer = document.createElement("div");
-  wrongContainer.className = "bc flex flex-col gap-2";
-  container.appendChild(wrongContainer);
+  const stepRows: Array<{ row: HTMLElement; input: HTMLInputElement; badge: HTMLElement }> = [];
 
-  const wrongRows: Array<{ row: HTMLElement; input: HTMLInputElement; removeBtn: HTMLButtonElement }> = [];
+  const renumber = () => {
+    stepRows.forEach((entry, i) => {
+      entry.badge.textContent = String(i + 1);
+    });
+  };
 
-  const addWrongRow = (value: string) => {
+  const updateRemoveButtons = () => {
+    const disable = stepRows.length <= 2;
+    for (const entry of stepRows) {
+      const delBtn = entry.row.querySelector<HTMLButtonElement>(".sprout-oq-del-btn");
+      if (delBtn) {
+        delBtn.disabled = disable;
+        delBtn.setAttribute("aria-disabled", disable ? "true" : "false");
+        delBtn.classList.toggle("is-disabled", disable);
+      }
+    }
+  };
+
+  const addStepRow = (value: string) => {
+    const idx = stepRows.length;
+
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-2";
+    row.className = "bc flex items-center gap-2 sprout-oq-editor-row";
+    row.draggable = true;
+
+    // Drag grip
+    const grip = document.createElement("span");
+    grip.className = "bc inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip";
+    setIcon(grip, "grip-vertical");
+    row.appendChild(grip);
+
+    // Number badge
+    const badge = document.createElement("span");
+    badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 shrink-0";
+    badge.textContent = String(idx + 1);
+    row.appendChild(badge);
+
+    // Text input
     const input = document.createElement("input");
     input.type = "text";
     input.className = "bc input flex-1 text-sm sprout-input-fixed";
-    input.placeholder = "Wrong option";
+    input.placeholder = `Step ${idx + 1}`;
+    input.value = value;
+    row.appendChild(input);
+
+    // Delete button
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost sprout-oq-del-btn";
+    delBtn.setAttribute("data-tooltip", "Remove step");
+    delBtn.setAttribute("data-tooltip-position", "top");
+    const xIcon = document.createElement("span");
+    xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    setIcon(xIcon, "x");
+    delBtn.appendChild(xIcon);
+    delBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (stepRows.length <= 2) return;
+      const pos = stepRows.findIndex((e) => e.input === input);
+      if (pos < 0) return;
+      stepRows[pos].row.remove();
+      stepRows.splice(pos, 1);
+      renumber();
+      updateRemoveButtons();
+    });
+    row.appendChild(delBtn);
+
+    // HTML5 DnD for reordering
+    let dragIdx = -1;
+    row.addEventListener("dragstart", (ev) => {
+      dragIdx = stepRows.findIndex((e) => e.row === row);
+      ev.dataTransfer?.setData("text/plain", String(dragIdx));
+      row.classList.add("sprout-oq-row-dragging");
+    });
+    row.addEventListener("dragend", () => {
+      row.classList.remove("sprout-oq-row-dragging");
+    });
+    row.addEventListener("dragover", (ev) => {
+      ev.preventDefault();
+      ev.dataTransfer!.dropEffect = "move";
+    });
+    row.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      const fromStr = ev.dataTransfer?.getData("text/plain");
+      if (fromStr === undefined || fromStr === null) return;
+      const fromIdx = parseInt(fromStr, 10);
+      const toIdx = stepRows.findIndex((e) => e.row === row);
+      if (isNaN(fromIdx) || fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+
+      // Reorder array
+      const [moved] = stepRows.splice(fromIdx, 1);
+      stepRows.splice(toIdx, 0, moved);
+
+      // Reorder DOM
+      listContainer.innerHTML = "";
+      for (const entry of stepRows) listContainer.appendChild(entry.row);
+      renumber();
+    });
+
+    listContainer.appendChild(row);
+    const entry = { row, input, badge };
+    stepRows.push(entry);
+    updateRemoveButtons();
+
+    return entry;
+  };
+
+  // Seed with existing steps or 2 empty rows
+  const seed = initialSteps.length >= 2 ? initialSteps : ["", ""];
+  for (const s of seed) addStepRow(s);
+  renumber();
+  updateRemoveButtons();
+
+  // "Add step" button
+  const addRow = document.createElement("div");
+  addRow.className = "bc flex items-center gap-2";
+  const addInput = document.createElement("input");
+  addInput.type = "text";
+  addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
+  addInput.placeholder = "Add another step (press enter)";
+  addInput.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const val = addInput.value.trim();
+      if (!val) return;
+      if (stepRows.length >= 20) { new Notice("Maximum 20 steps."); return; }
+      addStepRow(val);
+      renumber();
+      addInput.value = "";
+    }
+  });
+  addInput.addEventListener("blur", () => {
+    const val = addInput.value.trim();
+    if (!val) return;
+    if (stepRows.length >= 20) return;
+    addStepRow(val);
+    renumber();
+    addInput.value = "";
+  });
+  addRow.appendChild(addInput);
+  container.appendChild(addRow);
+
+  const getSteps = (): string[] => {
+    return stepRows.map((e) => String(e.input.value || "").trim()).filter(Boolean);
+  };
+
+  return {
+    element: container,
+    getSteps,
+  };
+}
+
+function createMcqEditor(card: CardRecord) {
+  const options = normalizeCardOptions(card.options);
+  const correctSet = new Set(getCorrectIndices(card));
+
+  const container = document.createElement("div");
+  container.className = "bc flex flex-col gap-1";
+
+  const label = document.createElement("label");
+  label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+  label.textContent = "Answers and options";
+  const mcqInfoIcon = document.createElement("span");
+  mcqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+  mcqInfoIcon.setAttribute("data-tooltip", "Check the box next to each correct answer. At least one correct and one incorrect option required.");
+  mcqInfoIcon.setAttribute("data-tooltip-position", "top");
+  setIcon(mcqInfoIcon, "info");
+  label.appendChild(mcqInfoIcon);
+  container.appendChild(label);
+
+  const optionsContainer = document.createElement("div");
+  optionsContainer.className = "bc flex flex-col gap-2";
+  container.appendChild(optionsContainer);
+
+  type OptionRowEntry = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
+  const optionRows: OptionRowEntry[] = [];
+
+  const updateRemoveButtons = () => {
+    const disable = optionRows.length <= 2;
+    for (const entry of optionRows) {
+      entry.removeBtn.disabled = disable;
+      entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
+      entry.removeBtn.classList.toggle("is-disabled", disable);
+    }
+  };
+
+  const addOptionRow = (value: string, isCorrect: boolean) => {
+    const row = document.createElement("div");
+    row.className = "bc flex items-center gap-2 sprout-edit-mcq-option-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = isCorrect;
+    checkbox.className = "bc sprout-mcq-correct-checkbox";
+    checkbox.setAttribute("data-tooltip", "Mark as correct answer");
+    checkbox.setAttribute("data-tooltip-position", "top");
+    row.appendChild(checkbox);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "bc input flex-1 text-sm sprout-input-fixed";
+    input.placeholder = "Enter an answer option";
     input.value = value;
     row.appendChild(input);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
+    removeBtn.setAttribute("data-tooltip", "Remove option");
+    removeBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");
     xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(xIcon, "x");
@@ -802,45 +1019,38 @@ function createMcqEditor(card: CardRecord) {
     removeBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      if (wrongRows.length <= 1) return;
-      const idx = wrongRows.findIndex((entry) => entry.input === input);
+      if (optionRows.length <= 2) return;
+      const idx = optionRows.findIndex((entry) => entry.input === input);
       if (idx === -1) return;
-      wrongRows[idx].row.remove();
-      wrongRows.splice(idx, 1);
+      optionRows[idx].row.remove();
+      optionRows.splice(idx, 1);
+      updateRemoveButtons();
     });
     row.appendChild(removeBtn);
-    wrongContainer.appendChild(row);
-    wrongRows.push({ row, input, removeBtn });
-    updateRemoveButtons();
-  };
 
-  const updateRemoveButtons = () => {
-    const disable = wrongRows.length <= 1;
-    for (const entry of wrongRows) {
-      entry.removeBtn.disabled = disable;
-      entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
-      entry.removeBtn.classList.toggle("is-disabled", disable);
-    }
+    optionsContainer.appendChild(row);
+    optionRows.push({ row, input, checkbox, removeBtn });
+    updateRemoveButtons();
   };
 
   const addInput = document.createElement("input");
   addInput.type = "text";
   addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
-  addInput.placeholder = "Add another wrong option";
+  addInput.placeholder = "Add another option (press enter)";
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
       ev.preventDefault();
       ev.stopPropagation();
       const value = addInput.value.trim();
       if (!value) return;
-      addWrongRow(value);
+      addOptionRow(value, false);
       addInput.value = "";
     }
   });
   addInput.addEventListener("blur", () => {
     const value = addInput.value.trim();
     if (!value) return;
-    addWrongRow(value);
+    addOptionRow(value, false);
     addInput.value = "";
   });
 
@@ -849,30 +1059,52 @@ function createMcqEditor(card: CardRecord) {
   addInputWrap.appendChild(addInput);
   container.appendChild(addInputWrap);
 
-  const initialWrongs = wrongValues.length ? wrongValues : [""];
-  for (const value of initialWrongs) addWrongRow(value);
+  // Populate from existing card
+  if (options.length > 0) {
+    options.forEach((opt, idx) => {
+      addOptionRow(opt, correctSet.has(idx));
+    });
+  } else {
+    // At least two empty rows
+    addOptionRow("", true);
+    addOptionRow("", false);
+  }
   updateRemoveButtons();
 
   const buildValue = () => {
-    const correct = correctInput.value.trim();
-    if (!correct) {
-      new Notice("Correct multiple-choice answer cannot be empty.");
+    const allOpts = optionRows
+      .map((entry) => ({ text: entry.input.value.trim(), isCorrect: entry.checkbox.checked }))
+      .filter((opt) => opt.text.length > 0);
+    const corrects = allOpts.filter((o) => o.isCorrect);
+    const wrongs = allOpts.filter((o) => !o.isCorrect);
+
+    if (corrects.length < 1) {
+      new Notice("Multiple-choice cards require at least one correct option (checked).");
       return null;
     }
-    const wrongs = wrongRows.map((entry) => entry.input.value.trim()).filter((opt) => opt.length > 0);
     if (wrongs.length < 1) {
-      new Notice("Multiple-choice cards require at least one wrong option.");
+      new Notice("Multiple-choice cards require at least one wrong option (unchecked).");
       return null;
     }
-    const optionsList = [correct, ...wrongs];
-    const rendered = optionsList.map((opt, idx) => (idx === 0 ? `**${escapePipeText(opt)}**` : escapePipeText(opt)));
-    return rendered.join(" | ");
+
+    const rendered = allOpts.map((opt) =>
+      opt.isCorrect ? `**${escapePipeText(opt.text)}**` : escapePipeText(opt.text)
+    );
+    return rendered.join(` ${getDelimiter()} `);
   };
 
-  const getOptions = () => ({
-    correct: String(correctInput.value || "").trim(),
-    wrongs: wrongRows.map((entry) => String(entry.input.value || "").trim()).filter(Boolean),
-  });
+  const getOptions = () => {
+    const allOpts = optionRows
+      .map((entry) => ({ text: String(entry.input.value || "").trim(), isCorrect: entry.checkbox.checked }))
+      .filter((opt) => opt.text.length > 0);
+    const corrects = allOpts.filter((o) => o.isCorrect).map((o) => o.text);
+    const wrongs = allOpts.filter((o) => !o.isCorrect).map((o) => o.text);
+    return {
+      correct: corrects[0] || "",
+      corrects,
+      wrongs,
+    };
+  };
 
   return {
     element: container,

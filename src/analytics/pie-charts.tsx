@@ -15,6 +15,7 @@ import * as React from "react";
 import { Label, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import { startTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { cssClassForProps } from "../core/ui";
 
 type PieDatum = { name: string; value: number };
 
@@ -31,6 +32,7 @@ const palette = [
 const typeLabels: Record<string, string> = {
   all: "All cards",
   basic: "Basic",
+  "reversed-child": "Basic (Reversed)",
   mcq: "Multiple choice",
   "cloze-child": "Cloze",
   "io-child": "Image occlusion",
@@ -41,6 +43,7 @@ function InfoIcon(props: { text: string }) {
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -67,6 +70,7 @@ function normalizeEventType(raw: string) {
   const t = String(raw ?? "").toLowerCase();
   if (t === "cloze") return "cloze-child";
   if (t === "io") return "io-child";
+  if (t === "reversed") return "reversed-child";
   return t;
 }
 
@@ -75,7 +79,7 @@ function PieTooltip(props: { active?: boolean; payload?: Array<{ name?: string; 
   const item = props.payload[0] as { name?: string; value?: number } | undefined;
   if (!item) return null;
   return (
-    <div className="rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs">
+    <div className="sprout-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{item.name}</div>
       <div className="text-background">Count: {item.value ?? 0}</div>
     </div>
@@ -85,7 +89,7 @@ function PieTooltip(props: { active?: boolean; payload?: Array<{ name?: string; 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="svg-icon sprout-ana-chevron"
+      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -95,7 +99,6 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -217,8 +220,7 @@ function PieCard(props: {
           ? props.data.map((entry, index) => (
               <div key={`legend-${entry.name}`} className="bc inline-flex items-center gap-2">
                 <span
-                  className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-                  style={{ "--sprout-legend-color": palette[index % palette.length] } as React.CSSProperties}
+                  className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": palette[index % palette.length] })}`}
                 />
                 <span className="bc">{entry.name}</span>
                 <span className="bc text-foreground">{entry.value}</span>
@@ -247,7 +249,7 @@ export function StagePieCard(props: {
   useAnalyticsPopoverZIndex(open, wrapRef);
 
   const availableTypes = React.useMemo(() => {
-    return ["all", "basic", "cloze-child", "io-child", "mcq"];
+    return ["all", "basic", "reversed-child", "cloze-child", "io-child", "mcq"];
   }, [props.cards]);
 
   const typeCounts = React.useMemo(() => {
@@ -255,8 +257,7 @@ export function StagePieCard(props: {
     for (const type of availableTypes) counts.set(type, 0);
     for (const card of props.cards ?? []) {
       const t = String(card?.type ?? "");
-      if (!t || t === "io") continue;
-      if (t === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length) continue;
+      if (!t || t === "cloze" || t === "reversed" || t === "io" || t === "io-parent" || t === "io_parent" || t === "ioparent") continue;
       counts.set(t, (counts.get(t) ?? 0) + 1);
     }
     if (counts.has("all")) {
@@ -334,8 +335,8 @@ export function StagePieCard(props: {
   const filteredCards = React.useMemo(() => {
     return (props.cards ?? []).filter((card) => {
       if (!card) return false;
-      if (card.type === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length)
-        return false;
+      const _t = String(card.type ?? "");
+      if (_t === "cloze" || _t === "reversed" || _t === "io" || _t === "io-parent" || _t === "io_parent" || _t === "ioparent") return false;
       if (selectedType && selectedType !== "all" && card.type !== selectedType) return false;
       if (selectedGroups.length) {
         if (!Array.isArray(card.groups)) return false;
@@ -620,7 +621,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
   const popoverRef = React.useRef<HTMLDivElement | null>(null);
   useAnalyticsPopoverZIndex(open, wrapRef);
 
-  const availableTypes = React.useMemo(() => ["all", "basic", "cloze-child", "io-child", "mcq"], []);
+  const availableTypes = React.useMemo(() => ["all", "basic", "reversed-child", "cloze-child", "io-child", "mcq"], []);
 
   const getEventDeck = React.useCallback((ev: Record<string, unknown>) => {
     const raw = ev?.sourceNotePath ?? ev?.deckPath ?? ev?.deck;

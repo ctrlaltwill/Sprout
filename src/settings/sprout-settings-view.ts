@@ -550,6 +550,8 @@ export class SproutSettingsView extends ItemView {
       "Ordered-Questions.md",
       "Card-Browser.md",
       "Reading-View.md",
+      "Reading-View-Styles.md",
+      "Custom-Reading-Styles.md",
       "Study-Sessions.md",
       "Grading.md",
       "Scheduling.md",
@@ -669,7 +671,8 @@ export class SproutSettingsView extends ItemView {
         label: "Cards",
         icon: "square-stack",
         sections: [
-          { pageKeys: ["Cards", "Card-Browser", "Creating-Cards", "Reading-View"] },
+          { pageKeys: ["Cards", "Card-Browser", "Creating-Cards"] },
+          { title: "Reading view", pageKeys: ["Reading-View", "Reading-View-Styles", "Custom-Reading-Styles"] },
           {
             title: "Card Types",
             pageKeys: ["Basic-&-Reversed-Cards", "Cloze-Cards", "Image-Occlusion", "Multiple-Choice-Questions", "Ordered-Questions"],
@@ -742,6 +745,8 @@ export class SproutSettingsView extends ItemView {
       "Language-Settings": "Language Options",
       Backups: "Back Up",
       "Support-Sprout": "About Sprout",
+      "Reading-View-Styles": "Reading View Styles",
+      "Custom-Reading-Styles": "Custom Reading Styles",
     };
     return labelMap[pageKey] ?? pageKey.replace(/-/g, " ");
   }
@@ -774,6 +779,8 @@ export class SproutSettingsView extends ItemView {
       Widget: "panel-right",
       "Card-Browser": "table",
       "Reading-View": "book-open",
+      "Reading-View-Styles": "palette",
+      "Custom-Reading-Styles": "paintbrush",
       Analytics: "chart-column",
       Charts: "line-chart",
       "Text-to-Speech": "volume-2",
@@ -1629,7 +1636,7 @@ export class SproutSettingsView extends ItemView {
     tooltipLabel: string,
     tagName: "a" | "button" = "a",
   ): HTMLAnchorElement | HTMLButtonElement {
-    const btn = document.createElement(tagName) as HTMLAnchorElement | HTMLButtonElement;
+    const btn = document.createElement(tagName);
     btn.className = `sprout-about-btn ${cls}`;
     btn.setAttribute("data-tooltip", tooltipLabel);
     btn.setAttribute("data-tooltip-position", "top");
@@ -1654,12 +1661,13 @@ export class SproutSettingsView extends ItemView {
   private _getAboutAvatarSrc(): string | null {
     const pluginDir = (this.plugin.manifest as { dir?: string }).dir;
     const pluginId = this.plugin.manifest.id || "sprout";
-    const relPluginDir = `.obsidian/plugins/${pluginId}`;
+    const configDir = this.app.vault.configDir;
+    const relPluginDir = `${configDir}/plugins/${pluginId}`;
     const basePath = (this.app.vault.adapter as { getBasePath?: () => string }).getBasePath?.();
 
     const candidateBases: string[] = [
       `${relPluginDir}/wiki`,
-      ".obsidian/plugins/sprout/wiki",
+      `${configDir}/plugins/sprout/wiki`,
     ];
 
     if (pluginDir) {
@@ -1692,9 +1700,15 @@ export class SproutSettingsView extends ItemView {
   }
 
   private _enhanceAboutPage(body: HTMLElement) {
+    const storyCodeBlock = body.querySelector<HTMLElement>("pre > code");
+    if (storyCodeBlock?.textContent?.includes("Sprout was built by William Guy")) {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = storyCodeBlock.textContent.trim();
+      const pre = storyCodeBlock.closest("pre");
+      if (pre) pre.replaceWith(paragraph);
+    }
+
     const allLinks = Array.from(body.querySelectorAll<HTMLAnchorElement>("a.external-link"));
-    const allUls = Array.from(body.querySelectorAll<HTMLUListElement>("ul"));
-    const allH2s = Array.from(body.querySelectorAll<HTMLElement>("h2"));
 
     /* ── Section 1: Our Story ── */
     const linkedinLink = allLinks.find((a) => a.href.includes("linkedin.com"));
@@ -1726,22 +1740,35 @@ export class SproutSettingsView extends ItemView {
 
         const name = document.createElement("div");
         name.className = "sprout-about-name";
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
         name.textContent = "William Guy";
 
         const role = document.createElement("div");
         role.className = "sprout-about-role";
-        role.textContent = "Creator of Sprout";
+        role.textContent = "Creator of sprout";
+
+        const linksRow = document.createElement("div");
+        linksRow.className = "sprout-about-links-row";
+
+        const githubBtn = document.createElement("a");
+        githubBtn.className = "sprout-about-linkedin";
+        githubBtn.href = "https://github.com/ctrlaltwill";
+        githubBtn.target = "_blank";
+        githubBtn.rel = "noopener nofollow";
+        githubBtn.textContent = "GitHub →";
 
         const linkedinBtn = document.createElement("a");
         linkedinBtn.className = "sprout-about-linkedin";
         linkedinBtn.href = "https://www.linkedin.com/in/williamguy/";
         linkedinBtn.target = "_blank";
         linkedinBtn.rel = "noopener nofollow";
-        linkedinBtn.textContent = "LinkedIn →";
+        linkedinBtn.textContent = "Linkedin →";
 
         info.appendChild(name);
         info.appendChild(role);
-        info.appendChild(linkedinBtn);
+        linksRow.appendChild(githubBtn);
+        linksRow.appendChild(linkedinBtn);
+        info.appendChild(linksRow);
         storyCard.appendChild(avatar);
         storyCard.appendChild(info);
         storyUl.replaceWith(storyCard);
@@ -1824,7 +1851,7 @@ export class SproutSettingsView extends ItemView {
             ev.preventDefault();
             ev.stopPropagation();
             const text = `Check out Sprout — a spaced-repetition flashcard plugin for Obsidian! 🌱\nhttps://github.com/ctrlaltwill/Sprout`;
-            navigator.clipboard.writeText(text).then(() => {
+            void navigator.clipboard.writeText(text).then(() => {
               const origLabel = shareLabel.textContent ?? "Share Sprout";
               shareLabel.textContent = "Copied!";
               setIcon(shareIcon, "check");
@@ -1834,7 +1861,7 @@ export class SproutSettingsView extends ItemView {
                 setIcon(shareIcon, "share-2");
                 shareBtn.classList.remove("is-copied");
               }, 2000);
-            });
+            }).catch(() => undefined);
           });
         }
 
@@ -1856,13 +1883,14 @@ export class SproutSettingsView extends ItemView {
   private async _readSupportMarkdown(): Promise<string> {
     try {
       const pluginDir = (this.plugin.manifest as { dir?: string }).dir;
-      return await this.app.vault.adapter.read(`${pluginDir ?? ".obsidian/plugins/sprout"}/wiki/Support-Sprout.md`);
+      const configDir = this.app.vault.configDir;
+      return await this.app.vault.adapter.read(`${pluginDir ?? `${configDir}/plugins/sprout`}/wiki/Support-Sprout.md`);
     } catch {
       return `# About Sprout
 
 ## Our Story
 
-Sprout was built by [ctrlaltwill](https://github.com/ctrlaltwill) (William Guy), a final-year medical student in New Zealand. Designed to bring modern spaced-repetition directly into your Obsidian vault — so your flashcards, notes, and study sessions all live in one place.
+Sprout was built by William Guy, a final-year medical student in New Zealand. Designed to bring modern spaced-repetition directly into your Obsidian vault — so your flashcards, notes, and study sessions all live in one place.
 
 - [Find out more about Will](https://www.linkedin.com/in/williamguy/)
 
@@ -1964,7 +1992,7 @@ You can support Sprout by starring the repo, sharing it with friends, or caffein
       general: ["Appearance"],
       audio: ["Text to speech", "Voice and accent", "Voice tuning"],
       cards: ["Basic cards", "Cloze", "Image occlusion", "Multiple choice"],
-      reading: ["Reading view styles", "Reading view fields", "Reading view colours"],
+      reading: ["Reading view styles", "Macro styles", "Reading view fields", "Reading view colours", "Custom style CSS"],
       storage: ["Attachment storage", "Data backup", "Syncing"],
       study: ["Study sessions", "Scheduling"],
       reset: ["Reset", "Danger zone", "Quarantined cards"],

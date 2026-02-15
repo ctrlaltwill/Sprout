@@ -12,53 +12,32 @@
  */
 
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
+import { getCorrectIndices } from "../types/card";
+import {
+  escapeDelimiterText,
+  splitUnescapedDelimiters,
+  getDelimiter,
+} from "../core/delimiter";
 
 export function escapePipes(s: string): string {
-  return (s || "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+  return escapeDelimiterText(s);
 }
 
 /**
- * Split on implied option delimiter: unescaped pipes.
- * A literal pipe inside an option can be written as \|
+ * Split on implied option delimiter: unescaped delimiters.
+ * A literal delimiter inside an option can be written as \<delim>
  * A literal backslash can be written as \\ (standard escape behaviour).
  */
 export function splitUnescapedPipes(s: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let escape = false;
-
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-
-    if (escape) {
-      cur += ch;
-      escape = false;
-      continue;
-    }
-
-    if (ch === "\\") {
-      escape = true;
-      continue;
-    }
-
-    if (ch === "|") {
-      out.push(cur);
-      cur = "";
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  out.push(cur);
-  return out;
+  return splitUnescapedDelimiters(s);
 }
 
-export function parseMcqOptionsFromCell(raw: string): { options: string[]; correctIndex: number } {
+export function parseMcqOptionsFromCell(raw: string): { options: string[]; correctIndex: number; correctIndices: number[] } {
   const cleaned = (raw || "").replace(/\r?\n/g, " ").trim();
   if (!cleaned) throw new Error("MCQ options cannot be empty.");
 
-  const parts = cleaned.includes("|")
+  const parts = cleaned.includes(getDelimiter())
     ? splitUnescapedPipes(cleaned)
         .map((x) => x.trim())
         .filter(Boolean)
@@ -67,24 +46,23 @@ export function parseMcqOptionsFromCell(raw: string): { options: string[]; corre
         .map((x) => x.trim())
         .filter(Boolean);
 
-  if (parts.length < 2) throw new Error("MCQ requires at least 2 options (separate with |).");
+  if (parts.length < 2) throw new Error(`MCQ requires at least 2 options (separate with ${getDelimiter()}).`);
 
-  let correctIndex = -1;
+  const correctIndices: number[] = [];
 
   const options = parts.map((p, idx) => {
     const m = p.match(/^\*\*(.+)\*\*$/);
     if (m) {
-      if (correctIndex !== -1) throw new Error("MCQ has more than one bold (correct) option.");
-      correctIndex = idx;
+      correctIndices.push(idx);
       return m[1].trim();
     }
     return p;
   });
 
-  if (correctIndex === -1)
-    throw new Error("MCQ requires exactly one correct option wrapped in ** **.");
+  if (correctIndices.length === 0)
+    throw new Error("MCQ requires at least one correct option wrapped in ** **.");
 
-  return { options, correctIndex };
+  return { options, correctIndex: correctIndices[0], correctIndices };
 }
 
 export function validateClozeText(text: string) {
@@ -96,23 +74,37 @@ export function validateClozeText(text: string) {
 
 export function buildQuestionFor(card: CardRecord): string {
   if (card.type === "basic") return card.q || "";
+  if (card.type === "reversed") return card.a || "";
+  if (card.type === "reversed-child") {
+    return (card as unknown).reversedDirection === "back" ? (card.a || "") : (card.q || "");
+  }
   if (card.type === "mcq") return card.stem || "";
+  if (card.type === "oq") return card.q || "";
   return card.clozeText || "";
 }
 
 export function buildAnswerOrOptionsFor(card: CardRecord): string {
   if (card.type === "basic") return card.a || "";
+  if (card.type === "reversed") return card.q || "";
+  if (card.type === "reversed-child") {
+    return (card as unknown).reversedDirection === "back" ? (card.q || "") : (card.a || "");
+  }
 
   if (card.type === "mcq") {
-    const options = Array.isArray(card.options) ? card.options : [];
-    const correct = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : -1;
+    const options = normalizeCardOptions(card.options);
+    const correctSet = new Set(getCorrectIndices(card));
 
     const rendered = options.map((opt, idx) => {
       const t = escapePipes((opt || "").trim());
-      return idx === correct ? `**${t}**` : t;
+      return correctSet.has(idx) ? `**${t}**` : t;
     });
 
-    return rendered.join(" | ");
+    return rendered.join(` ${getDelimiter()} `);
+  }
+
+  if (card.type === "oq") {
+    const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+    return steps.map((s, i) => `${i + 1}. ${(s || "").trim()}`).join(` ${getDelimiter()} `);
   }
 
   return ""; // cloze: blank

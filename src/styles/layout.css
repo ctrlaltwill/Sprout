@@ -3,54 +3,73 @@
    scrollbar behaviour, wide mode, status bar.
    ========================================================================== */
 
-/* Workspace leaf / view containers: transparent so Sprout theming shows through */
-.workspace-leaf-content.sprout,
-.workspace-leaf-content .sprout,
-.workspace-leaf-content:has(.sprout),
+/* Workspace leaf / view containers: use Obsidian background variable */
 .view-content.sprout,
 .view-content .sprout,
 .view-content:has(.sprout),
-.view-header.sprout,
-.view-header .sprout,
-.view-header:has(.sprout),
 .workspace-leaf.sprout,
 .workspace-leaf .sprout,
 .workspace-leaf:has(.sprout) {
-  background: transparent !important;
+  background: var(--background) !important;
   border-radius: none !important;
+  background-color: var(--background) !important;
+  box-shadow: none !important;
+}
+
+/* Leaf-content: flex column so header takes natural height and view-content fills the rest */
+.workspace-leaf-content.sprout,
+.workspace-leaf-content .sprout,
+.workspace-leaf-content:has(.sprout) {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  border-radius: none !important;
+  box-shadow: none !important;
+}
+
+/* Workspace pinch zoom: content-only (excludes tab headers / side chrome) */
+body.sprout-workspace-content-zoomed
+  .workspace-leaf-content {
+  zoom: var(--sprout-workspace-content-zoom, 1);
+}
+
+/* View-header wrappers: transparent so header card margins are clean */
+.view-header.sprout,
+.view-header .sprout,
+.view-header:has(.sprout) {
+  background: transparent !important;
   background-color: transparent !important;
+  border-radius: none !important;
   box-shadow: none !important;
 }
 
 /* High-level view backgrounds */
-.sprout,
 .sprout .sprout-view-content,
 .sprout .sprout-browser-view,
 .sprout .sprout-analytics-root {
   background-color: var(--background-primary) !important;
 }
 
-/* Workspace leaf containers for Sprout views */
-.workspace-leaf-content.sprout,
-.workspace-leaf-content .sprout {
-  background-color: var(--background-primary) !important;
+/* Exception: modal containers should be transparent to allow backdrop dimming */
+.sprout-modal-container.modal-container {
+  background-color: transparent !important;
 }
 
 /* ---- Content sizing & padding ---- */
 
 /* Keep ONLY the top-level sprout-content-view constrained */
 .sprout .sprout-view-content {
+  position: relative;
+  top: 0;
   width: 100%;
   padding: 40px 0 40px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
 
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
-  max-height: 100%;
-  overflow-y: scroll !important;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* Keep scrollbar at the edge while preserving content padding */
@@ -112,7 +131,7 @@
 .sprout .sprout-modal *::-webkit-scrollbar-thumb,
 .sprout .sprout-modals *::-webkit-scrollbar-thumb {
   background: rgba(120, 120, 120, 0.6);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
 }
 .sprout .sprout-modal::-webkit-scrollbar-track,
 .sprout .sprout-modals::-webkit-scrollbar-track,

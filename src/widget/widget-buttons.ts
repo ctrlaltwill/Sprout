@@ -12,7 +12,7 @@
 
 import { setIcon } from "obsidian";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { placePopover } from "../core/ui";
 
 /* ------------------------------------------------------------------ */
 /*  Hover colour helper                                                */
@@ -36,7 +36,7 @@ export function applyWidgetHoverDarken(btn: HTMLButtonElement) {
  *
  * @param opts.icon   – Lucide icon name (passed to Obsidian `setIcon`)
  * @param opts.label  – Tooltip text (via `data-tooltip`)
- * @param opts.title  – Optional native `title` attribute
+ * @param opts.title  – Optional tooltip override
  * @param opts.className – CSS classes
  * @param opts.onClick   – Click handler
  */
@@ -50,8 +50,8 @@ export function makeIconButton(opts: {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = opts.className;
-  btn.setAttribute("data-tooltip", opts.label);
-  if (opts.title) btn.title = opts.title;
+  btn.setAttribute("data-tooltip", opts.title || opts.label);
+  btn.setAttribute("data-tooltip-position", "top");
   setIcon(btn, opts.icon);
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -70,7 +70,7 @@ export function makeIconButton(opts: {
  * Creates a text button with an optional keyboard-shortcut badge.
  *
  * @param opts.label     – Button label text
- * @param opts.title     – Optional native `title` attribute
+ * @param opts.title     – Optional tooltip override
  * @param opts.className – CSS classes
  * @param opts.onClick   – Click handler
  * @param opts.kbd       – Optional keyboard shortcut string shown as a `<kbd>` badge
@@ -85,7 +85,8 @@ export function makeTextButton(opts: {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = opts.className;
-  if (opts.title) btn.title = opts.title;
+  btn.setAttribute("data-tooltip", opts.title || opts.label);
+  btn.setAttribute("data-tooltip-position", "top");
 
   const content = document.createElement("span");
   content.textContent = opts.label;
@@ -220,27 +221,7 @@ export function attachWidgetMoreMenu(opts: {
 
   let cleanup: (() => void) | null = null;
 
-  const place = () => {
-    const r = trigger.getBoundingClientRect();
-    const margin = 8;
-    const width = Math.max(200, Math.round(panel.getBoundingClientRect().width || 0));
-
-    let left = r.right - width;
-    if (left + width > window.innerWidth - margin) {
-      left = Math.max(margin, window.innerWidth - width - margin);
-    }
-    if (left < margin) left = margin;
-
-    const panelRect = panel.getBoundingClientRect();
-    let top = r.bottom + 6;
-    if (top + panelRect.height > window.innerHeight - margin) {
-      top = Math.max(margin, r.top - panelRect.height - 6);
-    }
-
-    setCssProps(popover, "--sprout-popover-left", `${left}px`);
-    setCssProps(popover, "--sprout-popover-top", `${top}px`);
-    setCssProps(popover, "--sprout-popover-width", `${width}px`);
-  };
+  const place = () => placePopover({ trigger, panel, popoverEl: popover });
 
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");

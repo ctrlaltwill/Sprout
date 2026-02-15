@@ -93,6 +93,8 @@ export async function exportToApkg(
     if (c.type === "io" || c.type === "io-child") return false;
     // Exclude cloze children — the parent note generates Anki cards from cloze indices
     if (c.type === "cloze-child") return false;
+    // Exclude reversed children — the parent reversed card is the export unit
+    if (c.type === "reversed-child") return false;
     return true;
   });
 

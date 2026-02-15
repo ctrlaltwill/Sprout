@@ -16,7 +16,13 @@
 import { setIcon } from "obsidian";
 import { log } from "../core/logger";
 import { type ColKey, type DropdownOption, clearNode } from "./browser-helpers";
-import { setCssProps } from "../core/ui";
+import { placePopover } from "../core/ui";
+
+function getBoundsEl(trigger: HTMLElement): Element | null {
+  return trigger.closest(".workspace-leaf-content.sprout.theme-dark")
+    ?? trigger.closest(".workspace-leaf-content.sprout")
+    ?? trigger.closest(".workspace-leaf-content");
+}
 
 // ── Generic dropdown menu ──────────────────────────────────
 
@@ -47,6 +53,7 @@ export function makeDropdownMenu<T extends string>(
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("data-tooltip", args.label);
+  trigger.setAttribute("data-tooltip-position", "top");
   trigger.classList.add("sprout-pointer-auto");
   root.appendChild(trigger);
 
@@ -161,26 +168,12 @@ export function makeDropdownMenu<T extends string>(
     }
   };
 
-  const place = () => {
-    const r = trigger.getBoundingClientRect();
-    const margin = 8;
-    const width = Math.max(220, args.widthPx ?? 240);
-
-    const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
-
-    // measure panel height after attached so we can optionally place above (dropUp)
-    const panelRect = panel.getBoundingClientRect();
-    let top: number;
-    if (args.dropUp) {
-      top = Math.max(margin, r.top - panelRect.height - 6);
-    } else {
-      top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
-    }
-
-    setCssProps(popover, "--sprout-popover-left", `${left}px`);
-    setCssProps(popover, "--sprout-popover-top", `${top}px`);
-    setCssProps(popover, "--sprout-popover-width", `${width}px`);
-  };
+  const place = () => placePopover({
+    trigger, panel, popoverEl: popover,
+    width: Math.max(220, args.widthPx ?? 240),
+    dropUp: args.dropUp,
+    boundsEl: getBoundsEl(trigger),
+  });
 
   let cleanup: (() => void) | null = null;
 
@@ -304,6 +297,7 @@ export function makeColumnsDropdown(
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("data-tooltip", args.label);
+  trigger.setAttribute("data-tooltip-position", "top");
   root.appendChild(trigger);
 
   const trigIcon = document.createElement("span");
@@ -411,18 +405,11 @@ export function makeColumnsDropdown(
     }
   };
 
-  const place = () => {
-    const r = trigger.getBoundingClientRect();
-    const margin = 8;
-    const width = Math.max(220, args.widthPx ?? 260);
-    const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
-    const panelRect = panel.getBoundingClientRect();
-    const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - panelRect.height - margin));
-
-    setCssProps(popover, "--sprout-popover-left", `${left}px`);
-    setCssProps(popover, "--sprout-popover-top", `${top}px`);
-    setCssProps(popover, "--sprout-popover-width", `${width}px`);
-  };
+  const place = () => placePopover({
+    trigger, panel, popoverEl: popover,
+    width: Math.max(220, args.widthPx ?? 260),
+    boundsEl: getBoundsEl(trigger),
+  });
 
   let cleanup: (() => void) | null = null;
   let autoCloseTimer: number | null = null;

@@ -32,6 +32,8 @@ export type Session = {
   _bcStamp?: number;
   /** MCQ shuffled option order, keyed by card ID. */
   mcqOrderMap?: Record<string, number[]>;
+  /** OQ shuffled step order, keyed by card ID. */
+  oqOrderMap?: Record<string, number[]>;
   /** Skip counts per card ID, used by the skip feature. */
   skipCounts?: Record<string, number>;
   /** Session mode identifier. */

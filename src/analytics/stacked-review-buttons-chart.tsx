@@ -14,12 +14,14 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
 import { endTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
 import { MS_DAY } from "../core/constants";
+import { cssClassForProps } from "../core/ui";
 
 function InfoIcon(props: { text: string }) {
   return (
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -87,7 +89,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="svg-icon sprout-ana-chevron"
+      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -97,7 +99,6 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -205,6 +206,7 @@ function usePopoverPlacement(
 const TYPE_LABELS: Record<string, string> = {
   all: "All cards",
   basic: "Basic",
+  "reversed-child": "Basic (Reversed)",
   "cloze-child": "Cloze",
   "io-child": "Image occlusion",
   mcq: "Multiple choice",
@@ -214,6 +216,7 @@ function normalizeEventType(raw: string) {
   const t = String(raw ?? "").toLowerCase();
   if (t === "cloze") return "cloze-child";
   if (t === "io") return "io-child";
+  if (t === "reversed") return "reversed-child";
   return t;
 }
 
@@ -279,7 +282,7 @@ function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: u
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;
   return (
-    <div className="rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs">
+    <div className="sprout-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{datum.date}</div>
       <div className="text-background">Again: {datum.again}</div>
       <div className="text-background">Hard: {datum.hard}</div>
@@ -339,7 +342,7 @@ export function StackedReviewButtonsChart(props: {
   const todayIndex = React.useMemo(() => localDayIndex(Date.now(), formatter), [formatter]);
   const startIndex = todayIndex - (durationDays - 1);
 
-  const availableTypes = React.useMemo(() => ["all", "basic", "cloze-child", "io-child", "mcq"], []);
+  const availableTypes = React.useMemo(() => ["all", "basic", "reversed-child", "cloze-child", "io-child", "mcq"], []);
 
   const cardById = React.useMemo(() => {
     const map = new Map<string, CardLike>();
@@ -785,29 +788,25 @@ export function StackedReviewButtonsChart(props: {
       <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground">
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": COLORS.again } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.again })}`}
           />
           <span className="bc">Again</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": COLORS.hard } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.hard })}`}
           />
           <span className="bc">Hard</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": COLORS.good } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.good })}`}
           />
           <span className="bc">Good</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": COLORS.easy } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.easy })}`}
           />
           <span className="bc">Easy</span>
         </div>

@@ -48,7 +48,6 @@ export function renderPagination(
 
   const nav = document.createElement("nav");
   nav.setAttribute("role", "navigation");
-  nav.setAttribute("data-tooltip", "Pagination");
   nav.className = "flex items-center gap-2";
   host.appendChild(nav);
 
@@ -59,6 +58,7 @@ export function renderPagination(
     b.classList.add(..."h-8 px-2".split(" "));
     b.textContent = label;
     b.setAttribute("data-tooltip", tooltip);
+    b.setAttribute("data-tooltip-position", "top");
     b.disabled = disabled;
     if (active) b.setAttribute("aria-current", "page");
     b.addEventListener("click", (ev) => {
@@ -76,6 +76,7 @@ export function renderPagination(
     b.className = "btn-outline h-8 px-2";
     b.textContent = "…";
     b.setAttribute("data-tooltip", `Page ${targetPage}`);
+    b.setAttribute("data-tooltip-position", "top");
     b.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -101,6 +102,7 @@ export function renderPagination(
   prev.className = "btn-outline";
   prev.classList.add(..."h-8 px-2".split(" "));
   prev.setAttribute("data-tooltip", "Previous page");
+  prev.setAttribute("data-tooltip-position", "top");
   prev.disabled = pageIndex <= 0;
   prev.addEventListener("click", (ev) => {
     ev.preventDefault();
@@ -161,6 +163,7 @@ export function renderPagination(
   next.className = "btn-outline";
   next.classList.add(..."h-8 px-2".split(" "));
   next.setAttribute("data-tooltip", "Next page");
+  next.setAttribute("data-tooltip-position", "top");
   next.disabled = pageIndex >= totalPagesLocal - 1;
   next.addEventListener("click", (ev) => {
     ev.preventDefault();

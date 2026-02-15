@@ -24,6 +24,9 @@
 /* 6. Modals — backdrop, panel, close button, card editor, IO modal */
 @import "./modals.css";
 
+/* 6a. What's New Modal — release notes modal */
+@import "../modals/whats-new-modal/whats-new-modal.css";
+
 /* 7. Tooltips — base, modal, dark, settings, browser-table */
 @import "./tooltips.css";
 

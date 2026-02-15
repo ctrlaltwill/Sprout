@@ -10,6 +10,7 @@
   margin-left: auto !important;
   margin-right: auto !important;
   max-width: var(--sprout-review-max-width, 100%) !important;
+  max-height: 100% !important;
 }
 
 .sprout .sprout-session-column {
@@ -23,7 +24,7 @@
   max-height: none !important;
   height: fit-content !important;
   max-height: max-content !important;
-  border-radius: var(--radius);
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   box-shadow: none !important;
   padding-left: 0 !important;
@@ -121,13 +122,13 @@
   width: var(--sprout-cloze-width, auto) !important;
 }
 
-.sprout .sprout-cloze-revealed {
+.sprout .sprout-cloze-revealed:not(.sprout-cloze-typed-correct):not(.sprout-cloze-typed-wrong) {
   color: var(--sprout-cloze-color, inherit) !important;
 }
 
 .sprout-session-card header {
-  padding: 0em 0em 2em 0em !important;
-  margin: 1.5rem 2.5rem 0.5rem;
+  margin: 2.5rem 2.5rem 0rem;
+    padding: 0 0 2em !important;
 }
 
 .sprout-session-card section {
@@ -138,13 +139,13 @@
 
 .sprout-session-card footer {
   border-top: 1px solid var(--border);
-  padding: 3em 0em 1em 0rem !important;
-  margin: 2.5rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 2.5rem 0rem !important;
+    display: flex;
+    padding: 2.5rem 0rem;
 }
 
 /* Timer icon */
@@ -186,7 +187,7 @@
 /* ---- Mark element (cloze answer reveals) ---- */
 
 .sprout mark {
-  border-radius: 3px;
+  border-radius: var(--radius-s);
   background-color: rgb(0, 0, 0);
   color: white;
   padding: 0px 4px;
@@ -195,7 +196,7 @@
 
 .sprout-session-card header {
   border-bottom: 1px solid var(--border) !important;
-  border-radius: 0px;
+  border-radius: 0;
 }
 
 /* ---- Q / A / MCQ styling ---- */
@@ -208,7 +209,7 @@
 /* Answer styling: black, slightly larger */
 .sprout-session-card .sprout-a {
   color: rgb(0, 0, 0) !important;
-  font-size: 1.0625rem !important; /* text-md equivalent */
+  font-size: var(--sprout-font-sm-plus) !important; /* text-md equivalent */
 }
 .sprout-session-card .sprout-mcq-correct {
   border-color: rgb(34, 197, 94) !important; /* green */
@@ -230,7 +231,7 @@
 
 /* Extra information: match answer font size */
 .sprout-session-card .sprout-info {
-  font-size: 1.0625rem !important; /* align with .sprout-a */
+  font-size: var(--sprout-font-sm-plus) !important; /* align with .sprout-a */
 }
 
 /* ---- Cloze reveals ---- */
@@ -239,7 +240,7 @@
   font-weight: 500;
   background-color: var(--theme-accent);
   color: white;
-  border-radius: 3px;
+  border-radius: var(--radius-s);
   padding: 1px 5px;
   margin: 0px 1px;
 }
@@ -250,7 +251,7 @@
   min-height: 1em !important;
   margin-left: 0 !important;
   margin-right: 4px !important;
-  border-radius: 0px !important;
+  border-radius: 0 !important;
 }
 
 /* ---- Ensure session cards stay content-sized ---- */
@@ -316,7 +317,7 @@
   outline: none;
   box-shadow: none;
   border-radius: 0 !important;
-  padding: 0 0.15em;
+  padding: 0 .15em;
   margin: 0 -0.15em;
   min-width: 0;
   appearance: none;
@@ -344,7 +345,7 @@
   position: absolute !important;
   top: 12px !important;
   right: 12px !important;
-  z-index: 10;
+  z-index: 5;
   cursor: pointer;
 
   /* Theme-aware styling (matches btn-icon-outline) */
@@ -352,7 +353,7 @@
   color: var(--foreground) !important;
   border: 1px solid var(--border) !important;
   box-shadow: none !important;
-  border-radius: var(--radius) !important;
+  border-radius: var(--radius-m) !important;
   padding: 0.375rem !important;
   min-width: 32px;
   min-height: 32px;
@@ -394,10 +395,46 @@
   border-color: var(--muted) !important;
 }
 
+/* ---- TTS replay button ---- */
+
+.sprout-label-row {
+  gap: 4px;
+}
+
+.sprout-tts-replay-btn {
+  cursor: pointer;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: var(--radius-s) !important;
+  padding: 2px !important;
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  opacity: 0.6;
+}
+
+.sprout-tts-replay-btn:hover,
+.sprout-tts-replay-btn:focus-visible {
+  color: var(--text-normal) !important;
+  background: var(--background-modifier-hover) !important;
+  opacity: 1;
+}
+
+.sprout-tts-replay-btn:active {
+  color: var(--text-normal) !important;
+  background: var(--background-modifier-active-hover) !important;
+  opacity: 1;
+}
+
 /* ---- Markdown block text (Q/A/cloze/info) ---- */
 
 .sprout-md-block {
-  font-size: 14px !important;
+  font-size: var(--sprout-font-xs) !important;
   line-height: 1.75 !important;
 }
 
@@ -434,7 +471,7 @@
 .sprout-mcq-option-text {
   line-height: 1.75;
   display: block;
-  font-size: 14px !important;
+  font-size: var(--sprout-font-xs) !important;
 }
 
 .sprout-mcq-option-line {
@@ -442,26 +479,184 @@
   margin-bottom: 2px;
 }
 
+/* Multi-answer MCQ: selected (toggle) state */
+/* Use .sprout .btn-outline.sprout-mcq-selected to beat .sprout .btn-outline specificity (0-3-0 > 0-2-0) */
+.sprout .btn-outline.sprout-mcq-selected,
+.sprout-mcq-selected {
+  border-color: var(--interactive-accent) !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  background-color: rgba(var(--interactive-accent-rgb, 59, 130, 246), 0.08) !important;
+}
+
+/* Multi-answer MCQ: missed correct answer on reveal */
+.sprout-mcq-missed-correct {
+  border-color: rgb(34, 197, 94) !important;
+  border-width: 2px !important;
+  border-style: dashed !important;
+  opacity: 0.75;
+}
+
+.theme-dark .sprout-mcq-missed-correct {
+  border-color: rgba(34, 197, 94, 0.6) !important;
+}
+
+/* Multi-answer MCQ submit button */
+.sprout-mcq-submit-btn {
+  cursor: pointer;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  box-shadow: none !important;
+  transition: opacity 0.15s;
+}
+
+.sprout-mcq-submit-btn:hover {
+  opacity: 0.9;
+}
+
+/* OQ submit button — remove box shadow */
+.sprout-oq-submit-btn {
+  box-shadow: none !important;
+}
+
+/* Shake animation for empty MCQ submit */
+@keyframes sprout-shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(5px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(1px); }
+}
+
+.sprout-mcq-submit-shake {
+  animation: sprout-shake 0.5s ease-in-out;
+}
+
+/* Force-show tooltip when class is applied programmatically */
+.sprout-mcq-submit-tooltip-visible::after {
+  opacity: 1 !important;
+  transition-delay: 0s !important;
+}
+
+/* ---- OQ (Ordering Question) drag-to-reorder ---- */
+
+.sprout-oq-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sprout-oq-step-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background-secondary);
+  padding: 6px 12px;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+  transform: translateY(var(--sprout-oq-translate, 0px));
+}
+
+.sprout-oq-step-list.sprout-oq-drag-active,
+.sprout-oq-step-list.sprout-oq-drag-active * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sprout-oq-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.sprout-oq-grip:active {
+  cursor: grabbing;
+}
+
+.sprout-oq-step-text {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  flex: 1;
+  font-size: var(--sprout-font-xs);
+  line-height: 1.75;
+}
+
+.sprout-oq-row-dragging {
+  opacity: 0.4;
+}
+
+.sprout-oq-row-anim {
+  transition: transform 0.18s ease;
+}
+
+/* Correct placement – green border */
+.sprout-oq-correct-highlight {
+  border-color: rgb(34, 197, 94) !important;
+  background-color: rgb(220, 252, 231) !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Wrong placement – red border */
+.sprout-oq-wrong-highlight {
+  border-color: rgb(239, 68, 68) !important;
+  background-color: rgb(254, 226, 226) !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Dark mode overrides */
+.theme-dark .sprout-oq-correct-highlight {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+}
+
+.theme-dark .sprout-oq-wrong-highlight {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
 /* ---- Grading buttons ---- */
+
+/* Remove box shadow from all reviewer footer buttons to match outline buttons */
+.sprout .sprout-session-card footer .btn {
+  box-shadow: none !important;
+}
 
 .sprout-btn-again {
   background-color: var(--sprout-again-bg) !important;
   color: var(--sprout-again-fg) !important;
+  box-shadow: none !important;
 }
 
 .sprout-btn-hard {
   background-color: var(--sprout-hard-bg) !important;
   color: var(--sprout-hard-fg) !important;
+  box-shadow: none !important;
 }
 
 .sprout-btn-good {
   background-color: var(--sprout-good-bg) !important;
   color: var(--sprout-good-fg) !important;
+  box-shadow: none !important;
 }
 
 .sprout-btn-easy {
   background-color: var(--sprout-easy-bg) !important;
   color: var(--sprout-easy-fg) !important;
+  box-shadow: none !important;
 }
 
 .sprout-btn-start-practice {
@@ -475,4 +670,139 @@
   opacity: 1 !important;
   transform: none !important;
   transition: none !important;
+}
+
+/* ---- Typed cloze input (front) ---- */
+
+.sprout-cloze-typed-wrap {
+  display: inline-block;
+  vertical-align: baseline;
+  margin: 0;
+}
+
+.sprout-cloze-typed-input {
+  font-family: inherit;
+  font-size: var(--sprout-font-xs) !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  padding: 2px 8px !important;
+  margin: 0 2px 0 0 !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: var(--radius-s) !important;
+  background: var(--background-primary) !important;
+  color: var(--text-normal);
+  outline: none !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box !important;
+  min-height: unset !important;
+  height: auto !important;
+}
+
+/* Compact padding in widget sidebar */
+.sprout-widget .sprout-cloze-typed-input {
+  padding: 2px 4px;
+}
+
+.sprout-cloze-typed-input:hover {
+  background: var(--background-primary) !important;
+}
+
+.sprout-cloze-typed-input:focus {
+  border-width: 1px !important;
+  border-color: var(--background-modifier-border) !important;
+  box-shadow: none !important;
+}
+
+/* When a state class is present, the state colours beat the generic :focus styles */
+.sprout-cloze-typed-input.sprout-cloze-typed--partial:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-hard-bg) !important;
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 10%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-hard-bg) 18%, transparent) !important;
+}
+
+.sprout-cloze-typed-input.sprout-cloze-typed--correct:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-good-bg) !important;
+  background-color: color-mix(in srgb, var(--sprout-good-bg) 10%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-good-bg) 18%, transparent) !important;
+}
+
+.sprout-cloze-typed-input.sprout-cloze-typed--wrong:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-again-bg) !important;
+  background-color: color-mix(in srgb, var(--sprout-again-bg) 10%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-again-bg) 18%, transparent) !important;
+}
+
+/* Question title (replaces Setting heading) */
+.sprout-question-title {
+  font-size: var(--sprout-font-md-plus);
+  font-weight: 700;
+  line-height: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: center;
+  padding: 0;
+}
+
+/* Typed input states */
+.sprout-cloze-typed-input.sprout-cloze-typed--partial {
+  border-color: var(--sprout-hard-bg) !important;
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 10%, transparent) !important;
+  color: var(--sprout-hard-bg) !important;
+}
+
+.sprout-cloze-typed-input.sprout-cloze-typed--correct {
+  border-color: var(--sprout-good-bg) !important;
+  background-color: color-mix(in srgb, var(--sprout-good-bg) 10%, transparent) !important;
+  color: var(--sprout-good-bg) !important;
+}
+
+.sprout-cloze-typed-input.sprout-cloze-typed--wrong {
+  border-color: var(--sprout-again-bg) !important;
+  background-color: color-mix(in srgb, var(--sprout-again-bg) 10%, transparent) !important;
+  color: var(--sprout-again-bg) !important;
+}
+
+/* ---- Typed cloze result pills (back) ---- */
+/* Override .sprout-cloze-revealed base so back pills fully match front input styling */
+
+.sprout-cloze-typed-correct,
+.sprout-cloze-typed-wrong {
+  display: inline-block;
+  font-family: inherit;
+  font-size: var(--sprout-font-xs) !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  padding: 2px 8px 2px 8px!important;
+  margin: 0 2px 0 4px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--radius-s) !important;
+  box-sizing: border-box !important;
+  vertical-align: baseline;
+}
+
+/* Compact padding in widget sidebar */
+.sprout-widget .sprout-cloze-typed-correct,
+.sprout-widget .sprout-cloze-typed-wrong {
+  padding: 2px 4px;
+}
+
+/* When wrong + correct pills sit side-by-side, collapse the gap between them */
+.sprout-cloze-typed-wrong + .sprout-cloze-typed-correct {
+  margin-left: 0px !important;
+}
+
+.sprout-cloze-typed-correct {
+  background-color: color-mix(in srgb, var(--sprout-good-bg) 10%, transparent) !important;
+  color: var(--sprout-good-bg) !important;
+  border: 1px solid var(--sprout-good-bg) !important;
+}
+
+.sprout-cloze-typed-wrong {
+  background-color: color-mix(in srgb, var(--sprout-again-bg) 10%, transparent) !important;
+  color: var(--sprout-again-bg) !important;
+  border: 1px solid var(--sprout-again-bg) !important;
+  text-decoration: line-through;
 }

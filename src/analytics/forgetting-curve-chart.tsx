@@ -17,12 +17,14 @@ import type { CardRecord, CardState, ReviewLogEntry } from "../core/store";
 import type { ReviewResult } from "../types/review";
 import { gradeFromPassFail, gradeFromRating, resetCardScheduling, type SchedulerSettings } from "../scheduler/scheduler";
 import { useAnalyticsPopoverZIndex } from "./filter-styles";
+import { cssClassForProps } from "../core/ui";
 
 function InfoIcon(props: { text: string }) {
   return (
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -238,7 +240,7 @@ function CardCurveTooltip(props: { active?: boolean; payload?: Array<{ value?: n
     day: "numeric",
   });
   return (
-    <div className="bc rounded-lg bg-foreground text-background px-3 py-2 text-xs">
+    <div className="bc sprout-data-tooltip-surface">
       <div className="bc text-sm font-medium text-background">{date}</div>
       {props.payload.map((entry) => {
         const value = Number(entry?.value ?? 0);
@@ -246,8 +248,7 @@ function CardCurveTooltip(props: { active?: boolean; payload?: Array<{ value?: n
         return (
           <div key={entry.dataKey} className="bc flex items-center gap-2">
             <span
-              className="bc inline-block size-2 rounded-full sprout-ana-legend-dot"
-              style={{ "--sprout-legend-color": entry.color } as React.CSSProperties}
+              className={`bc inline-block size-2 rounded-full sprout-ana-legend-dot ${cssClassForProps({ "--sprout-legend-color": entry.color })}`}
             />
             <span className="bc text-background">{idLabel}</span>
             <span className="bc text-background">{Math.round(value * 100)}%</span>
@@ -337,7 +338,10 @@ export function ForgettingCurveChart(props: {
   }, [reviewLog, selectedIds.length, cardById]);
 
   const searchIndex = React.useMemo(() => {
-    return (props.cards ?? []).map((card) => {
+    const PARENT_TYPES = new Set(["cloze", "reversed", "io", "io-parent", "io_parent", "ioparent"]);
+    return (props.cards ?? [])
+      .filter((card) => !PARENT_TYPES.has(String(card?.type ?? "").toLowerCase()))
+      .map((card) => {
       const id = String(card.id);
       const label = formatCardLabel(id);
       const idDigits = extractNineDigitId(id) ?? "";
@@ -568,8 +572,7 @@ export function ForgettingCurveChart(props: {
         {legendItems.map((item) => (
           <div key={item.id} className="bc inline-flex items-center gap-2">
             <span
-              className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-              style={{ "--sprout-legend-color": item.color } as React.CSSProperties}
+              className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": item.color })}`}
             />
             <span data-tooltip={item.tooltip || undefined}>{item.label}</span>
             {item.status ? <span className="bc text-muted-foreground">({item.status})</span> : null}

@@ -1,41 +1,61 @@
 /* ============================================================================
    TOOLTIPS — Default, modal, dark-mode, settings, browser-table tooltips.
+   Positioned absolutely relative to parent, similar to popovers.
    ========================================================================== */
 
 /* ---- Base tooltip ---- */
 
 [data-tooltip] {
   position: relative;
+  overflow: visible !important;
 }
 
-/* Default tooltip below */
 [data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: -35px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--foreground);
-  color: #fff;
   padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  min-width: 160px;
-  max-width: 300px;
+  border-radius: var(--radius-m);
+  font-size: var(--sprout-font-2xs) !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  max-width: min(300px, var(--sprout-tooltip-max-width, 300px));
   width: max-content;
   white-space: normal;
   overflow-wrap: anywhere;
   text-align: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 3000;
-  transition-delay: 1s;
-  border: none;
+  transition: opacity 0.15s ease;
+  transition-delay: 0s;
+  z-index: 2147483647 !important;
+  /* Theme-aware: inverted surface/text — !important to beat any theme overrides */
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  -webkit-font-smoothing: antialiased !important;
 }
 
 [data-tooltip]:hover::after {
   opacity: 1;
+  transition-delay: 0.8s;
+}
+
+/* Lift the hovered element above any parent stacking context (e.g. sticky header) */
+[data-tooltip]:hover {
+  z-index: 2147483646 !important;
+}
+
+/* Escalate ancestor stacking context within .sprout so the tooltip
+   ::after is never trapped behind sibling layers.
+   Exclude scroll containers to prevent glitchy behavior. */
+.sprout *:has([data-tooltip]:hover):not(.sprout-browser-table-wrap) {
+  z-index: 2147483646 !important;
+}
+
+/* Only allow overflow:visible on table cells and rows, not on scroll containers */
+.sprout tr:has([data-tooltip]:hover),
+.sprout td:has([data-tooltip]:hover) {
+  overflow: visible !important;
 }
 
 [data-tooltip]::before {
@@ -43,41 +63,60 @@
   display: none !important;
 }
 
-/* ---- Modal info tooltips: place to the right ---- */
+/* ---- Shared tooltip surface (for programmatic tooltips) ---- */
 
-/* ---- Modal tooltips: show above to avoid clipping in scrollable modals ---- */
-
-.sprout .sprout-modal [data-tooltip]::after,
-.sprout .sprout-modals [data-tooltip]::after {
-  bottom: calc(100% + 8px);
-  top: auto;
-  z-index: 10000;
+.sprout .sprout-data-tooltip-surface {
+  padding: 6px 10px;
+  border-radius: var(--radius-m);
+  font-size: var(--sprout-font-2xs);
+  font-weight: 400;
+  line-height: 1.4;
+  background-color: var(--foreground);
+  color: var(--background);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  -webkit-font-smoothing: antialiased;
 }
 
-.sprout .sprout-modal [data-tooltip]:has(.lucide-info)::after,
-.sprout .sprout-modals [data-tooltip]:has(.lucide-info)::after {
-  bottom: auto;
+/* ---- Tooltip positioning classes ---- */
+
+/* Bottom (default) — centred horizontally, just below the parent */
+[data-tooltip]::after,
+[data-tooltip-position="bottom"]::after {
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px)));
+}
+
+/* Top — centred horizontally, just above the parent */
+[data-tooltip-position="top"]::after {
+  bottom: calc(100% + 6px);
+  top: auto;
+  left: 50%;
+  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px)));
+}
+
+/* Left — centred vertically, just left of the parent */
+[data-tooltip-position="left"]::after {
+  right: calc(100% + 6px);
+  left: auto;
   top: 50%;
-  left: calc(100% + 8px);
   transform: translateY(-50%);
-  text-align: left;
-  z-index: 10000;
+}
+
+/* Right — centred vertically, just right of the parent */
+[data-tooltip-position="right"]::after {
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* ---- Dark mode tooltip contrast ---- */
 
 .theme-dark .sprout [data-tooltip]::after {
-  background-color: #111214;
-  color: #fff !important;
-  border: 1px solid var(--border);
-}
-
-/* ---- Tooltips above for browser table controls ---- */
-
-.sprout .sprout-view-content .btn-outline[data-tooltip]::after,
-.sprout .sprout-view-content .btn-icon-outline[data-tooltip]::after {
-  bottom: auto;
-  top: -35px;
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
+  border: 1px solid var(--border) !important;
 }
 
 /* ---- Settings tooltips: allow overflow and ensure visibility ---- */
@@ -87,10 +126,33 @@
 .sprout-settings .setting-item-info {
   overflow: visible !important;
 }
-.sprout-settings [data-tooltip]::after {
-  z-index: 10000;
-}
 
 .sprout-settings .setting-item {
   margin-bottom: 0px !important;
+}
+
+/* ---- Runtime measuring element (used by src/core/tooltip-positioner.ts) ---- */
+
+.sprout-tooltip-measure {
+  position: fixed;
+  left: -99999px;
+  top: -99999px;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+
+  padding: 6px 10px;
+  border-radius: var(--radius-m);
+  font-size: var(--sprout-font-2xs);
+  font-weight: 400;
+  line-height: 1.4;
+  width: max-content;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+
+  background-color: var(--foreground);
+  color: var(--background);
+  border: 1px solid var(--border);
+  -webkit-font-smoothing: antialiased;
 }

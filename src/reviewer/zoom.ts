@@ -8,6 +8,7 @@
  */
 
 import { Modal, type App } from "obsidian";
+import { scopeModalToWorkspace } from "../modals/modal-utils";
 
 export class SproutImageZoomModal extends Modal {
   private src: string;
@@ -20,6 +21,7 @@ export class SproutImageZoomModal extends Modal {
   }
 
   onOpen() {
+    scopeModalToWorkspace(this);
     this.contentEl.empty();
 
     // CSS hooks (you'll add CSS below)

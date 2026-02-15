@@ -109,8 +109,8 @@ export function buildCardBlockMarkdown(id: string, rec: CardRecord): string[] {
   const title = (rec.title || "").trim();
   if (title) pushPipeField("T", title);
 
-  if (rec.type === "basic") {
-    pushPipeField("Q", (rec.q || "").trim());
+  if (rec.type === "basic" || rec.type === "reversed") {
+    pushPipeField(rec.type === "reversed" ? "RQ" : "Q", (rec.q || "").trim());
     pushPipeField("A", (rec.a || "").trim());
   } else if (rec.type === "cloze") {
     pushPipeField("CQ", (rec.clozeText || "").trim());

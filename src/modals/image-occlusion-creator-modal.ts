@@ -36,6 +36,7 @@ import {
 } from "../imageocclusion/io-helpers";
 import {
   setModalTitle,
+  scopeModalToWorkspace,
   type ClipboardImage,
 } from "./modal-utils";
 
@@ -146,6 +147,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     const headerTitle = editing ? "Edit Image Occlusion Card" : "Add Image Occlusion Card";
     setModalTitle(this, headerTitle);
 
+    scopeModalToWorkspace(this);
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
@@ -375,13 +377,21 @@ export class ImageOcclusionCreatorModal extends Modal {
       }
     };
 
+    // Determine default mode (from settings or existing card)
+    let defaultMode: "solo" | "all" = this.plugin.settings?.imageOcclusion?.defaultMaskMode || "solo";
+    if (editing && this.editParentId) {
+      const ioMap = this.plugin.store?.data?.io || {};
+      const def = ioMap[String(this.editParentId)] || null;
+      if (def && (def.maskMode === "solo" || def.maskMode === "all")) {
+        defaultMode = def.maskMode;
+      }
+    }
 
     // ── Footer buttons ──────────────────────────────────────────────────────
     buildFooter(modalRoot, {
       onCancel: () => this.close(),
-      onSaveAll: () => void saveIo("all"),
-      onSaveSolo: () => void saveIo("solo"),
-    });
+      onSave: (mode) => void saveIo(mode),
+    }, defaultMode);
   }
 
   // ── Tool management ───────────────────────────────────────────────────────

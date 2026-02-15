@@ -10,7 +10,6 @@ import { Notice, setIcon } from "obsidian";
 import { log } from "../core/logger";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import { setCssProps } from "../core/ui";
 import {
   buildAnswerOrOptionsFor,
   escapePipes,
@@ -24,6 +23,7 @@ import {
   fmtDue,
   fmtLocation,
   parseGroupsInput,
+  createThemedDropdown,
 } from "./modal-utils";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -42,13 +42,13 @@ function coerceGroups(g: unknown): string[] {
   if (Array.isArray(g)) return g.map((x: unknown) => String(x)).filter(Boolean);
   if (typeof g === "string") {
     return g
-      .split(/[,;]/)
+      .split(/,/)
       .map((x) => x.trim())
       .filter(Boolean);
   }
   if (typeof g === "number" || typeof g === "boolean") {
     return String(g)
-      .split(/[,;]/)
+      .split(/,/)
       .map((x) => x.trim())
       .filter(Boolean);
   }
@@ -81,7 +81,6 @@ export function openBulkEditModalForCards(
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-bg";
-  setCssProps(backdrop, "opacity", "0.85");
   container.appendChild(backdrop);
 
   // ── Panel container ─────────────────────────────────────────────────────
@@ -92,6 +91,8 @@ export function openBulkEditModalForCards(
   // ── Close button (matches Obsidian modal-close-button) ──────────────────
   const close = document.createElement("div");
   close.className = "modal-close-button mod-raised clickable-icon";
+  close.setAttribute("data-tooltip", "Close");
+  close.setAttribute("data-tooltip-position", "top");
   setIcon(close, "x");
   panel.appendChild(close);
 
@@ -116,6 +117,7 @@ export function openBulkEditModalForCards(
   const normalizedTypes = cards.map((c) => String(c?.type ?? "").toLowerCase());
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
   const isSingleMcq = cards.length === 1 && normalizedTypes[0] === "mcq";
+  const isSingleOq = cards.length === 1 && normalizedTypes[0] === "oq";
 
   // Map of input elements by field key
   const inputEls: Record<string, HTMLInputElement | HTMLTextAreaElement> = {};
@@ -135,12 +137,13 @@ export function openBulkEditModalForCards(
     const vals = filtered.map((card) => {
       if (field === "title") return String(card.title || "");
       if (field === "question") {
-        if (card.type === "basic") return String(card.q || "");
+        if (card.type === "basic" || card.type === "reversed") return String(card.q || "");
         if (card.type === "mcq") return String(card.stem || "");
+        if (card.type === "oq") return String(card.q || "");
         if (card.type === "cloze") return String(card.clozeText || "");
       }
       if (field === "answer") {
-        if (card.type === "basic") return String(card.a || "");
+        if (card.type === "basic" || card.type === "reversed") return String(card.a || "");
         if (card.type === "mcq") return buildAnswerOrOptionsFor(card);
       }
       if (field === "info") return String(card.info || "");
@@ -200,7 +203,41 @@ export function openBulkEditModalForCards(
   const state0 = plugin.store.getState(card0.id);
 
   topGrid.appendChild(createReadonlyField("ID", card0.id));
-  topGrid.appendChild(createReadonlyField("Type", typeLabelBrowser(card0.type)));
+
+  // For basic/reversed cards, allow toggling between the two types
+  const isBasicOrReversed = card0.type === "basic" || card0.type === "reversed";
+  let selectedType: string = card0.type;
+
+  if (isBasicOrReversed) {
+    const typeWrapper = document.createElement("div");
+    typeWrapper.className = "bc flex flex-col gap-1";
+
+    const typeLabelEl = document.createElement("label");
+    typeLabelEl.className = "bc text-sm font-medium";
+    typeLabelEl.textContent = "Type";
+    typeWrapper.appendChild(typeLabelEl);
+
+    const typeDropdown = createThemedDropdown(
+      [
+        { value: "basic", label: "Basic" },
+        { value: "reversed", label: "Basic (Reversed)" },
+      ],
+      card0.type,
+      undefined,
+      {
+        fullWidth: false,
+        buttonSize: "sm",
+        buttonJustify: "start",
+        buttonClassName: "cursor-pointer",
+      },
+    );
+    typeDropdown.onChange((value) => { selectedType = value; });
+    typeWrapper.appendChild(typeDropdown.element);
+    topGrid.appendChild(typeWrapper);
+  } else {
+    topGrid.appendChild(createReadonlyField("Type", typeLabelBrowser(card0.type)));
+  }
+
   topGrid.appendChild(createReadonlyField("Stage", stageLabel(String(state0?.stage || "new"))));
   topGrid.appendChild(
     createReadonlyField("Due", state0 && Number.isFinite(state0.due) ? fmtDue(state0.due) : "—"),
@@ -212,8 +249,8 @@ export function openBulkEditModalForCards(
   form.appendChild(createFieldWrapper("Title", "title"));
   form.appendChild(createFieldWrapper("Question", "question"));
 
-  // Answer field (only for non-cloze, skip for MCQ which has its own editor)
-  if (hasNonCloze && !isSingleMcq) {
+  // Answer field (only for non-cloze, skip for MCQ/OQ which have their own editors)
+  if (hasNonCloze && !isSingleMcq && !isSingleOq) {
     form.appendChild(createFieldWrapper("Answer", "answer"));
   }
 
@@ -285,6 +322,8 @@ export function openBulkEditModalForCards(
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
+      removeBtn.setAttribute("data-tooltip", "Remove option");
+      removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
       xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-[0.8rem]";
       setIcon(xIcon, "x");
@@ -311,6 +350,168 @@ export function openBulkEditModalForCards(
     for (const value of initialWrongs) addWrongRow(value);
 
     form.appendChild(mcqSection);
+  }
+
+  // ── OQ-specific editor (reorderable steps) ──────────────────────────────
+  let oqListContainer: HTMLElement | null = null;
+  const oqStepRows: Array<{ row: HTMLElement; input: HTMLInputElement; badge: HTMLElement }> = [];
+  if (isSingleOq) {
+    const oqCard = cards[0];
+    const initialSteps = Array.isArray(oqCard.oqSteps) ? [...oqCard.oqSteps] : ["" , ""];
+
+    const oqSection = document.createElement("div");
+    oqSection.className = "bc flex flex-col gap-1";
+
+    const oqLabel = document.createElement("label");
+    oqLabel.className = "bc text-sm font-medium inline-flex items-center gap-1";
+    oqLabel.textContent = "Steps (correct order)";
+    oqLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
+    oqSection.appendChild(oqLabel);
+
+    const oqHint = document.createElement("div");
+    oqHint.className = "bc text-xs text-muted-foreground";
+    oqHint.textContent = "Enter the steps in their correct order. Drag the grip handles to reorder. Steps are shuffled during review.";
+    oqSection.appendChild(oqHint);
+
+    oqListContainer = document.createElement("div");
+    oqListContainer.className = "bc flex flex-col gap-2 sprout-oq-editor-list";
+    oqSection.appendChild(oqListContainer);
+
+    const renumberOq = () => {
+      oqStepRows.forEach((entry, i) => {
+        entry.badge.textContent = String(i + 1);
+      });
+    };
+
+    const updateOqRemoveButtons = () => {
+      const disable = oqStepRows.length <= 2;
+      for (const entry of oqStepRows) {
+        const delBtn = entry.row.querySelector<HTMLButtonElement>(".sprout-oq-del-btn");
+        if (delBtn) {
+          delBtn.disabled = disable;
+          delBtn.setAttribute("aria-disabled", disable ? "true" : "false");
+          delBtn.classList.toggle("is-disabled", disable);
+        }
+      }
+    };
+
+    const addOqStepRow = (value: string) => {
+      const idx = oqStepRows.length;
+
+      const row = document.createElement("div");
+      row.className = "bc flex items-center gap-2 sprout-oq-editor-row";
+      row.draggable = true;
+
+      // Drag grip
+      const grip = document.createElement("span");
+      grip.className = "bc inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip";
+      setIcon(grip, "grip-vertical");
+      row.appendChild(grip);
+
+      // Number badge
+      const badge = document.createElement("span");
+      badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 shrink-0";
+      badge.textContent = String(idx + 1);
+      row.appendChild(badge);
+
+      // Text input
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "bc input flex-1 text-sm sprout-input-fixed";
+      input.placeholder = `Step ${idx + 1}`;
+      input.value = value;
+      row.appendChild(input);
+
+      // Delete button
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost sprout-oq-del-btn";
+      delBtn.setAttribute("data-tooltip", "Remove step");
+      delBtn.setAttribute("data-tooltip-position", "top");
+      const xIcon = document.createElement("span");
+      xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+      setIcon(xIcon, "x");
+      delBtn.appendChild(xIcon);
+      delBtn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (oqStepRows.length <= 2) return;
+        const pos = oqStepRows.findIndex((e) => e.input === input);
+        if (pos < 0) return;
+        oqStepRows[pos].row.remove();
+        oqStepRows.splice(pos, 1);
+        renumberOq();
+        updateOqRemoveButtons();
+      });
+      row.appendChild(delBtn);
+
+      // HTML5 DnD for reordering
+      row.addEventListener("dragstart", (ev) => {
+        ev.dataTransfer?.setData("text/plain", String(oqStepRows.findIndex((e) => e.row === row)));
+        row.classList.add("sprout-oq-row-dragging");
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("sprout-oq-row-dragging");
+      });
+      row.addEventListener("dragover", (ev) => {
+        ev.preventDefault();
+        ev.dataTransfer!.dropEffect = "move";
+      });
+      row.addEventListener("drop", (ev) => {
+        ev.preventDefault();
+        const fromStr = ev.dataTransfer?.getData("text/plain");
+        if (fromStr === undefined || fromStr === null) return;
+        const fromIdx = parseInt(fromStr, 10);
+        const toIdx = oqStepRows.findIndex((e) => e.row === row);
+        if (isNaN(fromIdx) || fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+        const [moved] = oqStepRows.splice(fromIdx, 1);
+        oqStepRows.splice(toIdx, 0, moved);
+        oqListContainer!.innerHTML = "";
+        for (const entry of oqStepRows) oqListContainer!.appendChild(entry.row);
+        renumberOq();
+      });
+
+      oqListContainer!.appendChild(row);
+      oqStepRows.push({ row, input, badge });
+      updateOqRemoveButtons();
+    };
+
+    const seed = initialSteps.length >= 2 ? initialSteps : ["", ""];
+    for (const s of seed) addOqStepRow(s);
+    renumberOq();
+    updateOqRemoveButtons();
+
+    // "Add step" input
+    const addOqRow = document.createElement("div");
+    addOqRow.className = "bc flex items-center gap-2";
+    const addOqInput = document.createElement("input");
+    addOqInput.type = "text";
+    addOqInput.className = "bc input flex-1 text-sm sprout-input-fixed";
+    addOqInput.placeholder = "Add another step (press enter)";
+    addOqInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const val = addOqInput.value.trim();
+        if (!val) return;
+        if (oqStepRows.length >= 20) { new Notice("Maximum 20 steps."); return; }
+        addOqStepRow(val);
+        renumberOq();
+        addOqInput.value = "";
+      }
+    });
+    addOqInput.addEventListener("blur", () => {
+      const val = addOqInput.value.trim();
+      if (!val) return;
+      if (oqStepRows.length >= 20) return;
+      addOqStepRow(val);
+      renumberOq();
+      addOqInput.value = "";
+    });
+    addOqRow.appendChild(addOqInput);
+    oqSection.appendChild(addOqRow);
+
+    form.appendChild(oqSection);
   }
 
   // Extra information
@@ -422,7 +623,22 @@ export function openBulkEditModalForCards(
       updates.answer = rendered.join(" | ");
     }
 
-    if (!Object.keys(updates).length) {
+    // Handle OQ if single OQ selected
+    let oqStepsResult: string[] | null = null;
+    if (isSingleOq) {
+      const steps = oqStepRows.map((e) => String(e.input.value || "").trim()).filter(Boolean);
+      if (steps.length < 2) {
+        new Notice("Ordering requires at least 2 steps.");
+        return;
+      }
+      if (steps.length > 20) {
+        new Notice("Ordering supports a maximum of 20 steps.");
+        return;
+      }
+      oqStepsResult = steps;
+    }
+
+    if (!Object.keys(updates).length && !oqStepsResult && !(isBasicOrReversed && selectedType !== card0.type)) {
       new Notice("Enter a value for at least one field.");
       return;
     }
@@ -433,16 +649,26 @@ export function openBulkEditModalForCards(
       for (const card of cards) {
         const updated = JSON.parse(JSON.stringify(card)) as CardRecord;
 
+        // Apply type change (only basic ↔ reversed)
+        if (isBasicOrReversed && selectedType !== updated.type) {
+          (updated as Record<string, unknown>).type = selectedType;
+        }
+
         if (updates.title !== undefined) updated.title = updates.title;
 
         if (updates.question !== undefined) {
-          if (updated.type === "basic") updated.q = updates.question;
+          if (updated.type === "basic" || updated.type === "reversed") updated.q = updates.question;
           else if (updated.type === "mcq") updated.stem = updates.question;
+          else if (updated.type === "oq") updated.q = updates.question;
           else if (updated.type === "cloze") updated.clozeText = updates.question;
         }
 
+        if (oqStepsResult && updated.type === "oq") {
+          updated.oqSteps = oqStepsResult;
+        }
+
         if (updates.answer !== undefined) {
-          if (updated.type === "basic") {
+          if (updated.type === "basic" || updated.type === "reversed") {
             updated.a = updates.answer;
           } else if (updated.type === "mcq") {
             const parsed = parseMcqOptionsFromCell(updates.answer);
@@ -480,6 +706,12 @@ export function openBulkEditModalForCards(
   };
   document.addEventListener("keydown", onKeyDown, true);
 
-  // Mount the container
-  document.body.appendChild(container);
+  // Scope modal to the active leaf in the main (root) workspace so the overlay
+  // appears in the centre pane even when triggered from a sidebar widget.
+  const rootLeaf = document.querySelector(
+    ".mod-root .workspace-leaf.mod-active",
+  );
+  const leafContent = rootLeaf?.querySelector(".workspace-leaf-content");
+  const target = leafContent || document.body;
+  target.appendChild(container);
 }

@@ -2,7 +2,40 @@
    HEADER — Brand link, brand icon/text reveal animation.
    ========================================================================== */
 
-.sprout .view-header.sprout-header {padding: 40px;}
+.sprout .sprout-header-wrap {
+  background: transparent !important;
+  background-color: transparent !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  overflow: visible !important;
+  display: flow-root !important; /* contain child margins so ::after sits outside them */
+}
+
+/* Soft gradient fade below sticky header so content scrolls under a soft edge.
+   z-index kept below tooltip z-index (9999999) so tooltips always render on top. */
+.sprout .sprout-header-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px;
+  transform: translateY(100%);
+  background: linear-gradient(to bottom, var(--background), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sprout .view-header.sprout-header {
+  height: auto !important;
+  margin: 40px 40px 0px 40px !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  padding: 20px !important;
+  border-radius: var(--radius-l) !important;
+  background-color: var(--color-base-10) !important;
+  box-shadow: none !important;
+}
 
 .sprout .sprout-header-brand-link,
 .sprout .view-header .sprout-header-brand-link,
@@ -13,7 +46,7 @@
   text-decoration: none !important;
   border-style: solid !important;
   border-width: 1px !important;
-  border-radius: var(--radius) !important;
+  border-radius: var(--radius-m) !important;
   width: 32px !important;
   min-width: 32px !important;
   padding-left: 6px !important;
@@ -86,11 +119,15 @@
 }
 
 /* --- Dropdown root (inline-flex container for the trigger) --- */
-.sprout .sprout-dropdown-root {
+.sprout .sprout-header .dropdown-menu.sprout-dropdown-root {
   position: relative !important;
   z-index: 10050 !important;
   display: inline-flex !important;
   align-items: center !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* --- Actions host (view-actions override) --- */
@@ -102,7 +139,38 @@
 }
 
 /* --- More-menu wrapper --- */
-.sprout .sprout-more-wrap {
+.sprout .sprout-header .dropdown-menu.sprout-more-wrap {
   position: relative !important;
   overflow: visible !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* --- Header action buttons (custom style matching header bg) --- */
+.sprout .sprout-header .sprout-header-btn {
+  background-color: var(--background-modifier-form-field) !important;
+  color: var(--text-normal) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: var(--radius-m) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sprout .sprout-header .sprout-header-btn:hover {
+  background-color: var(--background-modifier-hover) !important;
+  color: var(--text-normal) !important;
+  border-color: var(--background-modifier-border-hover) !important;
+}
+.sprout .sprout-header .sprout-header-btn:focus-visible {
+  background-color: var(--background-modifier-hover) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-30) !important;
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+}
+.sprout .sprout-header .sprout-header-btn:active {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
 }

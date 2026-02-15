@@ -6,14 +6,17 @@
  *   - renderSessionMode — Builds and mounts the full session-mode DOM (card, buttons, header, menus) into the given container
  */
 
-import { Setting } from "obsidian";
 import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import { applyInlineMarkdown } from "../anki/anki-mapper";
+import { setIcon } from "obsidian";
 import { renderStudySessionHeader } from "./study-session-header";
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
+import { getCorrectIndices, isMultiAnswerMcq } from "../types/card";
+import type { ClozeRenderOptions } from "./question-cloze";
 
 declare global {
   interface Window {
@@ -37,6 +40,11 @@ type Args = {
   // grading
   gradeCurrentRating: (rating: Rating, meta: Record<string, unknown> | null) => Promise<void>;
   answerMcq: (choiceIdx: number) => Promise<void>;
+  answerMcqMulti?: (selectedIndices: number[]) => Promise<void>;
+  mcqMultiSelected?: Set<number>;
+  mcqMultiCardId?: string;
+  syncMcqMultiSelect?: (origIdx: number, selected: boolean) => void;
+  answerOq: (userOrder: number[]) => Promise<void>;
 
   // skip (session-only postpone; no scheduling changes)
   enableSkipButton?: boolean;
@@ -64,8 +72,8 @@ type Args = {
   getNextDueInScope: (scope: Scope) => number | null;
   startCountdown: (nextDue: number, lineEl: HTMLElement) => void;
 
-  // cloze rendering (legacy)
-  renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null) => HTMLElement;
+  // cloze rendering
+  renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null, opts?: ClozeRenderOptions) => HTMLElement;
 
   // markdown rendering
   renderMarkdownInto: (containerEl: HTMLElement, md: string, sourcePath: string) => Promise<void>;
@@ -80,6 +88,7 @@ type Args = {
 
   // MCQ option randomisation
   randomizeMcqOptions: boolean;
+  randomizeOqOrder: boolean;
 
   // grading mode
   fourButtonMode?: boolean;
@@ -90,6 +99,11 @@ type Args = {
   // AOS animation control
   applyAOS?: boolean;
   aosDelayMs?: number;
+
+  // TTS replay
+  ttsEnabled?: boolean;
+  ttsReplayFront?: () => void;
+  ttsReplayBack?: () => void;
 
   rerender: () => void;
 };
@@ -173,7 +187,8 @@ function makeTextButton(opts: {
   btn.type = "button";
   btn.className = opts.className.split(/\s+/).includes("bc") ? opts.className : `bc ${opts.className}`;
   btn.textContent = opts.label;
-  if (opts.title) btn.title = opts.title;
+  btn.setAttribute("data-tooltip", opts.title || opts.label);
+  btn.setAttribute("data-tooltip-position", "top");
 
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -186,24 +201,6 @@ function makeTextButton(opts: {
 }
 
 // --- IO helpers --------------------------------------------------------------
-
-function ioChildKeyFromId(id: string): string | null {
-  const m = String(id ?? "").match(/::io::(.+)$/);
-  if (!m) return null;
-  const k = String(m[1] ?? "").trim();
-  return k ? k : null;
-}
-
-function getGroupKey(card: CardRecord): string | null {
-  if (!card) return null;
-  const direct = typeof card.groupKey === "string" && card.groupKey.trim()
-    ? card.groupKey.trim()
-    : null;
-  if (direct) return direct;
-
-  const id = String(card.id ?? "");
-  return ioChildKeyFromId(id);
-}
 
 function isIoCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
@@ -264,6 +261,51 @@ function getMcqDisplayOrder(session: Session, card: CardRecord, enabled: boolean
         same = false;
         break;
       }
+    }
+    if (same) {
+      const tmp = next[0];
+      next[0] = next[1];
+      next[1] = tmp;
+    }
+  }
+
+  map[id] = next;
+  return next;
+}
+
+// --- OQ (Ordering Question) helpers ------------------------------------------
+
+/** Ensures session has an oqOrderMap. */
+function ensureOqOrderMap(session: Session): Record<string, number[]> {
+  const s = session as unknown as { oqOrderMap?: Record<string, number[]> };
+  if (!s.oqOrderMap || typeof s.oqOrderMap !== "object") s.oqOrderMap = {};
+  return s.oqOrderMap;
+}
+
+/** Get a shuffled initial display order for OQ steps. */
+function getOqShuffledOrder(session: Session, card: CardRecord, enabled: boolean): number[] {
+  const steps = card?.oqSteps || [];
+  const n = Array.isArray(steps) ? steps.length : 0;
+  const identity = Array.from({ length: n }, (_, i) => i);
+
+  if (!session || !n) return identity;
+
+  const id = String(card?.id ?? "");
+  if (!id) return identity;
+
+  const map = ensureOqOrderMap(session);
+  if (!enabled) {
+    map[id] = identity;
+    return identity;
+  }
+
+  // Shuffle, ensuring not identity
+  const next = identity.slice();
+  shuffleInPlace(next);
+  if (n >= 2) {
+    let same = true;
+    for (let i = 0; i < n; i++) {
+      if (next[i] !== i) { same = false; break; }
     }
     if (same) {
       const tmp = next[0];
@@ -585,7 +627,7 @@ export function renderSessionMode(args: Args) {
     const location = formatNotePathForHeader(locationRaw);
 
     const locationRow = document.createElement("div");
-    locationRow.className = "bc flex items-center gap-2 min-w-0 px-4";
+    locationRow.className = "bc flex items-center gap-2 min-w-0";
     header.appendChild(locationRow);
 
     const locationEl = document.createElement("div");
@@ -595,19 +637,10 @@ export function renderSessionMode(args: Args) {
 
     wrap.appendChild(quitBtn);
 
-    const titleSetting = new Setting(header)
-      .setName(practiceMode ? "Practice complete" : "No cards are due")
-      .setHeading();
-    titleSetting.settingEl.classList.add("bc");
-    titleSetting.nameEl.classList.add(
-      "text-lg",
-      "font-bold",
-      "leading-none",
-      "whitespace-pre-wrap",
-      "break-words",
-      "text-center",
-      "bc-question-title",
-    );
+    const titleWrap = document.createElement("div");
+    titleWrap.className = "bc sprout-question-title";
+    titleWrap.textContent = practiceMode ? "Practice complete" : "No cards are due";
+    header.appendChild(titleWrap);
 
     // Section: Practice session message (centered, no alert wrapper)
     if (practiceMode) {
@@ -682,6 +715,8 @@ export function renderSessionMode(args: Args) {
   // Card present
   args.clearCountdown();
 
+  const sourcePath = card.sourceNotePath || "";
+
   // ===== Header =====
   const header = document.createElement("header");
   header.className = "bc flex flex-col gap-4 pt-4 p-6";
@@ -692,7 +727,7 @@ export function renderSessionMode(args: Args) {
 
   // Location row
   const locationRow = document.createElement("div");
-  locationRow.className = "bc flex items-center gap-2 min-w-0 px-4";
+  locationRow.className = "bc flex items-center gap-2 min-w-0";
   header.appendChild(locationRow);
 
   const locationEl = document.createElement("div");
@@ -711,33 +746,18 @@ export function renderSessionMode(args: Args) {
     displayTitle = displayTitle.replace(/\s*•\s*c\d+\s*$/, "");
   }
 
+  // Remove direction suffix (e.g., " • Q→A", " • A→Q") from reversed-child cards
+  if (card.type === "reversed-child") {
+    displayTitle = displayTitle.replace(/\s*•\s*[AQ]\u2192[AQ]\s*$/, "");
+  }
+
   const titleText =
-    displayTitle ||
-    (card.type === "mcq"
-      ? "MCQ"
-      : card.type === "cloze" || card.type === "cloze-child"
-        ? "Cloze"
-        : ioLike
-          ? (() => {
-              const k = getGroupKey(card);
-              return k ? `Image Occlusion • ${k}` : "Image Occlusion";
-            })()
-          : "Basic");
-
-  const sourcePath = String(card.sourceNotePath || args.session?.scope?.name || "");
-
-  const titleSetting = new Setting(header).setName("").setHeading();
-  titleSetting.settingEl.classList.add("bc");
-  titleSetting.nameEl.classList.add(
-    "text-lg",
-    "font-bold",
-    "leading-none",
-    "whitespace-pre-wrap",
-    "break-words",
-    "text-center",
-    "bc-question-title",
-  );
-  const titleEl = titleSetting.nameEl;
+    displayTitle || "";
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "bc sprout-question-title";
+  if (!titleText) titleWrap.hidden = true;
+  header.appendChild(titleWrap);
+  const titleEl = titleWrap;
   // Render title as markdown to support wiki links and LaTeX
   const titleMd = String(titleText ?? "");
   if (titleMd.includes('[[') || titleMd.includes('$')) {
@@ -748,6 +768,49 @@ export function renderSessionMode(args: Args) {
 
   // ===== Content =====
   const mutedLabel = (s: string) => h("div", "text-muted-foreground text-sm font-medium", s);
+
+  /** Build a "Question" or "Answer" label row with an optional TTS replay button. */
+  const labelRow = (text: string, replayFn?: () => void) => {
+    const row = document.createElement("div");
+    row.className = "bc flex items-center justify-between sprout-label-row";
+    row.appendChild(mutedLabel(text));
+    if (args.ttsEnabled && replayFn) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "bc btn-icon sprout-tts-replay-btn";
+      btn.setAttribute("data-tooltip", `Read ${text.toLowerCase()} aloud`);
+      btn.setAttribute("data-tooltip-position", "top");
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      svg.setAttribute("width", "18");
+      svg.setAttribute("height", "18");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "2");
+      svg.setAttribute("stroke-linecap", "round");
+      svg.setAttribute("stroke-linejoin", "round");
+      svg.classList.add("lucide", "lucide-volume-2");
+      // Lucide volume-2 icon paths
+      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      polygon.setAttribute("points", "11 5 6 9 2 9 2 15 6 15 11 19 11 5");
+      svg.appendChild(polygon);
+      const path1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path1.setAttribute("d", "M15.54 8.46a5 5 0 0 1 0 7.07");
+      svg.appendChild(path1);
+      const path2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path2.setAttribute("d", "M19.07 4.93a10 10 0 0 1 0 14.14");
+      svg.appendChild(path2);
+      btn.appendChild(svg);
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        replayFn();
+      });
+      row.appendChild(btn);
+    }
+    return row;
+  };
 
   const setupLinkHandlers = (rootEl: HTMLElement, srcPath: string) => {
     const app = window?.app;
@@ -784,23 +847,29 @@ export function renderSessionMode(args: Args) {
     return block;
   };
 
-  if (card.type === "basic") {
-    section.appendChild(mutedLabel("Question"));
-    section.appendChild(renderMdBlock("bc-q", card.q || ""));
+  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
+    // For reversed-child with direction "back", swap content (A→Q)
+    const isBackDirection = card.type === "reversed-child" && (card as unknown as { reversedDirection?: string }).reversedDirection === "back";
+    const isOldReversed = card.type === "reversed";
+    const frontContent = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
+    const backContent = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
+
+    section.appendChild(labelRow("Question", args.ttsReplayFront));
+    section.appendChild(renderMdBlock("bc-q", frontContent));
 
     if (args.showAnswer || graded) {
-      section.appendChild(mutedLabel("Answer"));
-      section.appendChild(renderMdBlock("bc-a", card.a || ""));
+      section.appendChild(labelRow("Answer", args.ttsReplayBack));
+      section.appendChild(renderMdBlock("bc-a", backContent));
     }
   } else if (card.type === "cloze" || card.type === "cloze-child") {
     const text = String(card.clozeText || "");
     const reveal = args.showAnswer || !!graded;
     const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
 
-    section.appendChild(mutedLabel(reveal ? "Answer" : "Question"));
+    section.appendChild(labelRow(reveal ? "Answer" : "Question", reveal ? args.ttsReplayBack : args.ttsReplayFront));
     const clozContainer = document.createElement("div");
     clozContainer.className = "bc bc-cloze whitespace-pre-wrap break-words sprout-md-block";
-    const clozeContent = args.renderClozeFront(text, reveal, targetIndex);
+    const clozeContent = args.renderClozeFront(text, reveal, targetIndex, undefined);
     if (reveal) {
       const span = document.createElement("span");
       span.className = "bc whitespace-pre-wrap break-words";
@@ -811,45 +880,82 @@ export function renderSessionMode(args: Args) {
     }
     section.appendChild(clozContainer);
   } else if (card.type === "mcq") {
-    section.appendChild(mutedLabel("Question"));
+    section.appendChild(labelRow("Question"));
     section.appendChild(renderMdBlock("bc-q", card.stem || ""));
     const reveal = !!graded || !!args.showAnswer;
-    section.appendChild(mutedLabel(reveal ? "Answer" : "Options"));
+    const multiAnswer = isMultiAnswerMcq(card);
+    const correctSet = new Set(getCorrectIndices(card));
+
+    if (multiAnswer && !reveal) {
+      section.appendChild(labelRow("Options (select all correct answers)"));
+    } else {
+      section.appendChild(labelRow(reveal ? "Answer" : "Options"));
+    }
 
     // Only show MCQ options, not info, as answer options
-    const opts = (card.options || [] as Array<{ text: string; isCorrect: boolean } | string>).filter((opt) => {
-      if (typeof opt === "string") return true;
-      return !opt.isCorrect || (opt.isCorrect && (card.a || "").trim() === opt.text.trim());
-    });
-    const chosenOrigIdx = (graded?.meta as Record<string, unknown> | undefined)?.mcqChoice;
+    const opts = normalizeCardOptions(card.options);
+    const gradedMeta = (graded?.meta as Record<string, unknown> | undefined);
+    // Single-answer: mcqChoice; Multi-answer: mcqChoices
+    const chosenOrigIdx = gradedMeta?.mcqChoice;
+    const chosenOrigIndices: Set<number> = gradedMeta?.mcqChoices
+      ? new Set(gradedMeta.mcqChoices as number[])
+      : typeof chosenOrigIdx === "number" ? new Set([chosenOrigIdx]) : new Set<number>();
     const order = getMcqDisplayOrder(args.session, card, !!args.randomizeMcqOptions);
+
+    // Multi-answer: track current selections (before submit)
+    const multiSelected = (multiAnswer && args.mcqMultiSelected && args.mcqMultiCardId === String(card.id))
+      ? args.mcqMultiSelected
+      : new Set<number>();
 
     const optionList = document.createElement("div");
     optionList.className = "bc flex flex-col gap-2 sprout-mcq-options";
     section.appendChild(optionList);
 
+    // Multi-answer: show Submit button when not yet graded
+    // (declare early so click handlers can reference it)
+    let submitBtn: HTMLButtonElement | null = null;
+
     order.forEach((origIdx: number, displayIdx: number) => {
-      const opt = opts[origIdx] ?? {};
-      const text = typeof opt === "string" ? opt : (opt && typeof (opt as Record<string, unknown>).text === "string" ? (opt as Record<string, unknown>).text as string : "");
+      const opt = opts[origIdx] ?? "";
+      const text = typeof opt === "string" ? opt : "";
 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "bc btn-outline w-full justify-start text-left h-auto py-2 mb-2";
 
+      // Multi-answer selection state (before submit)
+      if (multiAnswer && !reveal && multiSelected.has(origIdx)) {
+        btn.classList.add("sprout-mcq-selected");
+      }
+
       // Apply correctness styles on back of card (revealed).
-      // Show green border on the correct option, red border on all non-correct options.
-      // If graded, the chosen wrong option is also explicitly marked.
       if (reveal) {
-        const isCorrect = origIdx === card.correctIndex;
-        const isChosen = !!graded && typeof chosenOrigIdx === "number" && chosenOrigIdx === origIdx;
-        const isChosenWrong = isChosen && chosenOrigIdx !== card.correctIndex;
+        const isCorrect = correctSet.has(origIdx);
+        const isChosen = chosenOrigIndices.has(origIdx);
 
-        if (isCorrect) {
-          btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
-        }
-
-        if (isChosenWrong) {
-          btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+        if (multiAnswer) {
+          // Multi-answer highlighting:
+          // - Correctly selected: green (chosen + correct)
+          // - Wrongly selected: red (chosen + not correct)
+          // - Missed correct: subtle green outline (correct + not chosen)
+          // - Correctly not selected: neutral (not correct + not chosen)
+          if (isCorrect && isChosen) {
+            btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
+          } else if (isCorrect && !isChosen) {
+            btn.classList.add("sprout-mcq-missed-correct");
+          } else if (!isCorrect && isChosen) {
+            btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+          }
+          // else: not correct, not chosen — stays neutral
+        } else {
+          // Single-answer highlighting (unchanged)
+          const isChosenWrong = isChosen && !isCorrect;
+          if (isCorrect) {
+            btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
+          }
+          if (isChosenWrong) {
+            btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+          }
         }
       }
 
@@ -885,13 +991,339 @@ export function renderSessionMode(args: Args) {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!graded) void args.answerMcq(origIdx);
+        if (graded) return;
+        if (multiAnswer) {
+          // Toggle selection in-place (no full re-render)
+          if (multiSelected.has(origIdx)) {
+            multiSelected.delete(origIdx);
+            btn.classList.remove("sprout-mcq-selected");
+          } else {
+            multiSelected.add(origIdx);
+            btn.classList.add("sprout-mcq-selected");
+          }
+          // Sync the backing state so keyboard/render stays in sync.
+          // Use set/delete (idempotent) — NOT toggle — because after a
+          // re-render multiSelected may be the same reference as the
+          // backing set, and toggling twice would cancel itself out.
+          if (args.syncMcqMultiSelect) {
+            args.syncMcqMultiSelect(origIdx, multiSelected.has(origIdx));
+          }
+          // Update submit button enabled state
+          if (submitBtn) {
+            submitBtn.disabled = multiSelected.size === 0;
+            submitBtn.classList.toggle("opacity-50", multiSelected.size === 0);
+            submitBtn.classList.toggle("cursor-not-allowed", multiSelected.size === 0);
+            // Reset empty-attempt counter when selection changes
+            if (multiSelected.size > 0) {
+              delete submitBtn.dataset.emptyAttempt;
+              submitBtn.removeAttribute("data-tooltip");
+              submitBtn.classList.remove("sprout-mcq-submit-tooltip-visible");
+            }
+          }
+        } else {
+          void args.answerMcq(origIdx);
+        }
       });
 
       optionList.appendChild(btn);
     });
 
+    // Multi-answer: show Submit button when not yet graded
+    if (multiAnswer && !reveal) {
+      const submitRow = document.createElement("div");
+      submitRow.className = "bc flex justify-end mt-2";
+      submitBtn = document.createElement("button");
+      submitBtn.type = "button";
+      submitBtn.className = "bc btn-primary px-4 py-2 text-sm sprout-mcq-submit-btn";
+
+      const submitLabel = document.createElement("span");
+      submitLabel.textContent = "Submit";
+      submitBtn.appendChild(submitLabel);
+
+      const submitKbd = document.createElement("kbd");
+      submitKbd.className = "bc kbd ml-2 text-xs";
+      submitKbd.textContent = "\u21B5";
+      submitBtn.appendChild(submitKbd);
+
+      submitBtn.disabled = multiSelected.size === 0;
+      if (multiSelected.size === 0) {
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      }
+      submitBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (multiSelected.size > 0 && args.answerMcqMulti) {
+          void args.answerMcqMulti([...multiSelected]);
+        } else if (multiSelected.size === 0 && submitBtn) {
+          submitBtn.classList.add("sprout-mcq-submit-shake");
+          submitBtn.addEventListener("animationend", () => {
+            submitBtn!.classList.remove("sprout-mcq-submit-shake");
+          }, { once: true });
+          // Show tooltip on second empty attempt
+          if (submitBtn.dataset.emptyAttempt === "1") {
+            submitBtn.setAttribute("data-tooltip", "Choose at least one answer to proceed");
+            submitBtn.setAttribute("data-tooltip-position", "top");
+            submitBtn.classList.add("sprout-mcq-submit-tooltip-visible");
+            setTimeout(() => {
+              submitBtn!.classList.remove("sprout-mcq-submit-tooltip-visible");
+            }, 2500);
+          }
+          submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
+        }
+      });
+      submitRow.appendChild(submitBtn);
+      optionList.appendChild(submitRow);
+    }
+
     // Do not render separate Answer subtitle/content for MCQ.
+  } else if (card.type === "oq") {
+    // ── Ordering Question ──────────────────────────────────────────────
+    section.appendChild(labelRow("Question"));
+    section.appendChild(renderMdBlock("bc-q", card.q || ""));
+
+    const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+    const reveal = !!graded || !!args.showAnswer;
+    const oqMeta = (graded?.meta || {}) as Record<string, unknown>;
+    const userOrder: number[] = Array.isArray(oqMeta.oqUserOrder) ? oqMeta.oqUserOrder as number[] : [];
+
+    if (!reveal) {
+      // ── Front: drag-to-reorder interface ──
+      section.appendChild(labelRow("Order the steps"));
+
+      const shuffled = getOqShuffledOrder(args.session, card, !!args.randomizeOqOrder);
+      const currentOrder = shuffled.slice();
+
+      const listWrap = document.createElement("div");
+      listWrap.className = "bc flex flex-col gap-2 sprout-oq-step-list";
+      section.appendChild(listWrap);
+
+      const renderSteps = () => {
+        listWrap.innerHTML = "";
+        currentOrder.forEach((origIdx, displayIdx) => {
+          const stepText = steps[origIdx] || "";
+          const row = document.createElement("div");
+          row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
+          row.draggable = false;
+          row.dataset.oqIdx = String(displayIdx);
+
+          // Grip handle
+          const grip = document.createElement("span");
+          grip.className = "bc sprout-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
+          grip.draggable = true;
+          setIcon(grip, "grip-vertical");
+          row.appendChild(grip);
+
+          // Step number badge
+          const badge = document.createElement("kbd");
+          badge.className = "bc kbd";
+          badge.textContent = String(displayIdx + 1);
+          row.appendChild(badge);
+
+          // Step text
+          const textEl = document.createElement("span");
+          textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
+          if (stepText.includes("[[") || stepText.includes("$")) {
+            void args.renderMarkdownInto(textEl, stepText, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
+          } else {
+            applyInlineMarkdown(textEl, stepText);
+          }
+          row.appendChild(textEl);
+
+          // ── Drag and drop ──
+          let dragOffset = 44;
+          row.addEventListener("dragstart", (e) => {
+            listWrap.classList.add("sprout-oq-drag-active");
+            if (e.dataTransfer) {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", String(displayIdx));
+            }
+            row.classList.add("sprout-oq-row-dragging");
+            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+            const first = allStepRows[0];
+            if (first) {
+              const gap = parseFloat(getComputedStyle(listWrap).rowGap || "0");
+              dragOffset = Math.round(first.getBoundingClientRect().height + gap);
+            }
+            allStepRows.forEach((r) => {
+              r.classList.add("sprout-oq-row-anim");
+              setCssProps(r, "--sprout-oq-translate", "0px");
+            });
+          });
+
+          row.addEventListener("dragend", () => {
+            listWrap.classList.remove("sprout-oq-drag-active");
+            row.classList.remove("sprout-oq-row-dragging");
+            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+            allStepRows.forEach((r) => {
+              setCssProps(r, "--sprout-oq-translate", "0px");
+              r.classList.remove("sprout-oq-row-anim");
+            });
+          });
+
+          row.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+            const fromStr = e.dataTransfer?.getData("text/plain");
+            const fromIdx = fromStr ? Number(fromStr) : -1;
+            if (fromIdx === -1 || fromIdx === displayIdx) return;
+
+            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+            allStepRows.forEach((r, idx) => {
+              if (idx === fromIdx) {
+                setCssProps(r, "--sprout-oq-translate", `${(displayIdx - fromIdx) * dragOffset}px`);
+              } else {
+                let offset = 0;
+                if (fromIdx < displayIdx) {
+                  if (idx > fromIdx && idx <= displayIdx) offset = -dragOffset;
+                } else {
+                  if (idx >= displayIdx && idx < fromIdx) offset = dragOffset;
+                }
+                setCssProps(r, "--sprout-oq-translate", `${offset}px`);
+              }
+            });
+          });
+
+          row.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const fromIdx = Number(e.dataTransfer?.getData("text/plain") || "-1");
+            if (fromIdx === -1 || fromIdx === displayIdx) return;
+            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+            allStepRows.forEach((r) => setCssProps(r, "--sprout-oq-translate", "0px"));
+            const item = currentOrder[fromIdx];
+            currentOrder.splice(fromIdx, 1);
+            currentOrder.splice(displayIdx, 0, item);
+            // Also update the session order map
+            const oqMap = ensureOqOrderMap(args.session);
+            oqMap[String(card.id)] = currentOrder.slice();
+            renderSteps();
+          });
+
+          // Touch drag support for mobile
+          let touchStartY = 0;
+          let touchCurrentIdx = displayIdx;
+          row.addEventListener("touchstart", (e) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            listWrap.classList.add("sprout-oq-drag-active");
+            touchStartY = touch.clientY;
+            touchCurrentIdx = displayIdx;
+            row.classList.add("sprout-oq-row-dragging");
+          }, { passive: true });
+
+          row.addEventListener("touchmove", (e) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            e.preventDefault();
+            const deltaY = touch.clientY - touchStartY;
+            const moveSteps = Math.round(deltaY / dragOffset);
+            const targetIdx = Math.max(0, Math.min(currentOrder.length - 1, displayIdx + moveSteps));
+
+            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+            allStepRows.forEach((r, idx) => {
+              if (idx === displayIdx) {
+                setCssProps(r, "--sprout-oq-translate", `${(targetIdx - displayIdx) * dragOffset}px`);
+              } else {
+                let offset = 0;
+                if (displayIdx < targetIdx) {
+                  if (idx > displayIdx && idx <= targetIdx) offset = -dragOffset;
+                } else {
+                  if (idx >= targetIdx && idx < displayIdx) offset = dragOffset;
+                }
+                setCssProps(r, "--sprout-oq-translate", `${offset}px`);
+              }
+            });
+            touchCurrentIdx = targetIdx;
+          }, { passive: false });
+
+          row.addEventListener("touchend", () => {
+            listWrap.classList.remove("sprout-oq-drag-active");
+            row.classList.remove("sprout-oq-row-dragging");
+            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+            allStepRows.forEach((r) => {
+              setCssProps(r, "--sprout-oq-translate", "0px");
+              r.classList.remove("sprout-oq-row-anim");
+            });
+            if (touchCurrentIdx !== displayIdx) {
+              const item = currentOrder[displayIdx];
+              currentOrder.splice(displayIdx, 1);
+              currentOrder.splice(touchCurrentIdx, 0, item);
+              const oqMap = ensureOqOrderMap(args.session);
+              oqMap[String(card.id)] = currentOrder.slice();
+              renderSteps();
+            }
+          });
+
+          row.addEventListener("touchcancel", () => {
+            listWrap.classList.remove("sprout-oq-drag-active");
+          });
+
+          listWrap.appendChild(row);
+        });
+      };
+
+      renderSteps();
+
+      // Submit button
+      const submitWrap = document.createElement("div");
+      submitWrap.className = "bc flex justify-center mt-2";
+      const submitBtn = document.createElement("button");
+      submitBtn.type = "button";
+      submitBtn.className = "bc btn w-full sprout-oq-submit-btn";
+
+      const submitLabel = document.createElement("span");
+      submitLabel.textContent = "Submit order";
+      submitBtn.appendChild(submitLabel);
+
+      const submitKbd = document.createElement("kbd");
+      submitKbd.className = "bc kbd ml-2 text-xs";
+      submitKbd.textContent = "\u21B5";
+      submitBtn.appendChild(submitKbd);
+
+      submitBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void args.answerOq(currentOrder.slice());
+      });
+      submitWrap.appendChild(submitBtn);
+      section.appendChild(submitWrap);
+
+    } else {
+      // ── Back: show correct order with correctness highlighting ──
+      section.appendChild(labelRow("Correct Order"));
+
+      const answerList = document.createElement("div");
+      answerList.className = "bc flex flex-col gap-2 sprout-oq-answer-list";
+      section.appendChild(answerList);
+
+      steps.forEach((stepText, correctIdx) => {
+        const wasInCorrectPosition = userOrder.length > 0 && userOrder[correctIdx] === correctIdx;
+
+        const row = document.createElement("div");
+        row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
+        if (wasInCorrectPosition) {
+          row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
+        } else if (userOrder.length > 0) {
+          row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
+        }
+
+        const badge = document.createElement("kbd");
+        badge.className = "bc kbd";
+        badge.textContent = String(correctIdx + 1);
+        row.appendChild(badge);
+
+        const textEl = document.createElement("span");
+        textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
+        if (stepText.includes("[[") || stepText.includes("$")) {
+          void args.renderMarkdownInto(textEl, stepText, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
+        } else {
+          applyInlineMarkdown(textEl, stepText);
+        }
+        row.appendChild(textEl);
+
+        answerList.appendChild(row);
+      });
+    }
   } else if (ioLike) {
     const reveal = !!graded || !!args.showAnswer;
 
@@ -912,7 +1344,7 @@ export function renderSessionMode(args: Args) {
   const infoText = extractInfoField(card);
   const isBack = !!graded || !!args.showAnswer;
   const shouldShowInfo =
-    (card.type === "basic" && isBack && !!infoText) || ((args.showInfo || graded) && !!infoText);
+    ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") && isBack && !!infoText) || ((args.showInfo || graded) && !!infoText);
   if (shouldShowInfo) {
     section.appendChild(mutedLabel("Extra information"));
     section.appendChild(renderMdBlock("bc-info", infoText));
@@ -948,18 +1380,18 @@ export function renderSessionMode(args: Args) {
 
   const canGradeNow =
     !graded &&
-    ((card.type === "basic" || card.type === "cloze" || card.type === "cloze-child" || ioLike) && !!args.showAnswer);
+    ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) && !!args.showAnswer);
 
   // Basic/Cloze/IO: reveal gate
   if (
-    (card.type === "basic" || card.type === "cloze" || card.type === "cloze-child" || ioLike) &&
+    (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) &&
     !args.showAnswer &&
     !graded
   ) {
     footerCenter.appendChild(
       makeTextButton({
         label: "Reveal",
-        className: "btn",
+        className: "btn-outline",
         onClick: () => {
           args.setShowAnswer(true);
           args.rerender();
@@ -1047,17 +1479,20 @@ export function renderSessionMode(args: Args) {
       if (skipEnabled) {
         const skipBtn = makeTextButton({
           label: "Skip",
+          title: "Skip card (↵)",
           className: "btn-outline",
           onClick: () => args.skipCurrentCard({ uiSource: "skip-btn", uiKey: 13, uiButtons: four ? 4 : 2 }),
           kbd: "↵",
         });
         skipBtn.dataset.bcAction = "skip-card";
-        skipBtn.title = "Skip (↵)";
         mainRow.appendChild(skipBtn);
       }
     } else if (card.type === "mcq") {
       const optCount = (card.options || []).length;
       mainRow.appendChild(h("div", "text-muted-foreground text-sm", `Choose 1–${optCount}.`));
+      hasMainRowContent = true;
+    } else if (card.type === "oq") {
+      mainRow.appendChild(h("div", "text-muted-foreground text-sm", "Drag to reorder, then submit."));
       hasMainRowContent = true;
     } else if (ioLike && !args.showAnswer) {
       mainRow.appendChild(h("div", "text-muted-foreground text-sm", "Press Enter to reveal the image."));

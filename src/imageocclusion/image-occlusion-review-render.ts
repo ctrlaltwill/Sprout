@@ -15,6 +15,7 @@ import type { StoredIORect } from "./image-occlusion-types";
 import { resolveImageFile } from "./io-helpers";
 import type * as IoModule from "./image-occlusion-index";
 import { queryFirst, setCssProps } from "../core/ui";
+import { scopeModalToWorkspace } from "../modals/modal-utils";
 
 export function isIoParentCard(card: CardRecord): boolean {
   return card && card.type === "io";
@@ -126,6 +127,7 @@ export function renderImageOcclusionReviewInto(args: {
       // Open modal with expanded image and masks, as in widget.ts
       const modal = new (class extends Modal {
         onOpen() {
+          scopeModalToWorkspace(this);
           this.containerEl.addClass("sprout");
           this.contentEl.classList.add("sprout-zoom-content", "sprout-io-zoom-out");
           const zoomHost = this.contentEl.createDiv({ cls: "bc sprout-zoom-host sprout-io-zoom-out" });
@@ -166,11 +168,24 @@ export function renderImageOcclusionReviewInto(args: {
     else if (card.groupKey) targetGroup = String(card.groupKey || "");
   }
   const renderMasks = showAllMasks && card.type === "io-child" ? occlusions : masksToShow;
+
+  // Get custom colors and icon from settings
+  const maskTargetColor = plugin.settings?.imageOcclusion?.maskTargetColor || "";
+  const maskOtherColor = plugin.settings?.imageOcclusion?.maskOtherColor || "";
+  const maskIcon = plugin.settings?.imageOcclusion?.maskIcon ?? "?";
+
   if (!reveal && renderMasks.length > 0) {
     const overlay = document.createElement("div");
     overlay.classList.add("sprout-io-overlay");
     const hintSizeUpdaters: Array<() => void> = [];
 
+    // Apply custom mask colors to the overlay container (only if set)
+    if (maskTargetColor) {
+      setCssProps(overlay, "--sprout-io-mask-target-color", maskTargetColor);
+    }
+    if (maskOtherColor) {
+      setCssProps(overlay, "--sprout-io-mask-other-color", maskOtherColor);
+    }
 
 
     function updateOverlay() {
@@ -216,16 +231,24 @@ export function renderImageOcclusionReviewInto(args: {
       if (widgetMode) {
         if (isTarget) {
           mask.classList.add("sprout-io-mask-target");
-          const hint = document.createElement("span");
-          hint.textContent = "?";
-          hint.classList.add("sprout-io-mask-hint");
-          mask.appendChild(hint);
-          hintSizeUpdaters.push(() => {
-            const rect = mask.getBoundingClientRect();
-            if (!rect.height) return;
-            const size = Math.max(12, rect.height * 0.35);
-            setCssProps(hint, "--sprout-io-hint-size", `${size}px`);
-          });
+          // Only show icon if maskIcon is not empty
+          if (maskIcon && maskIcon.trim()) {
+            const hint = document.createElement("span");
+            hint.classList.add("sprout-io-mask-hint");
+            const KNOWN_ICONS = ["circle-help", "eye-off"];
+            if (KNOWN_ICONS.includes(maskIcon.trim())) {
+              setIcon(hint, maskIcon.trim());
+            } else {
+              hint.textContent = maskIcon.trim();
+            }
+            mask.appendChild(hint);
+            hintSizeUpdaters.push(() => {
+              const rect = mask.getBoundingClientRect();
+              if (!rect.height) return;
+              const size = Math.max(12, rect.height * 0.35);
+              setCssProps(hint, "--sprout-io-hint-size", `${size}px`);
+            });
+          }
         } else {
           mask.classList.add("sprout-io-mask-other");
         }
@@ -280,6 +303,7 @@ export function renderImageOcclusionReviewInto(args: {
 
       const modal = new (class extends Modal {
         onOpen() {
+          scopeModalToWorkspace(this);
           this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
           this.modalEl.addClass("bc", "sprout-modals", "sprout-zoom-overlay");
           queryFirst(this.modalEl, ".modal-header")?.remove();

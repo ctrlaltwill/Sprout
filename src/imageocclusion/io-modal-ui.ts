@@ -9,8 +9,9 @@
  *   - CanvasContainerRefs — interface with references to canvas container DOM elements
  *   - CanvasContainerCallbacks — interface defining canvas container callbacks
  *   - buildCanvasContainer — builds the canvas container with placeholder, viewport, stage, image, and overlay elements
+ *   - FooterRefs — interface with references to footer DOM elements
  *   - FooterCallbacks — interface defining footer button callbacks
- *   - buildFooter — builds the modal footer with Cancel, Hide All, and Hide One buttons
+ *   - buildFooter — builds the modal footer with Cancel button, mode dropdown, and Save button
  *   - buildImageLimitDialog — builds a dialog warning that only one image per card is allowed
  *   - buildHeader — builds the modal header row with title and close button
  */
@@ -198,42 +199,94 @@ export function buildCanvasContainer(
 
 // ── Footer ──────────────────────────────────────────────────────────────────
 
-export interface FooterCallbacks {
-  onCancel(): void;
-  onSaveAll(): void;
-  onSaveSolo(): void;
+export interface FooterRefs {
+  footerEl: HTMLElement;
+  getMaskMode(): "solo" | "all";
+  cancelBtn: HTMLButtonElement;
+  saveBtn: HTMLButtonElement;
 }
 
-/** Build the modal footer with Cancel / Hide All / Hide One buttons. */
-export function buildFooter(parent: HTMLElement, cb: FooterCallbacks): HTMLElement {
-  const footer = parent.createDiv({ cls: "bc flex items-center justify-end gap-4" });
+export interface FooterCallbacks {
+  onCancel(): void;
+  onSave(mode: "solo" | "all"): void;
+}
+
+/** Build the modal footer with Cancel button, mask-mode picker, and Save button. */
+export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMode: "solo" | "all" = "solo"): FooterRefs {
+  const footer = parent.createDiv({ cls: "bc flex flex-col items-end gap-3" });
   footer.classList.add("sprout-io-footer", "sprout-modal-footer");
 
-  const cancelBtn = footer.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
+  let selectedMode: "solo" | "all" = defaultMode;
+  const options: { value: "solo" | "all"; label: string }[] = [
+    { value: "solo", label: "Hide one" },
+    { value: "all", label: "Hide all" },
+  ];
+
+  // Mode picker row
+  const modeRow = footer.createDiv({ cls: "bc flex items-center gap-2 w-full justify-end" });
+  modeRow.createEl("label", {
+    cls: "bc text-sm font-medium",
+    text: "Mask mode",
+  });
+
+  // Button-style dropdown (matches other modal dropdowns)
+  const dropRoot = modeRow.createDiv({ cls: "bc sprout relative inline-flex" });
+  const trigger = dropRoot.createEl("button", {
+    cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
+    attr: { type: "button", "aria-haspopup": "menu", "aria-expanded": "false" },
+  });
+  const triggerLabel = trigger.createEl("span", { cls: "bc truncate", text: options.find((o) => o.value === selectedMode)?.label ?? "Hide one" });
+  const chevronWrap = trigger.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-3" });
+  setIcon(chevronWrap, "chevron-down");
+
+  const menu = dropRoot.createDiv({ cls: "bc sprout-io-mode-menu" });
+  menu.classList.add("hidden");
+
+  for (const opt of options) {
+    const item = menu.createDiv({ cls: "bc sprout-io-mode-menu-item", text: opt.label });
+    if (opt.value === selectedMode) item.classList.add("is-selected");
+    item.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      selectedMode = opt.value;
+      triggerLabel.textContent = opt.label;
+      menu.querySelectorAll(".sprout-io-mode-menu-item").forEach((el) => el.classList.remove("is-selected"));
+      item.classList.add("is-selected");
+      menu.classList.add("hidden");
+      trigger.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  trigger.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const open = !menu.classList.contains("hidden");
+    menu.classList.toggle("hidden", open);
+    trigger.setAttribute("aria-expanded", String(!open));
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", () => {
+    menu.classList.add("hidden");
+    trigger.setAttribute("aria-expanded", "false");
+  });
+
+  // Button row
+  const buttonRow = footer.createDiv({ cls: "bc flex items-center gap-2" });
+
+  const cancelBtn = buttonRow.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
   cancelBtn.type = "button";
   const cancelIcon = cancelBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
   setIcon(cancelIcon, "x");
   cancelBtn.createSpan({ text: "Cancel" });
   cancelBtn.onclick = () => cb.onCancel();
 
-  const hideAllBtn = footer.createEl("button", {
-    cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
-    attr: { "data-tooltip": "Hide all: study with all masks hidden; no context clues." },
-  });
-  hideAllBtn.type = "button";
-  hideAllBtn.classList.add("sprout-io-hide-all");
-  hideAllBtn.createSpan({ text: "Hide all" });
-  hideAllBtn.onclick = () => cb.onSaveAll();
+  const saveBtn = buttonRow.createEl("button", { cls: "bc btn inline-flex items-center gap-2 h-9 px-3 text-sm" });
+  saveBtn.type = "button";
+  saveBtn.createSpan({ text: "Save" });
+  saveBtn.onclick = () => cb.onSave(selectedMode);
 
-  const hideOneBtn = footer.createEl("button", {
-    cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm",
-    attr: { "data-tooltip": "Hide one: hide only the active mask; keeps context visible." },
-  });
-  hideOneBtn.type = "button";
-  hideOneBtn.createSpan({ text: "Hide one" });
-  hideOneBtn.onclick = () => cb.onSaveSolo();
-
-  return footer;
+  return { footerEl: footer, getMaskMode: () => selectedMode, cancelBtn, saveBtn };
 }
 
 // ── Image-limit dialog ──────────────────────────────────────────────────────

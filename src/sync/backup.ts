@@ -1,6 +1,6 @@
 /**
  * @file src/sync/backup.ts
- * @summary Backup management for the Sprout data store (data.json). Provides CRUD operations for listing, creating, restoring, and deleting backup snapshots, routine backup scheduling invoked by the sync engine, and low-level adapter/filesystem utilities shared with the sync engine.
+ * @summary Backup management for the Sprout data store (data.json). Provides CRUD operations for listing, creating, restoring, and deleting backup snapshots, routine backup scheduling invoked by the sync engine, and low-level adapter/filesystem utilities shared with the sync engine. Backups include scheduling data (states, reviewLog) and analytics data (review events, session events) to preserve heatmaps, streaks, and answer-button history.
  *
  * @exports
  *  - isPlainObject                 — type guard that checks if a value is a plain object
@@ -75,14 +75,48 @@ export function joinPath(...parts: string[]): string {
 /**
  * Heuristic: returns `true` if `k` looks like a Sprout-generated
  * card-state key (9-digit parent or `parent::cloze::cN` child).
+ * This is intentionally strict to avoid false positives from other plugins.
  */
 export function likelySproutStateKey(k: string): boolean {
-  return /^\d{9}$/.test(k) || /^\d{9}::cloze::c\d+$/.test(k) || /^\d{9}::/.test(k);
+  // Match 9-digit parent keys: "123456789"
+  if (/^\d{9}$/.test(k)) return true;
+  // Match cloze child keys: "123456789::cloze::c1"
+  if (/^\d{9}::cloze::c\d+$/.test(k)) return true;
+  // Match other child patterns: "123456789::io::rect1", "123456789::rev::forward", etc.
+  if (/^\d{9}::[a-z]+::.+$/.test(k)) return true;
+  return false;
+}
+
+/**
+ * Validates whether a state object looks like a legitimate Sprout CardState.
+ * Checks for presence of FSRS scheduling fields to avoid loading unrelated data.
+ */
+function isValidSproutState(state: unknown): boolean {
+  if (!state || typeof state !== "object") return false;
+  const s = state as Record<string, unknown>;
+  
+  // Check for FSRS fields (mature/review states)
+  const hasStabilityDays = typeof s.stabilityDays === "number";
+  const hasDifficulty = typeof s.difficulty === "number";
+  
+  // Check for basic scheduling fields (all states)
+  const hasDue = typeof s.due === "number";
+  const hasStage = typeof s.stage === "string" || typeof s.stage === "number";
+  const hasLapses = typeof s.lapses === "number";
+  const hasReps = typeof s.reps === "number";
+  
+  // Accept if it has FSRS fields OR has stage (Sprout-specific) + any other scheduling field
+  const hasFSRS = hasStabilityDays || hasDifficulty;
+  const hasBasicScheduling = hasStage && (hasDue || hasReps || hasLapses);
+  
+  // Also accept if it only has stage (for minimal/edge cases, but stage is Sprout-specific)
+  return hasFSRS || hasBasicScheduling || hasStage;
 }
 
 /**
  * Tries to extract a `states` object from a parsed data.json structure.
  * Supports both `{ states: {...} }` and `{ data: { states: {...} } }`.
+ * Validates state objects to prevent loading foreign plugin data.
  */
 export function extractStatesFromDataJsonObject(obj: unknown): Record<string, unknown> | null {
   if (!obj) return null;
@@ -90,6 +124,37 @@ export function extractStatesFromDataJsonObject(obj: unknown): Record<string, un
   const root = isPlainObject(o.data) ? o.data : o;
   const states = (root)?.states;
   if (!isPlainObject(states)) return null;
+  
+  // Additional safety: verify at least some states are valid Sprout scheduling states
+  const stateEntries = Object.entries(states);
+  if (stateEntries.length === 0) return null;
+  
+  // Sample first few entries to validate structure
+  const sampleSize = Math.min(5, stateEntries.length);
+  let validCount = 0;
+  let sproutKeyCount = 0;
+  
+  for (let i = 0; i < sampleSize; i++) {
+    const [key, value] = stateEntries[i];
+    const keyMatchesSprout = likelySproutStateKey(key);
+    const stateIsValid = isValidSproutState(value);
+    
+    // Count how many keys match Sprout pattern
+    if (keyMatchesSprout) sproutKeyCount++;
+    
+    // Count valid Sprout states (both key pattern AND state structure must match)
+    if (keyMatchesSprout && stateIsValid) {
+      validCount++;
+    }
+  }
+  
+  // If we found at least one Sprout-patterned key, require those to have valid states
+  // If no Sprout-patterned keys found in sample, this is likely not Sprout data
+  if (sproutKeyCount === 0) return null;
+  
+  // At least 60% of Sprout-patterned keys should have valid state structures
+  if (validCount < sproutKeyCount * 0.6) return null;
+  
   return states;
 }
 
@@ -351,6 +416,9 @@ export type DataJsonBackupStats = DataJsonBackupEntry & {
   quarantine: number;
   io: number;
   sproutishStateKeys: number;
+  analyticsEvents: number;
+  analyticsReviewEvents: number;
+  analyticsSessionEvents: number;
 };
 
 // ────────────────────────────────────────────
@@ -413,6 +481,20 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
   const quarantineCount = countObjectKeys(quarantine);
   const ioCount = countObjectKeys(io);
 
+  // Analytics stats
+  const analyticsRaw = root.analytics;
+  const analyticsEvents: unknown[] =
+    isPlainObject(analyticsRaw) && Array.isArray((analyticsRaw).events)
+      ? (analyticsRaw).events as unknown[]
+      : [];
+  const analyticsEventCount = analyticsEvents.length;
+  const analyticsReviewCount = analyticsEvents.filter(
+    (e) => isPlainObject(e) && (e).kind === "review",
+  ).length;
+  const analyticsSessionCount = analyticsEvents.filter(
+    (e) => isPlainObject(e) && (e).kind === "session",
+  ).length;
+
   const entry: DataJsonBackupEntry = {
     path,
     name: String(path).split("/").pop() || String(path),
@@ -433,12 +515,15 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
     quarantine: quarantineCount,
     io: ioCount,
     sproutishStateKeys,
+    analyticsEvents: analyticsEventCount,
+    analyticsReviewEvents: analyticsReviewCount,
+    analyticsSessionEvents: analyticsSessionCount,
   };
 }
 
 /**
- * Creates a timestamped backup of the current scheduling data on disk.
- * Only saves states and reviewLog — not card content, IO maps, or quarantine.
+ * Creates a timestamped backup of the current scheduling and analytics data on disk.
+ * Saves states, reviewLog, and analytics events — not card content, IO maps, or quarantine.
  * Returns the backup file path, or `null` on failure.
  */
 export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: string): Promise<string | null> {
@@ -454,15 +539,17 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
 
     const states = data.states;
     const reviewLog = data.reviewLog;
+    const analytics = data.analytics;
     if (!isPlainObject(states) && !Array.isArray(reviewLog)) return null;
 
-    // Only persist scheduling data (states + reviewLog)
+    // Persist scheduling data (states + reviewLog) and analytics events
     const schedulingSnapshot: Record<string, unknown> = {
-      _backupType: "scheduling-data",
+      _backupType: "scheduling-and-analytics",
       _createdAt: Date.now(),
       version: Number(data.version ?? 0) || 0,
       states: states ?? {},
       reviewLog: reviewLog ?? [],
+      analytics: analytics ?? { version: 1, seq: 0, events: [] },
     };
 
     const text = JSON.stringify(schedulingSnapshot);
@@ -487,7 +574,7 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
 }
 
 /**
- * Restores scheduling data (states and reviewLog) from a backup file.
+ * Restores scheduling data (states, reviewLog) and analytics data from a backup file.
  * Does NOT restore card content (cards, io) to preserve markdown changes.
  * Optionally creates a safety backup before overwriting.
  *
@@ -515,12 +602,22 @@ export async function restoreFromDataJsonBackup(
     // This prevents overwriting question wording/content changes made in markdown
     const snapshot = clonePlain(root);
 
-    // Selectively restore only scheduling-related data
+    // Selectively restore scheduling-related data and analytics
     if (snapshot.states && typeof snapshot.states === "object") {
       plugin.store.data.states = snapshot.states as typeof plugin.store.data.states;
     }
     if (Array.isArray(snapshot.reviewLog)) {
       plugin.store.data.reviewLog = snapshot.reviewLog as typeof plugin.store.data.reviewLog;
+    }
+    // Restore analytics events (answer buttons, heatmap, streaks, etc.)
+    if (isPlainObject(snapshot.analytics)) {
+      const a = snapshot.analytics;
+      const eventsArr = Array.isArray(a.events) ? a.events : [];
+      plugin.store.data.analytics = {
+        version: Number(a.version ?? 1) || 1,
+        seq: Number(a.seq ?? 0) || 0,
+        events: eventsArr as typeof plugin.store.data.analytics.events,
+      };
     }
     // Note: cards, io, and quarantine are NOT restored to preserve markdown changes
 

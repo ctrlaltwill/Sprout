@@ -24,6 +24,13 @@ describe("reviewer fields utilities", () => {
     expect(parsed.correctIndex).toBe(0);
   });
 
+  it("parses multi-answer MCQ with multiple bold options", () => {
+    const parsed = parseMcqOptionsFromCell("**Red** | Green | **Blue** | Purple");
+    expect(parsed.options).toEqual(["Red", "Green", "Blue", "Purple"]);
+    expect(parsed.correctIndex).toBe(0);
+    expect(parsed.correctIndices).toEqual([0, 2]);
+  });
+
   it("throws when MCQ has no correct option", () => {
     expect(() => parseMcqOptionsFromCell("A | B")).toThrow();
   });
@@ -65,5 +72,25 @@ describe("reviewer fields utilities", () => {
     expect(buildAnswerOrOptionsFor(basic)).toBe("A");
     expect(buildQuestionFor(mcq)).toBe("Stem");
     expect(buildAnswerOrOptionsFor(mcq)).toBe("One | **Two**");
+  });
+
+  it("builds answer string for multi-answer MCQ", () => {
+    const mcqMulti: CardRecord = {
+      id: "3",
+      type: "mcq",
+      title: null,
+      stem: "Pick evens",
+      options: ["One", "Two", "Three", "Four"],
+      correctIndex: 1,
+      correctIndices: [1, 3],
+      q: null,
+      a: null,
+      info: null,
+      groups: null,
+      sourceNotePath: "note.md",
+      sourceStartLine: 1,
+    } as CardRecord;
+
+    expect(buildAnswerOrOptionsFor(mcqMulti)).toBe("One | **Two** | Three | **Four**");
   });
 });

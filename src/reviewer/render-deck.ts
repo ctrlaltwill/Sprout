@@ -106,8 +106,8 @@ function makeIconButton(opts: {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = opts.className || "btn-outline";
-  btn.title = opts.title || "";
-  btn.setAttribute("aria-label", opts.label);
+  btn.setAttribute("data-tooltip", opts.title || opts.label);
+  btn.setAttribute("data-tooltip-position", "top");
 
   const iconWrap = document.createElement("span");
   iconWrap.className = `inline-flex items-center justify-center${opts.iconClassName ? ` ${opts.iconClassName}` : ""}`;
@@ -133,7 +133,8 @@ function makeDisclosureChevron(isOpen: boolean, onToggle: () => void) {
   btn.type = "button";
   btn.className =
     "sprout-deck-disclosure sprout-deck-disclosure-btn inline-flex items-center justify-center text-muted-foreground hover:text-foreground focus-visible:text-foreground";
-  btn.setAttribute("aria-label", isOpen ? "Collapse folder" : "Expand folder");
+  btn.setAttribute("data-tooltip", isOpen ? "Collapse folder" : "Expand folder");
+  btn.setAttribute("data-tooltip-position", "top");
   btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   btn.dataset.open = isOpen ? "true" : "false";
 
@@ -244,7 +245,7 @@ export function renderDeckMode(args: Args) {
   popover.className = "sprout-group-select-popover sprout-deck-group-popover sprout-dropdown-shadow rounded-lg border border-border bg-popover text-popover-foreground";
 
   const popHeader = document.createElement("div");
-  popHeader.className = "sprout-group-select-header flex items-center gap-2 border-b border-border";
+  popHeader.className = "sprout-group-select-header flex items-center gap-1 border-b border-border pl-1 pr-0 w-full";
   popover.appendChild(popHeader);
 
   const searchSvgHost = document.createElement("span");
@@ -258,7 +259,7 @@ export function renderDeckMode(args: Args) {
   searchInput.autocomplete = "off";
   searchInput.setAttribute("autocorrect", "off");
   searchInput.spellcheck = false;
-  searchInput.className = "sprout-group-search-input sprout-deck-search-input text-sm flex-1 h-9";
+  searchInput.className = "bg-transparent text-sm flex-1 h-9 sprout-search-naked";
   popHeader.appendChild(searchInput);
 
   const listbox = document.createElement("div");

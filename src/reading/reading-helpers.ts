@@ -37,6 +37,13 @@
 
 import { log } from "../core/logger";
 import { queryFirst } from "../core/ui";
+import {
+  FIELD_START_READING_RE,
+  unescapeDelimiterText,
+  splitAtDelimiterTerminator,
+  getDelimiter,
+  escapeDelimiterRe,
+} from "../core/delimiter";
 
 /* -----------------------
    Constants
@@ -48,7 +55,13 @@ export const INVIS_RE = /[\u200B\uFEFF]/g;
 /** Relaxed anchor regex (match anywhere on a line) */
 export const ANCHOR_RE = /\^sprout-(\d{6,12})/;
 
-export const FIELD_START_RE = /^([A-Za-z]+)\s*\|\s*(.*)$/;
+/** Dynamic field-start regex that uses the active delimiter. */
+export const FIELD_START_RE = { test: (s: string) => FIELD_START_READING_RE().test(s), exec: (s: string) => FIELD_START_READING_RE().exec(s) };
+
+/** Match a string against the field-start regex. Works as a drop-in for `str.match(FIELD_START_RE)`. */
+function matchFieldStart(s: string): RegExpMatchArray | null {
+  return s.match(FIELD_START_READING_RE());
+}
 
 export type FieldKey = "T" | "Q" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO";
 
@@ -72,12 +85,12 @@ export function clean(s: string): string {
 }
 
 /**
- * Unescape pipe-delimited field text.
- * Converts \\ → \ and \| → |
- * This matches the parser.ts logic.
+ * Unescape delimited field text.
+ * Converts \\ → \ and \<delim> → <delim>
+ * Delegates to the shared delimiter utility.
  */
 export function unescapePipeText(s: string): string {
-  return s.replace(/\\\\/g, "\\").replace(/\\\|/g, "|");
+  return unescapeDelimiterText(s);
 }
 
 export function normalizeMathSignature(s: string): string {
@@ -173,17 +186,7 @@ export function processMarkdownFeatures(text: string): string {
 }
 
 export function splitAtPipeTerminator(line: string): { content: string; terminated: boolean } {
-  // Match trailing pipe: not preceded by backslash, optionally followed by whitespace
-  // Handles: "content |" or "$$ |" or "text|" but NOT "\|" (escaped pipe in LaTeX)
-  const match = line.match(/(?<!\\)\|\s*$/);
-  if (!match || match.index === undefined) {
-    return { content: line, terminated: false };
-  }
-
-  return {
-    content: line.slice(0, match.index).trimEnd(),
-    terminated: true,
-  };
+  return splitAtDelimiterTerminator(line);
 }
 
 /* -----------------------
@@ -332,12 +335,13 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
     if (trimmed.match(/^#{1,6}\s/)) break;
     
     // Check if this line starts a new field
-    if (trimmed.match(FIELD_START_RE)) {
+    if (matchFieldStart(trimmed)) {
       inPipeField = true;
       lastFieldHadClosingPipe = false;
       
       // Check if the field closes on the same line
-      if (trimmed.endsWith('|') && trimmed.indexOf('|') !== trimmed.lastIndexOf('|')) {
+      const d = getDelimiter();
+      if (trimmed.endsWith(d) && trimmed.indexOf(d) !== trimmed.lastIndexOf(d)) {
         inPipeField = false;
         lastFieldHadClosingPipe = true;
       }
@@ -348,7 +352,7 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
     // If we're in a pipe field, continue until we find the closing pipe
     if (inPipeField) {
       cardLines.push(line);
-      if (trimmed.endsWith('|')) {
+      if (trimmed.endsWith(getDelimiter())) {
         inPipeField = false;
         lastFieldHadClosingPipe = true;
       }
@@ -361,7 +365,7 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
       if (i + 1 < lines.length) {
         const nextLine = lines[i + 1].trim();
         // If next line is a header, another anchor, or doesn't start a field, we're done
-        if (nextLine.match(/^#{1,6}\s/) || nextLine.match(ANCHOR_RE) || !nextLine.match(FIELD_START_RE)) {
+        if (nextLine.match(/^#{1,6}\s/) || nextLine.match(ANCHOR_RE) || !matchFieldStart(nextLine)) {
           break;
         }
       }
@@ -370,7 +374,7 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
     }
     
     // If we're not in a field and hit a non-empty line that isn't a field start, we're done
-    if (trimmed && !trimmed.match(FIELD_START_RE)) {
+    if (trimmed && !matchFieldStart(trimmed)) {
       break;
     }
     
@@ -382,14 +386,16 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
 
 export interface SproutCard {
   anchorId: string;
-  type: "basic" | "cloze" | "mcq" | "io";
+  type: "basic" | "reversed" | "cloze" | "mcq" | "io" | "oq";
   title: string;
   fields: {
     T?: string | string[];
     Q?: string | string[];
+    RQ?: string | string[];
     A?: string | string[];
     CQ?: string | string[];
     MCQ?: string | string[];
+    OQ?: string | string[];
     O?: string | string[];
     I?: string | string[];
     G?: string | string[];
@@ -417,7 +423,7 @@ export function parseSproutCard(text: string): SproutCard | null {
 
   for (let i = parseFrom; i < lines.length; i++) {
     const line = lines[i];
-    const fm = line.match(FIELD_START_RE);
+    const fm = matchFieldStart(line);
     if (fm) {
       const raw = fm[1].toUpperCase();
       if (currentField && currentContent.length > 0) saveField(fields, currentField, currentContent);
@@ -472,6 +478,8 @@ export function parseSproutCard(text: string): SproutCard | null {
   if (fields.CQ) type = "cloze";
   else if (fields.MCQ) type = "mcq";
   else if (fields.IO) type = "io";
+  else if (fields.OQ) type = "oq";
+  else if (fields.RQ) type = "reversed";
   else if (fields.Q) type = "basic";
 
   // Use full T field (join if multiple lines) to ensure full title displayed
@@ -519,12 +527,26 @@ export function buildCardContentHTML(card: SproutCard): string {
     const options = Array.isArray(card.fields.O)
       ? card.fields.O
       : (typeof card.fields.O === 'string' ? card.fields.O.split('\n').filter(s => s.trim()) : []);
-    const answer = Array.isArray(card.fields.A) ? card.fields.A.join('\n') : card.fields.A;
-    contentHTML += buildMCQSectionHTML(question, options, answer);
-  } else if (card.type === "basic" && card.fields.Q) {
-    const question = Array.isArray(card.fields.Q) ? card.fields.Q.join('\n') : card.fields.Q;
+    const answers = Array.isArray(card.fields.A) ? card.fields.A : (card.fields.A ? [card.fields.A] : []);
+    contentHTML += buildMCQSectionHTML(question, options, answers);
+  } else if ((card.type === "basic" || card.type === "reversed") && (card.fields.Q || card.fields.RQ)) {
+    const qField = card.type === "reversed" ? card.fields.RQ : card.fields.Q;
+    const question = Array.isArray(qField) ? qField.join('\n') : qField;
     const answer = Array.isArray(card.fields.A) ? card.fields.A.join('\n') : card.fields.A;
     contentHTML += buildBasicSectionHTML(question, answer);
+  } else if (card.type === "oq" && card.fields.OQ) {
+    const question = Array.isArray(card.fields.OQ) ? card.fields.OQ.join('\n') : card.fields.OQ;
+    // Collect numbered step fields (1, 2, 3, ...)
+    const steps: string[] = [];
+    const fieldsAny = card.fields as Record<string, string | string[] | undefined>;
+    for (let i = 1; i <= 20; i++) {
+      const key = String(i);
+      const val = fieldsAny[key];
+      if (val !== undefined) {
+        steps.push(Array.isArray(val) ? val.join('\n') : String(val));
+      }
+    }
+    contentHTML += buildOQSectionHTML(question, steps);
   } else if (card.type === "io" && card.fields.IO) {
     const ioContent = Array.isArray(card.fields.IO) ? card.fields.IO.join('\n') : card.fields.IO;
     contentHTML += buildIOSectionHTML(ioContent);
@@ -562,34 +584,48 @@ export function buildClozeSectionHTML(clozeContent: string): string {
   }
 
   return `
-    <div class="sprout-card-section sprout-section-cloze">
+    <div class="sprout-card-section sprout-section-question sprout-section-cloze">
       <div class="sprout-section-label">Question</div>
       <div class="sprout-section-content sprout-p-spacing-none">${processedHtml}</div>
     </div>
   `;
 }
 
-export function buildMCQSectionHTML(question: string, options: string[], answer?: string): string {
-  // Shuffle options and insert answer at random position
-  function shuffleAndInsertAnswer(opts: string[], ans: string): { options: string[], answerIdx: number } {
-    const arr = opts.filter(opt => opt.trim() !== ans.trim());
+export function buildMCQSectionHTML(question: string, options: string[], answers?: string | string[]): string {
+  // Normalise answers to an array of trimmed strings
+  const ansArr: string[] = Array.isArray(answers)
+    ? answers.map(a => a.trim()).filter(Boolean)
+    : (answers ? [answers.trim()] : []);
+  const ansSet = new Set(ansArr.map(a => a.trim()));
+
+  // Shuffle options and insert answers at random positions
+  function shuffleAndInsertAnswers(opts: string[], ans: string[]): { options: string[], answerIdxs: Set<number> } {
+    const arr = opts.filter(opt => !ansSet.has(opt.trim()));
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    const answerIdx = Math.floor(Math.random() * (arr.length + 1));
-    arr.splice(answerIdx, 0, ans);
-    return { options: arr, answerIdx };
+    const answerIdxs = new Set<number>();
+    for (const a of ans) {
+      const idx = Math.floor(Math.random() * (arr.length + 1));
+      arr.splice(idx, 0, a);
+      // Recalculate indices since array shifted
+    }
+    // Find final answer positions
+    arr.forEach((opt, idx) => {
+      if (ansSet.has(opt.trim())) answerIdxs.add(idx);
+    });
+    return { options: arr, answerIdxs };
   }
 
-  const shuffled = answer ? shuffleAndInsertAnswer(options, answer) : { options, answerIdx: -1 };
+  const shuffled = ansArr.length > 0 ? shuffleAndInsertAnswers(options, ansArr) : { options, answerIdxs: new Set<number>() };
   const allOptions = shuffled.options;
-  const answerIdx = shuffled.answerIdx;
+  const answerIdxs = shuffled.answerIdxs;
 
   // Render options as ABCD list with full stop and 6px gap, styled
   const optionsHTML = allOptions.map((opt, idx) => {
     const letter = String.fromCharCode(65 + idx);
-    const isAnswer = idx === answerIdx;
+    const isAnswer = answerIdxs.has(idx);
     return `<div class="sprout-option">
       <span class="sprout-option-bullet">${letter}.</span>
       ${isAnswer
@@ -599,10 +635,10 @@ export function buildMCQSectionHTML(question: string, options: string[], answer?
   }).join('');
 
   // Collapsible options section only
-  const optionsSection = buildCollapsibleSectionHTML('Options', `.sprout-options-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-options-list">${optionsHTML}</div>`);
+  const optionsSection = buildCollapsibleSectionHTML('Options', `.sprout-options-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-options-list">${optionsHTML}</div>`, undefined, 'sprout-section-options');
 
   return `
-    <div class="sprout-card-section">
+    <div class="sprout-card-section sprout-section-question">
       <div class="sprout-section-label">Question</div>
       <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none">${processMarkdownFeatures(question)}</div>
     </div>
@@ -610,17 +646,44 @@ export function buildMCQSectionHTML(question: string, options: string[], answer?
   `;
 }
 
-export function buildBasicSectionHTML(question: string, answer?: string): string {
+export function buildOQSectionHTML(question: string, steps: string[]): string {
+  const aId = `sprout-oq-${Math.random().toString(36).slice(2,8)}`;
+
+  const stepsHTML = steps.map((step, idx) => {
+    return `<div class="sprout-oq-answer-row">
+      <span class="sprout-option-bullet">${idx + 1}.</span>
+      <span class="sprout-option-text">${processMarkdownFeatures(step)}</span>
+    </div>`;
+  }).join('');
+
+  const answerSection = buildCollapsibleSectionHTML(
+    'Answer (Correct Order)',
+    `.${aId}`,
+    `<div class="sprout-oq-answer-list">${stepsHTML}</div>`,
+    undefined,
+    'sprout-section-answer'
+  );
+
+  return `
+    <div class="sprout-card-section sprout-section-question">
+      <div class="sprout-section-label">Question</div>
+      <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none">${processMarkdownFeatures(question)}</div>
+    </div>
+    ${answerSection}
+  `;
+}
+
+export function buildBasicSectionHTML(question?: string, answer?: string): string {
   const qId = `sprout-q-${Math.random().toString(36).slice(2,8)}`;
   const aId = `sprout-a-${Math.random().toString(36).slice(2,8)}`;
   
   const q = question ? `
-    <div class="sprout-card-section">
+    <div class="sprout-card-section sprout-section-question">
       <div class="sprout-section-label">Question</div>
       <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none" id="${qId}"></div>
     </div>` : '';
 
-  const a = answer ? buildCollapsibleSectionHTML('Answer', `.sprout-answer-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-answer sprout-p-spacing-none" id="${aId}"></div>`, aId) : '';
+  const a = answer ? buildCollapsibleSectionHTML('Answer', `.sprout-answer-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-answer sprout-p-spacing-none" id="${aId}"></div>`, aId, 'sprout-section-answer') : '';
 
   return q + a;
 }
@@ -634,6 +697,7 @@ export function buildIOSectionHTML(_ioContent: string): string {
     `.sprout-io-answer-${Math.random().toString(36).slice(2,8)}`,
     `<div class="sprout-io-answer-wrap sprout-p-spacing-none" id="${ioAnswerId}"></div>`,
     ioAnswerId,
+    'sprout-section-answer',
   );
 
   return `
@@ -647,10 +711,10 @@ export function buildIOSectionHTML(_ioContent: string): string {
 
 export function buildInfoSectionHTML(_infoContent: string): string {
   const iId = `sprout-i-${Math.random().toString(36).slice(2,8)}`;
-  return buildCollapsibleSectionHTML('Extra Information', `.sprout-info-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-info sprout-p-spacing-none" id="${iId}"></div>`, iId);
+  return buildCollapsibleSectionHTML('Extra Information', `.sprout-info-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-info sprout-p-spacing-none" id="${iId}"></div>`, iId, 'sprout-section-info');
 }
 
-export function buildCollapsibleSectionHTML(label: string, targetSelector: string, innerHtml: string, _markdownId?: string) {
+export function buildCollapsibleSectionHTML(label: string, targetSelector: string, innerHtml: string, _markdownId?: string, sectionClass = '') {
   // targetSelector should be unique per card instance; caller supplies a selector string starting with '.'
   const contentId = targetSelector.startsWith('.') ? targetSelector.slice(1) : targetSelector.replace('#','');
 
@@ -658,10 +722,10 @@ export function buildCollapsibleSectionHTML(label: string, targetSelector: strin
   const chevronSvg = `<!--lucide:chevron-down--><svg class="sprout-toggle-chevron sprout-toggle-chevron-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>`;
 
   return `
-    <div class="sprout-card-section">
+    <div class="sprout-card-section ${escapeHtml(sectionClass).trim()}">
       <div class="sprout-section-label">
         <span>${escapeHtml(label)}</span>
-        <button class="sprout-toggle-btn sprout-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" title="Toggle ${escapeHtml(label)}">
+        <button class="sprout-toggle-btn sprout-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" data-tooltip="Toggle ${escapeHtml(label)}" data-tooltip-position="top">
           ${chevronSvg}
         </button>
       </div>
@@ -866,11 +930,12 @@ export function checkForNonCardContent(el: Element): { hasNonCardContent: boolea
   const text = el.textContent || '';
   
   // Check for markdown content after pipe delimiter
-  // Pattern: anything | followed by markdown content (e.g., # Header, list items, etc.)
-  // Extract EVERYTHING after the pipe so we can recreate proper DOM elements
-  const pipeMatch = text.match(/\|\s*(#{1,6}\s+.+)/s);
+  // Pattern: anything <delim> followed by markdown content (e.g., # Header, list items, etc.)
+  // Extract EVERYTHING after the delimiter so we can recreate proper DOM elements
+  const delimRe = escapeDelimiterRe();
+  const pipeMatch = text.match(new RegExp(`${delimRe}\\s*(#{1,6}\\s+.+)`, "s"));
   if (pipeMatch) {
-    debugLog('[Hide Siblings] Found content after pipe:', pipeMatch[1].substring(0, 80));
+    debugLog('[Hide Siblings] Found content after delimiter:', pipeMatch[1].substring(0, 80));
     return { hasNonCardContent: true, contentAfterPipe: pipeMatch[1].trim() };
   }
   
@@ -885,11 +950,11 @@ export function checkForNonCardContent(el: Element): { hasNonCardContent: boolea
   const mjxError = queryFirst(el, 'mjx-merror');
   if (mjxError) {
     const errorText = mjxError.textContent || '';
-    // Match pipe followed by ANY content starting with header - capture everything
+    // Match delimiter followed by ANY content starting with header - capture everything
     // Use 's' flag to make . match newlines
-    const errorPipeMatch = errorText.match(/\|\s*(#{1,6}\s+[\s\S]*)/);
+    const errorPipeMatch = errorText.match(new RegExp(`${delimRe}\\s*(#{1,6}\\s+[\\s\\S]*)`));
     if (errorPipeMatch) {
-      debugLog('[Hide Siblings] MathJax error has content after pipe:', errorPipeMatch[1].substring(0, 80));
+      debugLog('[Hide Siblings] MathJax error has content after delimiter:', errorPipeMatch[1].substring(0, 80));
       return { hasNonCardContent: true, contentAfterPipe: errorPipeMatch[1].trim() };
     }
   }

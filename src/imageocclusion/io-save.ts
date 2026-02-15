@@ -12,6 +12,7 @@ import { Notice, MarkdownView, TFile, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
 import type { CardRecord } from "../core/store";
+import { syncOneFile } from "../sync/sync-engine";
 import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
 import {
@@ -253,9 +254,11 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
     // Update the markdown block in the note
     try {
+      let fileToSync: TFile | null = null;
       const srcPath = String(parentRec.sourceNotePath || "");
       const file = app.vault.getAbstractFileByPath(srcPath);
       if (file instanceof TFile) {
+        fileToSync = file;
         const text = await app.vault.read(file);
         const lines = text.split(/\r?\n/);
         const { start, end } = findCardBlockRangeById(lines, parentId);
@@ -272,6 +275,10 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
         ];
         lines.splice(start, end - start, ...ioBlock);
         await app.vault.modify(file, lines.join("\n"));
+      }
+
+      if (fileToSync) {
+        await syncOneFile(plugin, fileToSync);
       }
     } catch (e: unknown) {
       log.warn("Failed to update IO markdown", e);
@@ -453,6 +460,12 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     await insertTextAtCursorOrAppend(app, active, ioBlock.join("\n"), true);
   } catch (e: unknown) {
     log.warn("Failed to insert IO markdown, but card saved to store", e);
+  }
+
+  try {
+    await syncOneFile(plugin, active);
+  } catch (e: unknown) {
+    log.warn("Failed to sync after IO markdown insertion", e);
   }
 
   new Notice(`Image occlusion saved.`);

@@ -19,6 +19,7 @@
 import type { CardRecord } from "../types/card";
 import type { CardState } from "../types/scheduler";
 import type { ReviewRating } from "../types/scheduler";
+import { isParentCard, ioChildKeyFromId as _ioChildKeyFromId, cardHasIoChildKey as _cardHasIoChildKey, isIoParentCard as _isIoParentCard, isClozeParentCard as _isClozeParentCard } from "../core/card-utils";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -62,50 +63,18 @@ export type UndoFrame = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  IO child key helpers                                               */
+/*  IO child key helpers (re-exported from core/card-utils)            */
 /* ------------------------------------------------------------------ */
 
-/** Extract the IO child key from a card ID string (e.g. `"…::io::mask1"` → `"mask1"`). */
-export function ioChildKeyFromId(id: string): string | null {
-  const m = String(id ?? "").match(/::io::(.+)$/);
-  if (!m) return null;
-  const k = String(m[1] ?? "").trim();
-  return k ? k : null;
-}
-
-function getGroupKey(card: CardRecord): string | null {
-  if (!card) return null;
-  const raw = typeof card.groupKey === "string" ? card.groupKey.trim() : "";
-  return raw ? raw : null;
-}
-
-/** Returns `true` if the card has an IO child key in any known property. */
-export function cardHasIoChildKey(card: CardRecord): boolean {
-  if (!card) return false;
-  if (getGroupKey(card)) return true;
-  const id = String(card.id ?? "");
-  return !!ioChildKeyFromId(id);
-}
+export const ioChildKeyFromId = _ioChildKeyFromId;
+export const cardHasIoChildKey = _cardHasIoChildKey;
 
 /* ------------------------------------------------------------------ */
-/*  Card-type predicates                                               */
+/*  Card-type predicates (re-exported from core/card-utils)            */
 /* ------------------------------------------------------------------ */
 
-/** Returns `true` if the card is an IO *parent* (not a child). */
-export function isIoParentCard(card: CardRecord): boolean {
-  const t = String(card?.type ?? "").toLowerCase();
-  if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
-  if (t === "io") return !cardHasIoChildKey(card);
-  return false;
-}
-
-/** Returns `true` if the card is a cloze parent with child deletions. */
-export function isClozeParentCard(card: CardRecord): boolean {
-  const t = String(card?.type ?? "").toLowerCase();
-  if (t !== "cloze") return false;
-  const children = (card)?.clozeChildren;
-  return Array.isArray(children) && children.length > 0;
-}
+export const isIoParentCard = _isIoParentCard;
+export const isClozeParentCard = _isClozeParentCard;
 
 /** Returns `true` if the card's type is `"cloze"` or `"cloze-child"`. */
 export function isClozeLike(card: CardRecord): boolean {
@@ -122,11 +91,7 @@ export function isClozeLike(card: CardRecord): boolean {
  * their children during review: cloze parents, IO parents).
  */
 export function filterReviewableCards(cards: CardRecord[]): CardRecord[] {
-  return (cards || []).filter((c) => {
-    const t = String(c?.type ?? "").toLowerCase();
-    if (t === "cloze" || t === "io" || t === "io-parent") return false;
-    return !isClozeParentCard(c) && !isIoParentCard(c);
-  });
+  return (cards || []).filter((c) => !isParentCard(c));
 }
 
 /* ------------------------------------------------------------------ */
@@ -228,6 +193,10 @@ export interface WidgetViewLike {
   /** @internal */ _undo: UndoFrame | null;
   /** @internal */ _sessionStamp: number;
   /** @internal */ _moreMenuToggle: (() => void) | null;
+  _typedClozeAnswers: Map<number, string>;
+  _typedClozeCardId: string;
+  _mcqMultiSelected: Set<number>;
+  _mcqMultiCardId: string;
 
   render(): void;
   currentCard(): CardRecord | null;
@@ -241,6 +210,8 @@ export interface WidgetViewLike {
   buryCurrentCard(): Promise<void>;
   suspendCurrentCard(): Promise<void>;
   answerMcq(choiceIdx: number): Promise<void>;
+  answerMcqMulti(selectedIndices: number[]): Promise<void>;
+  answerOq(userOrder: number[]): Promise<void>;
   nextCard(): Promise<void>;
   openEditModalForCurrentCard(): void;
 

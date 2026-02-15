@@ -14,6 +14,7 @@ import { renderClozeFront } from "../reviewer/question-cloze";
 import { getWidgetMcqDisplayOrder, isClozeLike } from "./widget-helpers";
 import type { WidgetViewLike, ReviewMeta } from "./widget-helpers";
 import type { CardRecord } from "../types/card";
+import { normalizeCardOptions, getCorrectIndices, isMultiAnswerMcq } from "../types/card";
 import type { ReviewRating } from "../types/scheduler";
 import {
   makeTextButton,
@@ -23,6 +24,11 @@ import {
 } from "./widget-buttons";
 import { processMarkdownFeatures, setupInternalLinkHandlers } from "./widget-markdown";
 import { isFolderNote } from "./widget-scope";
+
+/** Returns true if the text contains a markdown table (pipe-delimited with a separator row). */
+function hasMarkdownTable(text: string): boolean {
+  return /^\|.+\|\s*\n\|[\s:|-]+\|/m.test(text);
+}
 
 /* ------------------------------------------------------------------ */
 /*  renderWidgetSession                                                */
@@ -58,6 +64,8 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   const backBtn = document.createElement("button");
   backBtn.type = "button";
   backBtn.className = "bc btn-outline sprout-widget-back-btn";
+  backBtn.setAttribute("data-tooltip", "Back to summary");
+  backBtn.setAttribute("data-tooltip-position", "top");
   setIcon(backBtn, "arrow-left");
   applyWidgetHoverDarken(backBtn);
 
@@ -83,6 +91,14 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
 
   // ---- Empty queue (session complete) --------------------------------
   const card = view.currentCard();
+
+  // Reset typed cloze answers when a new card is shown
+  const cardId = String((card)?.id ?? "");
+  if (view._typedClozeCardId !== cardId) {
+    view._typedClozeAnswers.clear();
+    view._typedClozeCardId = cardId;
+  }
+
   if (!card) {
     const body = el("div", "bc px-4 py-6 text-center space-y-2");
     body.appendChild(el("div", "bc text-lg font-semibold text-foreground", "Session Complete!"));
@@ -122,12 +138,15 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   };
 
   // ---- Card title ----------------------------------------------------
-  let cardTitle =
-    card.title ||
-    (card.type === "mcq" ? "MCQ" : isClozeLike(card) ? "Cloze" : card.type === "io" ? "Image" : "Basic");
+  let cardTitle = card.title || "";
   cardTitle = cardTitle.replace(/\s*[•·-]\s*c\d+\b/gi, "").trim();
+  // Remove direction suffix (e.g., " • Q→A", " • A→Q") from reversed-child cards
+  if (card.type === "reversed-child") {
+    cardTitle = cardTitle.replace(/\s*•\s*[AQ]\u2192[AQ]\s*$/, "").trim();
+  }
 
   const titleEl = el("div", "bc text-xs font-semibold sprout-widget-text");
+  if (!cardTitle) titleEl.hidden = true;
   replaceChildrenWithHTML(titleEl, processMarkdownFeatures(cardTitle));
   applySectionStyles(titleEl);
   body.appendChild(titleEl);
@@ -135,7 +154,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   const infoText = String((card)?.info ?? "").trim();
 
   // ---- Card-type–specific content ------------------------------------
-  if (card.type === "basic") {
+  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
     renderBasicCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
   } else if (isClozeLike(card)) {
     renderClozeCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
@@ -143,6 +162,8 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
     renderMcqCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
   } else if (card.type === "io" || card.type === "io-child") {
     renderIoCard(view, body, card, graded, infoText, makeDivider, applySectionStyles);
+  } else if (card.type === "oq") {
+    renderOqCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
   }
 
   // Setup link handlers for processMarkdownFeatures content
@@ -183,8 +204,11 @@ function renderBasicCard(
   makeDivider: () => HTMLElement,
 ) {
   const qEl = el("div", "bc");
-  const qText = card.q || "";
-  if (qText.includes("$") || qText.includes("[[")) {
+  // For reversed-child cards, use reversedDirection to swap content
+  const isBackDirection = card.type === "reversed-child" && (card as unknown).reversedDirection === "back";
+  const isOldReversed = card.type === "reversed";
+  const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
+  if (qText.includes("$") || qText.includes("[[") || hasMarkdownTable(qText)) {
     const qContainer = document.createElement("div");
     qContainer.className = "bc whitespace-pre-wrap break-words";
     const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
@@ -203,8 +227,8 @@ function renderBasicCard(
   if (view.showAnswer || graded) {
     body.appendChild(makeDivider());
     const aEl = el("div", "bc");
-    const aText = card.a || "";
-    if (aText.includes("$") || aText.includes("[[")) {
+    const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
+    if (aText.includes("$") || aText.includes("[[") || hasMarkdownTable(aText)) {
       const aContainer = document.createElement("div");
       aContainer.className = "bc whitespace-pre-wrap break-words";
       const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
@@ -221,7 +245,7 @@ function renderBasicCard(
     body.appendChild(aEl);
 
     if (infoText) {
-      renderInfoBlock(body, infoText, applySectionStyles);
+      renderInfoBlock(body, infoText, applySectionStyles, view, card);
     }
   }
 }
@@ -239,7 +263,7 @@ function renderClozeCard(
   const reveal = view.showAnswer || !!graded;
   const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : undefined;
 
-  if (text.includes("$") || text.includes("[[")) {
+  if (text.includes("$") || text.includes("[[") || hasMarkdownTable(text)) {
     const clozeEl = el("div", "bc sprout-widget-cloze sprout-widget-text w-full");
     applySectionStyles(clozeEl);
 
@@ -262,7 +286,25 @@ function renderClozeCard(
     void view.renderMarkdownInto(clozeEl, processedText, sourcePath);
     body.appendChild(clozeEl);
   } else {
-    const clozeEl = renderClozeFront(text, reveal, targetIndex);
+    const clozeMode = view.plugin.settings.cards?.clozeMode ?? "standard";
+    const clozeBgColor = view.plugin.settings.cards?.clozeBgColor ?? "";
+    const clozeTextColor = view.plugin.settings.cards?.clozeTextColor ?? "";
+
+    const clozeEl = renderClozeFront(text, reveal, targetIndex, {
+      mode: clozeMode,
+      clozeBgColor,
+      clozeTextColor,
+      typedAnswers: view._typedClozeAnswers,
+      onTypedInput: (clozeIndex: number, value: string) => {
+        view._typedClozeAnswers.set(clozeIndex, value);
+      },
+      onTypedSubmit: () => {
+        if (!view.showAnswer) {
+          view.showAnswer = true;
+          view.render();
+        }
+      },
+    });
     clozeEl.className = "bc sprout-widget-cloze sprout-widget-text w-full";
     applySectionStyles(clozeEl);
     body.appendChild(clozeEl);
@@ -270,7 +312,7 @@ function renderClozeCard(
 
   if (reveal && infoText) {
     body.appendChild(makeDivider());
-    renderInfoBlock(body, infoText, applySectionStyles);
+    renderInfoBlock(body, infoText, applySectionStyles, view, card);
   }
 }
 
@@ -288,18 +330,36 @@ function renderMcqCard(
   applySectionStyles(stemEl);
   body.appendChild(stemEl);
 
-  const options = Array.isArray(card.options) ? card.options : [];
+  const options = normalizeCardOptions(card.options);
   const chosen = graded?.meta?.mcqChoice;
+  const chosenMulti: Set<number> = graded?.meta?.mcqChoices
+    ? new Set(graded.meta.mcqChoices as number[])
+    : new Set<number>();
+  const isMulti = isMultiAnswerMcq(card);
+  const correctSet = new Set(getCorrectIndices(card));
 
   // Randomise MCQ options if setting enabled (stable per session)
   const randomize = !!(view.plugin.settings.study?.randomizeMcqOptions);
   const order = getWidgetMcqDisplayOrder(view.session, card, randomize);
   const opts = order.map((i) => options[i]);
 
+  // Multi-answer: track selection state
+  if (isMulti && view._mcqMultiCardId !== String(card.id)) {
+    view._mcqMultiSelected = new Set<number>();
+    view._mcqMultiCardId = String(card.id);
+  }
+
+  // Label for multi-answer
+  if (isMulti && !graded) {
+    const hint = el("div", "bc text-xs text-muted-foreground mb-1 text-center");
+    hint.textContent = "Select all correct answers";
+    body.appendChild(hint);
+  }
+
   const optsContainer = el("div", "bc flex flex-col gap-2 sprout-widget-section");
 
   opts.forEach((opt: string, displayIdx: number) => {
-    const text = typeof opt === "string" ? opt : opt && typeof (opt as Record<string, unknown>).text === "string" ? (opt as Record<string, unknown>).text as string : "";
+    const text = typeof opt === "string" ? opt : "";
     const d = el("div", "bc px-3 py-2 rounded border border-border cursor-pointer hover:bg-secondary sprout-widget-text sprout-widget-mcq-option");
     const origIdx = order[displayIdx];
 
@@ -322,20 +382,79 @@ function renderMcqCard(
     left.appendChild(textEl);
     d.appendChild(left);
 
-    if (!graded) d.addEventListener("click", () => void view.answerMcq(origIdx));
+    if (!graded) {
+      if (isMulti) {
+        // Multi-answer: toggle selection on click
+        if (view._mcqMultiSelected.has(origIdx)) {
+          d.classList.add("sprout-mcq-selected");
+        }
+        d.addEventListener("click", () => {
+          if (view._mcqMultiSelected.has(origIdx)) view._mcqMultiSelected.delete(origIdx);
+          else view._mcqMultiSelected.add(origIdx);
+          view.render();
+        });
+      } else {
+        d.addEventListener("click", () => void view.answerMcq(origIdx));
+      }
+    }
     if (graded) {
-      if (origIdx === card.correctIndex) d.classList.add("border-green-600", "bg-green-50");
-      if (typeof chosen === "number" && chosen === origIdx && origIdx !== card.correctIndex)
-        d.classList.add("border-red-600", "bg-red-50");
+      if (isMulti) {
+        // Smart highlighting for multi-answer
+        const isCorrect = correctSet.has(origIdx);
+        const wasChosen = chosenMulti.has(origIdx);
+        if (isCorrect && wasChosen) d.classList.add("border-green-600", "bg-green-50");
+        else if (isCorrect && !wasChosen) d.classList.add("sprout-mcq-missed-correct");
+        else if (!isCorrect && wasChosen) d.classList.add("border-red-600", "bg-red-50");
+      } else {
+        if (origIdx === card.correctIndex) d.classList.add("border-green-600", "bg-green-50");
+        if (typeof chosen === "number" && chosen === origIdx && origIdx !== card.correctIndex)
+          d.classList.add("border-red-600", "bg-red-50");
+      }
     }
     optsContainer.appendChild(d);
   });
 
   body.appendChild(optsContainer);
 
+  // Submit button for multi-answer (when not graded)
+  if (isMulti && !graded) {
+    const submitBtn = el("button", "bc btn-primary w-full text-sm mt-2 sprout-mcq-submit-btn");
+
+    const submitLabel = document.createElement("span");
+    submitLabel.textContent = "Submit";
+    submitBtn.appendChild(submitLabel);
+
+    const submitKbd = document.createElement("kbd");
+    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.textContent = "\u21B5";
+    submitBtn.appendChild(submitKbd);
+
+    submitBtn.addEventListener("click", () => {
+      if (view._mcqMultiSelected.size > 0) {
+        void view.answerMcqMulti([...view._mcqMultiSelected]);
+      } else {
+        submitBtn.classList.add("sprout-mcq-submit-shake");
+        submitBtn.addEventListener("animationend", () => {
+          submitBtn.classList.remove("sprout-mcq-submit-shake");
+        }, { once: true });
+        // Show tooltip on second empty attempt
+        if (submitBtn.dataset.emptyAttempt === "1") {
+          submitBtn.setAttribute("data-tooltip", "Choose at least one answer to proceed");
+          submitBtn.setAttribute("data-tooltip-position", "top");
+          submitBtn.classList.add("sprout-mcq-submit-tooltip-visible");
+          setTimeout(() => {
+            submitBtn.classList.remove("sprout-mcq-submit-tooltip-visible");
+          }, 2500);
+        }
+        submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
+      }
+    });
+    body.appendChild(submitBtn);
+  }
+
   if ((view.showAnswer || graded) && infoText) {
     body.appendChild(makeDivider());
-    renderInfoBlock(body, infoText, applySectionStyles);
+    renderInfoBlock(body, infoText, applySectionStyles, view, card);
   }
 }
 
@@ -358,7 +477,280 @@ function renderIoCard(
 
   if (reveal && infoText) {
     body.appendChild(makeDivider());
-    renderInfoBlock(body, infoText, applySectionStyles);
+    renderInfoBlock(body, infoText, applySectionStyles, view, card);
+  }
+}
+
+/* ================================================================== */
+/*  OQ (Ordering Question) renderer                                    */
+/* ================================================================== */
+
+/** Ensure session has an oqOrderMap, typed loosely to avoid extending the Session type. */
+function ensureWidgetOqOrderMap(session: Record<string, unknown>): Record<string, number[]> {
+  if (!session.oqOrderMap || typeof session.oqOrderMap !== "object") session.oqOrderMap = {};
+  return session.oqOrderMap as Record<string, number[]>;
+}
+
+function shuffleInPlace(a: number[]): void {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+}
+
+function getWidgetOqShuffledOrder(session: Record<string, unknown>, card: CardRecord, enabled: boolean): number[] {
+  const steps = card?.oqSteps || [];
+  const n = Array.isArray(steps) ? steps.length : 0;
+  const identity = Array.from({ length: n }, (_, i) => i);
+  if (!session || !n) return identity;
+  const id = String(card?.id ?? "");
+  if (!id) return identity;
+
+  const map = ensureWidgetOqOrderMap(session);
+  if (!enabled) {
+    map[id] = identity;
+    return identity;
+  }
+
+  const next = identity.slice();
+  shuffleInPlace(next);
+  if (n >= 2) {
+    let same = true;
+    for (let i = 0; i < n; i++) if (next[i] !== i) { same = false; break; }
+    if (same) { const tmp = next[0]; next[0] = next[1]; next[1] = tmp; }
+  }
+  map[id] = next;
+  return next;
+}
+
+function renderOqCard(
+  view: WidgetViewLike,
+  body: HTMLElement,
+  card: CardRecord,
+  graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
+  infoText: string,
+  applySectionStyles: (e: HTMLElement) => void,
+  makeDivider: () => HTMLElement,
+) {
+  const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+  const reveal = view.showAnswer || !!graded;
+  const oqMeta = (graded?.meta || {}) as Record<string, unknown>;
+  const userOrder: number[] = Array.isArray(oqMeta.oqUserOrder) ? oqMeta.oqUserOrder as number[] : [];
+
+  // Question text
+  const qEl = el("div", "bc sprout-widget-text");
+  const qText = card.q || "";
+  if (qText.includes("$") || qText.includes("[[") || hasMarkdownTable(qText)) {
+    const qContainer = document.createElement("div");
+    qContainer.className = "bc whitespace-pre-wrap break-words";
+    const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
+    void view.renderMarkdownInto(qContainer, qText, sourcePath);
+    qEl.appendChild(qContainer);
+  } else {
+    const qP = document.createElement("p");
+    qP.className = "bc whitespace-pre-wrap break-words";
+    replaceChildrenWithHTML(qP, processMarkdownFeatures(qText.replace(/\n/g, "<br>")));
+    qEl.appendChild(qP);
+  }
+  applySectionStyles(qEl);
+  body.appendChild(qEl);
+
+  if (!reveal) {
+    // ── Front: drag-to-reorder interface ──
+    const shouldShuffle = view.plugin.settings.study?.randomizeOqOrder ?? true;
+    const shuffled = getWidgetOqShuffledOrder(view.session as unknown as Record<string, unknown>, card, shouldShuffle);
+    const currentOrder = shuffled.slice();
+
+    const listWrap = el("div", "bc flex flex-col gap-2 sprout-oq-step-list");
+    body.appendChild(listWrap);
+
+    const renderSteps = () => {
+      listWrap.innerHTML = "";
+      currentOrder.forEach((origIdx, displayIdx) => {
+        const stepText = steps[origIdx] || "";
+        const row = document.createElement("div");
+        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
+        row.draggable = true;
+        row.dataset.oqIdx = String(displayIdx);
+
+        // Grip handle
+        const grip = document.createElement("span");
+        grip.className = "bc sprout-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
+        setIcon(grip, "grip-vertical");
+        row.appendChild(grip);
+
+        // Step number badge
+        const badge = document.createElement("kbd");
+        badge.className = "bc kbd";
+        badge.textContent = String(displayIdx + 1);
+        row.appendChild(badge);
+
+        // Step text
+        const textEl = document.createElement("span");
+        textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text sprout-widget-text";
+        replaceChildrenWithHTML(textEl, processMarkdownFeatures(stepText));
+        row.appendChild(textEl);
+
+        // ── Drag and drop ──
+        let dragOffset = 40;
+        row.addEventListener("dragstart", (e) => {
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", String(displayIdx));
+          }
+          row.classList.add("sprout-oq-row-dragging");
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          const first = allStepRows[0];
+          if (first) {
+            const gap = parseFloat(getComputedStyle(listWrap).rowGap || "0");
+            dragOffset = Math.round(first.getBoundingClientRect().height + gap);
+          }
+          allStepRows.forEach((r) => {
+            r.classList.add("sprout-oq-row-anim");
+            setCssProps(r, "--sprout-oq-translate", "0px");
+          });
+        });
+        row.addEventListener("dragend", () => {
+          row.classList.remove("sprout-oq-row-dragging");
+          listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row").forEach((r) => {
+            setCssProps(r, "--sprout-oq-translate", "0px");
+            r.classList.remove("sprout-oq-row-anim");
+          });
+        });
+        row.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+          const fromStr = e.dataTransfer?.getData("text/plain");
+          const fromIdx = fromStr ? Number(fromStr) : -1;
+          if (fromIdx === -1 || fromIdx === displayIdx) return;
+          listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row").forEach((r, idx) => {
+            if (idx === fromIdx) {
+              setCssProps(r, "--sprout-oq-translate", `${(displayIdx - fromIdx) * dragOffset}px`);
+            } else {
+              let offset = 0;
+              if (fromIdx < displayIdx) { if (idx > fromIdx && idx <= displayIdx) offset = -dragOffset; }
+              else { if (idx >= displayIdx && idx < fromIdx) offset = dragOffset; }
+              setCssProps(r, "--sprout-oq-translate", `${offset}px`);
+            }
+          });
+        });
+        row.addEventListener("drop", (e) => {
+          e.preventDefault();
+          const fromIdx = Number(e.dataTransfer?.getData("text/plain") || "-1");
+          if (fromIdx === -1 || fromIdx === displayIdx) return;
+          listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row").forEach((r) => setCssProps(r, "--sprout-oq-translate", "0px"));
+          const item = currentOrder[fromIdx];
+          currentOrder.splice(fromIdx, 1);
+          currentOrder.splice(displayIdx, 0, item);
+          const oqMap = ensureWidgetOqOrderMap(view.session as unknown as Record<string, unknown>);
+          oqMap[String(card.id)] = currentOrder.slice();
+          renderSteps();
+        });
+
+        // Touch drag support
+        let touchStartY = 0;
+        let touchCurrentIdx = displayIdx;
+        row.addEventListener("touchstart", (e) => {
+          const touch = e.touches[0]; if (!touch) return;
+          touchStartY = touch.clientY;
+          touchCurrentIdx = displayIdx;
+          row.classList.add("sprout-oq-row-dragging");
+        }, { passive: true });
+        row.addEventListener("touchmove", (e) => {
+          const touch = e.touches[0]; if (!touch) return;
+          e.preventDefault();
+          const deltaY = touch.clientY - touchStartY;
+          const moveSteps = Math.round(deltaY / dragOffset);
+          const targetIdx = Math.max(0, Math.min(currentOrder.length - 1, displayIdx + moveSteps));
+          listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row").forEach((r, idx) => {
+            if (idx === displayIdx) {
+              setCssProps(r, "--sprout-oq-translate", `${(targetIdx - displayIdx) * dragOffset}px`);
+            } else {
+              let offset = 0;
+              if (displayIdx < targetIdx) { if (idx > displayIdx && idx <= targetIdx) offset = -dragOffset; }
+              else { if (idx >= targetIdx && idx < displayIdx) offset = dragOffset; }
+              setCssProps(r, "--sprout-oq-translate", `${offset}px`);
+            }
+          });
+          touchCurrentIdx = targetIdx;
+        }, { passive: false });
+        row.addEventListener("touchend", () => {
+          row.classList.remove("sprout-oq-row-dragging");
+          listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row").forEach((r) => {
+            setCssProps(r, "--sprout-oq-translate", "0px");
+            r.classList.remove("sprout-oq-row-anim");
+          });
+          if (touchCurrentIdx !== displayIdx) {
+            const item = currentOrder[displayIdx];
+            currentOrder.splice(displayIdx, 1);
+            currentOrder.splice(touchCurrentIdx, 0, item);
+            const oqMap = ensureWidgetOqOrderMap(view.session as unknown as Record<string, unknown>);
+            oqMap[String(card.id)] = currentOrder.slice();
+            renderSteps();
+          }
+        });
+
+        listWrap.appendChild(row);
+      });
+    };
+
+    renderSteps();
+
+    // Submit button
+    const submitBtn = document.createElement("button");
+    submitBtn.type = "button";
+    submitBtn.className = "bc btn-outline w-full text-sm mt-2 sprout-oq-submit-btn";
+
+    const submitLabel = document.createElement("span");
+    submitLabel.textContent = "Submit order";
+    submitBtn.appendChild(submitLabel);
+
+    const submitKbd = document.createElement("kbd");
+    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.textContent = "\u21B5";
+    submitBtn.appendChild(submitKbd);
+
+    applyWidgetHoverDarken(submitBtn);
+    submitBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      void view.answerOq(currentOrder.slice());
+    });
+    body.appendChild(submitBtn);
+
+  } else {
+    // ── Back: correct order with highlights ──
+    body.appendChild(makeDivider());
+    const answerList = el("div", "bc flex flex-col gap-2 sprout-oq-answer-list");
+    body.appendChild(answerList);
+
+    steps.forEach((stepText, correctIdx) => {
+      const wasCorrect = userOrder.length > 0 && userOrder[correctIdx] === correctIdx;
+      const row = document.createElement("div");
+      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
+      if (wasCorrect) {
+        row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
+      } else if (userOrder.length > 0) {
+        row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
+      }
+
+      const badge = document.createElement("kbd");
+      badge.className = "bc kbd";
+      badge.textContent = String(correctIdx + 1);
+      row.appendChild(badge);
+
+      const textEl = document.createElement("span");
+      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-widget-text sprout-oq-step-text";
+      replaceChildrenWithHTML(textEl, processMarkdownFeatures(stepText));
+      row.appendChild(textEl);
+
+      answerList.appendChild(row);
+    });
+
+    if (infoText) {
+      body.appendChild(makeDivider());
+      renderInfoBlock(body, infoText, applySectionStyles, view, card);
+    }
   }
 }
 
@@ -370,12 +762,22 @@ function renderInfoBlock(
   body: HTMLElement,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
+  view?: WidgetViewLike,
+  card?: CardRecord,
 ) {
   const infoEl = el("div", "bc sprout-widget-info");
-  const infoP = document.createElement("p");
-  infoP.className = "bc whitespace-pre-wrap break-words";
-  replaceChildrenWithHTML(infoP, processMarkdownFeatures(infoText.replace(/\n/g, "<br>")));
-  infoEl.appendChild(infoP);
+  if (view && hasMarkdownTable(infoText)) {
+    const infoContainer = document.createElement("div");
+    infoContainer.className = "bc whitespace-pre-wrap break-words";
+    const sourcePath = String(card?.sourceNotePath || view.activeFile?.path || "");
+    void view.renderMarkdownInto(infoContainer, infoText, sourcePath);
+    infoEl.appendChild(infoContainer);
+  } else {
+    const infoP = document.createElement("p");
+    infoP.className = "bc whitespace-pre-wrap break-words";
+    replaceChildrenWithHTML(infoP, processMarkdownFeatures(infoText.replace(/\n/g, "<br>")));
+    infoEl.appendChild(infoP);
+  }
   applySectionStyles(infoEl);
   body.appendChild(infoEl);
 }
@@ -385,7 +787,7 @@ function renderInfoBlock(
 /* ================================================================== */
 
 function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, ioLike: boolean) {
-  if ((card.type === "basic" || isClozeLike(card) || ioLike) && !view.showAnswer) {
+  if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer) {
     const revealBtn = makeTextButton({
       label: "Show Answer",
       className: "bc btn-outline w-full text-sm",
@@ -412,7 +814,7 @@ function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: C
 
 function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null, ioLike: boolean) {
   // Reveal button (for basic/cloze when hidden)
-  if ((card.type === "basic" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
+  if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
     const revealBtn = makeTextButton({
       label: "Reveal Answer",
       className: "bc btn-outline w-full text-sm",
@@ -429,7 +831,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
 
   // Grading buttons row – 2×2 grid layout (Again+Hard, Good+Easy)
   if (!graded) {
-    if ((card.type === "basic" || isClozeLike(card) || ioLike) && view.showAnswer) {
+    if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && view.showAnswer) {
       const fourButton = !!view.plugin.settings.study.fourButtonMode;
       let gradingGrid: HTMLElement;
       if (fourButton) {
@@ -503,8 +905,12 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       footer.appendChild(gradingGrid);
     } else if (card.type === "mcq") {
       const mcqNote = el("div", "bc text-xs text-muted-foreground w-full text-center");
-      mcqNote.textContent = "Select an option";
+      mcqNote.textContent = isMultiAnswerMcq(card) ? "Select all correct answers, then submit" : "Select an option";
       footer.appendChild(mcqNote);
+    } else if (card.type === "oq") {
+      const oqNote = el("div", "bc text-xs text-muted-foreground w-full text-center");
+      oqNote.textContent = "Drag to reorder, then submit";
+      footer.appendChild(oqNote);
     }
   } else {
     const nextBtn = makeTextButton({
@@ -533,6 +939,8 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
   const moreBtn = document.createElement("button");
   moreBtn.type = "button";
   moreBtn.className = "bc btn-outline flex-1 text-xs flex items-center justify-center gap-2";
+  moreBtn.setAttribute("data-tooltip", "More actions (M)");
+  moreBtn.setAttribute("data-tooltip-position", "top");
   applyWidgetHoverDarken(moreBtn);
 
   const moreText = document.createElement("span");

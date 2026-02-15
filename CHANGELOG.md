@@ -1,84 +1,28 @@
 # Changelog
 
-All notable changes to Sprout will be documented in this file.
+All notable changes to Sprout are summarized here.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+<details open>
+<summary><strong>Latest release: 1.0.5 (2026-02-13)</strong></summary>
 
-## [1.0.4] - 2026-02-08
+### Latest release notes
 
-### Changed
-- Updated Recharts from 2.15.4 to 3.7.0
-- Updated @types/node to latest version
-- Updated globals from 15.15.0 to latest
+#### Changed
+- Added plugin scaling support
+- Enabled text selection for copying card content
+- Added multi-select questions (MCQ subtype)
+- Added reversed and ordered questions
+- Added the wiki directly in the app
+- Added a new settings view
 
-### Fixed
-- Recharts v3 compatibility in analytics charts (forgetting curve, review calendar heatmap)
-- Chart component type definitions
+#### Fixed
+- Analytics chart compatibility and type definitions
 - Tag box styling consistency across browser, modals, and card editor
 
-## [1.0.3] - 2026-02-08
+#### Hint
+If scheduling or analytics data is lost after an update, restore from a backup.
 
-### Added
-- Automatic backups with scheduling-data-only option (15-minute intervals, keeps 5 most recent)
-
-### Changed
-- Reorganized settings into clearer sections with improved labels and descriptions
-- Unified modal styling and overlay consistency
-
-### Fixed
-- Modal DOM cleanup and rendering improvements
-- Code quality and type safety improvements
-
-## [1.0.2] - 2026-02-07
-
-### Changed
-- Improved settings organization and documentation
-- Code quality improvements for Obsidian community plugin standards
-
-## [1.0.1] - 2026-02-06
-
-### Added
-- Anki import/export (.apkg) with scheduling data, media files, and duplicate handling
-
-### Fixed
-- Reading view rendering and stability improvements
-
-## [1.0.0] - 2026-02-05
-
-### Note
-- First stable release - code refactored and source shared publicly on Github
-
-## [0.0.4] - 2026-01-26
-
-### Added
-- Scheduling data backups
-
-### Changed
-- Improved CSS styling (dark mode and reading-view)
-
-## [0.0.3] - 2026-01-19
-
-### Added
-- Rebranded as Sprout
-- Image occlusion cards
-- Analytics dashboard
-
-## [0.0.2] - 2026-01-12
-
-### Fixed
-- Fixes focused on deck and session stability
-
-## [0.0.1] - 2026-01-05
-
-### Added
-- First beta release (named Boot Camp)
-- Core flashcard functionality
-- FSRS-based spaced repetition
-- Basic card types (cloze, basic, multiple choice)
-
-[1.0.4]: https://github.com/ctrlaltwill/Sprout/releases/tag/1.0.4
-[1.0.3]: https://github.com/ctrlaltwill/Sprout/releases/tag/1.0.3
-[1.0.2]: https://github.com/ctrlaltwill/Sprout/releases/tag/1.0.2
-[1.0.1]: https://github.com/ctrlaltwill/Sprout/releases/tag/1.0.1
-[1.0.0]: https://github.com/ctrlaltwill/Sprout/releases/tag/1.0.0
+#### Links
+<a href="https://github.com/ctrlaltwill/Sprout/issues" style="display:inline-block;padding:6px 12px;margin-right:8px;border:1px solid #1f6feb;border-radius:6px;text-decoration:none;color:#1f6feb;">GitHub issues</a>
+<a href="https://github.com/ctrlaltwill/Sprout/wiki" style="display:inline-block;padding:6px 12px;border:1px solid #1f6feb;border-radius:6px;text-decoration:none;color:#1f6feb;">Documentation wiki</a>
+</details>

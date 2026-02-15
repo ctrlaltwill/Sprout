@@ -17,6 +17,7 @@ import type SproutPlugin from "../main";
 
 import type { Session, UndoFrame, ReviewMeta } from "./widget-helpers";
 import type { CardRecord } from "../types/card";
+import { isMultiAnswerMcq } from "../types/card";
 import { filterReviewableCards, getWidgetMcqDisplayOrder, isClozeLike } from "./widget-helpers";
 import { getCardsInActiveScope } from "./widget-scope";
 import {
@@ -26,6 +27,8 @@ import {
   buryCurrentCard as _buryCurrentCard,
   suspendCurrentCard as _suspendCurrentCard,
   answerMcq as _answerMcq,
+  answerMcqMulti as _answerMcqMulti,
+  answerOq as _answerOq,
   nextCard as _nextCard,
   openEditModalForCurrentCard as _openEditModalForCurrentCard,
 } from "./widget-session-actions";
@@ -50,6 +53,14 @@ export class SproutWidgetView extends ItemView {
   /** @internal */ _sessionStamp = 0;
   /** @internal */ _moreMenuToggle: (() => void) | null = null;
   private _mdHelper: SproutMarkdownHelper | null = null;
+
+  /** Stores user-typed cloze answers by cloze index for typed-mode cloze cards. */
+  private _typedClozeAnswers = new Map<number, string>();
+  /** Tracks the current card ID to reset typed answers when card changes. */
+  private _typedClozeCardId = "";
+  /** Tracks multi-answer MCQ selections. */
+  _mcqMultiSelected = new Set<number>();
+  _mcqMultiCardId = "";
 
   private _keysBound = false;
 
@@ -276,6 +287,12 @@ export class SproutWidgetView extends ItemView {
   async answerMcq(choiceIdx: number) {
     return _answerMcq(this, choiceIdx);
   }
+  async answerMcqMulti(selectedIndices: number[]) {
+    return _answerMcqMulti(this, selectedIndices);
+  }
+  async answerOq(userOrder: number[]) {
+    return _answerOq(this, userOrder);
+  }
   async nextCard() {
     return _nextCard(this);
   }
@@ -389,10 +406,45 @@ export class SproutWidgetView extends ItemView {
     if (ev.key === "Enter" || ev.key === " " || ev.code === "Space" || ev.key === "ArrowRight") {
       ev.preventDefault();
       if (card.type === "mcq") {
-        if (graded) void this.nextCard();
+        if (graded) { void this.nextCard(); return; }
+        // Multi-answer: Enter submits the selection
+        if (isMultiAnswerMcq(card) && this._mcqMultiSelected.size > 0) {
+          void this.answerMcqMulti([...this._mcqMultiSelected]);
+          return;
+        }
+        // Multi-answer: shake + tooltip on empty submit
+        if (isMultiAnswerMcq(card) && this._mcqMultiSelected.size === 0) {
+          const submitBtnEl = this.containerEl.querySelector<HTMLButtonElement>(".sprout-mcq-submit-btn");
+          if (submitBtnEl) {
+            submitBtnEl.classList.add("sprout-mcq-submit-shake");
+            submitBtnEl.addEventListener("animationend", () => {
+              submitBtnEl.classList.remove("sprout-mcq-submit-shake");
+            }, { once: true });
+            if (submitBtnEl.dataset.emptyAttempt === "1") {
+              submitBtnEl.setAttribute("data-tooltip", "Choose at least one answer to proceed");
+              submitBtnEl.setAttribute("data-tooltip-position", "top");
+              submitBtnEl.classList.add("sprout-mcq-submit-tooltip-visible");
+              setTimeout(() => {
+                submitBtnEl.classList.remove("sprout-mcq-submit-tooltip-visible");
+              }, 2500);
+            }
+            submitBtnEl.dataset.emptyAttempt = String(Number(submitBtnEl.dataset.emptyAttempt || "0") + 1);
+          }
+        }
         return;
       }
-      if (card.type === "basic" || isClozeLike(card) || ioLike) {
+      if (card.type === "oq") {
+        if (graded) { void this.nextCard(); return; }
+        // Enter submits the current order
+        const s = this.session as unknown as { oqOrderMap?: Record<string, number[]> };
+        const oqMap = s?.oqOrderMap || {};
+        const oqCurrentOrder = oqMap[String(card.id)];
+        if (Array.isArray(oqCurrentOrder) && oqCurrentOrder.length > 0) {
+          void this.answerOq(oqCurrentOrder.slice());
+        }
+        return;
+      }
+      if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) {
         if (!this.showAnswer) {
           this.showAnswer = true;
           this.render();
@@ -415,12 +467,25 @@ export class SproutWidgetView extends ItemView {
         const randomize = !!(this.plugin.settings.study?.randomizeMcqOptions);
         const order = getWidgetMcqDisplayOrder(this.session, card, randomize);
         const origIdx = order[displayIdx];
-        if (Number.isInteger(origIdx)) void this.answerMcq(origIdx);
+        if (!Number.isInteger(origIdx)) return;
+
+        if (isMultiAnswerMcq(card)) {
+          // Multi-answer: toggle selection
+          if (this._mcqMultiCardId !== String(card.id)) {
+            this._mcqMultiSelected = new Set<number>();
+            this._mcqMultiCardId = String(card.id);
+          }
+          if (this._mcqMultiSelected.has(origIdx)) this._mcqMultiSelected.delete(origIdx);
+          else this._mcqMultiSelected.add(origIdx);
+          this.render();
+        } else {
+          void this.answerMcq(origIdx);
+        }
         return;
       }
       if (isPractice) return;
 
-      if (card.type === "basic" || isClozeLike(card) || ioLike) {
+      if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) {
         if (!this.showAnswer) {
           this.showAnswer = true;
           this.render();
@@ -464,5 +529,15 @@ export class SproutWidgetView extends ItemView {
 
   onunload() {
     this.clearTimer();
+    this._mdHelper = null;
+    this._timing = null;
+    this.session = null;
+    this._undo = null;
+    this._moreMenuToggle = null;
+
+    // Remove global reference set in constructor
+    if ((window as Record<string, unknown>).SproutWidgetView === this) {
+      delete (window as Record<string, unknown>).SproutWidgetView;
+    }
   }
 }

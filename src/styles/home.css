@@ -18,18 +18,31 @@
 /* ---- Name input ---- */
 
 .sprout-home-name-input {
-  min-width: 0;
+  min-width: 1ch;
   flex: 0 0 auto;
-  max-width: 240px;
+  max-width: 100%;
   border: none !important;
   box-shadow: none !important;
-  width: var(--sprout-home-name-width, auto) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: min(100%, var(--sprout-home-name-width, auto)) !important;
 }
 
 .sprout-home-name-input {
-  font-size: 17.5px !important;
+  font-size: var(--sprout-font-md-plus) !important;
   font-weight: 600 !important;
   color: var(--text-normal) !important;
+}
+
+.sprout-home-name-input:focus,
+.sprout-home-name-input:focus-visible,
+.sprout-home-name-input:active,
+.sprout input.sprout-home-name-input:focus,
+.sprout input.sprout-home-name-input:focus-visible,
+.sprout input.sprout-home-name-input:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .sprout-greeting-suffix {
@@ -63,6 +76,7 @@
   margin-left: auto !important;
   margin-right: auto !important;
   max-width: var(--sprout-home-max-width, 100%) !important;
+  max-height: 100% !important;
 }
 
 /* ---- Icon wrappers ---- */
@@ -106,7 +120,7 @@
   height: 42px !important;
   padding: 10px !important;
   border: 1px dashed var(--background-modifier-border-hover) !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   background: var(--background-modifier-form-field) !important;
 }
 
@@ -134,7 +148,7 @@
   margin-top: 0.25rem;
   background: var(--bg-popover, var(--color-popover, var(--color-background))) !important;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   box-shadow: var(--shadow-s) !important;
   z-index: 1000;
   max-height: 300px;
@@ -160,6 +174,18 @@
   box-shadow: var(--shadow-s) !important;
 }
 
+.sprout-home-root.sprout-no-animate *,
+.sprout-home-root.sprout-no-animate .sprout-deck-row,
+.sprout-home-root.sprout-no-animate .sprout-deck-row-anim {
+  animation: none !important;
+  transition: none !important;
+}
+
+.sprout-home-root.sprout-no-animate [data-aos] {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
 /* ---- Deck rows ---- */
 
 .sprout-deck-row {
@@ -169,6 +195,23 @@
 
 .sprout-deck-row:hover {
   background-color: var(--color-base-30) !important;
+}
+
+.sprout .sprout-deck-row[data-tooltip] {
+  position: relative;
+  overflow: visible !important;
+}
+
+.sprout .sprout-deck-row[data-tooltip]:is(:hover, :focus-within) {
+  z-index: 2147483646 !important;
+}
+
+.sprout .sprout-deck-row[data-tooltip]::after {
+  top: calc(100% + 6px) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px))) !important;
+  z-index: 2147483647 !important;
 }
 
 .sprout-deck-row-dragging {
@@ -186,17 +229,23 @@
 
 .sprout-trend-badge {
     background-color: var(--theme-accent);
+    border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
     color: #fff;
-    border: none;
-    border-radius: 9999px;
+    border-radius: var(--radius-l);
     align-items: center;
-  padding: 0.125rem 0.5rem;
-    font-size: .65rem;
+  padding: 0.125rem 0.625rem;
+    font-size: var(--sprout-font-3xs);
     font-weight: 500;
     display: inline-flex;
+  gap: 3px;
   min-height: 22px;
   max-height: 22px;
   height: 22px;
+}
+
+.theme-dark .sprout-trend-badge {
+    background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .14);
+    border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .24);
 }
 
 .sprout-trend-badge svg {
@@ -221,9 +270,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-l);
   padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--sprout-font-2xs);
   font-weight: 500;
     min-height: 22px;
   max-height: 22px;
@@ -303,9 +352,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   border: 1px dashed rgba(var(--text-muted-rgb), 0.4);
-  font-size: 0.875rem;
+  font-size: var(--sprout-font-xs);
   color: var(--text-muted);
   background-color: rgba(var(--text-muted-rgb), 0.1);
   padding: 10px;

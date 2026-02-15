@@ -12,12 +12,14 @@
 
 import * as React from "react";
 import { useAnalyticsPopoverZIndex } from "./filter-styles";
+import { cssClassForProps, setCssProps } from "../core/ui";
 
 function InfoIcon(props: { text: string }) {
   return (
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -66,7 +68,7 @@ type HeatCell = {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="svg-icon sprout-ana-chevron"
+      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -76,7 +78,6 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -210,6 +211,7 @@ export function ReviewCalendarHeatmap(props: {
     y: number;
   } | null>(null);
   const chartWrapRef = React.useRef<HTMLDivElement | null>(null);
+  const tooltipRef = React.useRef<HTMLDivElement | null>(null);
   const dropdownWrapRef = React.useRef<HTMLDivElement | null>(null);
   const popoverRef = React.useRef<HTMLDivElement | null>(null);
   useAnalyticsPopoverZIndex(open, dropdownWrapRef);
@@ -229,6 +231,16 @@ export function ReviewCalendarHeatmap(props: {
   React.useEffect(() => {
     setDurationDays(props.rangeDays ?? 365);
   }, [props.rangeDays]);
+
+  React.useEffect(() => {
+    const el = tooltipRef.current;
+    if (!el) return;
+    if (!hovered) {
+      setCssProps(el, { "--sprout-ana-x": null, "--sprout-ana-y": null });
+      return;
+    }
+    setCssProps(el, { "--sprout-ana-x": `${hovered.x}px`, "--sprout-ana-y": `${hovered.y}px` });
+  }, [hovered]);
 
   const filteredEvents = React.useMemo(() => {
     return (props.revlog ?? []).filter((ev) => {
@@ -518,8 +530,8 @@ export function ReviewCalendarHeatmap(props: {
 
         {hovered ? (
           <div
-            className={"bc rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs sprout-ana-heatmap-tooltip"}
-            style={{ "--sprout-ana-x": `${hovered.x}px`, "--sprout-ana-y": `${hovered.y}px` } as React.CSSProperties}
+            ref={tooltipRef}
+            className={"bc sprout-data-tooltip-surface sprout-ana-heatmap-tooltip"}
           >
             <div className={"bc text-sm font-medium text-background"}>{hovered.cell.dateLabel}</div>
             <div className={"bc text-background"}>Reviews: {hovered.cell.count}</div>
@@ -536,8 +548,7 @@ export function ReviewCalendarHeatmap(props: {
           {palette.slice(1).map((color, idx) => (
             <span
               key={`${color}-${idx}`}
-              className={"bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"}
-              style={{ "--sprout-legend-color": color } as React.CSSProperties}
+              className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": color })}`}
             />
           ))}
         </div>

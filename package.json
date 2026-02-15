@@ -1,6 +1,6 @@
 {
   "name": "sprout",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -12,6 +12,7 @@
     "build:js": "node esbuild.config.js --prod",
     "build:css": "npx @tailwindcss/cli -i ./src/styles.tailwind.css -o ./dist/styles.tmp.css --minify && npx postcss ./dist/styles.tmp.css -o ./dist/styles.css && rm -f ./dist/styles.tmp.css",
     "build": "npm run build:js && npm run build:css && cp manifest.json dist/manifest.json",
+    "deploy": "npm run build && cp dist/main.js dist/main.js.map dist/manifest.json dist/styles.css \"$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Medicine/.obsidian/plugins/sprout/\" && cp dist/main.js dist/main.js.map dist/manifest.json dist/styles.css \"$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Medicine 17.09.35/.obsidian/plugins/sprout/\"",
     "analyze": "node esbuild.config.js --prod --metafile=meta.json --analyze",
     "test": "vitest run",
     "test:watch": "vitest",

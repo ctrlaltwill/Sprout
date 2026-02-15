@@ -10,6 +10,7 @@
  *  - scopeFromDeckPath         — constructs a Scope object from a deck path string
  *  - formatDeckLabel           — formats a deck path into a short display label
  *  - formatPinnedDeckLabel     — formats a pinned deck path into a display label with folder context
+ *  - getDeckLeafName           — extracts only the file/folder leaf name from a deck path
  */
 
 import type { Scope } from "../reviewer/types";
@@ -128,4 +129,19 @@ export function formatPinnedDeckLabel(label: string): string {
     .map((part) => part.trim())
     .filter(Boolean)
     .join(" / ");
+}
+
+/**
+ * Extract the leaf file/folder name from a deck path.
+ * Removes trailing slashes and a trailing `.md` extension.
+ */
+export function getDeckLeafName(path: string): string {
+  const clean = String(path || "").trim().replace(/\/+$/, "");
+  if (!clean) return "";
+  const leaf = clean
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .pop() ?? clean;
+  return leaf.replace(/\.md$/i, "");
 }

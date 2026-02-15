@@ -14,12 +14,14 @@ import * as React from "react";
 import { Area, Bar, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "./chart-axis-utils";
 import { endTruncateClass, useAnalyticsPopoverZIndex } from "./filter-styles";
+import { cssClassForProps } from "../core/ui";
 
 function InfoIcon(props: { text: string }) {
   return (
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -94,7 +96,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="svg-icon sprout-ana-chevron"
+      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -104,7 +106,6 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -221,7 +222,7 @@ function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: u
   if (!datum) return null;
   const total = datum.new + datum.learning + datum.relearning + datum.review;
   return (
-    <div className="rounded-lg bg-foreground text-background shadow-none border-0 px-3 py-2 text-xs">
+    <div className="sprout-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{datum.date}</div>
       <div className="text-background">Due: {total}</div>
       <div className="text-background">New: {datum.new}</div>
@@ -356,8 +357,7 @@ export function FutureDueChart(props: {
     for (const type of availableTypes) counts.set(type, 0);
     for (const card of props.cards ?? []) {
       const t = String(card?.type ?? "");
-      if (!t || t === "io") continue;
-      if (t === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length) continue;
+      if (!t || t === "cloze" || t === "reversed" || t === "io" || t === "io-parent" || t === "io_parent" || t === "ioparent") continue;
       counts.set(t, (counts.get(t) ?? 0) + 1);
     }
     if (counts.has("all")) {
@@ -383,8 +383,10 @@ export function FutureDueChart(props: {
 
     for (const card of props.cards ?? []) {
       if (!card) continue;
+      const _t = String(card.type ?? "");
+      if (_t === "cloze" || _t === "reversed" || _t === "io" || _t === "io-parent" || _t === "io_parent" || _t === "ioparent") continue;
       if (card.suspended || String(card.stage || "") === "suspended") continue;
-      if (selectedType && selectedType !== "all" && String(card.type ?? "") !== selectedType) continue;
+      if (selectedType && selectedType !== "all" && _t !== selectedType) continue;
       if (selectedDecks.length) {
         const deck = String(card.sourceNotePath ?? "");
         if (!selectedDecks.includes(deck)) continue;
@@ -763,36 +765,31 @@ export function FutureDueChart(props: {
       <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground">
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": "var(--chart-accent-1)" } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-1)" })}`}
           />
           <span className="bc">New</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": "var(--chart-accent-2)" } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-2)" })}`}
           />
           <span className="bc">Learning</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": "var(--chart-accent-3)" } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-3)" })}`}
           />
           <span className="bc">Relearning</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square"
-            style={{ "--sprout-legend-color": "var(--chart-accent-4)" } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-4)" })}`}
           />
           <span className="bc">Review</span>
         </div>
         <div className="bc inline-flex items-center gap-2">
           <span
-            className="bc inline-block sprout-ana-legend-line"
-            style={{ "--sprout-legend-color": "var(--chart-accent-3)" } as React.CSSProperties}
+            className={`bc inline-block sprout-ana-legend-line ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-3)" })}`}
           />
           <span className="bc">Backlog</span>
         </div>

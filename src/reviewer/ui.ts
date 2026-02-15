@@ -38,6 +38,8 @@ export function makePlainButton(
   const b = document.createElement("button");
   b.type = "button";
   b.className = className;
+  b.setAttribute("data-tooltip", label);
+  b.setAttribute("data-tooltip-position", "top");
   b.addEventListener("click", onClick);
 
   const left = el("span", "sprout-btn-left");

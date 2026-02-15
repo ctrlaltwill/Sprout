@@ -13,9 +13,10 @@
 
 import { Notice, Platform, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
 import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
+import { getDelimiter } from "../core/delimiter";
 import type { ColKey } from "./browser-helpers";
 import {
   clearNode,
@@ -38,11 +39,11 @@ export interface BulkEditContext {
 
 // ── Constants ──────────────────────────────────────────────
 
-const PLACEHOLDER_TITLE = "Title (optional)";
-const PLACEHOLDER_CLOZE = "Cloze text — use {{c1::answer}} syntax";
-const PLACEHOLDER_QUESTION = "Question";
-const PLACEHOLDER_ANSWER = "Answer";
-const PLACEHOLDER_INFO = "Extra information (optional)";
+const PLACEHOLDER_TITLE = "Enter a descriptive title for this flashcard";
+const PLACEHOLDER_CLOZE = "Type your text and wrap parts to hide with {{c1::text}}. Use {{c2::text}} for separate deletions, or {{c1::text}} again to hide together.";
+const PLACEHOLDER_QUESTION = "Enter the question you want to answer";
+const PLACEHOLDER_ANSWER = "Enter the answer to your question";
+const PLACEHOLDER_INFO = "Optional: Add extra context or explanation shown on the back of the card";
 
 // ── Main function ──────────────────────────────────────────
 
@@ -54,7 +55,6 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-bg";
-  setCssProps(backdrop, "opacity", "0.85");
   container.appendChild(backdrop);
 
   const panel = document.createElement("div");
@@ -64,7 +64,8 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   // Close button — direct child of panel, before header (matches Obsidian Modal layout)
   const close = document.createElement("div");
   close.className = "modal-close-button mod-raised clickable-icon";
-  close.setAttribute("aria-label", "Close");
+  close.setAttribute("data-tooltip", "Close");
+  close.setAttribute("data-tooltip-position", "top");
   setIcon(close, "x");
   close.addEventListener("click", () => {
     removeOverlay();
@@ -221,10 +222,10 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     list.className = "flex flex-col max-h-60 overflow-auto p-1";
 
     const searchWrap = document.createElement("div");
-    searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 sprout-browser-search-wrap";
+    searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 sprout-browser-search-wrap min-h-[38px]";
 
     const searchIconEl = document.createElement("span");
-    searchIconEl.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+    searchIconEl.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
     searchIconEl.setAttribute("aria-hidden", "true");
     setIcon(searchIconEl, "search");
     searchWrap.appendChild(searchIconEl);
@@ -558,7 +559,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     }
     const card = cards[0];
     mcqOriginalString = buildAnswerOrOptionsFor(card);
-    const options = Array.isArray(card.options) ? [...card.options] : [];
+    const options = normalizeCardOptions(card.options);
     const correctIndex = Number.isFinite(card.correctIndex) ? card.correctIndex! : 0;
     const correctValue = options[correctIndex] ?? "";
     const wrongValues = options.filter((_, idx) => idx !== correctIndex);
@@ -581,7 +582,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     const correctInput = document.createElement("input");
     correctInput.type = "text";
     correctInput.className = "input w-full sprout-input-fixed";
-    correctInput.placeholder = "Correct option";
+    correctInput.placeholder = "Enter the correct answer choice";
     correctInput.value = correctValue;
     correctWrapper.appendChild(correctInput);
     container.appendChild(correctWrapper);
@@ -601,7 +602,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     addInput.type = "text";
     addInput.className = "input flex-1 text-sm sprout-input-fixed";
     const updateAddPlaceholder = () => {
-      const label = wrongRows.length ? "Add another wrong option" : "Add wrong option";
+      const label = wrongRows.length ? "Add another incorrect answer choice" : "Enter an incorrect answer choice";
       addInput.placeholder = label;
     };
 
@@ -625,12 +626,14 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       const input = document.createElement("input");
       input.type = "text";
       input.className = "input flex-1 text-sm sprout-input-fixed";
-      input.placeholder = "Wrong option";
+      input.placeholder = "Enter an incorrect answer choice";
       input.value = value;
       row.appendChild(input);
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "inline-flex items-center justify-center sprout-remove-btn-ghost";
+      removeBtn.setAttribute("data-tooltip", "Remove option");
+      removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
       xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
       setIcon(xIcon, "x");
@@ -689,7 +692,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       const rendered = optionsList.map((opt, idx) =>
         idx === 0 ? `**${escapePipes(opt)}**` : escapePipes(opt),
       );
-      return rendered.join(" | ");
+      return rendered.join(` ${getDelimiter()} `);
     };
     buildMcqValue = () => buildValue();
 
@@ -803,5 +806,9 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
   backdrop.addEventListener("click", () => removeOverlay());
 
-  document.body.appendChild(container);
+  // Scope modal to active workspace leaf content (allows tab switching while modal is open)
+  const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+  const leafContent = activeLeaf?.querySelector(".workspace-leaf-content");
+  const target = leafContent || document.body;
+  target.appendChild(container);
 }

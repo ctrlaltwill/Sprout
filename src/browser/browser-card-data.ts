@@ -18,6 +18,7 @@
 
 import type SproutPlugin from "../main";
 import type { CardRecord, CardState } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 import { fmtGroups, coerceGroups } from "../indexes/group-format";
 import {
@@ -121,7 +122,7 @@ export function computeBrowserRows(
   }
 
   baseCards = baseCards.filter(
-    (c) => !["io-child", "cloze-child"].includes(String(c?.type || "")),
+    (c) => !["io-child", "cloze-child", "reversed-child"].includes(String(c?.type || "")),
   );
 
   if (includeQuarantined && groupFilters.length === 0) {
@@ -231,16 +232,17 @@ export function applyValueToCard(card: CardRecord, col: ColKey, value: string): 
 
   if (col === "question") {
     if (draft.type === "io") return draft;
-    if (draft.type === "basic") draft.q = v;
+    if (draft.type === "basic" || draft.type === "reversed") draft.q = v;
     else if (draft.type === "mcq") draft.stem = v;
     else if (draft.type === "cloze") draft.clozeText = v;
+    else if (draft.type === "oq") draft.q = v;
     return draft;
   }
 
   if (col === "answer") {
     if (draft.type === "io") return draft;
 
-    if (draft.type === "basic") {
+    if (draft.type === "basic" || draft.type === "reversed") {
       draft.a = v;
       return draft;
     }
@@ -248,6 +250,14 @@ export function applyValueToCard(card: CardRecord, col: ColKey, value: string): 
       const parsed = parseMcqOptionsFromCell(v);
       draft.options = parsed.options;
       draft.correctIndex = parsed.correctIndex;
+      draft.correctIndices = parsed.correctIndices ?? null;
+      return draft;
+    }
+    if (draft.type === "oq") {
+      // Parse numbered steps: "1. Step one | 2. Step two" or newline-separated
+      const raw = v.replace(/\s*\|\s*/g, "\n");
+      const steps = raw.split(/\n/).map((line) => line.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
+      draft.oqSteps = steps.length ? steps : [];
       return draft;
     }
     return draft;
@@ -303,26 +313,39 @@ export function readCardField(card: CardRecord, col: ColKey, plugin: SproutPlugi
  * Throws a descriptive Error if validation fails.
  */
 export function validateCardBeforeWrite(card: CardRecord): void {
-  if (card.type === "basic") {
+  if (card.type === "basic" || card.type === "reversed") {
     if (!(card.q || "").trim()) throw new Error("Q: is required.");
     if (!(card.a || "").trim()) throw new Error("A: is required.");
   } else if (card.type === "cloze") {
     validateClozeText(card.clozeText || "");
   } else if (card.type === "mcq") {
     if (!(card.stem || "").trim()) throw new Error("MCQ: is required.");
-    const opts = Array.isArray(card.options)
-      ? card.options.map((x) => (x || "").trim()).filter(Boolean)
-      : [];
+    const opts = normalizeCardOptions(card.options)
+      .map((x) => (x || "").trim()).filter(Boolean);
     if (opts.length < 2) throw new Error("MCQ requires at least 2 options.");
-    if (
+    const ci = card.correctIndices;
+    if (Array.isArray(ci) && ci.length > 0) {
+      // Multi-answer: every index must be in range
+      if (!ci.every((i) => Number.isFinite(i) && i >= 0 && i < opts.length)) {
+        throw new Error("MCQ correct indices out of range.");
+      }
+    } else if (
       !(
         Number.isFinite(card.correctIndex) &&
         (card.correctIndex as number) >= 0 &&
         (card.correctIndex as number) < opts.length
       )
     ) {
-      throw new Error("MCQ requires exactly one correct option.");
+      throw new Error("MCQ requires at least one correct option.");
     }
     card.options = opts;
+  } else if (card.type === "oq") {
+    if (!(card.q || "").trim()) throw new Error("OQ question is required.");
+    const steps = Array.isArray(card.oqSteps)
+      ? card.oqSteps.map((x) => (x || "").trim()).filter(Boolean)
+      : [];
+    if (steps.length < 2) throw new Error("OQ requires at least 2 steps.");
+    if (steps.length > 20) throw new Error("OQ supports a maximum of 20 steps.");
+    card.oqSteps = steps;
   }
 }

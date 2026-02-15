@@ -28,6 +28,7 @@ import {
   emptyEl,
   type IoEditorOpenOpts,
 } from "./io-helpers";
+import { scopeModalToWorkspace } from "../modals/modal-utils";
 
 export class ImageOcclusionEditorModal extends Modal {
   private plugin: SproutPlugin;
@@ -70,8 +71,8 @@ export class ImageOcclusionEditorModal extends Modal {
   private zoomPctEl!: HTMLElement;
 
   // footer controls
-  private btnSaveSolo!: HTMLButtonElement;
-  private btnSaveAll!: HTMLButtonElement;
+  private selectedMaskMode: "solo" | "all" = "solo";
+  private btnSave!: HTMLButtonElement;
 
   // transform state
   private t: StageTransform = { scale: 1, tx: 0, ty: 0 };
@@ -111,6 +112,7 @@ export class ImageOcclusionEditorModal extends Modal {
   }
 
   onOpen() {
+    scopeModalToWorkspace(this);
     this.modalEl.addClass("sprout-modals", "sprout-io-modal");
     this.containerEl.addClass("sprout-io-editor-modal");
 
@@ -415,39 +417,75 @@ export class ImageOcclusionEditorModal extends Modal {
     // -------------------------
     // Footer (bottom-right)
     // -------------------------
-    const footer = root.createDiv({ cls: "bc sprout-io-footer" });
+    const footer = root.createDiv({ cls: "bc sprout-io-footer flex flex-col items-end gap-3" });
 
-    const saveInfo = footer.createEl("button", {
-      cls: "bc btn-icon-ghost",
-      attr: {
-        type: "button",
-        "data-tooltip": "What do the save options mean?",
-        title:
-          "Save (hide one): each rectangle becomes its own card.\nSave (hide all): all rectangles in the same group are hidden together.",
-      },
+    // Mask mode picker row
+    const modeRow = footer.createDiv({ cls: "bc flex items-center gap-2 w-full justify-end" });
+    modeRow.createEl("label", {
+      cls: "bc text-sm font-medium",
+      text: "Mask mode",
     });
-    {
-      const ico = saveInfo.createSpan({ cls: "bc sprout-io-ico" });
-      setIcon(ico, "info");
+
+    const modeOptions: { value: "solo" | "all"; label: string }[] = [
+      { value: "solo", label: "Hide one" },
+      { value: "all", label: "Hide all" },
+    ];
+    this.selectedMaskMode = this.initialMaskMode;
+
+    const dropRoot = modeRow.createDiv({ cls: "bc sprout relative inline-flex" });
+    const trigger = dropRoot.createEl("button", {
+      cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
+      attr: { type: "button", "aria-haspopup": "menu", "aria-expanded": "false" },
+    });
+    const triggerLabel = trigger.createEl("span", {
+      cls: "bc truncate",
+      text: modeOptions.find((o) => o.value === this.selectedMaskMode)?.label ?? "Hide one",
+    });
+    const chevronWrap = trigger.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-3" });
+    setIcon(chevronWrap, "chevron-down");
+
+    const modeMenu = dropRoot.createDiv({ cls: "bc sprout-io-mode-menu" });
+    modeMenu.classList.add("hidden");
+
+    for (const opt of modeOptions) {
+      const item = modeMenu.createDiv({ cls: "bc sprout-io-mode-menu-item", text: opt.label });
+      if (opt.value === this.selectedMaskMode) item.classList.add("is-selected");
+      item.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.selectedMaskMode = opt.value;
+        triggerLabel.textContent = opt.label;
+        modeMenu.querySelectorAll(".sprout-io-mode-menu-item").forEach((el) => el.classList.remove("is-selected"));
+        item.classList.add("is-selected");
+        modeMenu.classList.add("hidden");
+        trigger.setAttribute("aria-expanded", "false");
+      });
     }
 
-    const saveWrap = footer.createDiv({
-      cls: "bc rounded-xl border border-border bg-background shadow-sm px-3 py-2 flex items-center gap-2",
+    trigger.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const open = !modeMenu.classList.contains("hidden");
+      modeMenu.classList.toggle("hidden", open);
+      trigger.setAttribute("aria-expanded", String(!open));
     });
 
-    this.btnSaveSolo = saveWrap.createEl("button", {
-      cls: "bc btn-outline",
-      attr: { type: "button" },
-      text: "Save (hide one)",
+    document.addEventListener("click", () => {
+      modeMenu.classList.add("hidden");
+      trigger.setAttribute("aria-expanded", "false");
     });
-    this.btnSaveSolo.onclick = () => void this.saveAndClose("solo");
 
-    this.btnSaveAll = saveWrap.createEl("button", {
+    // Button row
+    const buttonRow = footer.createDiv({ cls: "bc flex items-center gap-2" });
+
+    this.btnSave = buttonRow.createEl("button", {
       cls: "bc btn",
       attr: { type: "button" },
-      text: "Save (hide all)",
+      text: "Save",
     });
-    this.btnSaveAll.onclick = () => void this.saveAndClose("all");
+    this.btnSave.onclick = () => {
+      void this.saveAndClose(this.selectedMaskMode);
+    };
 
     // default tool
     this.setTool("occlusion");

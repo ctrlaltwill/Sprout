@@ -172,14 +172,14 @@ export function buildBrowserLayout(
     {
       label: "Columns",
       options: [
-        { v: "id", label: "ID" },
+        { v: "id", label: "Card ID" },
         { v: "type", label: "Type" },
         { v: "stage", label: "Stage" },
         { v: "due", label: "Due" },
         { v: "title", label: "Title" },
         { v: "question", label: "Question" },
         { v: "answer", label: "Answer" },
-        { v: "info", label: "Info" },
+        { v: "info", label: "Extra information" },
         { v: "location", label: "Location" },
         { v: "groups", label: "Groups" },
       ],
@@ -207,9 +207,11 @@ export function buildBrowserLayout(
     options: [
       { v: "all", label: "All types" },
       { v: "basic", label: "Basic" },
+      { v: "reversed", label: "Basic (reversed)" },
       { v: "cloze", label: "Cloze" },
       { v: "io", label: "Image occlusion" },
       { v: "mcq", label: "Multiple choice" },
+      { v: "oq", label: "Ordered question" },
     ],
     onChange: (v) => { ctx.setTypeFilter(v); ctx.refreshTable(); ctx.markFiltersDirty(); },
     onBeforeChange: () => ctx.setPageIndex(0),
@@ -267,6 +269,7 @@ export function buildBrowserLayout(
   suspendBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
   suspendBtn.disabled = true;
   suspendBtn.setAttribute("data-tooltip", "Suspend or Unsuspend selected cards");
+  suspendBtn.setAttribute("data-tooltip-position", "top");
   suspendBtn.addEventListener("click", (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
@@ -280,6 +283,7 @@ export function buildBrowserLayout(
   editBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
   editBtn.disabled = true;
   editBtn.setAttribute("data-tooltip", "Edit selected cards");
+  editBtn.setAttribute("data-tooltip-position", "top");
   editBtn.setAttribute("aria-live", "polite");
   const editIcon = document.createElement("span");
   editIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
@@ -302,6 +306,7 @@ export function buildBrowserLayout(
   resetFiltersBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
   resetFiltersBtn.disabled = true;
   resetFiltersBtn.setAttribute("data-tooltip", "Reset filters");
+  resetFiltersBtn.setAttribute("data-tooltip-position", "top");
   const resetIcon = document.createElement("span");
   resetIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
   setIcon(resetIcon, "funnel-x");
@@ -433,7 +438,7 @@ export function buildBrowserLayout(
     return th;
   };
 
-  hr.appendChild(headCell("Unique ID", "id"));
+  hr.appendChild(headCell("Card ID", "id"));
   hr.appendChild(headCell("Type", "type"));
   hr.appendChild(headCell("Stage", "stage"));
   hr.appendChild(headCell("Due", "due"));

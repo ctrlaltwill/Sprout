@@ -1,6 +1,6 @@
 # Reading View
 
-Last modified: 13/02/2026
+Last modified: 15/02/2026
 
 ## Overview
 
@@ -19,14 +19,25 @@ In reading mode, Sprout can show:
 
 ## Appearance settings
 
-Change these in **Settings → Preview**:
+Change these in **Settings → Reading**:
 
 | Setting | Description |
 |---------|-------------|
-| **Card style** | Select card block style |
-| **Show card borders** | Show or hide borders |
-| **Show card type badge** | Show or hide type badge |
-| **Compact mode** | Reduce spacing |
+| **Enable card styling** | When off, cards use native Obsidian reading view with no Sprout styling |
+| **Macro styles** | Choose one of Flashcards, Classic, Guidebook, Clean markdown, or Custom |
+| **Reading view fields** | Configure visible fields per macro style |
+| **Reading view colours** | Customise card colours for macros that support colour settings |
+| **Custom style CSS** | Add CSS that applies only to the Custom macro |
+
+## Macro styles
+
+- **Flashcards**: Front/back flip cards (question on front, answer on back).
+- **Classic**: Collapsible sections with chevrons for progressive reveal.
+- **Guidebook**: Walkthrough-style sections with guide navigation controls.
+- **Clean markdown**: Minimal, tidied markdown-style card rendering.
+- **Custom**: User-defined CSS with clean custom hooks for full styling control.
+
+For details, see [[Reading View Styles]] and [[Custom Reading Styles]].
 
 ## Interaction
 

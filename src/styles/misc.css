@@ -10,9 +10,9 @@
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-
+  font-size: var(--sprout-font-xs);
   font-weight: 600;
-  border-radius: var(--radius);
+  border-radius: var(--radius-m);
   background: #111;
   color: #fff;
   transition: background 0.18s;
@@ -88,9 +88,9 @@
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-
+  font-size: var(--sprout-font-xs);
   font-weight: 600;
-  border-radius: var(--radius);
+  border-radius: var(--radius-m);
   background: #f4b400 !important;
   color: #111 !important;
   transition: background 0.18s;
@@ -120,6 +120,16 @@
 }
 
 /* ---- Utility: cursors/opacity ---- */
+
+.sprout :is(.alert, .alert-destructive) > h2,
+.sprout :is(.alert, .alert-destructive) > h3,
+.sprout :is(.alert, .alert-destructive) > h4,
+.sprout :is(.alert, .alert-destructive) > h5,
+.sprout :is(.alert, .alert-destructive) > h6,
+.sprout :is(.alert, .alert-destructive) > strong,
+.sprout :is(.alert, .alert-destructive) > [data-title] {
+  line-clamp: 1;
+}
 
 .sprout .sprout-cursor-grab {
   cursor: grab !important;
@@ -197,6 +207,14 @@
   transform: var(--sprout-stage-transform, none) !important;
 }
 
+/* ---- Markdown code block spacing ---- */
+
+.sprout .markdown-rendered pre,
+.sprout .sprout-guide-body pre {
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+}
+
 /* ---- Image Occlusion review ---- */
 
 .sprout .sprout-io-container {
@@ -212,7 +230,7 @@
 .sprout .sprout-io-host-card {
   position: relative !important;
   display: inline-block !important;
-  border-radius: 3px !important;
+  border-radius: var(--radius-s) !important;
   overflow: hidden !important;
   border: 1px solid var(--background-modifier-border) !important;
   background: var(--background-secondary) !important;
@@ -280,7 +298,7 @@
 }
 
 .sprout .sprout-io-mask-target {
-  background: var(--theme-accent) !important;
+  background: var(--sprout-io-mask-target-color, var(--theme-accent)) !important;
   border: 2px solid var(--foreground) !important;
   display: flex !important;
   align-items: center !important;
@@ -288,7 +306,7 @@
 }
 
 .sprout .sprout-io-mask-other {
-  background: var(--foreground) !important;
+  background: var(--sprout-io-mask-other-color, var(--foreground)) !important;
   border: 2px solid var(--foreground) !important;
 }
 
@@ -302,14 +320,77 @@
 }
 
 .sprout .sprout-io-mask-rect {
-  border-radius: 3px !important;
+  border-radius: var(--radius-s) !important;
 }
 
 .sprout .sprout-io-mask-hint {
   color: #fff !important;
   font-weight: 600 !important;
   line-height: 1 !important;
-  font-size: var(--sprout-io-hint-size, 12px) !important;
+  font-size: var(--sprout-io-hint-size, var(--sprout-font-2xs)) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* SVG icons rendered by setIcon inside the hint span */
+.sprout .sprout-io-mask-hint .svg-icon {
+  width: var(--sprout-io-hint-size, 12px) !important;
+  height: var(--sprout-io-hint-size, 12px) !important;
+  stroke: #fff !important;
+}
+
+/* ── IO icon picker in settings ───────────────────────────────── */
+.sprout-io-icon-picker {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.sprout-io-icon-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-m) !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  font-size: var(--sprout-font-xs) !important;
+  cursor: pointer !important;
+  transition: border-color 0.15s, background-color 0.15s !important;
+}
+
+.sprout-io-icon-chip:hover {
+  background-color: var(--secondary) !important;
+}
+
+.sprout-io-icon-chip.is-active {
+  border-color: var(--theme-accent) !important;
+  background-color: var(--theme-accent) !important;
+  color: #fff !important;
+}
+
+.sprout-io-icon-chip.is-active .svg-icon {
+  stroke: #fff !important;
+}
+
+.sprout-io-icon-chip .svg-icon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.sprout-io-icon-custom-input {
+  height: 32px !important;
+  width: 60px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-m) !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  font-size: var(--sprout-font-xs) !important;
 }
 
 .theme-dark .sprout .sprout-bmc {
@@ -434,7 +515,7 @@ input[type="checkbox"]:checked:hover::after {
 .sprout-info {
     color: var(--text-color);
     opacity: 0.9;
-    font-size: 0.8rem;
+    font-size: var(--sprout-font-2xs);
     line-height: 1.9;
 }
 
@@ -445,17 +526,61 @@ input[type="checkbox"]:checked:hover::after {
 /* ---- Typography scale ---- */
 
 .sprout .text-xs {
-  font-size: 0.85rem !important;
+  font-size: var(--sprout-font-xs) !important;
 }
 .sprout .text-sm {
-  font-size: 0.85rem !important;
+  font-size: var(--sprout-font-xs) !important;
 }
 
-.sprout {
-  --font-ui-small: 0.85rem;
+.sprout .text-md {font-size: var(--sprout-font-xs) !important;}
+.sprout .text-lg {font-size: var(--sprout-font-sm) !important;}
+.sprout .text-xl {font-size: var(--sprout-font-md) !important;}
+.sprout .text-2xl {font-size: var(--sprout-font-lg) !important;}
+
+/* ---- Global input and textarea focus styles ---- */
+
+.sprout input:not(.sprout-home-name-input):focus,
+.sprout textarea:focus,
+.sprout .input:focus,
+.sprout .textarea:focus,
+.sprout input[type="text"]:not(.sprout-home-name-input):focus,
+.sprout input[type="search"]:focus,
+.sprout input[type="number"]:focus,
+.sprout select:focus {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.sprout .text-md {font-size: 0.9rem !important;}
-.sprout .text-lg {font-size: 1rem !important;}
-.sprout .text-xl {font-size: 1.25rem !important;}
-.sprout .text-2xl {font-size: 1.5rem !important;}
+/* Typed cloze inputs override the global accent focus above */
+.sprout .sprout-cloze-typed-input,
+.sprout .sprout-cloze-typed-input:focus {
+  border-width: 1px !important;
+}
+.sprout .sprout-cloze-typed-input:focus {
+  border-color: var(--background-modifier-border) !important;
+  box-shadow: none !important;
+}
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial,
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-hard-bg) !important;
+}
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--correct,
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--correct:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-good-bg) !important;
+}
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--wrong,
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--wrong:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-again-bg) !important;
+}
+
+.sprout .rounded-lg {
+    border-radius: var(--radius-l) !important;
+}
+
+.sprout h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+}

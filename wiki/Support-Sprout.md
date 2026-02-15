@@ -1,15 +1,23 @@
-# Support Sprout
+# About Sprout
 
-Last modified: 13/02/2026
+## Our Story
 
-If Sprout helps your workflow, here are the best ways to support the project.
+Sprout was built by William Guy, a final-year medical student in New Zealand. Designed to bring modern spaced-repetition directly into your Obsidian vault — so your flashcards, notes, and study sessions all live in one place.
 
-## Help improve Sprout
+- [Find out more about Will](https://www.linkedin.com/in/williamguy/)
 
-- [Report an issue](https://github.com/ctrlaltwill/Sprout/issues/new)
-- [Suggest a feature or idea](https://github.com/ctrlaltwill/Sprout/discussions/new)
-- [Star Sprout on GitHub](https://github.com/ctrlaltwill/Sprout)
+## Feedback & Issues
 
-## Buy me a coffee
+Found a bug? Have an idea for a feature? We'd love to hear from you. Sprout uses GitHub issue templates to keep things organised — just pick the right one and fill it in.
 
-[☕ Buy me a coffee](https://buymeacoffee.com/williamguy)
+- [Report a bug](https://github.com/ctrlaltwill/Sprout/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/ctrlaltwill/Sprout/issues/new?template=feature_request.yml)
+- [Browse open issues](https://github.com/ctrlaltwill/Sprout/issues)
+
+## Support the Project
+
+You can support Sprout by starring the repo, sharing it with friends, or caffeinating the dev!
+
+- [⭐ Star on GitHub](https://github.com/ctrlaltwill/Sprout)
+- [📋 Share Sprout](https://github.com/ctrlaltwill/Sprout)
+- [☕ Buy me a coffee](https://buymeacoffee.com/williamguy)

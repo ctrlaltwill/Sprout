@@ -16,6 +16,7 @@ import {
   mkDangerCallout,
   isStringArray,
   setModalTitle,
+  scopeModalToWorkspace,
   type CardRef,
 } from "./modal-utils";
 
@@ -38,6 +39,7 @@ export class ParseErrorModal extends Modal {
   onOpen() {
     setModalTitle(this, `Sync errors`);
 
+    scopeModalToWorkspace(this);
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");

@@ -12,7 +12,7 @@ import { Modal, Notice, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
 import { exportToApkg, type ExportOptions } from "../anki/anki-export";
-import { setModalTitle, createThemedDropdown } from "./modal-utils";
+import { setModalTitle, createThemedDropdown, scopeModalToWorkspace } from "./modal-utils";
 import { getGroupIndex } from "../indexes/group-index";
 import { buildDeckTree, type DeckNode } from "../deck/deck-tree";
 
@@ -61,6 +61,7 @@ export class AnkiExportModal extends Modal {
   onOpen() {
     setModalTitle(this, "Export to Anki");
 
+    scopeModalToWorkspace(this);
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
@@ -262,11 +263,11 @@ export class AnkiExportModal extends Modal {
     popover.appendChild(panel);
 
     const searchWrap = document.createElement("div");
-    searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full sprout-browser-search-wrap";
+    searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full sprout-browser-search-wrap min-h-[38px]";
     panel.appendChild(searchWrap);
 
     const searchIcon = document.createElement("span");
-    searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+    searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
     searchIcon.setAttribute("aria-hidden", "true");
     setIcon(searchIcon, "search");
     searchWrap.appendChild(searchIcon);

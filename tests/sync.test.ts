@@ -330,15 +330,16 @@ describe("extractStatesFromDataJsonObject", () => {
   it("prefers data.states over top-level states when data is a plain object", () => {
     const obj = {
       data: {
-        states: { nested: { stage: "review" } },
+        states: { "111111111": { stage: "review", due: 1700000000000, reps: 5 } },
       },
-      states: { topLevel: { stage: "new" } },
+      states: { "222222222": { stage: "new", due: 1700000000000, reps: 0 } },
     };
 
     const result = extractStatesFromDataJsonObject(obj);
     // The function checks `obj.data` first, so nested should win
     expect(result).toBeDefined();
-    expect(result!["nested"]).toEqual({ stage: "review" });
+    expect(result!["111111111"]).toEqual({ stage: "review", due: 1700000000000, reps: 5 });
+    expect(result!["222222222"]).toBeUndefined(); // top-level states should be ignored
   });
 
   it("handles a realistic data.json structure", () => {

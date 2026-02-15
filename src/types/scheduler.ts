@@ -51,6 +51,10 @@ export type CardState = {
   // ── Suspension bookkeeping ────────────────────────────────────────────
   /** Original `due` value stored when the card is suspended, so unsuspend can restore it. */
   suspendedDue?: number;
+
+  // ── Sibling burying ───────────────────────────────────────────────────
+  /** Epoch ms. When set and > now, the card is temporarily buried and excluded from sessions. */
+  buriedUntil?: number;
 };
 
 /**

@@ -10,6 +10,7 @@
 
 import type { CardRecord, CardState } from "../core/store";
 import { State } from "ts-fsrs";
+import { isParentCard } from "../core/card-utils";
 
 export type DeckCounts = {
   total: number;
@@ -124,6 +125,9 @@ export function buildDeckTree(
   for (const c of cards) {
     const notePath = String(c.sourceNotePath || "");
     if (!notePath) continue;
+
+    // Skip parent cards — only children (the ones actually studied) should be counted
+    if (isParentCard(c)) continue;
 
     const st = states[String(c.id)] || null;
     const fs = inferFsrsState(st);

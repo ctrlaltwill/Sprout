@@ -44,7 +44,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const titleCased = toTitleCase(titleText);
 
   const summaryLabelWrap = el("div", "bc flex flex-col items-start");
-  const summaryScope = `${titleCased} ${isFolder ? "Folder" : "Note"}`;
+  const summaryScope = titleCased;
   const summaryTitle = el("div", "bc text-xs sprout-widget-summary-title", `Study ${summaryScope}`);
   summaryLabelWrap.appendChild(summaryTitle);
 
@@ -55,8 +55,6 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
 
   header.appendChild(summaryLabelWrap);
 
-  wrap.appendChild(header);
-
   if (!f) {
     const body = el("div", "bc px-4 py-6 text-center");
     const msg = el("div", "bc text-muted-foreground text-sm", "Open a note to see flashcards.");
@@ -65,6 +63,8 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
     root.appendChild(wrap);
     return;
   }
+
+  wrap.appendChild(header);
 
   if (!cards.length) {
     const body = el("div", "bc px-4 py-6 sprout-widget-empty-body");
@@ -87,7 +87,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   // Teaser card: summary + next up preview
   const teaser = el("div", "bc card px-4 py-4 space-y-3 sprout-widget-teaser");
 
-  const teaserTitle = el("div", "bc text-xs font-semibold sprout-widget-teaser-title", `${titleCased} ${isFolder ? "Folder" : "Note"}`);
+  const teaserTitle = el("div", "bc text-xs font-semibold sprout-widget-teaser-title", titleCased);
   teaser.appendChild(teaserTitle);
 
   const previewSession = view.buildSessionForActiveNote();

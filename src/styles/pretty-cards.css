@@ -67,7 +67,7 @@
   padding-left: 1.7em;
   color: var(--text-color);
   opacity: 0.9;
-  font-size: 0.9rem;
+  font-size: var(--sprout-font-xs);
   line-height: 1.9;
   margin-bottom: 6px;
 }
@@ -78,6 +78,22 @@
   top: 0;
   width: 1.7em;
   display: inline-block;
+}
+
+/* ---- OQ reading-view (pretty-card) ---- */
+
+.sprout-oq-answer-list {
+  position: relative;
+}
+
+.sprout-oq-answer-row {
+  position: relative;
+  padding-left: 1.7em;
+  color: var(--text-color);
+  opacity: 0.9;
+  font-size: var(--sprout-font-xs);
+  line-height: 1.9;
+  margin-bottom: 6px;
 }
 
 mjx-container[jax="CHTML"][display="true"] {
@@ -166,9 +182,9 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* ---- Card surface ---- */
 
-/* Accent style (default) */
-.sprout-pretty-card.accent {
-  border-radius: 6px;
+/* Shared base (theme-inherited) for all macros */
+.sprout-pretty-card {
+  border-radius: var(--radius-m);
   padding: 12px 12px 15px 12px;
   box-shadow: none;
   box-sizing: border-box;
@@ -176,45 +192,126 @@ mjx-container[jax="CHTML"][display="true"] {
   margin-bottom: 20px;
   break-inside: avoid;
   page-break-inside: avoid;
+  overflow: visible;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+}
 
+/* Accent style (default) */
+.sprout-pretty-card.sprout-macro-classic.accent {
   /* Use Obsidian accent variables to match callouts */
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.06);
   border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.22);
-  overflow: visible;
 }
 
 /* Theme style (uses background/text/alt accent colors) */
-.sprout-pretty-card.theme {
-  border-radius: 6px;
-  padding: 12px 12px 15px 12px;
-  box-shadow: none;
-  box-sizing: border-box;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  break-inside: avoid;
-  page-break-inside: avoid;
-
+.sprout-pretty-card.sprout-macro-classic.theme {
   background-color: var(--background-primary) !important;
   color: var(--color);
   border: 1px solid var(--alt-accent-color);
-  overflow: visible;
 }
 
 /* ---- Card header ---- */
 
-.sprout-pretty-card.accent .sprout-card-header {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
 }
-.sprout-pretty-card.theme .sprout-card-header {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
+}
+
+/* Flashcards macro */
+.sprout-pretty-card.sprout-macro-flashcards {
+  background: var(--color-base-10);
+  border: 1px solid var(--alt-accent-color);
+  border-radius: var(--radius-l);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards.sprout-flashcard-flipped {
+  background: var(--color-base-20);
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-card-header {
+  margin-bottom: 0;
+}
+
+/* Guidebook macro (carousel-like walkthrough) */
+.sprout-pretty-card.sprout-macro-guidebook .sprout-card-content {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-card-section {
+  flex: 0 0 min(420px, 100%);
+  min-width: min(420px, 100%);
+  scroll-snap-align: start;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  background: var(--background-primary);
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-section-label {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* Markdown macro (native reading look) */
+.sprout-pretty-card.sprout-macro-markdown {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+  color: var(--text-normal);
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-card-header {
+  margin-bottom: 6px;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-card-title {
+  font-size: var(--font-text-size);
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-card-section {
+  border: none;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-section-label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-toggle-btn {
+  display: none !important;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-collapsible {
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 /* ---- Edit button ---- */
@@ -273,8 +370,8 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* ---- Card title ---- */
 
-.sprout-pretty-card.accent .sprout-card-title {
-  font-size: 0.8rem;
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-card-title {
+  font-size: var(--sprout-font-2xs);
   font-weight: 700;
   line-height: 1.4;
   color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
@@ -282,8 +379,8 @@ mjx-container[jax="CHTML"][display="true"] {
   align-items: center;
   gap: 6px;
 }
-.sprout-pretty-card.theme .sprout-card-title {
-  font-size: 0.8rem;
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-card-title {
+  font-size: var(--sprout-font-2xs);
   font-weight: 700;
   line-height: 1.4;
   color: var(--color);
@@ -323,8 +420,8 @@ mjx-container[jax="CHTML"][display="true"] {
   font-weight: 500 !important;
   line-height: 1.15 !important;
 }
-.sprout-pretty-card.accent .sprout-card-meta,
-.sprout-pretty-card.theme .sprout-card-meta {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-card-meta,
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-card-meta {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -333,19 +430,19 @@ mjx-container[jax="CHTML"][display="true"] {
 /* ---- Card ID ---- */
 
 .sprout-card-id {
-  font-size: 0.8rem;
+  font-size: var(--sprout-font-2xs);
   font-weight: 500;
   opacity: 1;
   color: hsl(var(--accent-h),var(--accent-s),var(--accent-l));
 }
-.sprout-pretty-card.accent .sprout-card-id {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-card-id {
   color: hsl(var(--accent-h),var(--accent-s),var(--accent-l));
 }
-.sprout-pretty-card.theme .sprout-card-id {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-card-id {
   color: var(--color);
 }
-.sprout-pretty-card.accent .sprout-card-id::before,
-.sprout-pretty-card.theme .sprout-card-id::before {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-card-id::before,
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-card-id::before {
   content: "#";
   position: relative;
   left: 2px;
@@ -361,12 +458,12 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* ---- Edit button (variant inside pretty cards) ---- */
 
-.sprout-pretty-card.accent .sprout-edit-btn,
-.sprout-pretty-card.theme .sprout-edit-btn {
-  font-size: 0.8rem;
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-edit-btn,
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-edit-btn {
+  font-size: var(--sprout-font-2xs);
   font-weight: 500;
   padding: 5px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   cursor: pointer;
   background: transparent;
   border: 1px solid rgba(0,0,0,0.06);
@@ -374,60 +471,60 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* ---- Card section + labels ---- */
 
-.sprout-pretty-card.accent .sprout-card-section,
-.sprout-pretty-card.theme .sprout-card-section {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-card-section,
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-card-section {
   margin-bottom: 0px;
 }
 
-.sprout-pretty-card.accent .sprout-section-label,
-.sprout-pretty-card.theme .sprout-section-label {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-section-label,
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-section-label {
   opacity: 0.9;
   margin-top: .5em;
-  font-size: 0.8rem;
+  font-size: var(--sprout-font-2xs);
   font-weight: 500;
 }
 
 /* Section content */
-.sprout-pretty-card.accent .sprout-section-content {
-  font-size: 0.8rem;
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-section-content {
+  font-size: var(--sprout-font-2xs);
   font-weight: 400;
   line-height: 1.9;
   color: var(--text-normal);
 }
-.sprout-pretty-card.theme .sprout-section-content {
-  font-size: 0.8rem;
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-section-content {
+  font-size: var(--sprout-font-2xs);
   font-weight: 400;
   line-height: 1.9;
   color: var(--color);
 }
-.sprout-pretty-card.theme .sprout-info {
-  font-size: 0.8rem;
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-info {
+  font-size: var(--sprout-font-2xs);
   color: var(--color);
 }
 
 /* ---- Cloze pills ---- */
 
-.sprout-pretty-card.accent .sprout-cloze {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-cloze {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   margin: 0 0px;
   padding: 1.5px 6px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
-.sprout-pretty-card.theme .sprout-cloze {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-cloze {
   background-color: var(--alt-accent-color);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   margin: 0 0px;
   padding: 1.5px 6px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
-.sprout-pretty-card.accent .sprout-cloze-text {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-cloze-text {
   font-weight: 500;
   color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
 }
-.sprout-pretty-card.theme .sprout-cloze-text {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-cloze-text {
   font-weight: 500;
   color: var(--color);
 }
@@ -435,7 +532,7 @@ mjx-container[jax="CHTML"][display="true"] {
 /* Generic cloze styling */
 .sprout-cloze {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
-    border-radius: 6px;
+    border-radius: var(--radius-m);
     margin: 0 0px;
     padding: 1.5px 6px;
      -webkit-box-decoration-break: clone;
@@ -449,76 +546,46 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* ---- Muted text ---- */
 
-.sprout-pretty-card.accent .sprout-text-muted {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-text-muted {
   opacity: 0.9;
   color: var(--text-color);
 }
-.sprout-pretty-card.theme .sprout-text-muted {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-text-muted {
   opacity: 0.9;
   color: var(--color);
 }
 
 /* ---- Answers and IO area ---- */
 
-.sprout-pretty-card.accent .sprout-answer {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-answer {
   color: var(--text-color);
   opacity: 0.9;
-  font-size: 0.8rem;
+  font-size: var(--sprout-font-2xs);
   line-height: 1.9;
 }
-.sprout-pretty-card.theme .sprout-answer {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-answer {
   color: var(--color);
   opacity: 0.9;
-  font-size: 0.8rem;
+  font-size: var(--sprout-font-2xs);
   line-height: 1.9;
 }
 
 /* IO Card */
-.sprout-pretty-card.accent .sprout-section-io .sprout-section-content {
+.sprout-pretty-card.sprout-macro-classic.accent .sprout-section-io .sprout-section-content {
   padding: 18px;
   border: 1px dashed rgba(0,0,0,0.06);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   text-align: center;
 }
-.sprout-pretty-card.theme .sprout-section-io .sprout-section-content {
+.sprout-pretty-card.sprout-macro-classic.theme .sprout-section-io .sprout-section-content {
   padding: 18px;
   border: 1px dashed var(--alt-accent-color);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   text-align: center;
 }
 
-/* ---- Tags ---- */
-
-.sprout-pretty-card.accent .sprout-tags-list {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 0;
-}
-.sprout-pretty-card.theme .sprout-tags-list {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 0;
-}
-.sprout-pretty-card.accent .sprout-tags-list span {
-  font-size: 0.8rem;
-  opacity: 0.76;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.02);
-}
-.sprout-pretty-card.theme .sprout-tags-list span {
-  font-size: 0.8rem;
-  opacity: 0.76;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--background);
-}
-
-/* Hide original content (keeps existing behaviour) */
-.sprout-pretty-card.accent .sprout-original-content,
-.sprout-pretty-card.theme .sprout-original-content {
+/* Hide original source fragment across all macros (prevents duplicates) */
+.sprout-pretty-card .sprout-original-content {
   display: none;
 }
 
@@ -562,7 +629,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .sprout-reading-view-cloze {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   margin: 0 0px;
   padding: 1px 4px;
   -webkit-box-decoration-break: clone;
@@ -578,7 +645,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-reading-view-cloze img,
 .sprout-cloze img {
   border: 2px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.5);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   padding: 2px;
 }
 
@@ -612,7 +679,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card img:not(.sprout-io-image) {
   max-width: 100% !important;
   height: auto !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   margin: 6px 0 !important;
   display: block !important;
 }
@@ -625,7 +692,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card .internal-embed.image-embed img {
   max-width: 100% !important;
   height: auto !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
 }
 
 /* ---- IO cards in reading view ---- */
@@ -634,7 +701,7 @@ mjx-container[jax="CHTML"][display="true"] {
   position: relative;
   display: inline-block;
   max-width: 100%;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   overflow: hidden;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-secondary);
@@ -644,7 +711,7 @@ mjx-container[jax="CHTML"][display="true"] {
   display: block !important;
   max-width: 100% !important;
   height: auto !important;
-  border-radius: 5px !important;
+  border-radius: var(--radius-s) !important;
 }
 
 .sprout-pretty-card .sprout-io-reading-overlay {
@@ -668,7 +735,7 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 .sprout-pretty-card .sprout-io-reading-mask-rect {
-  border-radius: 3px !important;
+  border-radius: var(--radius-s) !important;
 }
 
 .sprout-pretty-card .sprout-io-reading-mask-circle {
@@ -688,7 +755,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card .sprout-io-reading-mask-hint {
   color: #fff !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
+  font-size: var(--sprout-font-xs) !important;
   line-height: 1 !important;
 }
 
@@ -698,11 +765,11 @@ mjx-container[jax="CHTML"][display="true"] {
   display: block;
   padding: 8px 12px;
   margin: 4px 0;
-  font-size: 0.75rem;
+  font-size: var(--sprout-font-2xs);
   color: var(--text-muted);
   background: var(--background-modifier-error-hover, rgba(255, 0, 0, 0.05));
   border: 1px dashed var(--text-error, #e34040);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   font-style: italic;
 }
 
@@ -719,4 +786,461 @@ mjx-container[jax="CHTML"][display="true"] {
   overflow-wrap: break-word !important;
   word-break: break-word !important;
   white-space: normal !important;
+}
+
+/* ============================================================================
+   LAYOUT MODES — Vertical (single column) vs Masonry (default multi-column)
+   ========================================================================== */
+
+/*
+ * .sprout-layout-vertical disables multi-column layout,
+ * stacking cards in a single column with consistent spacing.
+ */
+.markdown-preview-section.sprout-layout-vertical:has(.sprout-pretty-card) {
+  column-width: unset !important;
+  column-gap: unset !important;
+  column-count: 1 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.markdown-preview-section.sprout-layout-vertical > .sprout-pretty-card {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ============================================================================
+   CARD MODES — Full (all fields visible) vs Flip (default collapsible)
+   ========================================================================== */
+
+/*
+ * Full card mode: answers and info are expanded by default (no collapsible).
+ * The class .sprout-card-full is added to each card element.
+ */
+.sprout-pretty-card.sprout-card-full .sprout-collapsible {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Hide toggle buttons in full card mode — they're not needed */
+.sprout-pretty-card.sprout-card-full .sprout-toggle-btn {
+  display: none !important;
+}
+
+/* ---- Field visibility (controlled via data attributes) ---- */
+
+.sprout-pretty-card[data-hide-title="true"] .sprout-card-header {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-question="true"] .sprout-section-question {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-options="true"] .sprout-section-options {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-answer="true"] .sprout-section-answer {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-info="true"] .sprout-section-info {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-groups="true"] .sprout-groups-list {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-edit="true"] .sprout-card-edit-btn {
+  display: none !important;
+}
+
+.sprout-pretty-card[data-hide-labels="true"] .sprout-section-label {
+  display: none !important;
+}
+
+/* ---- Macro styles ---- */
+
+.sprout-pretty-card.sprout-macro-markdown {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-lines {
+  display: grid;
+  gap: 4px;
+  font-size: var(--font-text-size);
+  line-height: 1.55;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line {
+  color: var(--text-normal);
+}
+
+.sprout-pretty-card.sprout-macro-custom {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.sprout-pretty-card.sprout-macro-custom .sprout-custom-body {
+  display: grid;
+  gap: 10px;
+}
+
+.sprout-pretty-card.sprout-macro-custom .sprout-custom-section {
+  margin: 0;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-card-content {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-card-section {
+  flex: 0 0 min(420px, 100%);
+  min-width: min(420px, 100%);
+  scroll-snap-align: start;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+}
+
+/* ---- Flashcard 3D flip mechanism ---- */
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-card-content {
+  min-height: max(120px, var(--sprout-flashcard-height, 120px));
+}
+
+.sprout-pretty-card.sprout-macro-flashcards.sprout-flashcard-animating {
+  animation: sprout-parent-flip 360ms ease;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-question,
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  min-height: max(120px, var(--sprout-flashcard-height, 120px));
+  padding: 20px;
+  box-sizing: border-box;
+  font-size: inherit;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-face {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--background-primary) 88%, var(--interactive-accent) 12%),
+    var(--background-primary)
+  );
+  padding: 12px;
+  text-align: left;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-face-label {
+  font-size: var(--sprout-font-2xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-face-content {
+  display: block;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body {
+  width: 100%;
+  max-width: 100%;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body-cloze {
+  text-align: left;
+  white-space: normal;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 3;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn {
+  background: var(--background-primary) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: var(--radius-s) !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  opacity: 0.95;
+  padding: 0 !important;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn:hover,
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn:focus,
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn:focus-visible {
+  opacity: 1;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-question,
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer {
+  background: transparent;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer {
+  font-weight: 400;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer strong {
+  font-weight: 700;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-question[hidden],
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer[hidden] {
+  display: none !important;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-options {
+  text-align: left;
+  font-size: var(--sprout-font-sm);
+  line-height: 1.6;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-info {
+  margin-top: 12px;
+  font-size: var(--sprout-font-xs);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-blank {
+  display: inline-block;
+  min-width: 3.2em;
+  border-bottom: 1px solid var(--text-muted);
+  white-space: nowrap;
+  color: transparent;
+  vertical-align: baseline;
+}
+
+@keyframes sprout-parent-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-section-label {
+  display: none !important;
+}
+
+.sprout-pretty-card.sprout-macro-classic .sprout-section-groups {
+  border-top: 1px dashed var(--background-modifier-border);
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.sprout-pretty-card.sprout-macro-classic .sprout-section-groups .sprout-groups-list {
+  margin-top: 4px;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook {
+  position: relative;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-guidebook-controls {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-guidebook-nav {
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-muted);
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+  transition: opacity 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook:hover .sprout-guidebook-nav {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-guidebook-nav:hover {
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-guidebook-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-guidebook-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: var(--background-modifier-border);
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.sprout-pretty-card.sprout-macro-guidebook .sprout-guidebook-dot.is-active {
+  background: var(--interactive-accent);
+  transform: scale(1.35);
+}
+
+/* ============================================================================
+   CUSTOM COLOURS — Applied via CSS custom properties on .sprout body class
+   ========================================================================== */
+
+/*
+ * When custom colours are set via settings, the plugin injects CSS custom
+ * properties on the body element:
+ *   --sprout-rv-bg, --sprout-rv-border, --sprout-rv-accent
+ * (with -dark variants for .theme-dark)
+ *
+ * These override the default accent/theme styles.
+ */
+
+.sprout-pretty-card.sprout-custom-colours {
+  background-color: var(--sprout-rv-bg) !important;
+  border-color: var(--sprout-rv-border) !important;
+}
+
+.sprout-pretty-card.sprout-custom-colours .sprout-card-title {
+  color: var(--sprout-rv-accent) !important;
+}
+
+.sprout-pretty-card.sprout-custom-colours .sprout-card-id {
+  color: var(--sprout-rv-accent) !important;
+}
+
+.sprout-pretty-card.sprout-custom-colours .sprout-reading-view-cloze {
+  background-color: color-mix(in srgb, var(--sprout-rv-accent) 12%, transparent) !important;
+}
+
+.sprout-pretty-card.sprout-custom-colours .sprout-cloze-text {
+  color: var(--sprout-rv-accent) !important;
+}
+
+.sprout-pretty-card.sprout-custom-colours .sprout-cloze {
+  background-color: color-mix(in srgb, var(--sprout-rv-accent) 12%, transparent) !important;
+}
+
+/* ---- Custom font size ---- */
+
+.sprout-pretty-card.sprout-custom-font .sprout-section-content,
+.sprout-pretty-card.sprout-custom-font .sprout-answer,
+.sprout-pretty-card.sprout-custom-font .sprout-info,
+.sprout-pretty-card.sprout-custom-font .sprout-section-label,
+.sprout-pretty-card.sprout-custom-font .sprout-text-muted,
+.sprout-pretty-card.sprout-custom-font .sprout-option {
+  font-size: var(--sprout-rv-font-size) !important;
+}
+
+/* ============================================================================
+   GROUP HEADERS — Visual separators for cards with the same G| field
+   ========================================================================== */
+
+.sprout-group-header {
+  column-span: all;
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 8px 0 4px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprout-group-header::before {
+  content: "";
+  display: block;
+  width: 3px;
+  height: 14px;
+  border-radius: var(--radius-s);
+  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.45);
+  flex-shrink: 0;
+}
+
+.sprout-pretty-card.theme ~ .sprout-group-header::before,
+.sprout-group-header.sprout-group-header-theme::before {
+  background: var(--alt-accent-color, var(--interactive-accent));
+}
+
+/* Groups list inside cards */
+.sprout-groups-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.sprout-groups-list .sprout-group-tag {
+  font-size: var(--sprout-font-2xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-s);
+  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.08);
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  font-weight: 500;
+}
+
+.sprout-pretty-card.theme .sprout-groups-list .sprout-group-tag {
+  background: var(--background-secondary);
+  color: var(--text-muted);
 }

@@ -13,10 +13,17 @@ import { parseCardsFromText, type ParsedCard } from "../parser/parser";
 import { generateUniqueId } from "../core/ids";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../types/card";
+import { normalizeCardOptions } from "../types/card";
+import {
+  FLASHCARD_HEADER_CARD_RE,
+  FLASHCARD_HEADER_FIELD_RE,
+} from "../core/delimiter";
 import type { CardState } from "../types/scheduler";
 import { loadSchedulingFromDataJson } from "../core/store";
 import { expandGroupPrefixes, normaliseGroupPath } from "../indexes/group-index";
 import { log } from "../core/logger";
+import { stableIoChildId, normaliseGroupKey } from "../imageocclusion/mask-tool";
+import type { StoredIORect } from "../imageocclusion/image-occlusion-types";
 
 import {
   countObjectKeys,
@@ -24,8 +31,6 @@ import {
   likelySproutStateKey,
   extractStatesFromDataJsonObject,
   tryReadJson,
-  safeListFolders,
-  safeListFiles,
   safeStatMtime,
   ensureRoutineBackupIfNeeded,
   listDataJsonBackups,
@@ -148,8 +153,8 @@ function splitMdPrefix(line: string): { prefix: string; rest: string } {
 function looksLikeFlashcardHeader(rest: string): boolean {
   const s = String(rest ?? "");
   if (/^\^sprout-\d{9}\s*$/.test(s.trim())) return true;
-  if (/^(Q|MCQ|CQ|IO)\s*(?::|\|)\s*/.test(s)) return true;
-  if (/^(T|A|O|I|G|C|K|L)\s*(?::|\|)\s*/.test(s)) return true;
+  if (FLASHCARD_HEADER_CARD_RE().test(s)) return true;
+  if (FLASHCARD_HEADER_FIELD_RE().test(s)) return true;
   if (/^\d+(?:\.\d+)?\s*\|\s*/.test(s)) return true;
   return false;
 }
@@ -273,43 +278,24 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
     }
   }
 
-  // Scan foreign plugin data.json files for recovery
-  try {
-    const pluginsRoot = joinPath(configDir, "plugins");
-    const pluginFolders = await safeListFolders(adapter, pluginsRoot);
-    for (const folderPath of pluginFolders) {
-      const folderId = String(folderPath).split("/").pop() || "";
-      if (!folderId || folderId === pluginId) continue;
-
-      const files = await safeListFiles(adapter, String(folderPath));
-      const candidates = files.filter((p) => /(^|\/)data\.json(\..+)?$/.test(String(p)));
-      if (!candidates.length) continue;
-
-      for (const p of candidates) {
-        const obj = await tryReadJson(adapter, p);
-        const states = extractStatesFromDataJsonObject(obj);
-        if (!states) continue;
-
-        const keys = Object.keys(states);
-        const stateCount = keys.length;
-        if (stateCount <= 0) continue;
-
-        const sproutish = keys.reduce((acc, k) => acc + (likelySproutStateKey(k) ? 1 : 0), 0);
-        if (sproutish <= 0) continue;
-
-        const mtime = await safeStatMtime(adapter, p);
-        const score = stateCount * 10 + sproutish * 5 + Math.min(1000, mtime / 1000);
-        cands.push({ states, score, mtime, path: p });
-      }
-    }
-  } catch {
-    // ignore
-  }
+  // NOTE: Only scans this plugin's own data.json variants and backup folder.
+  // extractStatesFromDataJsonObject() validates state structure to prevent
+  // loading corrupted or foreign data (checks for FSRS fields, Sprout key patterns).
 
   if (!cands.length) return null;
 
   cands.sort((a, b) => b.score - a.score || b.mtime - a.mtime);
-  return cands[0].states;
+  const best = cands[0];
+  
+  // Final safety check: ensure majority of keys look like Sprout state keys
+  const keys = Object.keys(best.states);
+  const validKeyCount = keys.reduce((acc, k) => acc + (likelySproutStateKey(k) ? 1 : 0), 0);
+  if (keys.length > 0 && validKeyCount / keys.length < 0.7) {
+    // Less than 70% of keys match Sprout pattern - likely foreign data
+    return null;
+  }
+  
+  return best.states;
 }
 
 /**
@@ -341,13 +327,14 @@ function cardSignature(rec: CardRecord | null): string {
     groups: Array.isArray(rec.groups) ? rec.groups : [],
   };
 
-  if (rec.type === "basic") {
+  if (rec.type === "basic" || rec.type === "reversed") {
     base.q = rec.q || "";
     base.a = rec.a || "";
   } else if (rec.type === "mcq") {
     base.stem = rec.stem || "";
-    base.options = Array.isArray(rec.options) ? rec.options : [];
+    base.options = normalizeCardOptions(rec.options);
     base.correctIndex = Number.isFinite(rec.correctIndex) ? rec.correctIndex : -1;
+    base.correctIndices = Array.isArray(rec.correctIndices) ? rec.correctIndices : [];
     base.a = rec.a || "";
   } else if (rec.type === "cloze") {
     base.clozeText = rec.clozeText || "";
@@ -368,6 +355,14 @@ function cardSignature(rec: CardRecord | null): string {
     base.parentId = rec.parentId || "";
     base.clozeIndex = Number.isFinite(rec.clozeIndex) ? rec.clozeIndex : -1;
     base.clozeText = rec.clozeText || "";
+  } else if (rec.type === "reversed-child") {
+    base.parentId = rec.parentId || "";
+    base.reversedDirection = rec.reversedDirection || "forward";
+    base.q = rec.q || "";
+    base.a = rec.a || "";
+  } else if (rec.type === "oq") {
+    base.q = rec.q || "";
+    base.oqSteps = Array.isArray(rec.oqSteps) ? rec.oqSteps : [];
   }
 
   return JSON.stringify(base);
@@ -537,31 +532,34 @@ async function deleteIoImage(plugin: SproutPlugin, imageRef: string): Promise<vo
   }
 }
 
-/** Deletes all io-child records (and their states) for a given `parentId`. */
-function deleteIoChildren(plugin: SproutPlugin, parentId: string): number {
+// ────────────────────────────────────────────
+// Shared child-record helpers
+// ────────────────────────────────────────────
+
+/** Deletes all child records (and their states) of `childType` for a given `parentId`. */
+function deleteChildrenByType(plugin: SproutPlugin, parentId: string, childType: string): number {
   let deleted = 0;
+  const pid = String(parentId || "");
 
   for (const id of Object.keys(plugin.store.data.cards || {})) {
     const rec = plugin.store.data.cards[id];
     if (!rec) continue;
-    if (String(rec.type) !== "io-child") continue;
-    if (String(rec.parentId || "") !== String(parentId || "")) continue;
-
+    if (String(rec.type) !== childType) continue;
+    if (String(rec.parentId || "") !== pid) continue;
     delete plugin.store.data.cards[id];
     if (plugin.store.data.states) delete (plugin.store.data.states)[id];
     deleted += 1;
   }
 
-  // Defensive: clean io-child entries from quarantine too.
+  // Defensive: clean child entries from quarantine too.
   for (const id of Object.keys(plugin.store.data.quarantine || {})) {
     const q = plugin.store.data.quarantine[id];
     if (!q) continue;
     const qRec = q as Record<string, unknown>;
     const qType = typeof qRec.type === "string" ? qRec.type : "";
     const qParentId = typeof qRec.parentId === "string" ? qRec.parentId : "";
-    if (qType !== "io-child") continue;
-    if (qParentId !== String(parentId || "")) continue;
-
+    if (qType !== childType) continue;
+    if (qParentId !== pid) continue;
     delete plugin.store.data.quarantine[id];
     if (plugin.store.data.states) delete (plugin.store.data.states)[id];
     deleted += 1;
@@ -570,22 +568,20 @@ function deleteIoChildren(plugin: SproutPlugin, parentId: string): number {
   return deleted;
 }
 
-/** Sweep: deletes io-child cards whose parentId no longer exists as an IO card. */
-function deleteOrphanIoChildren(plugin: SproutPlugin): number {
+/** Sweep: deletes child cards of `childType` whose parentId no longer exists as a `parentType` card. */
+function deleteOrphanChildren(plugin: SproutPlugin, parentType: string, childType: string): number {
   const liveParents = new Set<string>();
-
   for (const id of Object.keys(plugin.store.data.cards || {})) {
     const rec = plugin.store.data.cards[id];
     if (!rec) continue;
-    if (String(rec.type) === "io") liveParents.add(String(rec.id ?? id));
+    if (String(rec.type) === parentType) liveParents.add(String(rec.id ?? id));
   }
 
   let removed = 0;
   for (const id of Object.keys(plugin.store.data.cards || {})) {
     const rec = plugin.store.data.cards[id];
     if (!rec) continue;
-    if (String(rec.type) !== "io-child") continue;
-
+    if (String(rec.type) !== childType) continue;
     const pid = String(rec.parentId || "");
     if (!pid || !liveParents.has(pid)) {
       delete plugin.store.data.cards[id];
@@ -597,8 +593,73 @@ function deleteOrphanIoChildren(plugin: SproutPlugin): number {
   return removed;
 }
 
+/** Collects existing child records of `childType` for a given `parentId`. */
+function collectExistingChildren(plugin: SproutPlugin, parentId: string, childType: string): CardRecord[] {
+  const out: CardRecord[] = [];
+  for (const c of Object.values(plugin.store.data.cards || {})) {
+    if (!c) continue;
+    if (c.type !== childType) continue;
+    if (String(c.parentId || "") !== parentId) continue;
+    out.push(c);
+  }
+  return out;
+}
+
+/** Resolves the createdAt timestamp for a child record (preserves existing, falls back to parent, then now). */
+function resolveChildCreatedAt(prev: CardRecord | undefined, parent: CardRecord, now: number): number {
+  if (prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0) return Number(prev.createdAt);
+  if (Number.isFinite(parent?.createdAt) && Number(parent.createdAt) > 0) return Number(parent.createdAt);
+  return now;
+}
+
+/** Upserts a child card record, merging with previous if it exists, and ensures scheduling state. */
+function upsertChildRecord(
+  plugin: SproutPlugin,
+  childId: string,
+  rec: CardRecord,
+  now: number,
+  schedulingSnapshot: StateMap | null | undefined,
+  stateHook?: (childId: string) => boolean,
+): void {
+  const prev = plugin.store.data.cards?.[childId];
+  if (prev && typeof prev === "object") {
+    const merged = { ...prev, ...rec };
+    plugin.store.data.cards[childId] = merged;
+    plugin.store.upsertCard(merged);
+  } else {
+    plugin.store.data.cards[childId] = rec;
+    plugin.store.upsertCard(rec);
+  }
+
+  if (!hasState(plugin, childId)) {
+    // Allow callers to inject custom state logic (e.g., reversed migration)
+    if (stateHook && stateHook(childId)) return;
+    const restored = upsertStateIfPresent(plugin, schedulingSnapshot, childId);
+    if (!restored) ensureStateIfMissing(plugin, childId, now, 2.5);
+  }
+}
+
+/** Removes child records not in `keepChildIds`. */
+function pruneStaleChildren(plugin: SproutPlugin, existingChildren: CardRecord[], keepChildIds: Set<string>): void {
+  for (const ch of existingChildren) {
+    const id = String(ch.id || "");
+    if (!id) continue;
+    if (keepChildIds.has(id)) continue;
+    delete plugin.store.data.cards[id];
+    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
+  }
+}
+
+// Convenience wrappers (preserve call-site readability)
+function deleteIoChildren(plugin: SproutPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "io-child"); }
+function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "cloze-child"); }
+function deleteReversedChildren(plugin: SproutPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "reversed-child"); }
+function deleteOrphanIoChildren(plugin: SproutPlugin): number { return deleteOrphanChildren(plugin, "io", "io-child"); }
+function deleteOrphanClozeChildren(plugin: SproutPlugin): number { return deleteOrphanChildren(plugin, "cloze", "cloze-child"); }
+function deleteOrphanReversedChildren(plugin: SproutPlugin): number { return deleteOrphanChildren(plugin, "reversed", "reversed-child"); }
+
 // ────────────────────────────────────────────
-// Cloze child helpers
+// Child-type-specific utilities
 // ────────────────────────────────────────────
 
 /** Extracts cloze deletion indices (e.g. `{{c1::…}}`) from raw text. */
@@ -619,63 +680,66 @@ function stableClozeChildId(parentId: string, idx: number): string {
   return `${parentId}::cloze::c${idx}`;
 }
 
-/** Deletes all cloze-child records (and their states) for a given `parentId`. */
-function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number {
-  let deleted = 0;
-
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec = plugin.store.data.cards[id];
-    if (!rec) continue;
-    if (String(rec.type) !== "cloze-child") continue;
-    if (String(rec.parentId || "") !== String(parentId || "")) continue;
-
-    delete plugin.store.data.cards[id];
-    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-    deleted += 1;
-  }
-
-  for (const id of Object.keys(plugin.store.data.quarantine || {})) {
-    const q = plugin.store.data.quarantine[id];
-    if (!q) continue;
-    const qRec = q as Record<string, unknown>;
-    const qType = typeof qRec.type === "string" ? qRec.type : "";
-    const qParentId = typeof qRec.parentId === "string" ? qRec.parentId : "";
-    if (qType !== "cloze-child") continue;
-    if (qParentId !== String(parentId || "")) continue;
-
-    delete plugin.store.data.quarantine[id];
-    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-    deleted += 1;
-  }
-
-  return deleted;
+/** Stable deterministic ID for a reversed child: `${parentId}::reversed::${dir}`. */
+function stableReversedChildId(parentId: string, dir: "forward" | "back"): string {
+  return `${parentId}::reversed::${dir}`;
 }
 
-/** Removes cloze-child cards whose parent no longer exists as a cloze card. */
-function deleteOrphanClozeChildren(plugin: SproutPlugin): number {
-  const liveParents = new Set<string>();
+/**
+ * Synchronises reversed-child records with a parent reversed card.
+ * Creates two children: "forward" (Q→A) and "back" (A→Q), each with
+ * independent scheduling.
+ */
+function syncReversedChildren(plugin: SproutPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
+  const parentId = String(parent?.id ?? "");
+  if (!parentId) return;
 
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec = plugin.store.data.cards[id];
-    if (!rec) continue;
-    if (String(rec.type) === "cloze") liveParents.add(String(rec.id ?? id));
+  const directions: Array<"forward" | "back"> = ["forward", "back"];
+  const keepChildIds = new Set<string>();
+  const existingChildren = collectExistingChildren(plugin, parentId, "reversed-child");
+
+  const titleBase = parent?.title ? String(parent.title) : "Basic (Reversed)";
+
+  for (const dir of directions) {
+    const childId = stableReversedChildId(parentId, dir);
+    keepChildIds.add(childId);
+
+    const prev = plugin.store.data.cards?.[childId];
+    const dirLabel = dir === "forward" ? "Q→A" : "A→Q";
+    const rec: CardRecord = {
+      id: childId,
+      type: "reversed-child",
+      title: `${titleBase} • ${dirLabel}`,
+      parentId,
+      reversedDirection: dir,
+      q: parent?.q ?? null,
+      a: parent?.a ?? null,
+      info: parent?.info ?? null,
+      groups: parent?.groups ?? null,
+      sourceNotePath: String(parent?.sourceNotePath || ""),
+      sourceStartLine: Number(parent?.sourceStartLine ?? 0) || 0,
+      createdAt: resolveChildCreatedAt(prev, parent, now),
+      updatedAt: now,
+      lastSeenAt: now,
+    };
+
+    // Custom state hook: Basic → Reversed migration for the forward child
+    const stateHook = (cid: string) => {
+      if (dir === "forward" && hasState(plugin, parentId)) {
+        const parentState = plugin.store.data.states?.[parentId];
+        if (parentState && typeof parentState === "object") {
+          plugin.store.upsertState({ ...parentState, id: cid } as CardState);
+          delete (plugin.store.data.states as Record<string, unknown>)[parentId];
+        }
+        return true;
+      }
+      return false;
+    };
+
+    upsertChildRecord(plugin, childId, rec, now, schedulingSnapshot, stateHook);
   }
 
-  let removed = 0;
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const rec = plugin.store.data.cards[id];
-    if (!rec) continue;
-    if (String(rec.type) !== "cloze-child") continue;
-
-    const pid = String(rec.parentId || "");
-    if (!pid || !liveParents.has(pid)) {
-      delete plugin.store.data.cards[id];
-      if (plugin.store.data.states) delete (plugin.store.data.states)[id];
-      removed += 1;
-    }
-  }
-
-  return removed;
+  pruneStaleChildren(plugin, existingChildren, keepChildIds);
 }
 
 /** Collects all normalised group keys (including prefixes) across cards. */
@@ -711,10 +775,28 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
   const allFiles = vault.getFiles();
 
   const referencedIoIds = new Set<string>();
-  const mdFiles = vault.getMarkdownFiles();
-  const re = /sprout-io-(\d{9})/g;
+  
+  // Collect IO card IDs and unique file paths containing IO cards
+  const ioCardIds = new Set<string>();
+  const ioFilePaths = new Set<string>();
+  
+  for (const id of Object.keys(plugin.store.data.cards || {})) {
+    const card = plugin.store.data.cards[id];
+    if (card && String(card.type) === "io") {
+      ioCardIds.add(String(id));
+      if (card.sourceNotePath) {
+        ioFilePaths.add(card.sourceNotePath);
+      }
+    }
+  }
 
-  for (const md of mdFiles) {
+  // Only scan markdown files that contain IO cards
+  const re = /sprout-io-(\d{9})/g;
+  
+  for (const filePath of ioFilePaths) {
+    const md = vault.getAbstractFileByPath(filePath);
+    if (!(md instanceof TFile)) continue;
+    
     try {
       const text = await vault.read(md);
       let match: RegExpExecArray | null;
@@ -725,12 +807,6 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
       // ignore
     }
     re.lastIndex = 0;
-  }
-
-  const ioCardIds = new Set<string>();
-  for (const id of Object.keys(plugin.store.data.cards || {})) {
-    const card = plugin.store.data.cards[id];
-    if (card && String(card.type) === "io") ioCardIds.add(String(id));
   }
 
   let deleted = 0;
@@ -766,14 +842,7 @@ function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number
 
   const clozeIndices = extractClozeIndices(parent?.clozeText ?? "");
   const keepChildIds = new Set<string>();
-
-  const existingChildren: CardRecord[] = [];
-  for (const c of Object.values(plugin.store.data.cards || {})) {
-    if (!c) continue;
-    if (c.type !== "cloze-child") continue;
-    if (String(c.parentId || "") !== parentId) continue;
-    existingChildren.push(c);
-  }
+  const existingChildren = collectExistingChildren(plugin, parentId, "cloze-child");
 
   const titleBase = parent?.title ? String(parent.title) : "Cloze";
 
@@ -782,12 +851,6 @@ function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number
     keepChildIds.add(childId);
 
     const prev = plugin.store.data.cards?.[childId];
-    const createdAt = (() => {
-      if (prev && Number.isFinite(prev.createdAt) && Number(prev.createdAt) > 0) return Number(prev.createdAt);
-      if (Number.isFinite(parent?.createdAt) && Number(parent.createdAt) > 0) return Number(parent.createdAt);
-      return now;
-    })();
-
     const rec: CardRecord = {
       id: childId,
       type: "cloze-child",
@@ -795,41 +858,124 @@ function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number
       parentId,
       clozeIndex: idx,
       clozeText: parent?.clozeText ?? null,
-
       info: parent?.info ?? null,
       groups: parent?.groups ?? null,
-
       sourceNotePath: String(parent?.sourceNotePath || ""),
       sourceStartLine: Number(parent?.sourceStartLine ?? 0) || 0,
-
-      createdAt,
+      createdAt: resolveChildCreatedAt(prev, parent, now),
       updatedAt: now,
       lastSeenAt: now,
     };
 
-    if (prev && typeof prev === "object") {
-      const merged = { ...prev, ...rec };
-      plugin.store.data.cards[childId] = merged;
-      plugin.store.upsertCard(merged);
-    } else {
-      plugin.store.data.cards[childId] = rec;
-      plugin.store.upsertCard(rec);
-    }
+    upsertChildRecord(plugin, childId, rec, now, schedulingSnapshot);
+  }
 
-    // Restore scheduling if it exists; otherwise create state if missing (never reset).
-    if (!hasState(plugin, childId)) {
-      const restored = upsertStateIfPresent(plugin, schedulingSnapshot, childId);
-      if (!restored) ensureStateIfMissing(plugin, childId, now, 2.5);
+  pruneStaleChildren(plugin, existingChildren, keepChildIds);
+}
+
+// ────────────────────────────────────────────
+// IO child sync (analogous to syncClozeChildren)
+// ────────────────────────────────────────────
+
+/**
+ * Ensures io-child records exist for an IO parent card.
+ * Reads rect data from store.data.io[parentId]; if that entry is missing
+ * but the parent record has an `occlusions` array, rebuilds the IO map entry
+ * from that data so children can be created.
+ */
+function syncIoChildren(plugin: SproutPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
+  const parentId = String(parent?.id ?? "");
+  if (!parentId) return;
+
+  // Ensure the IO map exists
+  if (!plugin.store.data.io) plugin.store.data.io = {};
+  const ioMap = plugin.store.data.io;
+
+  // If no IO map entry, rebuild from parent.occlusions (parsed from markdown)
+  if (!ioMap[parentId]) {
+    const legacy = parent as unknown as Record<string, unknown>;
+    const rawOcclusions = legacy.occlusions;
+    const imageRef = normalizeIoImageRef(legacy.imageRef as string | null);
+    const maskMode = (legacy.maskMode as "solo" | "all" | null) ?? null;
+
+    if (Array.isArray(rawOcclusions) && rawOcclusions.length > 0 && imageRef) {
+      const rects: StoredIORect[] = [];
+      for (const r of rawOcclusions) {
+        if (!r || typeof r !== "object") continue;
+        const rect = r as Record<string, unknown>;
+        const rectIdRaw = rect.rectId ?? rect.id;
+        let rectId: string;
+        if (typeof rectIdRaw === 'string') {
+          rectId = rectIdRaw;
+        } else if (typeof rectIdRaw === 'number' || typeof rectIdRaw === 'boolean') {
+          rectId = String(rectIdRaw);
+        } else {
+          rectId = `r-${Math.random().toString(16).slice(2)}`;
+        }
+        rects.push({
+          rectId,
+          x: Number(rect.x ?? 0),
+          y: Number(rect.y ?? 0),
+          w: Number(rect.w ?? rect.width ?? 0),
+          h: Number(rect.h ?? rect.height ?? 0),
+          groupKey: normaliseGroupKey(rect.groupKey as string | null),
+          shape: (rect.shape === "circle" ? "circle" : "rect"),
+        });
+      }
+      if (rects.length > 0) {
+        ioMap[parentId] = { imageRef, maskMode, rects };
+      }
     }
   }
 
-  for (const ch of existingChildren) {
-    const id = String(ch.id || "");
-    if (!id) continue;
-    if (keepChildIds.has(id)) continue;
-    delete plugin.store.data.cards[id];
-    if (plugin.store.data.states) delete (plugin.store.data.states)[id];
+  const ioDef = ioMap[parentId];
+  if (!ioDef || !Array.isArray(ioDef.rects) || ioDef.rects.length === 0) return;
+
+  // Group rects by groupKey
+  const groupToRectIds = new Map<string, string[]>();
+  for (const r of ioDef.rects) {
+    const g = normaliseGroupKey(r.groupKey);
+    const arr = groupToRectIds.get(g) ?? [];
+    arr.push(String(r.rectId));
+    groupToRectIds.set(g, arr);
   }
+
+  const existingChildren = collectExistingChildren(plugin, parentId, "io-child");
+
+  const keepChildIds = new Set<string>();
+  const titleBase = parent?.title ? String(parent.title) : "Image occlusion";
+  const legacy = parent as unknown as Record<string, unknown>;
+
+  for (const [groupKey, rectIds] of groupToRectIds.entries()) {
+    const childId = stableIoChildId(parentId, groupKey);
+    keepChildIds.add(childId);
+
+    const prev = plugin.store.data.cards?.[childId];
+    const rec: CardRecord = {
+      id: childId,
+      type: "io-child",
+      title: titleBase,
+      parentId,
+      groupKey,
+      rectIds: rectIds.slice(),
+      retired: false,
+      prompt: (legacy.prompt as string | null) ?? null,
+      info: parent?.info ?? null,
+      groups: parent?.groups ?? null,
+      sourceNotePath: String(parent?.sourceNotePath || ""),
+      sourceStartLine: Number(parent?.sourceStartLine ?? 0) || 0,
+      imageRef: ioDef.imageRef || null,
+      maskMode: ioDef.maskMode || null,
+      createdAt: resolveChildCreatedAt(prev, parent, now),
+      updatedAt: now,
+      lastSeenAt: now,
+    };
+
+    upsertChildRecord(plugin, childId, rec, now, schedulingSnapshot);
+  }
+
+  // Remove orphan io-children for this parent
+  pruneStaleChildren(plugin, existingChildren, keepChildIds);
 }
 
 // ────────────────────────────────────────────
@@ -837,18 +983,35 @@ function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number
 // ────────────────────────────────────────────
 
 /**
- * Converts parsed MCQ data into legacy store fields (`options[]` + `correctIndex`).
+ * Converts parsed MCQ data into store fields (`options[]` + `correctIndex` + `correctIndices`).
  */
-function mcqLegacyFromParsed(c: ParsedCard): { options: string[]; correctIndex: number | null } {
+function mcqLegacyFromParsed(c: ParsedCard): { options: string[]; correctIndex: number | null; correctIndices: number[] } {
   if (c.type === "mcq") {
-    const correct = typeof c.a === "string" ? c.a.trim() : null;
-    let wrongs = Array.isArray(c.options) ? c.options.map((o) => String(o.text ?? "").trim()) : [];
-    if (correct) {
-      wrongs = wrongs.filter(w => w !== correct);
+    // Collect all options preserving order (corrects first, then wrongs — as set by parser)
+    const allOpts = Array.isArray(c.options) ? c.options : [];
+    const options: string[] = [];
+    const correctIndices: number[] = [];
+
+    for (const opt of allOpts) {
+      const text = String(opt.text ?? "").trim();
+      if (!text) continue;
+      if (opt.isCorrect) correctIndices.push(options.length);
+      options.push(text);
     }
-    const options = correct ? [correct, ...wrongs] : wrongs;
-    const correctIndex = correct ? 0 : null;
-    return { options, correctIndex };
+
+    // Legacy compat: if no options but c.a exists, build from c.a + wrong options
+    if (options.length === 0) {
+      const correct = typeof c.a === "string" ? c.a.trim() : null;
+      let wrongs = Array.isArray(c.options) ? c.options.map((o) => String(o.text ?? "").trim()) : [];
+      if (correct) {
+        wrongs = wrongs.filter(w => w !== correct);
+        return { options: [correct, ...wrongs], correctIndex: 0, correctIndices: [0] };
+      }
+      return { options: wrongs, correctIndex: null, correctIndices: [] };
+    }
+
+    const correctIndex = correctIndices.length > 0 ? correctIndices[0] : null;
+    return { options, correctIndex, correctIndices };
   }
   // fallback legacy
   const opts = Array.isArray(c.options) ? c.options : [];
@@ -859,7 +1022,8 @@ function mcqLegacyFromParsed(c: ParsedCard): { options: string[]; correctIndex: 
     const idx = opts.findIndex((o) => !!o?.isCorrect);
     correctIndex = idx >= 0 ? idx : null;
   }
-  return { options, correctIndex };
+  const correctIndices = correctIndex !== null ? [correctIndex] : [];
+  return { options, correctIndex, correctIndices };
 }
 
 // ────────────────────────────────────────────
@@ -964,7 +1128,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
       const rec = plugin.store.data.cards[id];
       if (!rec) continue;
       if (rec.sourceNotePath !== file.path) continue;
-      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
       rec.lastSeenAt = 0;
     }
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
@@ -1021,10 +1185,18 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
       anchorsRemoved += 1;
     }
 
-    // 3) Apply file edits
+    // 3) Apply file edits (with TOCTOU re-validation)
     if (edits.length) {
-      applyEditsToLines(lines, edits);
-      await vault.modify(file, lines.join("\n"));
+      const latestText = await vault.read(file);
+      if (latestText !== originalText) {
+        // File was modified while we were computing edits — abort the write.
+        // The next sync triggered by the file-change event will pick up
+        // the new content, so silently skipping here is safe.
+        log.warn(`syncOneFile: file "${file.path}" changed during sync; skipping write to avoid data loss`);
+      } else {
+        applyEditsToLines(lines, edits);
+        await vault.modify(file, lines.join("\n"));
+      }
     }
 
     // Recovery: if we found a snapshot, attach states for known IDs before we create defaults.
@@ -1074,14 +1246,14 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
         title: c.title ?? null,
 
-        q: c.type === "basic" ? (c.q ?? null) : null,
-        a: c.type === "basic" ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
+        q: (c.type === "basic" || c.type === "reversed" || c.type === "oq") ? (c.q ?? null) : null,
+        a: (c.type === "basic" || c.type === "reversed") ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
 
         stem: c.type === "mcq" ? (c.stem ?? null) : null,
         ...(c.type === "mcq"
           ? (() => {
-              const { options, correctIndex } = mcqLegacyFromParsed(c);
-              return { options: options.length ? options : [], correctIndex };
+              const { options, correctIndex, correctIndices } = mcqLegacyFromParsed(c);
+              return { options: options.length ? options : [], correctIndex, correctIndices };
             })()
           : {}),
 
@@ -1099,6 +1271,8 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
               };
             })()
           : {}),
+
+        oqSteps: c.type === "oq" ? (c.oqSteps ?? []) : undefined,
 
         info: c.info ?? null,
         groups: c.groups ?? null,
@@ -1118,14 +1292,26 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
       plugin.store.upsertCard(record);
 
       if (!hasState(plugin, id)) {
-        const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
-        if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
+        // Reversed → Basic migration: if a forward child state exists, transfer it to the
+        // now-basic parent (same Q→A direction). Orphan cleanup will remove the children.
+        const fwdChildId = `${id}::reversed::forward`;
+        if (c.type === "basic" && hasState(plugin, fwdChildId)) {
+          const fwdState = plugin.store.data.states?.[fwdChildId];
+          if (fwdState && typeof fwdState === "object") {
+            plugin.store.upsertState({ ...fwdState, id } as CardState);
+          }
+        } else {
+          const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
+          if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
+        }
       }
 
       if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
+      if (c.type === "reversed") syncReversedChildren(plugin, record, now, schedulingSnapshot);
 
-      // IO: verify image exists, else quarantine
+      // IO: verify image exists, else quarantine; sync children if image present
       if (c.type === "io") {
+        let ioQuarantined = false;
         const imageRef = normalizeIoImageRef(record.imageRef);
         if (imageRef) {
           const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
@@ -1141,9 +1327,13 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
             quarantinedCount += 1;
             quarantinedIds.push(id);
+            ioQuarantined = true;
 
             ensureStateIfMissing(plugin, id, now, 2.5);
           }
+        }
+        if (!ioQuarantined) {
+          syncIoChildren(plugin, record, now, schedulingSnapshot);
         }
       }
     }
@@ -1152,16 +1342,18 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     let removed = 0;
     const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
     const removedClozeParents: string[] = [];
+    const removedReversedParents: string[] = [];
 
     for (const id of Object.keys(plugin.store.data.cards || {})) {
       const rec = plugin.store.data.cards[id];
       if (!rec) continue;
       if (rec.sourceNotePath !== file.path) continue;
-      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child") continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
 
       if (rec.lastSeenAt === 0) {
         if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null });
         if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
+        if (String(rec.type) === "reversed") removedReversedParents.push(String(id));
 
         delete plugin.store.data.cards[id];
         if (plugin.store.data.states) delete (plugin.store.data.states)[id];
@@ -1177,6 +1369,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
     }
 
     for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
+    for (const parentId of removedReversedParents) removed += deleteReversedChildren(plugin, parentId);
 
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
       const q = plugin.store.data.quarantine[id];
@@ -1189,6 +1382,7 @@ export async function syncOneFile(plugin: SproutPlugin, file: TFile) {
 
     removed += deleteOrphanIoChildren(plugin);
     removed += deleteOrphanClozeChildren(plugin);
+    removed += deleteOrphanReversedChildren(plugin);
 
     const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
     const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
@@ -1237,7 +1431,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     for (const id of Object.keys(plugin.store.data.cards || {})) {
       const c = plugin.store.data.cards[id];
       if (!c) continue;
-      if (String(c.type) === "io-child" || String(c.type) === "cloze-child") continue;
+      if (String(c.type) === "io-child" || String(c.type) === "cloze-child" || String(c.type) === "reversed-child") continue;
       c.lastSeenAt = 0;
     }
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
@@ -1269,11 +1463,16 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
 
       const parseText = normaliseTextForParsing(text);
       const { cards } = parseCardsFromText(file.path, parseText, plugin.settings.indexing.ignoreInCodeFences);
-      if (!cards.length) {
-        return { cards: [], edits: [], lines, keepIds: new Set<string>(), idsInserted: 0, anchorsRemoved: 0, addedIds };
-      }
 
       const existingAnchorIds = collectAnchorIdsFromLines(lines);
+
+      // Even when no cards parse, we still need to clean up orphaned anchors
+      if (!cards.length) {
+        const orphanIdxs = collectAnchorLineIndicesToDelete(lines, new Set<string>());
+        const orphanEdits: TextEdit[] = [];
+        for (const idx of orphanIdxs) orphanEdits.push({ lineIndex: idx, deleteLine: true });
+        return { cards: [], edits: orphanEdits, lines, keepIds: new Set<string>(), idsInserted: 0, anchorsRemoved: orphanEdits.length, addedIds };
+      }
       for (const id of existingAnchorIds) {
         if (!usedIds.has(id)) {
           usedIds.add(id);
@@ -1335,28 +1534,32 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     };
 
     for (const file of mdFiles) {
-      let text = await vault.read(file);
-      let plan = buildFilePlan(file, text);
-      if (!plan.cards.length) continue;
-
-      if (plan.edits.length) {
-        const latestText = await vault.read(file);
-        if (latestText !== text) {
-          for (const id of plan.addedIds) usedIds.delete(id);
-          text = latestText;
-          plan = buildFilePlan(file, text);
-        }
+      try {
+        let text = await vault.read(file);
+        let plan = buildFilePlan(file, text);
+        if (!plan.cards.length && !plan.edits.length) continue;
 
         if (plan.edits.length) {
-          const lines = plan.lines.slice();
-          applyEditsToLines(lines, plan.edits);
-          await vault.modify(file, lines.join("\n"));
-        }
-      }
+          const latestText = await vault.read(file);
+          if (latestText !== text) {
+            for (const id of plan.addedIds) usedIds.delete(id);
+            text = latestText;
+            plan = buildFilePlan(file, text);
+          }
 
-      idsInserted += plan.idsInserted;
-      anchorsRemoved += plan.anchorsRemoved;
-      parsedAll.push(...plan.cards);
+          if (plan.edits.length) {
+            const lines = plan.lines.slice();
+            applyEditsToLines(lines, plan.edits);
+            await vault.modify(file, lines.join("\n"));
+          }
+        }
+
+        idsInserted += plan.idsInserted;
+        anchorsRemoved += plan.anchorsRemoved;
+        parsedAll.push(...plan.cards);
+      } catch (err) {
+        log.warn(`syncQuestionBank: skipping file "${file.path}" due to read/write error`, err);
+      }
     }
 
     for (const c of parsedAll) {
@@ -1391,14 +1594,14 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
 
         title: c.title ?? null,
 
-        q: c.type === "basic" ? (c.q ?? null) : null,
-        a: c.type === "basic" ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
+        q: (c.type === "basic" || c.type === "reversed" || c.type === "oq") ? (c.q ?? null) : null,
+        a: (c.type === "basic" || c.type === "reversed") ? (c.a ?? null) : c.type === "mcq" ? (c.a ?? null) : null,
 
         stem: c.type === "mcq" ? (c.stem ?? null) : null,
         ...(c.type === "mcq"
           ? (() => {
-              const { options, correctIndex } = mcqLegacyFromParsed(c);
-              return { options: options.length ? options : [], correctIndex };
+              const { options, correctIndex, correctIndices } = mcqLegacyFromParsed(c);
+              return { options: options.length ? options : [], correctIndex, correctIndices };
             })()
           : {}),
 
@@ -1415,6 +1618,8 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
               };
             })()
           : {}),
+
+        oqSteps: c.type === "oq" ? (c.oqSteps ?? []) : undefined,
 
         info: c.info ?? null,
         groups: c.groups ?? null,
@@ -1434,13 +1639,25 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
       plugin.store.upsertCard(record);
 
       if (!hasState(plugin, id)) {
-        const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
-        if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
+        // Reversed → Basic migration: if a forward child state exists, transfer it to the
+        // now-basic parent (same Q→A direction). Orphan cleanup will remove the children.
+        const fwdChildId = `${id}::reversed::forward`;
+        if (c.type === "basic" && hasState(plugin, fwdChildId)) {
+          const fwdState = plugin.store.data.states?.[fwdChildId];
+          if (fwdState && typeof fwdState === "object") {
+            plugin.store.upsertState({ ...fwdState, id } as CardState);
+          }
+        } else {
+          const restored = upsertStateIfPresent(plugin, schedulingSnapshot, id);
+          if (!restored) ensureStateIfMissing(plugin, id, now, 2.5);
+        }
       }
 
       if (c.type === "cloze") syncClozeChildren(plugin, record, now, schedulingSnapshot);
+      if (c.type === "reversed") syncReversedChildren(plugin, record, now, schedulingSnapshot);
 
       if (c.type === "io") {
+        let ioQuarantined = false;
         const imageRef = normalizeIoImageRef(record.imageRef);
         if (imageRef) {
           const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
@@ -1456,25 +1673,31 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
 
             quarantinedCount += 1;
             quarantinedIds.push(id);
+            ioQuarantined = true;
 
             ensureStateIfMissing(plugin, id, now, 2.5);
           }
+        }
+        if (!ioQuarantined) {
+          syncIoChildren(plugin, record, now, schedulingSnapshot);
         }
       }
     }
 
     const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
     const removedClozeParents: string[] = [];
+    const removedReversedParents: string[] = [];
 
     for (const id of Object.keys(plugin.store.data.cards || {})) {
       const card = plugin.store.data.cards[id];
       if (!card) continue;
 
-      if (String(card.type) === "io-child" || String(card.type) === "cloze-child") continue;
+      if (String(card.type) === "io-child" || String(card.type) === "cloze-child" || String(card.type) === "reversed-child") continue;
 
       if (card.lastSeenAt !== now) {
         if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null });
         if (String(card.type) === "cloze") removedClozeParents.push(String(id));
+        if (String(card.type) === "reversed") removedReversedParents.push(String(id));
 
         delete plugin.store.data.cards[id];
         if (plugin.store.data.states) delete (plugin.store.data.states)[id];
@@ -1490,6 +1713,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
     }
 
     for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
+    for (const parentId of removedReversedParents) removed += deleteReversedChildren(plugin, parentId);
 
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
       const q = plugin.store.data.quarantine[id];
@@ -1502,6 +1726,7 @@ export async function syncQuestionBank(plugin: SproutPlugin) {
 
     removed += deleteOrphanIoChildren(plugin);
     removed += deleteOrphanClozeChildren(plugin);
+    removed += deleteOrphanReversedChildren(plugin);
 
     const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
     const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);

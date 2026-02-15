@@ -35,6 +35,7 @@
  *  - setModalTitle            — sets and styles a modal's title bar
  *  - hasClozeToken            — checks whether text contains a cloze deletion marker
  *  - createModalMcqSection    — builds the MCQ options UI section for a modal
+ *  - scopeModalToWorkspace    — moves modal container to active leaf content for scoped display
  */
 
 import { type Modal, Platform, TFile, setIcon, type App } from "obsidian";
@@ -148,9 +149,10 @@ export function setVisible(el: HTMLElement, visible: boolean) {
 export function typeLabelBrowser(t: string): string {
   const ty = String(t ?? "").toLowerCase();
   if (ty === "basic") return "Basic";
-  if (ty === "cloze") return "Cloze";
+  if (ty === "reversed" || ty === "reversed-child") return "Basic (Reversed)";
+  if (ty === "cloze" || ty === "cloze-child") return "Cloze";
   if (ty === "mcq") return "Multiple choice";
-  if (ty === "io") return "Image occlusion";
+  if (ty === "io" || ty === "io-child") return "Image occlusion";
   return ty;
 }
 
@@ -252,7 +254,8 @@ export interface ModalCardEditorResult {
   root: HTMLElement;
   inputEls: Partial<Record<ModalCardFieldKey, HTMLInputElement | HTMLTextAreaElement>>;
   getGroupInputValue: () => string;
-  getMcqOptions?: () => { correct: string; wrongs: string[] };
+  getMcqOptions?: () => { correct: string; corrects: string[]; wrongs: string[] };
+  getOqSteps?: () => string[];
   buildMcqValue?: () => string | null;
 }
 
@@ -276,6 +279,7 @@ export function createModalCardEditor(config: ModalCardEditorConfig): ModalCardE
     stem: type === "mcq" ? null : undefined,
     options: type === "mcq" ? [] : undefined,
     correctIndex: type === "mcq" ? 0 : undefined,
+    oqSteps: type === "oq" ? [] : undefined,
     sourceNotePath: locationPath || "",
     sourceStartLine: 0,
   };
@@ -294,6 +298,7 @@ export function createModalCardEditor(config: ModalCardEditorConfig): ModalCardE
     inputEls: editor.inputEls,
     getGroupInputValue: editor.getGroupInputValue,
     getMcqOptions: editor.getMcqOptions,
+    getOqSteps: editor.getOqSteps,
     buildMcqValue: editor.buildMcqValue,
   };
 }
@@ -307,44 +312,39 @@ export function focusFirstField(el: HTMLElement) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Pipe-format helpers (must match parser pipe semantics)
+// Delimiter-format helpers (must match parser delimiter semantics)
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** Escape pipe characters for the Sprout pipe format. */
+import { escapeDelimiterText, formatDelimitedField } from "../core/delimiter";
+
+/** Escape delimiter characters for the Sprout delimited format. */
 export function escapePipeText(s: string): string {
-  return String(s ?? "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+  return escapeDelimiterText(s);
 }
 
 export type PipeKey =
   | "T"
   | "Q"
+  | "RQ"
   | "A"
   | "CQ"
   | "MCQ"
+  | "OQ"
   | "IO"
   | "I"
   | "O"
   | "G"
   | "K"
-  | "C";
+  | "C"
+  | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10"
+  | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20";
 
 /**
- * Format a single pipe-delimited field. Multi-line values are split across
- * multiple output lines (the closing `|` is on the last line).
+ * Format a single delimited field. Multi-line values are split across
+ * multiple output lines (the closing delimiter is on the last line).
  */
 export function formatPipeField(key: PipeKey, value: string): string[] {
-  const raw = String(value ?? "");
-  const parts = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
-
-  if (parts.length <= 1) {
-    return [`${key} | ${escapePipeText(parts[0] ?? "")} |`];
-  }
-
-  const out: string[] = [];
-  out.push(`${key} | ${escapePipeText(parts[0] ?? "")}`);
-  for (let i = 1; i < parts.length - 1; i++) out.push(escapePipeText(parts[i] ?? ""));
-  out.push(`${escapePipeText(parts[parts.length - 1] ?? "")} |`);
-  return out;
+  return formatDelimitedField(key, value);
 }
 
 /** Reference to a card in the quarantine (used by ParseErrorModal). */
@@ -463,7 +463,8 @@ export function hasClozeToken(s: string): boolean {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Build the "correct answer + wrong options" input section for MCQ cards.
+ * Build the MCQ answer options input section for creating MCQ cards.
+ * Each option has a checkbox to mark it as correct.
  * Returns the container element and a `getOptions()` accessor.
  */
 export function createModalMcqSection() {
@@ -471,59 +472,56 @@ export function createModalMcqSection() {
   container.className = "bc flex flex-col gap-1";
 
   const label = document.createElement("label");
-  label.className = "bc text-sm font-medium";
-  label.textContent = "Answer";
+  label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+  label.textContent = "Answers and options";
+  const mcqInfoIcon = document.createElement("span");
+  mcqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+  mcqInfoIcon.setAttribute("data-tooltip", "Check the box next to each correct answer. At least one correct and one incorrect option required.");
+  mcqInfoIcon.setAttribute("data-tooltip-position", "top");
+  setIcon(mcqInfoIcon, "info");
+  label.appendChild(mcqInfoIcon);
   container.appendChild(label);
 
-  const correctWrapper = document.createElement("div");
-  correctWrapper.className = "bc flex flex-col gap-1";
-  const correctLabel = document.createElement("div");
-  correctLabel.className = "bc text-xs text-muted-foreground inline-flex items-center gap-1";
-  correctLabel.textContent = "Correct answer";
-  correctLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
-  correctWrapper.appendChild(correctLabel);
-  const correctInput = document.createElement("input");
-  correctInput.type = "text";
-  correctInput.className = "bc input w-full sprout-input-fixed";
-  correctInput.placeholder = "Correct option";
-  correctWrapper.appendChild(correctInput);
-  container.appendChild(correctWrapper);
+  const optionsContainer = document.createElement("div");
+  optionsContainer.className = "bc flex flex-col gap-2";
+  container.appendChild(optionsContainer);
 
-  const wrongLabel = document.createElement("div");
-  wrongLabel.className = "bc text-xs text-muted-foreground inline-flex items-center gap-1";
-  wrongLabel.textContent = "Wrong options";
-  wrongLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
-  container.appendChild(wrongLabel);
-
-  const wrongContainer = document.createElement("div");
-  wrongContainer.className = "bc flex flex-col gap-2";
-  container.appendChild(wrongContainer);
-
-  type WrongRowEntry = { row: HTMLElement; input: HTMLInputElement; removeBtn: HTMLButtonElement };
-  const wrongRows: WrongRowEntry[] = [];
+  type OptionRowEntry = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
+  const optionRows: OptionRowEntry[] = [];
 
   const updateRemoveButtons = () => {
-    const disable = wrongRows.length <= 1;
-    for (const entry of wrongRows) {
+    const disable = optionRows.length <= 2;
+    for (const entry of optionRows) {
       entry.removeBtn.disabled = disable;
       entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
       entry.removeBtn.classList.toggle("is-disabled", disable);
     }
   };
 
-  const addWrongRow = (value: string) => {
+  const addOptionRow = (value: string, isCorrect: boolean) => {
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-2";
+    row.className = "bc flex items-center gap-2 sprout-edit-mcq-option-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = isCorrect;
+    checkbox.className = "bc sprout-mcq-correct-checkbox";
+    checkbox.setAttribute("data-tooltip", "Mark as correct answer");
+    checkbox.setAttribute("data-tooltip-position", "top");
+    row.appendChild(checkbox);
+
     const input = document.createElement("input");
     input.type = "text";
     input.className = "bc input flex-1 text-sm sprout-input-fixed";
-    input.placeholder = "Wrong option";
+    input.placeholder = "Enter an answer option";
     input.value = value;
     row.appendChild(input);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 sprout-remove-btn-ghost";
+    removeBtn.setAttribute("data-tooltip", "Remove option");
+    removeBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");
     xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(xIcon, "x");
@@ -531,38 +529,38 @@ export function createModalMcqSection() {
     removeBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      if (wrongRows.length <= 1) return;
-      const idx = wrongRows.findIndex((entry) => entry.input === input);
+      if (optionRows.length <= 2) return;
+      const idx = optionRows.findIndex((entry) => entry.input === input);
       if (idx === -1) return;
-      wrongRows[idx].row.remove();
-      wrongRows.splice(idx, 1);
+      optionRows[idx].row.remove();
+      optionRows.splice(idx, 1);
       updateRemoveButtons();
     });
     row.appendChild(removeBtn);
 
-    wrongContainer.appendChild(row);
-    wrongRows.push({ row, input, removeBtn });
+    optionsContainer.appendChild(row);
+    optionRows.push({ row, input, checkbox, removeBtn });
     updateRemoveButtons();
   };
 
   const addInput = document.createElement("input");
   addInput.type = "text";
   addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
-  addInput.placeholder = "Add another wrong option";
+  addInput.placeholder = "Add another option (press enter)";
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
       ev.preventDefault();
       ev.stopPropagation();
       const value = addInput.value.trim();
       if (!value) return;
-      addWrongRow(value);
+      addOptionRow(value, false);
       addInput.value = "";
     }
   });
   addInput.addEventListener("blur", () => {
     const value = addInput.value.trim();
     if (!value) return;
-    addWrongRow(value);
+    addOptionRow(value, false);
     addInput.value = "";
   });
 
@@ -571,12 +569,22 @@ export function createModalMcqSection() {
   addInputWrap.appendChild(addInput);
   container.appendChild(addInputWrap);
 
-  addWrongRow("");
+  // Start with one correct and one wrong row
+  addOptionRow("", true);
+  addOptionRow("", false);
 
-  const getOptions = () => ({
-    correct: String(correctInput.value || "").trim(),
-    wrongs: wrongRows.map((entry) => String(entry.input.value || "").trim()).filter(Boolean),
-  });
+  const getOptions = () => {
+    const allOpts = optionRows
+      .map((entry) => ({ text: String(entry.input.value || "").trim(), isCorrect: entry.checkbox.checked }))
+      .filter((opt) => opt.text.length > 0);
+    const corrects = allOpts.filter((o) => o.isCorrect).map((o) => o.text);
+    const wrongs = allOpts.filter((o) => !o.isCorrect).map((o) => o.text);
+    return {
+      correct: corrects[0] || "",
+      corrects,
+      wrongs,
+    };
+  };
 
   return { element: container, getOptions };
 }
@@ -601,6 +609,19 @@ export interface ThemedDropdownResult {
   onChange: (cb: (value: string) => void) => void;
 }
 
+export interface ThemedDropdownConfig {
+  /** When true (default), the trigger and container stretch to full width. */
+  fullWidth?: boolean;
+  /** Trigger size preset. Defaults to "md". */
+  buttonSize?: "md" | "sm";
+  /** How to justify trigger contents. Defaults to "between" for fullWidth, otherwise "start". */
+  buttonJustify?: "between" | "start";
+  /** Extra classes applied to the outer container. */
+  containerClassName?: string;
+  /** Extra classes applied to the trigger button. */
+  buttonClassName?: string;
+}
+
 /**
  * Build a themed popover dropdown that replaces a native `<select>`.
  * Opens below the trigger button with radio-dot indicators.
@@ -609,17 +630,35 @@ export function createThemedDropdown(
   options: DropdownOption[],
   initialValue?: string,
   extraCls?: string,
+  config?: ThemedDropdownConfig,
 ): ThemedDropdownResult {
   let currentValue = initialValue ?? options[0]?.value ?? "";
   let changeCb: ((value: string) => void) | null = null;
 
+  const fullWidth = config?.fullWidth ?? true;
+  const buttonSize = config?.buttonSize ?? "md";
+  const buttonJustify = config?.buttonJustify ?? (fullWidth ? "between" : "start");
+
   const container = document.createElement("div");
-  container.className = `bc sprout relative inline-flex w-full ${extraCls ?? ""}`.trim();
+  container.className = [
+    "bc sprout relative inline-flex",
+    fullWidth ? "w-full" : "",
+    extraCls ?? "",
+    config?.containerClassName ?? "",
+  ].filter(Boolean).join(" ");
 
   // Trigger button
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = "bc btn-outline h-9 px-3 text-sm inline-flex items-center gap-2 w-full justify-between";
+  btn.className = [
+    "bc btn-outline text-sm inline-flex items-center gap-2",
+    buttonSize === "sm" ? "h-7 px-2" : "h-9 px-3",
+    fullWidth ? "w-full" : "",
+    buttonJustify === "between" ? "justify-between" : "",
+    config?.buttonClassName ?? "",
+  ].filter(Boolean).join(" ");
+  btn.setAttribute("data-tooltip", "Open menu");
+  btn.setAttribute("data-tooltip-position", "top");
   btn.setAttribute("aria-haspopup", "menu");
   btn.setAttribute("aria-expanded", "false");
   container.appendChild(btn);
@@ -756,4 +795,32 @@ export function createThemedDropdown(
     },
     onChange: (cb) => { changeCb = cb; },
   };
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Workspace-scoped modal positioning
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Moves a modal's containerEl to the active workspace leaf content area so it only covers
+ * the active leaf and allows users to interact with sidebars, switch tabs, etc.
+ * This should be called in the modal's onOpen() after the modal is created.
+ * 
+ * @param modal - The Obsidian Modal instance
+ */
+export function scopeModalToWorkspace(modal: Modal) {
+  // Find the active workspace leaf content
+  const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+  const leafContent = activeLeaf?.querySelector(".workspace-leaf-content");
+  
+  if (!leafContent || !modal.containerEl) {
+    return; // Fallback to default behavior if leaf content not found
+  }
+
+  // Move the modal container from document.body to leaf content
+  try {
+    leafContent.appendChild(modal.containerEl);
+  } catch {
+    // If the element is already in the leaf content or fails to move, continue silently
+  }
 }

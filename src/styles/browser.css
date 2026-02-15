@@ -14,6 +14,7 @@
   box-sizing: border-box;
   flex: 1 1 0% !important;
   min-height: 0 !important;
+  max-height: 100% !important;
   overflow: auto !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
@@ -21,6 +22,7 @@
 
 .sprout .sprout-browser-view {
   min-height: 0;
+  max-height: 100%;
   gap: 10px;
 }
 
@@ -66,6 +68,12 @@
   vertical-align: top !important;
 }
 
+/* Allow tooltips to overflow browser cells */
+.sprout .sprout-browser-cell[data-tooltip],
+.sprout .sprout-browser-cell:has([data-tooltip]) {
+  overflow: visible !important;
+}
+
 .sprout .sprout-browser-cell-middle {
   vertical-align: middle !important;
 }
@@ -81,13 +89,15 @@
 }
 
 .sprout .sprout-browser-id-link {
-  font-size: 10px !important;
+  font-size: var(--sprout-font-2xs) !important;
   line-height: 1 !important;
   text-decoration: none !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
   color: var(--text-normal) !important;
+  position: relative !important;
+  z-index: 0 !important;
 }
 
 .sprout .sprout-browser-id-link:hover {
@@ -103,6 +113,8 @@
   transform: scale(var(--sprout-scale, 1));
   transform-origin: center;
   display: inline-flex;
+  position: relative !important;
+  z-index: 0 !important;
 }
 
 .sprout .sprout-browser-empty-message {
@@ -121,6 +133,8 @@
   min-height: var(--sprout-editor-height, auto) !important;
   max-height: var(--sprout-editor-height, auto) !important;
   resize: none !important;
+  position: relative !important;
+  z-index: 0 !important;
 }
 
 .sprout .sprout-browser-textarea--readonly {
@@ -134,6 +148,119 @@
   overflow: auto !important;
 }
 
+/* Contenteditable cells with image support */
+.sprout .sprout-browser-contenteditable {
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  overflow: auto !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+.sprout .sprout-browser-contenteditable[data-placeholder]:empty::before {
+  content: attr(data-placeholder) !important;
+  color: var(--text-faint) !important;
+  pointer-events: none !important;
+}
+
+/* Inline images in browser cells */
+.sprout .sprout-browser-inline-img {
+  display: inline-block !important;
+  max-width: 100% !important;
+  max-height: 120px !important;
+  object-fit: contain !important;
+  vertical-align: middle !important;
+  margin: 4px 0 !important;
+  border-radius: var(--radius-m) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  background: var(--background-secondary) !important;
+  cursor: default !important;
+  user-select: none !important;
+}
+
+.sprout .sprout-browser-inline-img:hover {
+  opacity: 0.8 !important;
+}
+
+/* ── Image-editor: textarea + overlay toggle ── */
+.sprout .sprout-browser-img-editor-wrap {
+  position: relative !important;
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  width: 100% !important;
+}
+
+/* Textarea sits behind, hidden until focused */
+.sprout .sprout-browser-img-textarea {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  opacity: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Overlay (rendered images) sits on top */
+.sprout .sprout-browser-img-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: auto !important;
+  padding: 6px 8px !important;
+  box-sizing: border-box !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  font-size: var(--font-ui-small) !important;
+  line-height: 1.4 !important;
+  color: var(--text-normal) !important;
+  background: var(--background-modifier-form-field) !important;
+  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  border-radius: var(--input-radius) !important;
+  z-index: 1 !important;
+  cursor: text !important;
+}
+
+/* When focused: show textarea, hide overlay */
+.sprout .sprout-browser-img-editor--focused .sprout-browser-img-textarea {
+  opacity: 1 !important;
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+
+.sprout .sprout-browser-img-editor--focused .sprout-browser-img-overlay {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* ── IO cell – textarea-styled box ── */
+.sprout .sprout-browser-io-box {
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  overflow: auto !important;
+  padding: 4px !important;
+  box-sizing: border-box !important;
+  background: var(--background-modifier-form-field) !important;
+  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  border-radius: var(--input-radius) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+.sprout .sprout-browser-io-box:hover {
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border)) !important;
+}
+
 .sprout .sprout-browser-io-cell {
   cursor: pointer !important;
 }
@@ -141,6 +268,7 @@
 .sprout .sprout-browser-tag-cell {
   overflow: visible !important;
   position: relative !important;
+  z-index: 0 !important;
 }
 
 .sprout .sprout-browser-tag-box {
@@ -167,6 +295,8 @@
 
 .sprout .sprout-browser-tag-badge {
   display: inline-flex !important;
+  position: relative !important;
+  z-index: 0 !important;
 }
 
 .sprout .sprout-browser-search-wrap {
@@ -180,6 +310,28 @@
   height: 36px !important;
   box-sizing: border-box !important;
   align-self: stretch !important;
+}
+
+/* Browser search input focus */
+.sprout .sprout-browser-search-input:focus {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Browser textarea focus */
+.sprout .sprout-browser-textarea:focus {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Browser tag box focus */
+.sprout .sprout-browser-tag-box:focus,
+.sprout .sprout-browser-tag-box:focus-within {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .sprout .sprout-browser-table {
@@ -237,10 +389,16 @@
   text-overflow: clip !important;
 }
 
+/* Allow tooltips to overflow clipped cells */
+.sprout .sprout-cell-clip[data-tooltip],
+.sprout .sprout-cell-clip:has([data-tooltip]) {
+  overflow: visible !important;
+}
+
 .sprout .sprout-sticky-th {
   position: sticky !important;
   top: var(--sprout-sticky-top, 0px) !important;
-  z-index: 10 !important;
+  z-index: 2 !important; /* low enough to stay below tooltips (z-index ~9999) */
   background: var(--background) !important;
   box-shadow: 0 1px 0 var(--background-modifier-border) !important;
   height: 44px !important;
@@ -255,7 +413,7 @@
 .sprout .sprout-browser-io-frame {
   position: relative !important;
   display: inline-block !important;
-  border-radius: 10px !important;
+  border-radius: var(--radius-l) !important;
   overflow: hidden !important;
   border: 1px solid var(--background-modifier-border) !important;
   background: var(--background-secondary) !important;
@@ -264,9 +422,9 @@
 .sprout .sprout-browser-io-img {
   display: block !important;
   max-width: 100% !important;
-  max-height: 140px !important;
+  max-height: calc(var(--sprout-editor-height, 140px) - 12px) !important;
   object-fit: contain !important;
-  border-radius: 10px !important;
+  border-radius: var(--radius-l) !important;
   border: 1px solid var(--background-modifier-border) !important;
   background: var(--background-secondary) !important;
 }
@@ -274,7 +432,7 @@
 .sprout .sprout-browser-io-img-inner {
   display: block !important;
   max-width: 100% !important;
-  max-height: 140px !important;
+  max-height: calc(var(--sprout-editor-height, 140px) - 12px) !important;
   object-fit: contain !important;
 }
 
@@ -286,7 +444,7 @@
   height: var(--sprout-io-height, 0) !important;
   background: rgba(0, 0, 0, 0.55) !important;
   border: 1px solid rgba(0, 0, 0, 0.25) !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   pointer-events: none !important;
   z-index: 1 !important;
 }
@@ -336,6 +494,8 @@
   overflow-y: auto !important;
   max-height: none !important;
   width: 100% !important;
+  z-index: 1 !important;
+  position: relative !important;
 }
 
 .sprout .sprout-icon-scale-80 {
@@ -458,4 +618,113 @@
 /* IO widget overflow */
 .bc-io-host[data-sprout-io-widget="1"] {
   overflow: hidden !important;
+}
+
+/* ---- MCQ answer cell (multi-input) ---- */
+
+.sprout .sprout-browser-mcq-cell {
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  overflow-y: auto !important;
+  padding: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.sprout .sprout-browser-mcq-row {
+  min-height: 24px !important;
+}
+
+.sprout .sprout-browser-mcq-input {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 2px 6px !important;
+  font-size: var(--sprout-font-2xs) !important;
+}
+
+.sprout .sprout-browser-mcq-input:focus {
+  border-color: var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.sprout .sprout-mcq-correct-input {
+  border-color: rgb(34, 197, 94) !important;
+}
+
+.sprout .sprout-mcq-correct-label {
+  color: rgb(34, 197, 94) !important;
+  font-weight: 700 !important;
+}
+
+.sprout .sprout-browser-mcq-add {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 2px 6px !important;
+  font-size: var(--sprout-font-2xs) !important;
+  opacity: 0.6 !important;
+}
+
+.sprout .sprout-browser-mcq-add:focus {
+  opacity: 1 !important;
+  border-color: var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ---- OQ steps cell (multi-input, draggable) ---- */
+
+.sprout .sprout-browser-oq-cell {
+  height: var(--sprout-editor-height, auto) !important;
+  min-height: var(--sprout-editor-height, auto) !important;
+  max-height: var(--sprout-editor-height, auto) !important;
+  overflow-y: auto !important;
+  padding: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.sprout .sprout-browser-oq-row {
+  min-height: 24px !important;
+}
+
+.sprout .sprout-browser-oq-row.sprout-oq-row-dragging {
+  opacity: 0.4 !important;
+}
+
+.sprout .sprout-oq-grip-sm {
+  cursor: grab !important;
+  opacity: 0.4 !important;
+  flex-shrink: 0 !important;
+}
+
+.sprout .sprout-oq-grip-sm:hover {
+  opacity: 0.8 !important;
+}
+
+.sprout .sprout-browser-oq-input {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 2px 6px !important;
+  font-size: var(--sprout-font-2xs) !important;
+}
+
+.sprout .sprout-browser-oq-input:focus {
+  border-color: var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.sprout .sprout-browser-oq-add {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 2px 6px !important;
+  font-size: var(--sprout-font-2xs) !important;
+  opacity: 0.6 !important;
+}
+
+.sprout .sprout-browser-oq-add:focus {
+  opacity: 1 !important;
+  border-color: var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
 }

@@ -28,5 +28,9 @@ export function matchesScope(scope: Scope, rawPath: string): boolean {
     return p.startsWith(folder + "/");
   }
 
-  return true;
+  // group scope is resolved separately; path-based match N/A
+  if (scope.type === "group") return false;
+
+  // Unknown scope type — fail closed
+  return false;
 }

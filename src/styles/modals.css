@@ -3,40 +3,76 @@
    IO modal, modal content overflow.
    ========================================================================== */
 
+/* ---- Workspace positioning for modal containers ---- */
+
+/* Make the workspace leaf content a positioning context for modals */
+.workspace-leaf-content {
+  position: relative !important;
+}
+
+/* Ensure view content is layered below modals but creates stacking context */
+.workspace-leaf-content > .view-header,
+.workspace-leaf-content > .view-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Make the workspace root area a positioning context for modals (fallback) */
+.workspace-split.mod-root {
+  position: relative !important;
+}
+
+/* Scope modal containers to workspace area only */
+.sprout-modal-container.modal-container,
+.sprout-modal-dim.modal-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
+}
+
+/* Re-enable pointer events for modal backdrop and content */
+.sprout-modal-container .modal-bg,
+.sprout-modal-container .modal {
+  pointer-events: auto !important;
+}
+
 /* ---- Backdrop ---- */
 
-.sprout .sprout-modal-container .modal-bg {
-  background-color: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: none !important;
-}
-.sprout .modal-container.mod-dim .modal-bg {
-  background-color: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: none !important;
-}
+.sprout .sprout-modal-container .modal-bg,
+.sprout .modal-container.mod-dim .modal-bg,
 .sprout-modal-dim .modal-bg {
-  background-color: rgba(0, 0, 0, 0.85) !important;
+  -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+  opacity: 0.6;
+  background-color: var(--background) !important;
+  position: absolute !important;
+  inset: 0 !important;
 }
 
 /* ---- Panel ---- */
 
 .sprout .sprout-modals.modal {
-  padding: 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--background);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
-  overflow: hidden;
-  height: auto !important;
-
-  /* keep it feeling like Basecoat dialog sizing */
-  max-width: min(560px, 92vw);
-  max-height: min(80vh, 720px);
+    border: 1px solid var(--border);
+    background: var(--background);
+    border-radius: var(--radius-l);
+    max-width: min(560px, 92vw);
+    max-height: min(80vh, 720px);
+    padding: 10px !important;
+    overflow: hidden;
+    outline: none;
+    height: auto !important;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
 .sprout .modal-container .modal {
   padding: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-l);
   border: 1px solid var(--border);
   background: var(--background);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
@@ -79,7 +115,7 @@
 }
 
 .sprout .modal-container .modal-content {
-  padding: 16px 20px 20px;
+  padding: 16px 20px 16px !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -110,6 +146,32 @@
   min-height: 36px !important;
 }
 
+.sprout .sprout-modals.modal .sprout-tag-box {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+}
+
+.sprout .sprout-modals.modal .textarea {
+  line-height: 1.5 !important;
+}
+
+/* Input and textarea focus styles */
+.sprout .sprout-modals.modal .input:focus,
+.sprout .sprout-modals.modal select.input:focus,
+.sprout .sprout-modals.modal input[type="text"].input:focus,
+.sprout .sprout-modals.modal textarea.textarea:focus,
+.sprout .sprout-modals.modal .textarea:focus {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* MCQ answer section label spacing */
+.sprout .sprout-modals.modal .bc.text-xs.text-muted-foreground.inline-flex {
+  margin-top: 5px !important;
+}
+
 /* ---- Export modal: deck & group pickers ---- */
 
 .sprout .sprout-deck-picker .sprout-popover-dropdown,
@@ -118,7 +180,7 @@
   bottom: calc(100% + 6px) !important;
   left: 0 !important;
   right: auto !important;
-  z-index: 10000 !important;
+  z-index: 10001 !important;
   width: 100% !important;
   display: none !important;
   pointer-events: auto !important;
@@ -129,6 +191,13 @@
   display: block !important;
 }
 
+/* Show focus effect on tag box when popover is open */
+.sprout .sprout-group-picker:has(.sprout-popover-dropdown.is-open) .sprout-tag-box {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* ---- Modal popover / dropdown backgrounds & borders ---- */
 .sprout .sprout-popover-dropdown .rounded-lg.bg-popover,
 .sprout .sprout-popover-dropdown-below .rounded-lg.bg-popover,
@@ -136,7 +205,7 @@
 .sprout .sprout-modals .sprout-popover-dropdown-below .bg-popover {
   background-color: var(--background-primary, var(--background, #fff)) !important;
   border: 1px solid var(--background-modifier-border, var(--border, #e0e0e0)) !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-m) !important;
   color: var(--text-normal, var(--foreground, #111)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   opacity: 1 !important;
@@ -189,7 +258,7 @@
   max-height: 90vh !important;
   overflow: auto !important;
   padding: 20px !important;
-  border-radius: 12px;
+  border-radius: var(--radius-l);
   border: 1px solid var(--border);
   background: var(--background);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
@@ -234,7 +303,7 @@
   max-height: 90% !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-l) !important;
 }
 
 .sprout .sprout-card-creator-content {
@@ -256,14 +325,18 @@
 }
 
 .sprout .sprout-location-input {
-  min-height: 38px !important;
-  max-height: 38px !important;
-  height: 38px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  height: 36px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   direction: rtl !important;
   text-align: left !important;
+  opacity: 1 !important;
+  background-color: var(--background-primary) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  cursor: not-allowed !important;
 }
 
 .sprout .sprout-io-preview-image {
@@ -305,9 +378,8 @@
 /* ---- Consistent modal footer spacing ---- */
 
 .sprout .sprout-modal-footer {
-  margin-top: 16px !important;
-  padding-top: 16px !important;
-  border-top: 1px solid var(--border) !important;
+  padding-top: 20px !important;
+  border-top: none;
 }
 
 /* ---- Bulk edit modal (browser) ---- */
@@ -320,7 +392,7 @@
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-l) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   background: var(--background) !important;
   position: relative !important;
@@ -343,7 +415,7 @@
 }
 
 .sprout .sprout-bulk-edit-panel > .modal-header .modal-title {
-  font-size: 1.125rem !important;
+  font-size: var(--sprout-font-md-plus) !important;
   font-weight: 600 !important;
 }
 
@@ -404,7 +476,7 @@
   max-height: 90% !important;
   overflow: hidden !important;
   padding: 0 !important;
-  border: none !important;
+  border: 1px solid var(--border) !important;
 }
 
 .sprout .sprout-io-creator-root {
@@ -457,7 +529,7 @@
   flex-shrink: 0 !important;
   background-color: var(--background-secondary) !important;
   border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-m) !important;
 }
 
 .sprout .sprout-io-canvas-placeholder {
@@ -515,6 +587,42 @@
   border-top: 1px solid var(--border) !important;
 }
 
+/* IO mode picker — button-style dropdown menu */
+.sprout .sprout-io-mode-menu {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  right: 0 !important;
+  z-index: 10060 !important;
+  min-width: 120px !important;
+  padding: 4px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-m) !important;
+  background-color: var(--background) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+.sprout .sprout-io-mode-menu.hidden {
+  display: none !important;
+}
+
+.sprout .sprout-io-mode-menu-item {
+  padding: 5px 10px !important;
+  border-radius: var(--radius-s) !important;
+  font-size: var(--sprout-font-xs) !important;
+  color: var(--foreground) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+.sprout .sprout-io-mode-menu-item:hover {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.sprout .sprout-io-mode-menu-item.is-selected {
+  font-weight: 600 !important;
+}
+
 .sprout .sprout-io-dlg-cancel {
   background-color: #000 !important;
   color: #fff !important;
@@ -546,11 +654,11 @@
   height: var(--sprout-io-text-h, 30px) !important;
   padding: 6px 8px !important;
   resize: none !important;
-  font-size: var(--sprout-io-text-size, 14px) !important;
+  font-size: var(--sprout-io-text-size, var(--sprout-font-xs)) !important;
   line-height: 1.3 !important;
   color: var(--sprout-io-text-color, #111) !important;
   border: 1px dashed rgba(16, 185, 129, 0.6) !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   outline: none !important;
   background: var(--sprout-io-text-bg, transparent) !important;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
@@ -561,7 +669,7 @@
   border: 2px dashed #10b981 !important;
   background-color: rgba(16, 185, 129, 0.08) !important;
   pointer-events: none !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   left: var(--sprout-io-preview-x, 0) !important;
   top: var(--sprout-io-preview-y, 0) !important;
   width: var(--sprout-io-preview-w, 1px) !important;
@@ -573,7 +681,7 @@
   border: 2px dashed #10b981 !important;
   background-color: rgba(16, 185, 129, 0.12) !important;
   pointer-events: none !important;
-  border-radius: 4px !important;
+  border-radius: var(--radius-s) !important;
   left: var(--sprout-io-crop-x, 0) !important;
   top: var(--sprout-io-crop-y, 0) !important;
   width: var(--sprout-io-crop-w, 1px) !important;
@@ -604,7 +712,7 @@
   pointer-events: auto !important;
   border: 3px dashed #ef4444 !important;
   background-color: rgba(239, 68, 68, 0.08) !important;
-  border-radius: 4px !important;
+  border-radius: var(--radius-s) !important;
 }
 
 .sprout .sprout-io-rect.is-selected {
@@ -623,11 +731,11 @@
   transform: translate(-50%, -50%) !important;
   width: 60px !important;
   padding: 6px 12px !important;
-  font-size: 21px !important;
+  font-size: var(--sprout-font-xl) !important;
   font-weight: 700 !important;
   text-align: center !important;
   border: 2px solid rgba(0, 0, 0, 0.3) !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   background-color: rgba(255, 255, 255, 0.95) !important;
   color: #000 !important;
   cursor: text !important;
@@ -640,7 +748,7 @@
   height: var(--sprout-io-corner-size, 10px) !important;
   background: rgba(0, 0, 0, 0.25) !important;
   border: 1px solid rgba(255, 255, 255, 0.7) !important;
-  border-radius: 3px !important;
+  border-radius: var(--radius-s) !important;
   pointer-events: none !important;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
 }
@@ -666,7 +774,7 @@
   border: var(--sprout-io-text-border, 1px dashed rgba(16, 185, 129, 0.6)) !important;
   background-color: var(--sprout-io-text-bg, transparent) !important;
   box-shadow: var(--sprout-io-text-shadow, none) !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-m) !important;
   padding: 6px 8px !important;
   box-sizing: border-box !important;
   display: flex !important;
@@ -677,7 +785,7 @@
 .sprout .sprout-io-text-content {
   white-space: pre-wrap !important;
   word-break: break-word !important;
-  font-size: var(--sprout-io-text-size, 14px) !important;
+  font-size: var(--sprout-io-text-size, var(--sprout-font-xs)) !important;
   line-height: 1.3 !important;
   color: var(--sprout-io-text-color, #111111) !important;
   pointer-events: none !important;
@@ -692,7 +800,7 @@
   flex-shrink: 0;
   margin-left: auto;
 
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   border: 1px solid transparent;
   background: transparent;
   width: 32px;
@@ -707,7 +815,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   border: 1px solid transparent;
   background: transparent;
   width: 32px;
@@ -757,7 +865,7 @@
   padding: 0;
   width: 90%;
   max-width: 600px;
-  border-radius: 12px;
+  border-radius: var(--radius-l);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
@@ -814,7 +922,7 @@
 /* Allow tooltips to overflow outside the modal */
 [data-tooltip] {
   overflow: visible !important;
-  z-index: 10001;
+  z-index: 9999999 !important;
 }
 
 /* ---- Image zoom modal ---- */
@@ -894,6 +1002,16 @@
 
 /* ---- Confirm modals (settings) ---- */
 
+.sprout-confirm-modal .modal {
+  box-shadow: var(--shadow-s) !important;
+  max-width: min(500px, 90%) !important;
+}
+
+.sprout-confirm-modal .modal-content,
+.sprout-confirm-modal .modal-content p {
+  text-align: left !important;
+}
+
 .sprout-confirm-row {
   display: flex;
   gap: 8px;
@@ -941,7 +1059,7 @@
 .sprout-confirm-muted {
   margin-top: 10px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--sprout-font-2xs);
   line-height: 1.5;
 }
 
@@ -949,9 +1067,9 @@
   margin-top: 10px;
   padding: 10px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--background-secondary, var(--background));
-  font-size: 12px;
+  font-size: var(--sprout-font-2xs);
   color: var(--text-normal);
 }
 
@@ -965,14 +1083,14 @@
   gap: 8px;
   margin-top: 10px;
   color: var(--text-normal);
-  font-size: 12px;
+  font-size: var(--sprout-font-2xs);
 }
 
 .sprout-confirm-hint {
   margin-top: 10px;
   padding: 10px 12px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--background-modifier-message);
 }
 
@@ -980,12 +1098,12 @@
   font-weight: 600;
   margin-bottom: 4px;
   color: var(--text-normal);
-  font-size: 12px;
+  font-size: var(--sprout-font-2xs);
 }
 
 .sprout-confirm-hint-body {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--sprout-font-2xs);
   line-height: 1.5;
 }
 
@@ -999,6 +1117,12 @@
   margin: 8px 0;
   line-height: 1.5;
   color: var(--text-normal);
+}
+
+/* Remove box shadow from backup table */
+.sprout-backup-table,
+.sprout-backup-table * {
+  box-shadow: none !important;
 }
 
 /* ---- IO Editor Modal (moved from inline <style> in image-mask-renderer.ts) ---- */
@@ -1083,7 +1207,7 @@
   height: var(--sprout-io-height, 0);
   box-sizing: border-box;
   border: 2px dashed var(--interactive-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.06);
   pointer-events: none;
 }
@@ -1096,7 +1220,7 @@
   height: var(--sprout-io-height, 0);
   box-sizing: border-box;
   border: 2px solid var(--interactive-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -1111,9 +1235,9 @@
   top: 50%;
   transform: translate(-50%, -50%);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--sprout-font-xs);
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.55);
   color: white;
   pointer-events: none;
@@ -1158,7 +1282,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: var(--background);
   border: 1px solid var(--background-modifier-border);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
@@ -1171,7 +1295,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--background-modifier-border);
   background: var(--background-secondary);
 }
@@ -1186,7 +1310,7 @@
 .sprout-io-btn {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1221,21 +1345,21 @@
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--background-modifier-border);
   background: var(--background);
 }
 
 .sprout-io-toolbar-label {
-  font-size: 11px;
+  font-size: var(--sprout-font-2xs);
   color: var(--muted-foreground);
 }
 
 .sprout-io-input {
   height: 26px;
-  font-size: 12px;
+  font-size: var(--sprout-font-2xs);
   padding: 2px 6px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--background-modifier-border);
   background: var(--background);
   color: var(--foreground);
@@ -1255,7 +1379,7 @@
   width: 26px;
   height: 26px;
   padding: 2px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--background-modifier-border);
   background: var(--background);
   cursor: pointer;
@@ -1333,7 +1457,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--sprout-font-2xs);
   font-weight: 700;
   color: var(--foreground);
 }

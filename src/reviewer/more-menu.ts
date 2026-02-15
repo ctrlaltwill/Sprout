@@ -9,7 +9,7 @@
  */
 
 import { log } from "../core/logger";
-import { queryFirst, setCssProps } from "../core/ui";
+import { placePopover, queryFirst } from "../core/ui";
 import type { SproutReviewerView } from "./review-view";
 
 export function closeMoreMenu(view: SproutReviewerView) {
@@ -57,25 +57,7 @@ export function toggleMoreMenu(view: SproutReviewerView, force?: boolean) {
   const place = () => {
     const btn = view._moreBtnEl;
     if (!btn || !panel) return;
-    const r = btn.getBoundingClientRect();
-    const margin = 8;
-    const width = Math.max(200, Math.round(panel.getBoundingClientRect().width || 0));
-
-    let left = r.left;
-    if (left + width > window.innerWidth - margin) {
-      left = Math.max(margin, window.innerWidth - width - margin);
-    }
-    if (left < margin) left = margin;
-
-    const panelRect = panel.getBoundingClientRect();
-    let top = r.bottom + 6;
-    if (top + panelRect.height > window.innerHeight - margin) {
-      top = Math.max(margin, r.top - panelRect.height - 6);
-    }
-
-    setCssProps(popover, "--sprout-popover-left", `${left}px`);
-    setCssProps(popover, "--sprout-popover-top", `${top}px`);
-    setCssProps(popover, "--sprout-popover-width", `${width}px`);
+    placePopover({ trigger: btn, panel, popoverEl: popover });
   };
 
   popover.setAttribute("aria-hidden", "false");
@@ -180,13 +162,13 @@ export function injectMoreMenu(view: SproutReviewerView) {
   // Instead of rendering the menu inside the card row, render the popover at the document body root for correct positioning
   const wrap = document.createElement("div");
   wrap.className = "sprout bc relative inline-flex overflow-visible";
-  wrap.dataset.bcAction = "more-wrap";
+  wrap.dataset.sproutAction = "more-wrap";
 
   const moreBtn = document.createElement("button");
   moreBtn.type = "button";
   moreBtn.id = triggerId;
   moreBtn.className = "bc btn-outline";
-  moreBtn.dataset.bcAction = "more-toggle";
+  moreBtn.dataset.sproutAction = "reviewer-more-trigger";
   moreBtn.setAttribute("aria-haspopup", "menu");
   moreBtn.setAttribute("aria-controls", menuId);
   moreBtn.setAttribute("aria-expanded", "false");
@@ -286,11 +268,11 @@ export function injectMoreMenu(view: SproutReviewerView) {
   const showUndoHere = !!canUndoNow && !!undoFrame && String(undoFrame.id ?? "") !== String(id);
 
   const buryItem = createMenuItem("Bury", "B", () => void view.buryCurrentCard(), graded);
-  buryItem.dataset.bcAction = "bury-card";
+  buryItem.dataset.sproutAction = "bury-card";
   menu.appendChild(buryItem);
 
   const suspendItem = createMenuItem("Suspend", "S", () => void view.suspendCurrentCard(), graded);
-  suspendItem.dataset.bcAction = "suspend-card";
+  suspendItem.dataset.sproutAction = "suspend-card";
   menu.appendChild(suspendItem);
 
   if (showUndoHere) {
@@ -302,16 +284,16 @@ export function injectMoreMenu(view: SproutReviewerView) {
     const undoItem = createMenuItem("Undo", "U", () => {
       void view.undoLastGrade?.();
     });
-    undoItem.dataset.bcAction = "undo-grade";
+    undoItem.dataset.sproutAction = "undo-grade";
     menu.appendChild(undoItem);
   }
 
   const openItem = createMenuItem("Open Note", "O", () => void view.openCurrentCardInNote());
-  openItem.dataset.bcAction = "open-note";
+  openItem.dataset.sproutAction = "open-note";
   menu.appendChild(openItem);
 
   const editItem = createMenuItem("Edit", "E", () => view.openEditModalForCurrentCard());
-  editItem.dataset.bcAction = "edit-card";
+  editItem.dataset.sproutAction = "edit-card";
   menu.appendChild(editItem);
 
   menu.addEventListener("pointerdown", (ev) => ev.stopPropagation());

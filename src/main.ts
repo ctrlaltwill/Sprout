@@ -32,6 +32,7 @@ import {
   VIEW_TYPE_BROWSER,
   VIEW_TYPE_ANALYTICS,
   VIEW_TYPE_HOME,
+  VIEW_TYPE_SETTINGS,
   BRAND,
   DEFAULT_SETTINGS,
   deepMerge,
@@ -41,6 +42,8 @@ import {
 import { log } from "./core/logger";
 import { registerReadingViewPrettyCards, teardownReadingView } from "./reading/reading-view";
 import { removeAosErrorHandler } from "./core/aos-loader";
+import { initTooltipPositioner } from "./core/tooltip-positioner";
+import { initButtonTooltipDefaults } from "./core/tooltip-defaults";
 
 import { JsonStore } from "./core/store";
 import { queryFirst } from "./core/ui";
@@ -50,15 +53,21 @@ import { SproutCardBrowserView } from "./browser/sprout-card-browser-view";
 import { SproutAnalyticsView } from "./analytics/analytics-view";
 import { SproutHomeView } from "./home/sprout-home-view";
 import { SproutSettingsTab } from "./settings/sprout-settings-tab";
+import { SproutSettingsView } from "./settings/sprout-settings-view";
 import { formatSyncNotice, syncQuestionBank } from "./sync/sync-engine";
-import { joinPath, safeStatMtime } from "./sync/backup";
+import { joinPath, safeStatMtime, createDataJsonBackupNow } from "./sync/backup";
 import { CardCreatorModal } from "./modals/card-creator-modal";
 import { ImageOcclusionCreatorModal } from "./modals/image-occlusion-creator-modal";
 import { ParseErrorModal } from "./modals/parse-error-modal";
+import { setDelimiter } from "./core/delimiter";
 // Anki modals are lazy-loaded to defer sql.js WASM parsing until needed
 // import { AnkiImportModal } from "./modals/anki-import-modal";
 // import { AnkiExportModal } from "./modals/anki-export-modal";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
+import { WhatsNewModal, hasReleaseNotes } from "./modals/whats-new-modal";
+import { checkForVersionUpgrade } from "./core/version-manager";
+import { createRoot, type Root as ReactRoot } from "react-dom/client";
+import React from "react";
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
@@ -121,9 +130,18 @@ export default class SproutPlugin extends Plugin {
     VIEW_TYPE_BROWSER,
     VIEW_TYPE_ANALYTICS,
     VIEW_TYPE_HOME,
+    VIEW_TYPE_SETTINGS,
     // If you also want it hidden in the sidebar widget, uncomment:
     // VIEW_TYPE_WIDGET,
   ]);
+
+  // What's New modal state
+  private _whatsNewModalContainer: HTMLElement | null = null;
+  private _whatsNewModalRoot: ReactRoot | null = null;
+
+  // Workspace content zoom (markdown + Sprout leaves only)
+  private _workspaceZoomValue = 1;
+  private _workspaceZoomSaveTimer: number | null = null;
 
   private _initBasecoatRuntime() {
     const bc = getBasecoatApi();
@@ -188,6 +206,15 @@ export default class SproutPlugin extends Plugin {
       if (s[oldKey] != null) delete s[oldKey];
     };
 
+    const normaliseLegacyMacro = (raw: unknown): "flashcards" | "classic" | "guidebook" | "markdown" | "custom" => {
+      const key = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+      if (key === "minimal-flip") return "flashcards";
+      if (key === "full-card") return "classic";
+      if (key === "compact") return "markdown";
+      if (key === "flashcards" || key === "classic" || key === "guidebook" || key === "markdown" || key === "custom") return key;
+      return "flashcards";
+    };
+
     // Rename top-level groups
     move("home", "general");
     move("appearance", "general");
@@ -195,10 +222,12 @@ export default class SproutPlugin extends Plugin {
     move("widget", "study");
     move("scheduler", "scheduling");
 
-    // Merge imageOcclusion + cardAttachments → storage
+    // Merge legacy imageOcclusion.attachmentFolderPath + cardAttachments → storage
+    // NOTE: imageOcclusion is now reused for mask appearance settings (maskTargetColor,
+    // maskOtherColor, maskIcon, defaultMaskMode) — do NOT delete the entire object.
     const io = s.imageOcclusion as Record<string, unknown> | undefined;
     const ca = s.cardAttachments as Record<string, unknown> | undefined;
-    if (io || ca) {
+    if ((io && "attachmentFolderPath" in io) || ca) {
       const storage = (s.storage ?? {}) as Record<string, unknown>;
       if (io?.attachmentFolderPath != null && storage.imageOcclusionFolderPath == null) {
         storage.imageOcclusionFolderPath = io.attachmentFolderPath;
@@ -207,17 +236,100 @@ export default class SproutPlugin extends Plugin {
         storage.cardAttachmentFolderPath = ca.attachmentFolderPath;
       }
       s.storage = storage;
-      delete s.imageOcclusion;
+      // Only strip the legacy key; preserve new mask-appearance fields
+      if (io) delete io.attachmentFolderPath;
       delete s.cardAttachments;
     }
+
+    // Migrate legacy reading style toggle + preset model
+    const general = (s.general ?? {}) as Record<string, unknown>;
+    const reading = (s.readingView ?? {}) as Record<string, unknown>;
+
+    if (general.enableReadingStyles == null) {
+      const prettify = typeof general.prettifyCards === "string" ? general.prettifyCards.toLowerCase() : "";
+      general.enableReadingStyles = prettify !== "off";
+    }
+
+    if (reading.activeMacro == null) {
+      reading.activeMacro = normaliseLegacyMacro(reading.preset);
+    }
+
+    const visibleFields = (reading.visibleFields ?? {}) as Record<string, unknown>;
+    const displayLabels = reading.displayLabels !== false;
+    const defaultFields = {
+      title: visibleFields.title !== false,
+      question: visibleFields.question !== false,
+      options: visibleFields.options !== false,
+      answer: visibleFields.answer !== false,
+      info: visibleFields.info !== false,
+      groups: visibleFields.groups !== false,
+      edit: visibleFields.edit !== false,
+      labels: displayLabels,
+    };
+
+    if (!isPlainObject(reading.macroConfigs)) {
+      const asString = (value: unknown) => (typeof value === "string" ? value : "");
+      const createMacro = (fallback: Record<string, unknown>, withColours: boolean) => ({
+        fields: {
+          title: fallback.title !== false,
+          question: fallback.question !== false,
+          options: fallback.options !== false,
+          answer: fallback.answer !== false,
+          info: fallback.info !== false,
+          groups: fallback.groups !== false,
+          edit: fallback.edit !== false,
+          labels: fallback.labels !== false,
+        },
+        ...(withColours
+          ? {
+              colours: {
+                cardBgLight: asString(reading.cardBgLight),
+                cardBgDark: asString(reading.cardBgDark),
+                cardBorderLight: asString(reading.cardBorderLight),
+                cardBorderDark: asString(reading.cardBorderDark),
+                cardAccentLight: asString(reading.cardAccentLight),
+                cardAccentDark: asString(reading.cardAccentDark),
+              },
+            }
+          : {}),
+      });
+
+      reading.macroConfigs = {
+        flashcards: createMacro({ ...defaultFields, title: false, options: false, info: false, groups: false, edit: false, labels: false }, false),
+        classic: createMacro(defaultFields, true),
+        guidebook: createMacro(defaultFields, true),
+        markdown: createMacro({ ...defaultFields, title: false, edit: false, labels: true }, true),
+        custom: {
+          ...createMacro(defaultFields, true),
+          customCss: "",
+        },
+      };
+    }
+
+    s.general = general;
+    s.readingView = reading;
   }
 
   private _normaliseSettingsInPlace() {
     const s = this.settings;
     s.scheduling ??= {} as SproutSettings["scheduling"];
     s.general ??= {} as SproutSettings["general"];
+    s.general.enableReadingStyles ??= DEFAULT_SETTINGS.general.enableReadingStyles;
+    if (s.general.prettifyCards === "off") s.general.enableReadingStyles = false;
     s.general.pinnedDecks ??= [];
+    s.general.workspaceContentZoom = clamp(
+      Number(s.general.workspaceContentZoom ?? DEFAULT_SETTINGS.general.workspaceContentZoom ?? 1),
+      0.8,
+      1.8,
+    );
     s.general.githubStars ??= { count: null, fetchedAt: null };
+
+    // Ensure imageOcclusion group exists (may have been deleted by an older migration)
+    s.imageOcclusion ??= {} as SproutSettings["imageOcclusion"];
+    s.imageOcclusion.defaultMaskMode ??= DEFAULT_SETTINGS.imageOcclusion.defaultMaskMode;
+    s.imageOcclusion.maskTargetColor ??= DEFAULT_SETTINGS.imageOcclusion.maskTargetColor;
+    s.imageOcclusion.maskOtherColor ??= DEFAULT_SETTINGS.imageOcclusion.maskOtherColor;
+    s.imageOcclusion.maskIcon ??= DEFAULT_SETTINGS.imageOcclusion.maskIcon;
 
     s.scheduling.learningStepsMinutes = cleanPositiveNumberArray(
       s.scheduling.learningStepsMinutes,
@@ -248,6 +360,115 @@ export default class SproutPlugin extends Plugin {
     for (const k of legacyKeys) {
       if (k in s.scheduling) delete (s.scheduling as Record<string, unknown>)[k];
     }
+
+    s.readingView ??= clonePlain(DEFAULT_SETTINGS.readingView);
+    const rv = s.readingView;
+
+    const toMacro = (raw: unknown): SproutSettings["readingView"]["activeMacro"] => {
+      const key = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+      if (key === "minimal-flip") return "flashcards";
+      if (key === "full-card") return "classic";
+      if (key === "compact") return "markdown";
+      if (key === "flashcards" || key === "classic" || key === "guidebook" || key === "markdown" || key === "custom") return key;
+      return "flashcards";
+    };
+
+    rv.activeMacro = toMacro(rv.activeMacro ?? rv.preset);
+    rv.preset = rv.activeMacro;
+
+    const defaultMacroConfigs = clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs);
+    rv.macroConfigs ??= defaultMacroConfigs;
+    rv.macroConfigs.flashcards ??= defaultMacroConfigs.flashcards;
+    rv.macroConfigs.classic ??= defaultMacroConfigs.classic;
+    rv.macroConfigs.guidebook ??= defaultMacroConfigs.guidebook;
+    rv.macroConfigs.markdown ??= defaultMacroConfigs.markdown;
+    rv.macroConfigs.custom ??= defaultMacroConfigs.custom;
+
+    const normaliseFields = (
+      fields: Partial<SproutSettings["readingView"]["macroConfigs"]["classic"]["fields"]> | undefined,
+      fallback: SproutSettings["readingView"]["macroConfigs"]["classic"]["fields"],
+    ): SproutSettings["readingView"]["macroConfigs"]["classic"]["fields"] => ({
+      title: fields?.title ?? fallback.title,
+      question: fields?.question ?? fallback.question,
+      options: fields?.options ?? fallback.options,
+      answer: fields?.answer ?? fallback.answer,
+      info: fields?.info ?? fallback.info,
+      groups: fields?.groups ?? fallback.groups,
+      edit: fields?.edit ?? fallback.edit,
+      labels: fields?.labels ?? fallback.labels,
+    });
+
+    rv.macroConfigs.flashcards.fields = normaliseFields(rv.macroConfigs.flashcards.fields, defaultMacroConfigs.flashcards.fields);
+    rv.macroConfigs.classic.fields = normaliseFields(rv.macroConfigs.classic.fields, defaultMacroConfigs.classic.fields);
+    rv.macroConfigs.guidebook.fields = normaliseFields(rv.macroConfigs.guidebook.fields, defaultMacroConfigs.guidebook.fields);
+    rv.macroConfigs.markdown.fields = normaliseFields(rv.macroConfigs.markdown.fields, defaultMacroConfigs.markdown.fields);
+    rv.macroConfigs.custom.fields = normaliseFields(rv.macroConfigs.custom.fields, defaultMacroConfigs.custom.fields);
+
+    rv.macroConfigs.classic.colours ??= clonePlain(defaultMacroConfigs.classic.colours);
+    rv.macroConfigs.guidebook.colours ??= clonePlain(defaultMacroConfigs.guidebook.colours);
+    rv.macroConfigs.markdown.colours ??= clonePlain(defaultMacroConfigs.markdown.colours);
+    rv.macroConfigs.custom.colours ??= clonePlain(defaultMacroConfigs.custom.colours);
+    rv.macroConfigs.custom.customCss ??= defaultMacroConfigs.custom.customCss;
+
+    rv.visibleFields ??= {
+      title: rv.macroConfigs[rv.activeMacro].fields.title,
+      question: rv.macroConfigs[rv.activeMacro].fields.question,
+      options: rv.macroConfigs[rv.activeMacro].fields.options,
+      answer: rv.macroConfigs[rv.activeMacro].fields.answer,
+      info: rv.macroConfigs[rv.activeMacro].fields.info,
+      groups: rv.macroConfigs[rv.activeMacro].fields.groups,
+      edit: rv.macroConfigs[rv.activeMacro].fields.edit,
+    };
+    rv.displayLabels ??= rv.macroConfigs[rv.activeMacro].fields.labels;
+
+    if (!s.general.enableReadingStyles) s.general.prettifyCards = "off";
+    else if (!s.general.prettifyCards || s.general.prettifyCards === "off") s.general.prettifyCards = "accent";
+  }
+
+  private _applyWorkspaceContentZoom(value: number) {
+    const next = clamp(Number(value || 1), 0.8, 1.8);
+    this._workspaceZoomValue = next;
+    document.body.style.setProperty("--sprout-workspace-content-zoom", next.toFixed(3));
+    document.body.classList.toggle("sprout-workspace-content-zoomed", Math.abs(next - 1) > 0.001);
+  }
+
+  private _queueWorkspaceZoomSave() {
+    if (this._workspaceZoomSaveTimer != null) window.clearTimeout(this._workspaceZoomSaveTimer);
+    this._workspaceZoomSaveTimer = window.setTimeout(() => {
+      this._workspaceZoomSaveTimer = null;
+      void this.saveAll();
+    }, 250);
+  }
+
+  private _registerWorkspaceContentPinchZoom() {
+    this._applyWorkspaceContentZoom(this.settings.general.workspaceContentZoom ?? 1);
+
+    this.registerDomEvent(
+      document,
+      "wheel",
+      (ev: WheelEvent) => {
+        if (!ev.ctrlKey) return;
+
+        const target = ev.target as HTMLElement | null;
+        if (!target) return;
+        if (target.closest(".modal-container, .menu, .popover, .suggestion-container")) return;
+
+        const leaf = target.closest<HTMLElement>(".workspace-leaf-content");
+        if (!leaf) return;
+
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        const factor = Math.exp(-ev.deltaY * 0.006);
+        const next = clamp(this._workspaceZoomValue * factor, 0.8, 1.8);
+        if (Math.abs(next - this._workspaceZoomValue) < 0.001) return;
+
+        this._applyWorkspaceContentZoom(next);
+        this.settings.general.workspaceContentZoom = Number(next.toFixed(3));
+        this._queueWorkspaceZoomSave();
+      },
+      { capture: true, passive: false },
+    );
   }
 
   /**
@@ -274,12 +495,19 @@ export default class SproutPlugin extends Plugin {
       // ✅ IMPORTANT: Basecoat runtime init for Obsidian (DOMContentLoaded already happened)
       this._initBasecoatRuntime();
 
+      // Initialize tooltip positioner for dynamic positioning
+      initTooltipPositioner();
+
+      // Ensure all buttons use `data-tooltip` and never rely on native `title` tooltips.
+      this.register(initButtonTooltipDefaults());
+
       this._bc = {
         VIEW_TYPE_REVIEWER,
         VIEW_TYPE_WIDGET,
         VIEW_TYPE_BROWSER,
         VIEW_TYPE_ANALYTICS,
         VIEW_TYPE_HOME,
+        VIEW_TYPE_SETTINGS,
         BRAND,
         DEFAULT_SETTINGS,
         deepMerge,
@@ -288,6 +516,7 @@ export default class SproutPlugin extends Plugin {
         SproutCardBrowserView,
         SproutAnalyticsView,
         SproutHomeView,
+        SproutSettingsView,
         SproutSettingsTab,
         syncQuestionBank,
         CardCreatorModal,
@@ -302,9 +531,20 @@ export default class SproutPlugin extends Plugin {
       this.settings = deepMerge(DEFAULT_SETTINGS, rootSettings);
       this._migrateSettingsInPlace();
       this._normaliseSettingsInPlace();
+      this._registerWorkspaceContentPinchZoom();
+
+      // Activate the user's chosen delimiter before any parsing occurs
+      setDelimiter(this.settings.indexing.delimiter ?? "|");
 
       this.store = new JsonStore(this);
       this.store.load(rootObj);
+
+      if (!this.store.loadedFromDisk && isPlainObject(root)) {
+        log.warn(
+          "data.json existed but contained no .store — " +
+          "initial save will be guarded by assessPersistSafety.",
+        );
+      }
 
       registerReadingViewPrettyCards(this);
 
@@ -313,6 +553,7 @@ export default class SproutPlugin extends Plugin {
       this.registerView(VIEW_TYPE_BROWSER, (leaf) => new SproutCardBrowserView(leaf, this));
       this.registerView(VIEW_TYPE_ANALYTICS, (leaf) => new SproutAnalyticsView(leaf, this));
       this.registerView(VIEW_TYPE_HOME, (leaf) => new SproutHomeView(leaf, this));
+      this.registerView(VIEW_TYPE_SETTINGS, (leaf) => new SproutSettingsView(leaf, this));
 
       this.addSettingTab(new SproutSettingsTab(this.app, this));
 
@@ -325,8 +566,38 @@ export default class SproutPlugin extends Plugin {
 
       this.addCommand({
         id: "open",
-        name: "Sprout",
+        name: "Open home",
         callback: async () => this.openHomeTab(),
+      });
+
+      this.addCommand({
+        id: "open-analytics",
+        name: "Open analytics",
+        callback: async () => this.openAnalyticsTab(),
+      });
+
+      this.addCommand({
+        id: "open-settings",
+        name: "Open plugin settings",
+        callback: () => this.openPluginSettingsInObsidian(),
+      });
+
+      this.addCommand({
+        id: "open-guide",
+        name: "Open guide",
+        callback: async () => this.openSettingsTab(false, "guide"),
+      });
+
+      this.addCommand({
+        id: "edit-flashcards",
+        name: "Edit flashcards",
+        callback: async () => this.openBrowserTab(),
+      });
+
+      this.addCommand({
+        id: "new-study-session",
+        name: "New study session",
+        callback: async () => this.openReviewerTab(),
       });
 
       this.addCommand({
@@ -380,6 +651,9 @@ export default class SproutPlugin extends Plugin {
         }
         // Ensure status bar class matches the active view after layout settles
         this._updateStatusBarVisibility(null);
+        
+        // Check for version upgrades and show What's New modal if needed
+        this._checkAndShowWhatsNewModal();
       });
 
       await this.saveAll();
@@ -403,6 +677,15 @@ export default class SproutPlugin extends Plugin {
     this._bc = null;
     this._destroyRibbonIcons();
     document.body.classList.remove("sprout-hide-status-bar");
+    document.body.classList.remove("sprout-workspace-content-zoomed");
+    document.body.style.removeProperty("--sprout-workspace-content-zoom");
+    if (this._workspaceZoomSaveTimer != null) {
+      window.clearTimeout(this._workspaceZoomSaveTimer);
+      this._workspaceZoomSaveTimer = null;
+    }
+
+    // Clean up What's New modal
+    this._closeWhatsNewModal();
 
     // Tear down reading-view observers + window listeners
     teardownReadingView();
@@ -421,6 +704,60 @@ export default class SproutPlugin extends Plugin {
       } catch (e) { log.swallow("remove ribbon icon", e); }
     }
     this._ribbonEls = [];
+  }
+
+  /**
+   * Check if the plugin was upgraded and show the What's New modal if needed.
+   */
+  private _checkAndShowWhatsNewModal() {
+    try {
+      const currentVersion = this.manifest.version;
+      const { shouldShow, version } = checkForVersionUpgrade(currentVersion);
+      
+      if (shouldShow && version && hasReleaseNotes(version)) {
+        this._showWhatsNewModal(version);
+      }
+    } catch (e) {
+      console.error('[Sprout] Error checking version upgrade:', e);
+      log.swallow("check version upgrade", e);
+    }
+  }
+
+  /**
+   * Display the What's New modal for a specific version.
+   */
+  private _showWhatsNewModal(version: string) {
+    // Clean up any existing modal
+    this._closeWhatsNewModal();
+
+    // Create modal container
+    const container = document.body.createDiv();
+    this._whatsNewModalContainer = container;
+
+    // Create React root and render modal
+    const root = createRoot(container);
+    this._whatsNewModalRoot = root;
+
+    const modalElement = React.createElement(WhatsNewModal, {
+      version,
+      onClose: () => this._closeWhatsNewModal(),
+    });
+    
+    root.render(modalElement);
+  }
+
+  /**
+   * Close and clean up the What's New modal.
+   */
+  private _closeWhatsNewModal() {
+    if (this._whatsNewModalRoot) {
+      this._whatsNewModalRoot.unmount();
+      this._whatsNewModalRoot = null;
+    }
+    if (this._whatsNewModalContainer) {
+      this._whatsNewModalContainer.remove();
+      this._whatsNewModalContainer = null;
+    }
   }
 
   _getActiveMarkdownFile(): TFile | null {
@@ -478,7 +815,7 @@ export default class SproutPlugin extends Plugin {
     );
   }
 
-  openAddFlashcardModal(forcedType?: "basic" | "cloze" | "mcq" | "io") {
+  openAddFlashcardModal(forcedType?: "basic" | "reversed" | "cloze" | "mcq" | "oq" | "io") {
     const ok = this._ensureEditingNoteEditor();
     if (!ok) {
       new Notice("Must be editing a note to add a flashcard");
@@ -519,10 +856,16 @@ export default class SproutPlugin extends Plugin {
               subItem.setTitle("Basic").setIcon("file-text").onClick(() => this.openAddFlashcardModal("basic"));
             });
             submenu.addItem((subItem: MenuItem) => {
+              subItem.setTitle("Basic (reversed)").setIcon("file-text").onClick(() => this.openAddFlashcardModal("reversed"));
+            });
+            submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Cloze").setIcon("file-minus").onClick(() => this.openAddFlashcardModal("cloze"));
             });
             submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Multiple choice").setIcon("list").onClick(() => this.openAddFlashcardModal("mcq"));
+            });
+            submenu.addItem((subItem: MenuItem) => {
+              subItem.setTitle("Ordered question").setIcon("list-ordered").onClick(() => this.openAddFlashcardModal("oq"));
             });
             submenu.addItem((subItem: MenuItem) => {
               subItem.setTitle("Image occlusion").setIcon("image").onClick(() => this.openAddFlashcardModal("io"));
@@ -623,6 +966,22 @@ export default class SproutPlugin extends Plugin {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const mtimeBefore = canStat ? await safeStatMtime(adapter, dataPath) : 0;
       const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
+
+      // ── Persist-safety check ────────────────────────────────────────
+      const diskStore = root?.store as Record<string, unknown> | undefined;
+      const safety = this.store.assessPersistSafety(diskStore ?? null);
+
+      if (!safety.allow) {
+        log.warn(`_doSave: aborting — ${safety.reason}`);
+        try { await createDataJsonBackupNow(this, "safety-before-empty-write"); } catch { /* best effort */ }
+        return;
+      }
+
+      if (safety.backupFirst) {
+        log.warn(`_doSave: ${safety.reason} Creating safety backup before writing.`);
+        try { await createDataJsonBackupNow(this, "safety-regression"); } catch { /* best effort */ }
+      }
+
       root.settings = this.settings;
       root.store = this.store.data;
 
@@ -656,6 +1015,7 @@ export default class SproutPlugin extends Plugin {
     refresh(VIEW_TYPE_BROWSER);
     refresh(VIEW_TYPE_ANALYTICS);
     refresh(VIEW_TYPE_HOME);
+    refresh(VIEW_TYPE_SETTINGS);
   }
 
   async refreshGithubStars(force = false) {
@@ -857,6 +1217,53 @@ export default class SproutPlugin extends Plugin {
     const leaf = this.app.workspace.getLeaf("tab");
     await leaf.setViewState({ type: VIEW_TYPE_ANALYTICS, active: true });
     void this.app.workspace.revealLeaf(leaf);
+  }
+
+  async openSettingsTab(forceNew: boolean = false, targetTab?: string) {
+    const resolvedTargetTab = targetTab ?? "settings";
+
+    if (!forceNew) {
+      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_SETTINGS);
+      if (existing) {
+        void this.app.workspace.revealLeaf(existing);
+        // Navigate to the target tab if specified
+        const view = existing.view as SproutSettingsView | undefined;
+        if (view && typeof view.navigateToTab === "function") {
+          view.navigateToTab(resolvedTargetTab);
+        }
+        return;
+      }
+    }
+
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: VIEW_TYPE_SETTINGS, active: true });
+    void this.app.workspace.revealLeaf(leaf);
+
+    // Navigate to the target tab after the view opens
+    setTimeout(() => {
+      const view = leaf.view as SproutSettingsView | undefined;
+      if (view && typeof view.navigateToTab === "function") {
+        view.navigateToTab(resolvedTargetTab);
+      }
+    }, 50);
+  }
+
+  openPluginSettingsInObsidian() {
+    const settings = this.app.setting;
+    if (!settings) {
+      new Notice("Obsidian settings are unavailable.");
+      return;
+    }
+
+    settings.open();
+    const pluginId = this.manifest?.id || "sprout";
+
+    try {
+      if (typeof settings.openTabById === "function") settings.openTabById(pluginId);
+      else if (typeof settings.openTab === "function") settings.openTab(pluginId);
+    } catch (e) {
+      log.warn("failed to open plugin settings tab", e);
+    }
   }
 
   private async openWidgetSafe(): Promise<void> {

@@ -31,6 +31,7 @@ import { TFile, TFolder, Notice } from "obsidian";
 
 // ── Re-export shared types (backward-compatible) ────────────────────────────
 export type { CardRecord } from "../types/card";
+export { normalizeCardOptions } from "../types/card";
 export type { ReviewResult, ReviewLogEntry } from "../types/review";
 export type {
   AnalyticsMode,
@@ -44,6 +45,7 @@ export type { QuarantineEntry, StoreData } from "../types/store";
 
 // ── Local imports of the types we actually use in this file ─────────────────
 import type { CardRecord } from "../types/card";
+import { normalizeCardOptions } from "../types/card";
 import type { ReviewLogEntry } from "../types/review";
 import type {
   AnalyticsReviewEvent,
@@ -58,6 +60,47 @@ const ANALYTICS_MAX_EVENTS = 50_000;
 
 function clampInt(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, Math.floor(n)));
+}
+
+// ── Persist-safety types & helpers ──────────────────────────────────────────
+
+/** Result of comparing in-memory store against on-disk store before writing. */
+export type PersistSafetyResult = {
+  /** Whether the write should proceed. */
+  allow: boolean;
+  /** If true, a safety backup should be created before (or instead of) writing. */
+  backupFirst: boolean;
+  /** Human-readable explanation (for logging). */
+  reason?: string;
+};
+
+/** Safely count own keys on an unknown value. */
+function countKeys(v: unknown): number {
+  return v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v).length : 0;
+}
+
+/** Count analytics events from a raw (possibly untyped) analytics object. */
+function countAnalyticsEvents(analytics: unknown): number {
+  if (!analytics || typeof analytics !== "object") return 0;
+  const events = (analytics as Record<string, unknown>).events;
+  return Array.isArray(events) ? events.length : 0;
+}
+
+/**
+ * Calculates a weight (total item count) for a store-shaped object.
+ * Works on both the typed `StoreData` and a raw `Record<string, unknown>`
+ * read from disk.
+ */
+function storeWeight(d: Record<string, unknown> | StoreData | null | undefined): number {
+  if (!d) return 0;
+  let w = 0;
+  w += countKeys(d.cards);
+  w += countKeys(d.states);
+  if (Array.isArray(d.reviewLog)) w += d.reviewLog.length;
+  w += countKeys(d.quarantine);
+  w += countKeys(d.io);
+  w += countAnalyticsEvents(d.analytics);
+  return w;
 }
 
 export function defaultStore(): StoreData {
@@ -87,6 +130,19 @@ export class JsonStore {
 
   // ✅ In-memory mutation revision (NOT persisted). Used for cheap index invalidation.
   private _rev = 0;
+
+  /**
+   * Tracks whether the last `load()` call actually found persisted store data
+   * on disk, or fell back to an empty `defaultStore()`.
+   *
+   * - `true`  → `data.json` had a `.store` object and we loaded it.
+   * - `false` → `data.json` was missing, empty, corrupt, or had no `.store` key;
+   *             the in-memory store is a blank default.
+   *
+   * Used by the persistence layer to avoid overwriting a rich data.json with an
+   * empty store during plugin reload / update scenarios.
+   */
+  loadedFromDisk = false;
 
   constructor(plugin: SproutPlugin) {
     this.plugin = plugin;
@@ -222,9 +278,83 @@ export class JsonStore {
     this.bumpRevision();
   }
 
+  // ── Persist-safety helpers ─────────────────────────────────────────────────
+
+  /**
+   * Returns the total number of meaningful data items across cards, states,
+   * review log, quarantine, IO definitions, and analytics events.
+   * Used as a heuristic to detect whether the store contains real user data
+   * vs. being an empty default.
+   */
+  dataWeight(): number {
+    return storeWeight(this.data);
+  }
+
+  /**
+   * Compares the in-memory store against an on-disk store object and decides
+   * whether it's safe to persist.
+   *
+   * Returns:
+   * - `allow: true` — safe to write.
+   * - `allow: false` — writing would likely destroy data; caller should abort.
+   * - `backupFirst: true` — write is allowed but we'd lose significant data;
+   *    caller should create a safety backup before writing.
+   */
+  assessPersistSafety(diskStore: Record<string, unknown> | null | undefined): PersistSafetyResult {
+    const inMem = this.dataWeight();
+    const disk = diskStore ? storeWeight(diskStore) : 0;
+
+    // Case 1: in-memory store is empty but disk has data → refuse to write
+    if (inMem === 0 && disk > 0) {
+      return {
+        allow: false,
+        backupFirst: true,
+        reason:
+          `In-memory store is empty (weight=0) but data.json has ${disk} items. ` +
+          `Refusing to overwrite to prevent data loss.`,
+      };
+    }
+
+    // Case 2: large regression — we'd lose >50% of states or analytics events
+    if (inMem > 0 && diskStore && typeof diskStore === "object") {
+      const diskStates = countKeys(diskStore.states);
+      const inMemStates = countKeys(this.data.states);
+      const diskEvents = countAnalyticsEvents(diskStore.analytics);
+      const inMemEvents = Array.isArray(this.data.analytics?.events)
+        ? this.data.analytics.events.length
+        : 0;
+
+      const statesDropped = diskStates > 10 && inMemStates < diskStates * 0.5;
+      const eventsDropped = diskEvents > 10 && inMemEvents < diskEvents * 0.5;
+
+      if (statesDropped || eventsDropped) {
+        return {
+          allow: true,
+          backupFirst: true,
+          reason:
+            `Large data regression detected ` +
+            `(states: ${diskStates}→${inMemStates}, events: ${diskEvents}→${inMemEvents}).`,
+        };
+      }
+    }
+
+    // Case 3: everything looks fine
+    return { allow: true, backupFirst: false };
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
   load(rootData: unknown) {
-    if (rootData && (rootData as Record<string, unknown>).store) this.data = (rootData as Record<string, unknown>).store as typeof this.data;
-    else this.data = defaultStore();
+    const rootObj = rootData as Record<string, unknown> | null;
+    const storeObj = rootObj?.store;
+
+    if (storeObj && typeof storeObj === "object" && !Array.isArray(storeObj)) {
+      this.data = storeObj as typeof this.data;
+      this.loadedFromDisk = true;
+    } else {
+      this.data = defaultStore();
+      this.loadedFromDisk = false;
+    }
 
     // Backwards-compatible defaults
     if (!this.data || typeof this.data !== "object") this.data = defaultStore();
@@ -335,6 +465,11 @@ export class JsonStore {
         if (!pickString(card.groupKey)) {
           const legacyGroup = pickString(card.ioGroupKey) ?? pickString(card.key);
           if (legacyGroup) card.groupKey = legacyGroup;
+        }
+
+        // MCQ options migration: coerce any leaked McqOption[] objects → string[]
+        if (Array.isArray(card.options)) {
+          card.options = normalizeCardOptions(card.options);
         }
 
         if (!pickString(card.info)) {

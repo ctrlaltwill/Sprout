@@ -52,7 +52,7 @@
 }
 
 .sprout .sprout-widget .sprout-widget-action-btn {
-  font-size: 11px !important;
+  font-size: var(--sprout-font-2xs) !important;
 }
 
 .sprout .sprout-widget .sprout-widget-back-btn {
@@ -61,7 +61,7 @@
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
 }
 
 .sprout .sprout-widget button:hover,
@@ -111,7 +111,7 @@
   box-shadow: none !important;
   outline: none !important;
   background-color: var(--background) !important;
-  border-radius: var(--button-radius) !important;
+  border-radius: var(--radius-m) !important;
 }
 
 .sprout :is(.sprout-widget button, .sprout-widget .btn, .sprout-widget .btn-outline) {
@@ -125,7 +125,7 @@
 .sprout .sprout-widget-cloze .sprout-cloze-revealed {
   background-color: var(--theme-accent);
   color: #fff;
-  border-radius: 3px;
+  border-radius: var(--radius-s);
   margin: 0px 2px 0px 0px;
   padding: 0.5px 5px;
   font-weight: 500;
@@ -141,7 +141,7 @@
    across widget-render-session.ts (~15 usages) */
 
 .sprout .sprout-widget-text {
-  font-size: 11px;
+  font-size: var(--sprout-font-2xs);
   line-height: 1.75;
   color: var(--foreground) !important;
 }
@@ -163,10 +163,10 @@
 .sprout .sprout-widget-card-body {
   margin: 10px auto 20px auto !important;
   gap: 0 !important;
-  border-radius: var(--input-radius) !important;
+  border-radius: var(--radius-m) !important;
   border: var(--border-width) solid var(--background-modifier-border) !important;
   padding: 20px !important;
-  max-width: 90% !important;
+  width: 90% !important;
   box-shadow: none !important;
 }
 
@@ -202,7 +202,7 @@
 
 /* Widget info block (extra info text, dimmed) */
 .sprout .sprout-widget-info {
-  font-size: 11px;
+  font-size: var(--sprout-font-2xs);
   line-height: 1.75;
   color: var(--foreground) !important;
   opacity: 0.6 !important;
@@ -263,9 +263,9 @@
   border: 1px solid var(--theme-accent) !important;
   color: var(--theme-accent) !important;
   background-color: color-mix(in srgb, var(--theme-accent) 12%, transparent) !important;
-  border-radius: 999px !important;
+  border-radius: var(--radius-xl) !important;
   padding: 3px 10px !important;
-  font-size: 11px !important;
+  font-size: var(--sprout-font-2xs) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
@@ -301,16 +301,16 @@
 .sprout-widget-teaser {
   margin: 10px auto 20px !important;
   gap: 0 !important;
-  border-radius: var(--input-radius) !important;
+  border-radius: var(--radius-m) !important;
   border: var(--border-width) solid var(--background-modifier-border) !important;
   padding: 20px !important;
-  max-width: 90% !important;
+  width: 90% !important;
   box-shadow: none !important;
 }
 
 .sprout-widget-teaser-title {
   color: var(--foreground) !important;
-  font-size: 11px !important;
+  font-size: var(--sprout-font-2xs) !important;
   margin-bottom: 0 !important;
 }
 

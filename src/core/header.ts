@@ -14,11 +14,11 @@
  */
 
 import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
-import { MAX_CONTENT_WIDTH, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME } from "./constants";
+import { MAX_CONTENT_WIDTH, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME, VIEW_TYPE_SETTINGS } from "./constants";
 import { log } from "./logger";
-import { queryFirst, setCssProps } from "./ui";
+import { placePopover, queryFirst } from "./ui";
 
-export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics";
+export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics" | "settings";
 
 export type SproutHeaderMenuItem = {
   label: string;
@@ -102,7 +102,16 @@ export class SproutHeader {
     const viewHeader =
       queryFirst(this.deps.containerEl, ":scope > .view-header") ??
       queryFirst(this.deps.containerEl, ".view-header");
-    if (viewHeader) viewHeader.classList.add("bc", "sprout-header");
+    if (viewHeader) {
+      viewHeader.classList.add("bc", "sprout-header");
+      // Wrap header in a transparent container if not already wrapped
+      if (!viewHeader.parentElement?.classList.contains("sprout-header-wrap")) {
+        const wrap = document.createElement("div");
+        wrap.className = "sprout-header-wrap";
+        viewHeader.parentElement?.insertBefore(wrap, viewHeader);
+        wrap.appendChild(viewHeader);
+      }
+    }
 
     this.installHeaderDropdownNav(active);
     this.installHeaderActionsButtonGroup(active);
@@ -128,6 +137,7 @@ export class SproutHeader {
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
     this.widthBtnEl.classList.toggle("sprout-is-hidden", hide);
     this.widthBtnEl.setAttribute("data-tooltip", isWide ? "Collapse table" : "Expand table");
+    this.widthBtnEl.setAttribute("data-tooltip-position", "bottom");
 
     const text = isWide ? "Collapse" : "Expand";
     const textNode = queryFirst(this.widthBtnEl, "[data-sprout-label]");
@@ -175,7 +185,9 @@ export class SproutHeader {
           ? VIEW_TYPE_REVIEWER
           : page === "analytics"
             ? VIEW_TYPE_ANALYTICS
-            : VIEW_TYPE_BROWSER;
+            : page === "settings"
+              ? VIEW_TYPE_SETTINGS
+              : VIEW_TYPE_BROWSER;
 
     await this.deps.leaf.setViewState?.({ type, active: true });
     void this.deps.app.workspace.revealLeaf(this.deps.leaf);
@@ -300,18 +312,17 @@ export class SproutHeader {
     root.classList.add("is-open");
 
     const place = () => {
-      const r = trigger.getBoundingClientRect();
-      const margin = 8;
-      const width = 260;
-      const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
-      const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
-      setCssProps(root, "--sprout-popover-left", `${left}px`);
-      setCssProps(root, "--sprout-popover-top", `${top}px`);
+      placePopover({
+        trigger, panel, popoverEl: root,
+        setWidth: false,
+        align: "left",
+      });
     };
 
-    place();
+    requestAnimationFrame(() => place());
 
     const onResizeOrScroll = () => place();
+    const onVisualViewportResize = () => place();
 
     const onDocPointerDown = (ev: PointerEvent) => {
       const t = ev.target as Node | null;
@@ -322,6 +333,13 @@ export class SproutHeader {
 
     window.addEventListener("resize", onResizeOrScroll, true);
     window.addEventListener("scroll", onResizeOrScroll, true);
+    window.visualViewport?.addEventListener("resize", onVisualViewportResize);
+
+    const bodyObserver = new MutationObserver(() => place());
+    bodyObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
 
     const tid = window.setTimeout(() => {
       document.addEventListener("pointerdown", onDocPointerDown, true);
@@ -331,6 +349,8 @@ export class SproutHeader {
       window.clearTimeout(tid);
       window.removeEventListener("resize", onResizeOrScroll, true);
       window.removeEventListener("scroll", onResizeOrScroll, true);
+      window.visualViewport?.removeEventListener("resize", onVisualViewportResize);
+      bodyObserver.disconnect();
       document.removeEventListener("pointerdown", onDocPointerDown, true);
     };
   }
@@ -360,16 +380,17 @@ export class SproutHeader {
     const trigger = document.createElement("button");
     trigger.type = "button";
     trigger.id = `${this.headerNavId}-trigger`;
-    trigger.className = "btn-outline h-7 px-2 text-xs inline-flex items-center gap-2";
+    trigger.className = "btn-outline sprout-header-btn h-7 px-2 text-xs inline-flex items-center gap-2";
     trigger.setAttribute("aria-haspopup", "menu");
     trigger.setAttribute("aria-expanded", "false");
-    // Removed tooltip per user request
+    trigger.setAttribute("data-tooltip", "Sprout menu");
+    trigger.setAttribute("data-tooltip-position", "bottom");
     root.appendChild(trigger);
 
     const trigText = document.createElement("span");
     trigText.className = "truncate";
     trigText.textContent =
-      active === "home" ? "Home" : active === "analytics" ? "Analytics" : active === "study" ? "Study" : "Flashcards";
+      active === "home" ? "Home" : active === "analytics" ? "Analytics" : active === "study" ? "Study" : active === "settings" ? "Settings" : "Flashcards";
     trigger.appendChild(trigText);
 
     const trigIcon = document.createElement("span");
@@ -483,24 +504,18 @@ export class SproutHeader {
     root.classList.add("is-open");
 
     const place = () => {
-      const r = trigger.getBoundingClientRect();
-      const margin = 8;
-
-      // measure actual panel width so right edges align perfectly
-      const panelRect = panel.getBoundingClientRect();
-      const popW = Math.max(200, panelRect.width || 260);
-
-      const left = Math.max(margin, Math.min(r.right - popW, window.innerWidth - popW - margin));
-      const top = Math.max(margin, Math.min(r.bottom + 6, window.innerHeight - margin));
-
-      setCssProps(root, "--sprout-popover-left", `${left}px`);
-      setCssProps(root, "--sprout-popover-top", `${top}px`);
+      placePopover({
+        trigger, panel, popoverEl: root,
+        setWidth: false,
+        align: "right",
+      });
     };
 
     // Place after layout to ensure correct width measurement
     requestAnimationFrame(() => place());
 
     const onResizeOrScroll = () => place();
+    const onVisualViewportResize = () => place();
 
     const onDocPointerDown = (ev: PointerEvent) => {
       const t = ev.target as Node | null;
@@ -519,6 +534,13 @@ export class SproutHeader {
 
     window.addEventListener("resize", onResizeOrScroll, true);
     window.addEventListener("scroll", onResizeOrScroll, true);
+    window.visualViewport?.addEventListener("resize", onVisualViewportResize);
+
+    const bodyObserver = new MutationObserver(() => place());
+    bodyObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
 
     const tid = window.setTimeout(() => {
       document.addEventListener("pointerdown", onDocPointerDown, true);
@@ -529,6 +551,8 @@ export class SproutHeader {
       window.clearTimeout(tid);
       window.removeEventListener("resize", onResizeOrScroll, true);
       window.removeEventListener("scroll", onResizeOrScroll, true);
+      window.visualViewport?.removeEventListener("resize", onVisualViewportResize);
+      bodyObserver.disconnect();
       document.removeEventListener("pointerdown", onDocPointerDown, true);
       document.removeEventListener("keydown", onDocKeydown, true);
     };
@@ -549,7 +573,7 @@ export class SproutHeader {
     // Collapse/Expand
     const widthBtn = document.createElement("button");
     widthBtn.type = "button";
-    widthBtn.className = "btn-outline inline-flex items-center gap-2";
+    widthBtn.className = "btn-outline sprout-header-btn inline-flex items-center gap-2";
     widthBtn.setAttribute("data-sprout-expand-collapse", "true");
     widthBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
@@ -591,8 +615,9 @@ export class SproutHeader {
     // Sync
     const syncBtn = document.createElement("button");
     syncBtn.type = "button";
-    syncBtn.className = "bc btn-outline inline-flex items-center gap-2";
+    syncBtn.className = "bc btn-outline sprout-header-btn inline-flex items-center gap-2";
     syncBtn.setAttribute("data-tooltip", "Sync flashcards");
+    syncBtn.setAttribute("data-tooltip-position", "bottom");
     syncBtn.setAttribute("data-sprout-sync", "true");
     syncBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
@@ -624,10 +649,11 @@ export class SproutHeader {
     const moreBtn = document.createElement("button");
     moreBtn.type = "button";
     moreBtn.id = `${this.moreId}-trigger`;
-    moreBtn.className = "bc btn-icon-outline";
+    moreBtn.className = "bc btn-icon-outline sprout-header-btn";
     moreBtn.setAttribute("aria-haspopup", "menu");
     moreBtn.setAttribute("aria-expanded", "false");
-    moreBtn.setAttribute("data-tooltip", "Pane options");
+    moreBtn.setAttribute("data-tooltip", "More options");
+    moreBtn.setAttribute("data-tooltip-position", "bottom");
     moreWrap.appendChild(moreBtn);
 
     const moreIcon = document.createElement("span");
@@ -638,47 +664,25 @@ export class SproutHeader {
 
     this.moreTriggerEl = moreBtn;
 
-    const splitRight = () => {
-      const newLeaf = this.deps.app.workspace.getLeaf("split", "vertical");
-      void this.deps.app.workspace.revealLeaf(newLeaf);
-    };
-
-    const splitLeft = () => {
-      const newLeaf =
-        this.deps.app.workspace.createLeafBySplit?.(this.deps.leaf, "vertical", true) ??
-        this.deps.app.workspace.getLeaf("split", "vertical");
-      void this.deps.app.workspace.revealLeaf(newLeaf);
-    };
-
-    const splitDown = () => {
-      const newLeaf = this.deps.app.workspace.getLeaf("split", "horizontal");
-      void this.deps.app.workspace.revealLeaf(newLeaf);
-    };
-
     const closeTab = () => {
       try {
         this.deps.leaf.detach();
       } catch (e) { log.swallow("closeTab: leaf detach", e); }
     };
 
+    const switchSettingsTab = (tab: "settings" | "guide" | "about") => {
+      setTimeout(() => {
+        const settingsLeaf = this.deps.leaf;
+        const view = settingsLeaf?.view as { navigateToTab?: (tabId: string) => void } | undefined;
+        if (view && typeof view.navigateToTab === "function") {
+          view.navigateToTab(tab);
+        }
+      }, 100);
+    };
+
     const openSettings = () => {
-      // Open the Sprout settings section in Obsidian
-      if (typeof this.deps.app.setting?.open === "function") {
-        // Open settings
-        this.deps.app.setting.open();
-        // Select the Sprout section by data-setting-id
-        setTimeout(() => {
-          const sproutTab = queryFirst(document, '.vertical-tab-nav-item[data-setting-id="sprout"]');
-          if (sproutTab) (sproutTab as HTMLElement).click();
-        }, 100);
-      } else {
-        // fallback: open settings modal
-        this.deps.app.commands?.executeCommandById?.("app:open-settings");
-        setTimeout(() => {
-          const sproutTab = queryFirst(document, '.vertical-tab-nav-item[data-setting-id="sprout"]');
-          if (sproutTab) (sproutTab as HTMLElement).click();
-        }, 300);
-      }
+      void this.navigate("settings");
+      switchSettingsTab("settings");
     };
 
     const runCommand = (commandId: string, label: string) => {
@@ -689,12 +693,23 @@ export class SproutHeader {
     const openAnkiImport = () => runCommand("sprout:import-anki", "Import from Anki");
     const openAnkiExport = () => runCommand("sprout:export-anki", "Export to Anki");
 
+    const openGuide = () => {
+      // Navigate to the Settings view and switch to the Guide tab
+      void this.navigate("settings");
+      switchSettingsTab("guide");
+    };
+
+    const openReleaseNotes = () => {
+      // Navigate to the Settings view and switch to the Release Notes tab
+      void this.navigate("settings");
+      switchSettingsTab("about");
+    };
+
     const menuItems: SproutHeaderMenuItem[] = [
-      { label: "Split left pane", icon: "panel-left", onActivate: splitLeft },
-      { label: "Split right pane", icon: "panel-right", onActivate: splitRight },
-      { label: "Split down pane", icon: "panel-bottom", onActivate: splitDown },
       { label: "Import from Anki", icon: "folder-down", onActivate: openAnkiImport },
       { label: "Export to Anki", icon: "folder-up", onActivate: openAnkiExport },
+      { label: "Open guide", icon: "book-open", onActivate: openGuide },
+      { label: "Open release notes", icon: "sprout", onActivate: openReleaseNotes },
       { label: "Open settings", icon: "settings", onActivate: openSettings },
       { label: "Close tab", icon: "x", onActivate: closeTab },
     ];

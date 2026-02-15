@@ -22,7 +22,7 @@ Two methods:
 1. write card syntax in notes
 2. use **Add flashcard** from the context menu or command palette
 
-See [[Creating Cards]] and [[Reading View]].
+See [[Creating Cards]], [[Reading View]], [[Reading View Styles]], and [[Custom Reading Styles]].
 
 ## Edit cards
 

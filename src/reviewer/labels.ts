@@ -9,9 +9,11 @@
 
 export function typeLabel(t: string): string {
   if (t === "basic") return "Basic";
+  if (t === "reversed" || t === "reversed-child") return "Basic (Reversed)";
   if (t === "mcq") return "Multiple choice";
   if (t === "cloze" || t === "cloze-child") return "Cloze";
   if (t === "io-child") return "Image occlusion";
+  if (t === "oq") return "Ordered question";
   return t;
 }
 

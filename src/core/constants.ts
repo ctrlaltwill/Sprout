@@ -27,6 +27,7 @@ export const VIEW_TYPE_WIDGET = "sprout-widget";
 export const VIEW_TYPE_BROWSER = "sprout-browser";
 export const VIEW_TYPE_ANALYTICS = "sprout-analytics";
 export const VIEW_TYPE_HOME = "sprout-home";
+export const VIEW_TYPE_SETTINGS = "sprout-settings";
 
 export const BRAND = "Sprout";
 

@@ -25,6 +25,10 @@
 
 import { type App, TFolder } from "obsidian";
 import type SproutPlugin from "../main";
+import {
+  CARD_START_SETTINGS_RE,
+  FIELD_LINE_SETTINGS_RE,
+} from "../core/delimiter";
 
 // ────────────────────────────────────────────
 // Regex constants for card-block detection
@@ -35,16 +39,15 @@ export const ANCHOR_LINE_RE = /^\^sprout-(\d{9})\s*$/;
 
 /**
  * Card block detection: matches the opening line of a card block.
- * Covers colon + pipe formats for Q, MCQ, and CQ types, plus IO pipe blocks.
+ * Uses the active delimiter (pipe by default) and also accepts colon for legacy.
  */
-export const CARD_START_RE = /^(Q|MCQ|CQ)\s*(?::|\|)\s*.*$|^IO\s*\|\s*.*$/;
+export function getCardStartRe(): RegExp { return CARD_START_SETTINGS_RE(); }
 
 /**
  * Matches a field line within a card block.
- * Covers T, A, I, O, G (colon/pipe), and C/K (colon or pipe).
+ * Uses the active delimiter and also accepts colon for legacy.
  */
-export const FIELD_LINE_RE =
-  /^(T|A|I|O|G)\s*(?::|\|)\s*.*$|^(C|K)\s*(?::|\|)\s*.*$/;
+export function getFieldLineRe(): RegExp { return FIELD_LINE_SETTINGS_RE(); }
 
 // ────────────────────────────────────────────
 // Numeric parsing / formatting helpers
@@ -108,14 +111,14 @@ export function isAnchorLine(line: string): boolean {
   return ANCHOR_LINE_RE.test(line.trim());
 }
 
-/** Returns true if `line` starts a card block (Q:, MCQ|, CQ:, etc.). */
+/** Returns true if `line` starts a card block (Q:, MCQ<d>, CQ:, etc.). */
 export function isCardStartLine(line: string): boolean {
-  return CARD_START_RE.test(line.trim());
+  return getCardStartRe().test(line.trim());
 }
 
-/** Returns true if `line` is a card field (T:, A|, O:, I:, C:, K|, etc.). */
+/** Returns true if `line` is a card field (T:, A<d>, O:, I:, C:, K<d>, etc.). */
 export function isFieldLine(line: string): boolean {
-  return FIELD_LINE_RE.test(line.trim());
+  return getFieldLineRe().test(line.trim());
 }
 
 /**

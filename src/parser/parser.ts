@@ -8,17 +8,19 @@
  *  - parseCardsFromText — parses a markdown string into an array of ParsedCard objects
  */
 
+import {
+  CARD_START_DELIM_RE,
+  FIELD_DELIM_RE,
+  TITLE_OUTSIDE_DELIM_RE,
+  ANY_HEADER_DELIM_RE,
+  stripClosingDelimiter,
+  unescapeDelimiterText,
+  escapeDelimiterRe,
+} from "../core/delimiter";
+
 const ANCHOR_RE = /^\^sprout-(\d{9})$/;
 
-// New (pipe) format
-const CARD_START_PIPE_RE = /^(Q|MCQ|CQ|IO)\s*\|\s*(.*)$/;
-const FIELD_PIPE_RE = /^(T|A|O|I|G|C)\s*\|\s*(.*)$/;
-const TITLE_OUTSIDE_PIPE_RE = /^T\s*\|\s*(.*)$/;
-
-// Any header marker (used to decide whether a line is a “continuation” in legacy mode)
-const ANY_HEADER_RE = /^(?:\^sprout-\d{9}|(?:Q|MCQ|CQ|IO|T|A|O|I|G|C)\s*\|)\s*/;
-
-type CardType = "basic" | "mcq" | "cloze" | "io";
+type CardType = "basic" | "reversed" | "mcq" | "cloze" | "io" | "oq";
 
 export type McqOption = { text: string; isCorrect: boolean };
 
@@ -62,6 +64,11 @@ export type ParsedCard = {
   ioOcclusionsRaw: string | null; // raw JSON text from O | ... |
   occlusions: unknown[] | null; // parsed array, if valid
   maskMode: "solo" | "all" | null; // from C | solo/all |
+
+  // OQ: ordering question
+  oqSteps: string[] | null; // ordered list of steps (correct order)
+  /** @internal Parser-only: index of the step currently being accumulated. */
+  _oqCurrentStepIdx?: number;
 
   // shared
   info: string | null;
@@ -119,27 +126,9 @@ function normaliseMultiline(s: string | null): string | null {
   return s.replace(/[ \t]+\n/g, "\n").trim();
 }
 
-/**
- * For pipe-delimited fields (KEY | ... |):
- * - Field ends when a line ends with an unescaped '|' (ignoring trailing whitespace).
- * - Literal '|' in content can be written as \|
- * - Literal '\' can be written as \\
- */
-function stripClosingPipe(line: string): { text: string; closed: boolean } {
-  const trimmedRight = line.replace(/[ \t]+$/g, "");
-  if (!trimmedRight.endsWith("|")) return { text: line, closed: false };
-
-  let bs = 0;
-  for (let i = trimmedRight.length - 2; i >= 0 && trimmedRight[i] === "\\"; i--) bs++;
-
-  if (bs % 2 === 1) return { text: line, closed: false };
-
-  return { text: trimmedRight.slice(0, -1), closed: true };
-}
-
-function unescapePipeText(s: string): string {
-  return s.replace(/\\\\/g, "\\").replace(/\\\|/g, "|");
-}
+// stripClosingPipe and unescapePipeText are now in core/delimiter.ts
+const stripClosingPipe = stripClosingDelimiter;
+const unescapePipeText = unescapeDelimiterText;
 
 
 function normaliseGroupPathLocal(raw: string): string | null {
@@ -164,8 +153,10 @@ function parseGroups(raw: string | null): string[] | null {
   const flat = raw.replace(/\r?\n/g, " ").trim();
   if (!flat) return null;
 
+  // Split on comma and the active delimiter
+  const delimRe = new RegExp(`[,${escapeDelimiterRe()}]`, "g");
   const parts = flat
-    .split(/[,;|]/g)
+    .split(delimRe)
     .map((s) => normaliseGroupPathLocal(s))
     .filter((x): x is string => !!x);
 
@@ -200,9 +191,9 @@ function makeEmptyCard(
   startLine: number,
   pendingId: string | null,
   pendingTitle: string | null,
-  kind: "Q" | "MCQ" | "CQ" | "IO",
+  kind: "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "OQ",
 ): ParsedCard {
-  const type: CardType = kind === "Q" ? "basic" : kind === "MCQ" ? "mcq" : kind === "CQ" ? "cloze" : "io";
+  const type: CardType = kind === "Q" ? "basic" : kind === "RQ" ? "reversed" : kind === "MCQ" ? "mcq" : kind === "CQ" ? "cloze" : kind === "OQ" ? "oq" : "io";
 
   return {
     id: pendingId || null,
@@ -230,6 +221,8 @@ function makeEmptyCard(
     ioOcclusionsRaw: null,
     occlusions: null,
     maskMode: null,
+
+    oqSteps: null,
 
     info: null,
 
@@ -272,7 +265,7 @@ export function parseCardsFromText(
   let current: ParsedCard | null = null;
 
   let currentField: CurrentFieldKey | null = null;
-  let pipeField: CurrentFieldKey | "mcqOption" | null = null;
+  let pipeField: CurrentFieldKey | "mcqOption" | "oqStepField" | null = null;
 
 
   const flush = () => {
@@ -310,36 +303,42 @@ export function parseCardsFromText(
 
     current.groups = parseGroups(current.groupsRaw);
 
-    if (current.type === "basic") {
+    if (current.type === "basic" || current.type === "reversed") {
       if (!current.q) current.errors.push("Missing Q:");
       if (!current.a) current.errors.push("Missing A:");
     } else if (current.type === "mcq") {
       if (!current.stem) current.errors.push("Missing MCQ:");
-      // New MCQ format: A | ... | (correct), O | ... | (>=1 wrong)
-      const correct = current.a && current.a.trim();
-      // Remove any wrong options that match the answer (regardless of order)
-      let wrongs = Array.isArray(current.options)
-        ? current.options.filter(o => !o.isCorrect && o.text && o.text.trim())
-        : [];
-      if (correct) {
-        wrongs = wrongs.filter(o => o.text.trim() !== correct);
+
+      // Collect correct and wrong options from the options array
+      // (A | lines are pushed as isCorrect:true, O | lines as isCorrect:false)
+      const allOpts = Array.isArray(current.options) ? current.options : [];
+      // Also support legacy: if current.a is set but no correct options exist in the array
+      const correctFromA = current.a && current.a.trim() ? current.a.trim() : null;
+      let corrects = allOpts.filter(o => o.isCorrect && o.text && o.text.trim());
+      let wrongs = allOpts.filter(o => !o.isCorrect && o.text && o.text.trim());
+
+      // Legacy compat: if no correct options in array but current.a exists, treat it as a single correct
+      if (corrects.length === 0 && correctFromA) {
+        corrects = [{ text: correctFromA, isCorrect: true }];
+        // Remove wrongs that duplicate the answer
+        wrongs = wrongs.filter(o => o.text.trim() !== correctFromA);
       }
-      const wrongTexts = wrongs.map(o => o.text.trim());
-      if (!correct) {
-        current.errors.push("MCQ requires exactly one A | correct answer | line.");
+
+      if (corrects.length < 1) {
+        current.errors.push("MCQ requires at least one A | correct answer | line.");
       }
       if (wrongs.length < 1) {
         current.errors.push("MCQ requires at least one O | wrong option | line.");
       }
-      // Set canonical options: correct first, then wrongs, filter out empty/whitespace options
-      if (correct && wrongs.length >= 1) {
-        const allOptions = [
-          { text: correct, isCorrect: true },
-          ...wrongTexts.map(text => ({ text, isCorrect: false })),
-        ];
-        // Filter out any options with empty or whitespace-only text
-        current.options = allOptions.filter(opt => opt.text && opt.text.trim().length > 0);
-        current.correctIndex = 0;
+      // Set canonical options: corrects first, then wrongs, filter out empty/whitespace
+      if (corrects.length >= 1 && wrongs.length >= 1) {
+        const correctTexts = corrects.map(o => ({ text: o.text.trim(), isCorrect: true }));
+        const wrongTexts = wrongs.map(o => ({ text: o.text.trim(), isCorrect: false }));
+        const finalOptions = [...correctTexts, ...wrongTexts].filter(opt => opt.text.length > 0);
+        current.options = finalOptions;
+        current.correctIndex = 0; // backward compat: first correct
+        // Also set legacy current.a to the first correct answer
+        current.a = correctTexts[0]?.text ?? null;
       }
     } else if (current.type === "cloze") {
       if (!current.clozeText) current.errors.push("Missing CQ:");
@@ -368,6 +367,17 @@ export function parseCardsFromText(
       // mask mode is optional; if present must be solo/all
       const mm = String(current.maskMode ?? "").trim();
       if (mm && mm !== "solo" && mm !== "all") current.errors.push('IO mask mode must be "solo" or "all".');
+    } else if (current.type === "oq") {
+      if (!current.q) current.errors.push("Missing OQ question.");
+      // Clean up steps: trim whitespace, remove empty trailing entries
+      if (current.oqSteps) {
+        current.oqSteps = current.oqSteps.map(s => (s || "").trim()).filter(Boolean);
+      }
+      const steps = current.oqSteps || [];
+      if (steps.length < 2) current.errors.push("OQ requires at least 2 numbered steps (1 | ... |, 2 | ... |).");
+      if (steps.length > 20) current.errors.push("OQ supports a maximum of 20 steps.");
+      // Clean up internal field
+      delete (current as unknown)._oqCurrentStepIdx;
     }
 
     cards.push(current);
@@ -412,6 +422,12 @@ export function parseCardsFromText(
           const lastOption = current.options[current.options.length - 1];
           lastOption.text = (lastOption.text ? lastOption.text + "\n" : "") + chunk;
         }
+      } else if (pipeField === "oqStepField") {
+        // Continuation of a numbered OQ step
+        const idx = (current as Record<string, unknown>)._oqCurrentStepIdx;
+        if (current.oqSteps && typeof idx === "number" && idx >= 0 && idx < current.oqSteps.length) {
+          current.oqSteps[idx] = (current.oqSteps[idx] ? current.oqSteps[idx] + "\n" : "") + chunk;
+        }
       } else {
         appendToField(current, pipeField, chunk);
       }
@@ -446,7 +462,7 @@ export function parseCardsFromText(
 
     // 5) Pending title outside card (pipe)
     if (!current) {
-      const tpipe = line.match(TITLE_OUTSIDE_PIPE_RE);
+      const tpipe = line.match(TITLE_OUTSIDE_DELIM_RE());
       if (tpipe) {
         const { text: rawText, closed } = stripClosingPipe(tpipe[1] || "");
         const chunk = unescapePipeText(rawText);
@@ -458,14 +474,14 @@ export function parseCardsFromText(
     }
 
     // 6) Legacy multiline pending title continuation
-    if (!current && pendingTitleFieldOpen && !ANY_HEADER_RE.test(line)) {
+    if (!current && pendingTitleFieldOpen && !ANY_HEADER_DELIM_RE().test(line)) {
       pendingTitle = (pendingTitle || "") + "\n" + line;
       continue;
     }
 
     // --- IO prompt field inside IO card: "Q | ... |" must NOT start a new card ---
     if (current && current.type === "io") {
-      const qm = /^Q\s*\|\s*(.*)$/.exec(line);
+      const qm = new RegExp(`^Q\\s*${escapeDelimiterRe()}\\s*(.*)$`).exec(line);
       if (qm) {
         const restRaw = qm[1] ?? "";
         const { text: rawText, closed } = stripClosingPipe(restRaw);
@@ -481,11 +497,11 @@ export function parseCardsFromText(
     }
 
     // 8) Card start (pipe)
-    const sp = line.match(CARD_START_PIPE_RE);
+    const sp = line.match(CARD_START_DELIM_RE());
     if (sp) {
       flush();
 
-      const kind = sp[1] as "Q" | "MCQ" | "CQ" | "IO";
+      const kind = sp[1] as "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "OQ";
       const startLine = pendingIdLine !== null ? pendingIdLine : i;
 
       current = makeEmptyCard(notePath, startLine, pendingId, pendingTitle, kind);
@@ -500,13 +516,14 @@ export function parseCardsFromText(
       const { text: rawText, closed } = stripClosingPipe(restRaw);
       const first = unescapePipeText(rawText);
 
-      if (kind === "Q") current.q = "";
+      if (kind === "Q" || kind === "RQ") current.q = "";
       if (kind === "MCQ") current.stem = "";
       if (kind === "CQ") current.clozeText = "";
       if (kind === "IO") current.ioSrc = "";
+      if (kind === "OQ") { current.q = ""; current.oqSteps = []; }
 
       const key: CurrentFieldKey =
-        kind === "Q"
+        kind === "Q" || kind === "RQ" || kind === "OQ"
           ? "q"
           : kind === "MCQ"
             ? "stem"
@@ -523,12 +540,28 @@ export function parseCardsFromText(
     }
 
     // 9) Field inside card (pipe)
-    const fp = current ? line.match(FIELD_PIPE_RE) : null;
+    const fp = current ? line.match(FIELD_DELIM_RE()) : null;
     if (fp && current) {
-      const key = fp[1] as "T" | "A" | "O" | "I" | "G" | "C" | "L";
+      const key = fp[1];
       const restRaw = fp[2] ?? "";
       const { text: rawText, closed } = stripClosingPipe(restRaw);
       const chunk = unescapePipeText(rawText);
+
+      // OQ numbered step fields (1 | ... |, 2 | ... |, etc.)
+      if (current.type === "oq" && /^\d{1,2}$/.test(key)) {
+        const stepNum = Number(key);
+        if (stepNum >= 1 && stepNum <= 20) {
+          if (!current.oqSteps) current.oqSteps = [];
+          // Ensure the step array is large enough (steps may arrive out of order)
+          while (current.oqSteps.length < stepNum) current.oqSteps.push("");
+          // Accumulate content for this step (pipe field may be multi-line)
+          current._oqCurrentStepIdx = stepNum - 1;
+          current.oqSteps[stepNum - 1] = chunk;
+          pipeField = closed ? null : "oqStepField";
+          currentField = null;
+          continue;
+        }
+      }
 
       // IO-specific fields first (so they don't get misinterpreted as MCQ)
       if (current.type === "io") {
@@ -549,8 +582,8 @@ export function parseCardsFromText(
           } else {
             current.errors.push('IO mask mode must be "solo" or "all".');
           }
-          // allow multiline but treat as raw accumulation (rare); keep last line
-          pipeField = closed ? null : null;
+          // C | is always a single keyword (solo/all), but if left open consume remaining lines
+          pipeField = closed ? null : "maskMode";
           currentField = null;
           continue;
         }
@@ -597,9 +630,11 @@ export function parseCardsFromText(
         continue;
       }
       if (current.type === "mcq" && key === "A") {
-        current.a = current.a ?? null;
-        appendToField(current, "a", chunk);
-        pipeField = closed ? null : "a";
+        // Multi-answer MCQ: each A | line becomes a correct option
+        if (!current.options) current.options = [];
+        current.options.push({ text: chunk, isCorrect: true });
+        // If not closed, track that we're building this option (reuse mcqOption)
+        pipeField = closed ? null : "mcqOption";
         currentField = null;
         continue;
       }
@@ -646,14 +681,14 @@ export function parseCardsFromText(
     }
 
     // 10) Legacy continuation lines
-    if (current && currentField && !ANY_HEADER_RE.test(line)) {
+    if (current && currentField && !ANY_HEADER_DELIM_RE().test(line)) {
       const prev = current[currentField];
       (current as Record<string, unknown>)[currentField] = (prev ? String(prev) + "\n" : "") + line;
       continue;
     }
 
     // 14) Prose encountered while inside a card but not consuming a field => flush
-    if (current && !pipeField && !currentField && !ANY_HEADER_RE.test(line)) {
+    if (current && !pipeField && !currentField && !ANY_HEADER_DELIM_RE().test(line)) {
       flush();
       pendingId = null;
       pendingIdLine = null;

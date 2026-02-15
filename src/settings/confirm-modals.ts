@@ -18,6 +18,15 @@ import type SproutPlugin from "../main";
 import { log } from "../core/logger";
 import type { DataJsonBackupStats } from "../sync/backup";
 import { restoreFromDataJsonBackup } from "../sync/backup";
+import { scopeModalToWorkspace } from "../modals/modal-utils";
+
+type ConfirmButtonKind = "default" | "danger";
+
+function styleConfirmActionButton(button: HTMLButtonElement, kind: ConfirmButtonKind = "default") {
+  button.type = "button";
+  button.classList.add("bc", "btn-outline", "inline-flex", "items-center", "gap-2", "h-9", "px-3", "text-sm", "sprout-settings-action-btn");
+  if (kind === "danger") button.classList.add("sprout-btn-danger");
+}
 
 // ────────────────────────────────────────────
 // 1) ConfirmResetSchedulingModal
@@ -37,21 +46,24 @@ export class ConfirmResetSchedulingModal extends Modal {
   }
 
   onOpen() {
+    this.containerEl.addClass("sprout-confirm-modal");
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Reset scheduling for all cards?").setHeading();
+    new Setting(contentEl).setName("Reset scheduling?").setHeading();
     contentEl.createEl("p", {
-      text: "This resets all cards to new and clears scheduling fields. This cannot be undone. Consider creating a backup first.",
+      text: "All cards will be reset to new. This can be restored from a backup.",
     });
 
     const row = contentEl.createDiv();
     row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
+    styleConfirmActionButton(cancelBtn, "default");
     cancelBtn.onclick = () => this.close();
 
-    const resetBtn = row.createEl("button", { text: "Reset scheduling (no undo)" });
+    const resetBtn = row.createEl("button", { text: "Reset" });
+    styleConfirmActionButton(resetBtn, "danger");
     resetBtn.onclick = async () => {
       this.close();
       try {
@@ -87,21 +99,24 @@ export class ConfirmResetAnalyticsModal extends Modal {
   }
 
   onOpen() {
+    this.containerEl.addClass("sprout-confirm-modal");
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Reset all analytics data?").setHeading();
+    new Setting(contentEl).setName("Reset analytics?").setHeading();
     contentEl.createEl("p", {
-      text: "This clears all review history, heatmaps, statistics, and analytics events. Scheduling data (due dates, intervals) will be preserved. This cannot be undone. Consider creating a backup first.",
+      text: "All review history and statistics will be cleared. Scheduling is preserved. This can be restored from a backup.",
     });
 
     const row = contentEl.createDiv();
     row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
+    styleConfirmActionButton(cancelBtn, "default");
     cancelBtn.onclick = () => this.close();
 
-    const resetBtn = row.createEl("button", { text: "Reset analytics (no undo)" });
+    const resetBtn = row.createEl("button", { text: "Reset" });
+    styleConfirmActionButton(resetBtn, "danger");
     resetBtn.onclick = async () => {
       this.close();
       try {
@@ -140,30 +155,25 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
   }
 
   onOpen() {
+    this.containerEl.addClass("sprout-confirm-modal");
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Delete all flashcards in this vault?").setHeading();
+    new Setting(contentEl).setName("Delete all flashcards?").setHeading();
 
-    const p = contentEl.createEl("p");
-    p.setText(
-      [
-        "This will permanently delete Sprout flashcards from your notes and database.",
-        "",
-        "It removes all Q/MCQ/CQ blocks (and their T/A/O/I lines), removes all ^sprout-######### anchors, and clears Sprout data.",
-        "",
-        "This cannot be undone.",
-      ].join("\n"),
-    );
+    contentEl.createEl("p", {
+      text: "All flashcards will be permanently removed from your notes and database. Restore is only possible from a vault backup.",
+    });
 
     const row = contentEl.createDiv();
     row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
+    styleConfirmActionButton(cancelBtn, "default");
     cancelBtn.onclick = () => this.close();
 
-    const deleteBtn = row.createEl("button", { text: "Delete all flashcards" });
-    deleteBtn.classList.add("sprout-btn-danger");
+    const deleteBtn = row.createEl("button", { text: "Delete all" });
+    styleConfirmActionButton(deleteBtn, "danger");
     deleteBtn.onclick = async () => {
       this.close();
       try {
@@ -198,22 +208,24 @@ export class ConfirmResetDefaultsModal extends Modal {
   }
 
   onOpen() {
+    this.containerEl.addClass("sprout-confirm-modal");
     const { contentEl } = this;
     contentEl.empty();
 
-    new Setting(contentEl).setName("Reset settings to defaults?").setHeading();
+    new Setting(contentEl).setName("Reset settings?").setHeading();
     contentEl.createEl("p", {
-      text: "This resets settings back to their defaults. It does not delete cards or change scheduling. This cannot be undone.",
+      text: "All settings will be restored to defaults. Cards and scheduling are not affected.",
     });
 
     const row = contentEl.createDiv();
     row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
+    styleConfirmActionButton(cancelBtn, "default");
     cancelBtn.onclick = () => this.close();
 
-    const resetBtn = row.createEl("button", { text: "Reset settings" });
-    resetBtn.classList.add("sprout-btn-danger");
+    const resetBtn = row.createEl("button", { text: "Reset" });
+    styleConfirmActionButton(resetBtn, "danger");
     resetBtn.onclick = async () => {
       this.close();
       try {
@@ -241,6 +253,7 @@ export type CurrentDbSnapshot = {
   reviewLog: number;
   quarantine: number;
   io: number;
+  analyticsEvents?: number;
 };
 
 /**
@@ -265,6 +278,7 @@ export class BackupCompareModal extends Modal {
   }
 
   onOpen() {
+    scopeModalToWorkspace(this);
     const { contentEl } = this;
     contentEl.empty();
 
@@ -323,6 +337,7 @@ export class BackupCompareModal extends Modal {
     row.classList.add("sprout-confirm-row-lg");
 
     const closeBtn = row.createEl("button", { text: "Close" });
+    styleConfirmActionButton(closeBtn, "default");
     closeBtn.onclick = () => this.close();
   }
 
@@ -388,6 +403,7 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     add("States", this.current.states, this.backup.states);
     add("Review log", this.current.reviewLog, this.backup.reviewLog);
+    add("Analytics events", this.current.analyticsEvents ?? 0, this.backup.analyticsEvents ?? 0);
     const hint = contentEl.createDiv({ cls: "sprout-confirm-hint" });
     hint.createDiv({
       cls: "sprout-confirm-hint-title",
@@ -395,7 +411,7 @@ export class ConfirmRestoreBackupModal extends Modal {
     });
     hint.createDiv({
       cls: "sprout-confirm-hint-body",
-      text: `Card content (${this.current.cards} cards) is unchanged. Restore does not edit markdown notes; it only restores scheduling data.`,
+      text: `Card content (${this.current.cards} cards) is unchanged. Restore does not edit markdown notes; it only restores scheduling and analytics data.`,
     });
 
     /* ── safety-backup checkbox ── */
@@ -418,10 +434,11 @@ export class ConfirmRestoreBackupModal extends Modal {
     row.classList.add("sprout-confirm-row-lg");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
+    styleConfirmActionButton(cancelBtn, "default");
     cancelBtn.onclick = () => this.close();
 
     const restoreBtn = row.createEl("button", { text: "Restore backup" });
-    restoreBtn.classList.add("sprout-btn-danger");
+    styleConfirmActionButton(restoreBtn, "danger");
 
     restoreBtn.onclick = async () => {
       restoreBtn.setAttr("disabled", "true");
@@ -479,10 +496,11 @@ export class ConfirmDeleteBackupModal extends Modal {
     row.classList.add("sprout-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: "Cancel" });
+    styleConfirmActionButton(cancelBtn, "default");
     cancelBtn.onclick = () => this.close();
 
     const deleteBtn = row.createEl("button", { text: "Delete backup" });
-    deleteBtn.classList.add("sprout-btn-danger");
+    styleConfirmActionButton(deleteBtn, "danger");
     deleteBtn.onclick = async () => {
       this.close();
       try {

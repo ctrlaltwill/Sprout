@@ -14,7 +14,7 @@
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
-import { queryFirst, setCssProps } from "../core/ui";
+import { placePopover, queryFirst } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
 import { syncOneFile } from "../sync/sync-engine";
 
@@ -29,6 +29,7 @@ import {
   formatPipeField,
   createModalCardEditor,
   setModalTitle,
+  scopeModalToWorkspace,
   type ModalCardFieldKey,
   type ModalCardEditorResult,
   type ClipboardImage,
@@ -53,6 +54,8 @@ export class CardCreatorModal extends Modal {
   private plugin: SproutPlugin;
   private forcedType?: CardType;
   private pendingImages: Map<string, PendingImage> = new Map();
+  private _ioPasteHandler: ((ev: ClipboardEvent) => void) | null = null;
+  private _ioBlobUrl: string | null = null;
 
   constructor(app: App, plugin: SproutPlugin, forcedType?: CardType) {
     super(app);
@@ -145,6 +148,7 @@ export class CardCreatorModal extends Modal {
   onOpen() {
     setModalTitle(this, "Add flashcard");
 
+    scopeModalToWorkspace(this);
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");
@@ -181,15 +185,18 @@ export class CardCreatorModal extends Modal {
     let cardEditor: ModalCardEditorResult | null = null;
     let currentType: CardType = this.forcedType || "basic";
     const typeLabelFor = (type: CardType) => {
+      if (type === "reversed") return "Basic (Reversed)";
       if (type === "cloze") return "Cloze";
       if (type === "mcq") return "Multiple choice";
+      if (type === "oq") return "Ordered question";
       return "Basic";
     };
-    const isTypeMenuOption = (type: CardType) => type === "basic" || type === "cloze" || type === "mcq";
+    const isTypeMenuOption = (type: CardType) => type === "basic" || type === "reversed" || type === "cloze" || type === "mcq" || type === "oq";
     let updateTypeMenuLabel: () => void = () => {};
     const setType = (next: CardType) => {
       currentType = next;
-      typeSel.value = next;
+      if (next === "reversed") typeSel.value = "basic";
+      else typeSel.value = next === "mcq" ? "mcq" : next === "cloze" ? "cloze" : "basic";
       renderCardEditor();
       syncVisibility();
       updateTypeMenuLabel();
@@ -200,9 +207,13 @@ export class CardCreatorModal extends Modal {
     }
 
     // Popover-based type menu (uses inline popover for compatibility)
-    const typeMenuRow = body.createDiv({ cls: "bc flex flex-col gap-1 items-start" });
-    typeMenuRow.createEl("label", { cls: "bc text-sm font-medium", text: "Type" });
-    const typeMenuWrap = typeMenuRow.createDiv({ cls: "bc sprout relative inline-flex" });
+    // Layout requirement: show the card type selector in the left half of a 1x2 grid, with an empty right column.
+    const typeMenuGrid = body.createDiv({ cls: "bc grid grid-cols-2 gap-4 items-start w-full" });
+    const typeMenuLeft = typeMenuGrid.createDiv({ cls: "bc flex flex-col gap-1 items-start" });
+    typeMenuGrid.createDiv({ cls: "bc" });
+
+    typeMenuLeft.createEl("label", { cls: "bc text-sm font-medium", text: "Type" });
+    const typeMenuWrap = typeMenuLeft.createDiv({ cls: "bc sprout relative inline-flex" });
     const typeMenuBtn = typeMenuWrap.createEl("button", {
       cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
     });
@@ -238,14 +249,16 @@ export class CardCreatorModal extends Modal {
     let typeMenuOpen = false;
     const typeOptions: Array<{ value: CardType; label: string }> = [
       { value: "basic", label: "Basic" },
+      { value: "reversed", label: "Basic (Reversed)" },
       { value: "cloze", label: "Cloze" },
       { value: "mcq", label: "Multiple Choice" },
+      { value: "oq", label: "Ordered question" },
     ];
 
     updateTypeMenuLabel = () => {
       typeMenuBtnText.textContent = typeLabelFor(currentType);
       const show = isTypeMenuOption(currentType);
-      typeMenuRow.classList.toggle("sprout-is-hidden", !show);
+      typeMenuGrid.classList.toggle("sprout-is-hidden", !show);
     };
     updateTypeMenuLabel();
 
@@ -259,16 +272,10 @@ export class CardCreatorModal extends Modal {
       typeMenuOpen = false;
     };
 
-    const placeTypeMenu = () => {
-      const r = typeMenuBtn.getBoundingClientRect();
-      const margin = 8;
-      const width = 180;
-      const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
-      const top = r.bottom + 6;
-      setCssProps(typePopover, "--sprout-popover-left", `${left}px`);
-      setCssProps(typePopover, "--sprout-popover-top", `${top}px`);
-      setCssProps(typePopover, "--sprout-popover-width", `${width}px`);
-    };
+    const placeTypeMenu = () => placePopover({
+      trigger: typeMenuBtn, panel: typeMenu, popoverEl: typePopover,
+      width: 180,
+    });
 
     const buildTypeMenu = () => {
       while (typeMenu.firstChild) typeMenu.removeChild(typeMenu.firstChild);
@@ -362,7 +369,7 @@ export class CardCreatorModal extends Modal {
       editorContainer.empty();
       try {
         cardEditor = createModalCardEditor({
-          type: currentType,
+          type: currentType === "reversed" ? "basic" : currentType,
           locationPath: path,
           locationTitle: path ? `Target: ${path}` : "Target: (no active note)",
           plugin: this.plugin,
@@ -470,8 +477,14 @@ export class CardCreatorModal extends Modal {
     ioWrap.appendChild(ioPasteZone);
 
     const updateIOPreview = () => {
+      // Revoke previous blob URL to prevent memory leak
+      if (this._ioBlobUrl) {
+        URL.revokeObjectURL(this._ioBlobUrl);
+        this._ioBlobUrl = null;
+      }
       if (ioImageData) {
-        ioImgElement.src = URL.createObjectURL(new Blob([ioImageData.data], { type: ioImageData.mime }));
+        this._ioBlobUrl = URL.createObjectURL(new Blob([ioImageData.data], { type: ioImageData.mime }));
+        ioImgElement.src = this._ioBlobUrl;
         ioImageInfo.textContent = `${ioImageData.mime} • ${(ioImageData.data.byteLength / 1024).toFixed(1)} KB`;
         ioImageName.textContent = "Ready to save and edit occlusions";
         ioImagePreview.classList.remove("sprout-is-hidden");
@@ -512,7 +525,8 @@ export class CardCreatorModal extends Modal {
       }
     };
 
-    document.addEventListener("paste", (ev) => { void handleIoPaste(ev); });
+    this._ioPasteHandler = (ev: ClipboardEvent) => { void handleIoPaste(ev); };
+    document.addEventListener("paste", this._ioPasteHandler);
 
     const syncVisibility = () => {
       const showIo = currentType === "io";
@@ -614,11 +628,11 @@ export class CardCreatorModal extends Modal {
         // Build the pipe-format card block
         const block: string[] = [];
 
-        if (type === "basic") {
+        if (type === "basic" || type === "reversed") {
           if (!requireNonEmpty(questionVal, "Basic requires a question.")) return;
           if (!requireNonEmpty(answerVal, "Basic requires an answer.")) return;
           if (titleVal) block.push(...formatPipeField("T", titleVal));
-          block.push(...formatPipeField("Q", questionVal));
+          block.push(...formatPipeField(currentType === "reversed" ? "RQ" : "Q", questionVal));
           block.push(...formatPipeField("A", answerVal));
         } else if (type === "cloze") {
           if (!requireNonEmpty(questionVal, "Cloze requires text with at least one {{cN::...}} token.")) return;
@@ -632,19 +646,17 @@ export class CardCreatorModal extends Modal {
         } else if (type === "mcq") {
           if (!requireNonEmpty(questionVal, "Multiple choice requires a stem.")) return;
           const mcqValues = cardEditor.getMcqOptions?.();
-          const correct = typeof mcqValues?.correct === "string"
-            ? mcqValues.correct.trim()
-            : typeof mcqValues?.correct === "number"
-              ? String(mcqValues.correct).trim()
-              : "";
-          const wrongs = (mcqValues?.wrongs || [])
-            .map((x: unknown) => {
-              if (typeof x === "string") return x.trim();
-              if (typeof x === "number") return String(x).trim();
-              return "";
-            })
+          const corrects = (mcqValues?.corrects || [])
+            .map((x: unknown) => (typeof x === "string" ? x.trim() : typeof x === "number" ? String(x).trim() : ""))
             .filter(Boolean);
-          if (!requireNonEmpty(correct, "Multiple Choice requires a correct option")) return;
+          const wrongs = (mcqValues?.wrongs || [])
+            .map((x: unknown) => (typeof x === "string" ? x.trim() : typeof x === "number" ? String(x).trim() : ""))
+            .filter(Boolean);
+          if (corrects.length < 1) {
+            new Notice(`Multiple choice requires at least one correct option`);
+            focusFirstField(cardEditor.root);
+            return;
+          }
           if (wrongs.length < 1) {
             new Notice(`Multiple choice requires at least one wrong option`);
             focusFirstField(cardEditor.root);
@@ -653,7 +665,25 @@ export class CardCreatorModal extends Modal {
           if (titleVal) block.push(...formatPipeField("T", titleVal));
           block.push(...formatPipeField("MCQ", questionVal));
           for (const wrong of wrongs) block.push(...formatPipeField("O", wrong));
-          block.push(...formatPipeField("A", correct));
+          for (const c of corrects) block.push(...formatPipeField("A", c));
+        } else if (type === "oq") {
+          if (!requireNonEmpty(questionVal, "Ordering requires a question.")) return;
+          const steps = cardEditor.getOqSteps?.() || [];
+          if (steps.length < 2) {
+            new Notice("Ordering requires at least 2 steps.");
+            focusFirstField(cardEditor.root);
+            return;
+          }
+          if (steps.length > 20) {
+            new Notice("Ordering supports a maximum of 20 steps.");
+            focusFirstField(cardEditor.root);
+            return;
+          }
+          if (titleVal) block.push(...formatPipeField("T", titleVal));
+          block.push(...formatPipeField("OQ", questionVal));
+          for (let i = 0; i < steps.length; i++) {
+            block.push(...formatPipeField(String(i + 1) as unknown, steps[i]));
+          }
         } else {
           new Notice(`Unsupported card type`);
           return;
@@ -669,23 +699,18 @@ export class CardCreatorModal extends Modal {
           finalContent = await this.savePendingImages(active, finalContent);
         }
 
-        await insertTextAtCursorOrAppend(active, finalContent);
+        await insertTextAtCursorOrAppend(active, finalContent, true);
         this.close();
 
-        // Auto-sync after a short delay so the new block gets picked up
-        setTimeout(() => {
-          void (async () => {
-            try {
-              const res = await syncOneFile(this.plugin, active);
-              new Notice(
-                `Added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
-              );
-            } catch (e: unknown) {
-              log.error("sync failed", e);
-              new Notice(`Sync failed (${e instanceof Error ? e.message : String(e)})`);
-            }
-          })();
-        }, 1000);
+        try {
+          const res = await syncOneFile(this.plugin, active);
+          new Notice(
+            `Added + synced — ${res.newCount} new; ${res.updatedCount} updated; ${res.sameCount} unchanged; ${res.idsInserted} IDs inserted.`,
+          );
+        } catch (e: unknown) {
+          log.error("sync failed", e);
+          new Notice(`Sync failed (${e instanceof Error ? e.message : String(e)})`);
+        }
       } catch (e: unknown) {
         log.error("add failed", e);
         new Notice(`Add failed (${e instanceof Error ? e.message : String(e)})`);
@@ -695,6 +720,18 @@ export class CardCreatorModal extends Modal {
   }
 
   onClose() {
+    // Remove global IO paste listener
+    if (this._ioPasteHandler) {
+      document.removeEventListener("paste", this._ioPasteHandler);
+      this._ioPasteHandler = null;
+    }
+
+    // Revoke any active blob URL
+    if (this._ioBlobUrl) {
+      URL.revokeObjectURL(this._ioBlobUrl);
+      this._ioBlobUrl = null;
+    }
+
     // Discard any unsaved pending images
     this.pendingImages.clear();
 

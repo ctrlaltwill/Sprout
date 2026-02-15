@@ -23,4 +23,14 @@ describe("scope matching", () => {
     expect(matchesScope(scope, "Decks/Sub/Card.md")).toBe(true);
     expect(matchesScope(scope, "Decks/Other/Card.md")).toBe(false);
   });
+
+  it("group scope returns false (resolved elsewhere)", () => {
+    const scope: Scope = { type: "group", key: "anatomy", name: "anatomy" };
+    expect(matchesScope(scope, "Any/Path.md")).toBe(false);
+  });
+
+  it("unknown scope type returns false (fail-closed)", () => {
+    const scope = { type: "nonsense", key: "", name: "" } as unknown as Scope;
+    expect(matchesScope(scope, "Any/Path.md")).toBe(false);
+  });
 });

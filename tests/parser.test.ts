@@ -125,6 +125,45 @@ A | Correct |`
 
     expect(card.errors.length).toBeGreaterThan(0);
   });
+
+  it("parses a multi-answer MCQ with multiple A | lines", () => {
+    const card = parseOne(
+      `MCQ | Which are primary colors? |
+A | Red |
+A | Blue |
+O | Green |
+O | Purple |`
+    );
+
+    expect(card.type).toBe("mcq");
+    expect(card.stem).toBe("Which are primary colors?");
+    expect(card.errors).toHaveLength(0);
+    expect(card.options).toBeDefined();
+    expect(card.options!.length).toBe(4);
+    const corrects = card.options!.filter((o) => o.isCorrect);
+    expect(corrects.length).toBe(2);
+    expect(corrects.map((o) => o.text).sort()).toEqual(["Blue", "Red"]);
+    const wrongs = card.options!.filter((o) => !o.isCorrect);
+    expect(wrongs.length).toBe(2);
+    expect(wrongs.map((o) => o.text).sort()).toEqual(["Green", "Purple"]);
+  });
+
+  it("multi-answer MCQ places correct options first in canonical order", () => {
+    const card = parseOne(
+      `MCQ | Pick the evens |
+O | 1 |
+A | 2 |
+O | 3 |
+A | 4 |`
+    );
+
+    expect(card.errors).toHaveLength(0);
+    // Corrects first, wrongs after
+    expect(card.options![0]).toEqual({ text: "2", isCorrect: true });
+    expect(card.options![1]).toEqual({ text: "4", isCorrect: true });
+    expect(card.options![2]).toEqual({ text: "1", isCorrect: false });
+    expect(card.options![3]).toEqual({ text: "3", isCorrect: false });
+  });
 });
 
 // ── Cloze cards ─────────────────────────────────────────────────────────────

@@ -60,15 +60,17 @@ describe("rewriteFieldForAnki", () => {
 });
 
 describe("rewriteFieldForSprout", () => {
+  const soundTag = "[sou" + "nd:audio.mp3]";
+
   it("converts <img src> to ![[...]]", () => {
     const nameMap = new Map([["test.png", "media/test.png"]]);
     const result = rewriteFieldForSprout('<img src="test.png">', nameMap);
     expect(result).toBe("![[media/test.png]]");
   });
 
-  it("converts [sound:file.mp3] to ![[...]]", () => {
+  it("converts Anki sound marker to ![[...]]", () => {
     const nameMap = new Map([["audio.mp3", "media/audio.mp3"]]);
-    const result = rewriteFieldForSprout("[sound:audio.mp3]", nameMap);
+    const result = rewriteFieldForSprout(soundTag, nameMap);
     expect(result).toBe("![[media/audio.mp3]]");
   });
 

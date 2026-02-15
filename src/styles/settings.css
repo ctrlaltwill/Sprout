@@ -3,11 +3,1001 @@
    Mirrors the changelog table structure (native <table>) from tables.css.
    ========================================================================== */
 
+/* ── Settings redirect notice (shown in Obsidian settings modal) ── */
+
+.sprout-settings-redirect-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 16px 20px;
+  border-radius: var(--radius-m, 8px);
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+}
+
+.sprout-settings-redirect-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.sprout-settings-redirect-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sprout-settings-redirect-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sprout-settings-redirect-text p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+}
+
+.sprout-settings-redirect-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-ui-small);
+  font-weight: 500;
+  color: var(--text-accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sprout-settings-redirect-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   GUIDE TAB — Horizontal nav buttons + rendered markdown content
+   ========================================================================== */
+
+.sprout-guide-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+  background: var(--background-primary);
+}
+
+/* ---- Category navigation with hover dropdowns ---- */
+
+.sprout-guide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: visible;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  position: relative;
+  z-index: 10;
+}
+
+/* ---- Release notes nav (horizontal scroll with edge fades) ---- */
+
+.sprout-release-nav-frame {
+  position: relative;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  overflow: hidden;
+}
+
+.sprout-release-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+
+.sprout-release-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sprout-release-nav-btn {
+  flex: 0 0 auto;
+}
+
+.sprout-release-nav-frame::before,
+.sprout-release-nav-frame::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  z-index: 3;
+}
+
+.sprout-release-nav-frame::before {
+  left: 0;
+  background: linear-gradient(to right, var(--background-primary), transparent);
+}
+
+.sprout-release-nav-frame::after {
+  right: 0;
+  background: linear-gradient(to left, var(--background-primary), transparent);
+}
+
+.sprout-release-nav-frame.is-at-start::before {
+  opacity: 0;
+}
+
+.sprout-release-nav-frame.is-at-end::after {
+  opacity: 0;
+}
+
+/* ── Wrapper for each category button + dropdown ── */
+
+.sprout-guide-nav-group {
+  position: relative;
+}
+
+/* ── Category buttons — standalone pill style ── */
+
+.sprout-guide-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: var(--sprout-font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background);
+  color: var(--text-normal);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  box-shadow: none !important;
+  white-space: nowrap;
+  line-height: 1.4;
+  position: relative;
+}
+
+/* Dropdown-parent buttons: no pointer unless they're a direct page link */
+.sprout-guide-nav-btn:has(.sprout-guide-nav-chevron) {
+  cursor: default;
+}
+
+.sprout-guide-nav-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  z-index: 3;
+}
+
+.sprout-guide-nav-btn.is-active {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  font-weight: 600;
+  z-index: 2;
+}
+
+/* ── Chevron icon inside buttons ── */
+
+.sprout-guide-nav-chevron {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.12s ease;
+}
+
+.sprout-guide-nav-chevron .svg-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.sprout-guide-nav-btn:hover .sprout-guide-nav-chevron {
+  opacity: 0.8;
+}
+
+/* ── Dropdown panel ── */
+
+.sprout-guide-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: auto;
+  z-index: 100;
+  min-width: 240px;
+  padding-top: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transform-origin: top left;
+  transition: opacity 0.12s ease 0.1s, transform 0.12s ease 0.1s;
+}
+
+.sprout-guide-dropdown.is-visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+.sprout-guide-dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  padding: 4px;
+  text-align: left;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+  background: var(--background-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Dropdown page item ── */
+
+.sprout-guide-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  margin: 1px 0 !important;
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  color: var(--text-normal);
+  text-align: left;
+  transition: background-color 0.08s ease, color 0.08s ease;
+  user-select: none;
+}
+
+.sprout-guide-dropdown-item:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.sprout-guide-dropdown-item:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb, 68, 138, 255), 0.5);
+  outline-offset: -2px;
+}
+
+.sprout-guide-dropdown-item.is-active {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  font-weight: 600;
+}
+
+/* ── Dropdown icon ── */
+
+.sprout-guide-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.sprout-guide-dropdown-item:hover .sprout-guide-dropdown-icon {
+  color: inherit;
+}
+
+.sprout-guide-dropdown-icon .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Dropdown label (section header) ── */
+
+.sprout-guide-dropdown-label {
+  padding: 6px 10px 6px;
+  font-size: var(--sprout-font-xs);
+  color: var(--text-faint);
+  text-align: left;
+  user-select: none;
+}
+
+/* ── Dropdown divider ── */
+
+.sprout-guide-dropdown-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--background-modifier-border);
+}
+
+/* ---- Content area — scrollable below the nav ---- */
+
+.sprout-guide-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  --sprout-guide-dots-inset: 26px;
+  --sprout-guide-dots-size: 8px;
+  --sprout-guide-dots-ring: 0px;
+  --sprout-guide-dots-gap: 20px;
+  --sprout-guide-dots-safe-space: calc(var(--sprout-guide-dots-inset) + var(--sprout-guide-dots-size) + (2 * var(--sprout-guide-dots-ring)) + 10px);
+}
+
+.sprout-guide-content::before,
+.sprout-guide-content::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.sprout-guide-content::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--background-primary), transparent);
+}
+
+.sprout-guide-content::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--background-primary), transparent);
+}
+
+.sprout-guide-content-inner {
+  height: 100%;
+  padding: 20px var(--sprout-guide-dots-safe-space) 35px 40px;
+  overflow-y: auto;
+}
+
+.sprout-guide-content-inner.is-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.sprout-guide-layout.is-loading .sprout-guide-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sprout-guide-layout.is-loading .sprout-guide-content::before,
+.sprout-guide-layout.is-loading .sprout-guide-content::after {
+  display: none;
+}
+
+.sprout-guide-layout.is-loading .sprout-guide-content-inner.is-loading {
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  overflow: hidden;
+  position: relative;
+  z-index: 4;
+}
+
+/* Indeterminate loading bar at the top of loading content */
+.sprout-guide-layout.is-loading .sprout-guide-content-inner.is-loading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 2.5px;
+  background: var(--interactive-accent);
+  border-radius: 0 2px 2px 0;
+  z-index: 10;
+  animation: sprout-loading-bar 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes sprout-loading-bar {
+  0% {
+    left: -40%;
+    width: 40%;
+  }
+  50% {
+    left: 20%;
+    width: 50%;
+  }
+  100% {
+    left: 100%;
+    width: 30%;
+  }
+}
+
+.sprout-guide-content-inner--snap {
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+
+.sprout-guide-snap-heading {
+  scroll-snap-align: start;
+  scroll-margin-top: 16px;
+}
+
+.sprout-guide-dots-rail {
+  position: absolute;
+  right: var(--sprout-guide-dots-inset);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sprout-guide-dots-gap);
+  z-index: 3;
+  pointer-events: none;
+  width: 0;
+  min-width: 0;
+  overflow: visible;
+  --sprout-guide-dot-bg: var(--color-base-40);
+  --sprout-guide-dot-active: var(--interactive-accent);
+  --sprout-guide-dot-inactive-size: 6px;
+  --sprout-guide-dot-active-scale: 1.333333;
+  --sprout-guide-dot-bounce-scale: 1.5;
+}
+
+@keyframes sprout-guide-dot-bounce {
+  0% {
+    transform: scale(var(--sprout-guide-dot-active-scale));
+  }
+  50% {
+    transform: scale(var(--sprout-guide-dot-bounce-scale));
+  }
+  100% {
+    transform: scale(var(--sprout-guide-dot-active-scale));
+  }
+}
+
+.sprout-guide-dot {
+  display: block;
+  position: relative;
+  width: var(--sprout-guide-dot-inactive-size);
+  height: var(--sprout-guide-dot-inactive-size);
+  min-width: var(--sprout-guide-dot-inactive-size);
+  min-height: var(--sprout-guide-dot-inactive-size);
+  border-radius: 50%;
+  background: var(--color-base-40);
+  opacity: 1;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+  transform-origin: center;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  pointer-events: auto;
+}
+
+.sprout-guide-dot::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.sprout-guide-dot:hover {
+  background: var(--sprout-guide-dot-active);
+}
+
+.sprout-guide-dot:hover:not(.is-active) {
+  transform: scale(var(--sprout-guide-dot-active-scale));
+}
+
+.sprout-guide-dot.is-active {
+  background: var(--sprout-guide-dot-active);
+  transform: scale(var(--sprout-guide-dot-active-scale));
+  animation: sprout-guide-dot-bounce 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.sprout-guide-dot:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb, 68, 138, 255), 0.45);
+  outline-offset: 2px;
+}
+
+/* ---- Fixed footer for prev/next navigation ---- */
+
+.sprout-guide-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--background-modifier-border);
+  z-index: 2;
+}
+
+.sprout-guide-header {
+  margin-bottom: 20px;
+}
+
+.sprout-guide-title {
+  font-size: var(--h1-size, 1.6em);
+  font-weight: var(--h1-weight, 700);
+  color: var(--text-normal);
+  margin: 0;
+  line-height: var(--h1-line-height, 1.3);
+}
+
+/* ---- Markdown body — graduated font sizing with 0.9rem base ---- */
+
+.sprout-guide-body {
+  color: var(--color-base-70);
+  font-size: var(--sprout-font-xs);
+  line-height: 1.65;
+}
+
+.sprout-guide-body * {
+  color: var(--color-base-70) !important;
+}
+
+.sprout-guide-body h1,
+.sprout-guide-body h2,
+.sprout-guide-body h1 *,
+.sprout-guide-body h2 * {
+  color: var(--text-normal) !important;
+}
+
+.sprout-settings-layout-content h1,
+.sprout-settings-layout-content h2,
+.sprout-settings-layout-content h1 *,
+.sprout-settings-layout-content h2 * {
+  color: var(--text-normal) !important;
+}
+
+.sprout-guide-body a,
+.sprout-guide-body a *,
+.sprout-guide-link,
+.sprout-guide-link * {
+  color: var(--text-accent) !important;
+}
+
+.sprout-guide-body,
+.sprout-guide-body * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Headings — graduated sizing */
+.sprout-guide-body.markdown-rendered h1 {
+  margin-bottom: 1em;
+    padding-left: 0;
+    padding-right: 0;
+    font-size: var(--sprout-font-xl-minus) !important;
+    font-weight: 700 !important;
+    line-height: 1.25;
+    border-top: none !important;
+    border-bottom: none !important;
+    margin-top: 0 !important;
+    padding-top: 20px;
+}
+
+.sprout-guide-body.markdown-rendered h1::after,
+.sprout-guide-body.markdown-rendered h1[data-heading]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* "Last updated" badge after H1 */
+.sprout-guide-updated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  background-color: var(--background-modifier-hover);
+  color: var(--text-muted);
+  border-radius: var(--radius-l);
+  padding: 0.125rem 0.6rem;
+  font-size: var(--sprout-font-2xs);
+  font-weight: 500;
+  min-height: 22px;
+  max-height: 22px;
+  height: 22px;
+  margin-bottom: 1.2em;
+}
+
+.sprout-guide-updated-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sprout-guide-updated-badge svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+}
+
+.sprout .sprout-guide-body h2 {
+    border-bottom: none;
+    margin-top: 2.2em !important;
+    margin-bottom: .6em !important;
+    padding: 20px 0 .35em !important;
+    line-height: 1.3 !important;
+    font-size: var(--sprout-font-md) !important;
+    border-top: 1px solid var(--background-modifier-border) !important;
+    font-weight: 600 !important;
+    color: var(--text-normal) !important;
+}
+
+.sprout .sprout-guide-body h1:first-child {
+  margin-top: 0;
+}
+
+.sprout .sprout-guide-body h1 + h2 {
+  margin-top: 0.4em;
+}
+
+.sprout .sprout-guide-body h2:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+.sprout .sprout-guide-body.markdown-rendered h3,
+.sprout .sprout-guide-body h3 {
+  font-size: var(--sprout-font-md-minus) !important;
+  color: var(--color-base-70) !important;
+  font-weight: 600 !important;
+  margin-top: 1.6em;
+  margin-bottom: 0.45em;
+  padding-left: 0;
+  padding-right: 0;
+  line-height: 1.35;
+}
+
+.sprout .sprout-settings-layout-content h1 {
+  margin-bottom: 1em;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: var(--sprout-font-xl-minus) !important;
+  font-weight: 700 !important;
+  line-height: 1.25;
+  border-top: none !important;
+  border-bottom: none !important;
+  margin-top: 0 !important;
+  padding-top: 20px;
+  color: var(--text-normal) !important;
+}
+
+.sprout .sprout-settings-layout-content h2 {
+  border-bottom: none;
+  margin-top: 2.2em !important;
+  margin-bottom: .6em !important;
+  padding: 20px 0 .35em !important;
+  line-height: 1.3 !important;
+  font-size: var(--sprout-font-md) !important;
+  border-top: 1px solid var(--background-modifier-border) !important;
+  font-weight: 600 !important;
+  color: var(--text-normal) !important;
+}
+
+.sprout .sprout-settings-layout-content h1:first-child {
+  margin-top: 0;
+}
+
+.sprout .sprout-settings-layout-content h1 + h2 {
+  margin-top: 0.4em;
+}
+
+.sprout .sprout-settings-layout-content h2:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+.sprout .sprout-settings-layout-content h3 {
+  font-size: var(--sprout-font-md-minus) !important;
+  color: var(--color-base-70) !important;
+  font-weight: 600 !important;
+  margin-top: 1.6em;
+  margin-bottom: 0.45em;
+  padding-left: 0;
+  padding-right: 0;
+  line-height: 1.35;
+}
+
+.sprout-guide-body h4 {
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  margin-top: 1.3em;
+  margin-bottom: 0.35em;
+  line-height: 1.4;
+}
+
+.sprout-guide-body p {
+  margin: 0.7em 0;
+  line-height: 2;
+}
+
+.sprout-guide-body ul,
+.sprout-guide-body ol {
+  margin: 0.7em 0;
+  padding-left: 1.6em;
+}
+
+.sprout-guide-body li {
+  margin-top: 0.2em;
+}
+
+.sprout-guide-body li + li {
+  margin-top: 0.3em;
+}
+
+/* Tables — styled to match analytics / changelog look */
+.sprout-guide-body table {
+  width: 100%;
+  margin: 1.1em 0;
+  font-size: var(--sprout-font-xs);
+  border-collapse: separate;
+  border-spacing: 0;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  background: var(--background-primary);
+  padding: 0 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+}
+
+.sprout-guide-body thead tr {
+  background: var(--background-primary);
+}
+
+.sprout-guide-body th {
+  padding: 8px 10px;
+  font-weight: 500;
+  font-size: var(--sprout-font-xs);
+  color: var(--text-muted);
+  text-align: left;
+  border: none;
+}
+
+.sprout-guide-body tbody {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.sprout-guide-body td {
+  padding: 8px 10px;
+  font-size: var(--sprout-font-xs);
+  border: none;
+  vertical-align: top;
+  background: inherit;
+}
+
+.sprout-guide-body table code {
+  font-size: var(--sprout-font-2xs);
+}
+
+.sprout-guide-body tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sprout-guide-body tbody tr:hover td {
+  background: var(--background-secondary);
+}
+
+.sprout-guide-body tbody tr:hover td:first-child {
+  border-top-left-radius: var(--radius-m, 8px);
+  border-bottom-left-radius: var(--radius-m, 8px);
+}
+
+.sprout-guide-body tbody tr:hover td:last-child {
+  border-top-right-radius: var(--radius-m, 8px);
+  border-bottom-right-radius: var(--radius-m, 8px);
+}
+
+/* Code blocks */
+.sprout-guide-body pre {
+  position: relative;
+  width: fit-content;
+  margin: .8em 0 1.1em;
+  padding: 10px 20px;
+  font-size: var(--sprout-font-xs);
+}
+
+/* Copy-code button — bare icon, no button chrome */
+.sprout-guide-body pre .copy-code-button {
+  all: unset;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 15px;
+  width: 15px;
+  padding: 2px;
+  margin: 3px;
+  cursor: pointer;
+  color: var(--text-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.sprout-guide-body pre:hover .copy-code-button {
+  opacity: 1;
+}
+
+.sprout-guide-body pre .copy-code-button:hover {
+  color: var(--text-normal);
+}
+
+body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide-copy-code-button:not(.ant-btn) {
+  padding: 0px 3px !important;
+  margin: 0px !important;
+  border-radius: 3px !important;
+}
+
+.sprout-guide-body pre .copy-code-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sprout-guide-body pre .copy-code-button.sprout-guide-copy-code-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.sprout-guide-body code {
+  font-size: var(--sprout-font-2xs);
+}
+
+/* Blockquotes / callouts */
+.sprout-guide-body blockquote {
+  margin: 1.1em 0;
+}
+
+/* Strong / bold — slightly heavier for readability at smaller size */
+.sprout-guide-body strong {
+  font-weight: 600 !important;
+}
+
+/* Internal guide navigation links */
+.sprout-guide-link {
+    color: var(--text-accent);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.sprout-guide-link:hover {
+  text-decoration-style: solid;
+  color: var(--interactive-accent-hover, var(--interactive-accent));
+}
+
+/* Loading / empty states */
+.sprout-guide-loading,
+.sprout-guide-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.sprout-guide-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 100%;
+}
+
+.sprout-guide-loading-label {
+  color: var(--text-faint);
+  font-size: var(--sprout-font-xs);
+}
+
+.sprout-guide-loading .three-body {
+  --uib-size: 35px;
+  --uib-speed: 0.8s;
+  --uib-color: var(--interactive-accent);
+  position: relative;
+  display: inline-block;
+  height: var(--uib-size);
+  width: var(--uib-size);
+  opacity: 1;
+  visibility: visible;
+  animation: sprout-three-body-spin calc(var(--uib-speed) * 2.5) infinite linear;
+}
+
+.sprout-guide-loading .three-body__dot {
+  position: absolute;
+  height: 100%;
+  width: 30%;
+}
+
+.sprout-guide-loading .three-body__dot::after {
+  content: "";
+  position: absolute;
+  height: 0%;
+  width: 100%;
+  padding-bottom: 100%;
+  background-color: var(--uib-color);
+  border-radius: 50%;
+}
+
+.sprout-guide-loading .three-body__dot:nth-child(1) {
+  bottom: 5%;
+  left: 0;
+  transform: rotate(60deg);
+  transform-origin: 50% 85%;
+}
+
+.sprout-guide-loading .three-body__dot:nth-child(1)::after {
+  bottom: 0;
+  left: 0;
+  animation: sprout-three-body-wobble1 var(--uib-speed) infinite ease-in-out;
+  animation-delay: calc(var(--uib-speed) * -0.3);
+}
+
+.sprout-guide-loading .three-body__dot:nth-child(2) {
+  bottom: 5%;
+  right: 0;
+  transform: rotate(-60deg);
+  transform-origin: 50% 85%;
+}
+
+.sprout-guide-loading .three-body__dot:nth-child(2)::after {
+  bottom: 0;
+  left: 0;
+  animation: sprout-three-body-wobble1 var(--uib-speed) infinite calc(var(--uib-speed) * -0.15) ease-in-out;
+}
+
+.sprout-guide-loading .three-body__dot:nth-child(3) {
+  bottom: -5%;
+  left: 0;
+  transform: translateX(116.666%);
+}
+
+.sprout-guide-loading .three-body__dot:nth-child(3)::after {
+  top: 0;
+  left: 0;
+  animation: sprout-three-body-wobble2 var(--uib-speed) infinite ease-in-out;
+}
+
+@keyframes sprout-three-body-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sprout-three-body-wobble1 {
+  0%,
+  100% {
+    transform: translateY(0%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-66%) scale(0.65);
+    opacity: 0.8;
+  }
+}
+
+@keyframes sprout-three-body-wobble2 {
+  0%,
+  100% {
+    transform: translateY(0%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(66%) scale(0.65);
+    opacity: 0.8;
+  }
+}
+
 /* ---- Settings headings — remove double border between first heading and User details ---- */
 
 .sprout-settings .setting-item-heading {
   border-top: none !important;
   border-bottom: none !important;
+  padding: 16px 0px 20px;
 }
 
 .sprout-settings .setting-item-heading:first-child {
@@ -50,11 +1040,12 @@
 .sprout-settings .sprout-settings-table-wrap {
   padding: 8px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   overflow-x: auto;
   overflow-y: hidden;
   background: var(--background-secondary, var(--background));
   width: 100%;
+  box-shadow: none !important;
 }
 
 /* ---- Backup table (matches .sprout-changelog-table) ---- */
@@ -92,7 +1083,7 @@
   border: none;
   vertical-align: middle;
   text-align: left;
-  font-size: 11.5px;
+  font-size: var(--sprout-font-2xs);
 }
 
 .sprout-backup-table tbody td {
@@ -111,21 +1102,21 @@
 /* Corner radius on first/last cells (matches changelog) */
 .sprout-backup-table th:first-child,
 .sprout-backup-table td:first-child {
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-top-left-radius: var(--radius-l);
+  border-bottom-left-radius: var(--radius-l);
 }
 
 .sprout-backup-table th:last-child,
 .sprout-backup-table td:last-child {
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-top-right-radius: var(--radius-l);
+  border-bottom-right-radius: var(--radius-l);
 }
 
 /* Header cells */
 .sprout-backup-table th {
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: var(--sprout-font-2xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   text-align: left;
@@ -135,7 +1126,7 @@
 .sprout-backup-table td,
 .sprout-backup-cell {
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: var(--sprout-font-2xs);
 }
 
 /* Label cells (first column — Backup name) */
@@ -170,7 +1161,7 @@
 .sprout-settings .sprout-settings-icon-btn {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   box-shadow: none;
   outline: none;
   padding: 0 !important;
@@ -221,6 +1212,29 @@
   color: var(--text-error);
 }
 
+.sprout .sprout-settings-action-btn,
+.sprout-settings .sprout-settings-action-btn {
+  min-height: 33px;
+}
+
+.sprout .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron,
+.sprout-settings .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease;
+}
+
+.sprout .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron.is-expanded,
+.sprout-settings .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron.is-expanded {
+  transform: rotate(180deg);
+}
+
+.sprout .sprout-settings-advanced-content,
+.sprout-settings .sprout-settings-advanced-content {
+  margin-bottom: 2px;
+}
+
 /* ---- See more/fewer toggle ---- */
 
 .sprout .sprout-settings-see-more-wrap,
@@ -238,8 +1252,8 @@
   padding: 2px 12px;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 12px;
-  border-radius: 4px;
+  font-size: var(--sprout-font-2xs);
+  border-radius: var(--radius-s);
   transition: background 0.15s, color 0.15s;
 }
 
@@ -255,7 +1269,7 @@
 .sprout-settings .sprout-settings-text-muted {
   color: var(--text-muted);
   padding: 14px;
-  font-size: 13px;
+  font-size: var(--sprout-font-xs);
   text-align: center;
 }
 
@@ -264,4 +1278,1541 @@
 .sprout .sprout-settings-opacity-flicker,
 .sprout-settings .sprout-settings-opacity-flicker {
   opacity: 0.99;
+}
+
+/* ---- Settings wrapper (must flex to fill vertical-tab-content) ---- */
+
+.sprout-settings-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ---- Tab navigation row ---- */
+
+.sprout-settings-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* ---- Button group (main tabs) ---- */
+
+.sprout-settings-tab-nav {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+.sprout-settings-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 16px;
+  font-size: var(--sprout-font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0;
+  border: none;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  box-shadow: none !important;
+  position: relative;
+}
+
+button.sprout-settings-tab-btn {
+  border-radius: 0 !important;
+}
+
+.sprout-settings-tab-nav .sprout-settings-tab-btn + .sprout-settings-tab-btn {
+  border-left: 1px solid var(--background-modifier-border) !important;
+}
+
+.sprout-settings-tab-nav .sprout-settings-tab-btn:first-child {
+  border-top-left-radius: var(--radius-s);
+  border-bottom-left-radius: var(--radius-s);
+}
+
+.sprout-settings-tab-nav .sprout-settings-tab-btn:last-child {
+  border-top-right-radius: var(--radius-s);
+  border-bottom-right-radius: var(--radius-s);
+}
+
+.sprout-settings-tab-btn:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+  z-index: 1;
+}
+
+.sprout-settings-tab-btn:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb, 68, 138, 255), 0.5);
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+.sprout-settings-tab-btn:active {
+  background-color: var(--background-modifier-active-hover, var(--background-modifier-hover));
+  color: var(--text-normal);
+}
+
+.sprout-settings-tab-btn.is-active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+  font-weight: 600;
+  z-index: 2;
+}
+
+/* ---- Standalone buttons (About, Guide) – left of tab group ---- */
+
+.sprout-settings-standalone-btns {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.sprout-settings-tab-btn-standalone {
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: var(--radius-s) !important;
+}
+
+/* ---- Icon sizing inside tab buttons ---- */
+
+.sprout-settings-tab-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sprout-settings-tab-btn-icon .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- About tab content ---- */
+
+/* Hero branding block */
+.sprout-about-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.sprout-about-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-m);
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  flex-shrink: 0;
+}
+
+.sprout-about-hero-icon .svg-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sprout-about-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sprout-about-hero-title {
+  font-size: var(--sprout-font-md-plus);
+  font-weight: 700;
+  color: var(--text-normal);
+  letter-spacing: -0.01em;
+}
+
+.sprout-about-hero-subtitle {
+  font-size: var(--sprout-font-xs);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.sprout-about-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprout-about-author {
+  font-size: var(--sprout-font-2xs);
+  color: var(--text-faint);
+}
+
+/* Links bar below hero */
+.sprout-about-links-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Section blocks */
+.sprout-about-section {
+  padding-top: 16px;
+}
+
+.sprout-about-section:last-child {
+  padding-bottom: 0;
+}
+
+.sprout-about-section-title {
+  font-size: var(--sprout-font-md) !important;
+  font-weight: 600 !important;
+  color: var(--text-normal) !important;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.sprout-about-section-date {
+  font-size: var(--sprout-font-2xs);
+  color: var(--text-faint);
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+
+.sprout-about-release-content {
+  font-size: var(--sprout-font-xs);
+  line-height: 1.65;
+  color: var(--color-base-70);
+}
+
+.sprout-about-release-content p,
+.sprout-about-release-content li {
+  color: var(--color-base-70);
+  line-height: 1.65;
+}
+
+.sprout-about-release-content ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.sprout-about-release-content li {
+  margin-bottom: 2px;
+}
+
+.sprout-about-description {
+  font-size: var(--sprout-font-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.sprout-about-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sprout-about-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.sprout-about-actions button {
+  font-size: var(--sprout-font-xs);
+}
+
+.sprout-about-hint {
+  font-size: var(--sprout-font-2xs);
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* Tab content wrapper - fills remaining viewport height */
+.sprout-settings-tab-content-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab content - scrollable container */
+.sprout-settings-tab-content {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sprout-settings-pane-title {
+  margin: 0 0 1em 0;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: var(--sprout-font-xl-minus) !important;
+  font-weight: 700 !important;
+  line-height: 1.25;
+  color: var(--text-normal) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  margin-top: 0 !important;
+  padding-top: 20px;
+}
+
+/* First h2 right after the pane title — no border, tight margin (like guide h1+h2) */
+.sprout-settings-pane-title + h2 {
+  margin-top: 0.4em !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+.sprout-settings-subtab-nav {
+  margin-bottom: 0;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.sprout-settings-layout-header .sprout-settings-subtab-nav {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  border-bottom: none;
+  gap: 6px;
+}
+
+.sprout-settings-layout-header .sprout-settings-subtab-nav .sprout-guide-nav-btn {
+  box-shadow: none !important;
+}
+
+.sprout-settings-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+  background: var(--background-primary);
+}
+
+.sprout-settings-layout-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: visible;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.sprout-settings-layout-content {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.sprout-settings-layout-content-frame {
+  flex: 1;
+  min-height: 0;
+}
+
+/* When guide layout is inside, remove parent border/padding — guide has its own */
+.sprout-settings-tab-content:has(.sprout-guide-layout) {
+  border: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Clean up setting items inside tab content */
+.sprout-settings-tab-content .setting-item {
+  background-color: transparent !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  padding: 18px 0 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.sprout-settings-tab-content .setting-item:first-child {
+  border-top: none;
+  padding-top: 0 !important;
+}
+
+.sprout-settings-tab-content .setting-item:last-child {
+  padding-bottom: 5px !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Setting item headings inside tabs */
+.sprout-settings-tab-content .setting-item-heading {
+  background-color: transparent !important;
+  border-top: 1px solid var(--background-modifier-border) !important;
+  border-bottom: none !important;
+  padding: 20px 0 8px 0 !important;
+  margin: 22px 0 0 !important;
+}
+
+.sprout-settings-tab-content .setting-item-heading:first-child {
+  margin-top: 0 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+.sprout-settings-tab-content .sprout-settings-pane-title + .setting-item-heading {
+  margin-top: 0.4em !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+.sprout-settings-layout-content > .setting-item-heading:first-child {
+  margin-top: 0 !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+.sprout-settings-tab-content .setting-item-heading .setting-item-name {
+  font-size: var(--sprout-font-md) !important;
+  font-weight: 600 !important;
+  color: var(--text-normal) !important;
+  line-height: 1.3;
+}
+
+/* Setting item info and controls */
+.sprout-settings-tab-content .setting-item-info {
+  flex-grow: 1;
+}
+
+.sprout-settings-tab-content .setting-item-name {
+  font-size: var(--sprout-font-xs);
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.sprout-settings-tab-content .setting-item-description {
+  font-size: var(--sprout-font-xs);
+  color: var(--color-base-70);
+  line-height: 1.65;
+  margin-top: 0.45em;
+}
+
+/* ---- Guide-like typography for settings content ---- */
+
+.sprout-settings-layout-content .setting-item-name {
+  font-size: var(--sprout-font-xs);
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.sprout-settings-layout-content .setting-item-description {
+  font-size: var(--sprout-font-xs);
+  color: var(--color-base-70);
+  line-height: 2;
+  margin-top: 0.3em;
+}
+
+.sprout-settings-layout-content .setting-item {
+  padding: 18px 0 !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.sprout-settings-layout-content .setting-item:last-child {
+  padding-bottom: 5px !important;
+}
+
+.sprout .sprout-settings-layout-content h2 + .setting-item {
+  padding-top: 4px !important;
+}
+
+.sprout .sprout-settings-layout-content .sprout-settings-pane-title + .sprout-settings-wrapper h2:first-child,
+.sprout .sprout-settings-layout-content .sprout-settings-pane-title + h2 {
+  margin-top: 0.4em !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+.sprout .sprout-settings-layout-content .sprout-settings-wrapper > h2:first-child {
+  margin-top: 0 !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+/* Ensure controls don't get weird backgrounds */
+.sprout-settings-tab-content .setting-item-control {
+  background-color: transparent !important;
+}
+
+/* Clean up input fields, buttons, and toggles */
+.sprout-settings-tab-content input[type="text"],
+.sprout-settings-tab-content input[type="number"],
+.sprout-settings-tab-content textarea {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  padding: 7px 15px;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.sprout-settings-tab-content input[type="text"],
+.sprout-settings-tab-content input[type="number"] {
+  min-height: 38px;
+}
+
+/* Remove box-shadows from all buttons in settings */
+.sprout-settings-tab-content button {
+  box-shadow: none !important;
+}
+
+/* Minimal select styling - let theme handle most of it */
+.sprout-settings-tab-content select {
+  box-shadow: none !important;
+}
+
+.sprout-settings-tab-content select:focus,
+.sprout-settings-tab-content select:hover,
+.sprout-settings-tab-content select:active {
+  box-shadow: none !important;
+}
+
+.sprout-settings-tab-content input[type="text"]:focus,
+.sprout-settings-tab-content input[type="number"]:focus,
+.sprout-settings-tab-content textarea:focus {
+  border-color: var(--background-modifier-border-focus, var(--interactive-accent));
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 0, 102, 255), 0.12);
+  outline: none;
+}
+
+/* Range slider focus */
+.sprout-settings-tab-content input[type="range"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 0, 102, 255), 0.12);
+  border-radius: var(--radius-s, 4px);
+}
+
+/* Special cases - backup table, folder suggest, etc. should keep their styles */
+.sprout-settings-tab-content .setting-item:has(.sprout-settings-backup-control),
+.sprout-settings-tab-content .setting-item:has(.sprout-settings-table-wrap) {
+  border-top: none !important;
+  padding-top: 12px !important;
+}
+
+/* ---- Colour picker (cloze settings) ---- */
+
+.sprout-colour-picker {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  padding: 2px;
+  border: 1.5px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.sprout-colour-picker::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.sprout-colour-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--radius-s);
+}
+
+/* Restore-default icon button next to colour pickers */
+.sprout-colour-restore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 4px !important;
+  margin-right: 6px;
+  cursor: pointer;
+  color: var(--text-faint);
+  opacity: 0.45;
+  transition: color 0.15s ease, opacity 0.15s ease;
+  vertical-align: middle;
+}
+
+.sprout-colour-restore[aria-disabled="true"] {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.25;
+}
+
+.sprout-colour-restore:not([aria-disabled="true"]) {
+  opacity: 1;
+  color: var(--interactive-accent);
+}
+
+.sprout-colour-restore:not([aria-disabled="true"]):hover {
+  color: var(--interactive-accent-hover, var(--interactive-accent));
+}
+
+/* ---- Reading View preset grid ---- */
+
+.sprout-rv-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.sprout-rv-preset-card {
+  border: 1.5px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 12px 14px;
+  cursor: pointer;
+  background: var(--background-primary);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sprout-rv-preset-card:hover {
+  border-color: var(--interactive-accent);
+  background: var(--background-primary-alt);
+}
+
+.sprout-rv-preset-card.is-active {
+  border-color: var(--interactive-accent);
+  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.06);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+.sprout-rv-preset-label {
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-normal);
+}
+
+.sprout-rv-preset-card.is-active .sprout-rv-preset-label {
+  color: var(--interactive-accent);
+}
+
+.sprout-rv-preset-desc {
+  font-size: var(--sprout-font-2xs);
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.sprout-rv-preset-custom {
+  border-style: dashed;
+}
+
+/* ---- Preview live demo card ---- */
+
+.sprout-rv-live-preview {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary-alt);
+  padding: 12px;
+  margin: 8px 0 14px;
+}
+
+.sprout-rv-live-preview-title {
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 3px;
+}
+
+.sprout-rv-live-preview-note {
+  font-size: var(--sprout-font-2xs);
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.sprout-rv-live-preview .sprout-rv-demo-card {
+  margin: 0 !important;
+  width: 100%;
+}
+
+.sprout-rv-custom-hooks {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.sprout-rv-custom-hooks-title {
+  font-size: var(--sprout-font-2xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.sprout-rv-custom-hooks-code {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  font-size: var(--sprout-font-2xs);
+  line-height: 1.45;
+}
+
+.sprout-rv-custom-css-control {
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.sprout-rv-custom-css-input {
+  width: 100%;
+  min-height: 220px;
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: var(--sprout-font-2xs);
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.sprout-rv-custom-css-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================================
+   SETTINGS SELECT — Custom popover-style dropdown for settings.
+   Two variants:
+     1. Simple select  (.sprout-ss)        — static list, no search
+     2. Filterable select (.sprout-ss--filterable) — adds search input
+   Matches the Basecoat popover / btn-outline appearance.
+   ========================================================================== */
+
+/* ---- Trigger button (matches btn-outline + chevron) ---- */
+
+.sprout-ss-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 140px;
+  max-width: 260px;
+  box-shadow: none !important;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.sprout-ss-trigger:hover {
+  border-color: var(--background-modifier-border-hover, var(--interactive-accent));
+  background: var(--background-modifier-hover, var(--background-secondary));
+}
+
+.sprout-ss-trigger:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb, 0, 102, 255), 0.5);
+  outline-offset: 2px;
+}
+
+.sprout-ss-trigger[aria-expanded="true"] {
+  border-color: var(--interactive-accent);
+}
+
+.sprout-ss-trigger-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.sprout-ss-trigger-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: opacity 120ms ease;
+}
+.sprout-ss-trigger:hover .sprout-ss-trigger-chevron {
+  opacity: 0.75;
+}
+.sprout-ss-trigger-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- Popover panel ---- */
+
+.sprout-ss-panel {
+  padding: 4px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--background-primary) !important;
+  color: var(--text-normal) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: var(--radius-m, 8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.theme-dark .sprout-ss-panel {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* ---- Search input (filterable variant only) ---- */
+
+.sprout-ss-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.sprout-ss-search-icon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.45;
+}
+.sprout-ss-search-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sprout-ss-search-input,
+.sprout-ss-search-input:focus,
+.sprout-ss-search-input:focus-visible {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  font-size: var(--font-ui-small);
+  padding: 2px 0 !important;
+  min-height: unset !important;
+  height: auto !important;
+}
+.sprout-ss-search-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* ---- Options list ---- */
+
+.sprout-ss-listbox {
+  overflow-y: auto;
+  flex: 1;
+  padding: 2px 0;
+}
+
+/* ---- Individual option item ---- */
+
+.sprout-ss-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius-s, 4px);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  user-select: none;
+  outline: none;
+  transition: background-color 80ms ease;
+}
+.sprout-ss-item:hover,
+.sprout-ss-item:focus {
+  background: var(--background-modifier-hover);
+  outline: none;
+}
+.sprout-ss-item[aria-selected="true"] {
+  font-weight: 500;
+}
+
+.sprout-ss-item-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sprout-ss-item-label {
+  line-height: 1.25;
+}
+
+.sprout-ss-item-desc {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: calc(var(--font-ui-small) - 1px);
+  line-height: 1.35;
+  font-weight: 400;
+}
+
+/* ---- Radio dot indicator ---- */
+
+.sprout-ss-dot-wrap {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sprout-ss-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 100ms ease;
+}
+
+.sprout-ss-dot.is-selected {
+  background: currentColor;
+}
+
+/* ---- Separator ---- */
+
+.sprout-ss-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--background-modifier-border);
+}
+
+/* ---- Empty state (filterable only) ---- */
+
+.sprout-ss-empty {
+  padding: 12px 8px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+}
+
+/* ---- Warning callout (for destructive setting descriptions) ---- */
+
+.sprout-ss-warning {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-s, 4px);
+  background: rgba(var(--color-red-rgb, 255, 59, 48), 0.08);
+  border: 1px solid rgba(var(--color-red-rgb, 255, 59, 48), 0.18);
+  font-size: var(--sprout-font-2xs);
+  line-height: 1.45;
+  color: var(--text-error, #d63031);
+}
+
+.sprout-ss-warning-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sprout-ss-warning-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+/* ============================================================================
+   SETTINGS VIEW — In-workspace settings view (ItemView)
+   ========================================================================== */
+
+/* Root container for the settings view */
+.sprout-settings-view-root {
+  gap: 16px;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-width: var(--sprout-settings-view-max-width, 100%) !important;
+  overflow-y: hidden !important;
+}
+
+/* Override parent padding-bottom so content fills to the edge */
+.sprout.sprout-settings-view-root {
+  padding-bottom: 20px !important;
+}
+
+/* Tab navigation row (reuses the same classes as Obsidian settings tab) */
+.sprout-settings-view-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  justify-content: space-between;
+}
+
+@media (max-width: 980px) {
+  .sprout-settings-view-tab-row .sprout-settings-tab-nav-main {
+    width: 100%;
+  }
+
+  .sprout-settings-view-tab-row .sprout-settings-tab-nav-main .sprout-settings-tab-btn {
+    flex: 1 1 25%;
+    min-width: 0;
+    justify-content: center;
+    padding: 8px 12px;
+  }
+
+  .sprout-settings-view-tab-row
+    .sprout-settings-tab-nav-main
+    .sprout-settings-tab-btn
+    +
+    .sprout-settings-tab-btn {
+    border-left: none !important;
+  }
+
+  .sprout-settings-view-tab-row .sprout-settings-tab-nav-main .sprout-settings-tab-btn:not(:nth-child(4n + 1)) {
+    border-left: 1px solid var(--background-modifier-border) !important;
+  }
+
+  .sprout-settings-view-tab-row .sprout-settings-tab-nav-main .sprout-settings-tab-btn:nth-child(-n + 4) {
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+}
+
+/* Ensure settings view tab content wrapper fills available space */
+.sprout-settings-view-root .sprout-settings-tab-content-wrapper {
+  flex: 1;
+  min-height: 200px;
+}
+
+/* Scope the Sprout settings wrapper class for the in-view tab content */
+.sprout-settings-view-root .sprout-settings-tab-content .setting-item {
+  background-color: transparent !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  padding: 18px 0 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.sprout-settings-view-root .sprout-settings-tab-content .setting-item:first-child {
+  padding-top: 0 !important;
+}
+
+.sprout-settings-view-root .sprout-settings-tab-content .setting-item:last-child {
+  padding-bottom: 5px !important;
+}
+
+.sprout-settings-view-root .sprout-settings-tab-content .setting-item-heading {
+  background-color: transparent !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  padding: 16px 0 20px;
+}
+
+.sprout-settings-view-root .sprout-settings-tab-content .setting-item-heading:first-child {
+  padding-top: 0;
+}
+
+/* ── Cascade fade-in animation for settings tab content ── */
+
+@keyframes sprout-cascade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sprout-cascade-item {
+  opacity: 0;
+  animation: sprout-cascade-in 0.35s ease-out forwards;
+}
+
+/* When animations are disabled, skip the cascade */
+.sprout-settings-tab-content.sprout-no-animate .sprout-cascade-item,
+.sprout-guide-body.sprout-no-animate .sprout-cascade-item {
+  opacity: 1;
+  animation: none;
+}
+
+.sprout-settings-view-root.sprout-no-animate *,
+.sprout-settings-tab-content.sprout-no-animate *,
+.sprout-guide-body.sprout-no-animate * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.sprout-settings-view-root.sprout-no-animate [data-aos],
+.sprout-settings-tab-content.sprout-no-animate [data-aos],
+.sprout-guide-body.sprout-no-animate [data-aos] {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* ── Guide prev / next page navigation ── */
+
+.sprout-guide-prev-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.sprout-guide-prev-next-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  max-width: 50%;
+}
+
+.sprout-guide-prev-btn {
+  align-items: flex-start;
+  margin-right: auto;
+}
+
+.sprout-guide-next-btn {
+  align-items: flex-end;
+  margin-left: auto;
+}
+
+.sprout-guide-prev-next-label {
+  font-size: var(--sprout-font-2xs);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.sprout-guide-prev-next-link {
+  font-size: var(--sprout-font-xs);
+  font-weight: 400;
+  color: var(--text-accent);
+  cursor: pointer;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sprout-guide-prev-next-link:hover {
+  text-decoration: underline;
+}
+
+.sprout-guide-prev-next-spacer {
+  flex: 1;
+}
+
+/* ---- Folder suggest popover ---- */
+
+/* The wrapper sits inside .setting-item-control (a flex row).
+   We make it take no layout space so it doesn't push the input;
+   instead the dropdown list is anchored to the full control. */
+.setting-item-control:has(.sprout-folder-suggest) {
+  position: relative;
+}
+
+.sprout-folder-suggest {
+  /* Remove from flex flow so it doesn't affect the input width */
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+}
+
+.sprout-folder-suggest-list {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: max-content;
+  min-width: 200px;
+  max-width: 400px;
+  z-index: var(--layer-popover, 30);
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+}
+
+.theme-dark .sprout-folder-suggest-list {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.sprout-folder-suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sprout-folder-suggest-item:hover,
+.sprout-folder-suggest-item.is-active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+/* ── About Sprout page ── */
+
+/* Story card */
+.sprout-about-story-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-l);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  margin-top: 8px;
+  max-width: 400px;
+}
+
+.sprout-about-avatar {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--interactive-accent) 0%, var(--interactive-accent-hover) 100%);
+  color: var(--text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--sprout-font-sm);
+  letter-spacing: 0.5px;
+  user-select: none;
+  overflow: hidden;
+}
+
+.sprout-about-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.sprout-about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sprout-about-name {
+  font-size: var(--sprout-font-sm);
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.sprout-about-role {
+  font-size: var(--sprout-font-xs);
+  color: var(--text-muted);
+}
+
+.sprout-about-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sprout-about-linkedin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  color: var(--interactive-accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  cursor: pointer;
+}
+
+.sprout-about-linkedin:hover {
+  color: var(--interactive-accent-hover);
+  text-decoration: underline;
+}
+
+.sprout-about-linkedin-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sprout-about-linkedin-icon .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Button groups (feedback + support sections) */
+.sprout-about-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sprout-about-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  border-radius: var(--radius-m);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+  line-height: 1.4;
+}
+
+.sprout-about-btn:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--text-muted);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  color: var(--text-normal);
+}
+
+.sprout-about-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.sprout-about-btn-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sprout-about-btn-icon .svg-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sprout-about-btn-label {
+  white-space: nowrap;
+}
+
+/* Star — spin only on hover */
+@keyframes sprout-about-star-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.25); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.sprout-about-btn--star:hover .sprout-about-btn-icon .svg-icon {
+  animation: sprout-about-star-spin 0.6s ease-in-out;
+}
+
+/* Coffee — tip on hover */
+@keyframes sprout-about-coffee-tip {
+  0%   { transform: rotate(0deg); }
+  30%  { transform: rotate(-18deg); }
+  60%  { transform: rotate(6deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.sprout-about-btn--coffee:hover .sprout-about-btn-icon .svg-icon {
+  animation: sprout-about-coffee-tip 0.5s ease-in-out;
+  transform-origin: bottom center;
+}
+
+/* Share button — copied state */
+.sprout-about-btn--share .sprout-about-btn-icon .svg-icon,
+.sprout-about-btn--share .sprout-about-btn-label {
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.sprout-about-btn--share.is-copied {
+  border-color: var(--text-normal);
+  background: var(--text-normal);
+  color: var(--background-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.sprout-about-btn--share.is-copied .svg-icon {
+  color: var(--background-primary);
+}
+
+.sprout-about-btn--share.is-copied .sprout-about-btn-label {
+  color: var(--background-primary);
+}
+
+@keyframes sprout-about-check-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.sprout-about-btn--share.is-copied .sprout-about-btn-icon .svg-icon {
+  animation: sprout-about-check-pop 0.35s ease;
+}
+
+/* Colour-coded hover accents per button type */
+.sprout-about-btn--bug:hover {
+  border-color: var(--color-red);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-red) 30%, transparent);
+}
+
+.sprout-about-btn--feature:hover {
+  border-color: var(--color-orange);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-orange) 30%, transparent);
+}
+
+.sprout-about-btn--browse:hover {
+  border-color: var(--color-blue);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-blue) 30%, transparent);
+}
+
+.sprout-about-btn--star:hover {
+  border-color: var(--color-yellow);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-yellow) 30%, transparent);
+}
+
+.sprout-about-btn--share:hover {
+  border-color: var(--color-purple);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-purple) 30%, transparent);
+}
+
+.sprout-about-btn--coffee:hover {
+  border-color: var(--color-green);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-green) 30%, transparent);
+}
+
+.sprout-about-btn--star:hover {
+  border-color: #f1c40f;
+  box-shadow: 0 4px 12px rgba(241, 196, 15, 0.2);
+}
+
+.sprout-about-btn--coffee:hover {
+  border-color: #d4a574;
+  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.15);
+}
+
+/* Legacy support button styles (kept for backward compat) */
+
+.sprout-support-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sprout-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  border-radius: var(--radius-m);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  line-height: 1.4;
+}
+
+.sprout-support-btn:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  color: var(--text-normal);
+}
+
+.sprout-support-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.sprout-support-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.15em;
+}
+
+.sprout-support-btn-label {
+  white-space: nowrap;
+}
+
+@keyframes sprout-star-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.sprout-support-star {
+  animation: sprout-star-spin 3s ease-in-out infinite;
+  display: inline-block;
+}
+
+.sprout-support-btn--star:hover .sprout-support-star {
+  animation-duration: 1s;
 }

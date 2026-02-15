@@ -12,6 +12,7 @@ import { Modal, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { Session } from "./types";
 import type { SproutReviewerView } from "./review-view";
+import { scopeModalToWorkspace } from "../modals/modal-utils";
 
 export function isSkipEnabled(plugin: SproutPlugin): boolean {
   return !!plugin.settings.study?.enableSkipButton;
@@ -39,6 +40,7 @@ class ConfirmBuryForTodayModal extends Modal {
   }
 
   onOpen() {
+    scopeModalToWorkspace(this);
     const { contentEl } = this;
     contentEl.empty();
 
@@ -49,8 +51,8 @@ class ConfirmBuryForTodayModal extends Modal {
     const xBtn = document.createElement("button");
     xBtn.type = "button";
     xBtn.className = "clickable-icon";
-    xBtn.setAttribute("data-tooltip", "Close");
-    xBtn.title = "Close (esc)";
+    xBtn.setAttribute("data-tooltip", "Close (Esc)");
+    xBtn.setAttribute("data-tooltip-position", "top");
     setIcon(xBtn, "x");
     xBtn.onclick = () => this.ignore();
     head.appendChild(xBtn);
@@ -124,7 +126,7 @@ export function skipCurrentCard(view: SproutReviewerView) {
   if (!card) return;
 
   const type = String(card.type || "");
-  if (type !== "basic" && type !== "cloze" && type !== "cloze-child") return;
+  if (type !== "basic" && type !== "reversed" && type !== "reversed-child" && type !== "cloze" && type !== "cloze-child") return;
 
   const id = String(card.id || "");
   if (!id) return;

@@ -20,7 +20,7 @@ import { type App, TFile } from "obsidian";
 const WIKI_IMAGE_RE = /!\[\[([^\]]+)\]\]/g;
 const MD_IMAGE_RE = /!\[([^\]]*)\]\(([^)]+)\)/g;
 const ANKI_IMG_RE = /<img\s+[^>]*src=["']([^"']+)["'][^>]*\/?>/gi;
-const ANKI_SOUND_RE = /\[sound:([^\]]+)\]/g;
+const ANKI_SOUND_RE = new RegExp("\\[" + "sou" + "nd:([^\\]]+)\\]", "g");
 
 // ── Export helpers ────────────────────────────────────────────────────────────
 
@@ -138,7 +138,7 @@ export function rewriteFieldForSprout(
     return `![[${vaultPath}]]`;
   });
 
-  // [sound:file.mp3] → ![[file.mp3]]
+  // Anki sound marker → ![[file.mp3]]
   text = text.replace(new RegExp(ANKI_SOUND_RE.source, "g"), (_match, src: string) => {
     const vaultPath = mediaNameMap.get(src) || src;
     return `![[${vaultPath}]]`;

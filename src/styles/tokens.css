@@ -12,12 +12,10 @@
    ========================================================================== */
 
 .sprout {
-  --radius: 0.65rem !important;
-
   /* Surfaces - using parent theme color-base variables */
   --background: var(--color-base-00) !important;
   --background-primary: var(--color-base-00) !important;
-  --file-header-background-focused: var(--color-base-00) !important;
+  --file-header-background-focused: transparent !important;
   --color-popover: var(--color-base-00) !important;
   --interactive-normal: var(--color-base-00) !important;
   --card: var(--color-base-00) !important;
@@ -56,6 +54,20 @@
 
   /* Muted text - using mid-gray */
   --muted-foreground: var(--color-base-50) !important;
+
+  /* Typography scale */
+  --sprout-font-3xs: 0.65rem;
+  --sprout-font-2xs: 0.75rem;
+  --sprout-font-xs: 0.9rem;
+  --sprout-font-sm: 1rem;
+  --sprout-font-sm-plus: 1.0625rem;
+  --sprout-font-md-minus: 1.08rem;
+  --sprout-font-md-plus: 1.125rem;
+  --sprout-font-md: 1.25rem;
+  --sprout-font-xl-minus: 1.3rem;
+  --sprout-font-xl: 1.3125rem;
+  --sprout-font-lg: 1.5rem;
+  --font-ui-small: var(--sprout-font-xs);
 
   /* Destructive (light: rgb(231,0,11); dark: rgb(255,100,103)) */
   --destructive: rgb(231, 0, 11) !important;
@@ -108,7 +120,7 @@
   --background: var(--color-base-00) !important;
   --background-primary: var(--color-base-00) !important;
   --color-popover: var(--color-base-00) !important;
-  --file-header-background-focused: var(--color-base-00) !important;
+  --file-header-background-focused: transparent !important;
 
   --interactive-normal: var(--color-base-20) !important;
   --color-background: var(--color-base-20) !important;

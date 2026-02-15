@@ -19,9 +19,10 @@ import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_ANALYTICS } from "../core/constants";
-import { queryFirst, setCssProps } from "../core/ui";
+import { placePopover, queryFirst, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
+import { isParentCard } from "../core/card-utils";
 import { StagePieCard } from "./pie-charts";
 import { FutureDueChart } from "./future-due-chart";
 import { NewCardsPerDayChart } from "./new-cards-per-day-chart";
@@ -51,12 +52,13 @@ function localDayIndex(ts: number, timeZone: string) {
   return Math.floor(Date.UTC(year, month - 1, day) / MS_DAY);
 }
 
-function computeDueForecast(states: Record<string, CardState>, now: number) {
+function computeDueForecast(states: Record<string, CardState>, now: number, parentIds?: Set<string>) {
   const byDays: Record<number, number> = { 1: 0, 7: 0, 30: 0, 90: 0 };
   const thresholds = [1, 7, 30, 90];
 
-  for (const st of Object.values(states || {})) {
+  for (const [id, st] of Object.entries(states || {})) {
     if (!st || typeof st !== "object") continue;
+    if (parentIds && parentIds.has(id)) continue;
     if ((st).stage === "suspended") continue;
 
     const due = Number((st).due);
@@ -286,11 +288,13 @@ export class SproutAnalyticsView extends ItemView {
 
     const now = Date.now();
     const events = this.plugin.store.getAnalyticsEvents?.() ?? [];
-    const cards = this.plugin.store.getAllCards?.() ?? [];
+    const allCards = this.plugin.store.getAllCards?.() ?? [];
+    const cards = allCards.filter(c => !isParentCard(c));
+    const parentIds = new Set(allCards.filter(c => isParentCard(c)).map(c => String(c.id)));
     const states = this.plugin.store.data.states ?? {};
     const reviewLog = this.plugin.store.data.reviewLog ?? [];
 
-    const dueForecast = computeDueForecast(states, now);
+    const dueForecast = computeDueForecast(states, now, parentIds);
     void dueForecast; // reserved for future use
 
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -309,8 +313,9 @@ export class SproutAnalyticsView extends ItemView {
       dayMap.set(idx, entry);
     }
 
-    for (const st of Object.values(states || {})) {
+    for (const [stId, st] of Object.entries(states || {})) {
       if (!st || typeof st !== "object") continue;
+      if (parentIds.has(stId)) continue;
       if (st.stage === "suspended") continue;
       const due = Number(st.due);
       if (!Number.isFinite(due) || due <= 0) continue;
@@ -403,11 +408,11 @@ export class SproutAnalyticsView extends ItemView {
     };
 
     const formatTrend = (current: number, previous: number, previousDaysWithData: number) => {
-      if (previousDaysWithData <= 0 || previous <= 0) return { value: 0, text: "0.0%", dir: 0 };
+      if (previousDaysWithData <= 0 || previous <= 0) return { value: 0, text: "0%", dir: 0 };
       const raw = ((current - previous) / previous) * 100;
       const capped = Math.min(Math.max(raw, -1000), 1000);
       const dir = capped > 0 ? 1 : capped < 0 ? -1 : 0;
-      return { value: capped, text: `${capped > 0 ? "+" : ""}${capped.toFixed(1)}%`, dir };
+      return { value: capped, text: `${capped > 0 ? "+" : ""}${capped.toFixed(0)}%`, dir };
     };
 
     const buildTrendBadge = (trend: { value: number; text: string; dir: number }) => {
@@ -425,7 +430,7 @@ export class SproutAnalyticsView extends ItemView {
       badge.appendChild(icon);
 
       const valueEl = document.createElement("span");
-      valueEl.textContent = trend.dir === 0 ? "0.0%" : `${trend.dir > 0 ? "+" : ""}0.0%`;
+      valueEl.textContent = trend.dir === 0 ? "0%" : `${trend.dir > 0 ? "+" : ""}0%`;
       badge.appendChild(valueEl);
 
       // Animate count-up with subtle spin
@@ -440,7 +445,7 @@ export class SproutAnalyticsView extends ItemView {
         const p = Math.min(Math.max(elapsed / durationMs, 0), 1);
         const eased = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p; // easeInOut
         const currentVal = (trend.dir === 0 ? 0 : eased * Math.abs(target)) * (trend.dir >= 0 ? 1 : -1);
-        valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(1)}%`;
+        valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(0)}%`;
         const angle = startAngle + (endAngle - startAngle) * eased;
         setCssProps(badge as HTMLElement, "--sprout-rotate", `${angle}deg`);
         if (p < 1) requestAnimationFrame(animate);
@@ -751,7 +756,7 @@ export class SproutAnalyticsView extends ItemView {
     bottom.appendChild(center);
 
     const right = document.createElement("div");
-    right.className = "bc flex flex-row flex-wrap items-center gap-2";
+    right.className = "bc flex flex-row flex-wrap items-center gap-2 sprout-analytics-controls";
     bottom.appendChild(right);
 
     const formatStudyTime = (minutes: number) => {
@@ -871,7 +876,7 @@ export class SproutAnalyticsView extends ItemView {
     rowsLbl.textContent = "Rows";
 
     const rowsWrap = right.createDiv({ cls: "bc sprout relative inline-flex" });
-    const rowsBtn = rowsWrap.createEl("button", { cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2" });
+    const rowsBtn = rowsWrap.createEl("button", { cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2 sprout-analytics-rows-btn" });
     rowsBtn.setAttribute("aria-haspopup", "menu");
     rowsBtn.setAttribute("aria-expanded", "false");
 
@@ -899,8 +904,20 @@ export class SproutAnalyticsView extends ItemView {
 
     let rowsOpen = false;
     const pageSizeOptions = ["100", "50", "25", "10", "5"];
+    let activePointerHandler: ((ev: PointerEvent) => void) | null = null;
+    let pointerListenerTimer: number | null = null;
 
     const closeRowsMenu = () => {
+      // Cancel any pending deferred listener registration
+      if (pointerListenerTimer !== null) {
+        clearTimeout(pointerListenerTimer);
+        pointerListenerTimer = null;
+      }
+      // Remove the outside-click listener
+      if (activePointerHandler) {
+        document.removeEventListener("pointerdown", activePointerHandler, true);
+        activePointerHandler = null;
+      }
       rowsBtn.setAttribute("aria-expanded", "false");
       rowsPopover.setAttribute("aria-hidden", "true");
       rowsPopover.classList.remove("is-open");
@@ -910,17 +927,10 @@ export class SproutAnalyticsView extends ItemView {
       rowsOpen = false;
     };
 
-    const placeRowsMenu = () => {
-      const r = rowsBtn.getBoundingClientRect();
-      const margin = 8;
-      const width = 140;
-      const left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
-      const panelRect = rowsPanel.getBoundingClientRect();
-      const top = Math.max(margin, r.top - panelRect.height - 6);
-      setCssProps(rowsPopover, "--sprout-popover-left", `${left}px`);
-      setCssProps(rowsPopover, "--sprout-popover-top", `${top}px`);
-      setCssProps(rowsPopover, "--sprout-popover-width", `${width}px`);
-    };
+    const placeRowsMenu = () => placePopover({
+      trigger: rowsBtn, panel: rowsPanel, popoverEl: rowsPopover,
+      width: 96, dropUp: true,
+    });
 
     const buildRowsOptions = () => {
       while (rowsMenu.firstChild) rowsMenu.removeChild(rowsMenu.firstChild);
@@ -995,7 +1005,11 @@ export class SproutAnalyticsView extends ItemView {
         closeRowsMenu();
       };
 
-      window.setTimeout(() => {
+      // Store reference so closeRowsMenu can remove it
+      activePointerHandler = onDocPointerDown;
+
+      pointerListenerTimer = window.setTimeout(() => {
+        pointerListenerTimer = null;
         document.addEventListener("pointerdown", onDocPointerDown, true);
       }, 0);
 
@@ -1032,7 +1046,6 @@ export class SproutAnalyticsView extends ItemView {
 
       const nav = document.createElement("nav");
       nav.setAttribute("role", "navigation");
-      nav.setAttribute("data-tooltip", "Pagination");
       nav.className = "bc flex items-center gap-2";
       pagerHost.appendChild(nav);
 
@@ -1042,6 +1055,7 @@ export class SproutAnalyticsView extends ItemView {
         b.className = `bc ${active ? "btn" : "btn-outline"} h-8 px-2`;
         b.textContent = label;
         b.setAttribute("data-tooltip", tooltip);
+        b.setAttribute("data-tooltip-position", "top");
         b.disabled = disabled;
         if (active) b.setAttribute("aria-current", "page");
         b.addEventListener("click", (ev) => {
@@ -1059,6 +1073,7 @@ export class SproutAnalyticsView extends ItemView {
         b.className = "bc btn-outline h-8 px-2";
         b.textContent = "…";
         b.setAttribute("data-tooltip", `Page ${targetPage}`);
+        b.setAttribute("data-tooltip-position", "top");
         b.addEventListener("click", (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
@@ -1083,6 +1098,7 @@ export class SproutAnalyticsView extends ItemView {
       prev.type = "button";
       prev.className = "bc btn-outline h-8 px-2";
       prev.setAttribute("data-tooltip", "Previous page");
+      prev.setAttribute("data-tooltip-position", "top");
       prev.disabled = currentPage <= 0;
       prev.addEventListener("click", (ev) => {
         ev.preventDefault();
@@ -1143,6 +1159,7 @@ export class SproutAnalyticsView extends ItemView {
       next.type = "button";
       next.className = "bc btn-outline h-8 px-2";
       next.setAttribute("data-tooltip", "Next page");
+      next.setAttribute("data-tooltip-position", "top");
       next.disabled = currentPage >= totalPagesLocal - 1;
       next.addEventListener("click", (ev) => {
         ev.preventDefault();

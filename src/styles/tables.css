@@ -1,7 +1,75 @@
 /* ============================================================================
-   TABLES — Generic table hover, changelog table, toggle chevrons,
+   TABLES — Markdown table styling inside card content (reviewer, reading-view,
+   widget), generic table hover, changelog table, toggle chevrons,
    browser table hover overrides.
    ========================================================================== */
+
+/* ---- Markdown tables inside card content ---- */
+
+/*
+ * Shared styling for <table> elements rendered by MarkdownRenderer.render()
+ * inside card Q/A/Info blocks across all three views:
+ *   - Reviewer:     .sprout-md-block table
+ *   - Reading view: .sprout-section-content table, .sprout-answer table, .sprout-info table
+ *   - Widget:       .sprout-widget-text table
+ */
+
+/* Scrollable wrapper so wide tables don't overflow the card */
+.sprout .sprout-md-block,
+.sprout .sprout-section-content,
+.sprout .sprout-answer,
+.sprout .sprout-info,
+.sprout .sprout-widget-text {
+  overflow-x: auto;
+}
+
+/* Base table layout */
+.sprout .sprout-md-block table,
+.sprout .sprout-section-content table,
+.sprout .sprout-answer table,
+.sprout .sprout-info table,
+.sprout .sprout-widget-text table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: inherit;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+/* Header cells */
+.sprout .sprout-md-block table th,
+.sprout .sprout-section-content table th,
+.sprout .sprout-answer table th,
+.sprout .sprout-info table th,
+.sprout .sprout-widget-text table th {
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  white-space: nowrap;
+}
+
+/* Body cells */
+.sprout .sprout-md-block table td,
+.sprout .sprout-section-content table td,
+.sprout .sprout-answer table td,
+.sprout .sprout-info table td,
+.sprout .sprout-widget-text table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  vertical-align: top;
+}
+
+/* Subtle stripe for readability */
+.sprout .sprout-md-block table tbody tr:nth-child(even),
+.sprout .sprout-section-content table tbody tr:nth-child(even),
+.sprout .sprout-answer table tbody tr:nth-child(even),
+.sprout .sprout-info table tbody tr:nth-child(even),
+.sprout .sprout-widget-text table tbody tr:nth-child(even) {
+  background: var(--background-secondary-alt, var(--background-secondary));
+}
 
 /* ---- Generic table row hover ---- */
 
@@ -63,7 +131,7 @@
 .sprout .sprout-changelog-scroll {
   padding: 8px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   max-height: 165px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -101,14 +169,14 @@
 }
 .sprout-changelog-table th:first-child,
 .sprout-changelog-table td:first-child {
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-top-left-radius: var(--radius-l);
+  border-bottom-left-radius: var(--radius-l);
 }
 
 .sprout-changelog-table th:last-child,
 .sprout-changelog-table td:last-child {
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-top-right-radius: var(--radius-l);
+  border-bottom-right-radius: var(--radius-l);
 }
 .sprout-changelog-table th {
   color: var(--text-color);
@@ -135,12 +203,12 @@
   border-color: var(--background-modifier-border) !important;
 }
 .sprout .sprout-changelog-table tbody tr:hover td:first-child {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
+  border-top-left-radius: var(--radius-m);
+  border-bottom-left-radius: var(--radius-m);
 }
 .sprout .sprout-changelog-table tbody tr:hover td:last-child {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
+  border-top-right-radius: var(--radius-m);
+  border-bottom-right-radius: var(--radius-m);
 }
 
 .sprout-changelog-cell {
@@ -152,4 +220,74 @@
   border-top: var(--border-width) solid var(--background-modifier-border);
   margin-top: 8px;
   padding-top: 8px;
+}
+
+/* ---- Release summary card (What's New) ---- */
+
+.sprout-release-summary {
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background);
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sprout-release-version-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sprout-version-badge {
+  display: inline-block;
+  font-size: var(--sprout-font-2xs);
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: var(--radius-s);
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.sprout-release-content {
+  line-height: 1.5;
+}
+
+.sprout-release-heading {
+  font-weight: 600;
+  font-size: var(--sprout-font-2xs);
+  margin-top: 6px;
+  margin-bottom: 2px;
+  color: var(--text-normal);
+}
+
+.sprout-release-list {
+  margin: 0;
+  padding-left: 0;
+  list-style-position: inside;
+  color: var(--text-muted);
+}
+
+.sprout-release-list li {
+  margin-bottom: 1px;
+}
+
+.sprout-backup-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-m);
+  background: var(--background-modifier-message);
+  font-size: var(--sprout-font-2xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.sprout-release-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }

@@ -11,10 +11,12 @@
 import { Modal, Notice, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions } from "../core/store";
 import { queryFirst } from "../core/ui";
-import { setModalTitle } from "../modals/modal-utils";
+import { setModalTitle, scopeModalToWorkspace } from "../modals/modal-utils";
 import { syncOneFile } from "../sync/sync-engine";
 import { log } from "../core/logger";
+import { escapeDelimiterRe } from "../core/delimiter";
 
 export type CardEditPayload = {
   title?: string;
@@ -27,6 +29,8 @@ export type CardEditPayload = {
   options?: string[]; // plain options (no **)
   correctIndex?: number; // 0-based, -1 allowed
 
+  oqSteps?: string[]; // ordered steps for OQ
+
   info?: string;
 };
 
@@ -35,9 +39,9 @@ const ID_COMMENT_RE = /^<!--ID:(\d{9})-->$/;
 
 // Recognised field starts for "continuation line" handling (supports both pipe and legacy colon)
 const FIELD_START_PIPE_RE =
-  /^(T|Title|Q|Question|A|Answer|I|Info|MCQ|O|Options|CQ|Cloze|C|K|IO)\s*\|/;
+  /^(T|Title|Q|Question|A|Answer|I|Info|MCQ|O|Options|CQ|Cloze|C|K|IO|OQ|\d{1,2})\s*\|/;
 const FIELD_START_COLON_RE =
-  /^(T|Title|Q|Question|A|Answer|I|Info|MCQ|O|Options|CQ|Cloze|C|K|IO):/;
+  /^(T|Title|Q|Question|A|Answer|I|Info|MCQ|O|Options|CQ|Cloze|C|K|IO|OQ|\d{1,2}):/;
 
 function isMarkerLine(line: string): boolean {
   const t = (line || "").trim();
@@ -110,8 +114,9 @@ function setTaggedSection(
   newValue: string | undefined,
 ): string[] {
   const valueLines = newValue === undefined ? null : normaliseNewlines(newValue);
-  // Match both pipe and colon formats when finding existing fields
-  const tagResPipe = tagCandidates.map((t) => new RegExp(`^${t}\\s*\\|`, "i"));
+  // Match both delimiter and colon formats when finding existing fields
+  const delimEsc = escapeDelimiterRe();
+  const tagResPipe = tagCandidates.map((t) => new RegExp(`^${t}\\s*${delimEsc}`, "i"));
   const tagResColon = tagCandidates.map((t) => new RegExp(`^${t}:\\s*`, "i"));
 
   let tagIdx = -1;
@@ -232,6 +237,7 @@ export class CardEditModal extends Modal {
   }
 
   onOpen() {
+    scopeModalToWorkspace(this);
     this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-edit-modal");
     this.contentEl.addClass("bc");
@@ -358,7 +364,7 @@ export class CardEditModal extends Modal {
       return;
     }
 
-    if (type === "basic") {
+    if (type === "basic" || type === "reversed") {
       mkSectionTitle(contentEl, "Question");
       qEl = mkTextarea(String((this.card).q || ""), 4);
 
@@ -379,6 +385,133 @@ export class CardEditModal extends Modal {
       return;
     }
 
+    if (type === "oq") {
+      mkSectionTitle(contentEl, "Question");
+      qEl = mkTextarea(String((this.card).q || ""), 4);
+
+      mkSectionTitle(contentEl, "Steps (correct order)");
+
+      const oqHint = contentEl.createDiv({ cls: "text-xs text-muted-foreground" });
+      oqHint.textContent = "Drag the grip handles to reorder steps. Steps are shuffled during review.";
+
+      const oqListContainer = contentEl.createDiv({ cls: "sprout-oq-editor-list" });
+
+      const oqStepRows: Array<{ row: HTMLElement; input: HTMLInputElement; badge: HTMLElement }> = [];
+
+      const oqRenumber = () => {
+        oqStepRows.forEach((entry, i) => {
+          entry.badge.textContent = String(i + 1);
+        });
+      };
+
+      const oqUpdateRemove = () => {
+        const disable = oqStepRows.length <= 2;
+        for (const entry of oqStepRows) {
+          const btn = entry.row.querySelector<HTMLButtonElement>(".sprout-oq-del-btn");
+          if (btn) {
+            btn.disabled = disable;
+            btn.classList.toggle("is-disabled", disable);
+          }
+        }
+      };
+
+      const addOqStepRow = (value: string) => {
+        const row = contentEl.createDiv({ cls: "sprout-edit-mcq-option-row" });
+        row.draggable = true;
+
+        // Grip handle
+        const grip = document.createElement("span");
+        grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip";
+        setIcon(grip, "grip-vertical");
+        row.appendChild(grip);
+
+        // Number badge
+        const badge = document.createElement("span");
+        badge.className = "inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 shrink-0";
+        badge.textContent = String(oqStepRows.length + 1);
+        row.appendChild(badge);
+
+        const input = row.createEl("input");
+        input.type = "text";
+        input.value = value || "";
+        input.classList.add("sprout-edit-mcq-option-input");
+        input.placeholder = `Step ${oqStepRows.length + 1}`;
+
+        const delBtn = row.createEl("button", { text: "−", cls: "sprout-oq-del-btn" });
+        delBtn.type = "button";
+        delBtn.addEventListener("click", () => {
+          if (oqStepRows.length <= 2) return;
+          const pos = oqStepRows.findIndex((e) => e.input === input);
+          if (pos < 0) return;
+          oqStepRows[pos].row.remove();
+          oqStepRows.splice(pos, 1);
+          oqRenumber();
+          oqUpdateRemove();
+        });
+
+        // DnD reorder
+        row.addEventListener("dragstart", (ev) => {
+          const idx = oqStepRows.findIndex((e) => e.row === row);
+          ev.dataTransfer?.setData("text/plain", String(idx));
+          row.classList.add("sprout-oq-row-dragging");
+        });
+        row.addEventListener("dragend", () => {
+          row.classList.remove("sprout-oq-row-dragging");
+        });
+        row.addEventListener("dragover", (ev) => {
+          ev.preventDefault();
+          ev.dataTransfer!.dropEffect = "move";
+        });
+        row.addEventListener("drop", (ev) => {
+          ev.preventDefault();
+          const fromIdx = parseInt(ev.dataTransfer?.getData("text/plain") || "-1", 10);
+          const toIdx = oqStepRows.findIndex((e) => e.row === row);
+          if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+          const [moved] = oqStepRows.splice(fromIdx, 1);
+          oqStepRows.splice(toIdx, 0, moved);
+          oqListContainer.innerHTML = "";
+          for (const entry of oqStepRows) oqListContainer.appendChild(entry.row);
+          oqRenumber();
+        });
+
+        oqListContainer.appendChild(row);
+        const entry = { row, input, badge };
+        oqStepRows.push(entry);
+        oqUpdateRemove();
+        return entry;
+      };
+
+      const currentSteps = Array.isArray((this.card).oqSteps) ? (this.card).oqSteps : [];
+      const seedSteps = currentSteps.length >= 2 ? currentSteps : ["", ""];
+      for (const s of seedSteps) addOqStepRow(s);
+      oqRenumber();
+      oqUpdateRemove();
+
+      // Add step button
+      const oqAddRow = contentEl.createDiv({ cls: "sprout-edit-mcq-add-row" });
+      const oqPlusBtn = oqAddRow.createEl("button", { text: "+" });
+      oqPlusBtn.type = "button";
+      oqPlusBtn.onclick = () => {
+        if (oqStepRows.length >= 20) { new Notice("Maximum 20 steps."); return; }
+        addOqStepRow("");
+        oqRenumber();
+      };
+
+      mkSectionTitle(contentEl, "Extra information");
+      const infoEl = mkTextarea(String((this.card).info || ""), 4);
+
+      this.renderButtons(type, titleEl, {
+        qEl,
+        aEl: null,
+        clozeEl: null,
+        infoEl,
+        getMcq: () => null,
+        getOqSteps: () => oqStepRows.map((r) => (r.input.value || "").trim()).filter(Boolean),
+      });
+
+      return;
+    }
+
     // MCQ
     mkSectionTitle(contentEl, "Question");
     mcqStemEl = mkTextarea(String((this.card).stem || ""), 4);
@@ -386,7 +519,7 @@ export class CardEditModal extends Modal {
     mkSectionTitle(contentEl, "Options");
 
     // Seed options + correct
-    const currentOpts: string[] = Array.isArray((this.card).options) ? (this.card).options : [];
+    const currentOpts: string[] = normalizeCardOptions((this.card).options);
     const currentCorrect = Number.isFinite((this.card).correctIndex)
       ? Number((this.card).correctIndex)
       : -1;
@@ -445,6 +578,7 @@ export class CardEditModal extends Modal {
             correctIndex: number;
           }
         | null;
+      getOqSteps?: () => string[];
     },
   ) {
     const { contentEl } = this;
@@ -470,7 +604,7 @@ export class CardEditModal extends Modal {
           info: args.infoEl.value ?? "",
         };
 
-        if (type === "basic") {
+        if (type === "basic" || type === "reversed") {
           payload.q = args.qEl?.value ?? "";
           payload.a = args.aEl?.value ?? "";
         } else if (type === "cloze") {
@@ -480,6 +614,9 @@ export class CardEditModal extends Modal {
           payload.stem = m?.stem ?? "";
           payload.options = m?.options ?? [];
           payload.correctIndex = m?.correctIndex ?? -1;
+        } else if (type === "oq") {
+          payload.q = args.qEl?.value ?? "";
+          payload.oqSteps = args.getOqSteps?.() ?? [];
         }
 
         await this.onSave(payload);
@@ -529,8 +666,8 @@ export async function saveCardEdits(
   block = setTaggedSection(block, ["T", "Title"], norm(payload.title));
   block = setTaggedSection(block, ["I", "Info"], norm(payload.info));
 
-  if (type === "basic") {
-    block = setTaggedSection(block, ["Q", "Question"], norm(payload.q));
+  if (type === "basic" || type === "reversed") {
+    block = setTaggedSection(block, [type === "reversed" ? "RQ" : "Q", "Question"], norm(payload.q));
     block = setTaggedSection(block, ["A", "Answer"], norm(payload.a));
   } else if (type === "cloze") {
     block = setTaggedSection(block, ["CQ", "Cloze", "C"], norm(payload.clozeText));
@@ -587,6 +724,44 @@ export async function saveCardEdits(
       }
 
       block = [...block.slice(0, insertIdx), ...oLines, ...block.slice(insertIdx)];
+    }
+  } else if (type === "oq") {
+    block = setTaggedSection(block, ["OQ"], norm(payload.q));
+
+    const steps = Array.isArray(payload.oqSteps) ? payload.oqSteps : [];
+
+    // Remove all existing numbered step lines (1-20)
+    block = block.filter((line) => {
+      const trimmed = line.trim();
+      return !/^\d{1,2}\s*\|/.test(trimmed);
+    });
+
+    // Insert new numbered step lines after OQ field
+    if (steps.length > 0) {
+      let oqIdx = -1;
+      for (let i = 0; i < block.length; i++) {
+        if (/^OQ\s*\|/.test(block[i])) {
+          oqIdx = i;
+          break;
+        }
+      }
+
+      let insertIdx = oqIdx + 1;
+      if (oqIdx >= 0) {
+        while (insertIdx < block.length) {
+          const t = block[insertIdx].trim();
+          if (isFieldStart(t) || isMarkerLine(t)) break;
+          insertIdx++;
+        }
+      } else {
+        insertIdx = 0;
+        while (insertIdx < block.length && isMarkerLine(block[insertIdx].trim())) {
+          insertIdx++;
+        }
+      }
+
+      const stepLines = steps.map((step, idx) => `${idx + 1} | ${step} |`);
+      block = [...block.slice(0, insertIdx), ...stepLines, ...block.slice(insertIdx)];
     }
   }
 

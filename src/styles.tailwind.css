@@ -6,6 +6,7 @@
 
 /* Your class scanning */
 @source "./src";
+@source not "./src/anki/anki-media.ts";
 
 /* Basecoat (pick ONE approach: package OR CDN) */
 @import "basecoat-css"; /* preferred if you already installed it */

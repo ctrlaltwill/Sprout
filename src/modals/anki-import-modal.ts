@@ -11,7 +11,7 @@ import { Modal, Notice, setIcon } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
 import { previewApkg, importFromApkg, type ImportOptions, type ImportPreview, type ImportResult, type ModelFieldMapping } from "../anki/anki-import";
-import { setModalTitle, createThemedDropdown } from "./modal-utils";
+import { setModalTitle, createThemedDropdown, scopeModalToWorkspace } from "./modal-utils";
 import { setCssProps } from "../core/ui";
 
 export class AnkiImportModal extends Modal {
@@ -29,6 +29,7 @@ export class AnkiImportModal extends Modal {
   onOpen() {
     setModalTitle(this, "Import from Anki");
 
+    scopeModalToWorkspace(this);
     this.containerEl.addClass("sprout-modal-container");
     this.containerEl.addClass("sprout-modal-dim");
     this.containerEl.addClass("sprout");

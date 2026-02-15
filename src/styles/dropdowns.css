@@ -19,32 +19,30 @@
 
 /* ---- Dropdown menu basics ---- */
 
-.dropdown-menu hr {margin: 0; border-radius: 6px;
+.dropdown-menu hr {margin: 0; border-radius: var(--radius-m);
     overflow: hidden;}
 
-.sprout .dropdown-menu {
-  background-color: var(--background) !important;}
 
 /* ---- Dropdown menu hover/focus: light + dark ---- */
 
 .sprout.dropdown-menu .bg-popover {
   background-color: #fff;
   color: var(--popover-fg, var(--foreground));
-  border-radius: 6px;
+  border-radius: var(--radius-m);
 }
 
 /* Menu item hover/focus: light theme - very light grey */
 .sprout.dropdown-menu .group:hover,
 .sprout.dropdown-menu .group:focus {
-  background-color: #f3f3f3;
-  color: var(--accent-foreground, #111);
+  background-color: var(--color-background);
+  color: var(--text-normal, var(--text-color));
 }
 
 /* Menu item hover/focus: dark theme */
 .theme-dark .sprout.dropdown-menu .group:hover,
 .theme-dark .sprout.dropdown-menu .group:focus {
-  background-color: #23272e;
-  color: var(--accent-foreground, #fff);
+  background-color: var(--color-background);
+  color: var(--text-normal, var(--text-color));
 }
 
 /* Dark theme popover background */
@@ -77,11 +75,15 @@
 :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:hover,
 :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
-  :is([role="menuitem"], [role="menuitemradio"]).group:active,
-:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:focus,
 :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:focus-visible {
+  background-color: var(--color-background) !important;
+  color: var(--text-color) !important;
+}
+
+:where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role="menuitem"], [role="menuitemradio"]).group:active {
   background-color: var(--color-background) !important;
   color: var(--text-color) !important;
 }
@@ -130,7 +132,7 @@
 :where(.bc.p-1, .p-1) [role="button"] {
   color: var(--text-color) !important;
   margin: 1px 0 !important;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
 }
 
 :where(.bc.p-1, .p-1) [role="button"]:hover,
@@ -167,6 +169,11 @@
   display: block !important;
 }
 
+body.sprout-workspace-content-zoomed .sprout .dropdown-menu.sprout-popover-overlay,
+body.sprout-workspace-content-zoomed .sprout.dropdown-menu.sprout-popover-overlay {
+  zoom: var(--sprout-workspace-content-zoom, 1);
+}
+
 .sprout .sprout-overflow-visible {
   overflow: visible !important;
 }
@@ -189,7 +196,7 @@
 /* "Reset filters" (clickable text row) */
 :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
   color: var(--text-color) !important;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   padding-top: 6px;
   padding-bottom: 6px;
 }
@@ -239,4 +246,150 @@
 :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   .text-muted-foreground svg {
   stroke: currentColor !important;
+}
+
+/* ---- Searchable popover (settings) ---- */
+
+/* Trigger button — styled like Obsidian's native dropdown */
+.sprout-sp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 140px;
+  max-width: 260px;
+  transition: border-color 120ms ease;
+}
+
+.sprout-sp-trigger:hover {
+  border-color: var(--interactive-accent);
+}
+
+.sprout-sp-trigger-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.sprout-sp-trigger-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+.sprout-sp-trigger-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Panel */
+.sprout-sp-panel {
+  padding: 4px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--background-primary) !important;
+  color: var(--text-normal) !important;
+  border-color: var(--background-modifier-border) !important;
+}
+
+/* Search input wrapper */
+.sprout-sp-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.sprout-sp-search-icon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.45;
+}
+.sprout-sp-search-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sprout-sp-search-input {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  font-size: var(--font-ui-small);
+  padding: 2px 0;
+}
+.sprout-sp-search-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Options listbox */
+.sprout-sp-listbox {
+  overflow-y: auto;
+  flex: 1;
+  padding: 2px 0;
+}
+
+/* Individual option item */
+.sprout-sp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius-s, 4px);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  user-select: none;
+}
+.sprout-sp-item:hover,
+.sprout-sp-item:focus {
+  background: var(--background-modifier-hover);
+  outline: none;
+}
+.sprout-sp-item[aria-selected="true"] {
+  font-weight: 500;
+}
+
+/* Radio dot */
+.sprout-sp-dot-wrap {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sprout-sp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 100ms ease;
+}
+
+.sprout-sp-dot.is-selected {
+  background: currentColor;
+}
+
+/* Empty state */
+.sprout-sp-empty {
+  padding: 12px 8px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
 }

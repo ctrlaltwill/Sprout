@@ -40,7 +40,7 @@
 .sprout .sprout-deck-disclosure:focus-visible {
   outline: 2px solid rgba(var(--interactive-accent-rgb), 0.45);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--radius-l);
 }
 
 .sprout .sprout-deck-disclosure svg {
@@ -77,8 +77,8 @@
 }
 
 .sprout .sprout-group-select-header {
-  padding: 8px 10px;
-  background: var(--background) !important;
+  padding: 4px 0 4px 4px;
+  background: transparent !important;
   pointer-events: auto;
 }
 
@@ -87,7 +87,7 @@
   background: var(--background);
   color: var(--foreground);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-l);
   padding: 6px 10px;
   outline: none;
   box-shadow: none;
@@ -104,6 +104,8 @@
 
 .sprout .sprout-deck-header {
   flex: 0 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .sprout .sprout-deck-body {
@@ -115,6 +117,7 @@
 
 .sprout .sprout-deck-group-combo {
   flex: 0 1 auto;
+  z-index: 100;
 }
 
 .sprout .sprout-deck-control-btn {
@@ -166,7 +169,7 @@
 
 /* Group select popover: clip inner borders to rounded corners */
 .sprout .sprout-group-select-popover {
-  border-radius: 6px;
+  border-radius: var(--radius-l);
   overflow: hidden;
 }
 

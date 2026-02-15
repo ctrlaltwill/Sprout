@@ -23,13 +23,9 @@ export function renderTitleMarkdownIfNeeded(args: {
     const titleEl = queryFirst<HTMLElement>(rootEl, ".sprout-question-title");
   if (!titleEl) return;
 
-  const titleText =
-    (card).title ||
-    ((card).type === "mcq"
-      ? "MCQ"
-      : (card).type === "cloze" || (card).type === "cloze-child"
-        ? "Cloze"
-        : "Basic");
+  const titleText = (card).title || "";
+
+  if (!titleText) return;
 
   const s = String(titleText ?? "");
 

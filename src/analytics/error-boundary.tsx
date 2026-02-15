@@ -12,7 +12,7 @@ import * as React from "react";
 import { log } from "../core/logger";
 
 interface Props {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   chartName: string;
 }
 
@@ -44,8 +44,7 @@ export class ChartErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
-          className="bc card sprout-ana-card p-6 flex flex-col items-center justify-center gap-3"
-          style={{ minHeight: "300px" }}
+          className="bc card sprout-ana-card sprout-ana-min-300 p-6 flex flex-col items-center justify-center gap-3"
         >
           <div className="bc inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
             <svg

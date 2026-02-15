@@ -20,6 +20,7 @@ function InfoIcon(props: { text: string }) {
     <span
       className="inline-flex items-center text-muted-foreground"
       data-tooltip={props.text}
+      data-tooltip-position="right"
     >
       <svg
         className="svg-icon lucide-info"
@@ -45,7 +46,7 @@ function InfoIcon(props: { text: string }) {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className="svg-icon sprout-ana-chevron"
+      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -55,7 +56,6 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ "--sprout-rotate": open ? "90deg" : "0deg" } as React.CSSProperties}
       aria-hidden="true"
     >
       <polyline points="6 4 14 12 6 20" />
@@ -106,7 +106,7 @@ function StabilityTooltip(props: { active?: boolean; payload?: Array<{ payload?:
   const datum = props.payload[0]?.payload as StabilityBucket | undefined;
   if (!datum) return null;
   return (
-    <div className="bc rounded-lg bg-foreground text-background px-3 py-2 text-xs">
+    <div className="bc sprout-data-tooltip-surface">
       <div className="bc text-sm font-medium text-background">{formatStabilityLabel(Number(props.label ?? 0), [datum])}</div>
       <div className="bc text-background">Cards: {datum.count}</div>
     </div>
@@ -316,8 +316,8 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
   const filteredCards = React.useMemo(() => {
     return (props.cards ?? []).filter((card) => {
       if (!card) return false;
-      if (card.type === "cloze" && Array.isArray(card.clozeChildren) && card.clozeChildren.length)
-        return false;
+      const _t = String(card.type ?? "");
+      if (_t === "cloze" || _t === "reversed" || _t === "io" || _t === "io-parent" || _t === "io_parent" || _t === "ioparent") return false;
       if (selectedType && selectedType !== "all" && card.type !== selectedType) return false;
       if (selectedGroups.length) {
         if (!Array.isArray(card.groups)) return false;
