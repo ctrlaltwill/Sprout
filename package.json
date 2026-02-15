@@ -26,7 +26,7 @@
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "@types/sql.js": "^1.4.9",
-    "@typescript-eslint/parser": "^8.54.0",
+    "@typescript-eslint/parser": "^8.55.0",
     "@vitest/coverage-v8": "^4.0.18",
     "concurrently": "^9.2.1",
     "esbuild": "^0.27.3",
