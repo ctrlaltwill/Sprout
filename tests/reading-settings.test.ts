@@ -19,8 +19,9 @@ describe("reading settings defaults", () => {
     expect(DEFAULT_SETTINGS.readingView.macroConfigs.custom.fields.edit).toBe(true);
   });
 
-  it("limits colour config to non-flashcard macros", () => {
-    expect("colours" in DEFAULT_SETTINGS.readingView.macroConfigs.flashcards).toBe(false);
+  it("defines colour config for all macros", () => {
+    expect("colours" in DEFAULT_SETTINGS.readingView.macroConfigs.flashcards).toBe(true);
+    expect(DEFAULT_SETTINGS.readingView.macroConfigs.flashcards.colours.cardBgLight).toBe("");
     expect(DEFAULT_SETTINGS.readingView.macroConfigs.classic.colours.cardAccentLight).toBe("");
     expect(DEFAULT_SETTINGS.readingView.macroConfigs.guidebook.colours.cardBorderLight).toBe("");
     expect(DEFAULT_SETTINGS.readingView.macroConfigs.markdown.colours.cardBgLight).toBe("");
