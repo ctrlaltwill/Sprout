@@ -1,0 +1,10 @@
+{
+  "id": "sprout",
+  "name": "Sprout - Flashcards & Spaced Repetition",
+  "version": "1.0.5",
+  "minAppVersion": "1.5.0",
+  "description": "Spaced repetition flashcards. Write in Markdown, review efficiently, retain more.",
+  "author": "William Guy",
+  "authorUrl": "https://github.com/ctrlaltwill",
+  "isDesktopOnly": true
+}
