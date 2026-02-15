@@ -218,29 +218,51 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
 
   let selectedMode: "solo" | "all" = defaultMode;
   const options: { value: "solo" | "all"; label: string }[] = [
-    { value: "solo", label: "Hide one" },
-    { value: "all", label: "Hide all" },
+    { value: "solo", label: "Reveal group" },
+    { value: "all", label: "Reveal all" },
   ];
 
   // Mode picker row
-  const modeRow = footer.createDiv({ cls: "bc flex items-center gap-2 w-full justify-end" });
-  modeRow.createEl("label", {
-    cls: "bc text-sm font-medium",
-    text: "Mask mode",
+  const modeRow = footer.createDiv({ cls: "bc flex flex-col gap-1 items-start w-full" });
+  const modeLabel = modeRow.createEl("label", {
+    cls: "bc text-sm font-medium inline-flex items-center gap-1",
+    text: "Type",
   });
+  const modeInfo = modeLabel.createEl("span", {
+    cls: "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated",
+  });
+  modeInfo.setAttribute(
+    "data-tooltip",
+    "Choose how masks are revealed on the back: Reveal group shows only the selected group; Reveal all shows every group.",
+  );
+  modeInfo.setAttribute("data-tooltip-position", "top");
+  setIcon(modeInfo, "info");
 
   // Button-style dropdown (matches other modal dropdowns)
   const dropRoot = modeRow.createDiv({ cls: "bc sprout relative inline-flex" });
   const trigger = dropRoot.createEl("button", {
-    cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2",
+    cls: "bc btn-outline h-7 px-2 text-sm inline-flex items-center gap-2 sprout-io-mode-trigger",
     attr: { type: "button", "aria-haspopup": "menu", "aria-expanded": "false" },
   });
-  const triggerLabel = trigger.createEl("span", { cls: "bc truncate", text: options.find((o) => o.value === selectedMode)?.label ?? "Hide one" });
+  const triggerLabel = trigger.createEl("span", { cls: "bc", text: options.find((o) => o.value === selectedMode)?.label ?? "Reveal group" });
   const chevronWrap = trigger.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-3" });
   setIcon(chevronWrap, "chevron-down");
 
-  const menu = dropRoot.createDiv({ cls: "bc sprout-io-mode-menu" });
+  const menu = document.createElement("div");
+  menu.className = "bc sprout-io-mode-menu";
   menu.classList.add("hidden");
+  menu.setAttribute("aria-hidden", "true");
+  document.body.appendChild(menu);
+
+  const positionMenu = () => {
+    if (menu.classList.contains("hidden")) return;
+    const rect = trigger.getBoundingClientRect();
+    setCssProps(menu, {
+      position: "fixed",
+      top: `${Math.round(rect.bottom + 6)}px`,
+      left: `${Math.round(rect.left)}px`,
+    });
+  };
 
   for (const opt of options) {
     const item = menu.createDiv({ cls: "bc sprout-io-mode-menu-item", text: opt.label });
@@ -253,23 +275,56 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
       menu.querySelectorAll(".sprout-io-mode-menu-item").forEach((el) => el.classList.remove("is-selected"));
       item.classList.add("is-selected");
       menu.classList.add("hidden");
+      menu.setAttribute("aria-hidden", "true");
       trigger.setAttribute("aria-expanded", "false");
     });
   }
+
+  const closeMenu = () => {
+    menu.classList.add("hidden");
+    menu.setAttribute("aria-hidden", "true");
+    trigger.setAttribute("aria-expanded", "false");
+  };
+
+  const onDocClick = (ev: MouseEvent) => {
+    const target = ev.target as Node | null;
+    if (target && (dropRoot.contains(target) || menu.contains(target))) return;
+    closeMenu();
+  };
+
+  const onWindowResize = () => {
+    positionMenu();
+  };
+
+  const cleanup = () => {
+    document.removeEventListener("click", onDocClick);
+    window.removeEventListener("resize", onWindowResize);
+    observer.disconnect();
+    menu.remove();
+  };
+
+  const observer = new MutationObserver(() => {
+    if (!footer.isConnected) cleanup();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 
   trigger.addEventListener("click", (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
     const open = !menu.classList.contains("hidden");
-    menu.classList.toggle("hidden", open);
-    trigger.setAttribute("aria-expanded", String(!open));
+    if (open) {
+      closeMenu();
+      return;
+    }
+    menu.classList.remove("hidden");
+    menu.setAttribute("aria-hidden", "false");
+    trigger.setAttribute("aria-expanded", "true");
+    positionMenu();
   });
 
   // Close when clicking outside
-  document.addEventListener("click", () => {
-    menu.classList.add("hidden");
-    trigger.setAttribute("aria-expanded", "false");
-  });
+  document.addEventListener("click", onDocClick);
+  window.addEventListener("resize", onWindowResize);
 
   // Button row
   const buttonRow = footer.createDiv({ cls: "bc flex items-center gap-2" });
@@ -279,12 +334,18 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
   const cancelIcon = cancelBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
   setIcon(cancelIcon, "x");
   cancelBtn.createSpan({ text: "Cancel" });
-  cancelBtn.onclick = () => cb.onCancel();
+  cancelBtn.onclick = () => {
+    cleanup();
+    cb.onCancel();
+  };
 
-  const saveBtn = buttonRow.createEl("button", { cls: "bc btn inline-flex items-center gap-2 h-9 px-3 text-sm" });
+  const saveBtn = buttonRow.createEl("button", { cls: "bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm" });
   saveBtn.type = "button";
   saveBtn.createSpan({ text: "Save" });
-  saveBtn.onclick = () => cb.onSave(selectedMode);
+  saveBtn.onclick = () => {
+    cleanup();
+    cb.onSave(selectedMode);
+  };
 
   return { footerEl: footer, getMaskMode: () => selectedMode, cancelBtn, saveBtn };
 }

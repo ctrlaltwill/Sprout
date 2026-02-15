@@ -8,6 +8,7 @@
 
 import { Notice, setIcon } from "obsidian";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import {
@@ -25,6 +26,12 @@ import {
   parseGroupsInput,
   createThemedDropdown,
 } from "./modal-utils";
+
+const CLOZE_TOOLTIP =
+  "Use cloze syntax to hide text in your prompt.\n{{c1::text}} creates the first blank.\nUse {{c2::text}} for a different blank, or reuse {{c1::text}} to reveal together.\nShortcuts: Cmd/Ctrl+Shift+C (new blank), Cmd/Ctrl+Shift+Alt/Option+C (same blank number).";
+const MCQ_TOOLTIP = "Check the box next to each correct answer. At least one correct and one incorrect option required.";
+const OQ_TOOLTIP =
+  "Write the steps in the correct order.\nYou must have at least 2 steps.\nDrag the grip handles to reorder steps.\nSteps are shuffled during review.";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers (private to this module)
@@ -78,6 +85,7 @@ export function openBulkEditModalForCards(
   //   div.modal-container  >  div.modal-bg  +  div.modal
   const container = document.createElement("div");
   container.className = "modal-container sprout-modal-container sprout-modal-dim sprout mod-dim";
+  setCssProps(container, "z-index", "2147483000");
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-bg";
@@ -86,6 +94,7 @@ export function openBulkEditModalForCards(
   // ── Panel container ─────────────────────────────────────────────────────
   const panel = document.createElement("div");
   panel.className = "modal bc sprout-modals sprout-bulk-edit-panel";
+  setCssProps(panel, "z-index", "2147483001");
   container.appendChild(panel);
 
   // ── Close button (matches Obsidian modal-close-button) ──────────────────
@@ -116,6 +125,7 @@ export function openBulkEditModalForCards(
 
   const normalizedTypes = cards.map((c) => String(c?.type ?? "").toLowerCase());
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
+  const isClozeOnly = normalizedTypes.length > 0 && normalizedTypes.every((type) => type === "cloze");
   const isSingleMcq = cards.length === 1 && normalizedTypes[0] === "mcq";
   const isSingleOq = cards.length === 1 && normalizedTypes[0] === "oq";
 
@@ -163,6 +173,15 @@ export function openBulkEditModalForCards(
     const labelEl = document.createElement("label");
     labelEl.className = "bc text-sm font-medium";
     labelEl.textContent = label;
+    if (field === "question" && isClozeOnly) {
+      labelEl.className = "bc text-sm font-medium inline-flex items-center gap-1";
+      const infoIcon = document.createElement("span");
+      infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+      infoIcon.setAttribute("data-tooltip", CLOZE_TOOLTIP);
+      infoIcon.setAttribute("data-tooltip-position", "top");
+      setIcon(infoIcon, "info");
+      labelEl.appendChild(infoIcon);
+    }
     wrapper.appendChild(labelEl);
 
     const textarea = document.createElement("textarea");
@@ -267,8 +286,14 @@ export function openBulkEditModalForCards(
     mcqSection.className = "bc flex flex-col gap-1";
 
     const mcqLabel = document.createElement("label");
-    mcqLabel.className = "bc text-sm font-medium";
-    mcqLabel.textContent = "Answer";
+    mcqLabel.className = "bc text-sm font-medium inline-flex items-center gap-1";
+    mcqLabel.textContent = "Answers and options";
+    const mcqInfoIcon = document.createElement("span");
+    mcqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+    mcqInfoIcon.setAttribute("data-tooltip", MCQ_TOOLTIP);
+    mcqInfoIcon.setAttribute("data-tooltip-position", "top");
+    setIcon(mcqInfoIcon, "info");
+    mcqLabel.appendChild(mcqInfoIcon);
     mcqSection.appendChild(mcqLabel);
 
     // Correct answer input
@@ -321,7 +346,7 @@ export function openBulkEditModalForCards(
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
+      removeBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost";
       removeBtn.setAttribute("data-tooltip", "Remove option");
       removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
@@ -366,6 +391,12 @@ export function openBulkEditModalForCards(
     oqLabel.className = "bc text-sm font-medium inline-flex items-center gap-1";
     oqLabel.textContent = "Steps (correct order)";
     oqLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
+    const oqInfoIcon = document.createElement("span");
+    oqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+    oqInfoIcon.setAttribute("data-tooltip", OQ_TOOLTIP);
+    oqInfoIcon.setAttribute("data-tooltip-position", "top");
+    setIcon(oqInfoIcon, "info");
+    oqLabel.appendChild(oqInfoIcon);
     oqSection.appendChild(oqLabel);
 
     const oqHint = document.createElement("div");
@@ -410,7 +441,7 @@ export function openBulkEditModalForCards(
 
       // Number badge
       const badge = document.createElement("span");
-      badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 shrink-0";
+      badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0";
       badge.textContent = String(idx + 1);
       row.appendChild(badge);
 
@@ -425,7 +456,7 @@ export function openBulkEditModalForCards(
       // Delete button
       const delBtn = document.createElement("button");
       delBtn.type = "button";
-      delBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost sprout-oq-del-btn";
+      delBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost sprout-oq-del-btn";
       delBtn.setAttribute("data-tooltip", "Remove step");
       delBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");

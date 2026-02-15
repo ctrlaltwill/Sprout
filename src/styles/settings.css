@@ -1903,9 +1903,15 @@ button.sprout-settings-tab-btn {
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.sprout-rv-preset-card:hover {
+.sprout-rv-preset-card:not(.is-disabled):hover {
   border-color: var(--interactive-accent);
   background: var(--background-primary-alt);
+}
+
+.sprout-rv-preset-card.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-style: dashed;
 }
 
 .sprout-rv-preset-card.is-active {
@@ -1961,6 +1967,30 @@ button.sprout-settings-tab-btn {
 .sprout-rv-live-preview .sprout-rv-demo-card {
   margin: 0 !important;
   width: 100%;
+}
+
+.sprout-rv-live-preview .sprout-card-edit-btn,
+.sprout-rv-live-preview .sprout-flashcard-speak-btn {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.sprout-rv-live-preview-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.sprout-rv-live-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sprout-rv-live-preview-cardtype {
+  font-size: var(--sprout-font-2xs);
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .sprout-rv-custom-hooks {
@@ -2023,12 +2053,12 @@ button.sprout-settings-tab-btn {
 .sprout-ss-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 10px;
-  border-radius: var(--radius-s, 4px);
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-m, 8px);
   border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
+  background: var(--background-primary);
   color: var(--text-normal);
   font-size: var(--font-ui-small);
   cursor: pointer;
@@ -2147,8 +2177,9 @@ button.sprout-settings-tab-btn {
   align-items: flex-start;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: var(--radius-s, 4px);
+  border-radius: var(--radius-l, 4px);
   cursor: pointer;
+  margin: 1px 0px !important;
   font-size: var(--font-ui-small);
   color: var(--text-normal);
   user-select: none;
@@ -2484,6 +2515,7 @@ button.sprout-settings-tab-btn {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-shrink: 0;
   gap: 8px;
   width: 100%;
   padding: 5px 8px;
@@ -2492,6 +2524,7 @@ button.sprout-settings-tab-btn {
   background: none;
   color: var(--text-normal);
   font-size: var(--font-ui-small);
+  line-height: var(--line-height-normal);
   text-align: left;
   cursor: pointer;
   white-space: nowrap;

@@ -33,9 +33,11 @@ export type ColKey =
 export type CardType = "basic" | "reversed" | "reversed-child" | "cloze" | "mcq" | "io" | "oq";
 
 const CLOZE_TOOLTIP =
-  "Cloze syntax: {{c1::hidden text}}.\nNew cloze: Cmd+Shift+C (Ctrl+Shift+C).\nSame cloze #: Cmd+Shift+Option+C (Ctrl+Shift+Alt+C).";
+  "Use cloze syntax to hide text in your prompt.\n{{c1::text}} creates the first blank.\nUse {{c2::text}} for a different blank, or reuse {{c1::text}} to reveal together.\nShortcuts: Cmd/Ctrl+Shift+C (new blank), Cmd/Ctrl+Shift+Alt/Option+C (same blank number).";
 const FORMAT_TOOLTIP =
   "Formatting: Cmd+B (bold), Cmd+I (italic).";
+const OQ_TOOLTIP =
+  "Write the steps in the correct order.\nYou must have at least 2 steps.\nDrag the grip handles to reorder steps.\nSteps are shuffled during review.";
 const PLACEHOLDER_TITLE = "Enter a descriptive title for this flashcard";
 const PLACEHOLDER_CLOZE =
   "Type your text and wrap parts to hide with {{c1::text}}. Use {{c2::text}} for separate deletions, or {{c1::text}} again to hide together.";
@@ -276,6 +278,8 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
 
   const isSingleMcq = safeCards.length === 1 && normalizedTypes[0] === "mcq";
   const isSingleOq = safeCards.length === 1 && normalizedTypes[0] === "oq";
+  const isSingleBasicOrReversed =
+    safeCards.length === 1 && (normalizedTypes[0] === "basic" || normalizedTypes[0] === "reversed");
   const showReadOnlyFields = config.showReadOnlyFields ?? true;
 
   const root = document.createElement("div");
@@ -340,18 +344,21 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
       required.textContent = "*";
       label.appendChild(required);
     }
+    const suppressGenericInfoIcons = isSingleBasicOrReversed || isSingleMcq || isSingleOq || isClozeOnly;
     if (field.key === "question" && isClozeOnly) {
       label.className = "bc text-sm font-medium inline-flex items-center gap-1";
       const infoIcon = document.createElement("span");
       infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
-      infoIcon.setAttribute("data-tooltip", CLOZE_TOOLTIP + "\n" + FORMAT_TOOLTIP);
+      infoIcon.setAttribute("data-tooltip", CLOZE_TOOLTIP);
+      infoIcon.setAttribute("data-tooltip-position", "top");
       setIcon(infoIcon, "info");
       label.appendChild(infoIcon);
-    } else if (field.editable && ["title", "question", "answer", "info"].includes(field.key)) {
+    } else if (!suppressGenericInfoIcons && field.editable && ["title", "question", "answer", "info"].includes(field.key)) {
       label.className = "bc text-sm font-medium inline-flex items-center gap-1";
       const infoIcon = document.createElement("span");
       infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
       infoIcon.setAttribute("data-tooltip", FORMAT_TOOLTIP);
+      infoIcon.setAttribute("data-tooltip-position", "top");
       setIcon(infoIcon, "info");
       label.appendChild(infoIcon);
     }
@@ -448,7 +455,12 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
   if (isSingleOq) {
     const oqSection = createOqEditor(safeCards[0]);
     if (oqSection) {
-      root.appendChild(oqSection.element);
+      const questionWrapper = fieldWrappers.get("question");
+      if (questionWrapper && questionWrapper.nextSibling) {
+        root.insertBefore(oqSection.element, questionWrapper.nextSibling);
+      } else {
+        root.appendChild(oqSection.element);
+      }
       getOqSteps = oqSection.getSteps;
     }
   }
@@ -758,9 +770,22 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   renderBadges();
   renderList();
 
-  document.addEventListener("pointerdown", (ev) => {
+  const onDocPointerDown = (ev: PointerEvent) => {
     if (!container.contains(ev.target as Node)) closePopover();
+  };
+  document.addEventListener("pointerdown", onDocPointerDown);
+
+  const cleanup = () => {
+    document.removeEventListener("pointerdown", onDocPointerDown);
+    detachObserver.disconnect();
+  };
+
+  const detachObserver = new MutationObserver(() => {
+    if (!container.isConnected) cleanup();
   });
+  if (document.body) {
+    detachObserver.observe(document.body, { childList: true, subtree: true });
+  }
 
   container.addEventListener("click", (ev) => {
     ev.stopPropagation();
@@ -787,6 +812,12 @@ function createOqEditor(card: CardRecord) {
   label.className = "bc text-sm font-medium inline-flex items-center gap-1";
   label.textContent = "Steps (correct order)";
   label.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
+  const stepsInfoIcon = document.createElement("span");
+  stepsInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+  stepsInfoIcon.setAttribute("data-tooltip", OQ_TOOLTIP);
+  stepsInfoIcon.setAttribute("data-tooltip-position", "top");
+  setIcon(stepsInfoIcon, "info");
+  label.appendChild(stepsInfoIcon);
   container.appendChild(label);
 
   const hint = document.createElement("div");
@@ -833,7 +864,7 @@ function createOqEditor(card: CardRecord) {
 
     // Number badge
     const badge = document.createElement("span");
-    badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 shrink-0";
+    badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0";
     badge.textContent = String(idx + 1);
     row.appendChild(badge);
 
@@ -848,7 +879,7 @@ function createOqEditor(card: CardRecord) {
     // Delete button
     const delBtn = document.createElement("button");
     delBtn.type = "button";
-    delBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost sprout-oq-del-btn";
+    delBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost sprout-oq-del-btn";
     delBtn.setAttribute("data-tooltip", "Remove step");
     delBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");
@@ -1009,7 +1040,7 @@ function createMcqEditor(card: CardRecord) {
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "bc inline-flex items-center justify-center sprout-remove-btn-ghost";
+    removeBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost";
     removeBtn.setAttribute("data-tooltip", "Remove option");
     removeBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");

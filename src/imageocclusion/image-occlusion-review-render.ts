@@ -159,7 +159,8 @@ export function renderImageOcclusionReviewInto(args: {
     });
   }
   const maskMode = ioDef && typeof ioDef.maskMode === "string" ? String(ioDef.maskMode) : "";
-  const showAllMasks = widgetMode && maskMode === "all";
+  const showAllMasks = maskMode === "all";
+  const revealMode = plugin.settings?.imageOcclusion?.revealMode === "all" ? "all" : "group";
   let targetIds: Set<string> | null = null;
   let targetGroup: string | null = null;
   if (card.type === "io-child") {
@@ -168,13 +169,33 @@ export function renderImageOcclusionReviewInto(args: {
     else if (card.groupKey) targetGroup = String(card.groupKey || "");
   }
   const renderMasks = showAllMasks && card.type === "io-child" ? occlusions : masksToShow;
+  const isTargetRect = (rect: StoredIORect): boolean => {
+    const rectId = String(rect.rectId || "");
+    const rectGroup = String(rect.groupKey || "");
+    if (card.type !== "io-child") return true;
+    if (!targetIds && !targetGroup) return true;
+    if (targetIds) return targetIds.has(rectId);
+    return rectGroup === targetGroup;
+  };
+
+  const revealGroupOnly =
+    reveal &&
+    card.type === "io-child" &&
+    maskMode === "all" &&
+    revealMode === "group";
+
+  const masksForOverlay = !reveal
+    ? renderMasks
+    : revealGroupOnly
+      ? occlusions.filter((rect) => !isTargetRect(rect))
+      : [];
 
   // Get custom colors and icon from settings
   const maskTargetColor = plugin.settings?.imageOcclusion?.maskTargetColor || "";
   const maskOtherColor = plugin.settings?.imageOcclusion?.maskOtherColor || "";
   const maskIcon = plugin.settings?.imageOcclusion?.maskIcon ?? "?";
 
-  if (!reveal && renderMasks.length > 0) {
+  if (masksForOverlay.length > 0) {
     const overlay = document.createElement("div");
     overlay.classList.add("sprout-io-overlay");
     const hintSizeUpdaters: Array<() => void> = [];
@@ -206,21 +227,12 @@ export function renderImageOcclusionReviewInto(args: {
     }
 
     // Add masks
-    for (const rect of renderMasks) {
+    for (const rect of masksForOverlay) {
       const x = Number.isFinite(rect.x) ? Number(rect.x) : 0;
       const y = Number.isFinite(rect.y) ? Number(rect.y) : 0;
       const w = Number.isFinite(rect.w) ? Number(rect.w) : 0;
       const h = Number.isFinite(rect.h) ? Number(rect.h) : 0;
-      const rectId = String(rect.rectId || "");
-      const rectGroup = String(rect.groupKey || "");
-      const isTarget =
-        card.type !== "io-child"
-          ? true
-          : !targetIds && !targetGroup
-            ? true
-            : targetIds
-              ? targetIds.has(rectId)
-              : rectGroup === targetGroup;
+      const isTarget = isTargetRect(rect);
 
       const mask = document.createElement("div");
       mask.classList.add("sprout-io-mask");
@@ -228,32 +240,30 @@ export function renderImageOcclusionReviewInto(args: {
       setCssProps(mask, "--sprout-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
       setCssProps(mask, "--sprout-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
       setCssProps(mask, "--sprout-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
-      if (widgetMode) {
-        if (isTarget) {
-          mask.classList.add("sprout-io-mask-target");
-          // Only show icon if maskIcon is not empty
-          if (maskIcon && maskIcon.trim()) {
-            const hint = document.createElement("span");
-            hint.classList.add("sprout-io-mask-hint");
-            const KNOWN_ICONS = ["circle-help", "eye-off"];
-            if (KNOWN_ICONS.includes(maskIcon.trim())) {
-              setIcon(hint, maskIcon.trim());
-            } else {
-              hint.textContent = maskIcon.trim();
-            }
-            mask.appendChild(hint);
-            hintSizeUpdaters.push(() => {
-              const rect = mask.getBoundingClientRect();
-              if (!rect.height) return;
-              const size = Math.max(12, rect.height * 0.35);
-              setCssProps(hint, "--sprout-io-hint-size", `${size}px`);
-            });
+      if (reveal) {
+        mask.classList.add("sprout-io-mask-other");
+      } else if (isTarget) {
+        mask.classList.add("sprout-io-mask-target");
+        // Only show icon if maskIcon is not empty
+        if (maskIcon && maskIcon.trim()) {
+          const hint = document.createElement("span");
+          hint.classList.add("sprout-io-mask-hint");
+          const KNOWN_ICONS = ["circle-help", "eye-off"];
+          if (KNOWN_ICONS.includes(maskIcon.trim())) {
+            setIcon(hint, maskIcon.trim());
+          } else {
+            hint.textContent = maskIcon.trim();
           }
-        } else {
-          mask.classList.add("sprout-io-mask-other");
+          mask.appendChild(hint);
+          hintSizeUpdaters.push(() => {
+            const rect = mask.getBoundingClientRect();
+            if (!rect.height) return;
+            const size = Math.max(12, rect.height * 0.35);
+            setCssProps(hint, "--sprout-io-hint-size", `${size}px`);
+          });
         }
       } else {
-        mask.classList.add("sprout-io-mask-hidden");
+        mask.classList.add("sprout-io-mask-other");
       }
       // Render true ovals for ellipse/circle masks
       if (rect.shape === "circle") {
@@ -288,7 +298,22 @@ export function renderImageOcclusionReviewInto(args: {
       img.addEventListener("load", syncOverlayAfterLayout, { once: true });
     }
     // Also update overlay on window resize
-    window.addEventListener("resize", syncOverlay);
+    const onResize = () => syncOverlay();
+    window.addEventListener("resize", onResize);
+
+    let detachedObserver: MutationObserver | null = null;
+    const cleanupOverlayListeners = () => {
+      window.removeEventListener("resize", onResize);
+      detachedObserver?.disconnect();
+      detachedObserver = null;
+    };
+
+    if (document.body) {
+      detachedObserver = new MutationObserver(() => {
+        if (!host.isConnected) cleanupOverlayListeners();
+      });
+      detachedObserver.observe(document.body, { childList: true, subtree: true });
+    }
 
     // Insert overlay after image in host
     host.appendChild(overlay);

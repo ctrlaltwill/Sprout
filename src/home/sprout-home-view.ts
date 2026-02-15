@@ -642,7 +642,7 @@ export class SproutHomeView extends ItemView {
     streakHeader.createDiv({ cls: "bc", text: "Streak" });
     if (includesToday) {
       const keepBadge = document.createElement("span");
-      keepBadge.className = "sprout-live-badge";
+      keepBadge.className = "sprout-trend-badge sprout-live-badge sprout-live-badge-dark";
       
       // Flashing circle
       const circle = document.createElement("span");

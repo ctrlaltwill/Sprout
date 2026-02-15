@@ -143,6 +143,8 @@ export default class SproutPlugin extends Plugin {
   private _workspaceZoomValue = 1;
   private _workspaceZoomSaveTimer: number | null = null;
 
+  private _disposeTooltipPositioner: (() => void) | null = null;
+
   private _initBasecoatRuntime() {
     const bc = getBasecoatApi();
     if (!bc) {
@@ -223,8 +225,8 @@ export default class SproutPlugin extends Plugin {
     move("scheduler", "scheduling");
 
     // Merge legacy imageOcclusion.attachmentFolderPath + cardAttachments → storage
-    // NOTE: imageOcclusion is now reused for mask appearance settings (maskTargetColor,
-    // maskOtherColor, maskIcon, defaultMaskMode) — do NOT delete the entire object.
+    // NOTE: imageOcclusion is now reused for mask appearance/review settings (maskTargetColor,
+    // maskOtherColor, maskIcon, defaultMaskMode, revealMode) — do NOT delete the entire object.
     const io = s.imageOcclusion as Record<string, unknown> | undefined;
     const ca = s.cardAttachments as Record<string, unknown> | undefined;
     if ((io && "attachmentFolderPath" in io) || ca) {
@@ -265,6 +267,8 @@ export default class SproutPlugin extends Plugin {
       groups: visibleFields.groups !== false,
       edit: visibleFields.edit !== false,
       labels: displayLabels,
+      displayAudioButton: true,
+      displayEditButton: true,
     };
 
     if (!isPlainObject(reading.macroConfigs)) {
@@ -279,23 +283,34 @@ export default class SproutPlugin extends Plugin {
           groups: fallback.groups !== false,
           edit: fallback.edit !== false,
           labels: fallback.labels !== false,
+          displayAudioButton: fallback.displayAudioButton !== false,
+          displayEditButton: fallback.displayEditButton !== false,
         },
         ...(withColours
           ? {
               colours: {
+                autoDarkAdjust: true,
                 cardBgLight: asString(reading.cardBgLight),
                 cardBgDark: asString(reading.cardBgDark),
                 cardBorderLight: asString(reading.cardBorderLight),
                 cardBorderDark: asString(reading.cardBorderDark),
                 cardAccentLight: asString(reading.cardAccentLight),
                 cardAccentDark: asString(reading.cardAccentDark),
+                cardTextLight: "",
+                cardTextDark: "",
+                cardMutedLight: "",
+                cardMutedDark: "",
+                clozeBgLight: "",
+                clozeTextLight: "",
+                clozeBgDark: "",
+                clozeTextDark: "",
               },
             }
           : {}),
       });
 
       reading.macroConfigs = {
-        flashcards: createMacro({ ...defaultFields, title: false, options: false, info: false, groups: false, edit: false, labels: false }, false),
+        flashcards: createMacro({ ...defaultFields, title: false, options: false, info: false, groups: false, edit: false, labels: false }, true),
         classic: createMacro(defaultFields, true),
         guidebook: createMacro(defaultFields, true),
         markdown: createMacro({ ...defaultFields, title: false, edit: false, labels: true }, true),
@@ -327,6 +342,9 @@ export default class SproutPlugin extends Plugin {
     // Ensure imageOcclusion group exists (may have been deleted by an older migration)
     s.imageOcclusion ??= {} as SproutSettings["imageOcclusion"];
     s.imageOcclusion.defaultMaskMode ??= DEFAULT_SETTINGS.imageOcclusion.defaultMaskMode;
+    s.imageOcclusion.revealMode ??= (
+      s.imageOcclusion.defaultMaskMode === "all" ? "all" : DEFAULT_SETTINGS.imageOcclusion.revealMode
+    );
     s.imageOcclusion.maskTargetColor ??= DEFAULT_SETTINGS.imageOcclusion.maskTargetColor;
     s.imageOcclusion.maskOtherColor ??= DEFAULT_SETTINGS.imageOcclusion.maskOtherColor;
     s.imageOcclusion.maskIcon ??= DEFAULT_SETTINGS.imageOcclusion.maskIcon;
@@ -396,18 +414,44 @@ export default class SproutPlugin extends Plugin {
       groups: fields?.groups ?? fallback.groups,
       edit: fields?.edit ?? fallback.edit,
       labels: fields?.labels ?? fallback.labels,
+      displayAudioButton: fields?.displayAudioButton ?? fallback.displayAudioButton,
+      displayEditButton: fields?.displayEditButton ?? fallback.displayEditButton,
     });
 
     rv.macroConfigs.flashcards.fields = normaliseFields(rv.macroConfigs.flashcards.fields, defaultMacroConfigs.flashcards.fields);
     rv.macroConfigs.classic.fields = normaliseFields(rv.macroConfigs.classic.fields, defaultMacroConfigs.classic.fields);
     rv.macroConfigs.guidebook.fields = normaliseFields(rv.macroConfigs.guidebook.fields, defaultMacroConfigs.guidebook.fields);
     rv.macroConfigs.markdown.fields = normaliseFields(rv.macroConfigs.markdown.fields, defaultMacroConfigs.markdown.fields);
+    rv.macroConfigs.markdown.fields.edit = false;
+    rv.macroConfigs.markdown.fields.displayEditButton = false;
     rv.macroConfigs.custom.fields = normaliseFields(rv.macroConfigs.custom.fields, defaultMacroConfigs.custom.fields);
 
-    rv.macroConfigs.classic.colours ??= clonePlain(defaultMacroConfigs.classic.colours);
-    rv.macroConfigs.guidebook.colours ??= clonePlain(defaultMacroConfigs.guidebook.colours);
-    rv.macroConfigs.markdown.colours ??= clonePlain(defaultMacroConfigs.markdown.colours);
-    rv.macroConfigs.custom.colours ??= clonePlain(defaultMacroConfigs.custom.colours);
+    const normaliseColours = (
+      colours: Partial<SproutSettings["readingView"]["macroConfigs"]["classic"]["colours"]> | undefined,
+      fallback: SproutSettings["readingView"]["macroConfigs"]["classic"]["colours"],
+    ): SproutSettings["readingView"]["macroConfigs"]["classic"]["colours"] => ({
+      autoDarkAdjust: colours?.autoDarkAdjust ?? fallback.autoDarkAdjust,
+      cardBgLight: colours?.cardBgLight ?? fallback.cardBgLight,
+      cardBgDark: colours?.cardBgDark ?? fallback.cardBgDark,
+      cardBorderLight: colours?.cardBorderLight ?? fallback.cardBorderLight,
+      cardBorderDark: colours?.cardBorderDark ?? fallback.cardBorderDark,
+      cardAccentLight: colours?.cardAccentLight ?? fallback.cardAccentLight,
+      cardAccentDark: colours?.cardAccentDark ?? fallback.cardAccentDark,
+      cardTextLight: colours?.cardTextLight ?? fallback.cardTextLight,
+      cardTextDark: colours?.cardTextDark ?? fallback.cardTextDark,
+      cardMutedLight: colours?.cardMutedLight ?? fallback.cardMutedLight,
+      cardMutedDark: colours?.cardMutedDark ?? fallback.cardMutedDark,
+      clozeBgLight: colours?.clozeBgLight ?? fallback.clozeBgLight,
+      clozeTextLight: colours?.clozeTextLight ?? fallback.clozeTextLight,
+      clozeBgDark: colours?.clozeBgDark ?? fallback.clozeBgDark,
+      clozeTextDark: colours?.clozeTextDark ?? fallback.clozeTextDark,
+    });
+
+    rv.macroConfigs.flashcards.colours = normaliseColours(rv.macroConfigs.flashcards.colours, defaultMacroConfigs.flashcards.colours);
+    rv.macroConfigs.classic.colours = normaliseColours(rv.macroConfigs.classic.colours, defaultMacroConfigs.classic.colours);
+    rv.macroConfigs.guidebook.colours = normaliseColours(rv.macroConfigs.guidebook.colours, defaultMacroConfigs.guidebook.colours);
+    rv.macroConfigs.markdown.colours = normaliseColours(rv.macroConfigs.markdown.colours, defaultMacroConfigs.markdown.colours);
+    rv.macroConfigs.custom.colours = normaliseColours(rv.macroConfigs.custom.colours, defaultMacroConfigs.custom.colours);
     rv.macroConfigs.custom.customCss ??= defaultMacroConfigs.custom.customCss;
 
     rv.visibleFields ??= {
@@ -496,7 +540,8 @@ export default class SproutPlugin extends Plugin {
       this._initBasecoatRuntime();
 
       // Initialize tooltip positioner for dynamic positioning
-      initTooltipPositioner();
+      this._disposeTooltipPositioner?.();
+      this._disposeTooltipPositioner = initTooltipPositioner();
 
       // Ensure all buttons use `data-tooltip` and never rely on native `title` tooltips.
       this.register(initButtonTooltipDefaults());
@@ -683,6 +728,9 @@ export default class SproutPlugin extends Plugin {
       window.clearTimeout(this._workspaceZoomSaveTimer);
       this._workspaceZoomSaveTimer = null;
     }
+
+    this._disposeTooltipPositioner?.();
+    this._disposeTooltipPositioner = null;
 
     // Clean up What's New modal
     this._closeWhatsNewModal();
@@ -924,6 +972,58 @@ export default class SproutPlugin extends Plugin {
 
   public refreshAllViews(): void {
     this._refreshOpenViews();
+  }
+
+  public refreshReadingViewMarkdownLeaves(): void {
+    const leaves = this.app.workspace.getLeavesOfType("markdown");
+    for (const leaf of leaves) {
+      const container = leaf.view?.containerEl ?? null;
+      if (!(container instanceof HTMLElement)) continue;
+
+      const content = queryFirst(
+        container,
+        ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
+      );
+      if (!(content instanceof HTMLElement)) continue;
+
+      const scrollHost =
+        content.closest(".markdown-reading-view, .markdown-preview-view, .markdown-rendered") ??
+        content;
+      const prevTop = Number(scrollHost.scrollTop || 0);
+      const prevLeft = Number(scrollHost.scrollLeft || 0);
+
+      try {
+        content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
+      } catch (e) {
+        log.swallow("dispatch reading view refresh", e);
+      }
+
+      const view = leaf.view;
+      if (view instanceof MarkdownView && view.getMode?.() === "preview") {
+        try {
+          view.previewMode?.rerender?.();
+        } catch (e) {
+          log.swallow("rerender markdown preview", e);
+        }
+      }
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          try {
+            scrollHost.scrollTo({ top: prevTop, left: prevLeft });
+          } catch {
+            scrollHost.scrollTop = prevTop;
+            scrollHost.scrollLeft = prevLeft;
+          }
+
+          try {
+            content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
+          } catch (e) {
+            log.swallow("dispatch reading view refresh (post-rerender)", e);
+          }
+        });
+      });
+    }
   }
 
   async _runSync() {

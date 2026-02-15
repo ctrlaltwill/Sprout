@@ -26,19 +26,70 @@ const STORAGE_KEY_DISMISSED_VERSIONS = "sprout_dismissedVersions";
  *  - positive if v1 > v2
  */
 export function compareVersions(v1: string, v2: string): number {
-  const parts1 = v1.split(".").map(Number);
-  const parts2 = v2.split(".").map(Number);
-  
-  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-    const part1 = parts1[i] || 0;
-    const part2 = parts2[i] || 0;
-    
-    if (part1 !== part2) {
-      return part1 - part2;
+  const parseSemver = (value: string): {
+    major: number;
+    minor: number;
+    patch: number;
+    pre: string[];
+  } | null => {
+    const match = value.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
+    if (!match) return null;
+    return {
+      major: Number(match[1]),
+      minor: Number(match[2]),
+      patch: Number(match[3]),
+      pre: match[4] ? match[4].split(".") : [],
+    };
+  };
+
+  const comparePreRelease = (a: string[], b: string[]): number => {
+    if (!a.length && !b.length) return 0;
+    if (!a.length) return 1;
+    if (!b.length) return -1;
+
+    const len = Math.max(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      const ai = a[i];
+      const bi = b[i];
+      if (ai === undefined) return -1;
+      if (bi === undefined) return 1;
+      if (ai === bi) continue;
+
+      const aNum = /^\d+$/.test(ai);
+      const bNum = /^\d+$/.test(bi);
+
+      if (aNum && bNum) {
+        return Number(ai) - Number(bi);
+      }
+      if (aNum) return -1;
+      if (bNum) return 1;
+      return ai.localeCompare(bi);
     }
+
+    return 0;
+  };
+
+  const p1 = parseSemver(v1);
+  const p2 = parseSemver(v2);
+
+  if (!p1 || !p2) {
+    const parts1 = v1.split(".").map((part) => Number(part.replace(/\D.*$/, "")) || 0);
+    const parts2 = v2.split(".").map((part) => Number(part.replace(/\D.*$/, "")) || 0);
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+      const part1 = parts1[i] || 0;
+      const part2 = parts2[i] || 0;
+      if (part1 !== part2) {
+        return part1 - part2;
+      }
+    }
+    return 0;
   }
-  
-  return 0;
+
+  if (p1.major !== p2.major) return p1.major - p2.major;
+  if (p1.minor !== p2.minor) return p1.minor - p2.minor;
+  if (p1.patch !== p2.patch) return p1.patch - p2.patch;
+
+  return comparePreRelease(p1.pre, p2.pre);
 }
 
 /**

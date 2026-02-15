@@ -13,15 +13,15 @@ import {
   type App,
   Notice,
   setIcon,
-  MarkdownView,
 } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardState } from "../types/scheduler";
 import { log } from "../core/logger";
-import { placePopover, queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
+import { placePopover, setCssProps } from "../core/ui";
 import { DEFAULT_SETTINGS, VIEW_TYPE_WIDGET } from "../core/constants";
 import { DELIMITER_OPTIONS, setDelimiter, type DelimiterChar } from "../core/delimiter";
-import { syncReadingViewStyles } from "../reading/reading-view";
+import { renderReadingViewPreviewCard, syncReadingViewStyles } from "../reading/reading-view";
+import type { SproutCard } from "../reading/reading-helpers";
 import { getLanguageOptions, getScriptLanguageGroups, getAvailableVoices, getTtsService } from "../tts/tts-service";
 import {
   listDataJsonBackups,
@@ -63,6 +63,53 @@ export class SproutSettingsTab extends PluginSettingTab {
   private _audioAdvancedOptionsExpanded = false;
   private _readingCustomCssSaveTimer: number | null = null;
 
+  private static readonly NOTICE_LINES = {
+    backupCreateUnavailable: "Sprout: could not create backup (no scheduling data or adapter cannot write).",
+    backupCreateSuccess: "Scheduling data backup created",
+    backupCreateFailed: "Sprout: failed to create scheduling data backup (see console).",
+    ttsNotSupported: "Text-to-speech is not supported in this environment.",
+    settingsResetFailed: "Sprout: could not reset settings (see console).",
+    deleteAllSummary: (cardsRemoved: number, anchorsRemoved: number, filesTouched: number, seconds: number) =>
+      `Sprout: Deleted ${cardsRemoved} cards and ${anchorsRemoved} anchors in ${filesTouched} files (${seconds}s)`,
+
+    userName: (value: string) => `User name: ${value || "(empty)"}`,
+    greetingText: (enabled: boolean) => `Greeting text: ${enabled ? "On" : "Off"}`,
+    animations: (enabled: boolean) => `Animations: ${enabled ? "On" : "Off"}`,
+    ttsEnabled: (enabled: boolean) => `Text to speech: ${enabled ? "On" : "Off"}`,
+    clozeMode: (isTyped: boolean) => `Cloze mode: ${isTyped ? "Typed" : "Standard"}`,
+    clozeBgReset: "Cloze background colour reset to default",
+    clozeTextReset: "Cloze text colour reset to default",
+    ioDefaultModeUpdated: "Default reveal mode updated",
+    ioRevealMode: (isGroup: boolean) => `Reveal mode: ${isGroup ? "Reveal group" : "Reveal all"}`,
+    ioTargetColorUpdated: "Target mask color updated",
+    ioTargetColorReset: "Reset to theme accent",
+    ioOtherColorUpdated: "Other mask color updated",
+    ioOtherColorReset: "Reset to theme foreground",
+    randomizeMcqOptions: (enabled: boolean) => `Randomise multiple-choice options: ${enabled ? "On" : "Off"}`,
+    randomizeOqOrder: (enabled: boolean) => `Ordered question shuffle: ${enabled ? "On" : "Off"}`,
+    readingMacro: (label: string) => `Macro style: ${label}`,
+    cardStyling: (enabled: boolean) => `Card styling: ${enabled ? "On" : "Off"}`,
+    dailyNewLimit: (value: number) => `Daily new limit: ${fmtSettingValue(value)}`,
+    dailyReviewLimit: (value: number) => `Daily review limit: ${fmtSettingValue(value)}`,
+    autoAdvanceEnabled: (enabled: boolean) => `Auto-advance: ${enabled ? "On" : "Off"}`,
+    autoAdvanceSeconds: (value: number) => `Auto-advance: ${fmtSettingValue(value)}s`,
+    gradingButtons: (fourButtons: boolean) => `Grading buttons: ${fourButtons ? "Four" : "Two"}`,
+    skipButton: (enabled: boolean) => `Skip button: ${enabled ? "On" : "Off"}`,
+    folderNotes: (enabled: boolean) => `Folder notes: ${enabled ? "On" : "Off"}`,
+    siblingMode: (label: string) => `Sibling card management: ${label}`,
+    fsrsPresetCustom: "FSRS preset: custom",
+    fsrsPreset: (label: string) => `FSRS preset: ${label}`,
+    learningSteps: (value: number[]) => `Learning steps: ${fmtSettingValue(value)}`,
+    relearningSteps: (value: number[]) => `Relearning steps: ${fmtSettingValue(value)}`,
+    requestRetention: (value: number) => `Requested retention: ${fmtSettingValue(value)}`,
+    ioAttachmentFolder: (value: string) => `IO attachment folder: ${fmtSettingValue(value)}`,
+    deleteOrphanedImages: (enabled: boolean) => `Delete orphaned images: ${enabled ? "On" : "Off"}`,
+    cardAttachmentFolder: (value: string) => `Card attachment folder: ${fmtSettingValue(value)}`,
+    ignoreCodeBlocks: (enabled: boolean) => `Ignore code blocks: ${enabled ? "On" : "Off"}`,
+    cardDelimiter: (label: string) => `Card delimiter: ${label}`,
+    settingsResetDefaults: "Settings reset to defaults",
+  };
+
   /** Debounce timers for settings-change notices (keyed by setting path). */
   private _noticeTimers = new Map<string, number>();
 
@@ -91,7 +138,7 @@ export class SproutSettingsTab extends PluginSettingTab {
    * Macro style definitions for Preview card appearance.
    * Each preset maps to a set of readingView setting values.
    */
-  private static readonly PREVIEW_MACRO_PRESETS: Record<string, {
+  private static readonly PREVIEW_MACRO_PRESETS: Record<"flashcards" | "classic" | "markdown" | "custom", {
     label: string;
     desc: string;
     layout: "masonry" | "vertical";
@@ -104,6 +151,8 @@ export class SproutSettingsTab extends PluginSettingTab {
       info: boolean;
       groups: boolean;
       edit: boolean;
+      displayAudioButton: boolean;
+      displayEditButton: boolean;
     };
     displayLabels: boolean;
   }> = {
@@ -112,7 +161,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       desc: "Simple front/back cards with flip interaction. Question on front, answer on back.",
       layout: "masonry",
       cardMode: "flip",
-      visibleFields: { title: false, question: true, options: false, answer: true, info: false, groups: false, edit: false },
+      visibleFields: { title: false, question: true, options: false, answer: true, info: false, groups: false, edit: false, displayAudioButton: true, displayEditButton: true },
       displayLabels: false,
     },
     "classic": {
@@ -120,15 +169,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       desc: "Classic cards with chevrons and collapsible sections for progressive reveal.",
       layout: "masonry",
       cardMode: "flip",
-      visibleFields: { title: true, question: true, options: true, answer: true, info: true, groups: true, edit: true },
-      displayLabels: true,
-    },
-    "guidebook": {
-      label: "Guidebook",
-      desc: "Walkthrough-style cards with guided sections and navigation dots.",
-      layout: "vertical",
-      cardMode: "full",
-      visibleFields: { title: true, question: true, options: true, answer: true, info: true, groups: true, edit: true },
+      visibleFields: { title: true, question: true, options: true, answer: true, info: true, groups: true, edit: true, displayAudioButton: true, displayEditButton: true },
       displayLabels: true,
     },
     "markdown": {
@@ -136,15 +177,15 @@ export class SproutSettingsTab extends PluginSettingTab {
       desc: "Tidied markdown-style output with minimal card chrome.",
       layout: "vertical",
       cardMode: "full",
-      visibleFields: { title: false, question: true, options: true, answer: true, info: true, groups: true, edit: false },
+      visibleFields: { title: true, question: true, options: true, answer: true, info: true, groups: true, edit: false, displayAudioButton: true, displayEditButton: false },
       displayLabels: true,
     },
     "custom": {
       label: "Custom",
       desc: "User-authored CSS with clean hooks for full visual control.",
-      layout: "vertical",
+      layout: "masonry",
       cardMode: "full",
-      visibleFields: { title: true, question: true, options: true, answer: true, info: true, groups: true, edit: true },
+      visibleFields: { title: true, question: true, options: true, answer: true, info: true, groups: true, edit: true, displayAudioButton: true, displayEditButton: true },
       displayLabels: true,
     },
   };
@@ -442,14 +483,14 @@ export class SproutSettingsTab extends PluginSettingTab {
         try {
           const p = await createDataJsonBackupNow(this.plugin, "manual");
           if (!p) {
-            new Notice("Sprout: could not create backup (no scheduling data or adapter cannot write).");
+            new Notice(SproutSettingsTab.NOTICE_LINES.backupCreateUnavailable);
             return;
           }
-          new Notice("Scheduling data backup created");
+          new Notice(SproutSettingsTab.NOTICE_LINES.backupCreateSuccess);
           await scan();
         } catch (e) {
           log.error(e);
-          new Notice("Sprout: failed to create scheduling data backup (see console).");
+          new Notice(SproutSettingsTab.NOTICE_LINES.backupCreateFailed);
         }
       };
 
@@ -661,23 +702,10 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.setPlaceholder("Your name");
         t.setValue(String(this.plugin.settings.general.userName ?? ""));
         t.onChange(async (v) => {
-          this.plugin.settings.general.userName = v.trim();
+          const next = v.trim();
+          this.plugin.settings.general.userName = next;
           await this.plugin.saveAll();
-          this.plugin.refreshAllViews();
-        });
-      });
-
-    new Setting(wrapper)
-      .setName("Show plugin information on homepage")
-      .setDesc("Show information about development and features on the homepage.")
-      .addToggle((t) => {
-        // ON by default
-        const showSproutInfo = this.plugin.settings.general.hideSproutInfo !== true;
-        t.setValue(showSproutInfo);
-        t.onChange(async (v) => {
-          this.plugin.settings.general.hideSproutInfo = !v;
-          await this.plugin.saveAll();
-          this.plugin.refreshAllViews();
+          this.queueSettingsNotice("general.userName", SproutSettingsTab.NOTICE_LINES.userName(next));
         });
       });
 
@@ -689,7 +717,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.onChange(async (v) => {
           this.plugin.settings.general.showGreeting = !!v;
           await this.plugin.saveAll();
-          this.plugin.refreshAllViews();
+          this.queueSettingsNotice("general.showGreeting", SproutSettingsTab.NOTICE_LINES.greetingText(v));
         });
       });
 
@@ -705,7 +733,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (!this.plugin.settings.general) this.plugin.settings.general = {} as typeof this.plugin.settings.general;
           this.plugin.settings.general.enableAnimations = v;
           await this.plugin.saveAll();
-          this.plugin.refreshAllViews();
+          this.queueSettingsNotice("general.enableAnimations", SproutSettingsTab.NOTICE_LINES.animations(v));
         }),
       );
 
@@ -737,7 +765,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.onChange(async (v) => {
           this.plugin.settings.audio.enabled = v;
           await this.plugin.saveAll();
-          this._softRerender();
+          this.queueSettingsNotice("audio.enabled", SproutSettingsTab.NOTICE_LINES.ttsEnabled(v));
         });
       });
 
@@ -916,7 +944,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           btn.onClick(() => {
             const tts = getTtsService();
             if (!tts.isSupported) {
-              new Notice("Text-to-speech is not supported in this environment.");
+              new Notice(SproutSettingsTab.NOTICE_LINES.ttsNotSupported);
               return;
             }
             const sampleLang = audio.defaultLanguage || "en-US";
@@ -991,8 +1019,16 @@ export class SproutSettingsTab extends PluginSettingTab {
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
-            { value: "standard", label: "Standard" },
-            { value: "typed", label: "Typed" },
+            {
+              value: "standard",
+              label: "Standard",
+              description: "Classic cloze flow with highlighted deletions and reveal styling.",
+            },
+            {
+              value: "typed",
+              label: "Typed",
+              description: "Replaces blanks with a text input for active recall before reveal.",
+            },
           ],
           value: cardsSettings.clozeMode ?? "standard",
           onChange: (v) => {
@@ -1004,7 +1040,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               updateColourSettingsState();
 
               if (prev !== v) {
-                this.queueSettingsNotice("cards.clozeMode", `Cloze mode: ${v === "typed" ? "Typed" : "Standard"}`);
+                this.queueSettingsNotice("cards.clozeMode", SproutSettingsTab.NOTICE_LINES.clozeMode(v === "typed"));
               }
             })();
           },
@@ -1032,7 +1068,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         bgRestoreEl.setAttribute("aria-disabled", "true");
         const picker = bgColourSetting.controlEl.querySelector<HTMLInputElement>("input[type=color]");
         if (picker) picker.value = "#7c3aed";
-        this.queueSettingsNotice("cards.clozeBgColor", "Cloze background colour reset to default", 0);
+        this.queueSettingsNotice("cards.clozeBgColor", SproutSettingsTab.NOTICE_LINES.clozeBgReset, 0);
       })();
     });
 
@@ -1071,7 +1107,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         textRestoreEl.setAttribute("aria-disabled", "true");
         const picker = textColourSetting.controlEl.querySelector<HTMLInputElement>("input[type=color]");
         if (picker) picker.value = "#ffffff";
-        this.queueSettingsNotice("cards.clozeTextColor", "Cloze text colour reset to default", 0);
+        this.queueSettingsNotice("cards.clozeTextColor", SproutSettingsTab.NOTICE_LINES.clozeTextReset, 0);
       })();
     });
 
@@ -1095,21 +1131,31 @@ export class SproutSettingsTab extends PluginSettingTab {
     new Setting(wrapper).setName("Image occlusion").setHeading();
 
     new Setting(wrapper)
-      .setName("Default mask mode")
-      .setDesc("Choose which masks are hidden on the front of new image occlusion cards.")
+      .setName("Reveal mode")
+      .setDesc("For hide-all image occlusion cards, choose what is unmasked on reveal: reveal all unmasks every mask, while reveal group unmasks only the answer group. Hide-group cards are unaffected because other groups are never hidden.")
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
-            { value: "solo", label: "Hide one" },
-            { value: "all", label: "Hide all" },
+            {
+              value: "group",
+              label: "Reveal group",
+              description: "On reveal, only the answer group is unmasked; other groups stay masked (Hide all only).",
+            },
+            {
+              value: "all",
+              label: "Reveal all",
+              description: "On reveal, all masks are unmasked (Hide all only).",
+            },
           ],
-          value: this.plugin.settings.imageOcclusion?.defaultMaskMode || "solo",
+          value: this.plugin.settings.imageOcclusion?.revealMode || "group",
           onChange: (val) => {
             void (async () => {
-              if (val === "solo" || val === "all") {
-                this.plugin.settings.imageOcclusion.defaultMaskMode = val;
+              if (val === "group" || val === "all") {
+                this.plugin.settings.imageOcclusion.revealMode = val;
                 await this.plugin.saveAll();
-                this.queueSettingsNotice("io-default-mode", "Default reveal mode updated");
+                this.refreshReviewerViewsIfPossible();
+                this.refreshAllWidgetViews();
+                this.queueSettingsNotice("io-reveal-mode", SproutSettingsTab.NOTICE_LINES.ioRevealMode(val === "group"));
               }
             })();
           },
@@ -1128,7 +1174,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.onChange(async (val) => {
           this.plugin.settings.imageOcclusion.maskTargetColor = val;
           await this.plugin.saveAll();
-          this.queueSettingsNotice("io-target-color", "Target mask color updated");
+          this.queueSettingsNotice("io-target-color", SproutSettingsTab.NOTICE_LINES.ioTargetColorUpdated);
         });
       })
       .addExtraButton((btn) => {
@@ -1138,7 +1184,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         btn.onClick(async () => {
           this.plugin.settings.imageOcclusion.maskTargetColor = "";
           await this.plugin.saveAll();
-          this.queueSettingsNotice("io-target-color", "Reset to theme accent");
+          this.queueSettingsNotice("io-target-color", SproutSettingsTab.NOTICE_LINES.ioTargetColorReset);
           const picker = targetColourSetting.controlEl.querySelector<HTMLInputElement>("input[type=color]");
           if (picker) picker.value = "";
         });
@@ -1156,7 +1202,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.onChange(async (val) => {
           this.plugin.settings.imageOcclusion.maskOtherColor = val;
           await this.plugin.saveAll();
-          this.queueSettingsNotice("io-other-color", "Other mask color updated");
+          this.queueSettingsNotice("io-other-color", SproutSettingsTab.NOTICE_LINES.ioOtherColorUpdated);
         });
       })
       .addExtraButton((btn) => {
@@ -1166,7 +1212,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         btn.onClick(async () => {
           this.plugin.settings.imageOcclusion.maskOtherColor = "";
           await this.plugin.saveAll();
-          this.queueSettingsNotice("io-other-color", "Reset to theme foreground");
+          this.queueSettingsNotice("io-other-color", SproutSettingsTab.NOTICE_LINES.ioOtherColorReset);
           const picker = otherColourSetting.controlEl.querySelector<HTMLInputElement>("input[type=color]");
           if (picker) picker.value = "";
         });
@@ -1270,7 +1316,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== v) {
-            this.queueSettingsNotice("study.randomizeMcqOptions", `Randomise multiple-choice options: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("study.randomizeMcqOptions", SproutSettingsTab.NOTICE_LINES.randomizeMcqOptions(v));
           }
         });
       });
@@ -1291,7 +1337,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== v) {
-            this.queueSettingsNotice("study.randomizeOqOrder", `Ordered question shuffle: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("study.randomizeOqOrder", SproutSettingsTab.NOTICE_LINES.randomizeOqOrder(v));
           }
         });
       });
@@ -1306,16 +1352,20 @@ export class SproutSettingsTab extends PluginSettingTab {
       (this.plugin.settings as Record<string, unknown>).readingView = rv;
     }
 
-    const normaliseMacro = (raw: unknown): "flashcards" | "classic" | "guidebook" | "markdown" | "custom" => {
+    const normaliseMacro = (raw: unknown): "flashcards" | "classic" | "markdown" | "custom" => {
       const key = typeof raw === "string" ? raw.trim().toLowerCase() : "";
       if (key === "minimal-flip") return "flashcards";
       if (key === "full-card") return "classic";
       if (key === "compact") return "markdown";
-      if (key === "flashcards" || key === "classic" || key === "guidebook" || key === "markdown" || key === "custom") return key;
+      if (key === "guidebook") return "classic";
+      if (key === "flashcards" || key === "classic" || key === "markdown" || key === "custom") return key;
       return "flashcards";
     };
 
+    const isMacroComingSoon = (key: "flashcards" | "classic" | "markdown" | "custom") => key === "classic" || key === "custom";
+
     rv.activeMacro = normaliseMacro(rv.activeMacro ?? rv.preset);
+    if (isMacroComingSoon(rv.activeMacro)) rv.activeMacro = "flashcards";
     rv.preset = rv.activeMacro;
     rv.macroConfigs ??= clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs);
     rv.macroConfigs.flashcards ??= clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs.flashcards);
@@ -1336,6 +1386,8 @@ export class SproutSettingsTab extends PluginSettingTab {
       groups: fields?.groups ?? fallback.groups,
       edit: fields?.edit ?? fallback.edit,
       labels: fields?.labels ?? fallback.labels,
+      displayAudioButton: fields?.displayAudioButton ?? fallback.displayAudioButton,
+      displayEditButton: fields?.displayEditButton ?? fallback.displayEditButton,
     });
 
     rv.macroConfigs.flashcards.fields = normaliseFields(
@@ -1354,15 +1406,55 @@ export class SproutSettingsTab extends PluginSettingTab {
       rv.macroConfigs.markdown.fields,
       DEFAULT_SETTINGS.readingView.macroConfigs.markdown.fields,
     );
+    rv.macroConfigs.markdown.fields.edit = false;
+    rv.macroConfigs.markdown.fields.displayEditButton = false;
     rv.macroConfigs.custom.fields = normaliseFields(
       rv.macroConfigs.custom.fields,
       DEFAULT_SETTINGS.readingView.macroConfigs.custom.fields,
     );
 
-    rv.macroConfigs.classic.colours ??= clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs.classic.colours);
-    rv.macroConfigs.guidebook.colours ??= clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs.guidebook.colours);
-    rv.macroConfigs.markdown.colours ??= clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs.markdown.colours);
-    rv.macroConfigs.custom.colours ??= clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs.custom.colours);
+    const normaliseColours = (
+      colours: Partial<typeof DEFAULT_SETTINGS.readingView.macroConfigs.classic.colours> | undefined,
+      fallback: typeof DEFAULT_SETTINGS.readingView.macroConfigs.classic.colours,
+    ) => ({
+      autoDarkAdjust: colours?.autoDarkAdjust ?? fallback.autoDarkAdjust,
+      cardBgLight: colours?.cardBgLight ?? fallback.cardBgLight,
+      cardBgDark: colours?.cardBgDark ?? fallback.cardBgDark,
+      cardBorderLight: colours?.cardBorderLight ?? fallback.cardBorderLight,
+      cardBorderDark: colours?.cardBorderDark ?? fallback.cardBorderDark,
+      cardAccentLight: colours?.cardAccentLight ?? fallback.cardAccentLight,
+      cardAccentDark: colours?.cardAccentDark ?? fallback.cardAccentDark,
+      cardTextLight: colours?.cardTextLight ?? fallback.cardTextLight,
+      cardTextDark: colours?.cardTextDark ?? fallback.cardTextDark,
+      cardMutedLight: colours?.cardMutedLight ?? fallback.cardMutedLight,
+      cardMutedDark: colours?.cardMutedDark ?? fallback.cardMutedDark,
+      clozeBgLight: colours?.clozeBgLight ?? fallback.clozeBgLight,
+      clozeTextLight: colours?.clozeTextLight ?? fallback.clozeTextLight,
+      clozeBgDark: colours?.clozeBgDark ?? fallback.clozeBgDark,
+      clozeTextDark: colours?.clozeTextDark ?? fallback.clozeTextDark,
+    });
+
+    rv.macroConfigs.flashcards.colours = normaliseColours(
+      rv.macroConfigs.flashcards.colours,
+      DEFAULT_SETTINGS.readingView.macroConfigs.flashcards.colours,
+    );
+
+    rv.macroConfigs.classic.colours = normaliseColours(
+      rv.macroConfigs.classic.colours,
+      DEFAULT_SETTINGS.readingView.macroConfigs.classic.colours,
+    );
+    rv.macroConfigs.guidebook.colours = normaliseColours(
+      rv.macroConfigs.guidebook.colours,
+      DEFAULT_SETTINGS.readingView.macroConfigs.guidebook.colours,
+    );
+    rv.macroConfigs.markdown.colours = normaliseColours(
+      rv.macroConfigs.markdown.colours,
+      DEFAULT_SETTINGS.readingView.macroConfigs.markdown.colours,
+    );
+    rv.macroConfigs.custom.colours = normaliseColours(
+      rv.macroConfigs.custom.colours,
+      DEFAULT_SETTINGS.readingView.macroConfigs.custom.colours,
+    );
     rv.macroConfigs.custom.customCss ??= DEFAULT_SETTINGS.readingView.macroConfigs.custom.customCss;
 
     this.plugin.settings.general.enableReadingStyles ??= this.plugin.settings.general.prettifyCards !== "off";
@@ -1371,42 +1463,16 @@ export class SproutSettingsTab extends PluginSettingTab {
       try { syncReadingViewStyles(); } catch (e) { log.swallow("syncReadingViewStyles", e); }
     };
 
+    let rerenderLivePreview: (() => void) | null = null;
+
     const refreshReadingViews = () => {
       syncStyles();
-      const ws = this.plugin.app.workspace;
-      const leaves = ws.getLeavesOfType("markdown");
-      for (const leaf of leaves) {
-        const content = leaf.view?.containerEl
-          ? queryFirst(leaf.view.containerEl, ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section")
-          : null;
-        if (content) {
-          try {
-            content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
-          } catch (e) { log.swallow("dispatch reading view refresh", e); }
-        }
-      }
+      this.plugin.refreshReadingViewMarkdownLeaves();
     };
 
     const fullRerenderRV = () => {
       syncStyles();
-      this.plugin.refreshAllViews();
-      const ws = this.plugin.app.workspace;
-      const leaves = ws.getLeavesOfType("markdown");
-      for (const leaf of leaves) {
-        const content = leaf.view?.containerEl
-          ? queryFirst(leaf.view.containerEl, ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section")
-          : null;
-        if (content) {
-          try {
-            content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
-          } catch (e) { log.swallow("dispatch reading view refresh", e); }
-        }
-        const view = leaf.view;
-        if (view instanceof MarkdownView) {
-          try { view.previewMode?.rerender?.(); } catch (e) { log.swallow("rerender preview", e); }
-          try { (view.previewMode as unknown as { onLoadFile?: (f: unknown) => void })?.onLoadFile?.(view.file!); } catch (e) { log.swallow("reload preview file", e); }
-        }
-      }
+      this.plugin.refreshReadingViewMarkdownLeaves();
     };
 
     const syncLegacyMirror = () => {
@@ -1421,10 +1487,11 @@ export class SproutSettingsTab extends PluginSettingTab {
         edit: cfg.fields.edit,
       };
       rv.displayLabels = cfg.fields.labels;
-      const p = SproutSettingsTab.PREVIEW_MACRO_PRESETS[rv.activeMacro];
+      const presetKey = rv.activeMacro === "guidebook" ? "classic" : rv.activeMacro;
+      const p = SproutSettingsTab.PREVIEW_MACRO_PRESETS[presetKey];
       rv.layout = p.layout;
       rv.cardMode = p.cardMode;
-      rv.preset = rv.activeMacro;
+      rv.preset = presetKey;
       if ("colours" in cfg && cfg.colours) {
         rv.cardBgLight = cfg.colours.cardBgLight || "";
         rv.cardBgDark = cfg.colours.cardBgDark || "";
@@ -1442,8 +1509,12 @@ export class SproutSettingsTab extends PluginSettingTab {
       }
     };
 
-    const applyPreset = async (key: "flashcards" | "classic" | "guidebook" | "markdown" | "custom") => {
+    const applyPreset = async (key: "flashcards" | "classic" | "markdown" | "custom") => {
       const p = SproutSettingsTab.PREVIEW_MACRO_PRESETS[key];
+      if (isMacroComingSoon(key)) {
+        new Notice(`${p.label} is coming in a future release.`);
+        return;
+      }
       rv.activeMacro = key;
       rv.preset = key;
       rv.layout = p.layout;
@@ -1457,10 +1528,14 @@ export class SproutSettingsTab extends PluginSettingTab {
         groups: p.visibleFields.groups,
         edit: p.visibleFields.edit,
         labels: p.displayLabels,
+        displayAudioButton: p.visibleFields.displayAudioButton,
+        displayEditButton: p.visibleFields.displayEditButton,
       };
       syncLegacyMirror();
       await this.plugin.saveAll();
       fullRerenderRV();
+      rerenderLivePreview?.();
+      this.queueSettingsNotice("readingView.activeMacro", SproutSettingsTab.NOTICE_LINES.readingMacro(p.label));
       this._softRerender();
     };
 
@@ -1476,7 +1551,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           syncLegacyMirror();
           await this.plugin.saveAll();
           fullRerenderRV();
+          rerenderLivePreview?.();
           this._softRerender();
+          this.queueSettingsNotice("general.enableReadingStyles", SproutSettingsTab.NOTICE_LINES.cardStyling(enabled));
         });
       });
 
@@ -1484,217 +1561,291 @@ export class SproutSettingsTab extends PluginSettingTab {
     const isReadingStylesEnabled = !!this.plugin.settings.general.enableReadingStyles;
 
     new Setting(wrapper).setName("Macro styles").setHeading();
-    {
-      const item = wrapper.createDiv({ cls: "setting-item" });
-      const info = item.createDiv({ cls: "setting-item-info" });
-      info.createDiv({ cls: "setting-item-description", text: "Choose a style preset. Flashcards is the only style with flip interaction." });
-    }
 
     const presetGridRV = wrapper.createDiv({ cls: "sprout-rv-preset-grid" });
     const rvPresets = SproutSettingsTab.PREVIEW_MACRO_PRESETS;
-    for (const [key, p] of Object.entries(rvPresets) as Array<["flashcards" | "classic" | "guidebook" | "markdown" | "custom", typeof rvPresets.flashcards]>) {
+    const presetOrder: Array<"flashcards" | "markdown" | "classic" | "custom"> = ["flashcards", "markdown", "classic", "custom"];
+    for (const key of presetOrder) {
+      const p = rvPresets[key];
+      const isComingSoon = isMacroComingSoon(key);
       const card = presetGridRV.createDiv({
-        cls: `sprout-rv-preset-card${rv.activeMacro === key ? " is-active" : ""}`,
+        cls: `sprout-rv-preset-card${rv.activeMacro === key ? " is-active" : ""}${isComingSoon ? " is-disabled" : ""}`,
       });
+      if (isComingSoon) card.setAttribute("aria-disabled", "true");
       card.createDiv({ cls: "sprout-rv-preset-label", text: p.label });
-      card.createDiv({ cls: "sprout-rv-preset-desc", text: p.desc });
-      card.addEventListener("click", () => void applyPreset(key));
+      card.createDiv({
+        cls: "sprout-rv-preset-desc",
+        text: isComingSoon ? `${p.desc} Coming in a future release.` : p.desc,
+      });
+      card.addEventListener("click", () => {
+        if (isComingSoon) {
+          new Notice(`${p.label} is coming in a future release.`);
+          return;
+        }
+        void applyPreset(key);
+      });
     }
 
     const activeCfg = rv.macroConfigs[rv.activeMacro];
-    const demoExpandedByDefault = rv.activeMacro === "guidebook" || rv.activeMacro === "markdown" || rv.activeMacro === "custom";
     const previewWrap = wrapper.createDiv({ cls: "sprout-rv-live-preview" });
     previewWrap.createDiv({ cls: "sprout-rv-live-preview-title", text: "Live preview" });
-    previewWrap.createDiv({ cls: "sprout-rv-live-preview-note", text: "Demo card updates live as you change options below." });
+    previewWrap.createDiv({ cls: "sprout-rv-live-preview-note", text: "These 3 demo types (Basic, Cloze, MCQ) use the same renderer as reading view and update live as you change options below." });
 
-    const demoCard = previewWrap.createDiv({
-      cls: `el-p sprout-pretty-card sprout-reading-card sprout-reading-view-wrapper accent sprout-macro-${rv.activeMacro} sprout-single-card sprout-rv-demo-card${rv.activeMacro === "custom" ? " sprout-custom-root" : ""}`,
-    });
-    demoCard.setAttribute("data-sprout-processed", "true");
-    if (!activeCfg.fields.title) demoCard.setAttribute("data-hide-title", "true");
-    if (!activeCfg.fields.question) demoCard.setAttribute("data-hide-question", "true");
-    if (!activeCfg.fields.options) demoCard.setAttribute("data-hide-options", "true");
-    if (!activeCfg.fields.answer) demoCard.setAttribute("data-hide-answer", "true");
-    if (!activeCfg.fields.info) demoCard.setAttribute("data-hide-info", "true");
-    if (!activeCfg.fields.groups) demoCard.setAttribute("data-hide-groups", "true");
-    if (!activeCfg.fields.edit) demoCard.setAttribute("data-hide-edit", "true");
-    if (!activeCfg.fields.labels) demoCard.setAttribute("data-hide-labels", "true");
+    const previewGrid = previewWrap.createDiv({ cls: "sprout-rv-live-preview-grid" });
+    const previewCards: Array<{ label: string; card: SproutCard }> = [
+      {
+        label: "Basic",
+        card: {
+          anchorId: "910001",
+          type: "basic",
+          title: "General Knowledge",
+          fields: {
+            T: "General Knowledge",
+            Q: "What is the capital city of Canada?",
+            A: "Ottawa",
+            I: "Toronto is the largest city, but Ottawa is the capital.",
+            G: ["Pub Quiz/Geography"],
+          },
+        },
+      },
+      {
+        label: "Cloze",
+        card: {
+          anchorId: "910003",
+          type: "cloze",
+          title: "Science",
+          fields: {
+            T: "Science",
+            CQ: "The chemical symbol for gold is {{c1::Au}}.",
+            I: "\"Au\" comes from the Latin word aurum.",
+            G: ["Pub Quiz/Science"],
+          },
+        },
+      },
+      {
+        label: "MCQ",
+        card: {
+          anchorId: "910004",
+          type: "mcq",
+          title: "History",
+          fields: {
+            T: "History",
+            MCQ: "Which year did the first human land on the Moon?",
+            O: ["1965", "1969", "1972", "1975"],
+            A: "1969",
+            I: "Apollo 11 landed on the Moon in July 1969.",
+            G: ["Pub Quiz/History"],
+          },
+        },
+      },
+    ];
 
-    replaceChildrenWithHTML(demoCard, `
-      <div class="sprout-card-header sprout-reading-card-header ${rv.activeMacro === "custom" ? "sprout-custom-header" : ""}">
-        <div class="sprout-card-title sprout-reading-card-title ${rv.activeMacro === "custom" ? "sprout-custom-title" : ""}">Demo \u00b7 ABG Interpretation</div>
-        <span class="sprout-card-edit-btn" role="button" tabindex="0" aria-hidden="true"></span>
-      </div>
-      <div class="sprout-card-content sprout-reading-card-content ${rv.activeMacro === "custom" ? "sprout-custom-body" : ""}">
-        <div class="sprout-card-section sprout-section-question ${rv.activeMacro === "custom" ? "sprout-custom-section sprout-custom-section-question" : ""}">
-          <div class="sprout-section-label ${rv.activeMacro === "custom" ? "sprout-custom-label" : ""}">Question</div>
-          <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none ${rv.activeMacro === "custom" ? "sprout-custom-content" : ""}">A patient has pH 7.30 and HCO\u2083\u207b 18. What primary disorder is most likely?</div>
-        </div>
-        <div class="sprout-card-section sprout-section-options ${rv.activeMacro === "custom" ? "sprout-custom-section sprout-custom-section-options" : ""}">
-          <div class="sprout-section-label ${rv.activeMacro === "custom" ? "sprout-custom-label" : ""}">Options</div>
-          <div class="sprout-options-list">
-            <div class="sprout-option"><span class="sprout-option-bullet">A.</span><span class="sprout-option-text">Respiratory alkalosis</span></div>
-            <div class="sprout-option"><span class="sprout-option-bullet">B.</span><span class="sprout-option-text">Metabolic acidosis</span></div>
-            <div class="sprout-option"><span class="sprout-option-bullet">C.</span><span class="sprout-option-text">Metabolic alkalosis</span></div>
-          </div>
-        </div>
-        <div class="sprout-card-section sprout-section-answer ${rv.activeMacro === "custom" ? "sprout-custom-section sprout-custom-section-answer" : ""}">
-          <div class="sprout-section-label ${rv.activeMacro === "custom" ? "sprout-custom-label" : ""}">
-            <span>Answer</span>
-            <button class="sprout-toggle-btn sprout-toggle-btn-compact sprout-rv-demo-toggle" type="button" aria-expanded="${demoExpandedByDefault ? "true" : "false"}">
-              <svg class="sprout-toggle-chevron sprout-toggle-chevron-icon${demoExpandedByDefault ? "" : " sprout-reading-chevron-collapsed"}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
-            </button>
-          </div>
-          <div class="sprout-collapsible ${demoExpandedByDefault ? "expanded" : "collapsed"} sprout-rv-demo-answer">
-            <div class="sprout-answer sprout-p-spacing-none">Metabolic acidosis</div>
-          </div>
-        </div>
-        <div class="sprout-card-section sprout-section-info ${rv.activeMacro === "custom" ? "sprout-custom-section sprout-custom-section-info" : ""}">
-          <div class="sprout-section-label ${rv.activeMacro === "custom" ? "sprout-custom-label" : ""}">Extra Information</div>
-          <div class="sprout-info sprout-p-spacing-none">Low pH + low bicarbonate indicates primary metabolic acidosis.</div>
-        </div>
-      </div>
-      <div class="sprout-groups-list ${rv.activeMacro === "custom" ? "sprout-custom-groups" : ""}"><span class="sprout-group-tag">Medicine/Physiology</span></div>
-    `);
+    const renderLivePreviewCards = () => {
+      previewGrid.replaceChildren();
+      for (const sample of previewCards) {
+        const item = previewGrid.createDiv({ cls: "sprout-rv-live-preview-item" });
+        item.createDiv({ cls: "sprout-rv-live-preview-cardtype", text: sample.label });
+        const demoCard = item.createDiv({ cls: "sprout-rv-demo-card" });
+        renderReadingViewPreviewCard(demoCard, sample.card);
+      }
+    };
 
-    const demoToggle = previewWrap.querySelector<HTMLButtonElement>(".sprout-rv-demo-toggle");
-    const demoAnswer = previewWrap.querySelector<HTMLElement>(".sprout-rv-demo-answer");
-    const demoChevron = previewWrap.querySelector<HTMLElement>(".sprout-rv-demo-toggle .sprout-toggle-chevron");
-    if (demoToggle && demoAnswer && demoChevron && rv.activeMacro !== "flashcards") {
-      demoToggle.addEventListener("click", () => {
-        const expanded = demoToggle.getAttribute("aria-expanded") === "true";
-        if (expanded) {
-          demoToggle.setAttribute("aria-expanded", "false");
-          demoAnswer.classList.remove("expanded");
-          demoAnswer.classList.add("collapsed");
-          demoChevron.classList.add("sprout-reading-chevron-collapsed");
-        } else {
-          demoToggle.setAttribute("aria-expanded", "true");
-          demoAnswer.classList.remove("collapsed");
-          demoAnswer.classList.add("expanded");
-          demoChevron.classList.remove("sprout-reading-chevron-collapsed");
-        }
-      });
-    }
+    rerenderLivePreview = () => {
+      syncStyles();
+      renderLivePreviewCards();
+    };
 
-    new Setting(wrapper).setName("Custom style CSS").setHeading();
-    {
+    renderLivePreviewCards();
+
+    if (rv.activeMacro === "custom") {
+      new Setting(wrapper).setName("Custom style CSS").setHeading();
       const item = wrapper.createDiv({ cls: "setting-item" });
       const info = item.createDiv({ cls: "setting-item-info" });
       info.createDiv({
         cls: "setting-item-description",
-        text: rv.activeMacro === "custom"
-          ? "Write CSS scoped to .sprout-pretty-card.sprout-macro-custom. Use the clean hooks below for easy targeting."
-          : "Switch macro style to Custom to edit custom CSS.",
+        text: "Write CSS scoped to .sprout-pretty-card.sprout-macro-custom. Use the clean hooks below for easy targeting.",
       });
 
-      if (rv.activeMacro === "custom") {
-        const hooks = item.createDiv({ cls: "sprout-rv-custom-hooks" });
-        hooks.createDiv({ cls: "sprout-rv-custom-hooks-title", text: "Available hooks" });
-        hooks.createEl("code", {
-          cls: "sprout-rv-custom-hooks-code",
-          text: ".sprout-custom-root .sprout-custom-header .sprout-custom-title .sprout-custom-body .sprout-custom-section .sprout-custom-section-question .sprout-custom-section-options .sprout-custom-section-answer .sprout-custom-section-info .sprout-custom-section-groups .sprout-custom-label .sprout-custom-content .sprout-custom-groups",
-        });
+      const hooks = item.createDiv({ cls: "sprout-rv-custom-hooks" });
+      hooks.createDiv({ cls: "sprout-rv-custom-hooks-title", text: "Available hooks" });
+      hooks.createEl("code", {
+        cls: "sprout-rv-custom-hooks-code",
+        text: ".sprout-custom-root .sprout-custom-header .sprout-custom-title .sprout-custom-body .sprout-custom-section .sprout-custom-section-question .sprout-custom-section-options .sprout-custom-section-answer .sprout-custom-section-info .sprout-custom-section-groups .sprout-custom-label .sprout-custom-content .sprout-custom-groups",
+      });
 
-        const control = item.createDiv({ cls: "setting-item-control sprout-rv-custom-css-control" });
-        const textarea = control.createEl("textarea", {
-          cls: "sprout-rv-custom-css-input",
-          attr: {
-            rows: "12",
-            spellcheck: "false",
-          },
-        });
-        textarea.placeholder = ".sprout-pretty-card.sprout-macro-custom .sprout-custom-body {\n  border: 1px solid var(--background-modifier-border);\n}";
-        textarea.value = rv.macroConfigs.custom.customCss ?? "";
+      const control = item.createDiv({ cls: "setting-item-control sprout-rv-custom-css-control" });
+      const textarea = control.createEl("textarea", {
+        cls: "sprout-rv-custom-css-input",
+        attr: {
+          rows: "12",
+          spellcheck: "false",
+        },
+      });
+      textarea.placeholder = ".sprout-pretty-card.sprout-macro-custom .sprout-custom-body {\n  border: 1px solid var(--background-modifier-border);\n}";
+      textarea.value = rv.macroConfigs.custom.customCss ?? "";
 
-        const buttonRow = control.createDiv({ cls: "sprout-rv-custom-css-buttons" });
-        const insertStarter = buttonRow.createEl("button", { text: "Insert classic starter" });
-        const clearCss = buttonRow.createEl("button", { text: "Clear CSS" });
+      const buttonRow = control.createDiv({ cls: "sprout-rv-custom-css-buttons" });
+      const insertStarter = buttonRow.createEl("button", { text: "Insert classic starter" });
+      const clearCss = buttonRow.createEl("button", { text: "Clear CSS" });
 
-        const scheduleCustomCssSave = () => {
-          if (this._readingCustomCssSaveTimer != null) window.clearTimeout(this._readingCustomCssSaveTimer);
-          this._readingCustomCssSaveTimer = window.setTimeout(() => {
-            this._readingCustomCssSaveTimer = null;
-            void this.plugin.saveAll();
-          }, 300);
-        };
+      const scheduleCustomCssSave = () => {
+        if (this._readingCustomCssSaveTimer != null) window.clearTimeout(this._readingCustomCssSaveTimer);
+        this._readingCustomCssSaveTimer = window.setTimeout(() => {
+          this._readingCustomCssSaveTimer = null;
+          void this.plugin.saveAll();
+        }, 300);
+      };
 
-        textarea.addEventListener("input", () => {
-          rv.macroConfigs.custom.customCss = textarea.value;
-          syncStyles();
-          scheduleCustomCssSave();
-        });
+      textarea.addEventListener("input", () => {
+        rv.macroConfigs.custom.customCss = textarea.value;
+        syncStyles();
+        rerenderLivePreview?.();
+        scheduleCustomCssSave();
+      });
 
-        insertStarter.addEventListener("click", () => {
-          rv.macroConfigs.custom.customCss = SproutSettingsTab.CUSTOM_CLASSIC_STARTER_CSS;
-          textarea.value = SproutSettingsTab.CUSTOM_CLASSIC_STARTER_CSS;
-          syncStyles();
-          scheduleCustomCssSave();
-        });
+      insertStarter.addEventListener("click", () => {
+        rv.macroConfigs.custom.customCss = SproutSettingsTab.CUSTOM_CLASSIC_STARTER_CSS;
+        textarea.value = SproutSettingsTab.CUSTOM_CLASSIC_STARTER_CSS;
+        syncStyles();
+        rerenderLivePreview?.();
+        scheduleCustomCssSave();
+      });
 
-        clearCss.addEventListener("click", () => {
-          rv.macroConfigs.custom.customCss = "";
-          textarea.value = "";
-          syncStyles();
-          scheduleCustomCssSave();
-        });
-      }
+      clearCss.addEventListener("click", () => {
+        rv.macroConfigs.custom.customCss = "";
+        textarea.value = "";
+        syncStyles();
+        rerenderLivePreview?.();
+        scheduleCustomCssSave();
+      });
     }
 
     new Setting(wrapper).setName("Reading view fields").setHeading();
     {
       const item = wrapper.createDiv({ cls: "setting-item" });
       const info = item.createDiv({ cls: "setting-item-info" });
-      info.createDiv({ cls: "setting-item-description", text: "Choose which fields appear for the selected macro style." });
+      info.createDiv({
+        cls: "setting-item-description",
+        text: rv.activeMacro === "flashcards"
+          ? "Not editable for Flashcards. Layout is fixed to Question + Answer only."
+          : "Choose which fields appear for the selected macro style.",
+      });
     }
 
-    const includeFields: Array<{ key: keyof typeof activeCfg.fields; label: string }> = [
-      { key: "title", label: "Title" },
-      { key: "question", label: "Question" },
-      { key: "options", label: "Options" },
-      { key: "answer", label: "Answer" },
-      { key: "info", label: "Extra information" },
-      { key: "groups", label: "Groups" },
-      { key: "edit", label: "Edit control" },
-      { key: "labels", label: "Display labels" },
-    ];
+    const toHex = (value: string): string => {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (/^#([0-9a-fA-F]{3})$/.test(raw)) {
+        const m = raw.slice(1);
+        return `#${m[0]}${m[0]}${m[1]}${m[1]}${m[2]}${m[2]}`.toLowerCase();
+      }
+      if (/^#([0-9a-fA-F]{6})$/.test(raw)) return raw.toLowerCase();
+      const rgb = raw.match(/^rgba?\(\s*(\d{1,3})\s*[ ,]\s*(\d{1,3})\s*[ ,]\s*(\d{1,3})(?:\s*[,/]\s*[\d.]+)?\s*\)$/i);
+      if (!rgb) return "";
+      const r = Math.max(0, Math.min(255, Number(rgb[1])));
+      const g = Math.max(0, Math.min(255, Number(rgb[2])));
+      const b = Math.max(0, Math.min(255, Number(rgb[3])));
+      return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+    };
 
-    for (const f of includeFields) {
-      new Setting(wrapper)
-        .setName(f.label)
-        .addToggle((t) => {
-          t.setValue(!!activeCfg.fields[f.key]);
-          t.onChange(async (v) => {
-            activeCfg.fields[f.key] = v;
-            syncLegacyMirror();
-            await this.plugin.saveAll();
-            refreshReadingViews();
+    const resolveThemeHex = (cssVarName: string, mode: "light" | "dark", fallback: string): string => {
+      const body = document.body;
+      const hadLight = body.classList.contains("theme-light");
+      const hadDark = body.classList.contains("theme-dark");
+
+      if (mode === "light") {
+        body.classList.add("theme-light");
+        body.classList.remove("theme-dark");
+      } else {
+        body.classList.add("theme-dark");
+        body.classList.remove("theme-light");
+      }
+
+      const computed = getComputedStyle(body).getPropertyValue(cssVarName).trim();
+
+      body.classList.toggle("theme-light", hadLight);
+      body.classList.toggle("theme-dark", hadDark);
+
+      return toHex(computed) || fallback;
+    };
+
+    if (rv.activeMacro !== "flashcards") {
+      const includeFields: Array<{ key: keyof typeof activeCfg.fields; label: string }> = [
+        { key: "title", label: "Title" },
+        { key: "question", label: "Question" },
+        { key: "options", label: "Options" },
+        { key: "answer", label: "Answer" },
+        { key: "info", label: "Extra information" },
+        { key: "groups", label: "Groups" },
+      ];
+
+      if (rv.activeMacro !== "markdown") {
+        includeFields.push({ key: "labels", label: "Display labels" });
+      }
+
+      for (const f of includeFields) {
+        new Setting(wrapper)
+          .setName(f.label)
+          .addToggle((t) => {
+            t.setValue(!!activeCfg.fields[f.key]);
+            t.onChange(async (v) => {
+              activeCfg.fields[f.key] = v;
+              syncLegacyMirror();
+              await this.plugin.saveAll();
+              refreshReadingViews();
+              rerenderLivePreview?.();
+            });
           });
-        });
+      }
+    }
+
+    if (rv.activeMacro === "flashcards") {
+      const flashcardButtons: Array<{ key: "displayAudioButton" | "displayEditButton"; label: string }> = [
+        { key: "displayAudioButton", label: "Audio button" },
+        { key: "displayEditButton", label: "Edit button" },
+      ];
+
+      for (const btn of flashcardButtons) {
+        new Setting(wrapper)
+          .setName(btn.label)
+          .addToggle((t) => {
+            t.setValue(activeCfg.fields[btn.key] !== false);
+            t.onChange(async (v) => {
+              activeCfg.fields[btn.key] = v;
+              syncLegacyMirror();
+              await this.plugin.saveAll();
+              refreshReadingViews();
+              rerenderLivePreview?.();
+            });
+          });
+      }
     }
 
     new Setting(wrapper).setName("Reading view colours").setHeading();
     {
       const item = wrapper.createDiv({ cls: "setting-item" });
       const info = item.createDiv({ cls: "setting-item-info" });
-      const supportsColours = rv.activeMacro !== "flashcards";
       info.createDiv({
         cls: "setting-item-description",
-        text: supportsColours
-          ? "Customise card colours for this macro style. Colours auto-adjust for dark theme."
-          : "Colour customisation is unavailable for Flashcards.",
+        text: rv.activeMacro === "flashcards"
+          ? "Customise Flashcards colours. These changes apply only to Flashcards in reading view."
+          : rv.activeMacro === "markdown"
+            ? "Customise Clean markdown cloze colours for light and dark themes."
+            : "Switch macro style to Flashcards or Clean markdown to configure colours.",
       });
     }
 
-    const activeColours = rv.activeMacro === "flashcards" ? null : rv.macroConfigs[rv.activeMacro].colours;
+    const activeColours = rv.activeMacro === "flashcards" ? rv.macroConfigs.flashcards.colours : null;
+    const activeMarkdownColours = rv.activeMacro === "markdown" ? rv.macroConfigs.markdown.colours : null;
     const rvColourRow = (
       label: string,
       desc: string,
       getValue: () => string,
       getDefault: string,
       setValue: (v: string) => void,
+      container: HTMLElement = wrapper,
     ) => {
-      const setting = new Setting(wrapper).setName(label).setDesc(desc);
+      const setting = new Setting(container).setName(label).setDesc(desc);
 
       const restoreEl = setting.controlEl.createDiv({
         cls: "clickable-icon extra-setting-button sprout-colour-restore",
@@ -1710,6 +1861,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           syncLegacyMirror();
           await this.plugin.saveAll();
           syncStyles();
+          rerenderLivePreview?.();
           restoreEl.setAttribute("aria-disabled", "true");
           const picker = setting.controlEl.querySelector<HTMLInputElement>("input[type=color]");
           if (picker) picker.value = getDefault;
@@ -1724,36 +1876,171 @@ export class SproutSettingsTab extends PluginSettingTab {
         inp.addEventListener("input", () => {
           setValue(inp.value);
           syncLegacyMirror();
-          void this.plugin.saveAll().then(() => syncStyles());
+          void this.plugin.saveAll().then(() => {
+            syncStyles();
+            rerenderLivePreview?.();
+          });
           restoreEl.setAttribute("aria-disabled", "false");
         });
       });
     };
 
     if (activeColours) {
+      const flashcardsAutoDark = activeColours.autoDarkAdjust !== false;
+      const lightSuffix = flashcardsAutoDark ? "" : " (light)";
+
       rvColourRow(
-        "Card background",
-        "Background colour for cards. Automatically adjusted for dark theme.",
+        `Background colour${lightSuffix}`,
+        flashcardsAutoDark
+          ? "Source background colour. Dark theme is auto-generated from this."
+          : "Flashcard background in light mode.",
         () => activeColours.cardBgLight,
-        "#f8f8f8",
-        (v) => { activeColours.cardBgLight = v; activeColours.cardBgDark = ""; },
+        resolveThemeHex("--color-base-05", "light", "#f8f8f8"),
+        (v) => { activeColours.cardBgLight = v; },
       );
 
       rvColourRow(
-        "Card border",
-        "Border colour for cards. Automatically adjusted for dark theme.",
-        () => activeColours.cardBorderLight,
-        "#e0e0e0",
-        (v) => { activeColours.cardBorderLight = v; activeColours.cardBorderDark = ""; },
+        `Text colour${lightSuffix}`,
+        flashcardsAutoDark
+          ? "Source text colour. Dark theme is auto-generated from this."
+          : "Primary flashcard text in light mode.",
+        () => activeColours.cardTextLight,
+        resolveThemeHex("--text-colour", "light", resolveThemeHex("--text-normal", "light", "#1f2937")),
+        (v) => { activeColours.cardTextLight = v; },
       );
 
       rvColourRow(
-        "Accent colour",
-        "Title and highlight colour. Automatically adjusted for dark theme.",
-        () => activeColours.cardAccentLight,
+        `Cloze background${lightSuffix}`,
+        flashcardsAutoDark
+          ? "Source cloze background. Dark theme is auto-generated from this."
+          : "Revealed cloze background in light mode.",
+        () => activeColours.clozeBgLight,
+        resolveThemeHex("--interactive-accent", "light", "#7c3aed"),
+        (v) => { activeColours.clozeBgLight = v; },
+      );
+
+      rvColourRow(
+        `Cloze text${lightSuffix}`,
+        flashcardsAutoDark
+          ? "Source cloze text colour. Dark theme is auto-generated from this."
+          : "Revealed cloze text in light mode.",
+        () => activeColours.clozeTextLight,
+        "#ffffff",
+        (v) => { activeColours.clozeTextLight = v; },
+      );
+
+      new Setting(wrapper)
+        .setName("Create corresponding dark theme")
+        .setDesc("When enabled, dark colours are auto-generated from light colours using hue-saturation-lightness adjustments.")
+        .addToggle((t) => {
+          t.setValue(flashcardsAutoDark);
+          t.onChange(async (enabled) => {
+            activeColours.autoDarkAdjust = enabled;
+            syncLegacyMirror();
+            await this.plugin.saveAll();
+            syncStyles();
+            rerenderLivePreview?.();
+            this.plugin.refreshReadingViewMarkdownLeaves();
+          });
+        });
+
+      if (!flashcardsAutoDark) {
+        rvColourRow(
+          "Background colour (dark)",
+          "Flashcard background in dark mode.",
+          () => activeColours.cardBgDark,
+          resolveThemeHex("--color-base-05", "dark", "#1f2937"),
+          (v) => { activeColours.cardBgDark = v; },
+        );
+
+        rvColourRow(
+          "Text colour (dark)",
+          "Primary flashcard text in dark mode.",
+          () => activeColours.cardTextDark,
+          resolveThemeHex("--text-colour", "dark", resolveThemeHex("--text-normal", "dark", "#e5e7eb")),
+          (v) => { activeColours.cardTextDark = v; },
+        );
+
+        rvColourRow(
+          "Cloze background (dark)",
+          "Revealed cloze background in dark mode.",
+          () => activeColours.clozeBgDark,
+          resolveThemeHex("--interactive-accent", "dark", "#7c3aed"),
+          (v) => { activeColours.clozeBgDark = v; },
+        );
+
+        rvColourRow(
+          "Cloze text (dark)",
+          "Revealed cloze text in dark mode.",
+          () => activeColours.clozeTextDark,
+          "#ebebeb",
+          (v) => { activeColours.clozeTextDark = v; },
+        );
+      }
+    }
+
+    if (activeMarkdownColours) {
+      rvColourRow(
+        "Cloze background (light)",
+        "Background colour for revealed cloze spans in light theme.",
+        () => activeMarkdownColours.clozeBgLight,
         "#7c3aed",
-        (v) => { activeColours.cardAccentLight = v; activeColours.cardAccentDark = ""; },
+        (v) => { activeMarkdownColours.clozeBgLight = v; },
       );
+
+      rvColourRow(
+        "Cloze text (light)",
+        "Text colour for revealed cloze spans in light theme.",
+        () => activeMarkdownColours.clozeTextLight,
+        resolveThemeHex("--text-colour", "light", resolveThemeHex("--text-normal", "light", "#1f2937")),
+        (v) => { activeMarkdownColours.clozeTextLight = v; },
+      );
+
+      const markdownDarkRowsContainer = wrapper.createDiv();
+
+      const renderMarkdownDarkRows = () => {
+        markdownDarkRowsContainer.replaceChildren();
+        if (activeMarkdownColours.autoDarkAdjust !== false) return;
+
+        rvColourRow(
+          "Cloze background (dark)",
+          "Background colour for revealed cloze spans in dark theme.",
+          () => activeMarkdownColours.clozeBgDark,
+          "#3f2a72",
+          (v) => { activeMarkdownColours.clozeBgDark = v; },
+          markdownDarkRowsContainer,
+        );
+
+        rvColourRow(
+          "Cloze text (dark)",
+          "Text colour for revealed cloze spans in dark theme.",
+          () => activeMarkdownColours.clozeTextDark,
+          resolveThemeHex("--text-colour", "dark", resolveThemeHex("--text-normal", "dark", "#e5e7eb")),
+          (v) => { activeMarkdownColours.clozeTextDark = v; },
+          markdownDarkRowsContainer,
+        );
+      };
+
+      new Setting(wrapper)
+        .setName("Link dark-mode colours to light")
+        .setDesc("When enabled, dark-mode cloze colours are auto-derived from the light-theme colours.")
+        .addToggle((t) => {
+          t.setValue(activeMarkdownColours.autoDarkAdjust !== false);
+          t.onChange(async (enabled) => {
+            activeMarkdownColours.autoDarkAdjust = enabled;
+            if (enabled) {
+              activeMarkdownColours.clozeBgDark = "";
+              activeMarkdownColours.clozeTextDark = "";
+            }
+            syncLegacyMirror();
+            await this.plugin.saveAll();
+            syncStyles();
+            rerenderLivePreview?.();
+            renderMarkdownDarkRows();
+          });
+        });
+
+      renderMarkdownDarkRows();
     }
 
     syncLegacyMirror();
@@ -1782,7 +2069,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== next) {
-            this.queueSettingsNotice("study.dailyNewLimit", `Daily new limit: ${fmtSettingValue(next)}`);
+            this.queueSettingsNotice("study.dailyNewLimit", SproutSettingsTab.NOTICE_LINES.dailyNewLimit(next));
           }
         }),
       );
@@ -1799,7 +2086,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== next) {
-            this.queueSettingsNotice("study.dailyReviewLimit", `Daily review limit: ${fmtSettingValue(next)}`);
+            this.queueSettingsNotice("study.dailyReviewLimit", SproutSettingsTab.NOTICE_LINES.dailyReviewLimit(next));
           }
         }),
       );
@@ -1819,7 +2106,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           autoAdvanceSecondsSetting?.setDisabled(!v);
 
           if (prev !== v) {
-            this.queueSettingsNotice("study.autoAdvanceEnabled", `Auto-advance: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("study.autoAdvanceEnabled", SproutSettingsTab.NOTICE_LINES.autoAdvanceEnabled(v));
           }
         }),
       );
@@ -1840,7 +2127,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             this.refreshReviewerViewsIfPossible();
 
             if (prev !== next) {
-              this.queueSettingsNotice("study.autoAdvanceSeconds", `Auto-advance: ${fmtSettingValue(next)}s`);
+              this.queueSettingsNotice("study.autoAdvanceSeconds", SproutSettingsTab.NOTICE_LINES.autoAdvanceSeconds(next));
             }
           }),
       );
@@ -1853,8 +2140,16 @@ export class SproutSettingsTab extends PluginSettingTab {
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
-            { value: "two", label: "Two buttons" },
-            { value: "four", label: "Four buttons" },
+            {
+              value: "two",
+              label: "Two buttons",
+              description: "Again + Good only. Faster flow with simpler grading.",
+            },
+            {
+              value: "four",
+              label: "Four buttons",
+              description: "Again + Hard + Good + Easy. More control over intervals.",
+            },
           ],
           value: this.plugin.settings.study.fourButtonMode ? "four" : "two",
           onChange: (key) => {
@@ -1869,7 +2164,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               this.refreshAllWidgetViews();
 
               if (prevFour !== nextFour) {
-                this.queueSettingsNotice("study.gradingSystem", `Grading buttons: ${nextFour ? "Four" : "Two"}`);
+                this.queueSettingsNotice("study.gradingSystem", SproutSettingsTab.NOTICE_LINES.gradingButtons(nextFour));
               }
             })();
           },
@@ -1890,7 +2185,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== v) {
-            this.queueSettingsNotice("study.enableSkipButton", `Skip button: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("study.enableSkipButton", SproutSettingsTab.NOTICE_LINES.skipButton(v));
           }
         });
       });
@@ -1910,7 +2205,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.refreshReviewerViewsIfPossible();
 
           if (prev !== v) {
-            this.queueSettingsNotice("study.treatFolderNotesAsDecks", `Folder notes: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("study.treatFolderNotesAsDecks", SproutSettingsTab.NOTICE_LINES.folderNotes(v));
           }
         });
       });
@@ -1954,7 +2249,7 @@ export class SproutSettingsTab extends PluginSettingTab {
                   disperse: "Disperse siblings",
                   bury: "Bury siblings",
                 };
-                this.queueSettingsNotice("study.siblingMode", `Sibling card management: ${labels[next]}`);
+                this.queueSettingsNotice("study.siblingMode", SproutSettingsTab.NOTICE_LINES.siblingMode(labels[next]));
               }
             })();
           },
@@ -2042,7 +2337,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setDesc("Apply a recommended configuration, or choose custom to keep your current values.")
       .then((s) => {
         presetHandle = this._addSimpleSelect(s.controlEl, {
-          options: presets.map((p) => ({ value: p.key, label: p.label })),
+          options: presets.map((p) => ({ value: p.key, label: p.label, description: p.desc })),
           separatorAfterIndex: 0,
           value: detectPresetKey(),
 
@@ -2054,7 +2349,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               if (!p) return;
 
               if (p.key === "custom") {
-                this.queueSettingsNotice("scheduling.preset", "FSRS preset: custom");
+                this.queueSettingsNotice("scheduling.preset", SproutSettingsTab.NOTICE_LINES.fsrsPresetCustom);
                 return;
               }
 
@@ -2068,28 +2363,26 @@ export class SproutSettingsTab extends PluginSettingTab {
 
               await this.plugin.saveAll();
 
-              this.queueSettingsNotice("scheduling.preset", `FSRS preset: ${p.label}`, 0);
+              this.queueSettingsNotice("scheduling.preset", SproutSettingsTab.NOTICE_LINES.fsrsPreset(p.label), 0);
 
               if (!arraysEqualNumbers(prevLearning, sched.learningStepsMinutes)) {
                 this.queueSettingsNotice(
                   "scheduler.learningStepsMinutes",
-                  `Learning steps: ${fmtSettingValue(sched.learningStepsMinutes)}`,
+                  SproutSettingsTab.NOTICE_LINES.learningSteps(sched.learningStepsMinutes),
                 );
               }
               if (!arraysEqualNumbers(prevRelearning, sched.relearningStepsMinutes)) {
                 this.queueSettingsNotice(
                   "scheduler.relearningStepsMinutes",
-                  `Relearning steps: ${fmtSettingValue(sched.relearningStepsMinutes)}`,
+                  SproutSettingsTab.NOTICE_LINES.relearningSteps(sched.relearningStepsMinutes),
                 );
               }
               if (round2(prevRetention) !== round2(sched.requestRetention)) {
                 this.queueSettingsNotice(
                   "scheduler.requestRetention",
-                  `Requested retention: ${fmtSettingValue(sched.requestRetention)}`,
+                  SproutSettingsTab.NOTICE_LINES.requestRetention(sched.requestRetention),
                 );
               }
-
-              this._softRerender();
             })();
           },
         });
@@ -2109,7 +2402,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (!arraysEqualNumbers(prev, sched.learningStepsMinutes ?? [])) {
             this.queueSettingsNotice(
               "scheduler.learningStepsMinutes",
-              `Learning steps: ${fmtSettingValue(sched.learningStepsMinutes)}`,
+              SproutSettingsTab.NOTICE_LINES.learningSteps(sched.learningStepsMinutes),
             );
           }
         }),
@@ -2129,7 +2422,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (!arraysEqualNumbers(prev, sched.relearningStepsMinutes ?? [])) {
             this.queueSettingsNotice(
               "scheduler.relearningStepsMinutes",
-              `Relearning steps: ${fmtSettingValue(sched.relearningStepsMinutes)}`,
+              SproutSettingsTab.NOTICE_LINES.relearningSteps(sched.relearningStepsMinutes),
             );
           }
         }),
@@ -2152,7 +2445,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             if (prev !== round2(sched.requestRetention)) {
               this.queueSettingsNotice(
                 "scheduler.requestRetention",
-                `Requested retention: ${fmtSettingValue(sched.requestRetention)}`,
+                SproutSettingsTab.NOTICE_LINES.requestRetention(sched.requestRetention),
               );
             }
           }),
@@ -2231,7 +2524,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (prev !== next) {
             this.queueSettingsNotice(
               "io.attachmentFolderPath",
-              `IO attachment folder: ${fmtSettingValue(next)}`,
+              SproutSettingsTab.NOTICE_LINES.ioAttachmentFolder(next),
               fromPick ? 0 : 150,
             );
           }
@@ -2340,7 +2633,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           await this.plugin.saveAll();
 
           if (prev !== v) {
-            this.queueSettingsNotice("io.deleteOrphanedImages", `Delete orphaned images: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("io.deleteOrphanedImages", SproutSettingsTab.NOTICE_LINES.deleteOrphanedImages(v));
           }
         }),
       );
@@ -2403,7 +2696,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (prev !== next) {
             this.queueSettingsNotice(
               "card.attachmentFolderPath",
-              `Card attachment folder: ${fmtSettingValue(next)}`,
+              SproutSettingsTab.NOTICE_LINES.cardAttachmentFolder(next),
               fromPick ? 0 : 150,
             );
           }
@@ -2520,7 +2813,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           await this.plugin.saveAll();
 
           if (prev !== v) {
-            this.queueSettingsNotice("indexing.ignoreInCodeFences", `Ignore code blocks: ${v ? "On" : "Off"}`);
+            this.queueSettingsNotice("indexing.ignoreInCodeFences", SproutSettingsTab.NOTICE_LINES.ignoreCodeBlocks(v));
           }
         }),
       );
@@ -2550,7 +2843,7 @@ export class SproutSettingsTab extends PluginSettingTab {
               await this.plugin.saveAll();
 
               if (prev !== next) {
-                this.queueSettingsNotice("indexing.delimiter", `Card delimiter: ${DELIMITER_OPTIONS[next]}`);
+                this.queueSettingsNotice("indexing.delimiter", SproutSettingsTab.NOTICE_LINES.cardDelimiter(DELIMITER_OPTIONS[next]));
               }
             })();
           },
@@ -2580,15 +2873,11 @@ export class SproutSettingsTab extends PluginSettingTab {
 
               this.refreshReviewerViewsIfPossible();
               this.refreshAllWidgetViews();
-
-              this._softRerender();
-              this.queueSettingsNotice("settings.resetDefaults", "Settings reset to defaults", 0);
+              this.queueSettingsNotice("settings.resetDefaults", SproutSettingsTab.NOTICE_LINES.settingsResetDefaults, 0);
             } catch (e) {
               this.plugin.settings = before;
               log.error(e);
-              new Notice(
-                "Sprout: could not reset settings (see console).",
-              );
+              new Notice(SproutSettingsTab.NOTICE_LINES.settingsResetFailed);
             }
           }).open();
         }),
@@ -2600,7 +2889,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .then((s) => {
         this._appendSettingWarning(
           s,
-          "This permanently deletes your analytics history. It can be restored from a backup.",
+          "This permanently deletes your analytics history. It can be restored from a backup in Settings. Make one before resetting.",
         );
       })
       .addButton((b) =>
@@ -2615,7 +2904,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .then((s) => {
         this._appendSettingWarning(
           s,
-          "This resets scheduling for every card. It can be restored from a backup.",
+          "This resets scheduling for every card. It can be restored from a backup in Settings. Make one before resetting.",
         );
       })
       .addButton((b) =>
@@ -2635,7 +2924,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       .then((s) => {
         this._appendSettingWarning(
           s,
-          "This permanently removes flashcards from your notes and clears plugin data. Ensure you have a vault backup before continuing.",
+          "This permanently removes flashcards from your notes and clears plugin data. It cannot be restored from Sprout Settings. Ensure you have a full vault backup before continuing.",
         );
       })
       .addButton((b) =>
@@ -2650,9 +2939,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             this.refreshReviewerViewsIfPossible();
 
             const secs = Math.max(0, Math.round((Date.now() - before) / 100) / 10);
-            new Notice(
-              `Sprout: Deleted ${cardsRemoved} cards and ${anchorsRemoved} anchors in ${filesTouched} files (${secs}s)`,
-            );
+            new Notice(SproutSettingsTab.NOTICE_LINES.deleteAllSummary(cardsRemoved, anchorsRemoved, filesTouched, secs));
           }).open();
         }),
       );
@@ -2717,7 +3004,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ── Trigger button ──
     const trigger = document.createElement("button");
     trigger.type = "button";
-    trigger.className = "sprout-ss-trigger";
+    trigger.className = "sprout-ss-trigger bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-action-btn";
     trigger.setAttribute("aria-haspopup", "listbox");
     trigger.setAttribute("aria-expanded", "false");
 
@@ -2742,7 +3029,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     const popover = document.createElement("div");
     popover.id = `${id}-popover`;
     popover.setAttribute("aria-hidden", "true");
-    popover.classList.add("sprout-popover-overlay");
+    popover.classList.add("sprout-popover-overlay", "sprout-ss-popover");
 
     const panel = document.createElement("div");
     panel.className = "sprout-ss-panel";
@@ -2946,7 +3233,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ── Trigger button ──
     const trigger = document.createElement("button");
     trigger.type = "button";
-    trigger.className = "sprout-ss-trigger";
+    trigger.className = "sprout-ss-trigger bc btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-action-btn";
     trigger.setAttribute("aria-haspopup", "listbox");
     trigger.setAttribute("aria-expanded", "false");
 
@@ -2971,7 +3258,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     const popover = document.createElement("div");
     popover.id = `${id}-popover`;
     popover.setAttribute("aria-hidden", "true");
-    popover.classList.add("sprout-popover-overlay");
+    popover.classList.add("sprout-popover-overlay", "sprout-ss-popover");
 
     const panel = document.createElement("div");
     panel.className = "sprout-ss-panel";

@@ -222,8 +222,8 @@ function _rebuildRegexes() {
     `^(?:\\^sprout-\\d{9}|(?:RQ|Q|MCQ|CQ|IO|OQ|T|A|O|I|G|C|\\d{1,2})\\s*${d})\\s*`,
   );
 
-  // reading-helpers.ts — field start (relaxed): ^([A-Za-z]+)\s*<d>\s*(.*)$
-  _FIELD_START_READING_RE = new RegExp(`^([A-Za-z]+)\\s*${d}\\s*(.*)$`);
+  // reading-helpers.ts — field start (relaxed): ^([A-Za-z]+|\d{1,2})\s*<d>\s*(.*)$
+  _FIELD_START_READING_RE = new RegExp(`^([A-Za-z]+|\\d{1,2})\\s*${d}\\s*(.*)$`);
 
   // settings-utils.ts — card start (also accepts colon for legacy):
   //   ^(RQ|Q|MCQ|CQ|OQ)\s*(?::|<d>)\s*.*$|^IO\s*<d>\s*.*$
@@ -263,7 +263,7 @@ export function TITLE_OUTSIDE_DELIM_RE(): RegExp { return _TITLE_OUTSIDE_DELIM_R
 /** Any-header regex for parser.ts */
 export function ANY_HEADER_DELIM_RE(): RegExp { return _ANY_HEADER_DELIM_RE; }
 
-/** Reading-view field-start regex: `^([A-Za-z]+)\s*<d>\s*(.*)$` */
+/** Reading-view field-start regex: `^([A-Za-z]+|\d{1,2})\s*<d>\s*(.*)$` */
 export function FIELD_START_READING_RE(): RegExp { return _FIELD_START_READING_RE; }
 
 /** Settings-utils card-start regex (includes legacy colon) */

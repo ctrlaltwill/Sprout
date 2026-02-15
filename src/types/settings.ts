@@ -18,8 +18,6 @@ export type SproutSettings = {
   general: {
     userName: string;
     showGreeting: boolean;
-    /** Whether to hide the Sprout info section on the home page. */
-    hideSproutInfo: boolean;
     hasOpenedHome: boolean;
     pinnedDecks: string[];
     /** Workspace content-only zoom (markdown + Sprout leaf content). 1.0 = 100%. */
@@ -109,6 +107,8 @@ export type SproutSettings = {
   imageOcclusion: {
     /** Default mask mode when creating new IO cards: "solo" (hide one) or "all" (hide all). */
     defaultMaskMode: "solo" | "all";
+    /** Back-side reveal behavior for IO cards using Hide all mode. */
+    revealMode: "group" | "all";
     /** Background color for the target (active) mask. */
     maskTargetColor: string;
     /** Background color for other (context) masks. */
@@ -179,6 +179,25 @@ export type SproutSettings = {
           groups: boolean;
           edit: boolean;
           labels: boolean;
+          displayAudioButton: boolean;
+          displayEditButton: boolean;
+        };
+        colours: {
+          autoDarkAdjust: boolean;
+          cardBgLight: string;
+          cardBgDark: string;
+          cardBorderLight: string;
+          cardBorderDark: string;
+          cardAccentLight: string;
+          cardAccentDark: string;
+          cardTextLight: string;
+          cardTextDark: string;
+          cardMutedLight: string;
+          cardMutedDark: string;
+          clozeBgLight: string;
+          clozeTextLight: string;
+          clozeBgDark: string;
+          clozeTextDark: string;
         };
       };
       classic: {
@@ -191,14 +210,25 @@ export type SproutSettings = {
           groups: boolean;
           edit: boolean;
           labels: boolean;
+          displayAudioButton: boolean;
+          displayEditButton: boolean;
         };
         colours: {
+          autoDarkAdjust: boolean;
           cardBgLight: string;
           cardBgDark: string;
           cardBorderLight: string;
           cardBorderDark: string;
           cardAccentLight: string;
           cardAccentDark: string;
+          cardTextLight: string;
+          cardTextDark: string;
+          cardMutedLight: string;
+          cardMutedDark: string;
+          clozeBgLight: string;
+          clozeTextLight: string;
+          clozeBgDark: string;
+          clozeTextDark: string;
         };
       };
       guidebook: {
@@ -211,14 +241,25 @@ export type SproutSettings = {
           groups: boolean;
           edit: boolean;
           labels: boolean;
+          displayAudioButton: boolean;
+          displayEditButton: boolean;
         };
         colours: {
+          autoDarkAdjust: boolean;
           cardBgLight: string;
           cardBgDark: string;
           cardBorderLight: string;
           cardBorderDark: string;
           cardAccentLight: string;
           cardAccentDark: string;
+          cardTextLight: string;
+          cardTextDark: string;
+          cardMutedLight: string;
+          cardMutedDark: string;
+          clozeBgLight: string;
+          clozeTextLight: string;
+          clozeBgDark: string;
+          clozeTextDark: string;
         };
       };
       markdown: {
@@ -231,14 +272,25 @@ export type SproutSettings = {
           groups: boolean;
           edit: boolean;
           labels: boolean;
+          displayAudioButton: boolean;
+          displayEditButton: boolean;
         };
         colours: {
+          autoDarkAdjust: boolean;
           cardBgLight: string;
           cardBgDark: string;
           cardBorderLight: string;
           cardBorderDark: string;
           cardAccentLight: string;
           cardAccentDark: string;
+          cardTextLight: string;
+          cardTextDark: string;
+          cardMutedLight: string;
+          cardMutedDark: string;
+          clozeBgLight: string;
+          clozeTextLight: string;
+          clozeBgDark: string;
+          clozeTextDark: string;
         };
       };
       custom: {
@@ -251,14 +303,25 @@ export type SproutSettings = {
           groups: boolean;
           edit: boolean;
           labels: boolean;
+          displayAudioButton: boolean;
+          displayEditButton: boolean;
         };
         colours: {
+          autoDarkAdjust: boolean;
           cardBgLight: string;
           cardBgDark: string;
           cardBorderLight: string;
           cardBorderDark: string;
           cardAccentLight: string;
           cardAccentDark: string;
+          cardTextLight: string;
+          cardTextDark: string;
+          cardMutedLight: string;
+          cardMutedDark: string;
+          clozeBgLight: string;
+          clozeTextLight: string;
+          clozeBgDark: string;
+          clozeTextDark: string;
         };
         /** User-authored CSS injected only when custom macro is active in reading view. */
         customCss: string;

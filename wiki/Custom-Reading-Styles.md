@@ -1,26 +1,26 @@
 # Custom Reading Styles
 
-Last modified: 15/02/2026
+Last modified: 16/02/2026
 
 ## Overview
 
-Sprout includes a **Custom** macro style for Reading View.
+Custom classes and custom styling for Reading View are planned for a future release.
 
-Use **Settings → Reading → Macro styles → Custom**.
+Currently, the available Reading macro styles are **Disabled**, **Flashcards**, and **Clean markdown**.
 
-Then use **Custom style CSS** to paste your CSS.
+The **Custom** style is not active yet. When released, this page will document how to use **Settings → Reading → Macro styles → Custom** and apply **Custom style CSS**.
 
 ## Scope and safety
 
-Custom CSS is injected only when the Custom macro is active and should be scoped to:
+When released, Custom CSS will be injected only when the Custom macro is active and should be scoped to:
 
 `.sprout-pretty-card.sprout-macro-custom`
 
-This prevents your custom rules from changing Flashcards, Classic, Guidebook, or Clean markdown.
+This will prevent your custom rules from changing Disabled, Flashcards, Clean markdown, or future macro styles.
 
 ## Clean hook classes
 
-These hooks are provided for easy targeting:
+These hook classes are planned for easy targeting in a future release:
 
 - `.sprout-custom-root`
 - `.sprout-custom-header`

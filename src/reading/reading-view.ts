@@ -46,6 +46,11 @@ type SproutPluginLike = Plugin & {
   store?: { data?: { cards?: Record<string, CardRecord> } };
   settings?: {
     general?: { prettifyCards?: string; enableReadingStyles?: boolean };
+    cards?: {
+      clozeMode?: "standard" | "typed";
+      clozeBgColor?: string;
+      clozeTextColor?: string;
+    };
     audio?: {
       enabled?: boolean;
       autoplay?: boolean;
@@ -101,6 +106,25 @@ type SproutPluginLike = Plugin & {
             groups?: boolean;
             edit?: boolean;
             labels?: boolean;
+            displayAudioButton?: boolean;
+            displayEditButton?: boolean;
+          };
+          colours?: {
+            autoDarkAdjust?: boolean;
+            cardBgLight?: string;
+            cardBgDark?: string;
+            cardBorderLight?: string;
+            cardBorderDark?: string;
+            cardAccentLight?: string;
+            cardAccentDark?: string;
+            cardTextLight?: string;
+            cardTextDark?: string;
+            cardMutedLight?: string;
+            cardMutedDark?: string;
+            clozeBgLight?: string;
+            clozeTextLight?: string;
+            clozeBgDark?: string;
+            clozeTextDark?: string;
           };
         };
         classic?: {
@@ -113,14 +137,25 @@ type SproutPluginLike = Plugin & {
             groups?: boolean;
             edit?: boolean;
             labels?: boolean;
+            displayAudioButton?: boolean;
+            displayEditButton?: boolean;
           };
           colours?: {
+            autoDarkAdjust?: boolean;
             cardBgLight?: string;
             cardBgDark?: string;
             cardBorderLight?: string;
             cardBorderDark?: string;
             cardAccentLight?: string;
             cardAccentDark?: string;
+            cardTextLight?: string;
+            cardTextDark?: string;
+            cardMutedLight?: string;
+            cardMutedDark?: string;
+            clozeBgLight?: string;
+            clozeTextLight?: string;
+            clozeBgDark?: string;
+            clozeTextDark?: string;
           };
         };
         guidebook?: {
@@ -133,14 +168,25 @@ type SproutPluginLike = Plugin & {
             groups?: boolean;
             edit?: boolean;
             labels?: boolean;
+            displayAudioButton?: boolean;
+            displayEditButton?: boolean;
           };
           colours?: {
+            autoDarkAdjust?: boolean;
             cardBgLight?: string;
             cardBgDark?: string;
             cardBorderLight?: string;
             cardBorderDark?: string;
             cardAccentLight?: string;
             cardAccentDark?: string;
+            cardTextLight?: string;
+            cardTextDark?: string;
+            cardMutedLight?: string;
+            cardMutedDark?: string;
+            clozeBgLight?: string;
+            clozeTextLight?: string;
+            clozeBgDark?: string;
+            clozeTextDark?: string;
           };
         };
         markdown?: {
@@ -153,14 +199,25 @@ type SproutPluginLike = Plugin & {
             groups?: boolean;
             edit?: boolean;
             labels?: boolean;
+            displayAudioButton?: boolean;
+            displayEditButton?: boolean;
           };
           colours?: {
+            autoDarkAdjust?: boolean;
             cardBgLight?: string;
             cardBgDark?: string;
             cardBorderLight?: string;
             cardBorderDark?: string;
             cardAccentLight?: string;
             cardAccentDark?: string;
+            cardTextLight?: string;
+            cardTextDark?: string;
+            cardMutedLight?: string;
+            cardMutedDark?: string;
+            clozeBgLight?: string;
+            clozeTextLight?: string;
+            clozeBgDark?: string;
+            clozeTextDark?: string;
           };
         };
         custom?: {
@@ -173,14 +230,25 @@ type SproutPluginLike = Plugin & {
             groups?: boolean;
             edit?: boolean;
             labels?: boolean;
+            displayAudioButton?: boolean;
+            displayEditButton?: boolean;
           };
           colours?: {
+            autoDarkAdjust?: boolean;
             cardBgLight?: string;
             cardBgDark?: string;
             cardBorderLight?: string;
             cardBorderDark?: string;
             cardAccentLight?: string;
             cardAccentDark?: string;
+            cardTextLight?: string;
+            cardTextDark?: string;
+            cardMutedLight?: string;
+            cardMutedDark?: string;
+            clozeBgLight?: string;
+            clozeTextLight?: string;
+            clozeBgDark?: string;
+            clozeTextDark?: string;
           };
           customCss?: string;
         };
@@ -270,14 +338,13 @@ function deriveColourForDark(lightHex: string): string {
 }
 
 /**
- * Derive a dark-theme accent variant from a light accent colour.
- * Bumps lightness to ensure visibility on dark backgrounds.
+ * Derive readable body text for dark backgrounds from a light-theme text colour.
  */
-function deriveAccentForDark(lightHex: string): string {
+function deriveTextForDark(lightHex: string): string {
   const { h, s, l } = hexToHsl(lightHex);
-  // Ensure accent is bright enough on dark backgrounds
-  const darkL = Math.max(55, Math.min(80, l + 20));
-  return hslToHex(h, s, darkL);
+  const darkL = Math.max(72, Math.min(92, l + 42));
+  const darkS = Math.max(0, s - 12);
+  return hslToHex(h, darkS, darkL);
 }
 
 /* =========================
@@ -295,6 +362,14 @@ function normaliseMacroPreset(raw: string | undefined): 'classic' | 'guidebook' 
   return 'flashcards';
 }
 
+function resolveReadingLayout(
+  rawLayout: 'masonry' | 'vertical' | undefined,
+  macroPreset: 'classic' | 'guidebook' | 'flashcards' | 'markdown' | 'custom',
+): 'masonry' | 'vertical' {
+  if (macroPreset === 'classic' || macroPreset === 'flashcards') return 'masonry';
+  return rawLayout === 'vertical' ? 'vertical' : 'masonry';
+}
+
 /**
  * Injects or updates a <style> element that writes the current reading-view
  * settings as CSS rules. This makes colour, font, layout, and mode changes
@@ -304,9 +379,10 @@ function normaliseMacroPreset(raw: string | undefined): 'classic' | 'guidebook' 
  */
 export function syncReadingViewStyles(): void {
   const plugin = getSproutPlugin();
-  const enabled = plugin?.settings?.general?.enableReadingStyles ?? plugin?.settings?.general?.prettifyCards !== "off";
+  const enabled = !!plugin?.settings?.general?.enableReadingStyles;
   const rv = plugin?.settings?.readingView;
   const macroPreset = normaliseMacroPreset((rv?.activeMacro as string | undefined) ?? rv?.preset);
+  const effectiveLayout = resolveReadingLayout(rv?.layout, macroPreset);
   const macroSelector = `.sprout-pretty-card.sprout-macro-${macroPreset}`;
 
   let styleEl = document.getElementById(DYNAMIC_STYLE_ID) as HTMLStyleElement | null;
@@ -334,40 +410,84 @@ export function syncReadingViewStyles(): void {
   let css = '';
 
   // ── Custom colours (body-level variables so all cards inherit) ──
-  const bgLight = (macroConfig as { colours?: { cardBgLight?: string } } | undefined)?.colours?.cardBgLight ?? rv?.cardBgLight;
-  const borderLight = (macroConfig as { colours?: { cardBorderLight?: string } } | undefined)?.colours?.cardBorderLight ?? rv?.cardBorderLight;
-  const accentLight = (macroConfig as { colours?: { cardAccentLight?: string } } | undefined)?.colours?.cardAccentLight ?? rv?.cardAccentLight;
+  const colours = (macroConfig as {
+    colours?: {
+      autoDarkAdjust?: boolean;
+      cardBgLight?: string;
+      cardBgDark?: string;
+      cardBorderLight?: string;
+      cardBorderDark?: string;
+      cardAccentLight?: string;
+      cardAccentDark?: string;
+      cardTextLight?: string;
+      cardTextDark?: string;
+      cardMutedLight?: string;
+      cardMutedDark?: string;
+      clozeBgLight?: string;
+      clozeTextLight?: string;
+      clozeBgDark?: string;
+      clozeTextDark?: string;
+    };
+  } | undefined)?.colours;
 
-  if (bgLight || borderLight || accentLight) {
-    let lightVars = '';
-    let darkVars = '';
-    if (bgLight) {
-      lightVars += `  --sprout-rv-bg: ${bgLight};\n`;
-      darkVars += `  --sprout-rv-bg: ${deriveColourForDark(bgLight)};\n`;
-    }
-    if (borderLight) {
-      lightVars += `  --sprout-rv-border: ${borderLight};\n`;
-      darkVars += `  --sprout-rv-border: ${deriveColourForDark(borderLight)};\n`;
-    }
-    if (accentLight) {
-      lightVars += `  --sprout-rv-accent: ${accentLight};\n`;
-      darkVars += `  --sprout-rv-accent: ${deriveAccentForDark(accentLight)};\n`;
-    }
-    css += `body.theme-light {\n${lightVars}}\n`;
-    css += `body.theme-dark {\n${darkVars}}\n`;
+  const autoDarkAdjust = colours?.autoDarkAdjust !== false;
+  const bgLight = colours?.cardBgLight ?? rv?.cardBgLight;
+  const textLight = colours?.cardTextLight ?? "";
 
-    // Apply custom colours to the active macro only (except flashcards).
-    css += `${macroSelector} {\n`;
-    if (bgLight) css += `  background-color: var(--sprout-rv-bg) !important;\n`;
-    if (borderLight) css += `  border-color: var(--sprout-rv-border) !important;\n`;
+  if (macroPreset === 'flashcards') {
+    const bgDark = colours?.cardBgDark ?? "";
+    const textDark = colours?.cardTextDark ?? "";
+    const clozeBgLight = colours?.clozeBgLight ?? "";
+    const clozeTextLight = colours?.clozeTextLight ?? "";
+    const clozeBgDark = colours?.clozeBgDark ?? "";
+    const clozeTextDark = colours?.clozeTextDark ?? "";
+
+    const lightBgHex = sanitizeHexColor(bgLight);
+    const lightTextHex = sanitizeHexColor(textLight);
+    const lightClozeBgHex = sanitizeHexColor(clozeBgLight);
+    const lightClozeTextHex = sanitizeHexColor(clozeTextLight);
+
+    const derivedBgDark = autoDarkAdjust && lightBgHex ? deriveColourForDark(lightBgHex) : "";
+    const derivedTextDark = autoDarkAdjust && lightTextHex ? deriveTextForDark(lightTextHex) : "";
+    const derivedClozeBgDark = autoDarkAdjust && lightClozeBgHex ? deriveColourForDark(lightClozeBgHex) : "";
+    const clozeTextDeriveSource = lightClozeTextHex || "#ffffff";
+    const derivedClozeTextDark = autoDarkAdjust ? deriveTextForDark(clozeTextDeriveSource) : "";
+
+    const lightBgValue = bgLight || 'var(--color-base-05)';
+    const darkBgValue = autoDarkAdjust ? (derivedBgDark || 'var(--color-base-05)') : (bgDark || 'var(--color-base-05)');
+    const lightTextValue = textLight || 'var(--text-colour, var(--text-color, var(--text-normal)))';
+    const darkTextValue = autoDarkAdjust
+      ? (derivedTextDark || 'var(--text-colour, var(--text-color, var(--text-normal)))')
+      : (textDark || 'var(--text-colour, var(--text-color, var(--text-normal)))');
+    const lightClozeBgValue = clozeBgLight || 'color-mix(in srgb, var(--interactive-accent) 16%, transparent)';
+    const darkClozeBgValue = autoDarkAdjust
+      ? (derivedClozeBgDark || 'color-mix(in srgb, var(--interactive-accent) 24%, transparent)')
+      : (clozeBgDark || 'color-mix(in srgb, var(--interactive-accent) 24%, transparent)');
+    const lightClozeTextValue = clozeTextLight || 'var(--sprout-rv-flash-text)';
+    const darkClozeTextValue = autoDarkAdjust
+      ? (derivedClozeTextDark || 'var(--sprout-rv-flash-text)')
+      : (clozeTextDark || 'var(--sprout-rv-flash-text)');
+
+    css += `body.theme-light {\n`;
+    css += `  --sprout-rv-flash-bg: ${lightBgValue};\n`;
+    css += `  --sprout-rv-flash-text: ${lightTextValue};\n`;
+    css += `  --sprout-rv-flash-cloze-bg: ${lightClozeBgValue};\n`;
+    css += `  --sprout-rv-flash-cloze-text: ${lightClozeTextValue};\n`;
     css += `}\n`;
-    if (accentLight && macroPreset !== 'flashcards') {
-      css += `${macroSelector} .sprout-card-title { color: var(--sprout-rv-accent) !important; }\n`;
-      css += `${macroSelector} .sprout-card-id { color: var(--sprout-rv-accent) !important; }\n`;
-      css += `${macroSelector} .sprout-reading-view-cloze { background-color: color-mix(in srgb, var(--sprout-rv-accent) 12%, transparent) !important; }\n`;
-      css += `${macroSelector} .sprout-cloze-text { color: var(--sprout-rv-accent) !important; }\n`;
-      css += `${macroSelector} .sprout-cloze { background-color: color-mix(in srgb, var(--sprout-rv-accent) 12%, transparent) !important; }\n`;
-    }
+
+    css += `body.theme-dark {\n`;
+    css += `  --sprout-rv-flash-bg: ${darkBgValue};\n`;
+    css += `  --sprout-rv-flash-text: ${darkTextValue};\n`;
+    css += `  --sprout-rv-flash-cloze-bg: ${darkClozeBgValue};\n`;
+    css += `  --sprout-rv-flash-cloze-text: ${darkClozeTextValue};\n`;
+    css += `}\n`;
+
+    css += `${macroSelector} { background: var(--sprout-rv-flash-bg) !important; color: var(--sprout-rv-flash-text) !important; }\n`;
+    css += `${macroSelector}.sprout-flashcard-flipped { background: var(--sprout-rv-flash-bg) !important; }\n`;
+    css += `${macroSelector} .sprout-flashcard-question, ${macroSelector} .sprout-flashcard-answer { background: var(--sprout-rv-flash-bg) !important; color: var(--sprout-rv-flash-text) !important; }\n`;
+    css += `${macroSelector} .sprout-card-content, ${macroSelector} .sprout-flashcard-options, ${macroSelector} .sprout-flashcard-info, ${macroSelector} .sprout-flashcard-body { color: var(--sprout-rv-flash-text) !important; }\n`;
+    css += `${macroSelector} .sprout-reading-view-cloze { background-color: var(--sprout-rv-flash-cloze-bg) !important; }\n`;
+    css += `${macroSelector} .sprout-cloze-text { color: var(--sprout-rv-flash-cloze-text) !important; }\n`;
   }
 
   // ── Font size ──
@@ -387,23 +507,23 @@ export function syncReadingViewStyles(): void {
   css += `}\n`;
 
   // ── Layout ──
-  if (rv?.layout === 'vertical') {
-    css += `.markdown-preview-section:has(.sprout-pretty-card) {\n`;
+  if (effectiveLayout === 'vertical') {
+    css += `.markdown-preview-section.sprout-layout-vertical > .sprout-reading-card-run {\n`;
     css += `  column-width: unset !important;\n  column-gap: unset !important;\n  column-count: 1 !important;\n`;
     css += `  display: flex;\n  flex-direction: column;\n  gap: 12px;\n`;
     css += `}\n`;
-    css += `.markdown-preview-section:has(.sprout-pretty-card) > .sprout-pretty-card {\n`;
+    css += `.markdown-preview-section.sprout-layout-vertical > .sprout-reading-card-run > .sprout-pretty-card {\n`;
     css += `  margin-top: 0 !important;\n  margin-bottom: 0 !important;\n`;
     css += `}\n`;
   }
 
   if (macroPreset === 'flashcards') {
-    css += `.markdown-preview-section:has(.sprout-pretty-card.sprout-macro-flashcards) {\n`;
+    css += `.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run:has(.sprout-pretty-card.sprout-macro-flashcards) {\n`;
     css += `  column-width: 280px !important;\n`;
     css += `  column-gap: 16px !important;\n`;
     css += `  display: block !important;\n`;
     css += `}\n`;
-    css += `.markdown-preview-section:has(.sprout-pretty-card.sprout-macro-flashcards) > .sprout-pretty-card.sprout-macro-flashcards {\n`;
+    css += `.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run:has(.sprout-pretty-card.sprout-macro-flashcards) > .sprout-pretty-card.sprout-macro-flashcards {\n`;
     css += `  margin-top: 0 !important;\n`;
     css += `  margin-bottom: 16px !important;\n`;
     css += `}\n`;
@@ -426,6 +546,8 @@ export function syncReadingViewStyles(): void {
       groups?: boolean;
       edit?: boolean;
       labels?: boolean;
+      displayAudioButton?: boolean;
+      displayEditButton?: boolean;
     };
   } | undefined)?.fields;
   const activeFields = macroFields ?? rv?.visibleFields;
@@ -437,7 +559,14 @@ export function syncReadingViewStyles(): void {
     if (!vf.answer) css += `${macroSelector} .sprout-section-answer { display: none !important; }\n`;
     if (!vf.info) css += `${macroSelector} .sprout-section-info { display: none !important; }\n`;
     if (!vf.groups) css += `${macroSelector} .sprout-groups-list, ${macroSelector} .sprout-section-groups { display: none !important; }\n`;
-    if (!vf.edit) css += `${macroSelector} .sprout-card-edit-btn { display: none !important; }\n`;
+    if (!vf.edit && macroPreset !== 'flashcards') css += `${macroSelector} .sprout-card-edit-btn { display: none !important; }\n`;
+  }
+
+  if (macroPreset === 'flashcards') {
+    const showAudioButton = macroFields?.displayAudioButton !== false;
+    const showEditButton = macroFields?.displayEditButton !== false;
+    if (!showAudioButton) css += `${macroSelector} .sprout-flashcard-speak-btn { display: none !important; }\n`;
+    if (!showEditButton) css += `${macroSelector} .sprout-card-edit-btn { display: none !important; }\n`;
   }
   const showLabels = (macroConfig as { fields?: { labels?: boolean } } | undefined)?.fields?.labels ?? rv?.displayLabels;
   if (showLabels === false) {
@@ -529,6 +658,14 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
   // Expose manual trigger and event hook
   setupManualTrigger();
 
+  const handleViewportChange = () => {
+    const stylesEnabled = !!getSproutPlugin()?.settings?.general?.enableReadingStyles;
+    if (!stylesEnabled) return;
+    scheduleViewportReflow();
+  };
+  addTrackedWindowListener('resize', handleViewportChange, { passive: true });
+  addTrackedWindowListener('scroll', handleViewportChange, { passive: true, capture: true });
+
   // Listen for prettify-cards-refresh event on each markdown view's containerEl
   function attachRefreshListenerToMarkdownViews() {
     // Attach to the actual markdown content container, not just workspace-leaf-content
@@ -554,27 +691,16 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
     // Re-sync the dynamic <style> element (colours, fonts, layout, card mode)
     syncReadingViewStyles();
 
-    // Get current prettify style
-    let prettifyStyle: string = "accent";
-    try {
-      const activePlugin = getSproutPlugin();
-      if (activePlugin?.settings?.general?.prettifyCards) {
-        prettifyStyle = activePlugin.settings.general.prettifyCards;
-      }
-    } catch (e) { log.swallow("read prettify plugin setting", e); }
+    const stylesEnabled = !!getSproutPlugin()?.settings?.general?.enableReadingStyles;
 
     const root = (e.currentTarget instanceof HTMLElement)
       ? e.currentTarget
       : (e.target instanceof HTMLElement ? e.target : null);
 
-    // When prettify is off, remove all pretty-card styling so raw markdown shows
-    if (prettifyStyle === "off") {
-      if (root) {
-        const cards = Array.from(root.querySelectorAll<HTMLElement>(".sprout-pretty-card"));
-        for (const card of cards) {
-          card.classList.remove("sprout-pretty-card", "sprout-reading-card", "sprout-reading-view-wrapper", "theme", "accent");
-        }
-      }
+    // When reading styles are disabled, remove all Sprout DOM adjustments
+    if (!stylesEnabled) {
+      if (root) resetCardsToNativeReading(root);
+      else resetCardsToNativeReading(document.documentElement);
       return;
     }
 
@@ -583,12 +709,8 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
       return;
     }
 
-    // Update prettify style class on all cards (accent ↔ theme)
-    const cards = Array.from(root.querySelectorAll<HTMLElement>(".sprout-pretty-card"));
-    for (const card of cards) {
-      card.classList.remove("theme", "accent");
-      card.classList.add(prettifyStyle === "theme" ? "theme" : "accent");
-    }
+    refreshProcessedCards(root);
+    scheduleViewportReflow();
 
   }
 
@@ -634,6 +756,8 @@ function setupManualTrigger() {
 let mutationObserver: MutationObserver | null = null;
 let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 120;
+let viewportReflowTimer: number | null = null;
+const VIEWPORT_REFLOW_DEBOUNCE_MS = 90;
 
 // Registered window listeners (stored for cleanup)
 let registeredWindowListeners: Array<{ event: string; handler: EventListenerOrEventListenerObject; options?: boolean | AddEventListenerOptions }> = [];
@@ -657,6 +781,10 @@ export function teardownReadingView(): void {
   if (debounceTimer) {
     window.clearTimeout(debounceTimer);
     debounceTimer = null;
+  }
+  if (viewportReflowTimer) {
+    window.clearTimeout(viewportReflowTimer);
+    viewportReflowTimer = null;
   }
   // Remove all tracked window listeners
   for (const { event, handler, options } of registeredWindowListeners) {
@@ -745,9 +873,10 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
   // Skip card prettification entirely when prettify is off
   try {
     const pluginCheck = getSproutPlugin();
-    const stylesEnabled = pluginCheck?.settings?.general?.enableReadingStyles ?? pluginCheck?.settings?.general?.prettifyCards !== "off";
+    const stylesEnabled = !!pluginCheck?.settings?.general?.enableReadingStyles;
     if (!stylesEnabled) {
       debugLog('[Sprout] Prettify cards is off — skipping card processing');
+      resetCardsToNativeReading(container);
       return;
     }
   } catch { /* proceed if we can't read settings */ }
@@ -769,6 +898,14 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
 
   const found: HTMLElement[] = [];
 
+  const applyLayoutForContainer = () => {
+    try {
+      reflowPrettyCardLayouts(container);
+    } catch (e) {
+      log.swallow('apply reading view settings', e);
+    }
+  };
+
   try {
     if (container.matches && container.matches('.el-p')) found.push(container);
   } catch {
@@ -779,6 +916,7 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
 
   if (found.length === 0) {
     debugLog('[Sprout] No unprocessed .el-p elements found in container');
+    applyLayoutForContainer();
     return;
   }
 
@@ -817,39 +955,96 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
   }
 
   // ── Apply reading view layout settings to sections containing cards ──
-  try {
-    const plugin = getSproutPlugin();
-    const rvSettings = plugin?.settings?.readingView;
-    if (rvSettings) {
-      // Find all sections that contain pretty cards and apply layout
-      const sections = new Set<HTMLElement>();
-      container.querySelectorAll<HTMLElement>('.sprout-pretty-card').forEach(card => {
-        const section = card.closest('.markdown-preview-section') as HTMLElement;
-        if (section) sections.add(section);
-      });
-      // Also check if container itself is a section
-      if (container.classList.contains('markdown-preview-section') && container.querySelector('.sprout-pretty-card')) {
-        sections.add(container);
-      }
-
-      for (const section of sections) {
-        // Layout: vertical vs masonry
-        if (rvSettings.layout === 'vertical') {
-          section.classList.add('sprout-layout-vertical');
-          section.classList.remove('sprout-layout-masonry');
-        } else {
-          section.classList.remove('sprout-layout-vertical');
-          section.classList.add('sprout-layout-masonry');
-        }
-
-      }
-    }
-  } catch (e) {
-    log.swallow('apply reading view settings', e);
-  }
+  applyLayoutForContainer();
 
   await Promise.resolve();
 
+}
+
+function refreshProcessedCards(container: HTMLElement) {
+  const cards = Array.from(container.querySelectorAll<HTMLElement>('.sprout-pretty-card[data-sprout-raw-text], .el-p[data-sprout-processed][data-sprout-raw-text]'));
+  if (!cards.length) return;
+
+  const touchedSections = new Set<HTMLElement>();
+
+  for (const el of cards) {
+    try {
+      if (el.closest('.cm-content')) continue;
+      const rawText = String(el.getAttribute('data-sprout-raw-text') || '');
+      if (!rawText.trim()) continue;
+      const card = parseSproutCard(rawText);
+      if (!card) continue;
+      enhanceCardElement(el, card, undefined, rawText);
+      const section = el.closest<HTMLElement>('.markdown-preview-section');
+      if (section) touchedSections.add(section);
+    } catch (err) {
+      log.error('Error refreshing processed card', err);
+    }
+  }
+
+  if (container.classList.contains('markdown-preview-section')) {
+    touchedSections.add(container);
+  }
+
+  if (!touchedSections.size) return;
+  const rvSettings = getSproutPlugin()?.settings?.readingView;
+  applyLayoutToSections(touchedSections, rvSettings);
+}
+
+function resetCardsToNativeReading(container: HTMLElement) {
+  const cards = Array.from(container.querySelectorAll<HTMLElement>('.sprout-pretty-card'));
+  for (const card of cards) {
+    try {
+      const originalHtml = card.querySelector<HTMLElement>('.sprout-original-content')?.innerHTML ?? '';
+      if (originalHtml) replaceChildrenWithHTML(card, originalHtml);
+
+      card.classList.remove(
+        'sprout-pretty-card',
+        'sprout-reading-card',
+        'sprout-reading-view-wrapper',
+        'sprout-single-card',
+        'sprout-custom-root',
+        'sprout-flashcard-flipped',
+        'sprout-flashcard-animating',
+        'accent',
+        'theme',
+        'sprout-macro-classic',
+        'sprout-macro-guidebook',
+        'sprout-macro-flashcards',
+        'sprout-macro-markdown',
+        'sprout-macro-custom',
+      );
+
+      card.removeAttribute('data-sprout-processed');
+      card.removeAttribute('data-sprout-id');
+      card.removeAttribute('data-sprout-type');
+      card.removeAttribute('data-sprout-raw-text');
+      card.removeAttribute('data-hide-title');
+      card.removeAttribute('data-hide-question');
+      card.removeAttribute('data-hide-options');
+      card.removeAttribute('data-hide-answer');
+      card.removeAttribute('data-hide-info');
+      card.removeAttribute('data-hide-groups');
+      card.removeAttribute('data-hide-edit');
+      card.removeAttribute('data-hide-labels');
+    } catch (err) {
+      log.error('Error resetting pretty card to native reading', err);
+    }
+  }
+
+  const sections = new Set<HTMLElement>();
+  cards.forEach((card) => {
+    const section = card.closest<HTMLElement>('.markdown-preview-section');
+    if (section) sections.add(section);
+  });
+  if (container.classList.contains('markdown-preview-section')) {
+    sections.add(container);
+  }
+
+  sections.forEach((section) => {
+    applySectionCardRunLayout(section, 'vertical');
+    section.classList.remove('sprout-layout-vertical', 'sprout-layout-masonry');
+  });
 }
 
 /* =========================
@@ -879,12 +1074,43 @@ function snapshotCardPositions(cardEl: HTMLElement): Map<HTMLElement, DOMRect> {
  * Call this AFTER the DOM change has been made and the browser has reflowed.
  *
  * @param before — Map returned by `snapshotCardPositions()` before the change
+ * @param lockedCard — Card to keep visually anchored while siblings animate
  */
-function flipAnimateCards(before: Map<HTMLElement, DOMRect>) {
+function flipAnimateCards(before: Map<HTMLElement, DOMRect>, lockedCard?: HTMLElement) {
   if (before.size === 0) return;
+
+  const lockedCards = new Set<HTMLElement>();
+  if (lockedCard) {
+    lockedCards.add(lockedCard);
+    const oldLockedRect = before.get(lockedCard);
+    if (oldLockedRect) {
+      for (const [card, rect] of before) {
+        if (card === lockedCard) continue;
+        const overlapsX = rect.right > oldLockedRect.left + 1 && rect.left < oldLockedRect.right - 1;
+        const isAbove = rect.bottom <= oldLockedRect.top + 2;
+        if (overlapsX && isAbove) lockedCards.add(card);
+      }
+    }
+  }
+
+  // Keep the interacted card fixed in the viewport while masonry reflows.
+  // We do this with scroll compensation so the chosen card appears stable,
+  // and sibling cards animate around it.
+  if (lockedCard) {
+    const oldLockedRect = before.get(lockedCard);
+    if (oldLockedRect) {
+      const newLockedRect = lockedCard.getBoundingClientRect();
+      const scrollDx = newLockedRect.left - oldLockedRect.left;
+      const scrollDy = newLockedRect.top - oldLockedRect.top;
+      if (Math.abs(scrollDx) >= 1 || Math.abs(scrollDy) >= 1) {
+        window.scrollBy(scrollDx, scrollDy);
+      }
+    }
+  }
 
   // "Last" — read the new positions
   for (const [card, oldRect] of before) {
+    if (lockedCards.has(card)) continue;
     const newRect = card.getBoundingClientRect();
     const dx = oldRect.left - newRect.left;
     const dy = oldRect.top - newRect.top;
@@ -914,6 +1140,7 @@ function flipAnimateCards(before: Map<HTMLElement, DOMRect>) {
   // Clean up transition style after animation ends
   const cleanup = () => {
     for (const [card] of before) {
+      if (lockedCards.has(card)) continue;
       card.classList.remove('sprout-flip-animating', 'sprout-flip-no-transition');
       setCssProps(card, {
         '--sprout-flip-x': null,
@@ -923,6 +1150,113 @@ function flipAnimateCards(before: Map<HTMLElement, DOMRect>) {
     }
   };
   setTimeout(cleanup, FLIP_DURATION + 20);
+}
+
+function unwrapCardRuns(section: HTMLElement) {
+  const wrappers = Array.from(section.querySelectorAll<HTMLElement>(':scope > .sprout-reading-card-run'));
+  for (const wrapper of wrappers) {
+    const children = Array.from(wrapper.children);
+    for (const child of children) {
+      section.insertBefore(child, wrapper);
+    }
+    wrapper.remove();
+  }
+}
+
+function wrapContiguousCardRuns(section: HTMLElement) {
+  unwrapCardRuns(section);
+
+  const children = Array.from(section.children) as HTMLElement[];
+  let currentRun: HTMLDivElement | null = null;
+
+  for (const child of children) {
+    const isCard = child.classList.contains('sprout-pretty-card');
+    const isHidden = child.classList.contains('sprout-hidden-important') || child.getAttribute('data-sprout-hidden') === 'true';
+
+    if (isCard && !isHidden) {
+      if (!currentRun) {
+        currentRun = section.ownerDocument.createElement('div');
+        currentRun.className = 'sprout-reading-card-run';
+        section.insertBefore(currentRun, child);
+      }
+      currentRun.appendChild(child);
+      continue;
+    }
+
+    currentRun = null;
+  }
+}
+
+function applySectionCardRunLayout(section: HTMLElement, layout: 'masonry' | 'vertical') {
+  if (layout === 'masonry') {
+    wrapContiguousCardRuns(section);
+    return;
+  }
+
+  unwrapCardRuns(section);
+}
+
+function resolveSectionLayoutFromDomAndSettings(
+  section: HTMLElement,
+  rvSettings: ReadingViewSettings | undefined,
+): 'masonry' | 'vertical' {
+  if (section.querySelector('.sprout-pretty-card.sprout-macro-flashcards, .sprout-pretty-card.sprout-macro-classic')) {
+    return 'masonry';
+  }
+
+  if (rvSettings) {
+    const macroPreset = normaliseMacroPreset((rvSettings.activeMacro as string | undefined) ?? rvSettings.preset);
+    return resolveReadingLayout(rvSettings.layout, macroPreset);
+  }
+
+  return 'masonry';
+}
+
+function applyLayoutToSections(sections: Iterable<HTMLElement>, rvSettings: ReadingViewSettings | undefined) {
+  for (const section of sections) {
+    const effectiveLayout = resolveSectionLayoutFromDomAndSettings(section, rvSettings);
+    if (effectiveLayout === 'vertical') {
+      section.classList.add('sprout-layout-vertical');
+      section.classList.remove('sprout-layout-masonry');
+      applySectionCardRunLayout(section, 'vertical');
+    } else {
+      section.classList.remove('sprout-layout-vertical');
+      section.classList.add('sprout-layout-masonry');
+      applySectionCardRunLayout(section, 'masonry');
+    }
+  }
+}
+
+function collectSectionsWithPrettyCards(scope: ParentNode): Set<HTMLElement> {
+  const sections = new Set<HTMLElement>();
+
+  if (scope instanceof HTMLElement && scope.classList.contains('markdown-preview-section') && scope.querySelector('.sprout-pretty-card')) {
+    sections.add(scope);
+  }
+
+  scope.querySelectorAll<HTMLElement>('.sprout-pretty-card').forEach((card) => {
+    const section = card.closest<HTMLElement>('.markdown-preview-section');
+    if (section) sections.add(section);
+  });
+
+  return sections;
+}
+
+function reflowPrettyCardLayouts(scope: ParentNode = document): void {
+  const sections = collectSectionsWithPrettyCards(scope);
+  if (!sections.size) return;
+  const rvSettings = getSproutPlugin()?.settings?.readingView;
+  applyLayoutToSections(sections, rvSettings);
+}
+
+function scheduleViewportReflow(): void {
+  if (viewportReflowTimer) {
+    window.clearTimeout(viewportReflowTimer);
+  }
+  viewportReflowTimer = window.setTimeout(() => {
+    viewportReflowTimer = null;
+    reflowPrettyCardLayouts(document);
+  }, VIEWPORT_REFLOW_DEBOUNCE_MS);
 }
 
 /* =========================
@@ -1107,45 +1441,157 @@ function toTextField(value: string | string[] | undefined): string {
   return String(value ?? '').trim();
 }
 
-function buildMarkdownModeContent(card: SproutCard, showLabels: boolean): string {
+function toListField(value: string | string[] | undefined): string[] {
+  const raw = Array.isArray(value) ? value : [String(value ?? '')];
+  return raw
+    .flatMap((entry) => String(entry).split('\n'))
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+type CleanMarkdownClozeStyle = {
+  bgColor?: string;
+  textColor?: string;
+};
+
+function sanitizeHexColor(value: string | undefined): string {
+  const v = String(value ?? '').trim();
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v) ? v : '';
+}
+
+function buildCleanMarkdownClozeSpanStyle(style?: CleanMarkdownClozeStyle): string {
+  const bg = sanitizeHexColor(style?.bgColor);
+  const text = sanitizeHexColor(style?.textColor);
+  if (!bg && !text) return '';
+  const rules: string[] = [];
+  if (bg) rules.push(`--sprout-clean-md-cloze-bg: ${bg}`);
+  if (text) {
+    rules.push(`--sprout-clean-md-cloze-text: ${text}`);
+    rules.push(`--sprout-cloze-color: ${text}`);
+  }
+  return ` style="${rules.join('; ')}"`;
+}
+
+function resolveCleanMarkdownClozeStyle(plugin: SproutPluginLike | null): CleanMarkdownClozeStyle | undefined {
+  if (!plugin) return undefined;
+
+  const cards = plugin.settings?.cards;
+  const markdownColours = plugin.settings?.readingView?.macroConfigs?.markdown?.colours;
+  const autoDarkAdjust = markdownColours?.autoDarkAdjust !== false;
+
+  const lightBg = sanitizeHexColor(markdownColours?.clozeBgLight) || sanitizeHexColor(cards?.clozeBgColor);
+  const lightText = sanitizeHexColor(markdownColours?.clozeTextLight) || sanitizeHexColor(cards?.clozeTextColor);
+
+  const isDark = document.body.classList.contains('theme-dark');
+  let bg = isDark ? sanitizeHexColor(markdownColours?.clozeBgDark) : lightBg;
+  let text = isDark ? sanitizeHexColor(markdownColours?.clozeTextDark) : lightText;
+
+  if (isDark && autoDarkAdjust) {
+    if (!bg && lightBg) bg = deriveColourForDark(lightBg);
+    if (!text && lightText) text = deriveTextForDark(lightText);
+  }
+
+  if (!bg && !text) return undefined;
+  return { bgColor: bg, textColor: text };
+}
+
+function renderMarkdownLineWithClozeSpans(value: string, style?: CleanMarkdownClozeStyle): string {
+  const source = String(value ?? '');
+  if (!source) return '';
+
+  const clozeRegex = /\{\{c\d+::([\s\S]*?)\}\}/g;
+  const spanStyle = buildCleanMarkdownClozeSpanStyle(style);
+  let last = 0;
+  let out = '';
+  let match: RegExpExecArray | null;
+
+  while ((match = clozeRegex.exec(source)) !== null) {
+    if (match.index > last) {
+      out += processMarkdownFeatures(source.slice(last, match.index));
+    }
+    const answer = String(match[1] ?? '').trim();
+    if (answer) {
+      out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${processMarkdownFeatures(answer)}</span>`;
+    }
+    last = match.index + match[0].length;
+  }
+
+  if (last < source.length) {
+    out += processMarkdownFeatures(source.slice(last));
+  }
+
+  return out || processMarkdownFeatures(source);
+}
+
+function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeStyle?: CleanMarkdownClozeStyle): string {
   const lines: string[] = [];
   const addLine = (label: string, value: string) => {
     const v = value.trim();
     if (!v) return;
-    lines.push(showLabels ? `${label}: ${processMarkdownFeatures(v)}` : processMarkdownFeatures(v));
+    const rendered = renderMarkdownLineWithClozeSpans(v, clozeStyle);
+    lines.push(showLabels ? `${label}: ${rendered}` : rendered);
+  };
+
+  const getOqSteps = (): string[] => {
+    const fieldsAny = card.fields as Record<string, string | string[] | undefined>;
+    const numbered: string[] = [];
+    for (let i = 1; i <= 20; i++) {
+      const step = toTextField(fieldsAny[String(i)]);
+      if (!step) continue;
+      numbered.push(step);
+    }
+    if (numbered.length) return numbered;
+    return toTextField(card.fields.A)
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  };
+
+  const renderList = (items: string[], ordered = false): string => {
+    if (!items.length) return '';
+    const tag = ordered ? 'ol' : 'ul';
+    const listItems = items.map((item) => `<li>${renderMarkdownLineWithClozeSpans(item, clozeStyle)}</li>`).join('');
+    return `<${tag}>${listItems}</${tag}>`;
+  };
+
+  const addListSection = (label: string, items: string[], ordered = false) => {
+    if (!items.length) return;
+    const listHtml = renderList(items, ordered);
+    lines.push(showLabels ? `${label}: ${listHtml}` : listHtml);
   };
 
   if (card.type === 'mcq') {
     const question = toTextField(card.fields.MCQ);
-    const answer = toTextField(card.fields.A);
-    const optionsRaw = Array.isArray(card.fields.O)
-      ? card.fields.O
-      : toTextField(card.fields.O).split('\n').map((s) => s.trim()).filter(Boolean);
+    const answers = toListField(card.fields.A);
+    const optionsRaw = toListField(card.fields.O);
     addLine('Question', question);
 
-    const options = answer
-      ? [answer, ...optionsRaw.filter((opt) => opt.trim() && opt.trim() !== answer.trim())]
-      : optionsRaw;
-
-    options.forEach((opt, idx) => {
-      const safe = processMarkdownFeatures(opt);
-      const line = idx === 0 && answer ? `${idx + 1}. <strong>${safe}</strong>` : `${idx + 1}. ${safe}`;
-      lines.push(line);
+    const seen = new Set<string>();
+    const options = [...answers, ...optionsRaw].filter((option) => {
+      const key = option.trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
+
+    addListSection('Options', options, false);
+    addListSection('Answer', answers, false);
   } else if (card.type === 'oq') {
     addLine('Question', toTextField(card.fields.OQ));
-    const fieldsAny = card.fields as Record<string, string | string[] | undefined>;
-    for (let i = 1; i <= 20; i++) {
-      const step = toTextField(fieldsAny[String(i)]);
-      if (!step) continue;
-      lines.push(`${i}. ${processMarkdownFeatures(step)}`);
-    }
+    const steps = getOqSteps();
+    addListSection('Answer', steps, true);
   } else if (card.type === 'cloze') {
     addLine('Question', toTextField(card.fields.CQ));
     addLine('Extra information', toTextField(card.fields.I));
   } else if (card.type === 'io') {
-    addLine('Image occlusion', toTextField(card.fields.IO));
-    addLine('Answer', toTextField(card.fields.A));
+    const ioQuestionId = `sprout-io-question-${Math.random().toString(36).slice(2, 8)}`;
+    const ioAnswerId = `sprout-io-answer-${Math.random().toString(36).slice(2, 8)}`;
+    lines.push(
+      `<div class="sprout-markdown-io-entry">${showLabels ? 'Image occlusion: ' : ''}<div class="sprout-markdown-io-slot" id="${ioQuestionId}"></div></div>`,
+    );
+    lines.push(
+      `<div class="sprout-markdown-io-entry">${showLabels ? 'Answer: ' : ''}<div class="sprout-markdown-io-slot" id="${ioAnswerId}"></div></div>`,
+    );
     addLine('Extra information', toTextField(card.fields.I));
   } else {
     const question = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
@@ -1154,58 +1600,74 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean): string
     addLine('Extra information', toTextField(card.fields.I));
   }
 
-  const groups = Array.isArray(card.fields.G) ? card.fields.G : (card.fields.G ? [String(card.fields.G)] : []);
+  const groups = normalizeGroupsForDisplay(card.fields.G);
   if (groups.length) {
-    const gText = groups.map((g) => processMarkdownFeatures(String(g))).join(', ');
+    const gText = groups.map((g) => renderMarkdownLineWithClozeSpans(String(g), clozeStyle)).join(', ');
     lines.push(showLabels ? `Groups: ${gText}` : gText);
   }
 
   return `<div class="sprout-markdown-lines">${lines.map((line) => `<div class="sprout-markdown-line">${line}</div>`).join('')}</div>`;
 }
 
-function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
-  const toInlineHtml = (value: string): string => {
-    const html = processMarkdownFeatures(value);
-    return html
-      .replace(/^\s*<p>([\s\S]*?)<\/p>\s*$/i, "$1")
-      .replace(/<\/p>\s*<p>/gi, " ");
-  };
+function normalizeGroupsForDisplay(groupsField: string | string[] | undefined): string[] {
+  if (!groupsField) return [];
+  const base = Array.isArray(groupsField) ? groupsField : [String(groupsField)];
+  const splitGroups = base.flatMap((group) =>
+    String(group)
+      .split(/[\n,]/g)
+      .map((part) => part.trim())
+      .filter(Boolean),
+  );
+  return splitGroups;
+}
 
+function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
   const source = String(text || '');
   const regex = /\{\{c\d+::([\s\S]*?)\}\}/g;
   let out = '';
   let last = 0;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(source)) !== null) {
-    if (match.index > last) out += toInlineHtml(source.slice(last, match.index));
+    if (match.index > last) out += renderMarkdownLineWithClozeSpans(source.slice(last, match.index));
     const ans = String(match[1] || '').trim();
-    if (mode === 'front') out += `<span class="sprout-flashcard-blank">_____</span>`;
-    else out += `<strong>${toInlineHtml(ans)}</strong>`;
+    if (mode === 'front') out += `<span class="sprout-flashcard-blank">&nbsp;</span>`;
+    else out += `<span class="sprout-reading-view-cloze"><span class="sprout-cloze-text">${renderMarkdownLineWithClozeSpans(ans)}</span></span>`;
     last = match.index + match[0].length;
   }
-  if (last < source.length) out += toInlineHtml(source.slice(last));
+  if (last < source.length) out += renderMarkdownLineWithClozeSpans(source.slice(last));
   return out;
 }
 
-function buildFlashcardContentHTML(card: SproutCard, includeSpeakerButton: boolean): string {
+function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerButton: boolean; includeEditButton: boolean }): string {
   const idSeed = Math.random().toString(36).slice(2, 8);
   let front = '';
   let back = '';
+  const allowSpeakerForCardType = card.type === 'basic' || card.type === 'reversed' || card.type === 'cloze';
 
-  const actionsFor = (side: 'front' | 'back') => {
-    const speaker = includeSpeakerButton
-      ? `<button class="sprout-flashcard-action-btn sprout-flashcard-speak-btn" type="button" data-sprout-tts-side="${side}" data-tooltip="Read aloud" data-tooltip-position="top" aria-label="Read aloud"></button>`
-      : '';
-    return `<div class="sprout-flashcard-actions"><button class="sprout-flashcard-action-btn sprout-card-edit-btn" type="button" data-tooltip="Edit card" data-tooltip-position="top" aria-label="Edit card"></button>${speaker}</div>`;
+  const getOqSteps = (): string[] => {
+    const fieldsAny = card.fields as Record<string, string | string[] | undefined>;
+    const numbered: string[] = [];
+    for (let i = 1; i <= 20; i++) {
+      const step = toTextField(fieldsAny[String(i)]);
+      if (!step) continue;
+      numbered.push(step);
+    }
+    if (numbered.length) return numbered;
+    return toTextField(card.fields.A)
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
   };
 
-  const faceWrap = (side: 'front' | 'back', bodyHtml: string) => {
-    const label = side === 'front' ? 'Question' : 'Answer';
-    return `<div class="sprout-flashcard-face sprout-flashcard-face-${side}">
-      <div class="sprout-flashcard-face-label">${label}</div>
-      ${actionsFor(side)}
-      <div class="sprout-flashcard-face-content">${bodyHtml}</div>
-    </div>`;
+  const actionsFor = (side: 'front' | 'back') => {
+    const speaker = options.includeSpeakerButton && allowSpeakerForCardType
+      ? `<button class="sprout-flashcard-action-btn sprout-flashcard-speak-btn" type="button" data-sprout-tts-side="${side}" data-tooltip="Read aloud" data-tooltip-position="top" aria-label="Read aloud"></button>`
+      : '';
+    const edit = options.includeEditButton
+      ? `<button class="sprout-flashcard-action-btn sprout-card-edit-btn" type="button" data-tooltip="Edit card" data-tooltip-position="top" aria-label="Edit card"></button>`
+      : '';
+    if (!edit && !speaker) return '';
+    return `<div class="sprout-flashcard-actions">${edit}${speaker}</div>`;
   };
 
   if (card.type === 'cloze') {
@@ -1217,33 +1679,45 @@ function buildFlashcardContentHTML(card: SproutCard, includeSpeakerButton: boole
     back = `<div class="sprout-flashcard-io" id="sprout-io-answer-${idSeed}"></div>`;
   } else if (card.type === 'mcq') {
     const q = toTextField(card.fields.MCQ);
-    const answer = toTextField(card.fields.A);
-    const options = Array.isArray(card.fields.O)
+    const answers = (Array.isArray(card.fields.A)
+      ? card.fields.A
+      : toTextField(card.fields.A).split('\n'))
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+    const wrongOptions = Array.isArray(card.fields.O)
       ? card.fields.O
       : toTextField(card.fields.O).split('\n').map((s) => s.trim()).filter(Boolean);
-    front = `<div>${processMarkdownFeatures(q)}</div>${options.length ? `<div class="sprout-flashcard-options">${options.map((opt, i) => `<div>${String.fromCharCode(65 + i)}. ${processMarkdownFeatures(opt)}</div>`).join('')}</div>` : ''}`;
-    back = `<div><strong>${processMarkdownFeatures(answer)}</strong></div>`;
+
+    const seen = new Set<string>();
+    const allOptions = [...answers, ...wrongOptions]
+      .map((s) => String(s).trim())
+      .filter(Boolean)
+      .filter((opt) => {
+        const key = opt.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    for (let i = allOptions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
+    }
+
+    front = `<div class="sprout-flashcard-question-text">${renderMarkdownLineWithClozeSpans(q)}</div>${allOptions.length ? `<ul class="sprout-flashcard-options sprout-flashcard-options-list">${allOptions.map((opt) => `<li>${renderMarkdownLineWithClozeSpans(String(opt))}</li>`).join('')}</ul>` : ''}`;
+    back = answers.length > 1
+      ? `<ul class="sprout-flashcard-answer-list">${answers.map((ans) => `<li><strong>${renderMarkdownLineWithClozeSpans(ans)}</strong></li>`).join('')}</ul>`
+      : `<div><strong>${renderMarkdownLineWithClozeSpans(answers[0] || '')}</strong></div>`;
   } else if (card.type === 'oq') {
     const q = toTextField(card.fields.OQ);
-    const fieldsAny = card.fields as Record<string, string | string[] | undefined>;
-    const steps: string[] = [];
-    for (let i = 1; i <= 20; i++) {
-      const step = toTextField(fieldsAny[String(i)]);
-      if (!step) continue;
-      steps.push(step);
-    }
-    front = `<div>${processMarkdownFeatures(q)}</div>`;
-    back = `<div class="sprout-flashcard-options">${steps.map((s, i) => `<div>${i + 1}. ${processMarkdownFeatures(s)}</div>`).join('')}</div>`;
+    const steps = getOqSteps();
+    front = `<div>${renderMarkdownLineWithClozeSpans(q)}</div>`;
+    back = `<ol class="sprout-flashcard-sequence-list">${steps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ol>`;
   } else {
     const q = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
     const a = toTextField(card.fields.A);
-    front = `<div>${processMarkdownFeatures(q)}</div>`;
-    back = `<div>${processMarkdownFeatures(a)}</div>`;
-  }
-
-  const info = toTextField(card.fields.I);
-  if (info && card.type !== 'cloze') {
-    back += `<div class="sprout-flashcard-info">${processMarkdownFeatures(info)}</div>`;
+    front = `<div>${renderMarkdownLineWithClozeSpans(q)}</div>`;
+    back = `<div>${renderMarkdownLineWithClozeSpans(a)}</div>`;
   }
 
   const frontBodyClass = card.type === 'cloze'
@@ -1254,8 +1728,8 @@ function buildFlashcardContentHTML(card: SproutCard, includeSpeakerButton: boole
     : 'sprout-flashcard-body';
 
   return `
-    <div class="sprout-flashcard-question">${faceWrap('front', `<div class="${frontBodyClass}">${front}</div>`)}</div>
-    <div class="sprout-flashcard-answer" hidden>${faceWrap('back', `<div class="${backBodyClass}">${back}</div>`)}</div>
+    <div class="sprout-flashcard-question">${actionsFor('front')}<div class="${frontBodyClass}">${front}</div></div>
+    <div class="sprout-flashcard-answer" hidden>${actionsFor('back')}<div class="${backBodyClass}">${back}</div></div>
   `;
 }
 
@@ -1271,7 +1745,7 @@ function buildGroupsSectionHTML(groups: string[]): string {
         </button>
       </div>
       <div class="${contentId} sprout-collapsible collapsed sprout-p-spacing-none">
-        <div class="sprout-groups-list">${groups.map(g => `<span class="sprout-group-tag">${processMarkdownFeatures(String(g))}</span>`).join('')}</div>
+        <div class="sprout-groups-list">${groups.map(g => `<span class="sprout-group-tag">${renderMarkdownLineWithClozeSpans(String(g))}</span>`).join('')}</div>
       </div>
     </div>
   `;
@@ -1418,10 +1892,16 @@ function setupFlashcardFlip(el: HTMLElement) {
     if (target?.closest('.sprout-card-edit-btn, .sprout-flashcard-speak-btn')) return;
     if (el.classList.contains('sprout-flashcard-animating')) return;
 
+    const before = snapshotCardPositions(el);
+
     el.classList.add('sprout-flashcard-animating');
     window.setTimeout(() => {
       showingAnswer = !showingAnswer;
       applyFaceState();
+
+      requestAnimationFrame(() => {
+        flipAnimateCards(before, el);
+      });
     }, 180);
     window.setTimeout(() => {
       el.classList.remove('sprout-flashcard-animating');
@@ -1438,6 +1918,7 @@ function enhanceCardElement(
   card: SproutCard,
   originalContentOverride?: string,
   cardRawText?: string,
+  skipSiblingHiding = false,
 ) {
   const originalContent = originalContentOverride ?? el.innerHTML;
   el.replaceChildren();
@@ -1447,10 +1928,13 @@ function enhanceCardElement(
   let visibleFields: NonNullable<ReadingViewSettings>["visibleFields"] | undefined;
   let displayLabels = true;
   let ttsEnabled = false;
+  let showFlashcardAudioButton = true;
+  let showFlashcardEditButton = true;
   let audioSettings: AudioSettings | null = null;
+  let markdownClozeStyle: CleanMarkdownClozeStyle | undefined;
   try {
     const activePlugin = getSproutPlugin();
-    const stylesEnabled = activePlugin?.settings?.general?.enableReadingStyles ?? activePlugin?.settings?.general?.prettifyCards !== "off";
+    const stylesEnabled = !!activePlugin?.settings?.general?.enableReadingStyles;
     if (!stylesEnabled) {
       replaceChildrenWithHTML(el, originalContent);
       return;
@@ -1470,7 +1954,10 @@ function enhanceCardElement(
     visibleFields = macroConfig?.fields ?? activePlugin?.settings?.readingView?.visibleFields;
     displayLabels = macroConfig?.fields?.labels ?? activePlugin?.settings?.readingView?.displayLabels !== false;
     ttsEnabled = !!activePlugin?.settings?.audio?.enabled;
+    showFlashcardAudioButton = macroConfig?.fields?.displayAudioButton !== false;
+    showFlashcardEditButton = macroConfig?.fields?.displayEditButton !== false;
     audioSettings = activePlugin?.settings?.audio ?? null;
+    markdownClozeStyle = resolveCleanMarkdownClozeStyle(activePlugin);
   } catch (e) { log.swallow("read prettify plugin setting", e); }
 
   el.classList.add(
@@ -1493,23 +1980,30 @@ function enhanceCardElement(
   let groupsHtml = '';
   const groups = card.fields.G;
   if (groups) {
-    const groupArr = Array.isArray(groups) ? groups : [groups];
+    const groupArr = normalizeGroupsForDisplay(groups);
     if (groupArr.length > 0) {
-      groupsHtml = macroPreset === 'classic'
+      groupsHtml = macroPreset === 'markdown'
+        ? ''
+        : macroPreset === 'classic'
         ? buildGroupsSectionHTML(groupArr)
-        : `<div class="sprout-groups-list">${groupArr.map(g => `<span class="sprout-group-tag">${processMarkdownFeatures(String(g))}</span>`).join('')}</div>`;
+        : `<div class="sprout-groups-list">${groupArr.map(g => `<span class="sprout-group-tag">${renderMarkdownLineWithClozeSpans(String(g))}</span>`).join('')}</div>`;
     }
   }
 
   const cardContentHTML = macroPreset === 'markdown'
-    ? buildMarkdownModeContent(card, displayLabels)
+    ? buildMarkdownModeContent(card, displayLabels, markdownClozeStyle)
     : macroPreset === 'flashcards'
-      ? buildFlashcardContentHTML(card, ttsEnabled)
+      ? buildFlashcardContentHTML(card, {
+        includeSpeakerButton: ttsEnabled && showFlashcardAudioButton,
+        includeEditButton: showFlashcardEditButton,
+      })
       : buildCardContentHTML(card);
 
     const headerHTML = macroPreset === 'flashcards'
       ? ``
-      : `<div class="sprout-card-header sprout-reading-card-header"><div class="sprout-card-title sprout-reading-card-title">${processMarkdownFeatures(card.title || '')}</div><span class="sprout-card-edit-btn" role="button" data-tooltip="Edit card" data-tooltip-position="top" tabindex="0"></span></div>`;
+      : macroPreset === 'markdown'
+        ? `<div class="sprout-card-header sprout-reading-card-header"><div class="sprout-card-title sprout-reading-card-title">${processMarkdownFeatures(card.title || '')}</div></div>`
+        : `<div class="sprout-card-header sprout-reading-card-header"><div class="sprout-card-title sprout-reading-card-title">${processMarkdownFeatures(card.title || '')}</div><span class="sprout-card-edit-btn" role="button" data-tooltip="Edit card" data-tooltip-position="top" tabindex="0"></span></div>`;
 
     const innerHTML = `
       ${headerHTML}
@@ -1542,7 +2036,9 @@ function enhanceCardElement(
 
   // Hide any sibling elements that were part of this card's content
   // (Obsidian renders block math as separate <div class="el-div"> siblings)
-  hideCardSiblingElements(el, cardRawText);
+  if (!skipSiblingHiding) {
+    hideCardSiblingElements(el, cardRawText);
+  }
 
   if (macroPreset === 'guidebook') setupGuidebookCarousel(el);
   if (macroPreset === 'flashcards') setupFlashcardFlip(el);
@@ -1653,6 +2149,7 @@ function enhanceCardElement(
               fields: {
                 T: rec.title || "",
                 Q: rec.q || "",
+                OQ: rec.q || "",
                 A: rec.a || "",
                 CQ: rec.clozeText || "",
                 MCQ: rec.stem || "",
@@ -1667,6 +2164,15 @@ function enhanceCardElement(
                 : -1;
               sproutCard.fields.A = correctIndex >= 0 && options[correctIndex] ? options[correctIndex] : "";
               sproutCard.fields.O = options;
+            } else if (sproutCard.type === "oq") {
+              const oqSteps = Array.isArray(rec.oqSteps)
+                ? rec.oqSteps.map((s) => String(s || "").trim()).filter(Boolean)
+                : [];
+              sproutCard.fields.A = oqSteps;
+              const fieldsAny = sproutCard.fields as Record<string, string | string[] | undefined>;
+              oqSteps.forEach((step, idx) => {
+                fieldsAny[String(idx + 1)] = step;
+              });
             }
             enhanceCardElement(el, sproutCard, original);
           } catch (e) {
@@ -1715,6 +2221,13 @@ function enhanceCardElement(
       e.stopPropagation();
       if (!ttsEnabled || !audioSettings?.enabled) return;
 
+      const tts = getTtsService();
+      if (!tts.isSupported) return;
+      if (tts.isSpeaking) {
+        tts.stop();
+        return;
+      }
+
       const side = ((e.currentTarget as HTMLElement).getAttribute("data-sprout-tts-side") === "back") ? "back" : "front";
       const panelSelector = side === "back" ? ".sprout-flashcard-answer" : ".sprout-flashcard-question";
       const panel = el.querySelector<HTMLElement>(panelSelector);
@@ -1723,13 +2236,16 @@ function enhanceCardElement(
       const panelText = (panel.innerText || panel.textContent || "").replace(/\s+/g, " ").trim();
       const imageAlt = Array.from(panel.querySelectorAll<HTMLImageElement>("img[alt]")).map((img) => (img.alt || "").trim()).filter(Boolean).join(" ");
       const raw = [panelText, imageAlt].filter(Boolean).join(" ").trim();
-      const text = (el.dataset.sproutType === "cloze" && side === "front")
-        ? raw.replace(/_+/g, " blank ").replace(/\s+/g, " ").trim()
+      const isClozeLike = el.dataset.sproutType === "cloze" || el.dataset.sproutType === "cloze-child";
+      const clozeFrontText = raw.replace(/_+/g, " blank ").replace(/\s+/g, " ").trim();
+      const clozeFallback = String(card.fields.CQ ?? "")
+        .replace(/\{\{c\d+::([\s\S]*?)\}\}/g, " blank ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const text = (isClozeLike && side === "front")
+        ? (clozeFrontText || clozeFallback)
         : raw;
       if (!text) return;
-
-      const tts = getTtsService();
-      if (!tts.isSupported) return;
       const mergedAudio = {
         ...DEFAULT_SETTINGS.audio,
         ...(audioSettings ?? {}),
@@ -1802,13 +2318,32 @@ function enhanceCardElement(
       // FLIP step 2: after the browser reflows, animate cards
       // from their old positions to their new ones
       requestAnimationFrame(() => {
-        flipAnimateCards(before);
+        flipAnimateCards(before, el);
       });
     });
   });
 
   // Render MathJax if present
   void renderMdInElements(el, card);
+}
+
+export function renderReadingViewPreviewCard(el: HTMLElement, card: SproutCard): void {
+  el.classList.add("el-p");
+  el.setAttribute("data-sprout-processed", "true");
+  enhanceCardElement(el, card, "", undefined, true);
+
+  const editButtons = el.querySelectorAll<HTMLElement>(".sprout-card-edit-btn");
+  editButtons.forEach((button) => {
+    button.setAttribute("aria-disabled", "true");
+    button.setAttribute("tabindex", "-1");
+  });
+
+  const audioButtons = el.querySelectorAll<HTMLButtonElement>(".sprout-flashcard-speak-btn");
+  audioButtons.forEach((button) => {
+    button.disabled = true;
+    button.setAttribute("aria-disabled", "true");
+    button.tabIndex = -1;
+  });
 }
 
 /* =========================

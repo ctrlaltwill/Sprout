@@ -81,6 +81,9 @@ export class SproutSettingsView extends ItemView {
   /** Tab content container. */
   private _tabContentEl: HTMLElement | null = null;
 
+  /** Window-level listener cleanups registered by active tab content. */
+  private _windowListenerCleanups: Array<() => void> = [];
+
   /**
    * Lazily-created SettingsTab adapter used to call the existing render methods.
    * We create a real SproutSettingsTab instance but never register it with
@@ -115,10 +118,34 @@ export class SproutSettingsView extends ItemView {
       this._header?.dispose?.();
       this._releaseComponent?.unload?.();
     } catch (e) { log.swallow("dispose settings header", e); }
+    this._clearWindowListeners();
     this._header = null;
     this._releaseComponent = null;
     this._settingsTabAdapter = null;
     await Promise.resolve();
+  }
+
+  private _trackWindowListener(
+    event: string,
+    handler: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions,
+  ) {
+    window.addEventListener(event, handler, options);
+    this._windowListenerCleanups.push(() => {
+      window.removeEventListener(event, handler, options as boolean | EventListenerOptions | undefined);
+    });
+  }
+
+  private _clearWindowListeners() {
+    if (!this._windowListenerCleanups.length) return;
+    const cleanups = this._windowListenerCleanups.splice(0, this._windowListenerCleanups.length);
+    for (const dispose of cleanups) {
+      try {
+        dispose();
+      } catch {
+        // no-op
+      }
+    }
   }
 
   onRefresh() {
@@ -303,6 +330,8 @@ export class SproutSettingsView extends ItemView {
   private _renderActiveTabContent() {
     const container = this._tabContentEl;
     if (!container) return;
+
+    this._clearWindowListeners();
 
     // Save scroll position
     const prevScroll = container.scrollTop;
@@ -1114,7 +1143,8 @@ export class SproutSettingsView extends ItemView {
           };
 
           inner.addEventListener("scroll", updateActiveDot, { passive: true });
-          window.addEventListener("resize", () => updateActiveDot(), { passive: true });
+          const onResize = () => updateActiveDot();
+          this._trackWindowListener("resize", onResize, { passive: true });
           window.requestAnimationFrame(updateActiveDot);
         }
 
@@ -1252,7 +1282,7 @@ export class SproutSettingsView extends ItemView {
         };
 
         nav.addEventListener("scroll", syncFade, { passive: true });
-        window.addEventListener("resize", syncFade, { passive: true });
+        this._trackWindowListener("resize", syncFade, { passive: true });
         syncFade();
       } catch {
         loading.empty();
@@ -1450,7 +1480,8 @@ export class SproutSettingsView extends ItemView {
       };
 
       contentInner.addEventListener("scroll", updateActiveDot, { passive: true });
-      window.addEventListener("resize", () => updateActiveDot(), { passive: true });
+      const onResize = () => updateActiveDot();
+      this._trackWindowListener("resize", onResize, { passive: true });
       window.requestAnimationFrame(updateActiveDot);
     }
 
@@ -1745,7 +1776,8 @@ export class SproutSettingsView extends ItemView {
 
         const role = document.createElement("div");
         role.className = "sprout-about-role";
-        role.textContent = "Creator of sprout";
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        role.textContent = "Creator and maintainer of Sprout.";
 
         const linksRow = document.createElement("div");
         linksRow.className = "sprout-about-links-row";
@@ -1991,7 +2023,7 @@ You can support Sprout by starring the repo, sharing it with friends, or caffein
     const sectionMap: Record<string, string[]> = {
       general: ["Appearance"],
       audio: ["Text to speech", "Voice and accent", "Voice tuning"],
-      cards: ["Basic cards", "Cloze", "Image occlusion", "Multiple choice"],
+      cards: ["Basic cards", "Cloze", "Image occlusion", "Multiple choice", "Ordered questions"],
       reading: ["Reading view styles", "Macro styles", "Reading view fields", "Reading view colours", "Custom style CSS"],
       storage: ["Attachment storage", "Data backup", "Syncing"],
       study: ["Study sessions", "Scheduling"],

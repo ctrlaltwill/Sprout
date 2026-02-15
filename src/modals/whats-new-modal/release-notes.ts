@@ -25,28 +25,32 @@ export interface ReleaseNote {
  * 3. The modal will automatically show for users upgrading to that version
  */
 export const RELEASE_NOTES: Record<string, ReleaseNote> = {
-  "1.0.5": {
-    version: "1.0.5",
-    title: "1.0.5",
-    releaseDate: "2025-06-15",
+  "1.0.5-beta.1": {
+    version: "1.0.5-beta.1",
+    title: "1.0.5 Beta 1",
+    releaseDate: "2026-02-16",
     content: `
-# New Features
-- Multi-select questions (subtype of multiple choice)
-- Reversed and ordered question support
-- In-app wiki/guide
-- New settings view
+# New card types
+- Multi-select MCQ and ordered questions for memorising sequences
 
-## Improvements
-- Plugin scaling support
-- Text selection enabled for copying card content
-- Text-to-speech and audio support for questions
-- Custom delimiters
-- Custom styling for reading view, clozes, and image occlusion masks
-- Data security fixes
+## Card customisation
+- Typed cloze support
+- Customisation of image occlusion masks
 
-## Bug Fixes
-- Fixed tooltips
-- Modal background is now limited to the workspace to allow switching tabs
+## Reading view
+- Overhaul with two styles: Flashcards and Clean markdown
+- Additional styles and full Custom support are planned for a future update
+
+## Settings and guide
+- New settings view with more control
+- Updated guide, visible directly within Obsidian
+
+## Fixes
+- Modal background/overlay is now limited to the workspace to allow tab-switching
+
+## Notes
+- This is a pre-release build targeting final version 1.0.5
+- If scheduling or analytics data is missing after update, restore from backup
     `.trim(),
   },
 

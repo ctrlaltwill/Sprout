@@ -139,26 +139,21 @@ mjx-container[jax="CHTML"][display="true"] {
  * and other content stay full-width and create natural column
  * break-points between card groups.
  */
-.markdown-preview-section:has(.sprout-pretty-card) {
+.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run {
   column-width: 280px;
   column-gap: 16px;
 }
 
-/* Non-card siblings span all columns so they render normally */
-.markdown-preview-section:has(.sprout-pretty-card) > :not(.sprout-pretty-card) {
-  column-span: all;
-}
-
 /* Vertical gap between cards matches the horizontal column-gap.
    !important needed to override .sprout .sprout-pretty-card.accent base margins */
-.markdown-preview-section:has(.sprout-pretty-card) > .sprout-pretty-card {
+.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run > .sprout-pretty-card {
   margin-top: 0 !important;
   margin-bottom: 16px !important;
 }
 
 /* Hidden duplicates must not take space */
-.markdown-preview-section:has(.sprout-pretty-card) > .sprout-hidden-important,
-.markdown-preview-section:has(.sprout-pretty-card) > [data-sprout-hidden="true"] {
+.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run > .sprout-hidden-important,
+.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run > [data-sprout-hidden="true"] {
   display: none !important;
 }
 
@@ -233,6 +228,7 @@ mjx-container[jax="CHTML"][display="true"] {
   background: var(--color-base-10);
   border: 1px solid var(--alt-accent-color);
   border-radius: var(--radius-l);
+  padding: 0 !important;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
@@ -601,7 +597,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* Responsive: single column on narrow screens */
 @media (max-width: 520px) {
-  .markdown-preview-section:has(.sprout-pretty-card) {
+  .markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run {
     column-count: 1 !important;
   }
 }
@@ -636,9 +632,20 @@ mjx-container[jax="CHTML"][display="true"] {
   box-decoration-break: clone;
 }
 
-.sprout-reading-view-cloze-text {
+.sprout-reading-view-cloze .sprout-cloze-text {
   font-weight: 500;
-  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  color: inherit;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-clean-markdown-cloze {
+  font-weight: 500;
+  background-color: var(--sprout-clean-md-cloze-bg, hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12));
+  color: var(--sprout-clean-md-cloze-text, var(--text-colour, var(--text-color, var(--text-normal))));
+  border-radius: var(--radius-s);
+  padding: 1px 5px;
+  margin: 0 1px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* When cloze contains only an image, use border instead of background span */
@@ -759,6 +766,18 @@ mjx-container[jax="CHTML"][display="true"] {
   line-height: 1 !important;
 }
 
+/* Clean markdown IO sizing: cap to 300px on first-hit dimension */
+.sprout-pretty-card.sprout-macro-markdown .sprout-io-reading-container {
+  max-width: min(100%, 300px);
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-io-reading-img {
+  width: auto !important;
+  height: auto !important;
+  max-width: min(100%, 300px) !important;
+  max-height: 300px !important;
+}
+
 /* ---- Missing image placeholder ---- */
 
 .sprout-pretty-card .sprout-missing-image {
@@ -786,28 +805,6 @@ mjx-container[jax="CHTML"][display="true"] {
   overflow-wrap: break-word !important;
   word-break: break-word !important;
   white-space: normal !important;
-}
-
-/* ============================================================================
-   LAYOUT MODES — Vertical (single column) vs Masonry (default multi-column)
-   ========================================================================== */
-
-/*
- * .sprout-layout-vertical disables multi-column layout,
- * stacking cards in a single column with consistent spacing.
- */
-.markdown-preview-section.sprout-layout-vertical:has(.sprout-pretty-card) {
-  column-width: unset !important;
-  column-gap: unset !important;
-  column-count: 1 !important;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.markdown-preview-section.sprout-layout-vertical > .sprout-pretty-card {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
 }
 
 /* ============================================================================
@@ -884,6 +881,22 @@ mjx-container[jax="CHTML"][display="true"] {
   color: var(--text-normal);
 }
 
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line :is(ul, ol) {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line .internal-embed.image-embed {
+  max-width: min(100%, 300px) !important;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line img {
+  width: auto !important;
+  height: auto !important;
+  max-width: min(100%, 300px) !important;
+  max-height: 300px !important;
+}
+
 .sprout-pretty-card.sprout-macro-custom {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
@@ -919,7 +932,8 @@ mjx-container[jax="CHTML"][display="true"] {
 /* ---- Flashcard 3D flip mechanism ---- */
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-card-content {
-  min-height: max(120px, var(--sprout-flashcard-height, 120px));
+  padding: 0 !important;
+  margin: 0;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards.sprout-flashcard-animating {
@@ -931,95 +945,127 @@ mjx-container[jax="CHTML"][display="true"] {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  min-height: max(120px, var(--sprout-flashcard-height, 120px));
-  padding: 20px;
+  padding: 16px;
   box-sizing: border-box;
   font-size: inherit;
   text-align: center;
   line-height: 1.5;
-}
-
-.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-face {
   border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--background-primary) 88%, var(--interactive-accent) 12%),
-    var(--background-primary)
-  );
+  border-radius: calc(var(--radius-l) - 1px);
+  background: var(--background-primary);
   padding: 12px;
-  text-align: left;
-}
-
-.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-face-label {
-  font-size: var(--sprout-font-2xs);
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-face-content {
-  display: block;
+  overflow: hidden;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55em;
   width: 100%;
   max-width: 100%;
+  text-align: center;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body > :is(.sprout-flashcard-question-text, p) {
+  margin: 0;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body > :is(ul, ol) {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body > :is(ul, ol) > li {
+  margin: 0;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body-cloze {
-  text-align: left;
+  display: block !important;
+  text-align: center;
   white-space: normal;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-actions {
   position: absolute;
   top: 8px;
+  left: 8px;
   right: 8px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 8px;
   z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-flashcard-question, .sprout-flashcard-answer):hover .sprout-flashcard-actions,
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-actions:focus-within {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn {
-  background: var(--background-primary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-s) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
   box-shadow: none !important;
-  color: var(--text-normal) !important;
-  opacity: 0.95;
+  outline: none !important;
+  color: var(--text-muted) !important;
+  opacity: 1;
   padding: 0 !important;
   margin: 0;
-  width: 18px;
-  height: 18px;
+  width: auto;
+  height: auto;
+  min-width: 0 !important;
+  min-height: 0 !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
+.sprout-pretty-card.sprout-macro-flashcards button.sprout-card-edit-btn,
+.sprout-pretty-card.sprout-macro-flashcards button.sprout-flashcard-speak-btn {
+  padding: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn:hover,
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn:focus,
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn:focus-visible {
   opacity: 1;
+  color: var(--text-normal) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-action-btn svg {
   display: block;
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   stroke: currentColor !important;
   fill: none !important;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-question,
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer {
-  background: transparent;
+  background: var(--sprout-rv-flash-bg) !important;
+  color: var(--sprout-rv-flash-text) !important;
+  padding: 20px 30px;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer {
@@ -1036,13 +1082,15 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-options {
-  text-align: left;
+  text-align: center;
   font-size: var(--sprout-font-sm);
   line-height: 1.6;
 }
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-info {
-  margin-top: 12px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
   font-size: var(--sprout-font-xs);
   color: var(--text-muted);
   text-align: center;
@@ -1050,10 +1098,10 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-blank {
   display: inline-block;
-  min-width: 3.2em;
   border-bottom: 1px solid var(--text-muted);
   white-space: nowrap;
   color: transparent;
+  width: 50px;
   vertical-align: baseline;
 }
 

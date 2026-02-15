@@ -170,7 +170,9 @@
 }
 
 body.sprout-workspace-content-zoomed .sprout .dropdown-menu.sprout-popover-overlay,
-body.sprout-workspace-content-zoomed .sprout.dropdown-menu.sprout-popover-overlay {
+body.sprout-workspace-content-zoomed .sprout.dropdown-menu.sprout-popover-overlay,
+body.sprout-workspace-content-zoomed .sprout .sprout-ss-popover.sprout-popover-overlay,
+body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-overlay {
   zoom: var(--sprout-workspace-content-zoom, 1);
 }
 

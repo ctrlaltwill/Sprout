@@ -125,6 +125,8 @@ export class ImageOcclusionCreatorModal extends Modal {
   private textDrawing = false;
   private textStart: { x: number; y: number } | null = null;
   private textPreviewEl: HTMLElement | null = null;
+  private onDocPaste?: (ev: ClipboardEvent) => void;
+  private onDocKeyDown?: (ev: KeyboardEvent) => void;
 
   constructor(app: App, plugin: SproutPlugin) {
     super(app);
@@ -229,38 +231,42 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.imgEl = canvasRefs.imgEl;
     this.overlayEl = canvasRefs.overlayEl;
     if (this.canvasContainerEl) this.canvasContainerEl.classList.add("sprout-io-canvas");
+    if (this.canvasContainerEl) this.canvasContainerEl.tabIndex = 0;
     if (this.stageEl) this.stageEl.classList.add("sprout-io-stage");
+    if (this.viewportEl) this.viewportEl.tabIndex = 0;
 
     // Global paste handler
     const handlePaste = async (ev: ClipboardEvent) => {
       const clipData = ev.clipboardData;
       if (!clipData) return;
 
+      const items = Array.from(clipData.items || []);
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+      if (!imageItem) return;
+
+      // Capture image pastes while IO modal is open so they never land in text inputs.
+      ev.preventDefault();
+      ev.stopPropagation();
+
       if (this.ioImageData) {
         this.showImageLimitAlert();
         return;
       }
 
-      const items = clipData.items;
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (!item.type.startsWith("image/")) continue;
-        ev.preventDefault();
-        try {
-          const blob = item.getAsFile();
-          if (!blob) continue;
-          const data = await blob.arrayBuffer();
-          this.ioImageData = { mime: item.type, data };
-          await this.loadImageToCanvas();
-          this.updatePlaceholderVisibility();
-        } catch (e: unknown) {
-          new Notice(`Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
-        }
-        return;
+      try {
+        const blob = imageItem.getAsFile();
+        if (!blob) return;
+        const data = await blob.arrayBuffer();
+        this.ioImageData = { mime: imageItem.type, data };
+        await this.loadImageToCanvas();
+        this.updatePlaceholderVisibility();
+      } catch (e: unknown) {
+        new Notice(`Failed to load pasted image (${e instanceof Error ? e.message : String(e)})`);
       }
     };
 
-    document.addEventListener("paste", (ev) => { void handlePaste(ev); });
+    this.onDocPaste = (ev: ClipboardEvent) => { void handlePaste(ev); };
+    document.addEventListener("paste", this.onDocPaste, true);
 
     // Setup canvas mouse/keyboard interactions
     this.setupCanvasEvents();
@@ -392,6 +398,10 @@ export class ImageOcclusionCreatorModal extends Modal {
       onCancel: () => this.close(),
       onSave: (mode) => void saveIo(mode),
     }, defaultMode);
+
+    requestAnimationFrame(() => {
+      (this.canvasContainerEl ?? this.viewportEl)?.focus();
+    });
   }
 
   // ── Tool management ───────────────────────────────────────────────────────
@@ -608,6 +618,22 @@ export class ImageOcclusionCreatorModal extends Modal {
 
   }
 
+  private clientToStagePoint(clientX: number, clientY: number): { x: number; y: number } {
+    if (!this.stageEl) return { x: 0, y: 0 };
+
+    const rect = this.stageEl.getBoundingClientRect();
+    const width = Math.max(1, rect.width);
+    const height = Math.max(1, rect.height);
+
+    const x = ((clientX - rect.left) / width) * this.stageW;
+    const y = ((clientY - rect.top) / height) * this.stageH;
+
+    return {
+      x: Math.max(0, Math.min(this.stageW, x)),
+      y: Math.max(0, Math.min(this.stageH, y)),
+    };
+  }
+
   // ── Canvas event handling (mouse / keyboard) ──────────────────────────────
 
   private setupCanvasEvents() {
@@ -638,6 +664,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       }
     };
 
+    this.onDocKeyDown = handleKeyDown;
     document.addEventListener("keydown", handleKeyDown);
 
     this.viewportEl.addEventListener("mousedown", (e: MouseEvent) => {
@@ -658,9 +685,7 @@ export class ImageOcclusionCreatorModal extends Modal {
 
       if (isTextTool) {
         if (isOnRect || isOnText || isOnForm) return;
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         this.activeTextId = null;
         this.textDrawing = true;
         this.textStart = { x: stageX, y: stageY };
@@ -671,9 +696,7 @@ export class ImageOcclusionCreatorModal extends Modal {
 
       if (isCropTool) {
         if (isOnForm) return;
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         this.cropDrawing = true;
         this.cropStart = { x: stageX, y: stageY };
         this.updateCropPreview(stageX, stageY, stageX, stageY);
@@ -691,9 +714,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         e.preventDefault();
       } else if (isOcclusionTool) {
         if (isOnRect || isOnText || isOnForm) return;
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
 
         this.drawing = true;
         this.drawStart = { x: stageX, y: stageY };
@@ -709,19 +730,13 @@ export class ImageOcclusionCreatorModal extends Modal {
         this.t.ty = panStart.ty + dy;
         this.applyTransform();
       } else if (this.cropDrawing && this.cropStart) {
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         this.updateCropPreview(this.cropStart.x, this.cropStart.y, stageX, stageY);
       } else if (this.textDrawing && this.textStart) {
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         this.updateTextPreview(this.textStart.x, this.textStart.y, stageX, stageY);
       } else if (this.drawing && this.drawStart) {
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         const shape = this.currentTool === "occlusion-circle" ? "circle" : "rect";
 
         this.updatePreview(this.drawStart.x, this.drawStart.y, stageX, stageY, shape);
@@ -736,18 +751,14 @@ export class ImageOcclusionCreatorModal extends Modal {
           this.viewportEl.classList.add("sprout-cursor-grab");
         }
       } else if (this.cropDrawing && this.cropStart) {
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         const start = this.cropStart;
         this.cropDrawing = false;
         this.cropStart = null;
         this.clearCropPreview();
         void this.finalizeCropRect(start.x, start.y, stageX, stageY);
       } else if (this.textDrawing && this.textStart) {
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
         const start = this.textStart;
         this.textDrawing = false;
         this.textStart = null;
@@ -764,9 +775,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         }
         this.openTextInput(left, top, { w: width, h: height });
       } else if (this.drawing && this.drawStart) {
-        const rect = this.viewportEl!.getBoundingClientRect();
-        const stageX = (e.clientX - rect.left - this.t.tx) / this.t.scale;
-        const stageY = (e.clientY - rect.top - this.t.ty) / this.t.scale;
+        const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
 
         this.finalizeRect(this.drawStart.x, this.drawStart.y, stageX, stageY);
         this.drawing = false;
@@ -1287,6 +1296,14 @@ export class ImageOcclusionCreatorModal extends Modal {
     try {
       this.onCloseCallback?.();
     } catch (e) { log.swallow("IO modal onClose callback", e); }
+    if (this.onDocPaste) {
+      document.removeEventListener("paste", this.onDocPaste, true);
+      this.onDocPaste = undefined;
+    }
+    if (this.onDocKeyDown) {
+      document.removeEventListener("keydown", this.onDocKeyDown);
+      this.onDocKeyDown = undefined;
+    }
     this.containerEl.removeClass("sprout-modal-container");
     this.containerEl.removeClass("sprout-modal-dim");
     this.modalEl.removeClass("bc", "sprout-modals", "sprout-io-creator");

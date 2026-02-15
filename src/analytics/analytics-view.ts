@@ -486,7 +486,7 @@ export class SproutAnalyticsView extends ItemView {
     };
 
     const longestBadge = streakMatches
-      ? makeBadge({ text: "Live", live: true, className: "sprout-live-badge sprout-live-badge-orange" })
+      ? makeBadge({ text: "Live", live: true, className: "sprout-trend-badge sprout-live-badge sprout-live-badge-orange" })
       : (() => {
           const badge = document.createElement("span");
           badge.className = "sprout-trend-badge inline-flex items-center gap-1 sprout-analytics-badge-compact";
@@ -498,7 +498,7 @@ export class SproutAnalyticsView extends ItemView {
 
     const includesToday = (dayMap.get(todayIndex)?.count ?? 0) > 0;
     const currentBadge = includesToday
-      ? makeBadge({ text: "Live", live: true, className: "sprout-live-badge sprout-live-badge-black" })
+      ? makeBadge({ text: "Live", live: true, className: "sprout-trend-badge sprout-live-badge sprout-live-badge-dark" })
       : null;
     const currentNote =
       currentStreak > 0 ? (streakMatches ? "Longest streak active" : includesToday ? "Keep it going!" : "Streak active.") : "No reviews yet";

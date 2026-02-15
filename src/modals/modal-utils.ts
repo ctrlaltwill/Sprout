@@ -519,7 +519,7 @@ export function createModalMcqSection() {
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 sprout-remove-btn-ghost";
+    removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 p-0 sprout-remove-btn-ghost";
     removeBtn.setAttribute("data-tooltip", "Remove option");
     removeBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");

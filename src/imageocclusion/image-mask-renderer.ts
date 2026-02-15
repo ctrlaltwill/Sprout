@@ -94,6 +94,7 @@ export class ImageOcclusionEditorModal extends Modal {
   // window listeners (so we can unbind cleanly)
   private onWinMove?: (e: MouseEvent) => void;
   private onWinUp?: (e: MouseEvent) => void;
+  private cleanupModeMenuListener?: () => void;
 
   // sizing constraint (viewport height = fitted image height, capped)
   private readonly MAX_CANVAS_H = 600;
@@ -188,6 +189,8 @@ export class ImageOcclusionEditorModal extends Modal {
     try {
       if (this.onWinMove) window.removeEventListener("mousemove", this.onWinMove);
       if (this.onWinUp) window.removeEventListener("mouseup", this.onWinUp);
+      this.cleanupModeMenuListener?.();
+      this.cleanupModeMenuListener = undefined;
     } catch {
       // no-op
     }
@@ -420,14 +423,14 @@ export class ImageOcclusionEditorModal extends Modal {
     const footer = root.createDiv({ cls: "bc sprout-io-footer flex flex-col items-end gap-3" });
 
     // Mask mode picker row
-    const modeRow = footer.createDiv({ cls: "bc flex items-center gap-2 w-full justify-end" });
+    const modeRow = footer.createDiv({ cls: "bc flex flex-col gap-1 items-start w-full" });
     modeRow.createEl("label", {
       cls: "bc text-sm font-medium",
-      text: "Mask mode",
+      text: "Type",
     });
 
     const modeOptions: { value: "solo" | "all"; label: string }[] = [
-      { value: "solo", label: "Hide one" },
+      { value: "solo", label: "Basic" },
       { value: "all", label: "Hide all" },
     ];
     this.selectedMaskMode = this.initialMaskMode;
@@ -439,7 +442,7 @@ export class ImageOcclusionEditorModal extends Modal {
     });
     const triggerLabel = trigger.createEl("span", {
       cls: "bc truncate",
-      text: modeOptions.find((o) => o.value === this.selectedMaskMode)?.label ?? "Hide one",
+      text: modeOptions.find((o) => o.value === this.selectedMaskMode)?.label ?? "Basic",
     });
     const chevronWrap = trigger.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-3" });
     setIcon(chevronWrap, "chevron-down");
@@ -470,10 +473,15 @@ export class ImageOcclusionEditorModal extends Modal {
       trigger.setAttribute("aria-expanded", String(!open));
     });
 
-    document.addEventListener("click", () => {
+    this.cleanupModeMenuListener?.();
+    const onDocClick = () => {
       modeMenu.classList.add("hidden");
       trigger.setAttribute("aria-expanded", "false");
-    });
+    };
+    document.addEventListener("click", onDocClick);
+    this.cleanupModeMenuListener = () => {
+      document.removeEventListener("click", onDocClick);
+    };
 
     // Button row
     const buttonRow = footer.createDiv({ cls: "bc flex items-center gap-2" });
@@ -610,7 +618,7 @@ export class ImageOcclusionEditorModal extends Modal {
       this.clearSelection();
 
       this.drawing = true;
-      const p = clientToStage(this.viewportEl, this.t, e.clientX, e.clientY);
+      const p = clientToStage(this.stageEl, this.t, e.clientX, e.clientY);
       this.drawStart = p;
 
       this.previewEl = document.createElement("div");
@@ -630,7 +638,7 @@ export class ImageOcclusionEditorModal extends Modal {
       }
 
       if (this.drawing && this.drawStart && this.previewEl) {
-        const p = clientToStage(this.viewportEl, this.t, e.clientX, e.clientY);
+        const p = clientToStage(this.stageEl, this.t, e.clientX, e.clientY);
         const r = rectPxFromPoints(this.drawStart, p);
 
         const minStage = 8 / (this.t.scale || 1);
@@ -651,7 +659,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
       if (!this.drawing || !this.drawStart) return;
 
-      const p = clientToStage(this.viewportEl, this.t, e.clientX, e.clientY);
+      const p = clientToStage(this.stageEl, this.t, e.clientX, e.clientY);
       const raw = rectPxFromPoints(this.drawStart, p);
 
       const minStage = 8 / (this.t.scale || 1);

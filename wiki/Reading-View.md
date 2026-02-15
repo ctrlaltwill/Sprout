@@ -1,6 +1,6 @@
 # Reading View
 
-Last modified: 15/02/2026
+Last modified: 16/02/2026
 
 ## Overview
 
@@ -24,18 +24,18 @@ Change these in **Settings → Reading**:
 | Setting | Description |
 |---------|-------------|
 | **Enable card styling** | When off, cards use native Obsidian reading view with no Sprout styling |
-| **Macro styles** | Choose one of Flashcards, Classic, Guidebook, Clean markdown, or Custom |
+| **Macro styles** | Currently available: Disabled, Flashcards, and Clean markdown. More styles are planned for a future update |
 | **Reading view fields** | Configure visible fields per macro style |
-| **Reading view colours** | Customise card colours for macros that support colour settings |
-| **Custom style CSS** | Add CSS that applies only to the Custom macro |
+| **Reading view colours** | Customise card colours for styles that support colour settings |
+| **Custom style CSS** | Reserved for the future Custom style (not active yet) |
 
 ## Macro styles
 
+- **Disabled**: Uses native Obsidian reading rendering with Sprout card styling turned off.
 - **Flashcards**: Front/back flip cards (question on front, answer on back).
-- **Classic**: Collapsible sections with chevrons for progressive reveal.
-- **Guidebook**: Walkthrough-style sections with guide navigation controls.
 - **Clean markdown**: Minimal, tidied markdown-style card rendering.
-- **Custom**: User-defined CSS with clean custom hooks for full styling control.
+
+Planned for a future release: **Classic**, **Guidebook**, and **Custom**.
 
 For details, see [[Reading View Styles]] and [[Custom Reading Styles]].
 

@@ -44,6 +44,30 @@
   border: var(--sprout-badge-border, none) !important;
 }
 
+.sprout .sprout-analytics-badge.sprout-trend-badge {
+  background-color: var(--theme-accent) !important;
+  border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85)) !important;
+  color: #fff !important;
+}
+
+.theme-dark .sprout .sprout-analytics-badge.sprout-trend-badge {
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .14) !important;
+  border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .24) !important;
+  color: #fff !important;
+}
+
+.sprout .sprout-analytics-badge.sprout-live-badge-orange {
+  background-color: var(--color-orange, #f59e0b) !important;
+  border: 1px solid color-mix(in srgb, var(--color-orange, #f59e0b) 78%, black) !important;
+  color: #fff !important;
+}
+
+.theme-dark .sprout .sprout-analytics-badge.sprout-live-badge-orange {
+  background-color: color-mix(in srgb, var(--color-orange, #f59e0b) 28%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-orange, #f59e0b) 52%, transparent) !important;
+  color: #fff !important;
+}
+
 .sprout .sprout-analytics-badge-compact {
   padding: 0rem 0.5rem !important;
 }

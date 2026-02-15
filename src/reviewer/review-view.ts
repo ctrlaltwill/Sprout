@@ -140,6 +140,20 @@ export class SproutReviewerView extends ItemView {
   // TTS: track what we've already spoken to avoid duplicate reads
   private _ttsLastSpokenKey = "";
 
+  private _cardPassesTtsGroupFilter(card: CardRecord, groupFilterRaw: string): boolean {
+    const groupFilter = groupFilterRaw.trim().toLowerCase();
+    if (!groupFilter) return true;
+    const groups = Array.isArray(card.groups) ? card.groups : [];
+    return groups.some((g) => g.trim().toLowerCase() === groupFilter);
+  }
+
+  private _canUseTtsForCard(card: CardRecord | null): boolean {
+    if (!card) return false;
+    const audio = this.plugin.settings?.audio;
+    if (!audio?.enabled) return false;
+    return this._cardPassesTtsGroupFilter(card, audio.limitToGroup || "");
+  }
+
   // Multi-answer MCQ: tracks which options the user has toggled
   private _mcqMultiSelected = new Set<number>();
   private _mcqMultiCardId = "";
@@ -259,12 +273,22 @@ export class SproutReviewerView extends ItemView {
 
   /** Replay the front of the current card (manual, ignores autoplay). */
   private _replayFront() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) {
+      tts.stop();
+      return;
+    }
     const card = this.currentCard();
     if (card) this._doSpeakFront(card, true);
   }
 
   /** Replay the back of the current card (manual, ignores autoplay). */
   private _replayBack() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) {
+      tts.stop();
+      return;
+    }
     const card = this.currentCard();
     if (card) this._doSpeakBack(card, true);
   }
@@ -276,12 +300,7 @@ export class SproutReviewerView extends ItemView {
   private _doSpeakFront(card: CardRecord, force = false) {
     const audio = this.plugin.settings?.audio;
     if (!audio) return;
-
-    const groupFilter = (audio.limitToGroup || "").trim().toLowerCase();
-    if (groupFilter) {
-      const groups = Array.isArray(card.groups) ? card.groups : [];
-      if (!groups.some((g) => g.trim().toLowerCase() === groupFilter)) return;
-    }
+    if (!this._canUseTtsForCard(card)) return;
 
     const tts = getTtsService();
     if (!tts.isSupported) return;
@@ -311,12 +330,7 @@ export class SproutReviewerView extends ItemView {
   private _doSpeakBack(card: CardRecord, force = false) {
     const audio = this.plugin.settings?.audio;
     if (!audio) return;
-
-    const groupFilter = (audio.limitToGroup || "").trim().toLowerCase();
-    if (groupFilter) {
-      const groups = Array.isArray(card.groups) ? card.groups : [];
-      if (!groups.some((g) => g.trim().toLowerCase() === groupFilter)) return;
-    }
+    if (!this._canUseTtsForCard(card)) return;
 
     const tts = getTtsService();
     if (!tts.isSupported) return;
@@ -1825,6 +1839,7 @@ export class SproutReviewerView extends ItemView {
     const infoPresent = activeCard ? this.hasInfoField(activeCard) : false;
     const showInfo =
       !!this.plugin.settings.study.showInfoByDefault || (this.showAnswer && infoPresent);
+    const ttsEnabledForCard = this._canUseTtsForCard(activeCard);
 
     const practiceMode = this.isPracticeSession();
     const canStartPractice = !practiceMode && !activeCard && this.canStartPractice(this.session.scope);
@@ -1934,7 +1949,7 @@ export class SproutReviewerView extends ItemView {
       applyAOS: this.plugin.settings?.general?.enableAnimations ?? true,
       aosDelayMs: this._firstSessionRender ? 100 : 0,
 
-      ttsEnabled: !!(this.plugin.settings?.audio?.enabled),
+      ttsEnabled: ttsEnabledForCard,
       ttsReplayFront: () => this._replayFront(),
       ttsReplayBack: () => this._replayBack(),
 

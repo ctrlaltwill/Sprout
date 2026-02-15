@@ -657,7 +657,7 @@ export function buildOQSectionHTML(question: string, steps: string[]): string {
   }).join('');
 
   const answerSection = buildCollapsibleSectionHTML(
-    'Answer (Correct Order)',
+    'Sequence',
     `.${aId}`,
     `<div class="sprout-oq-answer-list">${stepsHTML}</div>`,
     undefined,

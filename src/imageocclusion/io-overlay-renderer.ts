@@ -204,11 +204,8 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     // Interactjs: drag + resize
     interact(el)
       .draggable({
-        ignoreFrom: "input,textarea,button,select",
+        ignoreFrom: "input,textarea,button,select,.sprout-io-corner",
         listeners: {
-          start: () => {
-            cb.selectRect(rect.rectId);
-          },
           move: (event: DragMoveEvent) => {
             const r = getRectRef();
             if (!r) return;
@@ -231,11 +228,15 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
         },
       })
       .resizable({
-        edges: { left: true, right: true, top: true, bottom: true },
+        edges: rect.shape !== "circle"
+          ? {
+              left: ".sprout-io-corner.is-left",
+              right: ".sprout-io-corner.is-right",
+              top: ".sprout-io-corner.is-top",
+              bottom: ".sprout-io-corner.is-bottom",
+            }
+          : { left: true, right: true, top: true, bottom: true },
         listeners: {
-          start: () => {
-            cb.selectRect(rect.rectId);
-          },
           move: (event: ResizeMoveEvent) => {
             const r = getRectRef();
             if (!r) return;
@@ -325,9 +326,6 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     interact(el)
       .draggable({
         listeners: {
-          start: () => {
-            cb.selectText(textBox.textId);
-          },
           move: (event: DragMoveEvent) => {
             const t = getTextRef();
             if (!t) return;
@@ -352,9 +350,6 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
       .resizable({
         edges: { left: true, right: true, top: true, bottom: true },
         listeners: {
-          start: () => {
-            cb.selectText(textBox.textId);
-          },
           move: (event: ResizeMoveEvent) => {
             const t = getTextRef();
             if (!t) return;

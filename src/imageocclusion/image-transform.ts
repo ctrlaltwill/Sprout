@@ -27,14 +27,19 @@ export function applyStageTransform(el: HTMLElement, t: StageTransform) {
  * Converts client (screen) coordinates to stage (image) coordinates.
  */
 export function clientToStage(
-  viewportEl: HTMLElement,
-  t: StageTransform,
+  stageEl: HTMLElement,
+  _t: StageTransform,
   clientX: number,
   clientY: number,
 ): { x: number; y: number } {
-  const rect = viewportEl.getBoundingClientRect();
-  const x = (clientX - rect.left - t.tx) / t.scale;
-  const y = (clientY - rect.top - t.ty) / t.scale;
+  const rect = stageEl.getBoundingClientRect();
+  const renderedW = Math.max(1, rect.width);
+  const renderedH = Math.max(1, rect.height);
+  const baseW = Math.max(1, stageEl.offsetWidth || 1);
+  const baseH = Math.max(1, stageEl.offsetHeight || 1);
+
+  const x = ((clientX - rect.left) / renderedW) * baseW;
+  const y = ((clientY - rect.top) / renderedH) * baseH;
   return { x, y };
 }
 

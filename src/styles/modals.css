@@ -302,8 +302,10 @@
   width: auto !important;
   max-height: 90% !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   border-radius: var(--radius-l) !important;
+  z-index: 2147483001 !important;
+  isolation: isolate;
 }
 
 .sprout .sprout-card-creator-content {
@@ -311,6 +313,15 @@
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
+  overflow: visible !important;
+}
+
+.sprout .sprout-card-creator-modal [data-tooltip]:not([data-tooltip-position])::after,
+.sprout .sprout-bulk-edit-panel [data-tooltip]:not([data-tooltip-position])::after {
+  bottom: calc(100% + 6px) !important;
+  top: auto !important;
+  left: 50% !important;
+  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px))) !important;
 }
 
 .sprout .sprout-card-creator-root {
@@ -389,13 +400,15 @@
   width: min(640px, 100%) !important;
   max-width: min(640px, 92vw) !important;
   max-height: 90vh !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   display: flex !important;
   flex-direction: column !important;
   border-radius: var(--radius-l) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   background: var(--background) !important;
   position: relative !important;
+  z-index: 2147483001 !important;
+  isolation: isolate;
 }
 
 .sprout .sprout-bulk-edit-panel > .modal-close-button {
@@ -421,8 +434,7 @@
 
 .sprout .sprout-bulk-edit-content {
   padding: 16px 20px 20px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow: visible !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -474,7 +486,7 @@
   max-width: 96% !important;
   height: auto !important;
   max-height: 90% !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   padding: 0 !important;
   border: 1px solid var(--border) !important;
 }
@@ -483,7 +495,7 @@
   width: 100% !important;
   height: auto !important;
   max-width: 100% !important;
-  overflow-y: auto !important;
+  overflow-y: visible !important;
   overflow-x: hidden !important;
   display: flex !important;
   flex-direction: column !important;
@@ -578,7 +590,7 @@
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
 }
 
 .sprout .sprout-io-footer {
@@ -589,16 +601,20 @@
 
 /* IO mode picker — button-style dropdown menu */
 .sprout .sprout-io-mode-menu {
-  position: absolute !important;
-  top: calc(100% + 4px) !important;
-  right: 0 !important;
-  z-index: 10060 !important;
-  min-width: 120px !important;
+  position: fixed !important;
+  z-index: 1000002 !important;
+  min-width: 132px !important;
+  max-width: min(320px, calc(100vw - 16px)) !important;
   padding: 4px !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-m) !important;
   background-color: var(--background) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+.sprout .sprout-io-mode-trigger {
+  min-width: 112px !important;
+  justify-content: space-between !important;
 }
 
 .sprout .sprout-io-mode-menu.hidden {
@@ -749,7 +765,7 @@
   background: rgba(0, 0, 0, 0.25) !important;
   border: 1px solid rgba(255, 255, 255, 0.7) !important;
   border-radius: var(--radius-s) !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -1199,6 +1215,55 @@
   pointer-events: auto;
 }
 
+.sprout-io-editor-modal .sprout-io-viewport {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  width: 100% !important;
+  height: var(--sprout-io-viewport-h, auto) !important;
+  overflow: hidden !important;
+}
+
+.sprout-io-editor-modal .sprout-io-stage {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform-origin: 0 0 !important;
+  width: var(--sprout-io-stage-w, 1px) !important;
+  height: var(--sprout-io-stage-h, 1px) !important;
+}
+
+.sprout-io-editor-modal .sprout-stage-transform {
+  transform: var(--sprout-stage-transform, none) !important;
+}
+
+.sprout .sprout-io-editor-modal .sprout-io-overlay {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+  z-index: 10 !important;
+}
+
+.sprout-io-editor-modal .sprout-io-overlay {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+  z-index: 10 !important;
+}
+
 .sprout-io-preview {
   position: absolute;
   left: var(--sprout-io-left, 0);
@@ -1222,6 +1287,14 @@
   border: 2px solid var(--interactive-accent);
   border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.06);
+}
+
+.sprout .sprout-io-editor-modal .sprout-io-rect {
+  pointer-events: auto !important;
+}
+
+.sprout-io-editor-modal .sprout-io-rect {
+  pointer-events: auto !important;
 }
 
 .sprout-io-rect.selected {

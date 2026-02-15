@@ -18,9 +18,9 @@
  *   effective max width (`--sprout-tooltip-max-width`).
  */
 
-export function initTooltipPositioner(): void {
-  if (typeof document === "undefined") return;
-  if (typeof window === "undefined") return;
+export function initTooltipPositioner(): () => void {
+  if (typeof document === "undefined") return () => {};
+  if (typeof window === "undefined") return () => {};
 
   const WORKSPACE_DARK_SPROUT_SELECTOR = ".workspace-leaf-content.sprout.theme-dark";
   const WORKSPACE_SPROUT_SELECTOR = ".workspace-leaf-content.sprout";
@@ -234,4 +234,16 @@ export function initTooltipPositioner(): void {
   document.addEventListener("focusout", onFocusOut, true);
   window.addEventListener("scroll", onScrollOrResize, true);
   window.addEventListener("resize", onScrollOrResize, true);
+
+  return () => {
+    document.removeEventListener("pointerover", onPointerOver, true);
+    document.removeEventListener("pointerout", onPointerOut, true);
+    document.removeEventListener("focusin", onFocusIn, true);
+    document.removeEventListener("focusout", onFocusOut, true);
+    window.removeEventListener("scroll", onScrollOrResize, true);
+    window.removeEventListener("resize", onScrollOrResize, true);
+    activeTarget = null;
+    if (measureEl?.isConnected) measureEl.remove();
+    measureEl = null;
+  };
 }

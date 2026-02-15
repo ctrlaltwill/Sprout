@@ -853,12 +853,14 @@ export function renderSessionMode(args: Args) {
     const isOldReversed = card.type === "reversed";
     const frontContent = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
     const backContent = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
+    const replayFront = card.type === "basic" ? args.ttsReplayFront : undefined;
+    const replayBack = card.type === "basic" ? args.ttsReplayBack : undefined;
 
-    section.appendChild(labelRow("Question", args.ttsReplayFront));
+    section.appendChild(labelRow("Question", replayFront));
     section.appendChild(renderMdBlock("bc-q", frontContent));
 
     if (args.showAnswer || graded) {
-      section.appendChild(labelRow("Answer", args.ttsReplayBack));
+      section.appendChild(labelRow("Answer", replayBack));
       section.appendChild(renderMdBlock("bc-a", backContent));
     }
   } else if (card.type === "cloze" || card.type === "cloze-child") {

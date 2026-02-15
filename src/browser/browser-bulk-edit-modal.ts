@@ -15,6 +15,7 @@ import { Notice, Platform, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
 import { normalizeCardOptions } from "../core/store";
 import { log } from "../core/logger";
+import { setCssProps } from "../core/ui";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import { getDelimiter } from "../core/delimiter";
 import type { ColKey } from "./browser-helpers";
@@ -52,6 +53,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   //   div.modal-container  >  div.modal-bg  +  div.modal
   const container = document.createElement("div");
   container.className = "modal-container sprout-modal-container sprout-modal-dim sprout mod-dim";
+  setCssProps(container, "z-index", "2147483000");
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-bg";
@@ -59,6 +61,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
   const panel = document.createElement("div");
   panel.className = "modal bc sprout-modals sprout-bulk-edit-panel";
+  setCssProps(panel, "z-index", "2147483001");
   container.appendChild(panel);
 
   // Close button — direct child of panel, before header (matches Obsidian Modal layout)
