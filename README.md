@@ -16,6 +16,12 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 📖 **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 
+## Documentation sync
+
+- The plugin Guide and docs source live in `wiki/*.md`.
+- GitHub Wiki is automatically updated by `.github/workflows/wiki-sync.yml` whenever those files change on `main`.
+- You can also run the workflow manually from the Actions tab (`Sync GitHub Wiki`).
+
 
 ## Key features
 

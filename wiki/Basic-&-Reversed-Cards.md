@@ -49,4 +49,4 @@ See [[Grading]].
 - If `Q` or `A` is missing, the card cannot work correctly.
 - Keep one fact per card for better retention.
 - Use `I` for hints or references instead of making `A` too long.
-- Use [[Groups|groups]] to organize by topic.
+- Use groups to organize by topic.
