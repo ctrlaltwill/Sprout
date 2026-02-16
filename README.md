@@ -5,7 +5,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/issues)
 [![GitHub Downloads](https://img.shields.io/github/downloads/ctrlaltwill/Sprout/total?label=downloads)](https://github.com/ctrlaltwill/Sprout/releases)
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
-[![Wiki - 30 pages](https://img.shields.io/badge/Wiki-30%20pages-blue)](https://github.com/ctrlaltwill/Sprout/wiki)
+[![Wiki - 30 pages](https://img.shields.io/badge/wiki-30%20pages-blue)](https://github.com/ctrlaltwill/Sprout/wiki)
 
 
 > [!Note]
