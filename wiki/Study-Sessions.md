@@ -90,7 +90,7 @@ Press `M` or tap the **⋮** button to open the More menu:
 | Suspend | `S` | Remove card from future reviews (see [[Suspending-Cards|Suspending Cards]]) |
 | Undo | `U` | Revert the previous rating (only available on the next card) |
 | Open note | `O` | Jump to the source note |
-| Edit | `E` | Open the inline card editor (see [[Editing-Cards|Editing Cards]]) |
+| Edit | `E` | Open the inline card editor |
 
 ## Zoom
 

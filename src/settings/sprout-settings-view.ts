@@ -727,7 +727,7 @@ export class SproutSettingsView extends ItemView {
         sections: [
           { title: "Review Flow", pageKeys: ["Study-Sessions", "Grading", "Scheduling"] },
           { title: "Card State", pageKeys: ["Burying-Cards", "Suspending-Cards"] },
-          { title: "Scope", pageKeys: ["Groups", "Widget"] },
+          { title: "Scope", pageKeys: ["Widget"] },
         ],
       },
       {
@@ -791,7 +791,6 @@ export class SproutSettingsView extends ItemView {
       Installation: "download",
       "Creating-Cards": "plus-circle",
       Cards: "square-stack",
-      "Card-Formatting": "type",
       "Custom-Delimiters": "separator-vertical",
       "Keyboard-Shortcuts": "keyboard",
       "Basic-&-Reversed-Cards": "repeat",
@@ -804,7 +803,6 @@ export class SproutSettingsView extends ItemView {
       Scheduling: "calendar-clock",
       "Burying-Cards": "archive",
       "Suspending-Cards": "pause-circle",
-      Groups: "folders",
       Widget: "panel-right",
       "Card-Browser": "table",
       "Reading-View": "book-open",
