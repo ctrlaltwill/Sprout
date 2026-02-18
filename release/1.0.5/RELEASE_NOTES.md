@@ -2,23 +2,32 @@
 
 Release date: 2026-02-18
 
-This is the formal 1.0.5 stable release and builds on the 1.0.5-beta.1 pre-release.
+Version 1.0.5 is a major feature release introducing new card types, reading view styles, and deeper card customisation, building on the 1.0.5-beta.1 pre-release.
 
-## Added
-- New card types: multi-select MCQ and ordered questions for memorising sequences
-- Card customisation improvements: typed cloze and image occlusion mask customisation
-- Reading view overhaul with two styles: Flashcards and Clean markdown
-- New settings view with more control
-- Updated guide made visible directly within Obsidian
+## What's Changed
 
-## Fixed
-- Modal background/overlay is now limited to the workspace so tab-switching remains available
+### Cards and customisation
+- Multi-select MCQ: multiple correct answers selectable per question
+- Ordered questions: memorise sequences by arranging items in the correct order
+- Typed cloze: type the answer directly into cloze deletion cards
+- Image occlusion mask customisation: adjust mask appearance and styling
 
-## Development focus after 1.0.5
-1. Bug fixes and stability hardening
-2. Mobile functionality support (in development)
-3. Reading view improvements and style expansion
-4. Codebase tidy-up to support long-term extensibility
+### Reading view
+- Overhaul with two distinct styles: Flashcards and Clean markdown
+- Additional styles and full Custom Reading style support planned for a future update
+
+### Settings and guide
+- New settings view with expanded controls and clearer organisation
+- Updated in-app guide surfaced directly within Obsidian
+
+### Fixes
+- Modal background/overlay scoped to workspace so tab-switching remains available
+
+## In development
+- Mobile functionality support
+- Continued bug-fix and stability updates
+- Reading view enhancements and additional style support
+- Codebase tidy-up focused on extensibility
 
 ## Note
-If scheduling or analytics data appears missing after update, restore from backup.
+If scheduling or analytics data appears missing after update, restore from backup via Settings → Storage and Backup.
