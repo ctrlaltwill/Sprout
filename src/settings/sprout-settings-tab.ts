@@ -810,11 +810,16 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.onChange(async (v) => {
           this.plugin.settings.audio.enabled = v;
           await this.plugin.saveAll();
+          audioDetailsContainer.hidden = !v;
           this.queueSettingsNotice("audio.enabled", SproutSettingsTab.NOTICE_LINES.ttsEnabled(v));
         });
       });
 
-    if (audio.enabled) {
+    const audioDetailsContainer = wrapper.createDiv({ cls: "sprout-audio-details" });
+    audioDetailsContainer.hidden = !audio.enabled;
+
+    {
+      const detailsWrapper = audioDetailsContainer;
       audio.scriptLanguages ??= {
         cyrillic: "ru-RU",
         arabic: "ar-SA",
@@ -822,7 +827,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         devanagari: "hi-IN",
       };
 
-      new Setting(wrapper)
+      new Setting(detailsWrapper)
         .setName("Limit to group")
         .setDesc(
           "Only read aloud cards that belong to a specific group (set via the G| field). " +
@@ -837,7 +842,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           });
         });
 
-      new Setting(wrapper)
+      new Setting(detailsWrapper)
         .setName("Autoplay audio")
         .setDesc(
           "Automatically read the question aloud when a card is shown, and the answer when it is revealed.",
@@ -850,7 +855,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           });
         });
 
-      this._addSearchablePopover(wrapper, {
+      this._addSearchablePopover(detailsWrapper, {
         name: "Cloze answer read mode",
         description:
           "\"Just the answer\" reads only the cloze deletion (e.g. \"mitochondria\"). " +
@@ -868,10 +873,10 @@ export class SproutSettingsTab extends PluginSettingTab {
         },
       });
 
-      new Setting(wrapper).setName("Voice and accent").setHeading();
+      new Setting(detailsWrapper).setName("Voice and accent").setHeading();
 
       const langOptions = getLanguageOptions();
-      this._addSearchablePopover(wrapper, {
+      this._addSearchablePopover(detailsWrapper, {
         name: "Default voice",
         description:
           "Accent and dialect for Latin-script text (English, Spanish, French, etc.). " +
@@ -887,7 +892,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
       {
-        const advancedItem = wrapper.createDiv({ cls: "setting-item sprout-settings-advanced-row" });
+        const advancedItem = detailsWrapper.createDiv({ cls: "setting-item sprout-settings-advanced-row" });
         const advancedInfo = advancedItem.createDiv({ cls: "setting-item-info" });
         advancedInfo.createDiv({
           cls: "setting-item-name",
@@ -919,7 +924,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         setIcon(advancedChevron, "chevron-down");
         advancedChevron.classList.toggle("is-expanded", this._audioAdvancedOptionsExpanded);
 
-        const advancedContent = wrapper.createDiv({ cls: "sprout-settings-advanced-content" });
+        const advancedContent = detailsWrapper.createDiv({ cls: "sprout-settings-advanced-content" });
         advancedContent.hidden = !this._audioAdvancedOptionsExpanded;
 
         for (const group of getScriptLanguageGroups()) {
@@ -953,9 +958,9 @@ export class SproutSettingsTab extends PluginSettingTab {
         };
       }
 
-      new Setting(wrapper).setName("Voice tuning").setHeading();
+      new Setting(detailsWrapper).setName("Voice tuning").setHeading();
 
-      new Setting(wrapper)
+      new Setting(detailsWrapper)
         .setName("Speech rate")
         .setDesc("Speed of speech (0.5 = slow, 1.0 = normal, 2.0 = fast).")
         .addSlider((s) => {
@@ -968,7 +973,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           });
         });
 
-      new Setting(wrapper)
+      new Setting(detailsWrapper)
         .setName("Speech pitch")
         .setDesc("Pitch of speech (0.5 = low, 1.0 = normal, 2.0 = high).")
         .addSlider((s) => {
@@ -981,7 +986,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           });
         });
 
-      new Setting(wrapper)
+      new Setting(detailsWrapper)
         .setName("Test voice")
         .setDesc("Play a sample to hear the current voice settings.")
         .addButton((btn) => {
@@ -1015,7 +1020,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
       const voices = getAvailableVoices();
       if (voices.length === 0) {
-        new Setting(wrapper)
+        new Setting(detailsWrapper)
           .setName("Available system voices")
           .setDesc(
             "No TTS voices detected yet. Voices load asynchronously — try reopening this tab. " +
@@ -1706,7 +1711,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     renderLivePreviewCards();
 
-    if (rv.activeMacro === "custom") {
+    if ((rv.activeMacro as string) === "custom") {
       new Setting(wrapper).setName("Custom style CSS").setHeading();
       const item = wrapper.createDiv({ cls: "setting-item" });
       const info = item.createDiv({ cls: "setting-item-info" });
