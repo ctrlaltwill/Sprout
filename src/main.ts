@@ -40,6 +40,10 @@ import {
 } from "./core/constants";
 
 import { log } from "./core/logger";
+import { clamp, clonePlain, isPlainObject, type FlashcardType } from "./core/utils";
+import { getBasecoatApi, type BasecoatApi } from "./core/basecoat";
+import { migrateSettingsInPlace } from "./settings/settings-migration";
+import { normaliseSettingsInPlace } from "./settings/settings-normalisation";
 import { registerReadingViewPrettyCards, teardownReadingView } from "./reading/reading-view";
 import { removeAosErrorHandler } from "./core/aos-loader";
 import { initTooltipPositioner } from "./core/tooltip-positioner";
@@ -66,44 +70,11 @@ import { setDelimiter } from "./core/delimiter";
 // import { AnkiExportModal } from "./modals/anki-export-modal";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
 import { WhatsNewModal, hasReleaseNotes } from "./modals/whats-new-modal";
-import { checkForVersionUpgrade } from "./core/version-manager";
+import { checkForVersionUpgrade, loadVersionTracking, getVersionTrackingData } from "./core/version-manager";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import React from "react";
 
-function clamp(n: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, n));
-}
 
-function cleanPositiveNumberArray(v: unknown, fallback: number[]): number[] {
-  const arr = Array.isArray(v) ? v : [];
-  const out = arr.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
-  return out.length ? out : fallback;
-}
-
-function clonePlain<T>(x: T): T {
-  if (typeof structuredClone === "function") return structuredClone(x);
-  return JSON.parse(JSON.stringify(x)) as T;
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return !!v && typeof v === "object" && !Array.isArray(v);
-}
-
-type BasecoatApi = {
-  init?: (group: string) => void;
-  initAll?: () => void;
-  start?: () => void;
-  stop?: () => void;
-};
-
-function getBasecoatApi(): BasecoatApi | null {
-  const bc = window?.basecoat as BasecoatApi | undefined;
-  if (!bc) return null;
-  const hasInit = typeof bc.initAll === "function" || typeof bc.init === "function";
-  const hasStart = typeof bc.start === "function";
-  if (!hasInit || !hasStart) return null;
-  return bc;
-}
 
 export default class SproutPlugin extends Plugin {
   settings!: SproutSettings;
@@ -143,6 +114,72 @@ export default class SproutPlugin extends Plugin {
   private _workspaceZoomSaveTimer: number | null = null;
 
   private _disposeTooltipPositioner: (() => void) | null = null;
+
+  private readonly _refreshableViewTypes = [
+    VIEW_TYPE_REVIEWER,
+    VIEW_TYPE_WIDGET,
+    VIEW_TYPE_BROWSER,
+    VIEW_TYPE_ANALYTICS,
+    VIEW_TYPE_HOME,
+    VIEW_TYPE_SETTINGS,
+  ];
+
+  private _addCommand(
+    id: string,
+    name: string,
+    callback: () => void | Promise<void>,
+  ) {
+    this.addCommand({ id, name, callback });
+  }
+
+  private _registerCommands() {
+    this._addCommand("sync-flashcards", "Sync flashcards", async () => this._runSync());
+    this._addCommand("open", "Open home", async () => this.openHomeTab());
+    this._addCommand("open-analytics", "Open analytics", async () => this.openAnalyticsTab());
+    this._addCommand("open-settings", "Open plugin settings", () => this.openPluginSettingsInObsidian());
+    this._addCommand("open-guide", "Open guide", async () => this.openSettingsTab(false, "guide"));
+    this._addCommand("edit-flashcards", "Edit flashcards", async () => this.openBrowserTab());
+    this._addCommand("new-study-session", "New study session", async () => this.openReviewerTab());
+    this._addCommand("add-flashcard", "Add flashcard to note", () => this.openAddFlashcardModal());
+
+    const flashcardCommands: Array<{ id: string; name: string; type: FlashcardType }> = [
+      { id: "add-basic-flashcard", name: "Add basic flashcard to note", type: "basic" },
+      { id: "add-basic-reversed-flashcard", name: "Add basic (reversed) flashcard to note", type: "reversed" },
+      { id: "add-cloze-flashcard", name: "Add cloze flashcard to note", type: "cloze" },
+      { id: "add-multiple-choice-flashcard", name: "Add multiple choice flashcard to note", type: "mcq" },
+      { id: "add-ordered-question-flashcard", name: "Add ordered question flashcard to note", type: "oq" },
+      { id: "add-image-occlusion-flashcard", name: "Add image occlusion flashcard to note", type: "io" },
+    ];
+
+    for (const command of flashcardCommands) {
+      this._addCommand(command.id, command.name, () => this.openAddFlashcardModal(command.type));
+    }
+
+    this._addCommand("import-anki", "Import from Anki (.apkg)", async () => {
+      const { AnkiImportModal } = await import("./modals/anki-import-modal");
+      new AnkiImportModal(this).open();
+    });
+
+    this._addCommand("export-anki", "Export to Anki (.apkg)", async () => {
+      const { AnkiExportModal } = await import("./modals/anki-export-modal");
+      new AnkiExportModal(this).open();
+    });
+  }
+
+  private async _openSingleTabView(viewType: string, forceNew = false): Promise<WorkspaceLeaf> {
+    if (!forceNew) {
+      const existing = this._ensureSingleLeafOfType(viewType);
+      if (existing) {
+        void this.app.workspace.revealLeaf(existing);
+        return existing;
+      }
+    }
+
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: viewType, active: true });
+    void this.app.workspace.revealLeaf(leaf);
+    return leaf;
+  }
 
   private _initBasecoatRuntime() {
     const bc = getBasecoatApi();
@@ -199,279 +236,14 @@ export default class SproutPlugin extends Plugin {
     document.body.classList.toggle("sprout-hide-status-bar", hide);
   }
 
-  /**
-   * Migrate legacy settings keys from pre-1.1 structure to current layout.
-   * Runs once on load; safe to call multiple times (no-ops if already migrated).
-   */
+  /** Migrate legacy settings keys (delegates to settings-migration module). */
   private _migrateSettingsInPlace() {
-    const s = this.settings as Record<string, unknown>;
-
-    const move = (oldKey: string, newKey: string) => {
-      if (s[oldKey] != null && s[newKey] == null) {
-        s[newKey] = s[oldKey];
-      }
-      if (s[oldKey] != null) delete s[oldKey];
-    };
-
-    const normaliseLegacyMacro = (raw: unknown): "flashcards" | "classic" | "guidebook" | "markdown" | "custom" => {
-      const key = typeof raw === "string" ? raw.trim().toLowerCase() : "";
-      if (key === "minimal-flip") return "flashcards";
-      if (key === "full-card") return "classic";
-      if (key === "compact") return "markdown";
-      if (key === "flashcards" || key === "classic" || key === "guidebook" || key === "markdown" || key === "custom") return key;
-      return "flashcards";
-    };
-
-    // Rename top-level groups
-    move("home", "general");
-    move("appearance", "general");
-    move("reviewer", "study");
-    move("widget", "study");
-    move("scheduler", "scheduling");
-
-    // Merge legacy imageOcclusion.attachmentFolderPath + cardAttachments → storage
-    // NOTE: imageOcclusion is now reused for mask appearance/review settings (maskTargetColor,
-    // maskOtherColor, maskIcon, defaultMaskMode, revealMode) — do NOT delete the entire object.
-    const io = s.imageOcclusion as Record<string, unknown> | undefined;
-    const ca = s.cardAttachments as Record<string, unknown> | undefined;
-    if ((io && "attachmentFolderPath" in io) || ca) {
-      const storage = (s.storage ?? {}) as Record<string, unknown>;
-      if (io?.attachmentFolderPath != null && storage.imageOcclusionFolderPath == null) {
-        storage.imageOcclusionFolderPath = io.attachmentFolderPath;
-      }
-      if (ca?.attachmentFolderPath != null && storage.cardAttachmentFolderPath == null) {
-        storage.cardAttachmentFolderPath = ca.attachmentFolderPath;
-      }
-      s.storage = storage;
-      // Only strip the legacy key; preserve new mask-appearance fields
-      if (io) delete io.attachmentFolderPath;
-      delete s.cardAttachments;
-    }
-
-    // Migrate legacy reading style toggle + preset model
-    const general = (s.general ?? {}) as Record<string, unknown>;
-    const reading = (s.readingView ?? {}) as Record<string, unknown>;
-
-    if (general.enableReadingStyles == null) {
-      const prettify = typeof general.prettifyCards === "string" ? general.prettifyCards.toLowerCase() : "";
-      general.enableReadingStyles = prettify !== "off";
-    }
-
-    if (reading.activeMacro == null) {
-      reading.activeMacro = normaliseLegacyMacro(reading.preset);
-    }
-
-    const visibleFields = (reading.visibleFields ?? {}) as Record<string, unknown>;
-    const displayLabels = reading.displayLabels !== false;
-    const defaultFields = {
-      title: visibleFields.title !== false,
-      question: visibleFields.question !== false,
-      options: visibleFields.options !== false,
-      answer: visibleFields.answer !== false,
-      info: visibleFields.info !== false,
-      groups: visibleFields.groups !== false,
-      edit: visibleFields.edit !== false,
-      labels: displayLabels,
-      displayAudioButton: true,
-      displayEditButton: true,
-    };
-
-    if (!isPlainObject(reading.macroConfigs)) {
-      const asString = (value: unknown) => (typeof value === "string" ? value : "");
-      const createMacro = (fallback: Record<string, unknown>, withColours: boolean) => ({
-        fields: {
-          title: fallback.title !== false,
-          question: fallback.question !== false,
-          options: fallback.options !== false,
-          answer: fallback.answer !== false,
-          info: fallback.info !== false,
-          groups: fallback.groups !== false,
-          edit: fallback.edit !== false,
-          labels: fallback.labels !== false,
-          displayAudioButton: fallback.displayAudioButton !== false,
-          displayEditButton: fallback.displayEditButton !== false,
-        },
-        ...(withColours
-          ? {
-              colours: {
-                autoDarkAdjust: true,
-                cardBgLight: asString(reading.cardBgLight),
-                cardBgDark: asString(reading.cardBgDark),
-                cardBorderLight: asString(reading.cardBorderLight),
-                cardBorderDark: asString(reading.cardBorderDark),
-                cardAccentLight: asString(reading.cardAccentLight),
-                cardAccentDark: asString(reading.cardAccentDark),
-                cardTextLight: "",
-                cardTextDark: "",
-                cardMutedLight: "",
-                cardMutedDark: "",
-                clozeBgLight: "",
-                clozeTextLight: "",
-                clozeBgDark: "",
-                clozeTextDark: "",
-              },
-            }
-          : {}),
-      });
-
-      reading.macroConfigs = {
-        flashcards: createMacro({ ...defaultFields, title: false, options: false, info: false, groups: false, edit: false, labels: false }, true),
-        classic: createMacro(defaultFields, true),
-        guidebook: createMacro(defaultFields, true),
-        markdown: createMacro({ ...defaultFields, title: false, edit: false, labels: true }, true),
-        custom: {
-          ...createMacro(defaultFields, true),
-          customCss: "",
-        },
-      };
-    }
-
-    s.general = general;
-    s.readingView = reading;
+    migrateSettingsInPlace(this.settings as Record<string, unknown>);
   }
 
+  /** Normalise settings (delegates to settings-normalisation module). */
   private _normaliseSettingsInPlace() {
-    const s = this.settings;
-    s.scheduling ??= {} as SproutSettings["scheduling"];
-    s.general ??= {} as SproutSettings["general"];
-    s.general.enableReadingStyles ??= DEFAULT_SETTINGS.general.enableReadingStyles;
-    if (s.general.prettifyCards === "off") s.general.enableReadingStyles = false;
-    s.general.pinnedDecks ??= [];
-    s.general.workspaceContentZoom = clamp(
-      Number(s.general.workspaceContentZoom ?? DEFAULT_SETTINGS.general.workspaceContentZoom ?? 1),
-      0.8,
-      1.8,
-    );
-    s.general.githubStars ??= { count: null, fetchedAt: null };
-
-    // Ensure imageOcclusion group exists (may have been deleted by an older migration)
-    s.imageOcclusion ??= {} as SproutSettings["imageOcclusion"];
-    s.imageOcclusion.defaultMaskMode ??= DEFAULT_SETTINGS.imageOcclusion.defaultMaskMode;
-    s.imageOcclusion.revealMode ??= (
-      s.imageOcclusion.defaultMaskMode === "all" ? "all" : DEFAULT_SETTINGS.imageOcclusion.revealMode
-    );
-    s.imageOcclusion.maskTargetColor ??= DEFAULT_SETTINGS.imageOcclusion.maskTargetColor;
-    s.imageOcclusion.maskOtherColor ??= DEFAULT_SETTINGS.imageOcclusion.maskOtherColor;
-    s.imageOcclusion.maskIcon ??= DEFAULT_SETTINGS.imageOcclusion.maskIcon;
-
-    s.scheduling.learningStepsMinutes = cleanPositiveNumberArray(
-      s.scheduling.learningStepsMinutes,
-      DEFAULT_SETTINGS.scheduling.learningStepsMinutes,
-    );
-
-    s.scheduling.relearningStepsMinutes = cleanPositiveNumberArray(
-      s.scheduling.relearningStepsMinutes,
-      DEFAULT_SETTINGS.scheduling.relearningStepsMinutes,
-    );
-
-    s.scheduling.requestRetention = clamp(
-      Number(s.scheduling.requestRetention ?? DEFAULT_SETTINGS.scheduling.requestRetention),
-      0.8,
-      0.97,
-    );
-
-    const legacyKeys = [
-      "graduatingIntervalDays",
-      "easyBonus",
-      "hardFactor",
-      "minEase",
-      "maxEase",
-      "easeDeltaAgain",
-      "easeDeltaHard",
-      "easeDeltaEasy",
-    ];
-    for (const k of legacyKeys) {
-      if (k in s.scheduling) delete (s.scheduling as Record<string, unknown>)[k];
-    }
-
-    s.readingView ??= clonePlain(DEFAULT_SETTINGS.readingView);
-    const rv = s.readingView;
-
-    const toMacro = (raw: unknown): SproutSettings["readingView"]["activeMacro"] => {
-      const key = typeof raw === "string" ? raw.trim().toLowerCase() : "";
-      if (key === "minimal-flip") return "flashcards";
-      if (key === "full-card") return "classic";
-      if (key === "compact") return "markdown";
-      if (key === "flashcards" || key === "classic" || key === "guidebook" || key === "markdown" || key === "custom") return key;
-      return "flashcards";
-    };
-
-    rv.activeMacro = toMacro(rv.activeMacro ?? rv.preset);
-    rv.preset = rv.activeMacro;
-
-    const defaultMacroConfigs = clonePlain(DEFAULT_SETTINGS.readingView.macroConfigs);
-    rv.macroConfigs ??= defaultMacroConfigs;
-    rv.macroConfigs.flashcards ??= defaultMacroConfigs.flashcards;
-    rv.macroConfigs.classic ??= defaultMacroConfigs.classic;
-    rv.macroConfigs.guidebook ??= defaultMacroConfigs.guidebook;
-    rv.macroConfigs.markdown ??= defaultMacroConfigs.markdown;
-    rv.macroConfigs.custom ??= defaultMacroConfigs.custom;
-
-    const normaliseFields = (
-      fields: Partial<SproutSettings["readingView"]["macroConfigs"]["classic"]["fields"]> | undefined,
-      fallback: SproutSettings["readingView"]["macroConfigs"]["classic"]["fields"],
-    ): SproutSettings["readingView"]["macroConfigs"]["classic"]["fields"] => ({
-      title: fields?.title ?? fallback.title,
-      question: fields?.question ?? fallback.question,
-      options: fields?.options ?? fallback.options,
-      answer: fields?.answer ?? fallback.answer,
-      info: fields?.info ?? fallback.info,
-      groups: fields?.groups ?? fallback.groups,
-      edit: fields?.edit ?? fallback.edit,
-      labels: fields?.labels ?? fallback.labels,
-      displayAudioButton: fields?.displayAudioButton ?? fallback.displayAudioButton,
-      displayEditButton: fields?.displayEditButton ?? fallback.displayEditButton,
-    });
-
-    rv.macroConfigs.flashcards.fields = normaliseFields(rv.macroConfigs.flashcards.fields, defaultMacroConfigs.flashcards.fields);
-    rv.macroConfigs.classic.fields = normaliseFields(rv.macroConfigs.classic.fields, defaultMacroConfigs.classic.fields);
-    rv.macroConfigs.guidebook.fields = normaliseFields(rv.macroConfigs.guidebook.fields, defaultMacroConfigs.guidebook.fields);
-    rv.macroConfigs.markdown.fields = normaliseFields(rv.macroConfigs.markdown.fields, defaultMacroConfigs.markdown.fields);
-    rv.macroConfigs.markdown.fields.edit = false;
-    rv.macroConfigs.markdown.fields.displayEditButton = false;
-    rv.macroConfigs.custom.fields = normaliseFields(rv.macroConfigs.custom.fields, defaultMacroConfigs.custom.fields);
-
-    const normaliseColours = (
-      colours: Partial<SproutSettings["readingView"]["macroConfigs"]["classic"]["colours"]> | undefined,
-      fallback: SproutSettings["readingView"]["macroConfigs"]["classic"]["colours"],
-    ): SproutSettings["readingView"]["macroConfigs"]["classic"]["colours"] => ({
-      autoDarkAdjust: colours?.autoDarkAdjust ?? fallback.autoDarkAdjust,
-      cardBgLight: colours?.cardBgLight ?? fallback.cardBgLight,
-      cardBgDark: colours?.cardBgDark ?? fallback.cardBgDark,
-      cardBorderLight: colours?.cardBorderLight ?? fallback.cardBorderLight,
-      cardBorderDark: colours?.cardBorderDark ?? fallback.cardBorderDark,
-      cardAccentLight: colours?.cardAccentLight ?? fallback.cardAccentLight,
-      cardAccentDark: colours?.cardAccentDark ?? fallback.cardAccentDark,
-      cardTextLight: colours?.cardTextLight ?? fallback.cardTextLight,
-      cardTextDark: colours?.cardTextDark ?? fallback.cardTextDark,
-      cardMutedLight: colours?.cardMutedLight ?? fallback.cardMutedLight,
-      cardMutedDark: colours?.cardMutedDark ?? fallback.cardMutedDark,
-      clozeBgLight: colours?.clozeBgLight ?? fallback.clozeBgLight,
-      clozeTextLight: colours?.clozeTextLight ?? fallback.clozeTextLight,
-      clozeBgDark: colours?.clozeBgDark ?? fallback.clozeBgDark,
-      clozeTextDark: colours?.clozeTextDark ?? fallback.clozeTextDark,
-    });
-
-    rv.macroConfigs.flashcards.colours = normaliseColours(rv.macroConfigs.flashcards.colours, defaultMacroConfigs.flashcards.colours);
-    rv.macroConfigs.classic.colours = normaliseColours(rv.macroConfigs.classic.colours, defaultMacroConfigs.classic.colours);
-    rv.macroConfigs.guidebook.colours = normaliseColours(rv.macroConfigs.guidebook.colours, defaultMacroConfigs.guidebook.colours);
-    rv.macroConfigs.markdown.colours = normaliseColours(rv.macroConfigs.markdown.colours, defaultMacroConfigs.markdown.colours);
-    rv.macroConfigs.custom.colours = normaliseColours(rv.macroConfigs.custom.colours, defaultMacroConfigs.custom.colours);
-    rv.macroConfigs.custom.customCss ??= defaultMacroConfigs.custom.customCss;
-
-    rv.visibleFields ??= {
-      title: rv.macroConfigs[rv.activeMacro].fields.title,
-      question: rv.macroConfigs[rv.activeMacro].fields.question,
-      options: rv.macroConfigs[rv.activeMacro].fields.options,
-      answer: rv.macroConfigs[rv.activeMacro].fields.answer,
-      info: rv.macroConfigs[rv.activeMacro].fields.info,
-      groups: rv.macroConfigs[rv.activeMacro].fields.groups,
-      edit: rv.macroConfigs[rv.activeMacro].fields.edit,
-    };
-    rv.displayLabels ??= rv.macroConfigs[rv.activeMacro].fields.labels;
-
-    if (!s.general.enableReadingStyles) s.general.prettifyCards = "off";
-    else if (!s.general.prettifyCards || s.general.prettifyCards === "off") s.general.prettifyCards = "accent";
+    normaliseSettingsInPlace(this.settings);
   }
 
   private _applyWorkspaceContentZoom(value: number) {
@@ -592,6 +364,9 @@ export default class SproutPlugin extends Plugin {
       this.store = new JsonStore(this);
       this.store.load(rootObj);
 
+      // Load version tracking from data.json
+      loadVersionTracking(rootObj);
+
       if (!this.store.loadedFromDisk && isPlainObject(root)) {
         log.warn(
           "data.json existed but contained no .store — " +
@@ -611,107 +386,7 @@ export default class SproutPlugin extends Plugin {
       this.addSettingTab(new SproutSettingsTab(this.app, this));
 
       // Commands (hotkeys default to none; users can bind in Settings → Hotkeys)
-      this.addCommand({
-        id: "sync-flashcards",
-        name: "Sync flashcards",
-        callback: async () => this._runSync(),
-      });
-
-      this.addCommand({
-        id: "open",
-        name: "Open home",
-        callback: async () => this.openHomeTab(),
-      });
-
-      this.addCommand({
-        id: "open-analytics",
-        name: "Open analytics",
-        callback: async () => this.openAnalyticsTab(),
-      });
-
-      this.addCommand({
-        id: "open-settings",
-        name: "Open plugin settings",
-        callback: () => this.openPluginSettingsInObsidian(),
-      });
-
-      this.addCommand({
-        id: "open-guide",
-        name: "Open guide",
-        callback: async () => this.openSettingsTab(false, "guide"),
-      });
-
-      this.addCommand({
-        id: "edit-flashcards",
-        name: "Edit flashcards",
-        callback: async () => this.openBrowserTab(),
-      });
-
-      this.addCommand({
-        id: "new-study-session",
-        name: "New study session",
-        callback: async () => this.openReviewerTab(),
-      });
-
-      this.addCommand({
-        id: "add-flashcard",
-        name: "Add flashcard to note",
-        callback: () => this.openAddFlashcardModal(),
-      });
-
-      this.addCommand({
-        id: "add-basic-flashcard",
-        name: "Add basic flashcard to note",
-        callback: () => this.openAddFlashcardModal("basic"),
-      });
-
-      this.addCommand({
-        id: "add-basic-reversed-flashcard",
-        name: "Add basic (reversed) flashcard to note",
-        callback: () => this.openAddFlashcardModal("reversed"),
-      });
-
-      this.addCommand({
-        id: "add-cloze-flashcard",
-        name: "Add cloze flashcard to note",
-        callback: () => this.openAddFlashcardModal("cloze"),
-      });
-
-      this.addCommand({
-        id: "add-multiple-choice-flashcard",
-        name: "Add multiple choice flashcard to note",
-        callback: () => this.openAddFlashcardModal("mcq"),
-      });
-
-      this.addCommand({
-        id: "add-ordered-question-flashcard",
-        name: "Add ordered question flashcard to note",
-        callback: () => this.openAddFlashcardModal("oq"),
-      });
-
-      this.addCommand({
-        id: "add-image-occlusion-flashcard",
-        name: "Add image occlusion flashcard to note",
-        callback: () => this.openAddFlashcardModal("io"),
-      });
-
-      this.addCommand({
-        id: "import-anki",
-        name: "Import from Anki (.apkg)",
-        callback: async () => {
-          const { AnkiImportModal } = await import("./modals/anki-import-modal");
-          new AnkiImportModal(this).open();
-        },
-      });
-
-      this.addCommand({
-        id: "export-anki",
-        name: "Export to Anki (.apkg)",
-        callback: async () => {
-          const { AnkiExportModal } = await import("./modals/anki-export-modal");
-          new AnkiExportModal(this).open();
-        },
-      });
+      this._registerCommands();
 
       // Replace dropdown with separate ribbon icons (desktop + mobile)
       this._registerRibbonIcons();
@@ -813,7 +488,6 @@ export default class SproutPlugin extends Plugin {
         this._showWhatsNewModal(version);
       }
     } catch (e) {
-      console.error('[Sprout] Error checking version upgrade:', e);
       log.swallow("check version upgrade", e);
     }
   }
@@ -910,7 +584,7 @@ export default class SproutPlugin extends Plugin {
     );
   }
 
-  openAddFlashcardModal(forcedType?: "basic" | "reversed" | "cloze" | "mcq" | "oq" | "io") {
+  openAddFlashcardModal(forcedType?: FlashcardType) {
     const ok = this._ensureEditingNoteEditor();
     if (!ok) {
       new Notice("Must be editing a note to add a flashcard");
@@ -1131,6 +805,7 @@ export default class SproutPlugin extends Plugin {
 
       root.settings = this.settings;
       root.store = this.store.data;
+      root.versionTracking = getVersionTrackingData();
 
       if (canStat) {
         const mtimeBeforeWrite = await safeStatMtime(adapter, dataPath);
@@ -1148,21 +823,17 @@ export default class SproutPlugin extends Plugin {
     const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
     root.settings = this.settings;
     root.store = this.store.data;
+    root.versionTracking = getVersionTrackingData();
     await this.saveData(root);
   }
 
   private _refreshOpenViews() {
-    const refresh = (type: string) =>
-      this.app.workspace.getLeavesOfType(type).forEach((l) => {
-        const v = l.view as ItemView & { onRefresh?(): void };
-        v.onRefresh?.();
+    for (const type of this._refreshableViewTypes) {
+      this.app.workspace.getLeavesOfType(type).forEach((leaf) => {
+        const view = leaf.view as ItemView & { onRefresh?(): void };
+        view.onRefresh?.();
       });
-    refresh(VIEW_TYPE_REVIEWER);
-    refresh(VIEW_TYPE_WIDGET);
-    refresh(VIEW_TYPE_BROWSER);
-    refresh(VIEW_TYPE_ANALYTICS);
-    refresh(VIEW_TYPE_HOME);
-    refresh(VIEW_TYPE_SETTINGS);
+    }
   }
 
   async refreshGithubStars(force = false) {
@@ -1292,17 +963,7 @@ export default class SproutPlugin extends Plugin {
   }
 
   async openReviewerTab(forceNew: boolean = false) {
-    if (!forceNew) {
-      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_REVIEWER);
-      if (existing) {
-        void this.app.workspace.revealLeaf(existing);
-        return;
-      }
-    }
-
-    const leaf = this.app.workspace.getLeaf("tab");
-    await leaf.setViewState({ type: VIEW_TYPE_REVIEWER, active: true });
-    void this.app.workspace.revealLeaf(leaf);
+    await this._openSingleTabView(VIEW_TYPE_REVIEWER, forceNew);
   }
 
   async openHomeTab(forceNew: boolean = false) {
@@ -1329,31 +990,11 @@ export default class SproutPlugin extends Plugin {
   }
 
   async openBrowserTab(forceNew: boolean = false) {
-    if (!forceNew) {
-      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_BROWSER);
-      if (existing) {
-        void this.app.workspace.revealLeaf(existing);
-        return;
-      }
-    }
-
-    const leaf = this.app.workspace.getLeaf("tab");
-    await leaf.setViewState({ type: VIEW_TYPE_BROWSER, active: true });
-    void this.app.workspace.revealLeaf(leaf);
+    await this._openSingleTabView(VIEW_TYPE_BROWSER, forceNew);
   }
 
   async openAnalyticsTab(forceNew: boolean = false) {
-    if (!forceNew) {
-      const existing = this._ensureSingleLeafOfType(VIEW_TYPE_ANALYTICS);
-      if (existing) {
-        void this.app.workspace.revealLeaf(existing);
-        return;
-      }
-    }
-
-    const leaf = this.app.workspace.getLeaf("tab");
-    await leaf.setViewState({ type: VIEW_TYPE_ANALYTICS, active: true });
-    void this.app.workspace.revealLeaf(leaf);
+    await this._openSingleTabView(VIEW_TYPE_ANALYTICS, forceNew);
   }
 
   async openSettingsTab(forceNew: boolean = false, targetTab?: string) {

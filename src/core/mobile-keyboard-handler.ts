@@ -25,34 +25,11 @@ let isKeyboardOpen = false;
 function getDeviceType(): "iphone" | "ipad" | "android" | "unknown" {
   if (!Platform.isMobileApp) return "unknown";
 
-  // Get device dimensions
-  const width = Math.min(window.innerWidth, window.innerHeight);
-  const isTablet = width > 600;
-
-  // Device detection heuristics
-  // eslint-disable-next-line obsidianmd/platform
-  const userAgent = navigator.userAgent.toLowerCase();
-
-  // iPad detection
-  if (
-    userAgent.includes("ipad") ||
-    (isTablet && userAgent.includes("like mac") && !userAgent.includes("iphone"))
-  ) {
-    return "ipad";
+  if (Platform.isIosApp) {
+    return Platform.isTablet ? "ipad" : "iphone";
   }
 
-  // iPhone detection
-  if (userAgent.includes("iphone")) {
-    return "iphone";
-  }
-
-  // Android tablet detection
-  if (isTablet && userAgent.includes("android")) {
-    return "android";
-  }
-
-  // Android phone detection
-  if (userAgent.includes("android")) {
+  if (Platform.isAndroidApp) {
     return "android";
   }
 
@@ -174,6 +151,12 @@ export function initMobileKeyboardHandler(): void {
     updateContentPadding();
   };
 
+  const handleOrientationChange = () => {
+    keyboardHeightCache = 0;
+    isKeyboardOpen = false;
+    debouncedUpdate();
+  };
+
   // Debounce to avoid excessive updates
   let resizeTimeout: number | null = null;
   const debouncedUpdate = () => {
@@ -187,18 +170,14 @@ export function initMobileKeyboardHandler(): void {
   window.visualViewport.addEventListener("resize", handleViewportResize);
   window.visualViewport.addEventListener("scroll", debouncedUpdate);
   window.addEventListener("resize", handleWindowResize);
-  window.addEventListener("orientationchange", () => {
-    // Reset cache on orientation change
-    keyboardHeightCache = 0;
-    isKeyboardOpen = false;
-    debouncedUpdate();
-  });
+  window.addEventListener("orientationchange", handleOrientationChange);
 
   // Store cleanup functions
   cleanupFunctions = [
     () => window.visualViewport?.removeEventListener("resize", handleViewportResize),
     () => window.visualViewport?.removeEventListener("scroll", debouncedUpdate),
     () => window.removeEventListener("resize", handleWindowResize),
+    () => window.removeEventListener("orientationchange", handleOrientationChange),
     () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
     },

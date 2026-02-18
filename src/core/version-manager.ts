@@ -7,16 +7,57 @@
  * - Tracking which versions the user has dismissed the What's New modal for
  * - Determining whether to show the modal on plugin load
  * 
- * Uses localStorage for persistence (separate from plugin settings).
+ * Uses Obsidian's plugin data store (data.json) for persistence via an in-memory
+ * cache that is loaded at startup and written back through the plugin's save cycle.
  * 
  * @exports checkForVersionUpgrade - Check if plugin was upgraded and modal should show
  * @exports markVersionSeen - Mark a version as seen (user dismissed modal)
  * @exports getLastSeenVersion - Get the last version the user has seen the modal for
  * @exports compareVersions - Compare two semantic version strings
+ * @exports loadVersionTracking - Load version tracking data from data.json root
+ * @exports getVersionTrackingData - Get current in-memory version tracking data for persistence
+ * @exports clearVersionTracking - Clear all version tracking data
  */
 
-const STORAGE_KEY_LAST_VERSION = "sprout_lastSeenVersion";
-const STORAGE_KEY_DISMISSED_VERSIONS = "sprout_dismissedVersions";
+/**
+ * Shape of the version tracking data persisted in data.json under the
+ * `versionTracking` key.
+ */
+export interface VersionTrackingData {
+  lastSeenVersion: string | null;
+  dismissedVersions: string[];
+}
+
+/** In-memory cache — loaded once at startup, mutated in place, persisted via the plugin save cycle. */
+let _cache: VersionTrackingData = { lastSeenVersion: null, dismissedVersions: [] };
+
+/**
+ * Populate the in-memory cache from the `versionTracking` key found in the
+ * root object returned by `plugin.loadData()`.  Call this once during plugin
+ * `onload()`.
+ */
+export function loadVersionTracking(rootObj: Record<string, unknown>): void {
+  const raw = rootObj?.versionTracking;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>;
+    _cache = {
+      lastSeenVersion: typeof obj.lastSeenVersion === "string" ? obj.lastSeenVersion : null,
+      dismissedVersions: Array.isArray(obj.dismissedVersions)
+        ? (obj.dismissedVersions as unknown[]).filter((v): v is string => typeof v === "string")
+        : [],
+    };
+  } else {
+    _cache = { lastSeenVersion: null, dismissedVersions: [] };
+  }
+}
+
+/**
+ * Return the current in-memory version tracking data so the plugin's save
+ * cycle can write it to `root.versionTracking` in data.json.
+ */
+export function getVersionTrackingData(): VersionTrackingData {
+  return _cache;
+}
 
 /**
  * Compare two semantic version strings (e.g., "1.0.4" vs "1.0.3")
@@ -96,40 +137,22 @@ export function compareVersions(v1: string, v2: string): number {
  * Get the last version the user has seen the What's New modal for
  */
 export function getLastSeenVersion(): string | null {
-  try {
-    return globalThis.localStorage.getItem(STORAGE_KEY_LAST_VERSION);
-  } catch (e) {
-    console.error("Failed to get last seen version:", e);
-    return null;
-  }
+  return _cache.lastSeenVersion;
 }
 
 /**
  * Get the set of versions the user has explicitly dismissed the modal for
  */
 function getDismissedVersions(): Set<string> {
-  try {
-    const raw = globalThis.localStorage.getItem(STORAGE_KEY_DISMISSED_VERSIONS);
-    if (!raw) return new Set();
-    
-    const data = JSON.parse(raw) as unknown;
-    const arr = Array.isArray(data) ? data.filter((v): v is string => typeof v === 'string') : [];
-    return new Set(arr);
-  } catch (e) {
-    console.error("Failed to get dismissed versions:", e);
-    return new Set();
-  }
+  return new Set(_cache.dismissedVersions);
 }
 
 /**
- * Save the set of dismissed versions to localStorage
+ * Save the set of dismissed versions to the in-memory cache.
+ * Changes are persisted on the next plugin save cycle.
  */
 function saveDismissedVersions(versions: Set<string>): void {
-  try {
-    globalThis.localStorage.setItem(STORAGE_KEY_DISMISSED_VERSIONS, JSON.stringify([...versions]));
-  } catch (e) {
-    console.error("Failed to save dismissed versions:", e);
-  }
+  _cache.dismissedVersions = [...versions];
 }
 
 /**
@@ -153,11 +176,7 @@ export function checkForVersionUpgrade(currentVersion: string): {
   // First time user - show modal
   if (!lastSeen) {
     // Save current version as last seen so we can track future upgrades
-    try {
-      globalThis.localStorage.setItem(STORAGE_KEY_LAST_VERSION, currentVersion);
-    } catch (e) {
-      console.error("Failed to save last seen version:", e);
-    }
+    _cache.lastSeenVersion = currentVersion;
     return { 
       shouldShow: true,
       version: currentVersion 
@@ -188,29 +207,20 @@ export function checkForVersionUpgrade(currentVersion: string): {
  * @param dontShowAgain - If true, user clicked "don't show again" for this version
  */
 export function markVersionSeen(version: string, dontShowAgain: boolean = false): void {
-  try {
-    // Only update last seen and dismissed list if user chose "don't show again"
-    // This allows the modal to keep showing on every load until dismissed
-    if (dontShowAgain) {
-      globalThis.localStorage.setItem(STORAGE_KEY_LAST_VERSION, version);
-      const dismissed = getDismissedVersions();
-      dismissed.add(version);
-      saveDismissedVersions(dismissed);
-    }
-    // If not dismissed, do nothing - modal will appear again next time
-  } catch (e) {
-    console.error("Failed to mark version as seen:", e);
+  // Only update last seen and dismissed list if user chose "don't show again"
+  // This allows the modal to keep showing on every load until dismissed
+  if (dontShowAgain) {
+    _cache.lastSeenVersion = version;
+    const dismissed = getDismissedVersions();
+    dismissed.add(version);
+    saveDismissedVersions(dismissed);
   }
+  // If not dismissed, do nothing - modal will appear again next time
 }
 
 /**
  * Clear all version tracking data (for testing/debugging)
  */
 export function clearVersionTracking(): void {
-  try {
-    globalThis.localStorage.removeItem(STORAGE_KEY_LAST_VERSION);
-    globalThis.localStorage.removeItem(STORAGE_KEY_DISMISSED_VERSIONS);
-  } catch (e) {
-    console.error("Failed to clear version tracking:", e);
-  }
+  _cache = { lastSeenVersion: null, dismissedVersions: [] };
 }

@@ -10,7 +10,7 @@
  *   - SproutSettingsView — ItemView subclass implementing the in-workspace settings view
  */
 
-import { ItemView, setIcon, type WorkspaceLeaf, MarkdownRenderer, Component, requestUrl, TFile, normalizePath } from "obsidian";
+import { ItemView, setIcon, type WorkspaceLeaf, MarkdownRenderer, Component, TFile, normalizePath } from "obsidian";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_SETTINGS } from "../core/constants";
@@ -18,38 +18,20 @@ import { setCssProps } from "../core/ui";
 import { initAOS, refreshAOS, cascadeAOSOnLoad } from "../core/aos-loader";
 import type SproutPlugin from "../main";
 import { SproutSettingsTab } from "./sprout-settings-tab";
-import { RELEASE_NOTES } from "../modals/whats-new-modal/release-notes";
-
-interface GithubReleaseApiItem {
-  tag_name?: string;
-  body?: string;
-  published_at?: string;
-  html_url?: string;
-  draft?: boolean;
-  prerelease?: boolean;
-}
-
-interface ReleaseNotesPage {
-  key: string;
-  label: string;
-  version?: string;
-  modifiedDate?: string;
-  markdown: string;
-}
-
-interface GuidePage {
-  key: string;
-  label: string;
-  markdown: string;
-  sourcePath: string;
-}
-
-interface GuideCategory {
-  key: string;
-  label: string;
-  icon: string;
-  sections: Array<{ title?: string; pageKeys: string[] }>;
-}
+import {
+  getGuideCategories,
+  getGuidePageDisplayLabel,
+  getGuidePageIcon,
+  getGuideTooltipLabel,
+  loadGuidePages,
+  orderGuidePagesByNavigation,
+} from "./subpages/guide-content";
+import {
+  fetchGithubReleasePages,
+  formatReleaseDate,
+  readSupportMarkdown,
+} from "./subpages/release-content";
+import type { GuideCategory, GuidePage, ReleaseNotesPage } from "./subpages/types";
 
 export class SproutSettingsView extends ItemView {
   plugin: SproutPlugin;
@@ -572,258 +554,27 @@ export class SproutSettingsView extends ItemView {
 
   private async _getGuidePages(): Promise<GuidePage[]> {
     const pluginDir = (this.plugin.manifest as { dir?: string }).dir;
-    const preferredFiles = [
-      "Home.md",
-      "Installation.md",
-      "Creating-Cards.md",
-      "Cards.md",
-      "Basic-&-Reversed-Cards.md",
-      "Cloze-Cards.md",
-      "Image-Occlusion.md",
-      "Multiple-Choice-Questions.md",
-      "Ordered-Questions.md",
-      "Card-Browser.md",
-      "Reading-View.md",
-      "Reading-View-Styles.md",
-      "Custom-Reading-Styles.md",
-      "Study-Sessions.md",
-      "Grading.md",
-      "Scheduling.md",
-      "Burying-Cards.md",
-      "Suspending-Cards.md",
-      "Widget.md",
-      "Analytics.md",
-      "Charts.md",
-      "Text-to-Speech.md",
-      "Language-Settings.md",
-      "Settings.md",
-      "Keyboard-Shortcuts.md",
-      "Custom-Delimiters.md",
-      "Anki-Export-&-Import.md",
-      "Backups.md",
-      "Syncing.md",
-      "Support-Sprout.md",
-    ];
-
-    const pagesFromPluginDir: GuidePage[] = [];
-    if (pluginDir) {
-      for (const fileName of preferredFiles) {
-        const relPath = `wiki/${fileName}`;
-        try {
-          const markdown = await this.app.vault.adapter.read(`${pluginDir}/${relPath}`);
-          const key = fileName.replace(/\.md$/i, "");
-          pagesFromPluginDir.push({
-            key,
-            label: key.replace(/-/g, " "),
-            markdown,
-            sourcePath: `${pluginDir}/${relPath}`,
-          });
-        } catch {
-          // File might not exist in this build; ignore and continue.
-        }
-      }
-    }
-
-    if (pagesFromPluginDir.length) return pagesFromPluginDir;
-
-    const pagesFromRepoRaw: GuidePage[] = [];
-    for (const fileName of preferredFiles) {
-      try {
-        const res = await requestUrl({
-          url: `https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/${encodeURIComponent(fileName)}`,
-          method: "GET",
-        });
-        if (res.status !== 200 || !res.text) continue;
-        const key = fileName.replace(/\.md$/i, "");
-        pagesFromRepoRaw.push({
-          key,
-          label: key.replace(/-/g, " "),
-          markdown: res.text,
-          sourcePath: "",
-        });
-      } catch {
-        // Ignore and continue to next fallback source
-      }
-    }
-
-    if (pagesFromRepoRaw.length) return pagesFromRepoRaw;
-
-    const files = this.app.vault.getMarkdownFiles().filter((f) => f.path.startsWith("wiki/"));
-    if (!files.length) {
-      return [{
-        key: "guide-unavailable",
-        label: "Guide",
-        markdown: "# Guide\n\nGuide pages were not found.",
-        sourcePath: "",
-      }];
-    }
-
-    const order = [
-      "Home",
-      "Installation",
-      "Creating Cards",
-      "Cards",
-      "Study Sessions",
-      "Scheduling",
-      "Settings",
-      "Syncing",
-      "Support-Sprout",
-    ];
-    const rank = new Map(order.map((name, index) => [name.toLowerCase(), index]));
-
-    const pages: GuidePage[] = [];
-    for (const file of files) {
-      const key = file.basename;
-      const label = key.replace(/-/g, " ");
-      const markdown = await this.app.vault.read(file);
-      pages.push({ key, label, markdown, sourcePath: file.path });
-    }
-
-    pages.sort((a, b) => {
-      const ra = rank.get(a.key.toLowerCase());
-      const rb = rank.get(b.key.toLowerCase());
-      if (ra !== undefined && rb !== undefined) return ra - rb;
-      if (ra !== undefined) return -1;
-      if (rb !== undefined) return 1;
-      return a.label.localeCompare(b.label);
-    });
-
-    return pages;
+    return loadGuidePages(this.app, pluginDir);
   }
 
   private _getGuideCategories(): GuideCategory[] {
-    return [
-      { key: "home", label: "Home", icon: "house", sections: [{ pageKeys: ["Home"] }] },
-      {
-        key: "getting-started",
-        label: "Getting Started",
-        icon: "play-circle",
-        sections: [{ pageKeys: ["Installation", "Syncing"] }],
-      },
-      {
-        key: "cards",
-        label: "Cards",
-        icon: "square-stack",
-        sections: [
-          { pageKeys: ["Cards", "Card-Browser", "Creating-Cards"] },
-          { title: "Reading view", pageKeys: ["Reading-View", "Reading-View-Styles", "Custom-Reading-Styles"] },
-          {
-            title: "Card Types",
-            pageKeys: ["Basic-&-Reversed-Cards", "Cloze-Cards", "Image-Occlusion", "Multiple-Choice-Questions", "Ordered-Questions"],
-          },
-        ],
-      },
-      {
-        key: "analytics",
-        label: "Analytics",
-        icon: "chart-column",
-        sections: [{ pageKeys: ["Analytics", "Charts"] }],
-      },
-      {
-        key: "audio",
-        label: "Audio",
-        icon: "volume-2",
-        sections: [{ pageKeys: ["Text-to-Speech", "Language-Settings"] }],
-      },
-      {
-        key: "study",
-        label: "Study",
-        icon: "graduation-cap",
-        sections: [
-          { title: "Review Flow", pageKeys: ["Study-Sessions", "Grading", "Scheduling"] },
-          { title: "Card State", pageKeys: ["Burying-Cards", "Suspending-Cards"] },
-          { title: "Scope", pageKeys: ["Widget"] },
-        ],
-      },
-      {
-        key: "maintenance",
-        label: "Maintenance",
-        icon: "shield-check",
-        sections: [
-          { pageKeys: ["Anki-Export-&-Import", "Backups", "Custom-Delimiters", "Keyboard-Shortcuts", "Settings"] },
-        ],
-      },
-    ];
+    return getGuideCategories();
   }
 
   private _orderGuidePagesByNavigation(pages: GuidePage[]): GuidePage[] {
-    if (!pages.length) return [];
-
-    const byKey = new Map(pages.map((page) => [page.key, page]));
-    const ordered: GuidePage[] = [];
-    const seen = new Set<string>();
-
-    for (const category of this._getGuideCategories()) {
-      for (const section of category.sections) {
-        for (const key of section.pageKeys) {
-          const page = byKey.get(key);
-          if (!page || seen.has(page.key)) continue;
-          ordered.push(page);
-          seen.add(page.key);
-        }
-      }
-    }
-
-    for (const page of pages) {
-      if (seen.has(page.key)) continue;
-      ordered.push(page);
-      seen.add(page.key);
-    }
-
-    return ordered;
+    return orderGuidePagesByNavigation(pages);
   }
 
   private _getGuidePageDisplayLabel(pageKey: string): string {
-    const labelMap: Record<string, string> = {
-      Cards: "Cards Overview",
-      "Language-Settings": "Language Options",
-      Backups: "Back Up",
-      "Support-Sprout": "About Sprout",
-      "Reading-View-Styles": "Reading View Styles",
-      "Custom-Reading-Styles": "Custom Reading Styles",
-    };
-    return labelMap[pageKey] ?? pageKey.replace(/-/g, " ");
+    return getGuidePageDisplayLabel(pageKey);
   }
 
   private _getGuideTooltipLabel(pageKey: string): string {
-    if (pageKey === "Home") return "Home";
-    return this._getGuidePageDisplayLabel(pageKey);
+    return getGuideTooltipLabel(pageKey);
   }
 
   private _getGuidePageIcon(pageKey: string): string {
-    const iconMap: Record<string, string> = {
-      Home: "house",
-      Installation: "download",
-      "Creating-Cards": "plus-circle",
-      Cards: "square-stack",
-      "Custom-Delimiters": "separator-vertical",
-      "Keyboard-Shortcuts": "keyboard",
-      "Basic-&-Reversed-Cards": "repeat",
-      "Cloze-Cards": "text-cursor-input",
-      "Multiple-Choice-Questions": "list-checks",
-      "Ordered-Questions": "list-ordered",
-      "Image-Occlusion": "image",
-      "Study-Sessions": "graduation-cap",
-      Grading: "check-check",
-      Scheduling: "calendar-clock",
-      "Burying-Cards": "archive",
-      "Suspending-Cards": "pause-circle",
-      Widget: "panel-right",
-      "Card-Browser": "table",
-      "Reading-View": "book-open",
-      "Reading-View-Styles": "palette",
-      "Custom-Reading-Styles": "paintbrush",
-      Analytics: "chart-column",
-      Charts: "line-chart",
-      "Text-to-Speech": "volume-2",
-      "Language-Settings": "languages",
-      "Anki-Export-&-Import": "arrow-right-left",
-      Settings: "settings",
-      Syncing: "refresh-cw",
-      Backups: "database-backup",
-      "Support-Sprout": "sprout",
-    };
-    return iconMap[pageKey] ?? "file-text";
+    return getGuidePageIcon(pageKey);
   }
 
   private _ensureReleaseComponent(): Component {
@@ -1547,8 +1298,9 @@ export class SproutSettingsView extends ItemView {
       return this._releasePagesCache.pages;
     }
 
-    const supportMarkdown = await this._readSupportMarkdown();
-    const releasePages = await this._fetchGithubReleasePages();
+    const pluginDir = (this.plugin.manifest as { dir?: string }).dir;
+    const supportMarkdown = await readSupportMarkdown(this.app, pluginDir);
+    const releasePages = await fetchGithubReleasePages();
 
     const pages: ReleaseNotesPage[] = [
       { key: "about-sprout", label: "About Sprout", markdown: supportMarkdown },
@@ -1558,101 +1310,8 @@ export class SproutSettingsView extends ItemView {
     return pages;
   }
 
-  private async _fetchGithubReleasePages(): Promise<ReleaseNotesPage[]> {
-    try {
-      const res = await requestUrl({
-        url: "https://api.github.com/repos/ctrlaltwill/Sprout/releases?per_page=100",
-        method: "GET",
-        headers: { Accept: "application/vnd.github+json" },
-      });
-      if (res.status !== 200 || !res.text) return this._getBundledReleasePages();
-
-      const parsed = JSON.parse(res.text) as unknown;
-      if (!Array.isArray(parsed)) return this._getBundledReleasePages();
-
-      const releases = (parsed as GithubReleaseApiItem[])
-        .filter((r) => !r.draft && !r.prerelease && !!r.tag_name)
-        .sort((a, b) => new Date(b.published_at ?? 0).getTime() - new Date(a.published_at ?? 0).getTime());
-
-      if (!releases.length) return this._getBundledReleasePages();
-
-      return releases.map((r) => {
-        const version = String(r.tag_name ?? "").replace(/^v/i, "").trim();
-        const fallback = RELEASE_NOTES[version]?.content ?? "No release notes available.";
-        const body = this._normaliseReleaseBodyMarkdown(String(r.body ?? "").trim() || fallback);
-        const updated = this._formatDate(r.published_at);
-        const source = r.html_url ? `\n\n---\n\n[View on GitHub](${r.html_url})` : "";
-        return {
-          key: `release-${version.replace(/[^a-z0-9.-]/gi, "-").toLowerCase()}`,
-          label: version,
-          version,
-          modifiedDate: updated,
-          markdown: `${body}${source}`,
-        };
-      });
-    } catch {
-      return this._getBundledReleasePages();
-    }
-  }
-
-  private _getBundledReleasePages(): ReleaseNotesPage[] {
-    const versions = Object.keys(RELEASE_NOTES).sort((a, b) => this._compareSemverDesc(a, b));
-    return versions.map((version) => ({
-      key: `release-${version.replace(/[^a-z0-9.-]/gi, "-").toLowerCase()}`,
-      label: version,
-      version,
-      modifiedDate: RELEASE_NOTES[version].releaseDate ?? this._formatDate(undefined),
-      markdown: this._normaliseReleaseBodyMarkdown(RELEASE_NOTES[version].content),
-    }));
-  }
-
-  private _normaliseReleaseBodyMarkdown(markdown: string): string {
-    const lines = String(markdown ?? "").split(/\r?\n/);
-    const out: string[] = [];
-    let skipNextReleaseDateLine = false;
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      if (/^#\s+/i.test(trimmed) && /release|changelog|what'?s changed|what'?s new/i.test(trimmed)) continue;
-      if (/^##\s+/i.test(trimmed) && /v?\d+\.\d+\.\d+/i.test(trimmed)) continue;
-      if (/^last (updated|modified)\s*:/i.test(trimmed)) continue;
-
-      if (/^###\s+release date\s*$/i.test(trimmed)) {
-        skipNextReleaseDateLine = true;
-        continue;
-      }
-      if (skipNextReleaseDateLine) {
-        if (trimmed.length === 0) continue;
-        skipNextReleaseDateLine = false;
-        continue;
-      }
-
-      out.push(line);
-    }
-
-    return out.join("\n").replace(/^\s+|\s+$/g, "");
-  }
-
-  private _compareSemverDesc(a: string, b: string): number {
-    const pa = a.replace(/^v/i, "").split(".").map((n) => Number(n));
-    const pb = b.replace(/^v/i, "").split(".").map((n) => Number(n));
-    const len = Math.max(pa.length, pb.length);
-    for (let i = 0; i < len; i++) {
-      const na = Number.isFinite(pa[i]) ? pa[i] : 0;
-      const nb = Number.isFinite(pb[i]) ? pb[i] : 0;
-      if (na !== nb) return nb - na;
-    }
-    return 0;
-  }
-
   private _formatDate(input?: string): string {
-    const d = input ? new Date(input) : new Date();
-    if (Number.isNaN(d.getTime())) return "Unknown";
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    return formatReleaseDate(input);
   }
 
   /**
@@ -1915,39 +1574,6 @@ export class SproutSettingsView extends ItemView {
       }
 
       supportUl.replaceWith(wrapper);
-    }
-  }
-
-  private async _readSupportMarkdown(): Promise<string> {
-    try {
-      const pluginDir = (this.plugin.manifest as { dir?: string }).dir;
-      const configDir = this.app.vault.configDir;
-      return await this.app.vault.adapter.read(`${pluginDir ?? `${configDir}/plugins/sprout`}/wiki/Support-Sprout.md`);
-    } catch {
-      return `# About Sprout
-
-## Our Story
-
-Sprout was built by William Guy, a final-year medical student in New Zealand. Designed to bring modern spaced-repetition directly into your Obsidian vault — so your flashcards, notes, and study sessions all live in one place.
-
-- [Find out more about Will](https://www.linkedin.com/in/williamguy/)
-
-## Feedback & Issues
-
-Found a bug? Have an idea for a feature? We'd love to hear from you. Sprout uses GitHub issue templates to keep things organised — just pick the right one and fill it in.
-
-- [Report a bug](https://github.com/ctrlaltwill/Sprout/issues/new?template=bug_report.yml)
-- [Request a feature](https://github.com/ctrlaltwill/Sprout/issues/new?template=feature_request.yml)
-- [Browse open issues](https://github.com/ctrlaltwill/Sprout/issues)
-
-## Support the Project
-
-You can support Sprout by starring the repo, sharing it with friends, or caffeinating the dev!
-
-- [⭐ Star on GitHub](https://github.com/ctrlaltwill/Sprout)
-- [📋 Share Sprout](https://github.com/ctrlaltwill/Sprout)
-- [☕ Buy me a coffee](https://buymeacoffee.com/williamguy)
-`;
     }
   }
 

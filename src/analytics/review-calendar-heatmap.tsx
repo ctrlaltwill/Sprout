@@ -10,6 +10,7 @@
  *   - ReviewCalendarHeatmap — React component rendering an SVG calendar heatmap of daily review counts
  */
 
+import { Platform } from "obsidian";
 import * as React from "react";
 import { useAnalyticsPopoverZIndex } from "./filter-styles";
 import { cssClassForProps, setCssProps } from "../core/ui";
@@ -224,9 +225,7 @@ export function ReviewCalendarHeatmap(props: {
   };
   const durationOptions = React.useMemo(() => [7, 30, 90, 365, 0], []);
   const isTouchInput = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    if (window.matchMedia?.("(pointer: coarse)")?.matches) return true;
-    return (navigator.maxTouchPoints ?? 0) > 0;
+    return Platform.isMobile;
   }, []);
   const resetFilters = () => {
     setDurationDays(props.rangeDays ?? 365);

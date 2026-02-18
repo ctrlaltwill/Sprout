@@ -25,6 +25,28 @@ export interface ReleaseNote {
  * 3. The modal will automatically show for users upgrading to that version
  */
 export const RELEASE_NOTES: Record<string, ReleaseNote> = {
+  "1.0.6": {
+    version: "1.0.6",
+    title: "1.0.6",
+    releaseDate: "2026-02-18",
+    content: `
+# Sprout 1.0.6
+Version 1.0.6 is a compatibility release focused on Obsidian Community Plugins linter compliance for plugin approval.
+
+## What's Changed
+
+### Compatibility
+- Updated plugin code and metadata for compatibility with Obsidian Community Plugins linter requirements
+- Applied targeted compatibility tidy-up to support the approval process
+
+### Fixes
+- Resolved linter-related compatibility findings that could block community plugin approval
+
+## Notes
+- This is a compatibility and approval-readiness release with no user-facing feature changes
+    `.trim(),
+  },
+
   "1.0.5": {
     version: "1.0.5",
     title: "1.0.5",

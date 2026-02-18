@@ -28,7 +28,7 @@ src/
 
 ### 1. Version Detection
 
-The system uses `localStorage` to track:
+The system uses Obsidian's plugin data store (`data.json`) to track:
 - **Last seen version**: The last version for which the user opened the app
 - **Dismissed versions**: Versions the user explicitly dismissed with "don't show again"
 
@@ -152,17 +152,9 @@ hasReleaseNotes(version: string): boolean
 To test the modal locally:
 
 ```typescript
-// In browser console:
-localStorage.removeItem('sprout_lastSeenVersion');
-localStorage.removeItem('sprout_dismissedVersions');
-// Then reload the plugin
-```
-
-Or use the API:
-
-```typescript
 import { clearVersionTracking } from './core/version-manager';
 clearVersionTracking();
+// Then trigger a plugin save and reload
 ```
 
 ## Customization
@@ -187,11 +179,12 @@ Edit `release-notes.ts` to add content for new versions. The modal will automati
 
 ## Storage
 
-The system uses `localStorage` with these keys:
-- `sprout_lastSeenVersion` - Last seen version string
-- `sprout_dismissedVersions` - JSON array of dismissed version strings
+The system uses Obsidian's plugin data store (`data.json`) under the `versionTracking` key:
+- `lastSeenVersion` — Last seen version string
+- `dismissedVersions` — Array of dismissed version strings
 
-This is separate from plugin settings to avoid sync conflicts and ensure proper dismissal tracking across devices.
+Version tracking data is loaded into memory at startup via `loadVersionTracking()` and
+persisted alongside `settings` and `store` during the normal plugin save cycle.
 
 ## Notes
 

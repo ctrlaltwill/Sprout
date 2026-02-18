@@ -24,7 +24,7 @@ export type Session = {
   scope: Scope;
   queue: CardRecord[];
   index: number;
-  graded: Record<string, { rating: Rating; at: number; meta?: unknown } | undefined>;
+  graded: Record<string, { rating: Rating; at: number; meta?: Record<string, unknown> } | undefined>;
   stats: { total: number; done: number };
   /** True when running in free-practice mode (no scheduling changes). */
   practice?: boolean;

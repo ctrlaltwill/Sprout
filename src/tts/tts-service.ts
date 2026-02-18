@@ -209,7 +209,9 @@ export function getAvailableVoices(): SpeechSynthesisVoice[] {
  */
 function detectPlatform(): "mac" | "ios" | "android" | "windows" | "other" {
   if (Platform.isMacOS) return "mac";
-  if (Platform.isMobileApp) return "ios";
+  if (Platform.isIosApp) return "ios";
+  if (Platform.isAndroidApp) return "android";
+  if (Platform.isWin) return "windows";
   return "other";
 }
 
