@@ -19,19 +19,41 @@ let keyboardHeightCache = 0;
 let isKeyboardOpen = false;
 
 /**
- * Get device type based on Obsidian Platform API and viewport metrics.
+ * Get device type based on view port and device metrics
  * Returns: 'iphone' | 'ipad' | 'android' | 'unknown'
  */
 function getDeviceType(): "iphone" | "ipad" | "android" | "unknown" {
   if (!Platform.isMobileApp) return "unknown";
 
-  const shortEdge = Math.min(window.innerWidth, window.innerHeight);
-  const isTablet = shortEdge > 600;
+  // Get device dimensions
+  const width = Math.min(window.innerWidth, window.innerHeight);
+  const isTablet = width > 600;
 
-  if ((Platform as Record<string, unknown>).isAndroidApp) return "android";
+  // Device detection heuristics
+  // eslint-disable-next-line obsidianmd/platform
+  const userAgent = navigator.userAgent.toLowerCase();
 
-  if ((Platform as Record<string, unknown>).isIosApp) {
-    return isTablet ? "ipad" : "iphone";
+  // iPad detection
+  if (
+    userAgent.includes("ipad") ||
+    (isTablet && userAgent.includes("like mac") && !userAgent.includes("iphone"))
+  ) {
+    return "ipad";
+  }
+
+  // iPhone detection
+  if (userAgent.includes("iphone")) {
+    return "iphone";
+  }
+
+  // Android tablet detection
+  if (isTablet && userAgent.includes("android")) {
+    return "android";
+  }
+
+  // Android phone detection
+  if (userAgent.includes("android")) {
+    return "android";
   }
 
   return "unknown";
