@@ -168,6 +168,16 @@
   z-index: 1000003 !important;
 }
 
+/* Recharts tooltip: fade in only — no slide-in translation effect */
+.sprout .recharts-tooltip-wrapper {
+  transition: opacity 120ms ease !important;
+  animation: none !important;
+}
+.sprout .recharts-tooltip-wrapper[style*="translate"] {
+  /* Let Recharts set the translate for positioning but block the animated transition on it */
+  transition: opacity 120ms ease !important;
+}
+
 .sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info):is(:hover, :focus-visible) {
   z-index: 1000004 !important;
 }

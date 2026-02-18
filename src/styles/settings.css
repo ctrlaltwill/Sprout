@@ -1274,7 +1274,7 @@ button.sprout-settings-tab-btn {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
+  padding: 20px 30px 20px 20px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   border-radius: var(--button-radius, var(--radius-l));
   background-color: var(--background-secondary);
@@ -1532,6 +1532,21 @@ button.sprout-settings-tab-btn {
   background-color: var(--muted) !important;
   color: var(--foreground) !important;
   border-color: var(--muted) !important;
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn .sprout-about-star-spin,
+.sprout .sprout-about-buttons .sprout-about-btn .sprout-about-coffee-spin {
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-origin: center;
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn--star:hover .sprout-about-star-spin,
+.sprout .sprout-about-buttons .sprout-about-btn--coffee:hover .sprout-about-coffee-spin {
+  transform: rotate(360deg);
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn .sprout-about-btn-icon--after {
+  margin-left: 2px;
 }
 
 .sprout-about-hint {

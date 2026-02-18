@@ -1720,10 +1720,11 @@ export class SproutSettingsView extends ItemView {
     }
 
     const remoteCandidates = [
+      "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.png",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.jpg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.jpeg",
-      "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.png",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.webp",
+      "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/wiki/avatar.png",
       "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/wiki/avatar.jpg",
     ];
     return remoteCandidates[0] ?? null;
@@ -1855,6 +1856,13 @@ export class SproutSettingsView extends ItemView {
 
       if (githubStarLink) {
         const btn = this._createAboutBtn("sprout-about-btn--star", "star", "sprout-about-star-spin", "Star on GitHub", "Star on GitHub");
+        const starLabel = btn.querySelector<HTMLElement>(".sprout-about-btn-label");
+        if (starLabel) {
+          const githubIcon = document.createElement("span");
+          githubIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4 sprout-about-btn-icon sprout-about-btn-icon--after";
+          setIcon(githubIcon, "github");
+          starLabel.insertAdjacentElement("afterend", githubIcon);
+        }
         (btn as HTMLAnchorElement).href = githubStarLink.href;
         (btn as HTMLAnchorElement).target = "_blank";
         (btn as HTMLAnchorElement).rel = "noopener nofollow";
@@ -1899,7 +1907,7 @@ export class SproutSettingsView extends ItemView {
       }
 
       if (coffeeLink) {
-        const btn = this._createAboutBtn("sprout-about-btn--coffee", "coffee", "", "Buy me a Coffee", "Buy me a coffee");
+        const btn = this._createAboutBtn("sprout-about-btn--coffee", "coffee", "sprout-about-coffee-spin", "Buy me a Coffee", "Buy me a coffee");
         (btn as HTMLAnchorElement).href = coffeeLink.href;
         (btn as HTMLAnchorElement).target = "_blank";
         (btn as HTMLAnchorElement).rel = "noopener nofollow";

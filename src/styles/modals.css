@@ -400,7 +400,7 @@
   width: min(640px, 100%) !important;
   max-width: min(640px, 92vw) !important;
   max-height: 90vh !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
   border-radius: var(--button-radius, var(--radius-l)) !important;
@@ -434,7 +434,11 @@
 
 .sprout .sprout-bulk-edit-content {
   padding: 16px 20px 20px !important;
-  overflow: visible !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;

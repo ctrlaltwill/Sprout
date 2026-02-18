@@ -31,15 +31,26 @@ export const RELEASE_NOTES: Record<string, ReleaseNote> = {
     releaseDate: "2026-02-18",
     content: `
 # Sprout 1.0.5
-This stable release builds on the features delivered in 1.0.5-beta.1.
+Version 1.0.5 is a major feature release introducing new card types, reading view styles, and deeper card customisation, building on the 1.0.5-beta.1 pre-release.
 
-## Included in this release
-- Multi-select MCQ and ordered-question card types
-- Typed cloze support
-- Image occlusion mask customisation
-- Reading view overhaul with Flashcards and Clean markdown styles
-- New settings view with expanded controls
-- Updated in-app guide surfaced directly in Obsidian
+## What's Changed
+
+### Cards and customisation
+- Multi-select MCQ: multiple correct answers selectable per question
+- Ordered questions: memorise sequences by arranging items in the correct order
+- Typed cloze: type the answer directly into cloze deletion cards
+- Image occlusion mask customisation: adjust mask appearance and styling
+
+### Reading view
+- Overhaul with two distinct styles: Flashcards and Clean markdown
+- Additional styles and full Custom Reading style support planned for a future update
+
+### Settings and guide
+- New settings view with expanded controls and clearer organisation
+- Updated in-app guide surfaced directly within Obsidian
+
+### Fixes
+- Modal background/overlay scoped to workspace so tab-switching remains available
 
 ## In development
 - Mobile functionality support

@@ -633,6 +633,13 @@
 
 .sprout .sprout-browser-mcq-row {
   min-height: 24px !important;
+  pointer-events: auto !important;
+}
+
+.sprout .sprout-browser-mcq-row .sprout-mcq-correct-checkbox {
+  flex-shrink: 0 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .sprout .sprout-browser-mcq-input {
