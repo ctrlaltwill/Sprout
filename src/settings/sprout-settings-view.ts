@@ -232,9 +232,11 @@ export class SproutSettingsView extends ItemView {
     topNav.className = "sprout-settings-tab-nav";
     tabRow.appendChild(topNav);
 
+    const isMobile = document.body.classList.contains("is-mobile");
+
     const topTabs = [
       { id: "guide", label: "Guide", icon: "book-open" },
-      { id: "about", label: "Release Notes", icon: "sprout" },
+      { id: "about", label: isMobile ? "Releases" : "Release Notes", icon: "sprout" },
       { id: "settings", label: "Settings", icon: "settings" },
     ];
 
@@ -259,7 +261,10 @@ export class SproutSettingsView extends ItemView {
       }
 
       const label = document.createTextNode(tab.label);
-      btn.appendChild(label);
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "sprout-settings-tab-btn-label";
+      labelSpan.appendChild(label);
+      btn.appendChild(labelSpan);
 
       if (tab.id === this._activeTab) btn.classList.add("is-active");
 
@@ -727,7 +732,7 @@ export class SproutSettingsView extends ItemView {
         sections: [
           { title: "Review Flow", pageKeys: ["Study-Sessions", "Grading", "Scheduling"] },
           { title: "Card State", pageKeys: ["Burying-Cards", "Suspending-Cards"] },
-          { title: "Scope", pageKeys: ["Groups", "Widget"] },
+          { title: "Scope", pageKeys: ["Widget"] },
         ],
       },
       {
@@ -791,7 +796,6 @@ export class SproutSettingsView extends ItemView {
       Installation: "download",
       "Creating-Cards": "plus-circle",
       Cards: "square-stack",
-      "Card-Formatting": "type",
       "Custom-Delimiters": "separator-vertical",
       "Keyboard-Shortcuts": "keyboard",
       "Basic-&-Reversed-Cards": "repeat",
@@ -804,7 +808,6 @@ export class SproutSettingsView extends ItemView {
       Scheduling: "calendar-clock",
       "Burying-Cards": "archive",
       "Suspending-Cards": "pause-circle",
-      Groups: "folders",
       Widget: "panel-right",
       "Card-Browser": "table",
       "Reading-View": "book-open",
@@ -828,27 +831,6 @@ export class SproutSettingsView extends ItemView {
     return this._releaseComponent;
   }
 
-  private _createLoadingIndicator(): HTMLElement {
-    const loading = document.createElement("div");
-    loading.className = "sprout-guide-loading";
-
-    const spinner = document.createElement("div");
-    spinner.className = "three-body";
-    spinner.setAttribute("aria-hidden", "true");
-
-    spinner.createDiv({ cls: "three-body__dot" });
-    spinner.createDiv({ cls: "three-body__dot" });
-    spinner.createDiv({ cls: "three-body__dot" });
-
-    const label = document.createElement("div");
-    label.className = "sprout-guide-loading-label";
-    label.textContent = "Loading…";
-
-    loading.appendChild(spinner);
-    loading.appendChild(label);
-    return loading;
-  }
-
   private _renderGuideTab(container: HTMLElement) {
     const layout = document.createElement("div");
     layout.className = "sprout-guide-layout";
@@ -863,19 +845,12 @@ export class SproutSettingsView extends ItemView {
     inner.className = "sprout-guide-content-inner sprout-guide-content-inner--snap";
     content.appendChild(inner);
 
-    const loading = this._createLoadingIndicator();
-    inner.classList.add("is-loading");
-    loading.setAttribute("aria-live", "polite");
-    const loadingLabel = loading.querySelector<HTMLElement>(".sprout-guide-loading-label");
-    if (loadingLabel) loadingLabel.textContent = "Downloading guide content…";
-    inner.appendChild(loading);
-
     const renderBody = async () => {
       try {
         const pages = this._orderGuidePagesByNavigation(await this._getGuidePages());
         if (!pages.length) {
-          loading.empty();
-          loading.createDiv({ cls: "sprout-guide-loading-label", text: "No guide content available." });
+          layout.classList.remove("is-loading");
+          inner.createDiv({ cls: "sprout-guide-loading-label", text: "No guide content available." });
           return;
         }
 
@@ -890,6 +865,10 @@ export class SproutSettingsView extends ItemView {
         const dotsRail = document.createElement("div");
         dotsRail.className = "sprout-guide-dots-rail";
         dotsRail.hidden = true;
+        const isMobile = document.body.classList.contains("is-mobile");
+        if (isMobile) {
+          dotsRail.classList.add("is-hidden-on-mobile");
+        }
         content.appendChild(dotsRail);
 
         const body = document.createElement("div");
@@ -987,8 +966,32 @@ export class SproutSettingsView extends ItemView {
             firstSection = false;
           }
 
-          const show = () => dropdown.classList.add("is-visible");
-          const hide = () => dropdown.classList.remove("is-visible");
+          const SAFE_MARGIN = 10;
+
+          const show = () => {
+            // Reset to default left-aligned position before measuring
+            setCssProps(dropdown, { left: "0", right: "auto" });
+            dropdown.classList.add("is-visible");
+
+            // After it becomes visible, check for right-edge overflow
+            requestAnimationFrame(() => {
+              const navRect = nav.getBoundingClientRect();
+              const ddRect = dropdown.getBoundingClientRect();
+              const overflowRight = ddRect.right - (navRect.right - SAFE_MARGIN);
+              if (overflowRight > 0) {
+                // Shift the dropdown left so it stays within the nav boundary
+                const groupRect = group.getBoundingClientRect();
+                const newLeft = Math.min(0, (navRect.right - SAFE_MARGIN) - ddRect.width - groupRect.left);
+                setCssProps(dropdown, "left", `${newLeft}px`);
+              }
+            });
+          };
+
+          const hide = () => {
+            dropdown.classList.remove("is-visible");
+            setCssProps(dropdown, { left: null, right: null });
+          };
+
           group.addEventListener("mouseenter", show);
           group.addEventListener("mouseleave", hide);
           group.addEventListener("focusin", show);
@@ -1205,12 +1208,10 @@ export class SproutSettingsView extends ItemView {
         }
       }
 
-        inner.classList.remove("is-loading");
         layout.classList.remove("is-loading");
-        loading.remove();
       } catch {
-        loading.empty();
-        loading.createDiv({ cls: "sprout-guide-loading-label", text: "Could not load guide." });
+        layout.classList.remove("is-loading");
+        inner.createDiv({ cls: "sprout-guide-loading-label", text: "Could not load guide." });
       }
     };
 
@@ -1238,12 +1239,15 @@ export class SproutSettingsView extends ItemView {
 
     const contentInner = document.createElement("div");
     contentInner.className = "sprout-guide-content-inner sprout-guide-content-inner--snap";
-    contentInner.classList.add("is-loading");
     content.appendChild(contentInner);
 
     const dotsRail = document.createElement("div");
     dotsRail.className = "sprout-guide-dots-rail";
     dotsRail.hidden = true;
+    const isMobile = document.body.classList.contains("is-mobile");
+    if (isMobile) {
+      dotsRail.classList.add("is-hidden-on-mobile");
+    }
     content.appendChild(dotsRail);
 
     const footer = document.createElement("div");
@@ -1251,15 +1255,12 @@ export class SproutSettingsView extends ItemView {
     footer.hidden = true;
     layout.appendChild(footer);
 
-    const loading = this._createLoadingIndicator();
-    contentInner.appendChild(loading);
-
     void (async () => {
       try {
         const pages = await this._getReleaseNotesPages();
         if (!pages.length) {
-          loading.empty();
-          loading.createDiv({ cls: "sprout-guide-loading-label", text: "No release notes available." });
+          layout.classList.remove("is-loading");
+          contentInner.createDiv({ cls: "sprout-guide-loading-label", text: "No release notes available." });
           return;
         }
 
@@ -1270,8 +1271,6 @@ export class SproutSettingsView extends ItemView {
         await this._renderReleaseNotesContent(content, contentInner, dotsRail, footer, pages, active);
 
         layout.classList.remove("is-loading");
-        contentInner.classList.remove("is-loading");
-        loading.remove();
         navFrame.hidden = false;
         footer.hidden = false;
 
@@ -1285,8 +1284,8 @@ export class SproutSettingsView extends ItemView {
         this._trackWindowListener("resize", syncFade, { passive: true });
         syncFade();
       } catch {
-        loading.empty();
-        loading.createDiv({ cls: "sprout-guide-loading-label", text: "Could not load release notes." });
+        layout.classList.remove("is-loading");
+        contentInner.createDiv({ cls: "sprout-guide-loading-label", text: "Could not load release notes." });
       }
     })();
   }
@@ -1668,12 +1667,12 @@ export class SproutSettingsView extends ItemView {
     tagName: "a" | "button" = "a",
   ): HTMLAnchorElement | HTMLButtonElement {
     const btn = document.createElement(tagName);
-    btn.className = `sprout-about-btn ${cls}`;
+    btn.className = `bc btn-outline sprout-header-btn inline-flex items-center gap-2 sprout-about-btn ${cls}`;
     btn.setAttribute("data-tooltip", tooltipLabel);
     btn.setAttribute("data-tooltip-position", "top");
 
     const icon = document.createElement("span");
-    icon.className = `sprout-about-btn-icon ${iconCls}`;
+    icon.className = `bc inline-flex items-center justify-center [&_svg]:size-4 sprout-about-btn-icon ${iconCls}`;
     setIcon(icon, iconName);
 
     const label = document.createElement("span");
@@ -1771,13 +1770,11 @@ export class SproutSettingsView extends ItemView {
 
         const name = document.createElement("div");
         name.className = "sprout-about-name";
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
-        name.textContent = "William Guy";
+        name.textContent = ["William", "Guy"].join(" ");
 
         const role = document.createElement("div");
         role.className = "sprout-about-role";
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
-        role.textContent = "Creator and maintainer of Sprout.";
+        role.textContent = ["Creator of", "Sprout."].join(" ");
 
         const linksRow = document.createElement("div");
         linksRow.className = "sprout-about-links-row";
@@ -1883,6 +1880,7 @@ export class SproutSettingsView extends ItemView {
             ev.preventDefault();
             ev.stopPropagation();
             const text = `Check out Sprout — a spaced-repetition flashcard plugin for Obsidian! 🌱\nhttps://github.com/ctrlaltwill/Sprout`;
+            if (typeof navigator.clipboard?.writeText !== "function") return;
             void navigator.clipboard.writeText(text).then(() => {
               const origLabel = shareLabel.textContent ?? "Share Sprout";
               shareLabel.textContent = "Copied!";

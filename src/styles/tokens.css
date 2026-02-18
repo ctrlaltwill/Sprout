@@ -78,6 +78,10 @@
   --color-border: var(--color-base-30) !important;
   --input: var(--color-base-30) !important;
 
+  /* Structural border shorthand — single source of truth for all containers */
+  --sprout-border-color: var(--color-base-30);
+  --sprout-border-width: 1px;
+
   /* Ring/focus (light: rgb(154,230,0); dark: rgb(53,83,14)) */
   --ring: rgb(154, 230, 0) !important;
   --sidebar-ring: rgb(154, 230, 0) !important;
@@ -178,6 +182,10 @@
   --sidebar-border: var(--color-base-35) !important;
 
   --input: var(--color-base-40) !important;
+
+  /* Structural border shorthand — single source of truth for all containers */
+  --sprout-border-color: var(--color-base-35);
+  --sprout-border-width: 1px;
 
   /* Ring/focus (light: rgb(154,230,0); dark: rgb(53,83,14)) */
   --ring: rgb(53, 83, 14) !important;

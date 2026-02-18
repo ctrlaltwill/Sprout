@@ -10,9 +10,9 @@
  *   - getLanguageOptions — Returns a curated list of BCP-47 language options for the settings UI
  */
 
-/* eslint-disable no-console, obsidianmd/platform, @typescript-eslint/no-deprecated, @typescript-eslint/no-floating-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
-
 import { detectLanguage, getBlankWord } from "./language-detect";
+import { Platform } from "obsidian";
+import { log } from "../core/logger";
 import type { SproutSettings } from "../types/settings";
 
 // ── TTS debug mode ─────────────────────────────────────────────
@@ -22,7 +22,7 @@ import type { SproutSettings } from "../types/settings";
 let _ttsDebug = false;
 
 function ttsLog(...args: unknown[]) {
-  if (_ttsDebug) console.log("%c[Sprout TTS]", "color:#8be9fd;font-weight:bold", ...args);
+  if (_ttsDebug) log.debug("[TTS]", ...args);
 }
 
 /** Ensure voices are loaded (Electron/Chrome load them async). */
@@ -43,9 +43,9 @@ function ensureVoicesLoaded(): Promise<SpeechSynthesisVoice[]> {
 
 function dumpVoiceTable(voices: SpeechSynthesisVoice[]) {
   const platform = detectPlatform();
-  console.log(`%c[Sprout TTS] Platform: ${platform}  |  ${voices.length} voice(s)`, "color:#8be9fd;font-weight:bold");
+  log.debug("[TTS] Platform report", { platform, voiceCount: voices.length });
   if (!voices.length) {
-    console.warn("[Sprout TTS] No voices found! Check System Settings > Accessibility > Spoken Content and download voices.");
+    log.warn("[TTS] No voices found. Check system spoken-content voices.");
     return;
   }
   const rows = voices
@@ -58,7 +58,7 @@ function dumpVoiceTable(voices: SpeechSynthesisVoice[]) {
       score: voiceQualityScore(v),
     }))
     .sort((a, b) => b.score - a.score);
-  console.table(rows);
+  log.debug("[TTS] Voice table", rows);
 }
 
 if (typeof window !== "undefined") {
@@ -66,20 +66,21 @@ if (typeof window !== "undefined") {
   (window as unknown as Record<string, unknown>).sproutTtsDebug = (on = true) => {
     _ttsDebug = !!on;
     if (_ttsDebug) {
-      console.log(
-        "%c[Sprout TTS] Debug ON — voice selection will be logged on every speak() call.",
-        "color:#8be9fd;font-weight:bold",
-      );
-      ensureVoicesLoaded().then((voices) => dumpVoiceTable(voices));
+      log.debug("[TTS] Debug ON — voice selection will be logged for speak() calls.");
+      void ensureVoicesLoaded().then((voices) => dumpVoiceTable(voices)).catch((error: unknown) => {
+        log.debug("[TTS] Failed loading voices for debug table", error);
+      });
       return "debug enabled — voice table loading…";
     }
-    console.log("%c[Sprout TTS] Debug OFF", "color:#8be9fd;font-weight:bold");
+    log.debug("[TTS] Debug OFF");
     return "debug disabled";
   };
 
   // ── sproutTtsVoices() ─────────────────────────────────────────
   (window as unknown as Record<string, unknown>).sproutTtsVoices = () => {
-    ensureVoicesLoaded().then((voices) => dumpVoiceTable(voices));
+    void ensureVoicesLoaded().then((voices) => dumpVoiceTable(voices)).catch((error: unknown) => {
+      log.debug("[TTS] Failed loading voices", error);
+    });
     return "loading voices…";
   };
 }
@@ -203,17 +204,12 @@ export function getAvailableVoices(): SpeechSynthesisVoice[] {
 }
 
 /**
- * Detect the current platform from the user agent string.
+ * Detect the current platform from Obsidian Platform flags.
  * Returns 'mac', 'ios', 'android', 'windows', or 'other'.
  */
 function detectPlatform(): "mac" | "ios" | "android" | "windows" | "other" {
-  if (typeof navigator === "undefined") return "other";
-  const ua = navigator.userAgent.toLowerCase();
-  // iOS must be checked before Mac — both contain "Mac" in some UA strings
-  if (/iphone|ipad|ipod/.test(ua) || (ua.includes("mac") && "ontouchend" in document)) return "ios";
-  if (ua.includes("android")) return "android";
-  if (ua.includes("mac")) return "mac";
-  if (ua.includes("win")) return "windows";
+  if (Platform.isMacOS) return "mac";
+  if (Platform.isMobileApp) return "ios";
   return "other";
 }
 
@@ -606,7 +602,8 @@ function pickVoice(lang: string, preferredURI?: string): SpeechSynthesisVoice | 
           `Using higher-quality regional voice "${partialBest.name}" (score ${partialBestScore}) instead.`,
         );
         if (_ttsDebug) {
-          console.table(
+          log.debug(
+            "[TTS] Exact + partial ranked voices",
             [...sorted, ...partialSorted].map((v) => ({ name: v.name, lang: v.lang, score: scoreFor(v), uri: v.voiceURI })),
           );
         }
@@ -616,7 +613,8 @@ function pickVoice(lang: string, preferredURI?: string): SpeechSynthesisVoice | 
 
     ttsLog(`pickVoice("${lang}") — ${exact.length} exact match(es). Winner: "${winner.name}" (score ${winnerScore})`);
     if (_ttsDebug) {
-      console.table(
+      log.debug(
+        "[TTS] Exact-match ranked voices",
         sorted.map((v) => ({ name: v.name, lang: v.lang, score: scoreFor(v), uri: v.voiceURI })),
       );
     }
@@ -628,7 +626,8 @@ function pickVoice(lang: string, preferredURI?: string): SpeechSynthesisVoice | 
     const winner = sorted[0];
     ttsLog(`pickVoice("${lang}") — no exact match; ${partial.length} partial match(es) for "${primary}". Winner: "${winner.name}" (score ${scoreFor(winner)})`);
     if (_ttsDebug) {
-      console.table(
+      log.debug(
+        "[TTS] Partial-match ranked voices",
         sorted.map((v) => ({ name: v.name, lang: v.lang, score: scoreFor(v), uri: v.voiceURI })),
       );
     }
@@ -637,8 +636,7 @@ function pickVoice(lang: string, preferredURI?: string): SpeechSynthesisVoice | 
 
   ttsLog(`pickVoice("${lang}") — no matching voices found. Falling back to speechSynthesis default.`);
   if (_ttsDebug && scoredAll.length) {
-    console.log("[Sprout TTS] All voices scored:");
-    console.table(
+    log.debug("[TTS] All voices scored", 
       scoredAll
         .sort((a, b) => b.score - a.score)
         .map(({ voice: v, score }) => ({ name: v.name, lang: v.lang, score, uri: v.voiceURI })),
@@ -678,11 +676,11 @@ const SYMBOL_SPEECH_MAP: Array<[RegExp, string]> = [
   [/Δ/g, " delta "],
   [/∇/g, " nabla "],
   // Comparison / equality — only standalone, not inside words
-  [/(?<=\s|^)=(?=\s|$)/g, " equals "],
-  [/(?<=\s|^)\+(?=\s|$)/g, " plus "],
-  [/(?<=\s|^)-(?=\s|$)/g, " minus "],
-  [/(?<=\s|^)<(?=\s|$)/g, " less than "],
-  [/(?<=\s|^)>(?=\s|$)/g, " greater than "],
+  [/(^|\s)=(?=\s|$)/g, "$1equals "],
+  [/(^|\s)\+(?=\s|$)/g, "$1plus "],
+  [/(^|\s)-(?=\s|$)/g, "$1minus "],
+  [/(^|\s)<(?=\s|$)/g, "$1less than "],
+  [/(^|\s)>(?=\s|$)/g, "$1greater than "],
   // Subscript / superscript markers (common in chemistry)
   [/₂/g, "2"],
   [/₃/g, "3"],
@@ -836,31 +834,31 @@ function stripToPlainText(md: string): string {
   
   // Extract and speak alt text from images, or remove if no alt text
   // Markdown images: ![alt](url) → "alt" (or remove if no alt)
-  text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, (_, alt) => {
-    const altText = (alt || "").trim();
+  text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, (_match: string, alt: string) => {
+    const altText = alt.trim();
     return altText ? ` ${altText} ` : " ";
   });
   
   // Wikilink images: ![[image.png|alt]] → "alt" (or remove if no alt)
-  text = text.replace(/!\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_, _path, alt) => {
-    const altText = (alt || "").trim();
+  text = text.replace(/!\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_match: string, _path: string, alt?: string) => {
+    const altText = (alt ?? "").trim();
     return altText ? ` ${altText} ` : " ";
   });
   
   // Process LaTeX expressions before removing delimiters
   // Block math: $$...$$ or \[...\]
-  text = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, latex) => {
+  text = text.replace(/\$\$([\s\S]*?)\$\$/g, (_match: string, latex: string) => {
     return " " + latexToSpeech(latex) + " ";
   });
-  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_, latex) => {
+  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_match: string, latex: string) => {
     return " " + latexToSpeech(latex) + " ";
   });
   
   // Inline math: $...$ or \(...\)
-  text = text.replace(/\$([^$]+)\$/g, (_, latex) => {
+  text = text.replace(/\$([^$]+)\$/g, (_match: string, latex: string) => {
     return " " + latexToSpeech(latex) + " ";
   });
-  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, latex) => {
+  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_match: string, latex: string) => {
     return " " + latexToSpeech(latex) + " ";
   });
   
@@ -868,7 +866,7 @@ function stripToPlainText(md: string): string {
   text = text
     .replace(/<[^>]+>/g, "")                         // HTML tags
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")          // links → text
-    .replace(/\[\[([^\]|]*?)(?:\|([^\]]*))?\]\]/g, (_, target, alias) => alias || target) // wikilinks
+    .replace(/\[\[([^\]|]*?)(?:\|([^\]]*))?\]\]/g, (_match: string, target: string, alias?: string) => alias ?? target) // wikilinks
     .replace(/```[\s\S]*?```/g, "")                   // code blocks
     .replace(/`([^`]+)`/g, "$1")                      // inline code
     .replace(/[*_~#>]+/g, "");                        // formatting chars
@@ -967,6 +965,11 @@ export class TtsService {
     this._speaking = false;
   }
 
+  private shouldAutoDetectLanguage(settings: SproutSettings["audio"]): boolean {
+    const raw = (settings as Record<string, unknown>)["autoDetectLanguage"];
+    return typeof raw === "boolean" ? raw : true;
+  }
+
   /**
    * Speak the given text using the system TTS.
    *
@@ -1039,18 +1042,14 @@ export class TtsService {
       }, 10_000);
       if (_ttsDebug) {
         const actualVoice = utterance.voice;
-        console.log(
-          "%c[Sprout TTS] ▶ Speaking started",
-          "color:#50fa7b;font-weight:bold",
-          {
-            assignedVoice: actualVoice ? `${actualVoice.name} (${actualVoice.lang})` : "<browser default>",
-            voiceURI: actualVoice?.voiceURI ?? "n/a",
-            lang: utterance.lang,
-            rate: utterance.rate,
-            pitch: utterance.pitch,
-            textLength: utterance.text.length,
-          },
-        );
+        log.debug("[TTS] Speaking started", {
+          assignedVoice: actualVoice ? `${actualVoice.name} (${actualVoice.lang})` : "<browser default>",
+          voiceURI: actualVoice?.voiceURI ?? "n/a",
+          lang: utterance.lang,
+          rate: utterance.rate,
+          pitch: utterance.pitch,
+          textLength: utterance.text.length,
+        });
       }
     };
 
@@ -1066,17 +1065,13 @@ export class TtsService {
     utterance.onerror = (ev) => {
       cleanup();
       if (_ttsDebug) {
-        console.error(
-          "%c[Sprout TTS] ✖ Utterance error",
-          "color:#ff5555;font-weight:bold",
-          {
-            error: ev.error,
-            charIndex: ev.charIndex,
-            elapsedTime: ev.elapsedTime,
-            utteranceLang: utterance.lang,
-            utteranceVoice: utterance.voice?.name ?? "<default>",
-          },
-        );
+        log.error("[TTS] Utterance error", {
+          error: ev.error,
+          charIndex: ev.charIndex,
+          elapsedTime: ev.elapsedTime,
+          utteranceLang: utterance.lang,
+          utteranceVoice: utterance.voice?.name ?? "<default>",
+        });
       }
     };
 
@@ -1095,7 +1090,7 @@ export class TtsService {
     text: string,
     settings: SproutSettings["audio"],
   ): void {
-    this.speak(text, settings.defaultLanguage, settings, settings.autoDetectLanguage);
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings));
   }
 
   /**
@@ -1123,7 +1118,7 @@ export class TtsService {
         settings.defaultLanguage,
       );
     }
-    this.speak(prepared, settings.defaultLanguage, settings, settings.autoDetectLanguage);
+    this.speak(prepared, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings));
   }
 }
 

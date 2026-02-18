@@ -14,6 +14,11 @@ import type SproutPlugin from "../main";
 import type { Scope } from "./types";
 import { getGroupIndex, normaliseGroupPath } from "../indexes/group-index";
 import { log } from "../core/logger";
+import {
+  clearNode,
+  titleCaseGroupPath,
+  expandGroupAncestors,
+} from "../core/shared-utils";
 
 type Args = {
   app: App;
@@ -30,10 +35,7 @@ type Args = {
   rerender: () => void;
 };
 
-function clearNode(node: HTMLElement) {
-  while (node.firstChild) node.removeChild(node.firstChild);
-}
-
+/** Format a group path for display (alias for formatGroupDisplay without title-casing). */
 function prettifyGroupLabel(groupPath: string) {
   return groupPath.split("/").join(" / ");
 }
@@ -53,46 +55,7 @@ function ensureBasecoatStartedOnce() {
   window.__sprout_started = true;
 }
 
-function titleCaseToken(token: string): string {
-  if (!token) return token;
-  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
-}
 
-function titleCaseSegment(seg: string): string {
-  if (!seg) return seg;
-  return seg
-    .split(/([\s_-]+)/)
-    .map((part) => (/^[\s_-]+$/.test(part) ? part : titleCaseToken(part)))
-    .join("");
-}
-
-function normalizeGroupPathInput(path: string): string {
-  if (!path) return "";
-  return path
-    .split("/")
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-    .join("/");
-}
-
-function titleCaseGroupPath(path: string): string {
-  const normalized = normalizeGroupPathInput(path);
-  if (!normalized) return "";
-  return normalized
-    .split("/")
-    .map((seg) => titleCaseSegment(seg.trim()))
-    .filter(Boolean)
-    .join("/");
-}
-
-function expandGroupAncestors(path: string): string[] {
-  const canonical = titleCaseGroupPath(path);
-  if (!canonical) return [];
-  const parts = canonical.split("/").filter(Boolean);
-  const out: string[] = [];
-  for (let i = 1; i <= parts.length; i++) out.push(parts.slice(0, i).join("/"));
-  return out;
-}
 
 function makeIconButton(opts: {
   icon: string;
@@ -204,7 +167,7 @@ export function renderDeckMode(args: Args) {
 
   // Controls row
   const controlsRow = document.createElement("div");
-  controlsRow.className = "flex flex-row flex-wrap items-center gap-2";
+  controlsRow.className = "flex flex-row flex-wrap items-center gap-2 sprout-deck-controls-row";
   header.appendChild(controlsRow);
 
   const studyAllBtn = makeIconButton({
@@ -361,6 +324,7 @@ export function renderDeckMode(args: Args) {
   };
 
   const openPopover = () => {
+    if (popover.classList.contains("is-open")) return;
     popover.classList.add("is-open");
     comboTrigger.setAttribute("aria-expanded", "true");
     renderList();
@@ -392,7 +356,8 @@ export function renderDeckMode(args: Args) {
     if ((ev).button !== 0) return;
     ev.preventDefault();
     ev.stopPropagation();
-    openPopover();
+    if (popover.classList.contains("is-open")) closePopover();
+    else openPopover();
   });
 
   searchInput.addEventListener("input", () => {
@@ -425,7 +390,7 @@ export function renderDeckMode(args: Args) {
 
   // Controls order (grouped)
   const studyGroupButtons = document.createElement("div");
-  studyGroupButtons.className = "button-group";
+  studyGroupButtons.className = "button-group sprout-deck-study-buttons";
   studyGroupButtons.appendChild(studyAllBtn);
   studyGroupButtons.appendChild(comboTrigger);
   groupCombo.appendChild(studyGroupButtons);
@@ -448,7 +413,7 @@ export function renderDeckMode(args: Args) {
     },
   });
   const expandCollapseWrap = document.createElement("div");
-  expandCollapseWrap.className = "button-group";
+  expandCollapseWrap.className = "button-group sprout-deck-expand-buttons";
   expandCollapseWrap.appendChild(expandAllBtn);
 
   // Collapse all button

@@ -18,10 +18,10 @@ import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { initAOS, refreshAOS, resetAOS } from "../core/aos-loader";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
+import type { CardState, ReviewLogEntry } from "../core/store";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_ANALYTICS } from "../core/constants";
 import { placePopover, queryFirst, setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
-import type { CardState } from "../types/scheduler";
 import { isParentCard } from "../core/card-utils";
 import { StagePieCard } from "./pie-charts";
 import { FutureDueChart } from "./future-due-chart";
@@ -50,26 +50,6 @@ function localDayIndex(ts: number, timeZone: string) {
   const month = Number(map.get("month"));
   const day = Number(map.get("day"));
   return Math.floor(Date.UTC(year, month - 1, day) / MS_DAY);
-}
-
-function computeDueForecast(states: Record<string, CardState>, now: number, parentIds?: Set<string>) {
-  const byDays: Record<number, number> = { 1: 0, 7: 0, 30: 0, 90: 0 };
-  const thresholds = [1, 7, 30, 90];
-
-  for (const [id, st] of Object.entries(states || {})) {
-    if (!st || typeof st !== "object") continue;
-    if (parentIds && parentIds.has(id)) continue;
-    if ((st).stage === "suspended") continue;
-
-    const due = Number((st).due);
-    if (!Number.isFinite(due) || due <= 0) continue;
-
-    for (const d of thresholds) {
-      if (due <= now + d * MS_DAY) byDays[d] += 1;
-    }
-  }
-
-  return { byDays };
 }
 
 export class SproutAnalyticsView extends ItemView {
@@ -124,39 +104,39 @@ export class SproutAnalyticsView extends ItemView {
   async onClose() {
     try {
       this._header?.dispose?.();
-    } catch (e) { log.swallow("dispose header", e); }
+    } catch (e: unknown) { log.swallow("dispose header", e); }
     this._header = null;
     try {
       this._heatmapRoot?.unmount();
-    } catch (e) { log.swallow("unmount heatmap root", e); }
+    } catch (e: unknown) { log.swallow("unmount heatmap root", e); }
     this._heatmapRoot = null;
     try {
       this._stagePieRoot?.unmount();
-    } catch (e) { log.swallow("unmount stage pie root", e); }
+    } catch (e: unknown) { log.swallow("unmount stage pie root", e); }
     this._stagePieRoot = null;
     try {
       this._answerPieRoot?.unmount();
-    } catch (e) { log.swallow("unmount answer pie root", e); }
+    } catch (e: unknown) { log.swallow("unmount answer pie root", e); }
     this._answerPieRoot = null;
     try {
       this._futureDueRoot?.unmount();
-    } catch (e) { log.swallow("unmount future due root", e); }
+    } catch (e: unknown) { log.swallow("unmount future due root", e); }
     this._futureDueRoot = null;
     try {
       this._newCardsRoot?.unmount();
-    } catch (e) { log.swallow("unmount new cards root", e); }
+    } catch (e: unknown) { log.swallow("unmount new cards root", e); }
     this._newCardsRoot = null;
     try {
       this._stackedButtonsRoot?.unmount();
-    } catch (e) { log.swallow("unmount stacked buttons root", e); }
+    } catch (e: unknown) { log.swallow("unmount stacked buttons root", e); }
     this._stackedButtonsRoot = null;
     try {
       this._stabilityDistributionRoot?.unmount();
-    } catch (e) { log.swallow("unmount stability distribution root", e); }
+    } catch (e: unknown) { log.swallow("unmount stability distribution root", e); }
     this._stabilityDistributionRoot = null;
     try {
       this._forgettingCurveRoot?.unmount();
-    } catch (e) { log.swallow("unmount forgetting curve root", e); }
+    } catch (e: unknown) { log.swallow("unmount forgetting curve root", e); }
     this._forgettingCurveRoot = null;
     resetAOS();
     await Promise.resolve();
@@ -184,49 +164,49 @@ export class SproutAnalyticsView extends ItemView {
     if (this._heatmapRoot) {
       try {
         this._heatmapRoot.unmount();
-      } catch (e) { log.swallow("unmount heatmap root", e); }
+      } catch (e: unknown) { log.swallow("unmount heatmap root", e); }
       this._heatmapRoot = null;
     }
     if (this._stagePieRoot) {
       try {
         this._stagePieRoot.unmount();
-      } catch (e) { log.swallow("unmount stage pie root", e); }
+      } catch (e: unknown) { log.swallow("unmount stage pie root", e); }
       this._stagePieRoot = null;
     }
     if (this._answerPieRoot) {
       try {
         this._answerPieRoot.unmount();
-      } catch (e) { log.swallow("unmount answer pie root", e); }
+      } catch (e: unknown) { log.swallow("unmount answer pie root", e); }
       this._answerPieRoot = null;
     }
     if (this._futureDueRoot) {
       try {
         this._futureDueRoot.unmount();
-      } catch (e) { log.swallow("unmount future due root", e); }
+      } catch (e: unknown) { log.swallow("unmount future due root", e); }
       this._futureDueRoot = null;
     }
     if (this._newCardsRoot) {
       try {
         this._newCardsRoot.unmount();
-      } catch (e) { log.swallow("unmount new cards root", e); }
+      } catch (e: unknown) { log.swallow("unmount new cards root", e); }
       this._newCardsRoot = null;
     }
     if (this._stackedButtonsRoot) {
       try {
         this._stackedButtonsRoot.unmount();
-      } catch (e) { log.swallow("unmount stacked buttons root", e); }
+      } catch (e: unknown) { log.swallow("unmount stacked buttons root", e); }
       this._stackedButtonsRoot = null;
     }
     if (this._stabilityDistributionRoot) {
       try {
         this._stabilityDistributionRoot.unmount();
-      } catch (e) { log.swallow("unmount stability distribution root", e); }
+      } catch (e: unknown) { log.swallow("unmount stability distribution root", e); }
       this._stabilityDistributionRoot = null;
     }
     if (this._forgettingCurveRoot) {
       try {
         this._forgettingCurveRoot.unmount();
-      } catch (e) { log.swallow("unmount forgetting curve root", e); }
+      } catch (e: unknown) { log.swallow("unmount forgetting curve root", e); }
       this._forgettingCurveRoot = null;
     }
 
@@ -293,9 +273,6 @@ export class SproutAnalyticsView extends ItemView {
     const parentIds = new Set(allCards.filter(c => isParentCard(c)).map(c => String(c.id)));
     const states = this.plugin.store.data.states ?? {};
     const reviewLog = this.plugin.store.data.reviewLog ?? [];
-
-    const dueForecast = computeDueForecast(states, now, parentIds);
-    void dueForecast; // reserved for future use
 
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const dayMap = new Map<number, { count: number; totalMs: number }>();
@@ -387,8 +364,47 @@ export class SproutAnalyticsView extends ItemView {
     const streakMessages = ["One for the record books!", "Keep the streak rollin!", "Don't break the chain!", "You're on fire!"];
     const streakNote = streakMatches ? streakMessages[Math.floor(Math.random() * streakMessages.length)] : "All time";
 
+    this._renderKpiCards(body, applyAos, kpiBaseDelay, kpiStep,
+      currentStreak, longestStreak,
+      avgCardsPerDay, avgTimePerDayMinutes,
+      prevAvgCardsPerDay, prevAvgTimePerDayMinutes,
+      prevActiveDaysReviews, prevActiveDaysTime,
+      streakMatches, streakNote, todayIndex, dayMap,
+    );
+
+    this._renderCharts(body, applyAos, animationsEnabled,
+      heatmapDelay, heroRowDelay, graphsGridDelay, stabilityRowDelay,
+      events, cards, states, reviewLog, timezone, todayIndex, now, dayMap, dueByDay, parentIds,
+    );
+
+    this._renderStatsTable(body, applyAos, animationsEnabled,
+      statsCardDelay, rowBaseDelay, rowStep,
+      events, reviewLog, timezone, todayIndex, dayMap, dueByDay, parentIds,
+    );
+
+    if (animationsEnabled) refreshAOS();
+  }
+
+  private _renderKpiCards(
+    body: HTMLElement,
+    applyAos: (el: HTMLElement, delay?: number, animation?: string) => void,
+    kpiBaseDelay: number,
+    kpiStep: number,
+    currentStreak: number,
+    longestStreak: number,
+    avgCardsPerDay: number,
+    avgTimePerDayMinutes: number,
+    prevAvgCardsPerDay: number,
+    prevAvgTimePerDayMinutes: number,
+    prevActiveDaysReviews: number,
+    prevActiveDaysTime: number,
+    streakMatches: boolean,
+    streakNote: string,
+    todayIndex: number,
+    dayMap: Map<number, { count: number; totalMs: number }>,
+  ): void {
     const kpiRow = document.createElement("div");
-    kpiRow.className = "sprout-ana-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4";
+    kpiRow.className = "sprout-ana-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4";
     body.appendChild(kpiRow);
 
     const makeBadge = (opts: { text: string; bg?: string; color?: string; border?: string; live?: boolean; className?: string }) => {
@@ -511,6 +527,54 @@ export class SproutAnalyticsView extends ItemView {
     const cardsBadge = buildTrendBadge(formatTrend(avgCardsPerDay, prevAvgCardsPerDay, prevActiveDaysReviews));
     // FIX: closed template string correctly (this was causing esbuild to desync and later choke on `Showing ...`)
     makeCard("Daily cards", `${Math.round(avgCardsPerDay)}`, cardsBadge, "Last 7 days");
+  }
+
+
+  private _renderCharts(
+    body: HTMLElement,
+    applyAos: (el: HTMLElement, delay?: number, animation?: string) => void,
+    animationsEnabled: boolean,
+    heatmapDelay: number,
+    heroRowDelay: number,
+    graphsGridDelay: number,
+    stabilityRowDelay: number,
+    events: ReturnType<NonNullable<typeof this.plugin.store.getAnalyticsEvents>>,
+    cards: ReturnType<NonNullable<typeof this.plugin.store.getAllCards>>,
+    states: Record<string, CardState>,
+    reviewLog: ReviewLogEntry[],
+    timezone: string,
+    todayIndex: number,
+    now: number,
+    dayMap: Map<number, { count: number; totalMs: number }>,
+    dueByDay: Map<number, number>,
+    parentIds: Set<string>,
+  ): void {
+    const renderChartMountFallback = (host: HTMLElement, chartName: string, error: unknown) => {
+      log.error(`failed to mount analytics chart (${chartName})`, error);
+      host.replaceChildren();
+      const card = document.createElement("div");
+      card.className = "bc card sprout-ana-card p-6 flex flex-col items-center justify-center gap-2 text-center";
+      const titleEl = document.createElement("div");
+      titleEl.className = "bc font-semibold text-foreground";
+      titleEl.textContent = `${chartName} unavailable`;
+      const hintEl = document.createElement("div");
+      hintEl.className = "bc text-sm text-muted-foreground";
+      hintEl.textContent = "Unable to render this chart in this environment.";
+      card.appendChild(titleEl);
+      card.appendChild(hintEl);
+      host.appendChild(card);
+    };
+
+    const mountChartRoot = (host: HTMLElement, chartName: string, renderFn: (root: ReactRoot) => void): ReactRoot | null => {
+      try {
+        const rootNode = createRoot(host);
+        renderFn(rootNode);
+        return rootNode;
+      } catch (error: unknown) {
+        renderChartMountFallback(host, chartName, error);
+        return null;
+      }
+    };
 
     const heroRow = document.createElement("div");
     heroRow.className = "grid grid-cols-1 xl:grid-cols-2 gap-4";
@@ -521,18 +585,19 @@ export class SproutAnalyticsView extends ItemView {
     applyAos(heatmapHost, heatmapDelay);
     heroRow.appendChild(heatmapHost);
 
-    this._heatmapRoot = createRoot(heatmapHost);
     const reviewEvents = events.filter((ev) => ev && ev.kind === "review");
-    this._heatmapRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "Review Calendar Heatmap" },
-        React.createElement(ReviewCalendarHeatmap, {
-          revlog: reviewEvents,
-          timezone,
-          rangeDays: 365,
-          filters: {},
-        }),
-      ),
-    );
+    this._heatmapRoot = mountChartRoot(heatmapHost, "Review Calendar Heatmap", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "Review Calendar Heatmap" },
+          React.createElement(ReviewCalendarHeatmap, {
+            revlog: reviewEvents,
+            timezone,
+            rangeDays: 365,
+            filters: {},
+          }),
+        ),
+      );
+    });
 
     // 2x2 graphs grid
     const graphsGrid = document.createElement("div");
@@ -544,76 +609,82 @@ export class SproutAnalyticsView extends ItemView {
     const stagePieHost = document.createElement("div");
     stagePieHost.className = "h-full";
     graphsGrid.appendChild(stagePieHost);
-    this._stagePieRoot = createRoot(stagePieHost);
-    this._stagePieRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "Card Stage Distribution" },
-        React.createElement(StagePieCard, { cards, states, enableAnimations: animationsEnabled }),
-      ),
-    );
+    this._stagePieRoot = mountChartRoot(stagePieHost, "Card Stage Distribution", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "Card Stage Distribution" },
+          React.createElement(StagePieCard, { cards, states, enableAnimations: animationsEnabled }),
+        ),
+      );
+    });
 
     // Top-right: Study forecast
     const futureDueHost = document.createElement("div");
     futureDueHost.className = "h-full";
     graphsGrid.appendChild(futureDueHost);
-    this._futureDueRoot = createRoot(futureDueHost);
 
     const futureCards = cards.map((c) => {
-      const st = states?.[String(c.id)] ?? {};
+      const stateData = (states[String(c.id)] as Record<string, unknown> | undefined) || {};
+      const due = stateData.due as number | undefined;
+      const stage = stateData.stage as string | undefined;
       return {
         id: String(c.id),
-        due: Number(st?.due ?? 0) || null,
-        suspended: String(st?.stage ?? "") === "suspended",
-        stage: String(st?.stage ?? "new"),
+        due: Number(due ?? 0) || null,
+        suspended: String(stage ?? "") === "suspended",
+        stage: String(stage ?? "new"),
         type: String(c?.type ?? ""),
         sourceNotePath: String(c?.sourceNotePath ?? ""),
         groups: Array.isArray(c?.groups) ? c.groups : [],
       };
     });
 
-    this._futureDueRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "Study Forecast" },
-        React.createElement(FutureDueChart, {
-          cards: futureCards,
-          nowMs: now,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          horizonDays: 30,
-          enableAnimations: animationsEnabled,
-        }),
-      ),
-    );
+    this._futureDueRoot = mountChartRoot(futureDueHost, "Study Forecast", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "Study Forecast" },
+          React.createElement(FutureDueChart, {
+            cards: futureCards,
+            nowMs: now,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            horizonDays: 30,
+            enableAnimations: animationsEnabled,
+          }),
+        ),
+      );
+    });
 
     // Bottom-left: Answer buttons histogram
     const stackedButtonsHost = document.createElement("div");
     stackedButtonsHost.className = "h-full";
     graphsGrid.appendChild(stackedButtonsHost);
-    this._stackedButtonsRoot = createRoot(stackedButtonsHost);
-    this._stackedButtonsRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "Answer Buttons" },
-        React.createElement(StackedReviewButtonsChart, {
-          events,
-          cards,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          days: 30,
-          enableAnimations: animationsEnabled,
-        }),
-      ),
-    );
+    this._stackedButtonsRoot = mountChartRoot(stackedButtonsHost, "Answer Buttons", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "Answer Buttons" },
+          React.createElement(StackedReviewButtonsChart, {
+            events,
+            cards,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            days: 30,
+            enableAnimations: animationsEnabled,
+          }),
+        ),
+      );
+    });
 
     // Bottom-right: New cards per day
     const newCardsHost = document.createElement("div");
     newCardsHost.className = "h-full";
     graphsGrid.appendChild(newCardsHost);
-    this._newCardsRoot = createRoot(newCardsHost);
-    this._newCardsRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "New Cards Per Day" },
-        React.createElement(NewCardsPerDayChart, {
-          cards,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          days: 30,
-          enableAnimations: animationsEnabled,
-        }),
-      ),
-    );
+    this._newCardsRoot = mountChartRoot(newCardsHost, "New Cards Per Day", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "New Cards Per Day" },
+          React.createElement(NewCardsPerDayChart, {
+            cards,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            days: 30,
+            enableAnimations: animationsEnabled,
+          }),
+        ),
+      );
+    });
 
     // Stability Distribution + Placeholder
     const stabilityRow = document.createElement("div");
@@ -624,37 +695,56 @@ export class SproutAnalyticsView extends ItemView {
     const stabilityDistributionHost = document.createElement("div");
     stabilityDistributionHost.className = "h-full";
     stabilityRow.appendChild(stabilityDistributionHost);
-    this._stabilityDistributionRoot = createRoot(stabilityDistributionHost);
-    this._stabilityDistributionRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "Stability Distribution" },
-        React.createElement(StabilityDistributionChart, {
-          cards: cards.map(c => ({ ...c, groups: c.groups ?? undefined })),
-          states,
-          enableAnimations: animationsEnabled,
-        }),
-      ),
-    );
+    this._stabilityDistributionRoot = mountChartRoot(stabilityDistributionHost, "Stability Distribution", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "Stability Distribution" },
+          React.createElement(StabilityDistributionChart, {
+            cards: cards.map(c => ({ ...c, groups: c.groups ?? undefined })),
+            states,
+            enableAnimations: animationsEnabled,
+          }),
+        ),
+      );
+    });
 
     const forgettingCurveHost = document.createElement("div");
     forgettingCurveHost.className = "h-full";
     stabilityRow.appendChild(forgettingCurveHost);
-    this._forgettingCurveRoot = createRoot(forgettingCurveHost);
-    this._forgettingCurveRoot.render(
-      React.createElement(ChartErrorBoundary, { chartName: "Forgetting Curve" },
-        React.createElement(ForgettingCurveChart, {
-          cards,
-          states,
-          reviewLog,
-          scheduler: this.plugin.settings?.scheduling,
-          nowMs: now,
-          enableAnimations: animationsEnabled,
-        }),
-      ),
-    );
+    this._forgettingCurveRoot = mountChartRoot(forgettingCurveHost, "Forgetting Curve", (rootNode) => {
+      rootNode.render(
+        React.createElement(ChartErrorBoundary, { chartName: "Forgetting Curve" },
+          React.createElement(ForgettingCurveChart, {
+            cards,
+            states,
+            reviewLog,
+            scheduler: this.plugin.settings?.scheduling,
+            nowMs: now,
+            enableAnimations: animationsEnabled,
+          }),
+        ),
+      );
+    });
+  }
 
+
+  private _renderStatsTable(
+    body: HTMLElement,
+    applyAos: (el: HTMLElement, delay?: number, animation?: string) => void,
+    animationsEnabled: boolean,
+    statsCardDelay: number,
+    rowBaseDelay: number,
+    rowStep: number,
+    events: ReturnType<NonNullable<typeof this.plugin.store.getAnalyticsEvents>>,
+    reviewLog: ReviewLogEntry[],
+    timezone: string,
+    todayIndex: number,
+    dayMap: Map<number, { count: number; totalMs: number }>,
+    dueByDay: Map<number, number>,
+    parentIds: Set<string>,
+  ): void {
     // Daily stats table card
     const statsCard = document.createElement("div");
-    statsCard.className = "card sprout-ana-card p-4 flex flex-col gap-3 sprout-analytics-stats-card";
+    statsCard.className = "card sprout-ana-card p-4 flex flex-col gap-3 sprout-analytics-stats-card hidden md:flex";
     applyAos(statsCard, statsCardDelay);
     body.appendChild(statsCard);
 
@@ -679,7 +769,7 @@ export class SproutAnalyticsView extends ItemView {
 
     // Build per-day rating counts
     const ratingsByDay = new Map<number, { again: number; hard: number; good: number; easy: number }>();
-    for (const ev of reviewEvents) {
+    for (const ev of events) {
       const at = Number(ev.at);
       if (!Number.isFinite(at)) continue;
       if (ev.kind !== "review") continue;
@@ -923,7 +1013,7 @@ export class SproutAnalyticsView extends ItemView {
       rowsPopover.classList.remove("is-open");
       try {
         sproutWrapper.remove();
-      } catch (e) { log.swallow("remove rows menu wrapper", e); }
+      } catch (e: unknown) { log.swallow("remove rows menu wrapper", e); }
       rowsOpen = false;
     };
 
@@ -1190,4 +1280,5 @@ export class SproutAnalyticsView extends ItemView {
 
     if (animationsEnabled) refreshAOS();
   }
+
 }

@@ -31,7 +31,7 @@
   /* Theme-aware: inverted surface/text — !important to beat any theme overrides */
   background-color: var(--foreground) !important;
   color: var(--background) !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   -webkit-font-smoothing: antialiased !important;
 }
 
@@ -73,7 +73,7 @@
   line-height: 1.4;
   background-color: var(--foreground);
   color: var(--background);
-  border: 1px solid var(--border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-shadow: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -116,7 +116,7 @@
 .theme-dark .sprout [data-tooltip]::after {
   background-color: var(--foreground) !important;
   color: var(--background) !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
 /* ---- Settings tooltips: allow overflow and ensure visibility ---- */
@@ -153,6 +153,6 @@
 
   background-color: var(--foreground);
   color: var(--background);
-  border: 1px solid var(--border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   -webkit-font-smoothing: antialiased;
 }

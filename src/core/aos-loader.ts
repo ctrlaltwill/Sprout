@@ -1,4 +1,15 @@
 /**
+ * @file src/core/aos-loader.ts
+ * @summary Lazy-loads and initialises the AOS (Animate On Scroll) library
+ * with error suppression for querySelector errors that don't affect functionality.
+ *
+ * @exports
+ *   - initAOS     — initialise AOS with default config
+ *   - resetAOS    — refresh AOS after DOM changes
+ *   - removeAOS   — shut down AOS and clean up global listeners
+ */
+
+/**
  * AOS loader with error suppression
  * The querySelector errors don't break anything - we just hide them
  */
@@ -17,6 +28,36 @@ let AOS: AOSModule | null = null;
 let AOS_INITIALIZED = false;
 let AOS_LOAD_PROMISE: Promise<void> | null = null;
 let AOS_LOAD_FAILED = false;
+
+function isMobileAOSDisabled(): boolean {
+  // Disable AOS on phone-sized mobile devices; keep it for iPad / tablet / desktop.
+  // Obsidian adds body.is-mobile for all mobile devices (phones + tablets).
+  // We distinguish phones from iPads via viewport width (phones < 768px).
+  if (
+    typeof document !== "undefined" &&
+    document.body?.classList.contains("is-mobile") &&
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 767px)").matches
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function forceRevealAosElements(root: ParentNode = document): void {
+  let elements: HTMLElement[] = [];
+  try {
+    elements = Array.from(root.querySelectorAll<HTMLElement>("[data-aos]"));
+  } catch (e) {
+    log.swallow("forceRevealAosElements query", e);
+    return;
+  }
+
+  for (const el of elements) {
+    el.classList.remove("aos-init", "aos-animate");
+    el.classList.add("sprout-aos-fallback");
+  }
+}
 
 // Suppress AOS querySelector errors (removable handler)
 function aosErrorHandler(event: ErrorEvent) {
@@ -54,6 +95,10 @@ function loadAOS(): Promise<void> {
 void loadAOS();
 
 export function initAOS(config?: Record<string, unknown>): void {
+  if (isMobileAOSDisabled()) {
+    forceRevealAosElements(document);
+    return;
+  }
   if (AOS_INITIALIZED || AOS_LOAD_FAILED) return;
   if (!AOS) {
     void loadAOS().then(() => {
@@ -90,6 +135,10 @@ export function initAOS(config?: Record<string, unknown>): void {
 }
 
 export function refreshAOS(): void {
+  if (isMobileAOSDisabled()) {
+    forceRevealAosElements(document);
+    return;
+  }
   if (AOS_LOAD_FAILED) return;
   if (!AOS_INITIALIZED) {
     initAOS();
@@ -122,6 +171,11 @@ export function cascadeAOSOnLoad(
     overwriteDelays?: boolean;
   }
 ): number {
+  if (isMobileAOSDisabled()) {
+    forceRevealAosElements(root);
+    return 0;
+  }
+
   const stepMs = Number.isFinite(options?.stepMs) ? Number(options?.stepMs) : 0;
   const baseDelayMs = Number.isFinite(options?.baseDelayMs) ? Number(options?.baseDelayMs) : 0;
   const durationMs = Number.isFinite(options?.durationMs) ? Number(options?.durationMs) : AOS_DURATION;
@@ -170,6 +224,20 @@ export function cascadeAOSOnLoad(
     });
   });
 
+  // Safety-net: if any element is still invisible after animations should
+  // have completed (e.g. AOS CSS failed to load, or a mobile quirk hides
+  // elements), force-reveal them via the fallback class.
+  const safetyDelayMs = Math.max(600, Math.floor(maxDelay + durationMs + 300));
+  setTimeout(() => {
+    for (const el of els) {
+      if (!el.isConnected) continue;
+      const cs = getComputedStyle(el);
+      if (cs.opacity === "0" || cs.visibility === "hidden") {
+        el.classList.add("sprout-aos-fallback");
+      }
+    }
+  }, safetyDelayMs);
+
   return maxDelay;
 }
 
@@ -177,6 +245,11 @@ export function getAOS() { return AOS; }
 
 export function resetAOS(): void { 
   AOS_INITIALIZED = false;
+
+  if (isMobileAOSDisabled()) {
+    forceRevealAosElements(document);
+    return;
+  }
   
   // Remove AOS classes from all elements to allow re-animation
   try {

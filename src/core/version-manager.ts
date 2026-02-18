@@ -97,8 +97,7 @@ export function compareVersions(v1: string, v2: string): number {
  */
 export function getLastSeenVersion(): string | null {
   try {
-    // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-    return localStorage.getItem(STORAGE_KEY_LAST_VERSION);
+    return globalThis.localStorage.getItem(STORAGE_KEY_LAST_VERSION);
   } catch (e) {
     console.error("Failed to get last seen version:", e);
     return null;
@@ -110,8 +109,7 @@ export function getLastSeenVersion(): string | null {
  */
 function getDismissedVersions(): Set<string> {
   try {
-    // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-    const raw = localStorage.getItem(STORAGE_KEY_DISMISSED_VERSIONS);
+    const raw = globalThis.localStorage.getItem(STORAGE_KEY_DISMISSED_VERSIONS);
     if (!raw) return new Set();
     
     const data = JSON.parse(raw) as unknown;
@@ -128,8 +126,7 @@ function getDismissedVersions(): Set<string> {
  */
 function saveDismissedVersions(versions: Set<string>): void {
   try {
-    // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-    localStorage.setItem(STORAGE_KEY_DISMISSED_VERSIONS, JSON.stringify([...versions]));
+    globalThis.localStorage.setItem(STORAGE_KEY_DISMISSED_VERSIONS, JSON.stringify([...versions]));
   } catch (e) {
     console.error("Failed to save dismissed versions:", e);
   }
@@ -157,8 +154,7 @@ export function checkForVersionUpgrade(currentVersion: string): {
   if (!lastSeen) {
     // Save current version as last seen so we can track future upgrades
     try {
-      // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-      localStorage.setItem(STORAGE_KEY_LAST_VERSION, currentVersion);
+      globalThis.localStorage.setItem(STORAGE_KEY_LAST_VERSION, currentVersion);
     } catch (e) {
       console.error("Failed to save last seen version:", e);
     }
@@ -196,8 +192,7 @@ export function markVersionSeen(version: string, dontShowAgain: boolean = false)
     // Only update last seen and dismissed list if user chose "don't show again"
     // This allows the modal to keep showing on every load until dismissed
     if (dontShowAgain) {
-      // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-      localStorage.setItem(STORAGE_KEY_LAST_VERSION, version);
+      globalThis.localStorage.setItem(STORAGE_KEY_LAST_VERSION, version);
       const dismissed = getDismissedVersions();
       dismissed.add(version);
       saveDismissedVersions(dismissed);
@@ -213,10 +208,8 @@ export function markVersionSeen(version: string, dontShowAgain: boolean = false)
  */
 export function clearVersionTracking(): void {
   try {
-    // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-    localStorage.removeItem(STORAGE_KEY_LAST_VERSION);
-    // eslint-disable-next-line no-restricted-globals -- version tracking is global, not vault-specific
-    localStorage.removeItem(STORAGE_KEY_DISMISSED_VERSIONS);
+    globalThis.localStorage.removeItem(STORAGE_KEY_LAST_VERSION);
+    globalThis.localStorage.removeItem(STORAGE_KEY_DISMISSED_VERSIONS);
   } catch (e) {
     console.error("Failed to clear version tracking:", e);
   }

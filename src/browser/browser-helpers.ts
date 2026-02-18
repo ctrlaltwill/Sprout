@@ -127,10 +127,7 @@ export const CLOZE_ANSWER_HELP =
 
 // ─── DOM utilities ───────────────────────────────────────────────────
 
-/** Remove all child nodes from an element. */
-export function clearNode(node: HTMLElement) {
-  while (node.firstChild) node.removeChild(node.firstChild);
-}
+export { clearNode } from "../core/shared-utils";
 
 /**
  * Basecoat table defaults enforce `white-space: nowrap !important` on td/th.
@@ -180,75 +177,16 @@ export function fmtLocation(path: string | null | undefined): string {
   return noExt.split("/").filter(Boolean).join(" / ");
 }
 
-/** Title-case a single word token. */
-export function titleCaseToken(token: string): string {
-  if (!token) return token;
-  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
-}
-
-/** Title-case a path segment (preserving separators). */
-export function titleCaseSegment(seg: string): string {
-  if (!seg) return seg;
-  return seg
-    .split(/([\s_-]+)/)
-    .map((part) => (/^[\s_-]+$/.test(part) ? part : titleCaseToken(part)))
-    .join("");
-}
-
-/** Title-case an entire slash-delimited group path. */
-export function titleCaseGroupPath(path: string): string {
-  const normalized = normalizeGroupPathInput(path);
-  if (!normalized) return "";
-  return normalized
-    .split("/")
-    .map((seg) => titleCaseSegment(seg.trim()))
-    .filter(Boolean)
-    .join("/");
-}
-
-/** Normalise a group path (trim segments, collapse empty). */
-export function normalizeGroupPathInput(path: string): string {
-  if (!path) return "";
-  return path
-    .split("/")
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-    .join("/");
-}
-
-/** Format a group path for display: "A/B/C" → "A / B / C" (title-cased). */
-export function formatGroupDisplay(path: string): string {
-  const canonical = titleCaseGroupPath(path);
-  if (!canonical) return "";
-  return canonical.split("/").join(" / ");
-}
-
-/** Expand a group path to all ancestor paths (for hierarchy). */
-export function expandGroupAncestors(path: string): string[] {
-  const canonical = titleCaseGroupPath(path);
-  if (!canonical) return [];
-  const parts = canonical.split("/").filter(Boolean);
-  const out: string[] = [];
-  for (let i = 1; i <= parts.length; i++) out.push(parts.slice(0, i).join("/"));
-  return out;
-}
-
-/** Parse a comma-delimited input string into an array of normalised group paths. */
-export function parseGroupsInput(raw: string): string[] {
-  return String(raw ?? "")
-    .split(",")
-    .map((s) => titleCaseGroupPath(s.trim()))
-    .filter(Boolean);
-}
-
-/** Convert an array of groups back to a comma-delimited input string. */
-export function groupsToInput(groups: unknown): string {
-  if (!Array.isArray(groups)) return "";
-  return groups
-    .map((g: unknown) => titleCaseGroupPath(String(g).trim()))
-    .filter(Boolean)
-    .join(", ");
-}
+export {
+  titleCaseToken,
+  titleCaseSegment,
+  titleCaseGroupPath,
+  normalizeGroupPathInput,
+  formatGroupDisplay,
+  expandGroupAncestors,
+  parseGroupsInput,
+  groupsToInput,
+} from "../core/shared-utils";
 
 // ─── Delimited card block building ───────────────────────────────────
 

@@ -16,7 +16,7 @@
 import { Notice, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
-import { normalizeCardOptions } from "../core/store";
+import { normalizeCardOptions, getCorrectIndices } from "../core/store";
 import { log } from "../core/logger";
 import { placePopover, queryFirst, replaceChildrenWithHTML, setCssProps } from "../core/ui";
 import { coerceGroups } from "../indexes/group-format";
@@ -505,14 +505,14 @@ function makeMcqAnswerCell(
   }
 
   const options = normalizeCardOptions(card.options);
-  const correctIndex = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : 0;
+  const correctIdxSet = new Set(getCorrectIndices(card));
 
   const wrap = document.createElement("div");
   wrap.className = "bc flex flex-col gap-1 sprout-browser-mcq-cell";
   const h = `${ctx.editorHeightPx}px`;
   setCssProps(wrap, "--sprout-editor-height", h);
 
-  type McqRow = { row: HTMLElement; input: HTMLInputElement; isCorrect: boolean };
+  type McqRow = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement };
   const rows: McqRow[] = [];
 
   const key = `${card.id}:answer`;
@@ -524,11 +524,11 @@ function makeMcqAnswerCell(
 
     // Collect current values
     const liveOptions: string[] = [];
-    let liveCorrectIndex = 0;
+    const liveCorrectIndices: number[] = [];
     for (const r of rows) {
       const val = r.input.value.trim();
       if (!val) continue;
-      if (r.isCorrect) liveCorrectIndex = liveOptions.length;
+      if (r.checkbox.checked) liveCorrectIndices.push(liveOptions.length);
       liveOptions.push(val);
     }
 
@@ -537,11 +537,13 @@ function makeMcqAnswerCell(
 
     // Check if anything changed
     const origOptions = normalizeCardOptions(card.options);
-    const origCorrect = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : 0;
+    const origCorrectSet = new Set(getCorrectIndices(card));
+    const liveCorrectSet = new Set(liveCorrectIndices);
     if (
       liveOptions.length === origOptions.length &&
       liveOptions.every((v, i) => v === origOptions[i]) &&
-      liveCorrectIndex === origCorrect
+      liveCorrectSet.size === origCorrectSet.size &&
+      [...liveCorrectSet].every((i) => origCorrectSet.has(i))
     ) return;
 
     saving = true;
@@ -549,7 +551,8 @@ function makeMcqAnswerCell(
     try {
       const draft = JSON.parse(JSON.stringify(card)) as CardRecord;
       draft.options = liveOptions;
-      draft.correctIndex = liveCorrectIndex;
+      draft.correctIndex = liveCorrectIndices[0] ?? 0;
+      draft.correctIndices = liveCorrectIndices.length > 1 ? liveCorrectIndices : null;
       await ctx.writeCardToMarkdown(draft);
     } catch (err: unknown) {
       new Notice(`${err instanceof Error ? err.message : String(err)}`);
@@ -566,10 +569,9 @@ function makeMcqAnswerCell(
       if (r.input === document.activeElement) continue;
       if (r.input.value.trim() === "") toRemove.push(r);
     }
-    // Keep at least 1 row (the correct one)
+    // Keep at least 1 row
     const remaining = rows.length - toRemove.length;
     if (remaining < 1) {
-      // Keep the first empty row to meet minimum
       if (toRemove.length > 0) toRemove.shift();
     }
     for (const r of toRemove) {
@@ -578,33 +580,33 @@ function makeMcqAnswerCell(
       rows.splice(idx, 1);
       r.row.remove();
     }
-    // Renumber labels
-    let wrongNum = 1;
-    for (const r of rows) {
-      const label = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
-      if (label) label.textContent = r.isCorrect ? "✓" : String(wrongNum++);
-    }
   };
 
   const addMcqInputRow = (value: string, isCorrect: boolean) => {
     const row = document.createElement("div");
     row.className = "bc flex items-center gap-1 sprout-browser-mcq-row";
 
-    const label = document.createElement("span");
-    label.className = "bc text-xs font-medium shrink-0 w-4 text-center sprout-mcq-cell-label";
-    label.textContent = isCorrect ? "✓" : "";
-    if (isCorrect) label.classList.add("text-green-600", "sprout-mcq-correct-label");
-    row.appendChild(label);
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = isCorrect;
+    checkbox.className = "bc sprout-mcq-correct-checkbox";
+    checkbox.setAttribute("data-tooltip", "Mark as correct answer");
+    checkbox.setAttribute("data-tooltip-position", "top");
+    row.appendChild(checkbox);
+
+    checkbox.addEventListener("change", () => {
+      // Commit on checkbox toggle so the change is persisted
+      void commitMcq();
+    });
 
     const input = document.createElement("input");
     input.type = "text";
     input.className = "bc input flex-1 text-sm sprout-input-fixed sprout-browser-mcq-input";
-    input.placeholder = isCorrect ? "Correct answer" : "Wrong option";
+    input.placeholder = "Answer option";
     input.value = value;
-    if (isCorrect) input.classList.add("sprout-mcq-correct-input");
     row.appendChild(input);
 
-    const entry: McqRow = { row, input, isCorrect };
+    const entry: McqRow = { row, input, checkbox };
     rows.push(entry);
 
     input.addEventListener("blur", () => {
@@ -622,7 +624,7 @@ function makeMcqAnswerCell(
 
   // Seed with existing options
   for (let i = 0; i < options.length; i++) {
-    addMcqInputRow(options[i] || "", i === correctIndex);
+    addMcqInputRow(options[i] || "", correctIdxSet.has(i));
   }
   if (options.length === 0) {
     addMcqInputRow("", true);
@@ -632,19 +634,13 @@ function makeMcqAnswerCell(
   const addInput = document.createElement("input");
   addInput.type = "text";
   addInput.className = "bc input w-full text-xs sprout-input-fixed sprout-browser-mcq-add";
-  addInput.placeholder = "+ add wrong option";
+  addInput.placeholder = "+ add option";
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
       ev.preventDefault();
       const val = addInput.value.trim();
       if (!val) return;
       const entry = addMcqInputRow(val, false);
-      // Renumber
-      let wrongNum = 1;
-      for (const r of rows) {
-        const lbl = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
-        if (lbl) lbl.textContent = r.isCorrect ? "✓" : String(wrongNum++);
-      }
       addInput.value = "";
       entry.input.focus();
     }
@@ -653,11 +649,6 @@ function makeMcqAnswerCell(
     const val = addInput.value.trim();
     if (!val) return;
     addMcqInputRow(val, false);
-    let wrongNum = 1;
-    for (const r of rows) {
-      const lbl = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
-      if (lbl) lbl.textContent = r.isCorrect ? "✓" : String(wrongNum++);
-    }
     addInput.value = "";
     // Commit since focus left the cell
     setTimeout(() => {
@@ -666,13 +657,6 @@ function makeMcqAnswerCell(
     }, 0);
   });
   wrap.appendChild(addInput);
-
-  // Set initial labels
-  let wrongNum = 1;
-  for (const r of rows) {
-    const lbl = r.row.querySelector<HTMLElement>(".sprout-mcq-cell-label");
-    if (lbl && !r.isCorrect) lbl.textContent = String(wrongNum++);
-  }
 
   td.appendChild(wrap);
   return td;

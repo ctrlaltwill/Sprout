@@ -1,4 +1,13 @@
 /**
+ * @file src/core/tooltip-positioner.ts
+ * @summary Runtime tooltip clamping for header tooltips to prevent overflow
+ * outside the workspace leaf in split-pane layouts.
+ *
+ * @exports
+ *   - TooltipPositioner — class that observes tooltip-bearing elements and adjusts placement
+ */
+
+/**
  * Tooltip Positioner
  *
  * Tooltips are primarily positioned with CSS (pseudo-elements).

@@ -36,7 +36,7 @@ See [[Editing Cards]].
 
 ## Organize and format
 
-- Use [[Groups]] to organize cards.
+- Use groups to organize cards.
 - Use [[Card Formatting]] for markdown, math, links, and images.
 
 ## Important behavior

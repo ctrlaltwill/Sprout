@@ -13,7 +13,7 @@
 
 import { Notice, Platform, setIcon } from "obsidian";
 import type { CardRecord } from "../core/store";
-import { normalizeCardOptions } from "../core/store";
+import { normalizeCardOptions, getCorrectIndices } from "../core/store";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
@@ -563,78 +563,60 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     const card = cards[0];
     mcqOriginalString = buildAnswerOrOptionsFor(card);
     const options = normalizeCardOptions(card.options);
-    const correctIndex = Number.isFinite(card.correctIndex) ? card.correctIndex! : 0;
-    const correctValue = options[correctIndex] ?? "";
-    const wrongValues = options.filter((_, idx) => idx !== correctIndex);
+    const correctIdxSet = new Set(getCorrectIndices(card));
 
     const container = document.createElement("div");
     container.className = "flex flex-col gap-1";
 
     const label = document.createElement("label");
-    label.className = "text-sm font-medium";
-    label.textContent = "Answer";
+    label.className = "text-sm font-medium inline-flex items-center gap-1";
+    label.textContent = "Answers and options";
+    const mcqInfoIcon = document.createElement("span");
+    mcqInfoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+    mcqInfoIcon.setAttribute("data-tooltip", "Check the box next to each correct answer. At least one correct and one incorrect option required.");
+    mcqInfoIcon.setAttribute("data-tooltip-position", "top");
+    setIcon(mcqInfoIcon, "info");
+    label.appendChild(mcqInfoIcon);
     container.appendChild(label);
 
-    const correctWrapper = document.createElement("div");
-    correctWrapper.className = "flex flex-col gap-1";
-    const correctLabel = document.createElement("div");
-    correctLabel.className = "text-xs text-muted-foreground inline-flex items-center gap-1";
-    correctLabel.textContent = "Correct answer";
-    correctLabel.appendChild(Object.assign(document.createElement("span"), { className: "text-destructive", textContent: "*" }));
-    correctWrapper.appendChild(correctLabel);
-    const correctInput = document.createElement("input");
-    correctInput.type = "text";
-    correctInput.className = "input w-full sprout-input-fixed";
-    correctInput.placeholder = "Enter the correct answer choice";
-    correctInput.value = correctValue;
-    correctWrapper.appendChild(correctInput);
-    container.appendChild(correctWrapper);
+    const optionsContainer = document.createElement("div");
+    optionsContainer.className = "flex flex-col gap-2";
+    container.appendChild(optionsContainer);
 
-    const wrongLabel = document.createElement("div");
-    wrongLabel.className = "text-xs text-muted-foreground inline-flex items-center gap-1";
-    wrongLabel.textContent = "Wrong options";
-    wrongLabel.appendChild(Object.assign(document.createElement("span"), { className: "text-destructive", textContent: "*" }));
-    container.appendChild(wrongLabel);
-
-    const wrongContainer = document.createElement("div");
-    wrongContainer.className = "flex flex-col gap-2";
-    container.appendChild(wrongContainer);
-
-    const wrongRows: Array<{ row: HTMLElement; input: HTMLInputElement; removeBtn: HTMLButtonElement }> = [];
-    const addInput = document.createElement("input");
-    addInput.type = "text";
-    addInput.className = "input flex-1 text-sm sprout-input-fixed";
-    const updateAddPlaceholder = () => {
-      const label = wrongRows.length ? "Add another incorrect answer choice" : "Enter an incorrect answer choice";
-      addInput.placeholder = label;
-    };
-
-    const addInputWrap = document.createElement("div");
-    addInputWrap.className = "flex items-center gap-2";
-    addInputWrap.appendChild(addInput);
-    container.appendChild(addInputWrap);
+    type OptionRowEntry = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
+    const optionRows: OptionRowEntry[] = [];
 
     const updateRemoveButtons = () => {
-      const disable = wrongRows.length <= 1;
-      for (const entry of wrongRows) {
+      const disable = optionRows.length <= 2;
+      for (const entry of optionRows) {
         entry.removeBtn.disabled = disable;
         entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
         entry.removeBtn.classList.toggle("is-disabled", disable);
       }
     };
 
-    const addWrongRow = (value = "") => {
+    const addOptionRow = (value: string, isCorrect: boolean) => {
       const row = document.createElement("div");
-      row.className = "flex items-center gap-2";
+      row.className = "flex items-center gap-2 sprout-edit-mcq-option-row";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = isCorrect;
+      checkbox.className = "sprout-mcq-correct-checkbox";
+      checkbox.setAttribute("data-tooltip", "Mark as correct answer");
+      checkbox.setAttribute("data-tooltip-position", "top");
+      row.appendChild(checkbox);
+
       const input = document.createElement("input");
       input.type = "text";
       input.className = "input flex-1 text-sm sprout-input-fixed";
-      input.placeholder = "Enter an incorrect answer choice";
+      input.placeholder = "Enter an answer option";
       input.value = value;
       row.appendChild(input);
+
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "inline-flex items-center justify-center sprout-remove-btn-ghost";
+      removeBtn.className = "inline-flex items-center justify-center h-9 w-9 p-0 sprout-remove-btn-ghost";
       removeBtn.setAttribute("data-tooltip", "Remove option");
       removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
@@ -644,56 +626,73 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       removeBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        if (wrongRows.length <= 1) return;
-        const idx = wrongRows.findIndex((entry) => entry.input === input);
+        if (optionRows.length <= 2) return;
+        const idx = optionRows.findIndex((entry) => entry.input === input);
         if (idx === -1) return;
-        wrongRows[idx].row.remove();
-        wrongRows.splice(idx, 1);
+        optionRows[idx].row.remove();
+        optionRows.splice(idx, 1);
         updateRemoveButtons();
       });
       row.appendChild(removeBtn);
-      wrongContainer.appendChild(row);
-      wrongRows.push({ row, input, removeBtn });
+
+      optionsContainer.appendChild(row);
+      optionRows.push({ row, input, checkbox, removeBtn });
       updateRemoveButtons();
-      updateAddPlaceholder();
     };
 
-    const commitAddInput = () => {
-      const value = addInput.value.trim();
-      if (!value) return;
-      addWrongRow(value);
-      addInput.value = "";
-      addInput.focus();
-    };
+    // Seed with existing options
+    for (let i = 0; i < options.length; i++) {
+      addOptionRow(options[i] || "", correctIdxSet.has(i));
+    }
+    // Ensure at least 2 rows
+    if (options.length < 2) {
+      const seeded = options.length;
+      if (seeded === 0) { addOptionRow("", true); addOptionRow("", false); }
+      else if (seeded === 1) { addOptionRow("", !correctIdxSet.has(0)); }
+    }
+
+    // "Add another option" input
+    const addInput = document.createElement("input");
+    addInput.type = "text";
+    addInput.className = "input flex-1 text-sm sprout-input-fixed";
+    addInput.placeholder = "Add another option (press enter)";
     addInput.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") {
         ev.preventDefault();
         ev.stopPropagation();
-        commitAddInput();
+        const value = addInput.value.trim();
+        if (!value) return;
+        addOptionRow(value, false);
+        addInput.value = "";
       }
     });
     addInput.addEventListener("blur", () => {
-      commitAddInput();
+      const value = addInput.value.trim();
+      if (!value) return;
+      addOptionRow(value, false);
+      addInput.value = "";
     });
-
-    const initialWrongs = wrongValues.length ? wrongValues : [""];
-    for (const value of initialWrongs) addWrongRow(value);
-    updateAddPlaceholder();
+    const addInputWrap = document.createElement("div");
+    addInputWrap.className = "flex items-center gap-2";
+    addInputWrap.appendChild(addInput);
+    container.appendChild(addInputWrap);
 
     const buildValue = () => {
-      const correct = correctInput.value.trim();
-      if (!correct) {
-        new Notice("Correct multiple-choice answer cannot be empty.");
+      const allOpts = optionRows
+        .map((entry) => ({ text: String(entry.input.value || "").trim(), isCorrect: entry.checkbox.checked }))
+        .filter((opt) => opt.text.length > 0);
+      const corrects = allOpts.filter((o) => o.isCorrect);
+      const wrongs = allOpts.filter((o) => !o.isCorrect);
+      if (corrects.length < 1) {
+        new Notice("At least one correct answer is required.");
         return null;
       }
-      const wrongs = wrongRows.map((entry) => entry.input.value.trim()).filter((opt) => opt.length > 0);
       if (wrongs.length < 1) {
         new Notice("Multiple-choice cards require at least one wrong option.");
         return null;
       }
-      const optionsList = [correct, ...wrongs];
-      const rendered = optionsList.map((opt, idx) =>
-        idx === 0 ? `**${escapePipes(opt)}**` : escapePipes(opt),
+      const rendered = allOpts.map((opt) =>
+        opt.isCorrect ? `**${escapePipes(opt.text)}**` : escapePipes(opt.text),
       );
       return rendered.join(` ${getDelimiter()} `);
     };
@@ -809,9 +808,29 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
 
   backdrop.addEventListener("click", () => removeOverlay());
 
-  // Scope modal to active workspace leaf content (allows tab switching while modal is open)
-  const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
-  const leafContent = activeLeaf?.querySelector(".workspace-leaf-content");
-  const target = leafContent || document.body;
+  // On mobile, always attach to document.body so the overlay is never clipped
+  // by a leaf container's overflow rules. On desktop, scope to the active leaf
+  // so it appears within the correct workspace pane.
+  let target: HTMLElement = document.body;
+  if (!Platform.isMobileApp) {
+    const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+    const leafContent = activeLeaf?.querySelector<HTMLElement>(".workspace-leaf-content");
+    if (leafContent) target = leafContent;
+  }
   target.appendChild(container);
+
+  // On mobile WebViews the compositor may not paint newly-appended
+  // absolutely-positioned content until the next user interaction
+  // (e.g. a swipe or tab switch). Force a synchronous reflow and
+  // promote the element to its own compositing layer so the browser
+  // paints it immediately.
+  if (Platform.isMobileApp) {
+    void container.offsetHeight;
+    requestAnimationFrame(() => {
+      setCssProps(container, "transform", "translateZ(0)");
+      requestAnimationFrame(() => {
+        setCssProps(container, "transform", null);
+      });
+    });
+  }
 }

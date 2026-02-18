@@ -223,6 +223,11 @@ export function ReviewCalendarHeatmap(props: {
     }
   };
   const durationOptions = React.useMemo(() => [7, 30, 90, 365, 0], []);
+  const isTouchInput = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    if (window.matchMedia?.("(pointer: coarse)")?.matches) return true;
+    return (navigator.maxTouchPoints ?? 0) > 0;
+  }, []);
   const resetFilters = () => {
     setDurationDays(props.rangeDays ?? 365);
     setDurationOpen(false);
@@ -383,6 +388,17 @@ export function ReviewCalendarHeatmap(props: {
     gridHeight = Math.ceil(30 / 7) * 16;
   }
 
+  const setHoveredFromRect = React.useCallback((cell: HeatCell, rect: DOMRect) => {
+    const wrapRect = chartWrapRef.current?.getBoundingClientRect();
+    const x = rect.left - (wrapRect?.left ?? 0) + rect.width / 2;
+    const y = rect.top - (wrapRect?.top ?? 0) - 8;
+    setHovered({ cell, x, y });
+  }, []);
+
+  const clearHovered = React.useCallback(() => {
+    setHovered(null);
+  }, []);
+
   return (
     <div className={"bc card sprout-ana-card sprout-ana-min-320 p-4 flex flex-col gap-3"}>
       <div className={"bc flex items-start justify-between gap-2"}>
@@ -491,7 +507,8 @@ export function ReviewCalendarHeatmap(props: {
       </div>
 
       <div ref={chartWrapRef} className={"bc relative flex flex-1 items-center sprout-ana-min-120"}>
-        <svg className={"bc"} width="100%" height={gridHeight} viewBox={`0 0 ${gridWidth} ${gridHeight}`}>
+        <div className={"bc w-full overflow-x-auto overflow-y-hidden"}>
+          <svg className={"bc block mx-auto"} width={gridWidth} height={gridHeight} viewBox={`0 0 ${gridWidth} ${gridHeight}`}>
           {cells.map((cell, idx) => {
             let col = Math.floor(idx / 7);
             let row = idx % 7;
@@ -515,18 +532,31 @@ export function ReviewCalendarHeatmap(props: {
                 ry={3}
                 fill={fill}
                 onMouseEnter={(event) => {
-                  if (cell.isPadding) return;
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const wrapRect = chartWrapRef.current?.getBoundingClientRect();
-                  const x = rect.left - (wrapRect?.left ?? 0) + rect.width / 2;
-                  const y = rect.top - (wrapRect?.top ?? 0) - 8;
-                  setHovered({ cell, x, y });
+                  if (isTouchInput || cell.isPadding) return;
+                  setHoveredFromRect(cell, event.currentTarget.getBoundingClientRect());
                 }}
-                onMouseLeave={() => setHovered(null)}
+                onMouseLeave={() => {
+                  if (isTouchInput) return;
+                  clearHovered();
+                }}
+                onTouchStart={(event) => {
+                  if (cell.isPadding) return;
+                  setHoveredFromRect(cell, event.currentTarget.getBoundingClientRect());
+                }}
+                onClick={(event) => {
+                  if (cell.isPadding || !isTouchInput) return;
+                  const nextCell = hovered?.cell;
+                  if (nextCell && nextCell.dayIndex === cell.dayIndex) {
+                    clearHovered();
+                    return;
+                  }
+                  setHoveredFromRect(cell, event.currentTarget.getBoundingClientRect());
+                }}
               />
             );
           })}
-        </svg>
+          </svg>
+        </div>
 
         {hovered ? (
           <div

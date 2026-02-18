@@ -48,7 +48,7 @@ export function renderPagination(
 
   const nav = document.createElement("nav");
   nav.setAttribute("role", "navigation");
-  nav.className = "flex items-center gap-2";
+  nav.className = "flex items-center gap-2 sprout-browser-pagination";
   host.appendChild(nav);
 
   const mkBtn = (label: string, tooltip: string, disabled: boolean, active: boolean, onClick: () => void) => {

@@ -215,7 +215,7 @@ function PieCard(props: {
         ) : null}
       </div>
 
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-min-20">
+      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-min-20 sprout-ana-chart-legend">
         {total > 0
           ? props.data.map((entry, index) => (
               <div key={`legend-${entry.name}`} className="bc inline-flex items-center gap-2">

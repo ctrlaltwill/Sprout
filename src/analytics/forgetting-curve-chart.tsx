@@ -568,7 +568,7 @@ export function ForgettingCurveChart(props: {
   const legendContent = () => {
     if (!legendItems.length) return null;
     return (
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
         {legendItems.map((item) => (
           <div key={item.id} className="bc inline-flex items-center gap-2">
             <span

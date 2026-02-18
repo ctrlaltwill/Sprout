@@ -34,8 +34,14 @@ const DYNAMIC_PROPS = new Set<string>([
   "--sprout-popover-top",
 ]);
 
-let sharedStyleEl: HTMLStyleElement | null = null;
-let dynamicStyleEl: HTMLStyleElement | null = null;
+let sharedStyleSheet: CSSStyleSheet | null = null;
+let dynamicStyleSheet: CSSStyleSheet | null = null;
+
+function supportsConstructedSheets(): boolean {
+  return hasDom
+    && typeof CSSStyleSheet !== "undefined"
+    && Array.isArray((document as Document & { adoptedStyleSheets?: CSSStyleSheet[] }).adoptedStyleSheets);
+}
 
 const sharedRuleByKey = new Map<string, { className: string; rule: string }>();
 let sharedCssDirty = false;
@@ -51,28 +57,17 @@ type AppliedProp = { kind: "shared" | "dynamic"; className: string };
 const appliedByEl = new WeakMap<HTMLElement, Map<string, AppliedProp>>();
 
 function ensureStyleEls(): void {
-  if (!hasDom) return;
-  const head = document.head || document.getElementsByTagName("head")[0];
-  if (!head) return;
+  if (!supportsConstructedSheets()) return;
+  const doc = document as Document & { adoptedStyleSheets: CSSStyleSheet[] };
 
-  if (!sharedStyleEl) {
-    sharedStyleEl = document.getElementById("sprout-shared-css") as HTMLStyleElement | null;
-    if (!sharedStyleEl) {
-      // eslint-disable-next-line obsidianmd/no-forbidden-elements
-      sharedStyleEl = document.createElement("style");
-      sharedStyleEl.id = "sprout-shared-css";
-      head.appendChild(sharedStyleEl);
-    }
+  if (!sharedStyleSheet) sharedStyleSheet = new CSSStyleSheet();
+  if (!dynamicStyleSheet) dynamicStyleSheet = new CSSStyleSheet();
+
+  if (!doc.adoptedStyleSheets.includes(sharedStyleSheet)) {
+    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sharedStyleSheet];
   }
-
-  if (!dynamicStyleEl) {
-    dynamicStyleEl = document.getElementById("sprout-dynamic-css") as HTMLStyleElement | null;
-    if (!dynamicStyleEl) {
-      // eslint-disable-next-line obsidianmd/no-forbidden-elements
-      dynamicStyleEl = document.createElement("style");
-      dynamicStyleEl.id = "sprout-dynamic-css";
-      head.appendChild(dynamicStyleEl);
-    }
+  if (!doc.adoptedStyleSheets.includes(dynamicStyleSheet)) {
+    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, dynamicStyleSheet];
   }
 }
 
@@ -100,6 +95,7 @@ function buildRule(className: string, decls: CssDecls): string {
 
 export function cssClassForProps(decls: Record<string, CssPropValue>): string {
   if (!hasDom) return "";
+  if (!supportsConstructedSheets()) return "";
   ensureStyleEls();
 
   const norm = normalizeDecls(decls);
@@ -131,12 +127,12 @@ function scheduleFlush(): void {
 function flushCss(): void {
   ensureStyleEls();
 
-  if (sharedCssDirty && sharedStyleEl) {
+  if (sharedCssDirty && sharedStyleSheet) {
     sharedCssDirty = false;
-    sharedStyleEl.textContent = Array.from(sharedRuleByKey.values()).map((x) => x.rule).join("\n");
+    sharedStyleSheet.replaceSync(Array.from(sharedRuleByKey.values()).map((x) => x.rule).join("\n"));
   }
 
-  if (dynCssDirty && dynamicStyleEl) {
+  if (dynCssDirty && dynamicStyleSheet) {
     dynCssDirty = false;
     // prune disconnected refs while building
     const rules: string[] = [];
@@ -150,7 +146,7 @@ function flushCss(): void {
       for (const [k, v] of entry.decls) obj[k] = v;
       rules.push(buildRule(entry.className, obj));
     }
-    dynamicStyleEl.textContent = rules.join("\n");
+    dynamicStyleSheet.replaceSync(rules.join("\n"));
   }
 }
 
@@ -180,6 +176,12 @@ function ensureDynEntry(el: HTMLElement): DynEntry {
 
 function applyCssProp(el: HTMLElement, prop: string, value: CssPropValue): void {
   if (!hasDom) return;
+  if (!supportsConstructedSheets()) {
+    const nextVal = value === null || value === undefined ? null : String(value);
+    if (nextVal === null) el.style.removeProperty(prop);
+    else el.style.setProperty(prop, nextVal);
+    return;
+  }
   ensureStyleEls();
 
   const applied = getAppliedMap(el);

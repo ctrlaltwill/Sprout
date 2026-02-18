@@ -351,7 +351,18 @@ function deriveTextForDark(lightHex: string): string {
    Dynamic style injection
    ========================= */
 
-const DYNAMIC_STYLE_ID = 'sprout-rv-dynamic-styles';
+let readingDynamicStyleSheet: CSSStyleSheet | null = null;
+
+function getReadingDynamicStyleSheet(): CSSStyleSheet | null {
+  if (typeof document === 'undefined' || typeof CSSStyleSheet === 'undefined') return null;
+  const doc = document as Document & { adoptedStyleSheets?: CSSStyleSheet[] };
+  if (!Array.isArray(doc.adoptedStyleSheets)) return null;
+  if (!readingDynamicStyleSheet) readingDynamicStyleSheet = new CSSStyleSheet();
+  if (!doc.adoptedStyleSheets.includes(readingDynamicStyleSheet)) {
+    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, readingDynamicStyleSheet];
+  }
+  return readingDynamicStyleSheet;
+}
 
 function normaliseMacroPreset(raw: string | undefined): 'classic' | 'guidebook' | 'flashcards' | 'markdown' | 'custom' {
   const key = String(raw || '').trim().toLowerCase();
@@ -385,14 +396,11 @@ export function syncReadingViewStyles(): void {
   const effectiveLayout = resolveReadingLayout(rv?.layout, macroPreset);
   const macroSelector = `.sprout-pretty-card.sprout-macro-${macroPreset}`;
 
-  let styleEl = document.getElementById(DYNAMIC_STYLE_ID) as HTMLStyleElement | null;
-  if (!styleEl) {
-    // eslint-disable-next-line obsidianmd/no-forbidden-elements -- dynamic reading-view styles require runtime updates
-    styleEl = document.head.createEl('style', { attr: { id: DYNAMIC_STYLE_ID } });
-  }
+  const styleSheet = getReadingDynamicStyleSheet();
+  if (!styleSheet) return;
 
   if (!enabled) {
-    styleEl.textContent = "";
+    styleSheet.replaceSync("");
     return;
   }
 
@@ -589,7 +597,7 @@ export function syncReadingViewStyles(): void {
   // ── Upsert the <style> element ──
   // Note: Using document.head.createEl (Obsidian API) for reading-view dynamic settings
   // For static CSS, use the main styles.css file
-  styleEl.textContent = css;
+  styleSheet.replaceSync(css);
 }
 
 /* =========================
@@ -600,8 +608,6 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
   debugLog("[Sprout] Registering reading view prettifier");
 
   sproutPluginRef = plugin;
-
-  injectStylesOnce();
 
   // Inject dynamic styles from current reading-view settings
   syncReadingViewStyles();
@@ -721,15 +727,6 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
 }
 
 /* =========================
-   Styles + helpers
-   ========================= */
-
-// Styles are loaded from styles.css (see src/styles/pretty-cards.css)
-function injectStylesOnce() {
-  // no-op: CSS is now in styles.css via the Tailwind/PostCSS pipeline
-}
-
-/* =========================
    Manual trigger + event hook
    ========================= */
 
@@ -794,8 +791,12 @@ export function teardownReadingView(): void {
   // Clear global references
   sproutPluginRef = null;
   delete (window as unknown as Record<string, unknown>).sproutApplyMasonryGrid;
-  // Remove dynamic style element
-  document.getElementById(DYNAMIC_STYLE_ID)?.remove();
+  // Detach dynamic reading stylesheet
+  const doc = document as Document & { adoptedStyleSheets?: CSSStyleSheet[] };
+  if (readingDynamicStyleSheet && Array.isArray(doc.adoptedStyleSheets)) {
+    doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter((sheet) => sheet !== readingDynamicStyleSheet);
+  }
+  readingDynamicStyleSheet = null;
 }
 
 function setupDebouncedMutationObserver() {
@@ -2203,12 +2204,6 @@ function enhanceCardElement(
       e.preventDefault();
       e.stopPropagation();
       editBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-
-    editBtn.addEventListener("keydown", (ev) => {
-      if (ev.key !== "Enter" && ev.key !== " ") return;
-      ev.preventDefault();
-      (ev.currentTarget as HTMLElement)?.click();
     });
   }
 

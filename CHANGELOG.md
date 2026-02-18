@@ -3,21 +3,27 @@
 All notable changes to Sprout are summarized here.
 
 <details open>
-<summary><strong>Latest release: 1.0.5 (2026-02-13)</strong></summary>
+<summary><strong>Latest release: 1.0.5 (2026-02-18)</strong></summary>
 
-### Latest release notes
+### Release notes
 
-#### Changed
-- Added plugin scaling support
-- Enabled text selection for copying card content
-- Added multi-select questions (MCQ subtype)
-- Added reversed and ordered questions
-- Added the wiki directly in the app
-- Added a new settings view
+This stable release builds on the features delivered in `1.0.5-beta.1`.
+
+#### Added
+- Added new card types: multi-select MCQ and ordered questions for memorising sequences
+- Added more card customisation: typed cloze and customisation of image occlusion masks
+- Overhauled Reading view with two styles: Flashcards and Clean markdown
+- Added a new settings view with more control
+- Updated the guide and made it visible directly within Obsidian
 
 #### Fixed
-- Analytics chart compatibility and type definitions
-- Tag box styling consistency across browser, modals, and card editor
+- Limited modal background/overlay to the workspace so tab-switching remains available
+
+#### In development
+- Mobile functionality support, building on this release
+- Continued bug-fix and stability work
+- Reading view improvements and expanded style support
+- Codebase tidy-up to improve long-term extensibility
 
 #### Hint
 If scheduling or analytics data is lost after an update, restore from a backup.

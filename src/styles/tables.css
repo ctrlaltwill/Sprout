@@ -46,7 +46,7 @@
   font-weight: 600;
   text-align: left;
   padding: 6px 10px;
-  border-bottom: 2px solid var(--background-modifier-border);
+  border-bottom: 2px solid var(--sprout-border-color);
   background: var(--background-secondary);
   white-space: nowrap;
 }
@@ -58,7 +58,7 @@
 .sprout .sprout-info table td,
 .sprout .sprout-widget-text table td {
   padding: 5px 10px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
   vertical-align: top;
 }
 
@@ -130,8 +130,8 @@
 /* Changelog wrapper: padding + border so scroll stays inside */
 .sprout .sprout-changelog-scroll {
   padding: 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   max-height: 165px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -140,7 +140,7 @@
 
 .sprout-changelog-table thead tr {
   background: var(--background);
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 .sprout-changelog-table tbody tr {
   background: var(--background);
@@ -165,7 +165,7 @@
 
 /* Add a single border below the header (top of tbody) */
 .sprout-changelog-table tbody {
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 .sprout-changelog-table th:first-child,
 .sprout-changelog-table td:first-child {
@@ -200,7 +200,7 @@
 }
 .sprout .sprout-changelog-table tbody tr:hover td {
   background-color: var(--color-background) !important;
-  border-color: var(--background-modifier-border) !important;
+  border-color: var(--sprout-border-color) !important;
 }
 .sprout .sprout-changelog-table tbody tr:hover td:first-child {
   border-top-left-radius: var(--radius-m);
@@ -217,7 +217,7 @@
 
 /* Changelog footer with buttons */
 .sprout-changelog-footer {
-  border-top: var(--border-width) solid var(--background-modifier-border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
   margin-top: 8px;
   padding-top: 8px;
 }
@@ -226,8 +226,8 @@
 
 .sprout-release-summary {
   padding: 10px 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background);
   max-height: 200px;
   overflow-y: auto;
@@ -279,7 +279,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 8px 10px;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background-modifier-message);
   font-size: var(--sprout-font-2xs);
   color: var(--text-muted);
