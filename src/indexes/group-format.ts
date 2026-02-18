@@ -4,7 +4,8 @@
  *
  * @exports
  *  - coerceGroups — accepts a raw groups value (string, string[], or unknown) and returns a normalised string array
- *  - fmtGroups    — formats an array of group paths into a human-readable display string
+ *  - formatGroups — formats an array of group paths into a human-readable display string
+ *  - fmtGroups    — compatibility alias for formatGroups
  */
 
 import { normaliseGroupPath } from "./group-index";
@@ -28,11 +29,15 @@ export function coerceGroups(raw: unknown): string[] {
   return [];
 }
 
-export function fmtGroups(groups: unknown): string {
-  const norm = coerceGroups(groups)
+export function formatGroups(groups: unknown): string {
+  const normalizedGroups = coerceGroups(groups)
     .map((g) => normaliseGroupPath(g) || null)
     .filter((x): x is string => !!x);
 
-  if (!norm.length) return "—";
-  return norm.join(", ");
+  if (!normalizedGroups.length) return "—";
+  return normalizedGroups.join(", ");
+}
+
+export function fmtGroups(groups: unknown): string {
+  return formatGroups(groups);
 }

@@ -108,6 +108,18 @@ type Args = {
   rerender: () => void;
 };
 
+/** Shared rendering context passed to per-card-type helpers. */
+interface CardRenderCtx {
+  section: HTMLElement;
+  labelRow: (text: string, replayFn?: () => void) => HTMLElement;
+  renderMdBlock: (cls: string, md: string) => HTMLElement;
+  setupLinkHandlers: (rootEl: HTMLElement, srcPath: string) => void;
+  args: Args;
+  card: CardRecord;
+  graded: { meta?: Record<string, unknown> } | null;
+  sourcePath: string;
+}
+
 function buildCardAnchorFragment(cardId: string | null | undefined): string {
   const raw = String(cardId ?? "").trim();
   if (!raw) return "";
@@ -329,6 +341,7 @@ function makeHeaderMenu(opts: {
   onBury: () => void;
   onSuspend: () => void;
   onExit: () => void;
+  compactTrigger?: boolean;
 }) {
   const id = `bc-menu-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -345,8 +358,17 @@ function makeHeaderMenu(opts: {
   trigger.setAttribute("aria-controls", `${id}-menu`);
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("data-tooltip", "More actions");
-  trigger.appendChild(document.createTextNode("More"));
-  trigger.appendChild(makeKbd("M"));
+  if (opts.compactTrigger) {
+    trigger.classList.add("sprout-review-more-icon-btn");
+    trigger.setAttribute("aria-label", "More actions");
+    const iconWrap = document.createElement("span");
+    iconWrap.className = "bc inline-flex items-center justify-center";
+    setIcon(iconWrap, "menu");
+    trigger.appendChild(iconWrap);
+  } else {
+    trigger.appendChild(document.createTextNode("More"));
+    trigger.appendChild(makeKbd("M"));
+  }
   root.appendChild(trigger);
 
   const popover = document.createElement("div");
@@ -382,7 +404,7 @@ function makeHeaderMenu(opts: {
     labelSpan.textContent = label;
     item.appendChild(labelSpan);
 
-    if (hotkey) {
+    if (hotkey && !opts.compactTrigger) {
       const key = document.createElement("kbd");
       key.className = "bc kbd ml-auto text-xs text-muted-foreground tracking-widest";
       key.textContent = hotkey;
@@ -522,10 +544,467 @@ function makeHeaderMenu(opts: {
 
 // --- Main -------------------------------------------------------------------
 
+/** Renders MCQ card content (single-answer and multi-answer). */
+function renderMcqContent(ctx: CardRenderCtx): void {
+  const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
+  section.appendChild(labelRow("Question"));
+  section.appendChild(renderMdBlock("bc-q", card.stem || ""));
+  const reveal = !!graded || !!args.showAnswer;
+  const multiAnswer = isMultiAnswerMcq(card);
+  const correctSet = new Set(getCorrectIndices(card));
+
+  if (multiAnswer && !reveal) {
+    section.appendChild(labelRow("Options (select all correct answers)"));
+  } else {
+    section.appendChild(labelRow(reveal ? "Answer" : "Options"));
+  }
+
+  // Only show MCQ options, not info, as answer options
+  const opts = normalizeCardOptions(card.options);
+  const gradedMeta = (graded?.meta);
+  // Single-answer: mcqChoice; Multi-answer: mcqChoices
+  const chosenOrigIdx = gradedMeta?.mcqChoice;
+  const chosenOrigIndices: Set<number> = gradedMeta?.mcqChoices
+    ? new Set((gradedMeta.mcqChoices as number[]))
+    : typeof chosenOrigIdx === "number" ? new Set([chosenOrigIdx]) : new Set<number>();
+  const order = getMcqDisplayOrder(args.session, card, !!args.randomizeMcqOptions);
+
+  // Multi-answer: track current selections (before submit)
+  const multiSelected = (multiAnswer && args.mcqMultiSelected && args.mcqMultiCardId === String(card.id))
+    ? args.mcqMultiSelected
+    : new Set<number>();
+
+  const optionList = document.createElement("div");
+  optionList.className = "bc flex flex-col gap-2 sprout-mcq-options";
+  section.appendChild(optionList);
+
+  // Multi-answer: show Submit button when not yet graded
+  // (declare early so click handlers can reference it)
+  let submitBtn: HTMLButtonElement | null = null;
+
+  order.forEach((origIdx: number, displayIdx: number) => {
+    const opt = opts[origIdx] ?? "";
+    const text = typeof opt === "string" ? opt : "";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bc btn-outline w-full justify-start text-left h-auto py-2 mb-2";
+
+    // Multi-answer selection state (before submit)
+    if (multiAnswer && !reveal && multiSelected.has(origIdx)) {
+      btn.classList.add("sprout-mcq-selected");
+    }
+
+    // Apply correctness styles on back of card (revealed).
+    if (reveal) {
+      const isCorrect = correctSet.has(origIdx);
+      const isChosen = chosenOrigIndices.has(origIdx);
+
+      if (multiAnswer) {
+        // Multi-answer highlighting:
+        // - Correctly selected: green (chosen + correct)
+        // - Wrongly selected: red (chosen + not correct)
+        // - Missed correct: subtle green outline (correct + not chosen)
+        // - Correctly not selected: neutral (not correct + not chosen)
+        if (isCorrect && isChosen) {
+          btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
+        } else if (isCorrect && !isChosen) {
+          btn.classList.add("sprout-mcq-missed-correct");
+        } else if (!isCorrect && isChosen) {
+          btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+        }
+        // else: not correct, not chosen — stays neutral
+      } else {
+        // Single-answer highlighting (unchanged)
+        const isChosenWrong = isChosen && !isCorrect;
+        if (isCorrect) {
+          btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
+        }
+        if (isChosenWrong) {
+          btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+        }
+      }
+    }
+
+    const left = document.createElement("span");
+    left.className = "bc inline-flex items-center gap-2 min-w-0";
+
+    const key = document.createElement("kbd");
+    key.className = "bc kbd";
+    key.textContent = String(displayIdx + 1);
+    left.appendChild(key);
+
+    // Render option text with markdown support for wiki links and LaTeX
+    const textEl = document.createElement("span");
+    textEl.className = "bc min-w-0 whitespace-pre-wrap break-words sprout-mcq-option-text";
+
+    // Use markdown rendering if text contains wiki links or LaTeX
+    if (text && (text.includes('[[') || text.includes('$'))) {
+      void args.renderMarkdownInto(textEl, text, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
+    } else if (text && text.includes("\n")) {
+      text.split(/\n+/).forEach((line: string) => {
+        const p = document.createElement("div");
+        applyInlineMarkdown(p, line);
+        p.classList.add("sprout-mcq-option-line");
+        textEl.appendChild(p);
+      });
+    } else {
+      applyInlineMarkdown(textEl, text);
+    }
+    left.appendChild(textEl);
+
+    btn.appendChild(left);
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (graded) return;
+      if (multiAnswer) {
+        // Toggle selection in-place (no full re-render)
+        if (multiSelected.has(origIdx)) {
+          multiSelected.delete(origIdx);
+          btn.classList.remove("sprout-mcq-selected");
+        } else {
+          multiSelected.add(origIdx);
+          btn.classList.add("sprout-mcq-selected");
+        }
+        // Sync the backing state so keyboard/render stays in sync.
+        // Use set/delete (idempotent) — NOT toggle — because after a
+        // re-render multiSelected may be the same reference as the
+        // backing set, and toggling twice would cancel itself out.
+        if (args.syncMcqMultiSelect) {
+          args.syncMcqMultiSelect(origIdx, multiSelected.has(origIdx));
+        }
+        // Update submit button enabled state
+        if (submitBtn) {
+          submitBtn.disabled = multiSelected.size === 0;
+          submitBtn.classList.toggle("opacity-50", multiSelected.size === 0);
+          submitBtn.classList.toggle("cursor-not-allowed", multiSelected.size === 0);
+          // Reset empty-attempt counter when selection changes
+          if (multiSelected.size > 0) {
+            delete submitBtn.dataset.emptyAttempt;
+            submitBtn.removeAttribute("data-tooltip");
+            submitBtn.classList.remove("sprout-mcq-submit-tooltip-visible");
+          }
+        }
+      } else {
+        void args.answerMcq(origIdx);
+      }
+    });
+
+    optionList.appendChild(btn);
+  });
+
+  // Multi-answer: show Submit button when not yet graded
+  if (multiAnswer && !reveal) {
+    const submitRow = document.createElement("div");
+    submitRow.className = "bc flex justify-end mt-2";
+    submitBtn = document.createElement("button");
+    submitBtn.type = "button";
+    submitBtn.className = "bc btn-primary px-4 py-2 text-sm sprout-mcq-submit-btn";
+
+    const submitLabel = document.createElement("span");
+    submitLabel.textContent = "Submit";
+    submitBtn.appendChild(submitLabel);
+
+    const submitKbd = document.createElement("kbd");
+    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.textContent = "\u21B5";
+    submitBtn.appendChild(submitKbd);
+
+    submitBtn.disabled = multiSelected.size === 0;
+    if (multiSelected.size === 0) {
+      submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+    }
+    submitBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (multiSelected.size > 0 && args.answerMcqMulti) {
+        void args.answerMcqMulti([...multiSelected]);
+      } else if (multiSelected.size === 0 && submitBtn) {
+        submitBtn.classList.add("sprout-mcq-submit-shake");
+        submitBtn.addEventListener("animationend", () => {
+          submitBtn!.classList.remove("sprout-mcq-submit-shake");
+        }, { once: true });
+        // Show tooltip on second empty attempt
+        if (submitBtn.dataset.emptyAttempt === "1") {
+          submitBtn.setAttribute("data-tooltip", "Choose at least one answer to proceed");
+          submitBtn.setAttribute("data-tooltip-position", "top");
+          submitBtn.classList.add("sprout-mcq-submit-tooltip-visible");
+          setTimeout(() => {
+            submitBtn!.classList.remove("sprout-mcq-submit-tooltip-visible");
+          }, 2500);
+        }
+        submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
+      }
+    });
+    submitRow.appendChild(submitBtn);
+    optionList.appendChild(submitRow);
+  }
+
+  // Do not render separate Answer subtitle/content for MCQ.
+}
+
+/** Renders OQ (ordering question) card content. */
+function renderOqContent(ctx: CardRenderCtx): void {
+  const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
+  // ── Ordering Question ──────────────────────────────────────────────
+  section.appendChild(labelRow("Question"));
+  section.appendChild(renderMdBlock("bc-q", card.q || ""));
+
+  const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+  const reveal = !!graded || !!args.showAnswer;
+  const oqMeta = (graded?.meta || {});
+  const userOrder: number[] = Array.isArray(oqMeta.oqUserOrder) ? (oqMeta.oqUserOrder as number[]) : [];
+
+  if (!reveal) {
+    // ── Front: drag-to-reorder interface ──
+    section.appendChild(labelRow("Order the steps"));
+
+    const shuffled = getOqShuffledOrder(args.session, card, !!args.randomizeOqOrder);
+    const currentOrder = shuffled.slice();
+
+    const listWrap = document.createElement("div");
+    listWrap.className = "bc flex flex-col gap-2 sprout-oq-step-list";
+    section.appendChild(listWrap);
+
+    const renderSteps = () => {
+      listWrap.innerHTML = "";
+      currentOrder.forEach((origIdx, displayIdx) => {
+        const stepText = steps[origIdx] || "";
+        const row = document.createElement("div");
+        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
+        row.draggable = false;
+        row.dataset.oqIdx = String(displayIdx);
+
+        // Grip handle
+        const grip = document.createElement("span");
+        grip.className = "bc sprout-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
+        grip.draggable = true;
+        setIcon(grip, "grip-vertical");
+        row.appendChild(grip);
+
+        // Step number badge
+        const badge = document.createElement("kbd");
+        badge.className = "bc kbd";
+        badge.textContent = String(displayIdx + 1);
+        row.appendChild(badge);
+
+        // Step text
+        const textEl = document.createElement("span");
+        textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
+        if (stepText.includes("[[") || stepText.includes("$")) {
+          void args.renderMarkdownInto(textEl, stepText, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
+        } else {
+          applyInlineMarkdown(textEl, stepText);
+        }
+        row.appendChild(textEl);
+
+        // ── Drag and drop ──
+        let dragOffset = 44;
+        row.addEventListener("dragstart", (e) => {
+          listWrap.classList.add("sprout-oq-drag-active");
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", String(displayIdx));
+          }
+          row.classList.add("sprout-oq-row-dragging");
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          const first = allStepRows[0];
+          if (first) {
+            const gap = parseFloat(getComputedStyle(listWrap).rowGap || "0");
+            dragOffset = Math.round(first.getBoundingClientRect().height + gap);
+          }
+          allStepRows.forEach((r) => {
+            r.classList.add("sprout-oq-row-anim");
+            setCssProps(r, "--sprout-oq-translate", "0px");
+          });
+        });
+
+        row.addEventListener("dragend", () => {
+          listWrap.classList.remove("sprout-oq-drag-active");
+          row.classList.remove("sprout-oq-row-dragging");
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          allStepRows.forEach((r) => {
+            setCssProps(r, "--sprout-oq-translate", "0px");
+            r.classList.remove("sprout-oq-row-anim");
+          });
+        });
+
+        row.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+
+          const fromStr = e.dataTransfer?.getData("text/plain");
+          const fromIdx = fromStr ? Number(fromStr) : -1;
+          if (fromIdx === -1 || fromIdx === displayIdx) return;
+
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          allStepRows.forEach((r, idx) => {
+            if (idx === fromIdx) {
+              setCssProps(r, "--sprout-oq-translate", `${(displayIdx - fromIdx) * dragOffset}px`);
+            } else {
+              let offset = 0;
+              if (fromIdx < displayIdx) {
+                if (idx > fromIdx && idx <= displayIdx) offset = -dragOffset;
+              } else {
+                if (idx >= displayIdx && idx < fromIdx) offset = dragOffset;
+              }
+              setCssProps(r, "--sprout-oq-translate", `${offset}px`);
+            }
+          });
+        });
+
+        row.addEventListener("drop", (e) => {
+          e.preventDefault();
+          const fromIdx = Number(e.dataTransfer?.getData("text/plain") || "-1");
+          if (fromIdx === -1 || fromIdx === displayIdx) return;
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          allStepRows.forEach((r) => setCssProps(r, "--sprout-oq-translate", "0px"));
+          const item = currentOrder[fromIdx];
+          currentOrder.splice(fromIdx, 1);
+          currentOrder.splice(displayIdx, 0, item);
+          // Also update the session order map
+          const oqMap = ensureOqOrderMap(args.session);
+          oqMap[String(card.id)] = currentOrder.slice();
+          renderSteps();
+        });
+
+        // Touch drag support for mobile
+        let touchStartY = 0;
+        let touchCurrentIdx = displayIdx;
+        row.addEventListener("touchstart", (e) => {
+          const touch = e.touches[0];
+          if (!touch) return;
+          listWrap.classList.add("sprout-oq-drag-active");
+          touchStartY = touch.clientY;
+          touchCurrentIdx = displayIdx;
+          row.classList.add("sprout-oq-row-dragging");
+        }, { passive: true });
+
+        row.addEventListener("touchmove", (e) => {
+          const touch = e.touches[0];
+          if (!touch) return;
+          e.preventDefault();
+          const deltaY = touch.clientY - touchStartY;
+          const moveSteps = Math.round(deltaY / dragOffset);
+          const targetIdx = Math.max(0, Math.min(currentOrder.length - 1, displayIdx + moveSteps));
+
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          allStepRows.forEach((r, idx) => {
+            if (idx === displayIdx) {
+              setCssProps(r, "--sprout-oq-translate", `${(targetIdx - displayIdx) * dragOffset}px`);
+            } else {
+              let offset = 0;
+              if (displayIdx < targetIdx) {
+                if (idx > displayIdx && idx <= targetIdx) offset = -dragOffset;
+              } else {
+                if (idx >= targetIdx && idx < displayIdx) offset = dragOffset;
+              }
+              setCssProps(r, "--sprout-oq-translate", `${offset}px`);
+            }
+          });
+          touchCurrentIdx = targetIdx;
+        }, { passive: false });
+
+        row.addEventListener("touchend", () => {
+          listWrap.classList.remove("sprout-oq-drag-active");
+          row.classList.remove("sprout-oq-row-dragging");
+          const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
+          allStepRows.forEach((r) => {
+            setCssProps(r, "--sprout-oq-translate", "0px");
+            r.classList.remove("sprout-oq-row-anim");
+          });
+          if (touchCurrentIdx !== displayIdx) {
+            const item = currentOrder[displayIdx];
+            currentOrder.splice(displayIdx, 1);
+            currentOrder.splice(touchCurrentIdx, 0, item);
+            const oqMap = ensureOqOrderMap(args.session);
+            oqMap[String(card.id)] = currentOrder.slice();
+            renderSteps();
+          }
+        });
+
+        row.addEventListener("touchcancel", () => {
+          listWrap.classList.remove("sprout-oq-drag-active");
+        });
+
+        listWrap.appendChild(row);
+      });
+    };
+
+    renderSteps();
+
+    // Submit button
+    const submitWrap = document.createElement("div");
+    submitWrap.className = "bc flex justify-center mt-2";
+    const submitBtn = document.createElement("button");
+    submitBtn.type = "button";
+    submitBtn.className = "bc btn w-full sprout-oq-submit-btn";
+
+    const submitLabel = document.createElement("span");
+    submitLabel.textContent = "Submit order";
+    submitBtn.appendChild(submitLabel);
+
+    const submitKbd = document.createElement("kbd");
+    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.textContent = "\u21B5";
+    submitBtn.appendChild(submitKbd);
+
+    submitBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      void args.answerOq(currentOrder.slice());
+    });
+    submitWrap.appendChild(submitBtn);
+    section.appendChild(submitWrap);
+
+  } else {
+    // ── Back: show correct order with correctness highlighting ──
+    section.appendChild(labelRow("Correct Order"));
+
+    const answerList = document.createElement("div");
+    answerList.className = "bc flex flex-col gap-2 sprout-oq-answer-list";
+    section.appendChild(answerList);
+
+    steps.forEach((stepText, correctIdx) => {
+      const wasInCorrectPosition = userOrder.length > 0 && userOrder[correctIdx] === correctIdx;
+
+      const row = document.createElement("div");
+      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
+      if (wasInCorrectPosition) {
+        row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
+      } else if (userOrder.length > 0) {
+        row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
+      }
+
+      const badge = document.createElement("kbd");
+      badge.className = "bc kbd";
+      badge.textContent = String(correctIdx + 1);
+      row.appendChild(badge);
+
+      const textEl = document.createElement("span");
+      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
+      if (stepText.includes("[[") || stepText.includes("$")) {
+        void args.renderMarkdownInto(textEl, stepText, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
+      } else {
+        applyInlineMarkdown(textEl, stepText);
+      }
+      row.appendChild(textEl);
+
+      answerList.appendChild(row);
+    });
+  }
+}
+
 export function renderSessionMode(args: Args) {
   const skipEnabled = !!(args.enableSkipButton ?? args.skipEnabled);
   const practiceMode = !!args.practiceMode;
   const four = !!args.fourButtonMode;
+  const isPhoneMobile =
+    document.body.classList.contains("is-mobile") &&
+    !!window.matchMedia &&
+    window.matchMedia("(max-width: 700px)").matches;
   const applyAOS = !!args.applyAOS;
   const delayMs = Number.isFinite(args.aosDelayMs) ? Number(args.aosDelayMs) : applyAOS ? 100 : 0;
 
@@ -679,7 +1158,7 @@ export function renderSessionMode(args: Args) {
         label: "Return to Decks",
         className: "btn-outline",
         onClick: () => args.backToDecks(),
-        kbd: "Q",
+        kbd: isPhoneMobile ? undefined : "Q",
       });
       footerCenter.appendChild(backBtn);
     } else if (canStartPractice && hasStartPractice) {
@@ -687,17 +1166,16 @@ export function renderSessionMode(args: Args) {
         label: "Return to Decks",
         className: "btn-outline",
         onClick: () => args.backToDecks(),
-        kbd: "Q",
+        kbd: isPhoneMobile ? undefined : "Q",
       });
       footerCenter.appendChild(backBtn);
 
       const startBtn = makeTextButton({
         label: "Start Practice",
-        className: "btn",
+        className: "btn-outline",
         onClick: () => args.startPractice?.(),
-        kbd: "↵",
+        kbd: isPhoneMobile ? undefined : "↵",
       });
-      startBtn.classList.add("sprout-btn-start-practice");
       footerCenter.appendChild(startBtn);
     }
 
@@ -882,450 +1360,9 @@ export function renderSessionMode(args: Args) {
     }
     section.appendChild(clozContainer);
   } else if (card.type === "mcq") {
-    section.appendChild(labelRow("Question"));
-    section.appendChild(renderMdBlock("bc-q", card.stem || ""));
-    const reveal = !!graded || !!args.showAnswer;
-    const multiAnswer = isMultiAnswerMcq(card);
-    const correctSet = new Set(getCorrectIndices(card));
-
-    if (multiAnswer && !reveal) {
-      section.appendChild(labelRow("Options (select all correct answers)"));
-    } else {
-      section.appendChild(labelRow(reveal ? "Answer" : "Options"));
-    }
-
-    // Only show MCQ options, not info, as answer options
-    const opts = normalizeCardOptions(card.options);
-    const gradedMeta = (graded?.meta as Record<string, unknown> | undefined);
-    // Single-answer: mcqChoice; Multi-answer: mcqChoices
-    const chosenOrigIdx = gradedMeta?.mcqChoice;
-    const chosenOrigIndices: Set<number> = gradedMeta?.mcqChoices
-      ? new Set(gradedMeta.mcqChoices as number[])
-      : typeof chosenOrigIdx === "number" ? new Set([chosenOrigIdx]) : new Set<number>();
-    const order = getMcqDisplayOrder(args.session, card, !!args.randomizeMcqOptions);
-
-    // Multi-answer: track current selections (before submit)
-    const multiSelected = (multiAnswer && args.mcqMultiSelected && args.mcqMultiCardId === String(card.id))
-      ? args.mcqMultiSelected
-      : new Set<number>();
-
-    const optionList = document.createElement("div");
-    optionList.className = "bc flex flex-col gap-2 sprout-mcq-options";
-    section.appendChild(optionList);
-
-    // Multi-answer: show Submit button when not yet graded
-    // (declare early so click handlers can reference it)
-    let submitBtn: HTMLButtonElement | null = null;
-
-    order.forEach((origIdx: number, displayIdx: number) => {
-      const opt = opts[origIdx] ?? "";
-      const text = typeof opt === "string" ? opt : "";
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "bc btn-outline w-full justify-start text-left h-auto py-2 mb-2";
-
-      // Multi-answer selection state (before submit)
-      if (multiAnswer && !reveal && multiSelected.has(origIdx)) {
-        btn.classList.add("sprout-mcq-selected");
-      }
-
-      // Apply correctness styles on back of card (revealed).
-      if (reveal) {
-        const isCorrect = correctSet.has(origIdx);
-        const isChosen = chosenOrigIndices.has(origIdx);
-
-        if (multiAnswer) {
-          // Multi-answer highlighting:
-          // - Correctly selected: green (chosen + correct)
-          // - Wrongly selected: red (chosen + not correct)
-          // - Missed correct: subtle green outline (correct + not chosen)
-          // - Correctly not selected: neutral (not correct + not chosen)
-          if (isCorrect && isChosen) {
-            btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
-          } else if (isCorrect && !isChosen) {
-            btn.classList.add("sprout-mcq-missed-correct");
-          } else if (!isCorrect && isChosen) {
-            btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
-          }
-          // else: not correct, not chosen — stays neutral
-        } else {
-          // Single-answer highlighting (unchanged)
-          const isChosenWrong = isChosen && !isCorrect;
-          if (isCorrect) {
-            btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
-          }
-          if (isChosenWrong) {
-            btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
-          }
-        }
-      }
-
-      const left = document.createElement("span");
-      left.className = "bc inline-flex items-center gap-2 min-w-0";
-
-      const key = document.createElement("kbd");
-      key.className = "bc kbd";
-      key.textContent = String(displayIdx + 1);
-      left.appendChild(key);
-
-      // Render option text with markdown support for wiki links and LaTeX
-      const textEl = document.createElement("span");
-      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words sprout-mcq-option-text";
-      
-      // Use markdown rendering if text contains wiki links or LaTeX
-      if (text && (text.includes('[[') || text.includes('$'))) {
-        void args.renderMarkdownInto(textEl, text, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
-      } else if (text && text.includes("\n")) {
-        text.split(/\n+/).forEach((line: string) => {
-          const p = document.createElement("div");
-          applyInlineMarkdown(p, line);
-          p.classList.add("sprout-mcq-option-line");
-          textEl.appendChild(p);
-        });
-      } else {
-        applyInlineMarkdown(textEl, text);
-      }
-      left.appendChild(textEl);
-
-      btn.appendChild(left);
-
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (graded) return;
-        if (multiAnswer) {
-          // Toggle selection in-place (no full re-render)
-          if (multiSelected.has(origIdx)) {
-            multiSelected.delete(origIdx);
-            btn.classList.remove("sprout-mcq-selected");
-          } else {
-            multiSelected.add(origIdx);
-            btn.classList.add("sprout-mcq-selected");
-          }
-          // Sync the backing state so keyboard/render stays in sync.
-          // Use set/delete (idempotent) — NOT toggle — because after a
-          // re-render multiSelected may be the same reference as the
-          // backing set, and toggling twice would cancel itself out.
-          if (args.syncMcqMultiSelect) {
-            args.syncMcqMultiSelect(origIdx, multiSelected.has(origIdx));
-          }
-          // Update submit button enabled state
-          if (submitBtn) {
-            submitBtn.disabled = multiSelected.size === 0;
-            submitBtn.classList.toggle("opacity-50", multiSelected.size === 0);
-            submitBtn.classList.toggle("cursor-not-allowed", multiSelected.size === 0);
-            // Reset empty-attempt counter when selection changes
-            if (multiSelected.size > 0) {
-              delete submitBtn.dataset.emptyAttempt;
-              submitBtn.removeAttribute("data-tooltip");
-              submitBtn.classList.remove("sprout-mcq-submit-tooltip-visible");
-            }
-          }
-        } else {
-          void args.answerMcq(origIdx);
-        }
-      });
-
-      optionList.appendChild(btn);
-    });
-
-    // Multi-answer: show Submit button when not yet graded
-    if (multiAnswer && !reveal) {
-      const submitRow = document.createElement("div");
-      submitRow.className = "bc flex justify-end mt-2";
-      submitBtn = document.createElement("button");
-      submitBtn.type = "button";
-      submitBtn.className = "bc btn-primary px-4 py-2 text-sm sprout-mcq-submit-btn";
-
-      const submitLabel = document.createElement("span");
-      submitLabel.textContent = "Submit";
-      submitBtn.appendChild(submitLabel);
-
-      const submitKbd = document.createElement("kbd");
-      submitKbd.className = "bc kbd ml-2 text-xs";
-      submitKbd.textContent = "\u21B5";
-      submitBtn.appendChild(submitKbd);
-
-      submitBtn.disabled = multiSelected.size === 0;
-      if (multiSelected.size === 0) {
-        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
-      }
-      submitBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (multiSelected.size > 0 && args.answerMcqMulti) {
-          void args.answerMcqMulti([...multiSelected]);
-        } else if (multiSelected.size === 0 && submitBtn) {
-          submitBtn.classList.add("sprout-mcq-submit-shake");
-          submitBtn.addEventListener("animationend", () => {
-            submitBtn!.classList.remove("sprout-mcq-submit-shake");
-          }, { once: true });
-          // Show tooltip on second empty attempt
-          if (submitBtn.dataset.emptyAttempt === "1") {
-            submitBtn.setAttribute("data-tooltip", "Choose at least one answer to proceed");
-            submitBtn.setAttribute("data-tooltip-position", "top");
-            submitBtn.classList.add("sprout-mcq-submit-tooltip-visible");
-            setTimeout(() => {
-              submitBtn!.classList.remove("sprout-mcq-submit-tooltip-visible");
-            }, 2500);
-          }
-          submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
-        }
-      });
-      submitRow.appendChild(submitBtn);
-      optionList.appendChild(submitRow);
-    }
-
-    // Do not render separate Answer subtitle/content for MCQ.
+    renderMcqContent({ section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath });
   } else if (card.type === "oq") {
-    // ── Ordering Question ──────────────────────────────────────────────
-    section.appendChild(labelRow("Question"));
-    section.appendChild(renderMdBlock("bc-q", card.q || ""));
-
-    const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
-    const reveal = !!graded || !!args.showAnswer;
-    const oqMeta = (graded?.meta || {}) as Record<string, unknown>;
-    const userOrder: number[] = Array.isArray(oqMeta.oqUserOrder) ? oqMeta.oqUserOrder as number[] : [];
-
-    if (!reveal) {
-      // ── Front: drag-to-reorder interface ──
-      section.appendChild(labelRow("Order the steps"));
-
-      const shuffled = getOqShuffledOrder(args.session, card, !!args.randomizeOqOrder);
-      const currentOrder = shuffled.slice();
-
-      const listWrap = document.createElement("div");
-      listWrap.className = "bc flex flex-col gap-2 sprout-oq-step-list";
-      section.appendChild(listWrap);
-
-      const renderSteps = () => {
-        listWrap.innerHTML = "";
-        currentOrder.forEach((origIdx, displayIdx) => {
-          const stepText = steps[origIdx] || "";
-          const row = document.createElement("div");
-          row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
-          row.draggable = false;
-          row.dataset.oqIdx = String(displayIdx);
-
-          // Grip handle
-          const grip = document.createElement("span");
-          grip.className = "bc sprout-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
-          grip.draggable = true;
-          setIcon(grip, "grip-vertical");
-          row.appendChild(grip);
-
-          // Step number badge
-          const badge = document.createElement("kbd");
-          badge.className = "bc kbd";
-          badge.textContent = String(displayIdx + 1);
-          row.appendChild(badge);
-
-          // Step text
-          const textEl = document.createElement("span");
-          textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
-          if (stepText.includes("[[") || stepText.includes("$")) {
-            void args.renderMarkdownInto(textEl, stepText, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
-          } else {
-            applyInlineMarkdown(textEl, stepText);
-          }
-          row.appendChild(textEl);
-
-          // ── Drag and drop ──
-          let dragOffset = 44;
-          row.addEventListener("dragstart", (e) => {
-            listWrap.classList.add("sprout-oq-drag-active");
-            if (e.dataTransfer) {
-              e.dataTransfer.effectAllowed = "move";
-              e.dataTransfer.setData("text/plain", String(displayIdx));
-            }
-            row.classList.add("sprout-oq-row-dragging");
-            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
-            const first = allStepRows[0];
-            if (first) {
-              const gap = parseFloat(getComputedStyle(listWrap).rowGap || "0");
-              dragOffset = Math.round(first.getBoundingClientRect().height + gap);
-            }
-            allStepRows.forEach((r) => {
-              r.classList.add("sprout-oq-row-anim");
-              setCssProps(r, "--sprout-oq-translate", "0px");
-            });
-          });
-
-          row.addEventListener("dragend", () => {
-            listWrap.classList.remove("sprout-oq-drag-active");
-            row.classList.remove("sprout-oq-row-dragging");
-            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
-            allStepRows.forEach((r) => {
-              setCssProps(r, "--sprout-oq-translate", "0px");
-              r.classList.remove("sprout-oq-row-anim");
-            });
-          });
-
-          row.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-
-            const fromStr = e.dataTransfer?.getData("text/plain");
-            const fromIdx = fromStr ? Number(fromStr) : -1;
-            if (fromIdx === -1 || fromIdx === displayIdx) return;
-
-            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
-            allStepRows.forEach((r, idx) => {
-              if (idx === fromIdx) {
-                setCssProps(r, "--sprout-oq-translate", `${(displayIdx - fromIdx) * dragOffset}px`);
-              } else {
-                let offset = 0;
-                if (fromIdx < displayIdx) {
-                  if (idx > fromIdx && idx <= displayIdx) offset = -dragOffset;
-                } else {
-                  if (idx >= displayIdx && idx < fromIdx) offset = dragOffset;
-                }
-                setCssProps(r, "--sprout-oq-translate", `${offset}px`);
-              }
-            });
-          });
-
-          row.addEventListener("drop", (e) => {
-            e.preventDefault();
-            const fromIdx = Number(e.dataTransfer?.getData("text/plain") || "-1");
-            if (fromIdx === -1 || fromIdx === displayIdx) return;
-            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
-            allStepRows.forEach((r) => setCssProps(r, "--sprout-oq-translate", "0px"));
-            const item = currentOrder[fromIdx];
-            currentOrder.splice(fromIdx, 1);
-            currentOrder.splice(displayIdx, 0, item);
-            // Also update the session order map
-            const oqMap = ensureOqOrderMap(args.session);
-            oqMap[String(card.id)] = currentOrder.slice();
-            renderSteps();
-          });
-
-          // Touch drag support for mobile
-          let touchStartY = 0;
-          let touchCurrentIdx = displayIdx;
-          row.addEventListener("touchstart", (e) => {
-            const touch = e.touches[0];
-            if (!touch) return;
-            listWrap.classList.add("sprout-oq-drag-active");
-            touchStartY = touch.clientY;
-            touchCurrentIdx = displayIdx;
-            row.classList.add("sprout-oq-row-dragging");
-          }, { passive: true });
-
-          row.addEventListener("touchmove", (e) => {
-            const touch = e.touches[0];
-            if (!touch) return;
-            e.preventDefault();
-            const deltaY = touch.clientY - touchStartY;
-            const moveSteps = Math.round(deltaY / dragOffset);
-            const targetIdx = Math.max(0, Math.min(currentOrder.length - 1, displayIdx + moveSteps));
-
-            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
-            allStepRows.forEach((r, idx) => {
-              if (idx === displayIdx) {
-                setCssProps(r, "--sprout-oq-translate", `${(targetIdx - displayIdx) * dragOffset}px`);
-              } else {
-                let offset = 0;
-                if (displayIdx < targetIdx) {
-                  if (idx > displayIdx && idx <= targetIdx) offset = -dragOffset;
-                } else {
-                  if (idx >= targetIdx && idx < displayIdx) offset = dragOffset;
-                }
-                setCssProps(r, "--sprout-oq-translate", `${offset}px`);
-              }
-            });
-            touchCurrentIdx = targetIdx;
-          }, { passive: false });
-
-          row.addEventListener("touchend", () => {
-            listWrap.classList.remove("sprout-oq-drag-active");
-            row.classList.remove("sprout-oq-row-dragging");
-            const allStepRows = listWrap.querySelectorAll<HTMLElement>(".sprout-oq-step-row");
-            allStepRows.forEach((r) => {
-              setCssProps(r, "--sprout-oq-translate", "0px");
-              r.classList.remove("sprout-oq-row-anim");
-            });
-            if (touchCurrentIdx !== displayIdx) {
-              const item = currentOrder[displayIdx];
-              currentOrder.splice(displayIdx, 1);
-              currentOrder.splice(touchCurrentIdx, 0, item);
-              const oqMap = ensureOqOrderMap(args.session);
-              oqMap[String(card.id)] = currentOrder.slice();
-              renderSteps();
-            }
-          });
-
-          row.addEventListener("touchcancel", () => {
-            listWrap.classList.remove("sprout-oq-drag-active");
-          });
-
-          listWrap.appendChild(row);
-        });
-      };
-
-      renderSteps();
-
-      // Submit button
-      const submitWrap = document.createElement("div");
-      submitWrap.className = "bc flex justify-center mt-2";
-      const submitBtn = document.createElement("button");
-      submitBtn.type = "button";
-      submitBtn.className = "bc btn w-full sprout-oq-submit-btn";
-
-      const submitLabel = document.createElement("span");
-      submitLabel.textContent = "Submit order";
-      submitBtn.appendChild(submitLabel);
-
-      const submitKbd = document.createElement("kbd");
-      submitKbd.className = "bc kbd ml-2 text-xs";
-      submitKbd.textContent = "\u21B5";
-      submitBtn.appendChild(submitKbd);
-
-      submitBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        void args.answerOq(currentOrder.slice());
-      });
-      submitWrap.appendChild(submitBtn);
-      section.appendChild(submitWrap);
-
-    } else {
-      // ── Back: show correct order with correctness highlighting ──
-      section.appendChild(labelRow("Correct Order"));
-
-      const answerList = document.createElement("div");
-      answerList.className = "bc flex flex-col gap-2 sprout-oq-answer-list";
-      section.appendChild(answerList);
-
-      steps.forEach((stepText, correctIdx) => {
-        const wasInCorrectPosition = userOrder.length > 0 && userOrder[correctIdx] === correctIdx;
-
-        const row = document.createElement("div");
-        row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
-        if (wasInCorrectPosition) {
-          row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
-        } else if (userOrder.length > 0) {
-          row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
-        }
-
-        const badge = document.createElement("kbd");
-        badge.className = "bc kbd";
-        badge.textContent = String(correctIdx + 1);
-        row.appendChild(badge);
-
-        const textEl = document.createElement("span");
-        textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
-        if (stepText.includes("[[") || stepText.includes("$")) {
-          void args.renderMarkdownInto(textEl, stepText, sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
-        } else {
-          applyInlineMarkdown(textEl, stepText);
-        }
-        row.appendChild(textEl);
-
-        answerList.appendChild(row);
-      });
-    }
+    renderOqContent({ section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath });
   } else if (ioLike) {
     const reveal = !!graded || !!args.showAnswer;
 
@@ -1364,14 +1401,30 @@ export function renderSessionMode(args: Args) {
   const footerLeft = document.createElement("div");
   footerLeft.className = "bc flex items-center gap-2";
 
-  const editBtn = makeTextButton({
-    label: "Edit",
-    className: "btn-outline",
-    onClick: () => {
-      args.openEditModal?.();
-    },
-    kbd: "E",
-  });
+  const editBtn = isPhoneMobile
+    ? makeTextButton({
+      label: "",
+      title: "Edit",
+      className: "btn-outline sprout-review-edit-icon-btn",
+      onClick: () => {
+        args.openEditModal?.();
+      },
+    })
+    : makeTextButton({
+      label: "Edit",
+      className: "btn-outline",
+      onClick: () => {
+        args.openEditModal?.();
+      },
+      kbd: "E",
+    });
+  if (isPhoneMobile) {
+    editBtn.setAttribute("aria-label", "Edit");
+    const iconWrap = document.createElement("span");
+    iconWrap.className = "bc inline-flex items-center justify-center";
+    setIcon(iconWrap, "pencil");
+    editBtn.appendChild(iconWrap);
+  }
   footerLeft.appendChild(editBtn);
   footer.appendChild(footerLeft);
 
@@ -1398,7 +1451,7 @@ export function renderSessionMode(args: Args) {
           args.setShowAnswer(true);
           args.rerender();
         },
-        kbd: "↵",
+        kbd: isPhoneMobile ? undefined : "↵",
       }),
     );
   }
@@ -1416,11 +1469,11 @@ export function renderSessionMode(args: Args) {
       if (practiceMode) {
         const continueBtn = makeTextButton({
           label: "Continue",
-          className: "btn",
+          className: isPhoneMobile ? "btn-outline" : "btn",
           onClick: goNext,
-          kbd: "↵",
+          kbd: isPhoneMobile ? undefined : "↵",
         });
-        continueBtn.classList.add("sprout-btn-easy");
+        if (!isPhoneMobile) continueBtn.classList.add("sprout-btn-easy");
         mainRow.appendChild(continueBtn);
         hasMainRowContent = true;
       } else {
@@ -1542,6 +1595,7 @@ export function renderSessionMode(args: Args) {
       canSkip: skipEnabled && !!card && !graded,
       onSkip: () => args.skipCurrentCard({ uiSource: "footer-menu" }),
       onExit: () => args.backToDecks(),
+      compactTrigger: isPhoneMobile,
     }),
   );
   footer.appendChild(footerRight);

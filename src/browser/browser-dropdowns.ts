@@ -170,7 +170,9 @@ export function makeDropdownMenu<T extends string>(
 
   const place = () => placePopover({
     trigger, panel, popoverEl: popover,
-    width: Math.max(220, args.widthPx ?? 240),
+    width: document.body.classList.contains("is-mobile")
+      ? Math.max(0, Math.round(trigger.getBoundingClientRect().width))
+      : Math.max(220, args.widthPx ?? 240),
     dropUp: args.dropUp,
     boundsEl: getBoundsEl(trigger),
   });
@@ -407,7 +409,9 @@ export function makeColumnsDropdown(
 
   const place = () => placePopover({
     trigger, panel, popoverEl: popover,
-    width: Math.max(220, args.widthPx ?? 260),
+    width: document.body.classList.contains("is-mobile")
+      ? Math.max(0, Math.round(trigger.getBoundingClientRect().width))
+      : Math.max(220, args.widthPx ?? 260),
     boundsEl: getBoundsEl(trigger),
   });
 

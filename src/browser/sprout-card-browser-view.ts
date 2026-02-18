@@ -129,6 +129,7 @@ export class SproutCardBrowserView extends ItemView {
 
   // ✅ popover cleanup for all filter dropdowns + page-size dropdown
   private _uiCleanups: Array<() => void> = [];
+  private _mobileKeyboardCleanup: (() => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
@@ -144,6 +145,7 @@ export class SproutCardBrowserView extends ItemView {
   async onClose() {
     try { this._header?.dispose?.(); } catch (e) { log.swallow("dispose browser header", e); }
     this._header = null;
+    this._disposeMobileKeyboardSync();
     this._disposeUiPopovers();
     await Promise.resolve();
   }
@@ -166,6 +168,92 @@ export class SproutCardBrowserView extends ItemView {
     this._typeFilterMenu = null;
     this._stageFilterMenu = null;
     this._dueFilterMenu = null;
+  }
+
+  private _disposeMobileKeyboardSync() {
+    try { this._mobileKeyboardCleanup?.(); } catch (e) { log.swallow("dispose browser mobile keyboard sync", e); }
+    this._mobileKeyboardCleanup = null;
+  }
+
+  private _setupMobileKeyboardSync() {
+    this._disposeMobileKeyboardSync();
+
+    const root = this._rootEl;
+    if (!root) return;
+
+    const isPhoneMobile = () =>
+      document.body.classList.contains("is-mobile") && window.matchMedia("(max-width: 767px)").matches;
+
+    const setInset = (px: number) => {
+      setCssProps(root, "--sprout-browser-kb-inset", `${Math.max(0, px)}px`);
+    };
+
+    if (!isPhoneMobile()) {
+      setInset(0);
+      return;
+    }
+
+    const vv = window.visualViewport;
+    if (!vv) {
+      setInset(0);
+      return;
+    }
+
+    const updateInset = () => {
+      if (!isPhoneMobile()) {
+        setInset(0);
+        return;
+      }
+      const rawInset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      const keyboardInset = rawInset >= 80 ? rawInset : 0;
+      setInset(keyboardInset);
+    };
+
+    const scrollFocusedIntoView = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return;
+      const editable = target.closest<HTMLElement>(
+        "input, textarea, [contenteditable]:not([contenteditable='false'])",
+      );
+      if (!editable) return;
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          try {
+            editable.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+          } catch {
+            // no-op
+          }
+        });
+      });
+    };
+
+    const onFocusIn = (ev: FocusEvent) => {
+      if (!isPhoneMobile()) return;
+      scrollFocusedIntoView(ev.target);
+      updateInset();
+    };
+
+    const onResize = () => updateInset();
+    const onOrientation = () => {
+      window.requestAnimationFrame(updateInset);
+    };
+
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("orientationchange", onOrientation);
+    root.addEventListener("focusin", onFocusIn, true);
+
+    updateInset();
+
+    this._mobileKeyboardCleanup = () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onOrientation);
+      root.removeEventListener("focusin", onFocusIn, true);
+      setInset(0);
+    };
   }
 
   // ── Width mode ──────────────────────────────────────────
@@ -570,6 +658,7 @@ export class SproutCardBrowserView extends ItemView {
   // ── render ──────────────────────────────────────────────
 
   render() {
+    this._disposeMobileKeyboardSync();
     this._disposeUiPopovers();
 
     const root = this.contentEl;
@@ -673,6 +762,7 @@ export class SproutCardBrowserView extends ItemView {
     this._updateResetFiltersButtonState();
     this._updateSuspendButtonState();
     this.refreshTable();
+    this._setupMobileKeyboardSync();
 
     // Refresh AOS for animated elements
     if (animationsEnabled) {

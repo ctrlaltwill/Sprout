@@ -1,4 +1,12 @@
 /**
+ * @file src/modals/image-occlusion-creator-modal.ts
+ * @summary Full-featured modal for creating and editing Image Occlusion (IO) cards.
+ *
+ * @exports
+ *   - ImageOcclusionCreatorModal — Obsidian Modal subclass for IO card creation/editing
+ */
+
+/**
  * modals/ImageOcclusionCreatorModal.ts
  * ---------------------------------------------------------------------------
  * Full-featured modal for creating and editing Image Occlusion (IO) cards.
@@ -271,7 +279,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     // Setup canvas mouse/keyboard interactions
     this.setupCanvasEvents();
 
-    this.updatePlaceholderVisibility();
     this.updatePlaceholderVisibility();
     this.updateUndoRedoState();
 

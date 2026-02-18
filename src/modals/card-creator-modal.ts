@@ -1,4 +1,12 @@
 /**
+ * @file src/modals/card-creator-modal.ts
+ * @summary Modal for adding new flashcards (Basic, Cloze, MCQ) to the active note.
+ *
+ * @exports
+ *   - CardCreatorModal — Obsidian Modal subclass for card creation
+ */
+
+/**
  * modals/CardCreatorModal.ts
  * ---------------------------------------------------------------------------
  * Modal for adding a new flashcard (Basic, Cloze, or MCQ) to the active note.

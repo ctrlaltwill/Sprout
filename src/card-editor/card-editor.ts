@@ -17,6 +17,14 @@ import { normalizeCardOptions } from "../core/store";
 import { getCorrectIndices } from "../types/card";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import { escapeDelimiterText, getDelimiter } from "../core/delimiter";
+import {
+  clearNode,
+  titleCaseGroupPath,
+  formatGroupDisplay,
+  expandGroupAncestors,
+  parseGroupsInput,
+  groupsToInput,
+} from "../core/shared-utils";
 
 export type ColKey =
   | "id"
@@ -175,71 +183,7 @@ function attachFormatShortcuts(textarea: HTMLTextAreaElement) {
   });
 }
 
-function clearNode(node: HTMLElement) {
-  while (node.firstChild) node.removeChild(node.firstChild);
-}
 
-function titleCaseToken(token: string): string {
-  if (!token) return token;
-  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
-}
-
-function titleCaseSegment(seg: string): string {
-  if (!seg) return seg;
-  return seg
-    .split(/([\s_-]+)/)
-    .map((part) => (/^[\s_-]+$/.test(part) ? part : titleCaseToken(part)))
-    .join("");
-}
-
-function normalizeGroupPathInput(path: string): string {
-  if (!path) return "";
-  return path
-    .split("/")
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-    .join("/");
-}
-
-function titleCaseGroupPath(path: string): string {
-  const normalized = normalizeGroupPathInput(path);
-  if (!normalized) return "";
-  return normalized
-    .split("/")
-    .map((seg) => titleCaseSegment(seg))
-    .filter(Boolean)
-    .join("/");
-}
-
-function formatGroupDisplay(path: string): string {
-  const canonical = titleCaseGroupPath(path);
-  if (!canonical) return "";
-  return canonical.split("/").join(" / ");
-}
-
-function expandGroupAncestors(path: string): string[] {
-  const canonical = titleCaseGroupPath(path);
-  if (!canonical) return [];
-  const parts = canonical.split("/").filter(Boolean);
-  const out: string[] = [];
-  for (let i = 1; i <= parts.length; i++) out.push(parts.slice(0, i).join("/"));
-  return out;
-}
-
-function parseGroupsInput(raw: string): string[] {
-  return String(raw ?? "")
-    .split(",")
-    .map((s) => titleCaseGroupPath(s.trim()))
-    .filter(Boolean);
-}
-
-function groupsToInput(groups: unknown): string {
-  if (!Array.isArray(groups)) return "";
-  return groups
-    .map((g) => titleCaseGroupPath(String(g).trim()))
-    .filter(Boolean)
-    .join(", ");
-}
 
 // Delegate to shared delimiter utility
 const escapePipeText = escapeDelimiterText;

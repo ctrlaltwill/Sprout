@@ -205,10 +205,6 @@ export class ImageOcclusionEditorModal extends Modal {
     }
   }
 
-  private injectCssOnce() {
-    // CSS is now in styles.css (see src/styles/modals.css) — no-op
-  }
-
   private setTool(mode: "occlusion" | "transform") {
     this.handToggle = mode === "transform";
 
@@ -280,7 +276,6 @@ export class ImageOcclusionEditorModal extends Modal {
   private renderUI() {
     const { contentEl } = this;
     contentEl.empty();
-    this.injectCssOnce();
 
     const root = contentEl.createDiv({ cls: "bc sprout-io-root" });
 

@@ -9,23 +9,27 @@
 
 import type { Scope } from "../reviewer/types";
 
-export function normPath(s: string | null | undefined): string {
-  return String(s ?? "").replace(/\\/g, "/").replace(/^\.\//, "");
+function normalizeScopePath(pathValue: string | null | undefined): string {
+  return String(pathValue ?? "").replace(/\\/g, "/").replace(/^\.\//, "");
+}
+
+export function normPath(pathValue: string | null | undefined): string {
+  return normalizeScopePath(pathValue);
 }
 
 export function matchesScope(scope: Scope, rawPath: string): boolean {
-  const p = normPath(rawPath);
+  const normalizedPath = normalizeScopePath(rawPath);
 
   if (scope.type === "vault") return true;
 
   if (scope.type === "note") {
-    return p === normPath(scope.key);
+    return normalizedPath === normalizeScopePath(scope.key);
   }
 
   if (scope.type === "folder") {
-    const folder = normPath(scope.key).replace(/\/+$/, "");
+    const folder = normalizeScopePath(scope.key).replace(/\/+$/, "");
     if (!folder) return true;
-    return p.startsWith(folder + "/");
+    return normalizedPath.startsWith(folder + "/");
   }
 
   // group scope is resolved separately; path-based match N/A

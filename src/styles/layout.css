@@ -70,6 +70,24 @@ body.sprout-workspace-content-zoomed
   min-height: 0;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (max-width: 767px) {
+  body.is-mobile .sprout .sprout-view-content {
+    padding-bottom: calc(40px + 50px + env(safe-area-inset-bottom));
+  }
+
+  /* Prevent horizontal scrolling on mobile across all Sprout views */
+  body.is-mobile .sprout,
+  body.is-mobile .sprout .sprout-view-content,
+  body.is-mobile .sprout .sprout-home-root,
+  body.is-mobile .sprout .sprout-analytics-root,
+  body.is-mobile .sprout .sprout-browser-view,
+  body.is-mobile .workspace-leaf-content:has(.sprout) {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
 }
 
 /* Keep scrollbar at the edge while preserving content padding */
@@ -179,4 +197,24 @@ body.sprout.sprout-hide-status-bar .status-bar {
   height: 38px !important;
   min-height: 38px !important;
   max-height: 38px !important;
+}
+/* ============================================================================
+   MOBILE AOS ANIMATIONS — Fully disabled on phone-sized mobile (≤767px).
+   AOS remains active on iPad / tablet (≥768px) and desktop.
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  /*
+   * On phone-sized mobile devices, completely disable AOS animations and
+   * force all AOS-targeted elements to be fully visible immediately.
+   */
+
+  body.is-mobile .sprout [data-aos],
+  body.is-mobile .sprout [data-aos].aos-init,
+  body.is-mobile .sprout [data-aos].aos-animate {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }

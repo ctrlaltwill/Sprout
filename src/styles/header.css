@@ -30,11 +30,37 @@
 .sprout .view-header.sprout-header {
   height: auto !important;
   margin: 40px 40px 0px 40px !important;
-  border: 1px solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
-  border-radius: var(--radius-l) !important;
+  border-radius: var(--button-radius, var(--radius-l)) !important;
   background-color: var(--color-base-10) !important;
   box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  column-gap: 6px !important;
+}
+
+.sprout .view-header.sprout-header .view-header-left {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  min-width: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+.sprout .view-header.sprout-header .view-actions {
+  margin-left: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* Hide Obsidian page title for Sprout headers (all platforms). */
+.sprout .view-header.sprout-header .view-header-title-container {
+  display: none !important;
 }
 
 .sprout .sprout-header-brand-link,
@@ -46,7 +72,7 @@
   text-decoration: none !important;
   border-style: solid !important;
   border-width: 1px !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   width: 32px !important;
   min-width: 32px !important;
   padding-left: 6px !important;
@@ -128,6 +154,7 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  margin-right: auto !important;
 }
 
 /* --- Actions host (view-actions override) --- */
@@ -139,7 +166,7 @@
 }
 
 /* --- More-menu wrapper --- */
-.sprout .sprout-header .dropdown-menu.sprout-more-wrap {
+.sprout .sprout-header .sprout-more-wrap {
   position: relative !important;
   overflow: visible !important;
   background-color: transparent !important;
@@ -152,8 +179,8 @@
 .sprout .sprout-header .sprout-header-btn {
   background-color: var(--background-modifier-form-field) !important;
   color: var(--text-normal) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-m) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   box-shadow: none !important;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
@@ -173,4 +200,100 @@
   background-color: var(--muted) !important;
   color: var(--foreground) !important;
   border-color: var(--muted) !important;
+}
+
+/* --- Mobile header layout --- */
+@media (max-width: 820px) {
+  .sprout .view-header.sprout-header {
+    margin: 50px 12px 0 12px !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    column-gap: 6px !important;
+    max-width: calc(100% - 24px) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    border-color: transparent !important;
+    background-color: transparent !important;
+  }
+
+  .sprout .view-header.sprout-header .view-header-left {
+    order: 2;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  .sprout .view-header.sprout-header .view-actions {
+    order: 3;
+    width: auto !important;
+    flex: 1 1 auto !important;
+    margin-left: 0 !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+    gap: 6px !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .sprout .sprout-actions-host {
+    width: auto !important;
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+    gap: 6px !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Nuke any Obsidian-injected white bg on the view-actions bar */
+  body.is-mobile .sprout .view-header.sprout-header .view-actions,
+  body.is-mobile .sprout .sprout-actions-host,
+  body.is-mobile .sprout .view-header.sprout-header .view-actions::before,
+  body.is-mobile .sprout .view-header.sprout-header .view-actions::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .sprout .sprout-header .dropdown-menu.sprout-dropdown-root {
+    margin-right: 0 !important;
+  }
+
+  .sprout .view-header.sprout-header .view-actions .view-action.mod-bookmark,
+  .sprout .view-header.sprout-header [data-sprout-expand-collapse="true"] {
+    display: none !important;
+  }
+
+  .sprout .view-header.sprout-header [data-sprout-sync="true"] [data-sprout-label="true"] {
+    display: none !important;
+  }
+
+  /* Keep sidebar button on the left and pin other controls to the right */
+  .sprout .view-header.sprout-header .view-action {
+    order: 1;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+
+  /* Hide tooltip bubbles on mobile but keep buttons clickable */
+  .sprout .view-header.sprout-header button[data-tooltip]::before,
+  .sprout .view-header.sprout-header button[data-tooltip]::after {
+    display: none !important;
+  }
 }

@@ -785,7 +785,7 @@ export function StackedReviewButtonsChart(props: {
         </ResponsiveContainer>
       </div>
 
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
         <div className="bc inline-flex items-center gap-2">
           <span
             className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.again })}`}

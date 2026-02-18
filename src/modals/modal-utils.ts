@@ -45,6 +45,7 @@ import {
   createCardEditor,
 } from "../card-editor/card-editor";
 import type { CardRecord } from "../core/store";
+import { setCssProps } from "../core/ui";
 import type { CardRecordType } from "../types/card";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -184,58 +185,10 @@ export function fmtLocation(path: string | null | undefined): string {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Group-path helpers (title-case, normalise, parse/format)
+// Group-path helpers — re-exported from shared-utils for backward compatibility
 // ──────────────────────────────────────────────────────────────────────────────
 
-function titleCaseToken(token: string): string {
-  if (!token) return token;
-  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
-}
-
-function titleCaseSegment(seg: string): string {
-  if (!seg) return seg;
-  return seg
-    .split(/([\s_-]+)/)
-    .map((part) => (/^[\s_-]+$/.test(part) ? part : titleCaseToken(part)))
-    .join("");
-}
-
-function normalizeGroupPathInput(path: string): string {
-  if (!path) return "";
-  return path
-    .split("/")
-    .map((seg) => seg.trim())
-    .filter(Boolean)
-    .join("/");
-}
-
-/** Title-case every segment of a `/`-delimited group path. */
-export function titleCaseGroupPath(path: string): string {
-  const normalized = normalizeGroupPathInput(path);
-  if (!normalized) return "";
-  return normalized
-    .split("/")
-    .map((seg) => titleCaseSegment(seg.trim()))
-    .filter(Boolean)
-    .join("/");
-}
-
-/** Parse a comma-separated groups input string into an array of normalised paths. */
-export function parseGroupsInput(raw: string): string[] {
-  return String(raw ?? "")
-    .split(",")
-    .map((s) => titleCaseGroupPath(s.trim()))
-    .filter(Boolean);
-}
-
-/** Format an array of groups back into a comma-separated input string. */
-export function groupsToInput(groups: unknown): string {
-  if (!Array.isArray(groups)) return "";
-  return groups
-    .map((g: unknown) => titleCaseGroupPath(String(g).trim()))
-    .filter(Boolean)
-    .join(", ");
-}
+export { titleCaseGroupPath, parseGroupsInput, groupsToInput } from "../core/shared-utils";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Card editor helpers (shared by CardCreatorModal and bulk-edit)
@@ -822,5 +775,22 @@ export function scopeModalToWorkspace(modal: Modal) {
     leafContent.appendChild(modal.containerEl);
   } catch {
     // If the element is already in the leaf content or fails to move, continue silently
+    return;
+  }
+
+  // On mobile WebViews the compositor may not paint newly-appended
+  // absolutely-positioned content until the next user interaction
+  // (e.g. a swipe or tab switch). Force a synchronous reflow and
+  // promote the element to its own compositing layer so the browser
+  // paints it immediately.
+  if (Platform.isMobileApp) {
+    const el = modal.containerEl;
+    void el.offsetHeight;
+    requestAnimationFrame(() => {
+      setCssProps(el, "transform", "translateZ(0)");
+      requestAnimationFrame(() => {
+        setCssProps(el, "transform", null);
+      });
+    });
   }
 }

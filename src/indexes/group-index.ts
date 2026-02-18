@@ -3,7 +3,8 @@
  * @summary Maintains a cached index of card groups (decks/tags) with per-group card counts and scheduling-state breakdowns. Provides group-path normalisation, prefix expansion for nested groups, and a singleton GroupIndex class that rebuilds on demand when the store changes.
  *
  * @exports
- *  - normaliseGroupPath   — normalises a raw group path string (trims, collapses slashes, lowercases)
+ *  - normalizeGroupPath   — normalizes a raw group path string (trims, collapses slashes)
+ *  - normaliseGroupPath   — compatibility alias for normalizeGroupPath
  *  - expandGroupPrefixes  — expands a list of group paths to include all ancestor prefixes
  *  - GroupCounts           — type describing per-state card counts for a group
  *  - GroupIndex            — class that caches group-to-card mappings and count aggregations
@@ -15,50 +16,54 @@ import type { CardRecord, CardState } from "../core/store";
 import type SproutPlugin from "../main";
 
 /** Normalise a group path like " /a//b/ c / " -> "a/b/c" */
-export function normaliseGroupPath(raw: string): string | null {
-  let t = String(raw ?? "").trim();
-  if (!t) return null;
+export function normalizeGroupPath(raw: string): string | null {
+  let normalizedPath = String(raw ?? "").trim();
+  if (!normalizedPath) return null;
 
   // Convert backslashes to slashes (helps if pasted from Windows-y paths)
-  t = t.replace(/\\/g, "/");
+  normalizedPath = normalizedPath.replace(/\\/g, "/");
 
   // Trim outer slashes
-  t = t.replace(/^\/+/, "").replace(/\/+$/, "");
+  normalizedPath = normalizedPath.replace(/^\/+/, "").replace(/\/+$/, "");
 
   // Collapse repeated slashes
-  t = t.replace(/\/{2,}/g, "/");
+  normalizedPath = normalizedPath.replace(/\/{2,}/g, "/");
 
   // Split/trim segments and drop empties
-  const parts = t
+  const segments = normalizedPath
     .split("/")
-    .map((p) => p.trim())
+    .map((segment) => segment.trim())
     .filter(Boolean);
 
-  if (!parts.length) return null;
-  return parts.join("/");
+  if (!segments.length) return null;
+  return segments.join("/");
+}
+
+export function normaliseGroupPath(raw: string): string | null {
+  return normalizeGroupPath(raw);
 }
 
 /** Expand "a/b/c" -> ["a", "a/b", "a/b/c"] */
 export function expandGroupPrefixes(path: string): string[] {
-  const p = normaliseGroupPath(path);
-  if (!p) return [];
-  const segs = p.split("/").filter(Boolean);
-  const out: string[] = [];
-  for (let i = 0; i < segs.length; i++) {
-    out.push(segs.slice(0, i + 1).join("/"));
+  const normalizedPath = normalizeGroupPath(path);
+  if (!normalizedPath) return [];
+  const pathSegments = normalizedPath.split("/").filter(Boolean);
+  const prefixes: string[] = [];
+  for (let i = 0; i < pathSegments.length; i++) {
+    prefixes.push(pathSegments.slice(0, i + 1).join("/"));
   }
-  return out;
+  return prefixes;
 }
 
-function isAvailableNowState(st: CardState | undefined, now: number): boolean {
-  if (!st) return false;
+function isAvailableNowState(cardState: CardState | undefined, now: number): boolean {
+  if (!cardState) return false;
 
-  if (st.stage === "suspended") return false;
-  if (st.stage === "new") return true;
+  if (cardState.stage === "suspended") return false;
+  if (cardState.stage === "new") return true;
 
-  if (st.stage === "learning" || st.stage === "relearning" || st.stage === "review") {
-    if (typeof st.due !== "number" || !Number.isFinite(st.due)) return true;
-    return st.due <= now;
+  if (cardState.stage === "learning" || cardState.stage === "relearning" || cardState.stage === "review") {
+    if (typeof cardState.due !== "number" || !Number.isFinite(cardState.due)) return true;
+    return cardState.due <= now;
   }
 
   return false;
@@ -74,23 +79,23 @@ export class GroupIndex {
   build(cards: CardRecord[]): this {
     this.groupToIds.clear();
 
-    for (const c of cards) {
-      const id = String(c?.id ?? "");
+    for (const card of cards) {
+      const id = String(card?.id ?? "");
       if (!id) continue;
 
-      const groups = Array.isArray(c?.groups) ? c.groups : [];
-      for (const gRaw of groups) {
-        const g = normaliseGroupPath(gRaw);
-        if (!g) continue;
+      const groups = Array.isArray(card?.groups) ? card.groups : [];
+      for (const rawGroup of groups) {
+        const normalizedGroup = normalizeGroupPath(rawGroup);
+        if (!normalizedGroup) continue;
 
-        const prefixes = expandGroupPrefixes(g);
-        for (const k of prefixes) {
-          let set = this.groupToIds.get(k);
-          if (!set) {
-            set = new Set<string>();
-            this.groupToIds.set(k, set);
+        const prefixes = expandGroupPrefixes(normalizedGroup);
+        for (const groupKey of prefixes) {
+          let cardIds = this.groupToIds.get(groupKey);
+          if (!cardIds) {
+            cardIds = new Set<string>();
+            this.groupToIds.set(groupKey, cardIds);
           }
-          set.add(id);
+          cardIds.add(id);
         }
       }
     }
@@ -106,9 +111,9 @@ export class GroupIndex {
 
   /** IDs for group subtree. Because we index prefixes, this already includes descendants. */
   getIds(group: string): Set<string> {
-    const g = normaliseGroupPath(group);
-    if (!g) return new Set<string>();
-    return this.groupToIds.get(g) ?? new Set<string>();
+    const normalizedGroup = normalizeGroupPath(group);
+    if (!normalizedGroup) return new Set<string>();
+    return this.groupToIds.get(normalizedGroup) ?? new Set<string>();
   }
 
   getCounts(group: string, states: Record<string, CardState>, now: number): GroupCounts {
@@ -117,23 +122,23 @@ export class GroupIndex {
 
     let due = 0;
     for (const id of ids) {
-      const st = states[id];
-      if (isAvailableNowState(st, now)) due += 1;
+      const cardState = states[id];
+      if (isAvailableNowState(cardState, now)) due += 1;
     }
 
     return { due, total };
   }
 
   search(query: string, limit = 80): string[] {
-    const q = String(query ?? "").trim().toLowerCase();
-    if (!q) return this.keys.slice(0, limit);
+    const normalizedQuery = String(query ?? "").trim().toLowerCase();
+    if (!normalizedQuery) return this.keys.slice(0, limit);
 
-    const out: string[] = [];
+    const matches: string[] = [];
     for (let i = 0; i < this.keys.length; i++) {
-      if (this.keysLower[i].includes(q)) out.push(this.keys[i]);
-      if (out.length >= limit) break;
+      if (this.keysLower[i].includes(normalizedQuery)) matches.push(this.keys[i]);
+      if (matches.length >= limit) break;
     }
-    return out;
+    return matches;
   }
 }
 
@@ -156,6 +161,6 @@ export function getGroupIndex(plugin: SproutPlugin): GroupIndex {
   return index;
 }
 
-export function invalidateGroupIndex(plugin: SproutPlugin) {
+export function invalidateGroupIndex(plugin: SproutPlugin): void {
   _cache.delete(plugin);
 }

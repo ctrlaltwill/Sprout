@@ -6,11 +6,12 @@
  *  - openBulkEditModalForCards — opens the bulk-edit overlay for one or more card records, returning a promise that resolves when the user saves or cancels
  */
 
-import { Notice, setIcon } from "obsidian";
+import { Notice, Platform, setIcon } from "obsidian";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
+import { normalizeCardOptions, getCorrectIndices } from "../core/store";
 import {
   buildAnswerOrOptionsFor,
   escapePipes,
@@ -26,6 +27,13 @@ import {
   parseGroupsInput,
   createThemedDropdown,
 } from "./modal-utils";
+import { coerceGroups } from "../indexes/group-format";
+
+type GroupPickerFieldFactory = (
+  initialValue: string,
+  cardsCount: number,
+  plugin: SproutPlugin,
+) => { element: HTMLElement; hiddenInput: HTMLInputElement };
 
 const CLOZE_TOOLTIP =
   "Use cloze syntax to hide text in your prompt.\n{{c1::text}} creates the first blank.\nUse {{c2::text}} for a different blank, or reuse {{c1::text}} to reveal together.\nShortcuts: Cmd/Ctrl+Shift+C (new blank), Cmd/Ctrl+Shift+Alt/Option+C (same blank number).";
@@ -38,28 +46,39 @@ const OQ_TOOLTIP =
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** Convert a groups value (string | string[] | null) to a display string. */
-function groupsToInputString(groups: string[]): string {
+function formatGroupsForInput(groups: string[]): string {
   if (!groups || !groups.length) return "";
   return groups.join(" / ");
 }
 
-/** Coerce an arbitrary groups value into a string array. */
-function coerceGroups(g: unknown): string[] {
-  if (!g) return [];
-  if (Array.isArray(g)) return g.map((x: unknown) => String(x)).filter(Boolean);
-  if (typeof g === "string") {
-    return g
-      .split(/,/)
-      .map((x) => x.trim())
-      .filter(Boolean);
-  }
-  if (typeof g === "number" || typeof g === "boolean") {
-    return String(g)
-      .split(/,/)
-      .map((x) => x.trim())
-      .filter(Boolean);
-  }
-  return [];
+type EditableField = "title" | "question" | "answer" | "info" | "groups";
+
+function getSharedEditableFieldValue(cards: CardRecord[], field: EditableField): string {
+  const cardsForField = cards.filter((card) => {
+    if (field === "answer") return String(card.type ?? "").toLowerCase() !== "cloze";
+    return true;
+  });
+  if (!cardsForField.length) return "";
+
+  const values = cardsForField.map((card) => {
+    if (field === "title") return String(card.title || "");
+    if (field === "question") {
+      if (card.type === "basic" || card.type === "reversed") return String(card.q || "");
+      if (card.type === "mcq") return String(card.stem || "");
+      if (card.type === "oq") return String(card.q || "");
+      if (card.type === "cloze") return String(card.clozeText || "");
+    }
+    if (field === "answer") {
+      if (card.type === "basic" || card.type === "reversed") return String(card.a || "");
+      if (card.type === "mcq") return buildAnswerOrOptionsFor(card);
+    }
+    if (field === "info") return String(card.info || "");
+    if (field === "groups") return formatGroupsForInput(coerceGroups(card.groups));
+    return "";
+  });
+
+  const firstValue = values[0];
+  return values.every((value) => value === firstValue) ? firstValue : "";
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -131,42 +150,9 @@ export function openBulkEditModalForCards(
 
   // Map of input elements by field key
   const inputEls: Record<string, HTMLInputElement | HTMLTextAreaElement> = {};
-  let wrongContainer: HTMLElement | null = null;
-
-  /**
-   * Determines the shared value for a field across all selected cards.
-   * If all cards have the same value it's returned; otherwise returns "".
-   */
-  const sharedValue = (field: "title" | "question" | "answer" | "info" | "groups") => {
-    const filtered = cards.filter((c) => {
-      if (field === "answer") return String(c.type ?? "").toLowerCase() !== "cloze";
-      return true;
-    });
-    if (!filtered.length) return "";
-
-    const vals = filtered.map((card) => {
-      if (field === "title") return String(card.title || "");
-      if (field === "question") {
-        if (card.type === "basic" || card.type === "reversed") return String(card.q || "");
-        if (card.type === "mcq") return String(card.stem || "");
-        if (card.type === "oq") return String(card.q || "");
-        if (card.type === "cloze") return String(card.clozeText || "");
-      }
-      if (field === "answer") {
-        if (card.type === "basic" || card.type === "reversed") return String(card.a || "");
-        if (card.type === "mcq") return buildAnswerOrOptionsFor(card);
-      }
-      if (field === "info") return String(card.info || "");
-      if (field === "groups") return groupsToInputString(coerceGroups(card.groups));
-      return "";
-    });
-
-    const first = vals[0];
-    return vals.every((v) => v === first) ? first : "";
-  };
 
   /** Creates a label + textarea pair for an editable field. */
-  const createFieldWrapper = (label: string, field: "title" | "question" | "answer" | "info") => {
+  const createEditableTextareaField = (label: string, field: "title" | "question" | "answer" | "info") => {
     const wrapper = document.createElement("div");
     wrapper.className = "bc flex flex-col gap-1";
 
@@ -187,7 +173,7 @@ export function openBulkEditModalForCards(
     const textarea = document.createElement("textarea");
     textarea.className = "bc textarea w-full sprout-textarea-fixed";
     textarea.rows = 3;
-    textarea.value = sharedValue(field);
+    textarea.value = getSharedEditableFieldValue(cards, field);
     wrapper.appendChild(textarea);
     inputEls[field] = textarea;
 
@@ -265,22 +251,22 @@ export function openBulkEditModalForCards(
   form.appendChild(topGrid);
 
   // ── Editable fields ───────────────────────────────────────────────────────
-  form.appendChild(createFieldWrapper("Title", "title"));
-  form.appendChild(createFieldWrapper("Question", "question"));
+  form.appendChild(createEditableTextareaField("Title", "title"));
+  form.appendChild(createEditableTextareaField("Question", "question"));
 
   // Answer field (only for non-cloze, skip for MCQ/OQ which have their own editors)
   if (hasNonCloze && !isSingleMcq && !isSingleOq) {
-    form.appendChild(createFieldWrapper("Answer", "answer"));
+    form.appendChild(createEditableTextareaField("Answer", "answer"));
   }
 
   // ── MCQ-specific editor ─────────────────────────────────────────────────
   let mcqSection: HTMLElement | null = null;
+  type McqOptionRowEntry = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
+  const mcqOptionRows: McqOptionRowEntry[] = [];
   if (isSingleMcq) {
     const mcqCard = cards[0];
-    const options = Array.isArray(mcqCard.options) ? [...mcqCard.options] : [];
-    const correctIndex = Number.isFinite(mcqCard.correctIndex) ? (mcqCard.correctIndex as number) : 0;
-    const correctValue = options[correctIndex] ?? "";
-    const wrongValues = options.filter((_, idx) => idx !== correctIndex);
+    const options = normalizeCardOptions(mcqCard.options);
+    const correctIdxSet = new Set(getCorrectIndices(mcqCard));
 
     mcqSection = document.createElement("div");
     mcqSection.className = "bc flex flex-col gap-1";
@@ -296,83 +282,100 @@ export function openBulkEditModalForCards(
     mcqLabel.appendChild(mcqInfoIcon);
     mcqSection.appendChild(mcqLabel);
 
-    // Correct answer input
-    const correctWrapper = document.createElement("div");
-    correctWrapper.className = "bc flex flex-col gap-1";
-    const correctLabelDiv = document.createElement("div");
-    correctLabelDiv.className = "bc text-xs text-muted-foreground";
-    correctLabelDiv.textContent = "Correct answer";
-    correctWrapper.appendChild(correctLabelDiv);
-    const correctInput = document.createElement("input");
-    correctInput.type = "text";
-    correctInput.className = "bc input w-full";
-    correctInput.value = correctValue;
-    correctWrapper.appendChild(correctInput);
-    mcqSection.appendChild(correctWrapper);
-    inputEls["mcq_correct"] = correctInput;
+    const optionsContainer = document.createElement("div");
+    optionsContainer.className = "bc flex flex-col gap-2";
+    mcqSection.appendChild(optionsContainer);
 
-    // Wrong options list
-    const wrongLabel = document.createElement("div");
-    wrongLabel.className = "bc text-xs text-muted-foreground";
-    wrongLabel.textContent = "Wrong options";
-    mcqSection.appendChild(wrongLabel);
-
-    wrongContainer = document.createElement("div");
-    wrongContainer.className = "bc flex flex-col gap-2";
-    mcqSection.appendChild(wrongContainer);
-
-    const wrongRows: Array<{ input: HTMLInputElement }> = [];
-
-    /** Disable remove buttons when only one wrong option remains. */
     const updateRemoveButtons = () => {
-      const disable = wrongRows.length <= 1;
-      wrongContainer!.querySelectorAll("button").forEach((btn) => {
-        btn.disabled = disable;
-        btn.setAttribute("aria-disabled", disable ? "true" : "false");
-        btn.classList.toggle("is-disabled", disable);
-      });
+      const disable = mcqOptionRows.length <= 2;
+      for (const entry of mcqOptionRows) {
+        entry.removeBtn.disabled = disable;
+        entry.removeBtn.setAttribute("aria-disabled", disable ? "true" : "false");
+        entry.removeBtn.classList.toggle("is-disabled", disable);
+      }
     };
 
-    /** Append a new wrong-option row. */
-    const addWrongRow = (value = "") => {
+    const addOptionRow = (value: string, isCorrect: boolean) => {
       const row = document.createElement("div");
-      row.className = "bc flex items-center gap-2";
+      row.className = "bc flex items-center gap-2 sprout-edit-mcq-option-row";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = isCorrect;
+      checkbox.className = "bc sprout-mcq-correct-checkbox";
+      checkbox.setAttribute("data-tooltip", "Mark as correct answer");
+      checkbox.setAttribute("data-tooltip-position", "top");
+      row.appendChild(checkbox);
+
       const input = document.createElement("input");
       input.type = "text";
       input.className = "bc input flex-1 text-sm sprout-input-fixed";
-      input.placeholder = "Wrong option";
+      input.placeholder = "Enter an answer option";
       input.value = value;
       row.appendChild(input);
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost";
+      removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 p-0 sprout-remove-btn-ghost";
       removeBtn.setAttribute("data-tooltip", "Remove option");
       removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
-      xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-[0.8rem]";
+      xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
       setIcon(xIcon, "x");
       removeBtn.appendChild(xIcon);
-
       removeBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        if (wrongRows.length <= 1) return;
-        const idx = wrongRows.findIndex((r) => r.input === input);
+        if (mcqOptionRows.length <= 2) return;
+        const idx = mcqOptionRows.findIndex((entry) => entry.input === input);
         if (idx === -1) return;
-        wrongRows[idx].input.parentElement?.remove();
-        wrongRows.splice(idx, 1);
+        mcqOptionRows[idx].row.remove();
+        mcqOptionRows.splice(idx, 1);
         updateRemoveButtons();
       });
       row.appendChild(removeBtn);
 
-      wrongContainer!.appendChild(row);
-      wrongRows.push({ input });
+      optionsContainer.appendChild(row);
+      mcqOptionRows.push({ row, input, checkbox, removeBtn });
       updateRemoveButtons();
     };
 
-    const initialWrongs = wrongValues.length ? wrongValues : [""];
-    for (const value of initialWrongs) addWrongRow(value);
+    // Seed with existing options
+    for (let i = 0; i < options.length; i++) {
+      addOptionRow(options[i] || "", correctIdxSet.has(i));
+    }
+    // Ensure at least 2 rows
+    if (options.length < 2) {
+      const seeded = options.length;
+      if (seeded === 0) { addOptionRow("", true); addOptionRow("", false); }
+      else if (seeded === 1) { addOptionRow("", !correctIdxSet.has(0)); }
+    }
+
+    // "Add another option" input
+    const addInput = document.createElement("input");
+    addInput.type = "text";
+    addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
+    addInput.placeholder = "Add another option (press enter)";
+    addInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const value = addInput.value.trim();
+        if (!value) return;
+        addOptionRow(value, false);
+        addInput.value = "";
+      }
+    });
+    addInput.addEventListener("blur", () => {
+      const value = addInput.value.trim();
+      if (!value) return;
+      addOptionRow(value, false);
+      addInput.value = "";
+    });
+    const addInputWrap = document.createElement("div");
+    addInputWrap.className = "bc flex items-center gap-2";
+    addInputWrap.appendChild(addInput);
+    mcqSection.appendChild(addInputWrap);
 
     form.appendChild(mcqSection);
   }
@@ -546,7 +549,7 @@ export function openBulkEditModalForCards(
   }
 
   // Extra information
-  form.appendChild(createFieldWrapper("Extra information", "info"));
+  form.appendChild(createEditableTextareaField("Extra information", "info"));
 
   // ── Groups field (Basecoat tag picker) ────────────────────────────────────
   const groupsWrapper = document.createElement("div");
@@ -557,7 +560,8 @@ export function openBulkEditModalForCards(
   groupsLabel.textContent = "Groups";
   groupsWrapper.appendChild(groupsLabel);
 
-  const groupField = createGroupPickerFieldImpl(sharedValue("groups"), cards.length, plugin);
+  const createGroupPickerField = createGroupPickerFieldImpl as GroupPickerFieldFactory;
+  const groupField = createGroupPickerField(getSharedEditableFieldValue(cards, "groups"), cards.length, plugin);
   groupsWrapper.appendChild(groupField.element);
   groupsWrapper.appendChild(groupField.hiddenInput);
   inputEls["groups"] = groupField.hiddenInput;
@@ -631,26 +635,25 @@ export function openBulkEditModalForCards(
 
     // Handle MCQ if single MCQ selected
     if (isSingleMcq) {
-      const correctEl = inputEls["mcq_correct"] as HTMLInputElement;
-      const correct = (correctEl?.value ?? "").trim();
-      if (!correct) {
-        new Notice("Correct multiple-choice answer cannot be empty.");
+      const allOpts = mcqOptionRows
+        .map((entry) => ({ text: String(entry.input.value || "").trim(), isCorrect: entry.checkbox.checked }))
+        .filter((opt) => opt.text.length > 0);
+      const corrects = allOpts.filter((o) => o.isCorrect).map((o) => o.text);
+      const wrongs = allOpts.filter((o) => !o.isCorrect).map((o) => o.text);
+
+      if (corrects.length < 1) {
+        new Notice("At least one correct answer is required.");
         return;
       }
-
-      const wrongEls = wrongContainer?.querySelectorAll("input[type=text]") as NodeListOf<HTMLInputElement>;
-      const wrongs = Array.from(wrongEls || [])
-        .map((el) => el.value.trim())
-        .filter((v) => v.length > 0);
-
       if (wrongs.length < 1) {
         new Notice("Multiple-choice cards require at least one wrong option.");
         return;
       }
 
-      // Reconstruct legacy pipe-format answer string
-      const optionsList = [correct, ...wrongs];
-      const rendered = optionsList.map((opt, idx) => (idx === 0 ? `**${escapePipes(opt)}**` : escapePipes(opt)));
+      // Reconstruct legacy pipe-format answer string (bold = correct)
+      const rendered = allOpts.map((opt) =>
+        opt.isCorrect ? `**${escapePipes(opt.text)}**` : escapePipes(opt.text),
+      );
       updates.answer = rendered.join(" | ");
     }
 
@@ -737,12 +740,32 @@ export function openBulkEditModalForCards(
   };
   document.addEventListener("keydown", onKeyDown, true);
 
-  // Scope modal to the active leaf in the main (root) workspace so the overlay
-  // appears in the centre pane even when triggered from a sidebar widget.
-  const rootLeaf = document.querySelector(
-    ".mod-root .workspace-leaf.mod-active",
-  );
-  const leafContent = rootLeaf?.querySelector(".workspace-leaf-content");
-  const target = leafContent || document.body;
+  // On mobile, always attach to document.body so the overlay is never clipped
+  // by a leaf container's overflow rules. On desktop, scope to the active leaf
+  // in the main (root) workspace so it appears in the centre pane even when
+  // triggered from a sidebar widget.
+  let target: HTMLElement = document.body;
+  if (!Platform.isMobileApp) {
+    const rootLeaf = document.querySelector(
+      ".mod-root .workspace-leaf.mod-active",
+    );
+    const leafContent = rootLeaf?.querySelector<HTMLElement>(".workspace-leaf-content");
+    if (leafContent) target = leafContent;
+  }
   target.appendChild(container);
+
+  // On mobile WebViews the compositor may not paint newly-appended
+  // absolutely-positioned content until the next user interaction
+  // (e.g. a swipe or tab switch). Force a synchronous reflow and
+  // promote the element to its own compositing layer so the browser
+  // paints it immediately.
+  if (Platform.isMobileApp) {
+    void container.offsetHeight;
+    requestAnimationFrame(() => {
+      setCssProps(container, "transform", "translateZ(0)");
+      requestAnimationFrame(() => {
+        setCssProps(container, "transform", null);
+      });
+    });
+  }
 }

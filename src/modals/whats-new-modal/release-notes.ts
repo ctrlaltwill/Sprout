@@ -25,6 +25,33 @@ export interface ReleaseNote {
  * 3. The modal will automatically show for users upgrading to that version
  */
 export const RELEASE_NOTES: Record<string, ReleaseNote> = {
+  "1.0.5": {
+    version: "1.0.5",
+    title: "1.0.5",
+    releaseDate: "2026-02-18",
+    content: `
+# Sprout 1.0.5
+This stable release builds on the features delivered in 1.0.5-beta.1.
+
+## Included in this release
+- Multi-select MCQ and ordered-question card types
+- Typed cloze support
+- Image occlusion mask customisation
+- Reading view overhaul with Flashcards and Clean markdown styles
+- New settings view with expanded controls
+- Updated in-app guide surfaced directly in Obsidian
+
+## In development
+- Mobile functionality support
+- Continued bug-fix and stability updates
+- Reading view enhancements and additional style support
+- Codebase tidy-up focused on extensibility
+
+## Notes
+- If scheduling or analytics data is missing after update, restore from backup
+    `.trim(),
+  },
+
   "1.0.5-beta.1": {
     version: "1.0.5-beta.1",
     title: "1.0.5 Beta 1",

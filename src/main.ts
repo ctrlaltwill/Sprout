@@ -44,6 +44,7 @@ import { registerReadingViewPrettyCards, teardownReadingView } from "./reading/r
 import { removeAosErrorHandler } from "./core/aos-loader";
 import { initTooltipPositioner } from "./core/tooltip-positioner";
 import { initButtonTooltipDefaults } from "./core/tooltip-defaults";
+import { initMobileKeyboardHandler, cleanupMobileKeyboardHandler } from "./core/mobile-keyboard-handler";
 
 import { JsonStore } from "./core/store";
 import { queryFirst } from "./core/ui";
@@ -118,8 +119,6 @@ export default class SproutPlugin extends Plugin {
   isWideMode = false;
 
   readonly DEFAULT_SETTINGS: SproutSettings = DEFAULT_SETTINGS;
-  readonly defaultSettings: SproutSettings = DEFAULT_SETTINGS;
-  readonly defaults: SproutSettings = DEFAULT_SETTINGS;
 
   // Ribbon icons (desktop + mobile)
   private _ribbonEls: HTMLElement[] = [];
@@ -160,11 +159,17 @@ export default class SproutPlugin extends Plugin {
       bc.initAll?.();
 
       // Start observing future DOM changes (for views created later).
-      bc.start?.();
+      // Mobile page transitions can expose transient/partial DOM nodes that
+      // trigger noisy Basecoat runtime errors; keep observer desktop-only.
+      if (!Platform.isMobileApp) {
+        bc.start?.();
+        this._basecoatStarted = true;
+      } else {
+        this._basecoatStarted = false;
+      }
 
-      this._basecoatStarted = true;
       (this as unknown as { _basecoatApi: unknown })._basecoatApi = bc;
-      log.info(`Basecoat initAll + start OK`);
+      log.info(`Basecoat initAll OK${Platform.isMobileApp ? " (observer disabled on mobile)" : " + start OK"}`);
     } catch (e) {
       log.warn(`Basecoat init failed`, e);
     }
@@ -546,6 +551,9 @@ export default class SproutPlugin extends Plugin {
       // Ensure all buttons use `data-tooltip` and never rely on native `title` tooltips.
       this.register(initButtonTooltipDefaults());
 
+      // Initialize mobile keyboard handler for adaptive bottom padding
+      initMobileKeyboardHandler();
+
       this._bc = {
         VIEW_TYPE_REVIEWER,
         VIEW_TYPE_WIDGET,
@@ -652,6 +660,42 @@ export default class SproutPlugin extends Plugin {
       });
 
       this.addCommand({
+        id: "add-basic-flashcard",
+        name: "Add basic flashcard to note",
+        callback: () => this.openAddFlashcardModal("basic"),
+      });
+
+      this.addCommand({
+        id: "add-basic-reversed-flashcard",
+        name: "Add basic (reversed) flashcard to note",
+        callback: () => this.openAddFlashcardModal("reversed"),
+      });
+
+      this.addCommand({
+        id: "add-cloze-flashcard",
+        name: "Add cloze flashcard to note",
+        callback: () => this.openAddFlashcardModal("cloze"),
+      });
+
+      this.addCommand({
+        id: "add-multiple-choice-flashcard",
+        name: "Add multiple choice flashcard to note",
+        callback: () => this.openAddFlashcardModal("mcq"),
+      });
+
+      this.addCommand({
+        id: "add-ordered-question-flashcard",
+        name: "Add ordered question flashcard to note",
+        callback: () => this.openAddFlashcardModal("oq"),
+      });
+
+      this.addCommand({
+        id: "add-image-occlusion-flashcard",
+        name: "Add image occlusion flashcard to note",
+        callback: () => this.openAddFlashcardModal("io"),
+      });
+
+      this.addCommand({
         id: "import-anki",
         name: "Import from Anki (.apkg)",
         callback: async () => {
@@ -740,6 +784,9 @@ export default class SproutPlugin extends Plugin {
 
     // Remove global AOS error suppression handler
     removeAosErrorHandler();
+
+    // Clean up mobile keyboard handler
+    cleanupMobileKeyboardHandler();
 
     // ✅ stop Basecoat observer on unload (helps plugin reload / dev)
     this._stopBasecoatRuntime();
@@ -1153,16 +1200,6 @@ export default class SproutPlugin extends Plugin {
     this._normaliseSettingsInPlace();
     await this.saveAll();
     this._refreshOpenViews();
-  }
-
-  public async resetToDefaultSettings(): Promise<void> {
-    return this.resetSettingsToDefaults();
-  }
-  public async resetDefaultSettings(): Promise<void> {
-    return this.resetSettingsToDefaults();
-  }
-  public async loadDefaultSettings(): Promise<void> {
-    return this.resetSettingsToDefaults();
   }
 
   private _isCardStateLike(v: unknown): v is CardState {

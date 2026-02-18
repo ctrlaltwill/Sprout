@@ -12,7 +12,7 @@
   padding: 8px 14px;
   font-size: var(--sprout-font-xs);
   font-weight: 600;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: #111;
   color: #fff;
   transition: background 0.18s;
@@ -90,7 +90,7 @@
   padding: 8px 14px;
   font-size: var(--sprout-font-xs);
   font-weight: 600;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: #f4b400 !important;
   color: #111 !important;
   transition: background 0.18s;
@@ -171,6 +171,15 @@
   display: none !important;
 }
 
+/* ---- Mobile phones: hide keyboard hint badges ---- */
+
+@media (max-width: 767px) and (hover: none) and (pointer: coarse) {
+  .sprout kbd,
+  .sprout .kbd {
+    display: none !important;
+  }
+}
+
 /* ---- Utility: rotation/animations ---- */
 
 .sprout .sprout-rotate {
@@ -232,7 +241,7 @@
   display: inline-block !important;
   border-radius: var(--radius-s) !important;
   overflow: hidden !important;
-  border: 1px solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   background: var(--background-secondary) !important;
   max-width: 100% !important;
 }
@@ -354,7 +363,7 @@
   min-width: 32px !important;
   height: 32px !important;
   padding: 0 10px !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-radius: var(--radius-m) !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
@@ -386,7 +395,7 @@
   height: 32px !important;
   width: 60px !important;
   padding: 0 8px !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-radius: var(--radius-m) !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
@@ -558,7 +567,7 @@ input[type="checkbox"]:checked:hover::after {
   border-width: 1px !important;
 }
 .sprout .sprout-cloze-typed-input:focus {
-  border-color: var(--background-modifier-border) !important;
+  border-color: var(--sprout-border-color) !important;
   box-shadow: none !important;
 }
 .sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial,

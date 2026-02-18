@@ -120,12 +120,12 @@
   height: 42px !important;
   padding: 10px !important;
   border: 1px dashed var(--background-modifier-border-hover) !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   background: var(--background-modifier-form-field) !important;
 }
 
 .sprout-deck-search-input:focus {
-  border: 1px solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   text-align: left !important;
 }
 
@@ -134,7 +134,7 @@
 }
 
 .sprout-deck-search-input-focused {
-  border: 1px solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   text-align: left !important;
 }
 
@@ -147,8 +147,8 @@
   right: 0;
   margin-top: 0.25rem;
   background: var(--bg-popover, var(--color-popover, var(--color-background))) !important;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   box-shadow: var(--shadow-s) !important;
   z-index: 1000;
   max-height: 300px;
@@ -184,6 +184,12 @@
 .sprout-home-root.sprout-no-animate [data-aos] {
   opacity: 1 !important;
   transform: none !important;
+}
+
+/* ---- Deck sections ---- */
+
+.sprout .sprout-home-deck-section {
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 /* ---- Deck rows ---- */
@@ -231,7 +237,7 @@
     background-color: var(--theme-accent);
     border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
     color: #fff;
-    border-radius: var(--radius-l);
+    border-radius: var(--button-radius, var(--radius-l));
     align-items: center;
   padding: 0.125rem 0.625rem;
     font-size: var(--sprout-font-3xs);
@@ -362,11 +368,55 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   border: 1px dashed rgba(var(--text-muted-rgb), 0.4);
   font-size: var(--sprout-font-xs);
   color: var(--text-muted);
   background-color: rgba(var(--text-muted-rgb), 0.1);
   padding: 10px;
   height: 42px;
+}
+
+@media (max-width: 767px) {
+  body.is-mobile .sprout .sprout-home-name-input,
+  body.is-mobile .sprout .sprout-greeting-suffix {
+    display: none !important;
+  }
+
+  /* Strip parent card wrapper on mobile — pinned/recent become standalone cards */
+  body.is-mobile .sprout .sprout-home-decks-card {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 16px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure the inner grid lays out vertically */
+  body.is-mobile .sprout .sprout-home-decks-card > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  /* Promote each deck section to its own standalone card on mobile */
+  body.is-mobile .sprout .sprout-home-deck-section {
+    background-color: var(--background) !important;
+    border-radius: var(--button-radius, var(--radius-m)) !important;
+    border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+    box-shadow: none !important;
+    padding: 16px !important;
+  }
+
+  body.is-mobile .sprout .sprout-home-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.is-mobile .sprout .sprout-home-stats-grid > .sprout-stat-card {
+    width: 100%;
+    min-width: 0;
+  }
 }
