@@ -8,8 +8,8 @@
 [![Wiki - 30 pages](https://img.shields.io/badge/wiki-30%20pages-blue)](https://github.com/ctrlaltwill/Sprout/wiki)
 
 
-> [!Note]
-> Thank you for all of your support following Sprout’s stable release. I am actively working through early issues. Please raise bugs or feature requests via GitHub Issues.
+> [!Important]
+> Thank you for all of your support following Sprout’s stable release and subsequent updates. I am actively working through early teething issues. Please raise bugs or feature requests via GitHub Issues. I
 
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
