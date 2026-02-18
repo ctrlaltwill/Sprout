@@ -12,7 +12,7 @@ import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { type SproutHeader, createViewHeader } from "../core/header";
 import { log } from "../core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../core/constants";
-import { queryFirst, setCssProps } from "../core/ui";
+import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import type { Scope } from "../reviewer/types";
@@ -25,7 +25,6 @@ import {
   localDayIndex,
   formatTimeAgo,
   scopeFromDeckPath,
-  formatCountdownToMidnight,
   formatDeckLabel,
   formatPinnedDeckLabel,
   getDeckLeafName,
@@ -243,18 +242,24 @@ export class SproutHomeView extends ItemView {
       };
 
       const setGreetingText = (_name: string, firstOpen: boolean) => {
+        const isPhoneMobile =
+          document.body.classList.contains("is-mobile") && window.matchMedia("(max-width: 767px)").matches;
         const hour = new Date(nowMs).getHours();
-        const variants = firstOpen
-          ? ["Welcome to Sprout, {name}"]
-          : [
-              "Welcome back to Sprout, {name}",
-              "Kia ora {name}!",
-              "G'day {name}!",
-            ];
-        if (hour >= 5 && hour < 12) variants.push("Good morning {name}");
-        if (hour >= 5 && hour < 12) variants.push("Good morning {name}");
-        else if (hour >= 12 && hour < 18) variants.push("Good afternoon {name}");
-        else variants.push("Good evening {name}");
+        const variants = isPhoneMobile
+          ? [firstOpen ? "Welcome to Sprout." : "Welcome back to Sprout."]
+          : firstOpen
+            ? ["Welcome to Sprout, {name}"]
+            : [
+                "Welcome back to Sprout, {name}",
+                "Kia ora {name}!",
+                "G'day {name}!",
+              ];
+        if (!isPhoneMobile) {
+          if (hour >= 5 && hour < 12) variants.push("Good morning {name}");
+          if (hour >= 5 && hour < 12) variants.push("Good morning {name}");
+          else if (hour >= 12 && hour < 18) variants.push("Good afternoon {name}");
+          else variants.push("Good evening {name}");
+        }
 
         const pick = variants[Math.floor(Math.random() * variants.length)];
         const [prefix, suffix] = pick.split("{name}");
@@ -335,7 +340,7 @@ export class SproutHomeView extends ItemView {
     } else {
       // Greeting is off: just show 'Home' as the title
       title.className += " text-xl font-semibold tracking-tight";
-      title.textContent = "Home"
+      title.textContent = "Home";
     }
 
     // (greeting input logic is now only inside the showGreeting block)
@@ -451,26 +456,16 @@ export class SproutHomeView extends ItemView {
     const daysRange = 7;
     let reviews7d = 0;
     let time7d = 0;
-    let activeDays = 0;
     for (let i = 0; i < daysRange; i += 1) {
       const idx = todayIndex - i;
       const entry = dayMap.get(idx);
       if (entry) {
         reviews7d += entry.count;
         time7d += entry.totalMs;
-        if (entry.count > 0) activeDays += 1;
       }
     }
     const avgCardsPerDay = reviews7d / daysRange;
     const avgTimePerDayMinutes = time7d / daysRange / 60000;
-
-    let currentStreak = 0;
-    let cursor = todayIndex;
-    while (dayMap.get(cursor)?.count) {
-      currentStreak += 1;
-      cursor -= 1;
-    }
-    const atRisk = !dayMap.get(todayIndex)?.count && (dayMap.get(todayIndex - 1)?.count ?? 0) > 0;
 
     const openStudyForScope = async (scope: Scope) => {
       try {
@@ -493,7 +488,7 @@ export class SproutHomeView extends ItemView {
 
     const makeDeckSection = (label: string, iconName?: string) => {
       const section = document.createElement("div");
-      section.className = "flex flex-col gap-3 p-3 rounded-lg border border-border bg-background";
+      section.className = "sprout-home-deck-section flex flex-col gap-3 p-3 rounded-lg border border-border bg-background";
       const headingRow = section.createDiv({ cls: "sprout-section-heading-row flex items-center justify-between gap-2" });
       headingRow.createDiv({ cls: "font-semibold", text: label });
       if (iconName) {
@@ -513,13 +508,13 @@ export class SproutHomeView extends ItemView {
     const recentSection = makeDeckSection("Recent decks", "clock");
 
     const statsRow = document.createElement("div");
-    statsRow.className = "sprout-ana-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4";
+    statsRow.className = "sprout-ana-grid sprout-home-stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4";
     applyAos(statsRow, 200);
     body.appendChild(statsRow);
 
     // Decks card wrapper
     const decksCard = document.createElement("div");
-    decksCard.className = "card sprout-ana-card p-4 flex flex-col gap-4";
+    decksCard.className = "card sprout-ana-card sprout-home-decks-card p-4 flex flex-col gap-4";
     applyAos(decksCard, 400);
     body.appendChild(decksCard);
 
@@ -634,37 +629,6 @@ export class SproutHomeView extends ItemView {
       card.createDiv({ cls: "text-2xl font-semibold", text: `${Math.round(avgCardsPerDay)}` });
       card.createDiv({ cls: "text-xs text-muted-foreground", text: "Last 7 days" });
     }
-    const includesToday = (dayMap.get(todayIndex)?.count ?? 0) > 0;
-    const streakCard = document.createElement("div");
-    streakCard.className = "card sprout-ana-card sprout-stat-card small-card p-4 flex flex-col gap-2 lg:flex-1";
-    statsRow.appendChild(streakCard);
-    const streakHeader = streakCard.createDiv({ cls: "flex items-center justify-between text-sm text-muted-foreground" });
-    streakHeader.createDiv({ cls: "bc", text: "Streak" });
-    if (includesToday) {
-      const keepBadge = document.createElement("span");
-      keepBadge.className = "sprout-trend-badge sprout-live-badge sprout-live-badge-dark";
-      
-      // Flashing circle
-      const circle = document.createElement("span");
-      circle.className = "sprout-live-indicator";
-      keepBadge.appendChild(circle);
-      
-      keepBadge.appendChild(document.createTextNode("Live"));
-      streakHeader.appendChild(keepBadge);
-    }
-    streakCard.createDiv({ cls: "text-2xl font-semibold", text: `${currentStreak} day${currentStreak === 1 ? "" : "s"}` });
-    streakCard.createDiv({ cls: "text-xs text-muted-foreground", text: (activeDays === 0 ? "No reviews yet" : (atRisk ? `Ends in ${formatCountdownToMidnight(nowMs)} — study today.` : (includesToday ? "Keep it going!" : "Streak active."))) });
-
-    if (atRisk) {
-      this._streakTimer = window.setInterval(() => {
-        if (!statsRow?.parentElement) return; // Element was removed from DOM
-        const cards = Array.from(statsRow.querySelectorAll(".sprout-ana-card"));
-        const last = cards[cards.length - 1] ?? undefined;
-        const noteEl = last ? queryFirst<HTMLElement>(last, ".text-xs") : null;
-        if (noteEl) noteEl.textContent = `Ends in ${formatCountdownToMidnight(Date.now())} — study today.`;
-      }, 1000);
-    }
-
     const pinnedList = pinnedSection.list;
     
     // Get all available deck paths for search
@@ -978,7 +942,7 @@ export class SproutHomeView extends ItemView {
       React.createElement(ReviewCalendarHeatmap, {
         revlog: reviewEvents,
         timezone,
-        rangeDays: 365,
+        rangeDays: 0,
         filters: {},
       }),
     );

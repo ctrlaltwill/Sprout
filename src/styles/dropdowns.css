@@ -19,7 +19,7 @@
 
 /* ---- Dropdown menu basics ---- */
 
-.dropdown-menu hr {margin: 0; border-radius: var(--radius-m);
+.dropdown-menu hr {margin: 0; border-radius: var(--button-radius, var(--radius-m));
     overflow: hidden;}
 
 
@@ -28,7 +28,7 @@
 .sprout.dropdown-menu .bg-popover {
   background-color: #fff;
   color: var(--popover-fg, var(--foreground));
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
 }
 
 /* Menu item hover/focus: light theme - very light grey */
@@ -61,6 +61,11 @@
   color: var(--text-color) !important;
   border-color: var(--border-color, var(--border-border, var(--border))) !important;
   padding: 6px !important;
+}
+
+/* Inherit theme border-radius on all popover panels (overrides Tailwind rounded-lg) */
+:where(.rounded-lg.border.bg-popover) {
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 /* Menu items: role=menuitem + role=menuitemradio */
@@ -132,7 +137,7 @@
 :where(.bc.p-1, .p-1) [role="button"] {
   color: var(--text-color) !important;
   margin: 1px 0 !important;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
 }
 
 :where(.bc.p-1, .p-1) [role="button"]:hover,
@@ -198,7 +203,7 @@ body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-ov
 /* "Reset filters" (clickable text row) */
 :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
   color: var(--text-color) !important;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   padding-top: 6px;
   padding-bottom: 6px;
 }
@@ -260,7 +265,7 @@ body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-ov
   height: 30px;
   padding: 0 10px;
   border-radius: var(--radius-s, 4px);
-  border: 1px solid var(--background-modifier-border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background-secondary);
   color: var(--text-normal);
   font-size: var(--font-ui-small);
@@ -302,7 +307,7 @@ body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-ov
   overflow: hidden;
   background: var(--background-primary) !important;
   color: var(--text-normal) !important;
-  border-color: var(--background-modifier-border) !important;
+  border-color: var(--sprout-border-color) !important;
 }
 
 /* Search input wrapper */
@@ -311,7 +316,7 @@ body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-ov
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-sp-search-icon {

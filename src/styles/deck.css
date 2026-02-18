@@ -40,7 +40,7 @@
 .sprout .sprout-deck-disclosure:focus-visible {
   outline: 2px solid rgba(var(--interactive-accent-rgb), 0.45);
   outline-offset: 2px;
-  border-radius: var(--radius-l);
+  border-radius: var(--button-radius, var(--radius-l));
 }
 
 .sprout .sprout-deck-disclosure svg {
@@ -67,7 +67,7 @@
   z-index: 10000;
   background: var(--background) !important;
   color: var(--foreground) !important;
-  border-color: var(--border) !important;
+  border-color: var(--sprout-border-color) !important;
   box-shadow: none !important;
   pointer-events: auto;
 }
@@ -86,8 +86,8 @@
   width: 100%;
   background: var(--background);
   color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-l);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-l));
   padding: 6px 10px;
   outline: none;
   box-shadow: none;
@@ -124,13 +124,47 @@
   padding: 7px 15px !important;
 }
 
+body.is-mobile .sprout .sprout-deck-controls-row {
+  width: 100%;
+}
+
+body.is-mobile .sprout .sprout-deck-group-combo {
+  width: 100%;
+}
+
+body.is-mobile .sprout .sprout-deck-group-popover {
+  width: 100% !important;
+}
+
+body.is-mobile .sprout .sprout-deck-study-buttons {
+  display: flex;
+  width: 100%;
+}
+
+body.is-mobile .sprout .sprout-deck-study-buttons .sprout-deck-control-btn {
+  width: 50% !important;
+  min-width: 0;
+  justify-content: center;
+}
+
+body.is-mobile .sprout .sprout-deck-expand-buttons {
+  display: flex;
+  width: 100%;
+}
+
+body.is-mobile .sprout .sprout-deck-expand-buttons .btn-outline {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
 .sprout .sprout-deck-table-outer {
-  border-color: var(--background-modifier-border) !important;
+  border-color: var(--sprout-border-color) !important;
   height: 100% !important;
 }
 
 .sprout .sprout-deck-row {
-  border-radius: 8px !important;
+  border-radius: var(--button-radius, 8px) !important;
   overflow: hidden !important;
   cursor: pointer !important;
 }
@@ -169,7 +203,7 @@
 
 /* Group select popover: clip inner borders to rounded corners */
 .sprout .sprout-group-select-popover {
-  border-radius: var(--radius-l);
+  border-radius: var(--button-radius, var(--radius-l));
   overflow: hidden;
 }
 

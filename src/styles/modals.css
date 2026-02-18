@@ -58,9 +58,9 @@
 /* ---- Panel ---- */
 
 .sprout .sprout-modals.modal {
-    border: 1px solid var(--border);
+    border: var(--sprout-border-width) solid var(--sprout-border-color);
     background: var(--background);
-    border-radius: var(--radius-l);
+    border-radius: var(--button-radius, var(--radius-l));
     max-width: min(560px, 92vw);
     max-height: min(80vh, 720px);
     padding: 10px !important;
@@ -72,8 +72,8 @@
 
 .sprout .modal-container .modal {
   padding: 0;
-  border-radius: var(--radius-l);
-  border: 1px solid var(--border);
+  border-radius: var(--button-radius, var(--radius-l));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   overflow: hidden;
@@ -204,8 +204,8 @@
 .sprout .sprout-modals .sprout-popover-dropdown .bg-popover,
 .sprout .sprout-modals .sprout-popover-dropdown-below .bg-popover {
   background-color: var(--background-primary, var(--background, #fff)) !important;
-  border: 1px solid var(--background-modifier-border, var(--border, #e0e0e0)) !important;
-  border-radius: var(--radius-m) !important;
+  border: 1px solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   color: var(--text-normal, var(--foreground, #111)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   opacity: 1 !important;
@@ -216,7 +216,7 @@
 .theme-dark .sprout .sprout-modals .sprout-popover-dropdown .bg-popover,
 .theme-dark .sprout .sprout-modals .sprout-popover-dropdown-below .bg-popover {
   background-color: var(--background-secondary, var(--background, #1e1e1e)) !important;
-  border-color: var(--background-modifier-border, var(--border, #333)) !important;
+  border-color: var(--sprout-border-color) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
   opacity: 1 !important;
 }
@@ -235,7 +235,7 @@
   align-content: flex-start !important;
   cursor: pointer !important;
   background: var(--background-modifier-form-field) !important;
-  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   box-shadow: none !important;
 }
 
@@ -258,8 +258,8 @@
   max-height: 90vh !important;
   overflow: auto !important;
   padding: 20px !important;
-  border-radius: var(--radius-l);
-  border: 1px solid var(--border);
+  border-radius: var(--button-radius, var(--radius-l));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   box-sizing: border-box;
@@ -303,7 +303,7 @@
   max-height: 90% !important;
   box-sizing: border-box !important;
   overflow: visible !important;
-  border-radius: var(--radius-l) !important;
+  border-radius: var(--button-radius, var(--radius-l)) !important;
   z-index: 2147483001 !important;
   isolation: isolate;
 }
@@ -346,7 +346,7 @@
   text-align: left !important;
   opacity: 1 !important;
   background-color: var(--background-primary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   cursor: not-allowed !important;
 }
 
@@ -367,12 +367,12 @@
 /* Re-apply visible border on dropdown panels inside modals */
 .sprout .sprout-modals.modal .sprout-popover-dropdown .border,
 .sprout .sprout-modals.modal .sprout-popover-dropdown .border-border {
-  border-color: var(--background-modifier-border, var(--border, #e0e0e0)) !important;
+  border-color: var(--sprout-border-color) !important;
 }
 
 /* Preserve the outer modal border itself */
 .sprout .sprout-modals.modal {
-  border-color: var(--border) !important;
+  border-color: var(--sprout-border-color) !important;
 }
 
 /* Also strip borders inside bulk-edit overlay panels */
@@ -383,7 +383,7 @@
 
 /* Preserve the outer bulk-edit panel border */
 .sprout .sprout-bulk-edit-panel {
-  border-color: var(--border) !important;
+  border-color: var(--sprout-border-color) !important;
 }
 
 /* ---- Consistent modal footer spacing ---- */
@@ -403,7 +403,7 @@
   overflow: visible !important;
   display: flex !important;
   flex-direction: column !important;
-  border-radius: var(--radius-l) !important;
+  border-radius: var(--button-radius, var(--radius-l)) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   background: var(--background) !important;
   position: relative !important;
@@ -460,7 +460,7 @@
   row-gap: 2px !important;
   align-content: flex-start !important;
   background: var(--background-modifier-form-field) !important;
-  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   box-shadow: none !important;
 }
 
@@ -479,6 +479,26 @@
   display: block !important;
 }
 
+/* ---- Bulk edit modal (mobile) ---- */
+
+body.is-mobile .sprout .sprout-bulk-edit-panel {
+  width: min(640px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: 72vh !important;
+  margin: 0 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  overflow: hidden !important;
+}
+
+body.is-mobile .sprout .sprout-bulk-edit-content {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ---- Image occlusion creator modal ---- */
 
 .sprout .sprout-io-creator-modal {
@@ -488,7 +508,7 @@
   max-height: 90% !important;
   overflow: visible !important;
   padding: 0 !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
 .sprout .sprout-io-creator-root {
@@ -540,8 +560,8 @@
   overflow: hidden !important;
   flex-shrink: 0 !important;
   background-color: var(--background-secondary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-m) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 .sprout .sprout-io-canvas-placeholder {
@@ -580,7 +600,7 @@
 .sprout .sprout-io-stage-image {
   display: block !important;
   user-select: none !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   box-sizing: border-box !important;
 }
 
@@ -596,7 +616,7 @@
 .sprout .sprout-io-footer {
   margin-top: 16px !important;
   padding-top: 16px !important;
-  border-top: 1px solid var(--border) !important;
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
 /* IO mode picker — button-style dropdown menu */
@@ -606,8 +626,8 @@
   min-width: 132px !important;
   max-width: min(320px, calc(100vw - 16px)) !important;
   padding: 4px !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-m) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   background-color: var(--background) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
 }
@@ -674,7 +694,7 @@
   line-height: 1.3 !important;
   color: var(--sprout-io-text-color, #111) !important;
   border: 1px dashed rgba(16, 185, 129, 0.6) !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   outline: none !important;
   background: var(--sprout-io-text-bg, transparent) !important;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
@@ -685,7 +705,7 @@
   border: 2px dashed #10b981 !important;
   background-color: rgba(16, 185, 129, 0.08) !important;
   pointer-events: none !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   left: var(--sprout-io-preview-x, 0) !important;
   top: var(--sprout-io-preview-y, 0) !important;
   width: var(--sprout-io-preview-w, 1px) !important;
@@ -751,7 +771,7 @@
   font-weight: 700 !important;
   text-align: center !important;
   border: 2px solid rgba(0, 0, 0, 0.3) !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   background-color: rgba(255, 255, 255, 0.95) !important;
   color: #000 !important;
   cursor: text !important;
@@ -790,7 +810,7 @@
   border: var(--sprout-io-text-border, 1px dashed rgba(16, 185, 129, 0.6)) !important;
   background-color: var(--sprout-io-text-bg, transparent) !important;
   box-shadow: var(--sprout-io-text-shadow, none) !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   padding: 6px 8px !important;
   box-sizing: border-box !important;
   display: flex !important;
@@ -816,7 +836,7 @@
   flex-shrink: 0;
   margin-left: auto;
 
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   border: 1px solid transparent;
   background: transparent;
   width: 32px;
@@ -831,7 +851,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   border: 1px solid transparent;
   background: transparent;
   width: 32px;
@@ -881,7 +901,7 @@
   padding: 0;
   width: 90%;
   max-width: 600px;
-  border-radius: var(--radius-l);
+  border-radius: var(--button-radius, var(--radius-l));
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
@@ -1059,13 +1079,13 @@
 .sprout-compare-th {
   text-align: left;
   padding: 6px 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
   font-weight: 600;
 }
 
 .sprout-compare-td {
   padding: 6px 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-confirm-meta {
@@ -1082,8 +1102,8 @@
 .sprout-confirm-summary {
   margin-top: 10px;
   padding: 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background-secondary, var(--background));
   font-size: var(--sprout-font-2xs);
   color: var(--text-normal);
@@ -1105,8 +1125,8 @@
 .sprout-confirm-hint {
   margin-top: 10px;
   padding: 10px 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background-modifier-message);
 }
 
@@ -1201,7 +1221,7 @@
   user-select: none;
   -webkit-user-drag: none;
   pointer-events: none;
-  border: 1px solid var(--border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-sizing: border-box;
 }
 
@@ -1272,7 +1292,7 @@
   height: var(--sprout-io-height, 0);
   box-sizing: border-box;
   border: 2px dashed var(--interactive-accent);
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: rgba(0, 0, 0, 0.06);
   pointer-events: none;
 }
@@ -1285,7 +1305,7 @@
   height: var(--sprout-io-height, 0);
   box-sizing: border-box;
   border: 2px solid var(--interactive-accent);
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -1310,7 +1330,7 @@
   font-weight: 700;
   font-size: var(--sprout-font-xs);
   padding: 2px 8px;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: rgba(0, 0, 0, 0.55);
   color: white;
   pointer-events: none;
@@ -1355,9 +1375,9 @@
   align-items: center;
   gap: 6px;
   padding: 6px;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background);
-  border: 1px solid var(--background-modifier-border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
   width: fit-content;
   max-width: 100%;
@@ -1368,22 +1388,22 @@
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius, var(--radius-m));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background-secondary);
 }
 
 .sprout-io-toolbar-sep {
   width: 1px;
   height: 18px;
-  background: var(--background-modifier-border);
+  background: var(--sprout-border-color);
   margin: 0 2px;
 }
 
 .sprout-io-btn {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1418,8 +1438,8 @@
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius, var(--radius-m));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
 }
 
@@ -1432,8 +1452,8 @@
   height: 26px;
   font-size: var(--sprout-font-2xs);
   padding: 2px 6px;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius, var(--radius-m));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   color: var(--foreground);
 }
@@ -1452,8 +1472,8 @@
   width: 26px;
   height: 26px;
   padding: 2px;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius, var(--radius-m));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   cursor: pointer;
 }
@@ -1475,7 +1495,7 @@
   width: 70px;
   height: 12px;
   border-radius: 999px;
-  border: 1px solid var(--background-modifier-border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 60%, transparent);
 }
 
@@ -1496,7 +1516,7 @@
   width: 70px;
   height: 12px;
   border-radius: 999px;
-  border: 1px solid var(--background-modifier-border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-io-zoom-slider::-moz-range-thumb {

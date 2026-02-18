@@ -15,6 +15,7 @@ import { exportToApkg, type ExportOptions } from "../anki/anki-export";
 import { setModalTitle, createThemedDropdown, scopeModalToWorkspace } from "./modal-utils";
 import { getGroupIndex } from "../indexes/group-index";
 import { buildDeckTree, type DeckNode } from "../deck/deck-tree";
+import { clearNode, titleCaseGroupPath, formatGroupDisplay } from "../core/shared-utils";
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
 

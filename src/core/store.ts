@@ -31,7 +31,7 @@ import { TFile, TFolder, Notice } from "obsidian";
 
 // ── Re-export shared types (backward-compatible) ────────────────────────────
 export type { CardRecord } from "../types/card";
-export { normalizeCardOptions } from "../types/card";
+export { normalizeCardOptions, getCorrectIndices } from "../types/card";
 export type { ReviewResult, ReviewLogEntry } from "../types/review";
 export type {
   AnalyticsMode,

@@ -13,10 +13,11 @@
  *   - createViewHeader — factory function that wires a SproutHeader to any ItemView
  */
 
-import { setIcon, Notice, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
+import { setIcon, Notice, Platform, type App, type WorkspaceLeaf, type ItemView } from "obsidian";
 import { MAX_CONTENT_WIDTH, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_HOME, VIEW_TYPE_SETTINGS } from "./constants";
 import { log } from "./logger";
 import { placePopover, queryFirst } from "./ui";
+import { clearNode } from "./shared-utils";
 
 export type SproutHeaderPage = "home" | "study" | "flashcards" | "analytics" | "settings";
 
@@ -45,13 +46,9 @@ type Deps = {
   afterNavigate?: () => void;
 };
 
-function clearNode(node: HTMLElement) {
-  while (node.firstChild) node.removeChild(node.firstChild);
-}
-
+/** Null-safe alias for clearNode. */
 function clearChildren(node: HTMLElement | null) {
-  if (!node) return;
-  while (node.firstChild) node.removeChild(node.firstChild);
+  clearNode(node);
 }
 
 export class SproutHeader {
@@ -311,11 +308,12 @@ export class SproutHeader {
     this.topNavPopoverEl = root;
     root.classList.add("is-open");
 
+    const isMobile = document.body.classList.contains("is-mobile");
     const place = () => {
       placePopover({
         trigger, panel, popoverEl: root,
         setWidth: false,
-        align: "left",
+        align: isMobile ? "right" : "left",
       });
     };
 
@@ -355,56 +353,20 @@ export class SproutHeader {
     };
   }
 
-  private installHeaderDropdownNav(active: SproutHeaderPage) {
+  private installHeaderDropdownNav(_active: SproutHeaderPage) {
+    // Clear the left nav area so only Obsidian's native sidebar button remains.
+    // The Sprout page-switcher dropdown is now rendered in the right-hand
+    // actions group — see installHeaderActionsButtonGroup().
     const navHost =
       (this.deps.containerEl.querySelector<HTMLElement>(
         ":scope > .view-header .view-header-left .view-header-nav-buttons",
       )) ??
       (this.deps.containerEl.querySelector<HTMLElement>(".view-header .view-header-left .view-header-nav-buttons"));
 
-    if (!navHost) return;
-
-    clearNode(navHost);
-
-    navHost.classList.add("sprout-nav-host");
-
-    const root = document.createElement("div");
-    root.id = this.headerNavId;
-    root.className = "dropdown-menu";
-    root.classList.add("sprout-dropdown-root");
-    const sproutWrapper = document.createElement("div");
-    sproutWrapper.className = "sprout";
-    sproutWrapper.appendChild(root);
-    navHost.appendChild(root);
-
-    const trigger = document.createElement("button");
-    trigger.type = "button";
-    trigger.id = `${this.headerNavId}-trigger`;
-    trigger.className = "btn-outline sprout-header-btn h-7 px-2 text-xs inline-flex items-center gap-2";
-    trigger.setAttribute("aria-haspopup", "menu");
-    trigger.setAttribute("aria-expanded", "false");
-    trigger.setAttribute("data-tooltip", "Sprout menu");
-    trigger.setAttribute("data-tooltip-position", "bottom");
-    root.appendChild(trigger);
-
-    const trigText = document.createElement("span");
-    trigText.className = "truncate";
-    trigText.textContent =
-      active === "home" ? "Home" : active === "analytics" ? "Analytics" : active === "study" ? "Study" : active === "settings" ? "Settings" : "Flashcards";
-    trigger.appendChild(trigText);
-
-    const trigIcon = document.createElement("span");
-    trigIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
-    trigIcon.setAttribute("aria-hidden", "true");
-    setIcon(trigIcon, "chevron-down");
-    trigger.appendChild(trigIcon);
-
-    trigger.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (this.topNavPopoverEl) this.closeTopNavPopover();
-      else this.openTopNavPopover(trigger, active);
-    });
+    if (navHost) {
+      clearNode(navHost);
+      navHost.classList.add("sprout-nav-host");
+    }
 
     this.closeTopNavPopover();
   }
@@ -558,7 +520,7 @@ export class SproutHeader {
     };
   }
 
-  private installHeaderActionsButtonGroup(_active: SproutHeaderPage) {
+  private installHeaderActionsButtonGroup(active: SproutHeaderPage) {
     const actionsHost =
       (this.deps.containerEl.querySelector<HTMLElement>(":scope > .view-header .view-actions")) ??
       (this.deps.containerEl.querySelector<HTMLElement>(".view-header .view-actions"));
@@ -569,6 +531,42 @@ export class SproutHeader {
 
     actionsHost.classList.add("bc", "sprout-view-actions");
     actionsHost.classList.add("sprout-actions-host");
+
+    // ── Nav dropdown (page switcher — left-most item in the actions row) ──
+    const navRoot = document.createElement("div");
+    navRoot.id = this.headerNavId;
+    navRoot.className = "dropdown-menu";
+    navRoot.classList.add("sprout-dropdown-root");
+    actionsHost.appendChild(navRoot);
+
+    const navTrigger = document.createElement("button");
+    navTrigger.type = "button";
+    navTrigger.id = `${this.headerNavId}-trigger`;
+    navTrigger.className = "btn-outline sprout-header-btn h-7 px-2 text-xs inline-flex items-center gap-2";
+    navTrigger.setAttribute("aria-haspopup", "menu");
+    navTrigger.setAttribute("aria-expanded", "false");
+    navTrigger.setAttribute("data-tooltip", "Sprout menu");
+    navTrigger.setAttribute("data-tooltip-position", "bottom");
+    navRoot.appendChild(navTrigger);
+
+    const trigText = document.createElement("span");
+    trigText.className = "truncate";
+    trigText.textContent =
+      active === "home" ? "Home" : active === "analytics" ? "Analytics" : active === "study" ? "Study" : active === "settings" ? "Settings" : "Flashcards";
+    navTrigger.appendChild(trigText);
+
+    const trigIcon = document.createElement("span");
+    trigIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
+    trigIcon.setAttribute("aria-hidden", "true");
+    setIcon(trigIcon, "chevron-down");
+    navTrigger.appendChild(trigIcon);
+
+    navTrigger.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (this.topNavPopoverEl) this.closeTopNavPopover();
+      else this.openTopNavPopover(navTrigger, active);
+    });
 
     // Collapse/Expand
     const widthBtn = document.createElement("button");
@@ -630,9 +628,10 @@ export class SproutHeader {
     syncIcon.setAttribute("aria-hidden", "true");
     syncBtn.appendChild(syncIcon);
 
-    const syncTxt = document.createElement("span");
-    syncTxt.textContent = "Sync";
-    syncBtn.appendChild(syncTxt);
+    const syncLabel = document.createElement("span");
+    syncLabel.setAttribute("data-sprout-label", "true");
+    syncLabel.textContent = "Sync";
+    syncBtn.appendChild(syncLabel);
 
     actionsHost.appendChild(syncBtn);
     this.syncBtnIconEl = syncIcon;
@@ -642,8 +641,7 @@ export class SproutHeader {
     // More
     const moreWrap = document.createElement("div");
     moreWrap.id = this.moreId;
-    moreWrap.className = "dropdown-menu";
-    moreWrap.classList.add("sprout-more-wrap");
+    moreWrap.className = "sprout-more-wrap";
     actionsHost.appendChild(moreWrap);
 
     const moreBtn = document.createElement("button");
@@ -706,8 +704,10 @@ export class SproutHeader {
     };
 
     const menuItems: SproutHeaderMenuItem[] = [
-      { label: "Import from Anki", icon: "folder-down", onActivate: openAnkiImport },
-      { label: "Export to Anki", icon: "folder-up", onActivate: openAnkiExport },
+      ...(Platform.isMobileApp ? [] : [
+        { label: "Import from Anki", icon: "folder-down", onActivate: openAnkiImport },
+        { label: "Export to Anki", icon: "folder-up", onActivate: openAnkiExport },
+      ]),
       { label: "Open guide", icon: "book-open", onActivate: openGuide },
       { label: "Open release notes", icon: "sprout", onActivate: openReleaseNotes },
       { label: "Open settings", icon: "settings", onActivate: openSettings },

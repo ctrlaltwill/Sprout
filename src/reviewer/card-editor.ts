@@ -17,6 +17,7 @@ import { setModalTitle, scopeModalToWorkspace } from "../modals/modal-utils";
 import { syncOneFile } from "../sync/sync-engine";
 import { log } from "../core/logger";
 import { escapeDelimiterRe } from "../core/delimiter";
+import { findCardBlockRangeById } from "./markdown-block";
 
 export type CardEditPayload = {
   title?: string;
@@ -51,54 +52,6 @@ function isMarkerLine(line: string): boolean {
 function isFieldStart(line: string): boolean {
   const t = (line || "").trim();
   return isMarkerLine(t) || FIELD_START_PIPE_RE.test(t) || FIELD_START_COLON_RE.test(t);
-}
-
-/**
- * Locate the block to rewrite based on ^sprout-<id> or <!--ID:<id>-->.
- * Assumes the anchor/comment occurs *at the start of the card block* (common in your system).
- */
-function findCardBlockRangeById(
-  lines: string[],
-  id: string,
-): { start: number; end: number } {
-  const anchor = `^sprout-${id}`;
-  const comment = `<!--ID:${id}-->`;
-
-  let idx = lines.findIndex((l) => (l || "").trim() === anchor);
-  if (idx < 0) idx = lines.findIndex((l) => (l || "").trim() === comment);
-  if (idx < 0)
-    throw new Error(`Could not locate ^sprout-${id} (or ID comment) in note.`);
-
-  // Expand upward to include stacked marker lines
-  let start = idx;
-  while (start > 0) {
-    const prev = (lines[start - 1] || "").trim();
-    if (
-      prev === "" &&
-      start - 2 >= 0 &&
-      isMarkerLine((lines[start - 2] || "").trim())
-    ) {
-      start--;
-      continue;
-    }
-    if (isMarkerLine(prev)) {
-      start--;
-      continue;
-    }
-    break;
-  }
-
-  // End at next marker line (start of next card), after we've passed current start
-  let end = lines.length;
-  for (let i = idx + 1; i < lines.length; i++) {
-    const t = (lines[i] || "").trim();
-    if (isMarkerLine(t)) {
-      end = i;
-      break;
-    }
-  }
-
-  return { start, end };
 }
 
 function normaliseNewlines(s: string): string[] {

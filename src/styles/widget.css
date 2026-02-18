@@ -25,7 +25,7 @@
 
 .sprout-widget-hover-darken {
   background-color: var(--background) !important;
-  border-color: var(--border) !important;
+  border-color: var(--sprout-border-color) !important;
   transition: background-color 0.15s, border-color 0.15s;
 }
 
@@ -45,7 +45,7 @@
 .sprout .sprout-widget .sprout-widget-action-btn {
   background-color: var(--background) !important;
   color: var(--foreground) !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   box-shadow: none !important;
   outline: none !important;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
@@ -61,7 +61,7 @@
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
 }
 
 .sprout .sprout-widget button:hover,
@@ -111,12 +111,12 @@
   box-shadow: none !important;
   outline: none !important;
   background-color: var(--background) !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 .sprout :is(.sprout-widget button, .sprout-widget .btn, .sprout-widget .btn-outline) {
   background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
 /* ---- Widget cloze styling ---- */
@@ -163,8 +163,8 @@
 .sprout .sprout-widget-card-body {
   margin: 10px auto 20px auto !important;
   gap: 0 !important;
-  border-radius: var(--radius-m) !important;
-  border: var(--border-width) solid var(--background-modifier-border) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;
   box-shadow: none !important;
@@ -301,8 +301,8 @@
 .sprout-widget-teaser {
   margin: 10px auto 20px !important;
   gap: 0 !important;
-  border-radius: var(--radius-m) !important;
-  border: var(--border-width) solid var(--background-modifier-border) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;
   box-shadow: none !important;

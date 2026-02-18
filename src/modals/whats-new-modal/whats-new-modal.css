@@ -36,7 +36,7 @@
   display: flex;
   flex-direction: column;
   animation: whats-new-slide-up 0.3s ease-out;
-  border: 1px solid var(--background-modifier-border);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 @keyframes whats-new-slide-up {
@@ -55,7 +55,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .whats-new-modal-title {
@@ -129,7 +129,7 @@
 }
 
 .whats-new-modal-notes code {
-  background: var(--background-modifier-border);
+  background: var(--sprout-border-color);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: var(--font-monospace);
@@ -177,7 +177,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
   gap: 16px;
 }
 

@@ -27,7 +27,7 @@
 
 .sprout .sprout-analytics-root {
   min-height: 0;
-  max-height: 100%;
+  max-height: none;
   gap: 12px;
 }
 
@@ -259,7 +259,7 @@
 /* ---- Analytics tables ---- */
 
 .sprout .sprout-analytics-root .table tbody tr {
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 .sprout .sprout-analytics-root .table tbody tr:last-child {
   border-bottom: none;
@@ -286,11 +286,17 @@
   display: inline-block;
 }
 
+/* Daily stats table: enforce minimum column width */
+.sprout .sprout-analytics-stats-card .sprout-changelog-table th,
+.sprout .sprout-analytics-stats-card .sprout-changelog-table td {
+  min-width: 50px;
+}
+
 /* Analytics table wrapper: padding + border so scroll stays inside */
 .sprout .sprout-analytics-table-wrap {
   padding: 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   overflow: auto;
   background: var(--background);
 }
@@ -450,3 +456,45 @@
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
+
+@media (max-width: 768px) {
+  .sprout .sprout-analytics-root .sprout-ana-card {
+    min-width: 0 !important;
+  }
+
+  .sprout .sprout-analytics-chart {
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+  }
+
+  .sprout .sprout-ana-chart-legend {
+    margin-top: 8px !important;
+  }
+
+  .sprout .sprout-ana-heatmap-tooltip {
+    transform: translate(-50%, calc(-100% - 6px)) !important;
+  }
+
+  .sprout .sprout-ana-popover-sm,
+  .sprout .sprout-ana-popover-md {
+    min-width: min(280px, calc(100vw - 24px)) !important;
+  }
+
+  /* Phone-sized mobile: fully disable AOS on analytics elements.
+     iPad / tablet / desktop retain normal AOS behaviour. */
+  body.is-mobile .sprout .sprout-analytics-root [data-aos],
+  body.is-mobile .sprout .sprout-analytics-root [data-aos].aos-init,
+  body.is-mobile .sprout .sprout-analytics-root [data-aos].aos-animate,
+  body.is-mobile .sprout .sprout-analytics-chart[data-aos],
+  body.is-mobile .sprout .sprout-ana-card[data-aos],
+  body.is-mobile .sprout-analytics-root > div[data-aos] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  body.is-mobile .sprout .sprout-analytics-badge {
+    opacity: 1 !important;
+  }}

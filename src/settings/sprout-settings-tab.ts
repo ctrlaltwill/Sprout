@@ -653,6 +653,35 @@ export class SproutSettingsTab extends PluginSettingTab {
   }
 
   // ────────────────────────────────────────────
+  // Teardown
+  // ────────────────────────────────────────────
+
+  /**
+   * Called by Obsidian when the settings tab is navigated away from.
+   * Clears pending timers and removes any body-appended popovers so they
+   * don't leak into other views.
+   */
+  override hide() {
+    // Cancel all debounced notice timers.
+    for (const handle of this._noticeTimers.values()) {
+      window.clearTimeout(handle);
+    }
+    this._noticeTimers.clear();
+
+    // Cancel the debounced custom-CSS save timer.
+    if (this._readingCustomCssSaveTimer != null) {
+      window.clearTimeout(this._readingCustomCssSaveTimer);
+      this._readingCustomCssSaveTimer = null;
+    }
+
+    // Remove any orphaned body-portal popovers created by
+    // _addSimpleSelect / _addSearchablePopover.
+    document.body
+      .querySelectorAll(":scope > .sprout > .sprout-popover-overlay")
+      .forEach((el) => el.parentElement?.remove());
+  }
+
+  // ────────────────────────────────────────────
   // Main display() method
   // ────────────────────────────────────────────
 
@@ -688,6 +717,20 @@ export class SproutSettingsTab extends PluginSettingTab {
     // Create a wrapper for all settings (everything should render inside this)
     const wrapper = containerEl.createDiv({ cls: "sprout-settings-wrapper sprout-settings" });
 
+    this.renderAppearanceSection(wrapper);
+    this.renderAudioSection(wrapper);
+    this.renderCardsSection(wrapper);
+    this.renderReadingViewSection(wrapper);
+    this.renderStudySection(wrapper);
+    this.renderSchedulingSection(wrapper);
+    this.renderStorageSection(wrapper);
+    this.renderSyncSection(wrapper);
+    this.renderResetSection(wrapper);
+
+    this._styleSettingsButtons(wrapper);
+  }
+
+  private renderAppearanceSection(wrapper: HTMLElement): void {
     // Appearance title above user details
     new Setting(wrapper).setName("Appearance").setHeading();
 
@@ -736,7 +779,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           this.queueSettingsNotice("general.enableAnimations", SproutSettingsTab.NOTICE_LINES.animations(v));
         }),
       );
+  }
 
+  private renderAudioSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Audio
     // ----------------------------
@@ -978,7 +1023,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           );
       }
     }
+  }
 
+  private renderCardsSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Cards
     // ----------------------------
@@ -1341,7 +1388,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           }
         });
       });
+  }
 
+  private renderReadingViewSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Reading
     // ----------------------------
@@ -2052,7 +2101,9 @@ export class SproutSettingsTab extends PluginSettingTab {
         if (child) setCssProps(child, "display", "none");
       }
     }
+  }
 
+  private renderStudySection(wrapper: HTMLElement): void {
     // Study
     // ----------------------------
     new Setting(wrapper).setName("Study sessions").setHeading();
@@ -2255,7 +2306,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           },
         });
       });
+  }
 
+  private renderSchedulingSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Scheduling
     // ----------------------------
@@ -2459,7 +2512,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           new ConfirmResetSchedulingModal(this.app, this.plugin).open();
         }),
       );
+  }
 
+  private renderStorageSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Storage
     // ----------------------------
@@ -2797,7 +2852,9 @@ export class SproutSettingsTab extends PluginSettingTab {
 
 
     this.renderBackupsSection(wrapper);
+  }
 
+  private renderSyncSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Syncing
     // ----------------------------
@@ -2849,7 +2906,9 @@ export class SproutSettingsTab extends PluginSettingTab {
           },
         });
       });
+  }
 
+  private renderResetSection(wrapper: HTMLElement): void {
     // ----------------------------
     // Reset options
     // ----------------------------
@@ -2959,9 +3018,8 @@ export class SproutSettingsTab extends PluginSettingTab {
     }
 
     this.renderQuarantineList(wrapper);
-
-    this._styleSettingsButtons(wrapper);
   }
+
 
   private _styleSettingsButtons(root: HTMLElement) {
     const buttonEls = Array.from(root.querySelectorAll<HTMLButtonElement>("button"));
@@ -3128,12 +3186,15 @@ export class SproutSettingsTab extends PluginSettingTab {
     };
 
     // ── Positioning ──
-    const place = () => placePopover({
-      trigger, panel, popoverEl: popover,
-      width: Math.max(220, trigger.getBoundingClientRect().width),
-      align: "right",
-      gap: 4,
-    });
+    const place = () => {
+      const isPhone = document.body.classList.contains("is-mobile") && window.innerWidth < 768;
+      placePopover({
+        trigger, panel, popoverEl: popover,
+        width: isPhone ? undefined : Math.max(220, trigger.getBoundingClientRect().width),
+        align: "right",
+        gap: 4,
+      });
+    };
 
     // ── Open / Close ──
     let cleanup: (() => void) | null = null;
@@ -3408,12 +3469,15 @@ export class SproutSettingsTab extends PluginSettingTab {
     }
 
     // ── Positioning ──
-    const place = () => placePopover({
-      trigger, panel, popoverEl: popover,
-      width: Math.max(220, trigger.getBoundingClientRect().width),
-      align: "right",
-      gap: 4,
-    });
+    const place = () => {
+      const isPhone = document.body.classList.contains("is-mobile") && window.innerWidth < 768;
+      placePopover({
+        trigger, panel, popoverEl: popover,
+        width: isPhone ? undefined : Math.max(220, trigger.getBoundingClientRect().width),
+        align: "right",
+        gap: 4,
+      });
+    };
 
     // ── Open / Close ──
     let cleanup: (() => void) | null = null;

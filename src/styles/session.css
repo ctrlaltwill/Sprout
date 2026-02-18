@@ -24,8 +24,8 @@
   max-height: none !important;
   height: fit-content !important;
   max-height: max-content !important;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--border);
+  border-radius: var(--button-radius, var(--radius-m));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-shadow: none !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
@@ -138,7 +138,7 @@
 }
 
 .sprout-session-card footer {
-  border-top: 1px solid var(--border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -195,7 +195,7 @@
 }
 
 .sprout-session-card header {
-  border-bottom: 1px solid var(--border) !important;
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-radius: 0;
 }
 
@@ -351,9 +351,9 @@
   /* Theme-aware styling (matches btn-icon-outline) */
   background: var(--background) !important;
   color: var(--foreground) !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   box-shadow: none !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   padding: 0.375rem !important;
   min-width: 32px;
   min-height: 32px;
@@ -379,7 +379,7 @@
 .theme-dark .sprout-quit-btn {
   background: var(--background) !important;
   color: var(--foreground) !important;
-  border: 1px solid var(--border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
 .theme-dark .sprout-quit-btn:hover,
@@ -506,7 +506,7 @@
   cursor: pointer;
   font-weight: 500;
   padding: 6px 16px;
-  border-radius: var(--radius);
+  border-radius: var(--button-radius, var(--radius-m));
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
   border: none;
@@ -557,8 +557,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  border-radius: var(--button-radius, 8px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background-secondary);
   padding: 6px 12px;
   cursor: text;
@@ -633,35 +633,35 @@
 /* Remove box shadow from all reviewer footer buttons to match outline buttons */
 .sprout .sprout-session-card footer .btn {
   box-shadow: none !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 .sprout-btn-again {
   background-color: var(--sprout-again-bg) !important;
   color: var(--sprout-again-fg) !important;
   box-shadow: none !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 .sprout-btn-hard {
   background-color: var(--sprout-hard-bg) !important;
   color: var(--sprout-hard-fg) !important;
   box-shadow: none !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 .sprout-btn-good {
   background-color: var(--sprout-good-bg) !important;
   color: var(--sprout-good-fg) !important;
   box-shadow: none !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 .sprout-btn-easy {
   background-color: var(--sprout-easy-bg) !important;
   color: var(--sprout-easy-fg) !important;
   box-shadow: none !important;
-}
-
-.sprout-btn-start-practice {
-  background-color: rgb(0, 0, 0) !important;
-  color: white !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 /* ---- AOS animation fallback ---- */
@@ -687,7 +687,7 @@
   line-height: 1.5 !important;
   padding: 2px 8px !important;
   margin: 0 2px 0 0 !important;
-  border: 1px solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-radius: var(--radius-s) !important;
   background: var(--background-primary) !important;
   color: var(--text-normal);
@@ -709,7 +709,7 @@
 
 .sprout-cloze-typed-input:focus {
   border-width: 1px !important;
-  border-color: var(--background-modifier-border) !important;
+  border-color: var(--sprout-border-color) !important;
   box-shadow: none !important;
 }
 
@@ -806,3 +806,35 @@
   border: 1px solid var(--sprout-again-bg) !important;
   text-decoration: line-through;
 }
+
+@media (max-width: 700px) {
+  body.is-mobile .sprout .sprout-session-card .sprout-review-edit-icon-btn,
+  body.is-mobile .sprout .sprout-session-card .sprout-review-more-icon-btn {
+    width: 36px;
+    min-width: 36px;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center;
+    border-radius: var(--button-radius, var(--radius-m)) !important;
+  }
+
+  /* Ensure all session footer buttons have consistent radius on mobile */
+  body.is-mobile .sprout .sprout-session-card footer button,
+  body.is-mobile .sprout .sprout-session-card footer .btn,
+  body.is-mobile .sprout .sprout-session-card footer .btn-outline,
+  body.is-mobile .sprout .sprout-session-card footer .btn-destructive {
+    border-radius: var(--button-radius, var(--radius-m)) !important;
+  }
+
+  /* Phone-sized mobile: fully disable AOS on session elements.
+     iPad / tablet / desktop retain normal AOS behaviour. */
+  body.is-mobile .sprout [data-aos],
+  body.is-mobile .sprout [data-aos].aos-init,
+  body.is-mobile .sprout [data-aos].aos-animate,
+  body.is-mobile .sprout-session-card[data-aos],
+  body.is-mobile .sprout .card[data-aos] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    transition: none !important;
+  }}

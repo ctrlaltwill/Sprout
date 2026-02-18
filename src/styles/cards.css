@@ -5,7 +5,8 @@
 
 .card {
   background-color: var(--background);
-  border-radius: var(--radius-m) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m)) !important;
   box-shadow: none;
   margin: 0;
   padding: 25px;
@@ -21,7 +22,7 @@
 .theme-dark .sprout .card.sprout-ana-card,
 .theme-dark .sprout .sprout-ana-card {
   color: var(--card-foreground) !important;
-  border-color: var(--border) !important;
+  border-color: var(--sprout-border-color) !important;
   box-shadow: none !important;
 }
 
@@ -46,7 +47,7 @@
   row-gap: 2px;
   align-items: center;
   background: var(--background-modifier-form-field) !important;
-  border: var(--input-border-width) solid var(--background-modifier-border) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   box-shadow: none !important;
 }
 

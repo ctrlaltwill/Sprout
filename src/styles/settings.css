@@ -11,8 +11,8 @@
   gap: 12px;
   margin-top: 8px;
   padding: 16px 20px;
-  border-radius: var(--radius-m, 8px);
-  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background-color: var(--background-secondary);
 }
 
@@ -66,9 +66,10 @@
   min-height: 0;
   flex: 1;
   overflow: hidden;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m, 8px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m, 8px));
   background: var(--background-primary);
+  position: relative;
 }
 
 /* ---- Category navigation with hover dropdowns ---- */
@@ -80,9 +81,11 @@
   overflow: visible;
   flex-shrink: 0;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
   position: relative;
   z-index: 10;
+  /* 10px safe margin so dropdown popovers never touch the layout edge */
+  margin: 0 10px;
 }
 
 /* ---- Release notes nav (horizontal scroll with edge fades) ---- */
@@ -91,7 +94,7 @@
   position: relative;
   flex-shrink: 0;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
   overflow: hidden;
 }
 
@@ -161,8 +164,8 @@
   font-size: var(--sprout-font-xs);
   font-weight: 500;
   cursor: pointer;
-  border-radius: var(--radius-s);
-  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius, var(--radius-m));
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   color: var(--text-normal);
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -239,8 +242,8 @@
   min-width: 240px;
   padding: 4px;
   text-align: left;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m, 8px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m, 8px));
   background: var(--background-primary);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -314,7 +317,7 @@
 .sprout-guide-dropdown-divider {
   height: 1px;
   margin: 4px 0;
-  background: var(--background-modifier-border);
+  background: var(--sprout-border-color);
 }
 
 /* ---- Content area — scrollable below the nav ---- */
@@ -359,7 +362,7 @@
   overflow-y: auto;
 }
 
-.sprout-guide-content-inner.is-loading {
+.sprout-guide-layout.is-loading .sprout-guide-content-inner {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,7 +380,7 @@
   display: none;
 }
 
-.sprout-guide-layout.is-loading .sprout-guide-content-inner.is-loading {
+.sprout-guide-layout.is-loading .sprout-guide-content-inner {
   width: 100%;
   height: 100%;
   min-height: 240px;
@@ -386,8 +389,8 @@
   z-index: 4;
 }
 
-/* Indeterminate loading bar at the top of loading content */
-.sprout-guide-layout.is-loading .sprout-guide-content-inner.is-loading::before {
+/* Indeterminate loading bar at the top of the layout */
+.sprout-guide-layout.is-loading::before {
   content: "";
   position: absolute;
   top: 0;
@@ -443,6 +446,11 @@
   --sprout-guide-dot-inactive-size: 6px;
   --sprout-guide-dot-active-scale: 1.333333;
   --sprout-guide-dot-bounce-scale: 1.5;
+}
+
+body.is-mobile .sprout-guide-dots-rail,
+.sprout-guide-dots-rail.is-hidden-on-mobile {
+  display: none !important;
 }
 
 @keyframes sprout-guide-dot-bounce {
@@ -507,7 +515,7 @@
 
 .sprout-guide-footer {
   flex-shrink: 0;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
   z-index: 2;
 }
 
@@ -589,7 +597,7 @@
   gap: 0.35em;
   background-color: var(--background-modifier-hover);
   color: var(--text-muted);
-  border-radius: var(--radius-l);
+  border-radius: var(--button-radius, var(--radius-l));
   padding: 0.125rem 0.6rem;
   font-size: var(--sprout-font-2xs);
   font-weight: 500;
@@ -618,7 +626,7 @@
     padding: 20px 0 .35em !important;
     line-height: 1.3 !important;
     font-size: var(--sprout-font-md) !important;
-    border-top: 1px solid var(--background-modifier-border) !important;
+    border-top: var(--sprout-border-width) solid var(--sprout-border-color) !important;
     font-weight: 600 !important;
     color: var(--text-normal) !important;
 }
@@ -670,7 +678,7 @@
   padding: 20px 0 .35em !important;
   line-height: 1.3 !important;
   font-size: var(--sprout-font-md) !important;
-  border-top: 1px solid var(--background-modifier-border) !important;
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   font-weight: 600 !important;
   color: var(--text-normal) !important;
 }
@@ -739,8 +747,8 @@
   overflow: visible;
   background: var(--background-primary);
   padding: 0 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m, 8px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m, 8px));
 }
 
 .sprout-guide-body thead tr {
@@ -757,7 +765,7 @@
 }
 
 .sprout-guide-body tbody {
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-guide-body td {
@@ -869,127 +877,15 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 }
 
 /* Loading / empty states */
-.sprout-guide-loading,
 .sprout-guide-empty {
   padding: 40px;
   text-align: center;
   color: var(--text-faint);
 }
 
-.sprout-guide-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 100%;
-}
-
 .sprout-guide-loading-label {
   color: var(--text-faint);
   font-size: var(--sprout-font-xs);
-}
-
-.sprout-guide-loading .three-body {
-  --uib-size: 35px;
-  --uib-speed: 0.8s;
-  --uib-color: var(--interactive-accent);
-  position: relative;
-  display: inline-block;
-  height: var(--uib-size);
-  width: var(--uib-size);
-  opacity: 1;
-  visibility: visible;
-  animation: sprout-three-body-spin calc(var(--uib-speed) * 2.5) infinite linear;
-}
-
-.sprout-guide-loading .three-body__dot {
-  position: absolute;
-  height: 100%;
-  width: 30%;
-}
-
-.sprout-guide-loading .three-body__dot::after {
-  content: "";
-  position: absolute;
-  height: 0%;
-  width: 100%;
-  padding-bottom: 100%;
-  background-color: var(--uib-color);
-  border-radius: 50%;
-}
-
-.sprout-guide-loading .three-body__dot:nth-child(1) {
-  bottom: 5%;
-  left: 0;
-  transform: rotate(60deg);
-  transform-origin: 50% 85%;
-}
-
-.sprout-guide-loading .three-body__dot:nth-child(1)::after {
-  bottom: 0;
-  left: 0;
-  animation: sprout-three-body-wobble1 var(--uib-speed) infinite ease-in-out;
-  animation-delay: calc(var(--uib-speed) * -0.3);
-}
-
-.sprout-guide-loading .three-body__dot:nth-child(2) {
-  bottom: 5%;
-  right: 0;
-  transform: rotate(-60deg);
-  transform-origin: 50% 85%;
-}
-
-.sprout-guide-loading .three-body__dot:nth-child(2)::after {
-  bottom: 0;
-  left: 0;
-  animation: sprout-three-body-wobble1 var(--uib-speed) infinite calc(var(--uib-speed) * -0.15) ease-in-out;
-}
-
-.sprout-guide-loading .three-body__dot:nth-child(3) {
-  bottom: -5%;
-  left: 0;
-  transform: translateX(116.666%);
-}
-
-.sprout-guide-loading .three-body__dot:nth-child(3)::after {
-  top: 0;
-  left: 0;
-  animation: sprout-three-body-wobble2 var(--uib-speed) infinite ease-in-out;
-}
-
-@keyframes sprout-three-body-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes sprout-three-body-wobble1 {
-  0%,
-  100% {
-    transform: translateY(0%) scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-66%) scale(0.65);
-    opacity: 0.8;
-  }
-}
-
-@keyframes sprout-three-body-wobble2 {
-  0%,
-  100% {
-    transform: translateY(0%) scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(66%) scale(0.65);
-    opacity: 0.8;
-  }
 }
 
 /* ---- Settings headings — remove double border between first heading and User details ---- */
@@ -1039,8 +935,8 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout .sprout-settings-table-wrap,
 .sprout-settings .sprout-settings-table-wrap {
   padding: 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   overflow-x: auto;
   overflow-y: hidden;
   background: var(--background-secondary, var(--background));
@@ -1062,16 +958,16 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 
 .sprout-backup-table thead tr {
   background: var(--background-secondary, var(--background));
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-backup-table tbody tr {
   background: transparent;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-backup-table tbody {
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 /* ---- Backup cells (matches .sprout-changelog-cell) ---- */
@@ -1161,7 +1057,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout-settings .sprout-settings-icon-btn {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   box-shadow: none;
   outline: none;
   padding: 0 !important;
@@ -1210,29 +1106,6 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout .sprout-settings-icon-btn--danger,
 .sprout-settings .sprout-settings-icon-btn--danger {
   color: var(--text-error);
-}
-
-.sprout .sprout-settings-action-btn,
-.sprout-settings .sprout-settings-action-btn {
-  min-height: 33px;
-}
-
-.sprout .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron,
-.sprout-settings .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 120ms ease;
-}
-
-.sprout .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron.is-expanded,
-.sprout-settings .sprout-settings-advanced-toggle .sprout-settings-advanced-chevron.is-expanded {
-  transform: rotate(180deg);
-}
-
-.sprout .sprout-settings-advanced-content,
-.sprout-settings .sprout-settings-advanced-content {
-  margin-bottom: 2px;
 }
 
 /* ---- See more/fewer toggle ---- */
@@ -1304,8 +1177,8 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout-settings-tab-nav {
   display: inline-flex;
   flex-wrap: wrap;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   overflow: hidden;
 }
 
@@ -1331,17 +1204,17 @@ button.sprout-settings-tab-btn {
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn + .sprout-settings-tab-btn {
-  border-left: 1px solid var(--background-modifier-border) !important;
+  border-left: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn:first-child {
-  border-top-left-radius: var(--radius-s);
-  border-bottom-left-radius: var(--radius-s);
+  border-top-left-radius: var(--button-radius, var(--radius-m));
+  border-bottom-left-radius: var(--button-radius, var(--radius-m));
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn:last-child {
-  border-top-right-radius: var(--radius-s);
-  border-bottom-right-radius: var(--radius-s);
+  border-top-right-radius: var(--button-radius, var(--radius-m));
+  border-bottom-right-radius: var(--button-radius, var(--radius-m));
 }
 
 .sprout-settings-tab-btn:hover {
@@ -1377,8 +1250,8 @@ button.sprout-settings-tab-btn {
 }
 
 .sprout-settings-tab-btn-standalone {
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-s) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
 /* ---- Icon sizing inside tab buttons ---- */
@@ -1395,6 +1268,94 @@ button.sprout-settings-tab-btn {
   height: 14px;
 }
 
+/* ── Story Card (About page hero section) ── */
+
+.sprout-about-story-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-l));
+  background-color: var(--background-secondary);
+  width: fit-content;
+  margin-top: 18px;
+}
+
+.sprout-about-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--interactive-accent) 0%,
+    var(--interactive-accent-hover) 100%
+  );
+  color: var(--text-on-accent);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  user-select: none;
+  overflow: hidden;
+}
+
+.sprout-about-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.sprout-about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sprout-about-name {
+  font-size: var(--sprout-font-xs);
+  font-weight: 700;
+  color: var(--text-normal);
+  line-height: 1.2;
+}
+
+.sprout-about-role {
+  font-size: var(--sprout-font-xs);
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.sprout-about-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.sprout-about-linkedin {
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  color: var(--interactive-accent);
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+}
+
+.sprout-about-linkedin:hover {
+  color: var(--interactive-accent-hover);
+  text-decoration: underline;
+}
+
 /* ---- About tab content ---- */
 
 /* Hero branding block */
@@ -1403,7 +1364,7 @@ button.sprout-settings-tab-btn {
   flex-direction: column;
   gap: 8px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-about-hero-icon {
@@ -1412,7 +1373,7 @@ button.sprout-settings-tab-btn {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   flex-shrink: 0;
@@ -1460,7 +1421,7 @@ button.sprout-settings-tab-btn {
   gap: 8px;
   flex-wrap: wrap;
   padding: 12px 0;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 /* Section blocks */
@@ -1534,6 +1495,45 @@ button.sprout-settings-tab-btn {
   font-size: var(--sprout-font-xs);
 }
 
+.sprout-about-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn {
+  background-color: var(--background-modifier-form-field) !important;
+  color: var(--text-normal) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.2s;
+  text-decoration: none !important;
+  padding: 8px 12px !important;
+  margin: 0 !important;
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn:hover {
+  background-color: var(--background-modifier-hover) !important;
+  color: var(--text-normal) !important;
+  border-color: var(--background-modifier-border-hover) !important;
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+  background-color: var(--background-modifier-hover) !important;
+  color: var(--text-normal) !important;
+  border-color: var(--background-modifier-border-hover) !important;
+}
+
+.sprout .sprout-about-buttons .sprout-about-btn:active {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
 .sprout-about-hint {
   font-size: var(--sprout-font-2xs);
   color: var(--text-muted);
@@ -1553,8 +1553,8 @@ button.sprout-settings-tab-btn {
 /* Tab content - scrollable container */
 .sprout-settings-tab-content {
   background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1608,8 +1608,8 @@ button.sprout-settings-tab-btn {
   min-height: 0;
   flex: 1;
   overflow: hidden;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m, 8px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m, 8px));
   background: var(--background-primary);
 }
 
@@ -1620,7 +1620,7 @@ button.sprout-settings-tab-btn {
   overflow: visible;
   flex-shrink: 0;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-settings-layout-content {
@@ -1671,7 +1671,7 @@ button.sprout-settings-tab-btn {
 /* Setting item headings inside tabs */
 .sprout-settings-tab-content .setting-item-heading {
   background-color: transparent !important;
-  border-top: 1px solid var(--background-modifier-border) !important;
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-bottom: none !important;
   padding: 20px 0 8px 0 !important;
   margin: 22px 0 0 !important;
@@ -1777,13 +1777,7 @@ button.sprout-settings-tab-btn {
 .sprout-settings-tab-content input[type="number"],
 .sprout-settings-tab-content textarea {
   background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s, 4px);
-  padding: 7px 15px;
-  font-size: var(--font-ui-small);
-  color: var(--text-normal);
-  outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-settings-tab-content input[type="text"],
@@ -1810,16 +1804,7 @@ button.sprout-settings-tab-btn {
 .sprout-settings-tab-content input[type="text"]:focus,
 .sprout-settings-tab-content input[type="number"]:focus,
 .sprout-settings-tab-content textarea:focus {
-  border-color: var(--background-modifier-border-focus, var(--interactive-accent));
-  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 0, 102, 255), 0.12);
-  outline: none;
-}
-
-/* Range slider focus */
-.sprout-settings-tab-content input[type="range"]:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 0, 102, 255), 0.12);
-  border-radius: var(--radius-s, 4px);
+  border-color: var(--background-modifier-border-focus);
 }
 
 /* Special cases - backup table, folder suggest, etc. should keep their styles */
@@ -1837,8 +1822,8 @@ button.sprout-settings-tab-btn {
   width: 36px;
   height: 36px;
   padding: 2px;
-  border: 1.5px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: 1.5px solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background-primary);
   cursor: pointer;
   vertical-align: middle;
@@ -1895,23 +1880,17 @@ button.sprout-settings-tab-btn {
 }
 
 .sprout-rv-preset-card {
-  border: 1.5px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: 1.5px solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   padding: 12px 14px;
   cursor: pointer;
   background: var(--background-primary);
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.sprout-rv-preset-card:not(.is-disabled):hover {
+.sprout-rv-preset-card:hover {
   border-color: var(--interactive-accent);
   background: var(--background-primary-alt);
-}
-
-.sprout-rv-preset-card.is-disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  border-style: dashed;
 }
 
 .sprout-rv-preset-card.is-active {
@@ -1944,8 +1923,8 @@ button.sprout-settings-tab-btn {
 /* ---- Preview live demo card ---- */
 
 .sprout-rv-live-preview {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-radius: var(--button-radius, var(--radius-m));
   background: var(--background-primary-alt);
   padding: 12px;
   margin: 8px 0 14px;
@@ -1969,77 +1948,6 @@ button.sprout-settings-tab-btn {
   width: 100%;
 }
 
-.sprout-rv-live-preview .sprout-card-edit-btn,
-.sprout-rv-live-preview .sprout-flashcard-speak-btn {
-  pointer-events: none;
-  opacity: 0.45;
-}
-
-.sprout-rv-live-preview-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-}
-
-.sprout-rv-live-preview-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sprout-rv-live-preview-cardtype {
-  font-size: var(--sprout-font-2xs);
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.sprout-rv-custom-hooks {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-
-.sprout-rv-custom-hooks-title {
-  font-size: var(--sprout-font-2xs);
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-.sprout-rv-custom-hooks-code {
-  display: block;
-  white-space: normal;
-  word-break: break-word;
-  font-size: var(--sprout-font-2xs);
-  line-height: 1.45;
-}
-
-.sprout-rv-custom-css-control {
-  width: 100%;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-.sprout-rv-custom-css-input {
-  width: 100%;
-  min-height: 220px;
-  padding: 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-family: var(--font-monospace);
-  font-size: var(--sprout-font-2xs);
-  line-height: 1.45;
-  resize: vertical;
-}
-
-.sprout-rv-custom-css-buttons {
-  display: flex;
-  gap: 8px;
-}
-
 /* ============================================================================
    SETTINGS SELECT — Custom popover-style dropdown for settings.
    Two variants:
@@ -2053,12 +1961,12 @@ button.sprout-settings-tab-btn {
 .sprout-ss-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: var(--radius-m, 8px);
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-s, 4px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  background: var(--background-secondary);
   color: var(--text-normal);
   font-size: var(--font-ui-small);
   cursor: pointer;
@@ -2115,8 +2023,8 @@ button.sprout-settings-tab-btn {
   overflow: hidden;
   background: var(--background-primary) !important;
   color: var(--text-normal) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-m, 8px);
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m, 8px));
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
@@ -2131,7 +2039,7 @@ button.sprout-settings-tab-btn {
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
 }
 
 .sprout-ss-search-icon {
@@ -2144,9 +2052,7 @@ button.sprout-settings-tab-btn {
   height: 14px;
 }
 
-.sprout-ss-search-input,
-.sprout-ss-search-input:focus,
-.sprout-ss-search-input:focus-visible {
+.sprout-ss-search-input {
   flex: 1;
   border: none !important;
   outline: none !important;
@@ -2174,12 +2080,11 @@ button.sprout-settings-tab-btn {
 
 .sprout-ss-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: var(--radius-l, 4px);
+  border-radius: var(--radius-s, 4px);
   cursor: pointer;
-  margin: 1px 0px !important;
   font-size: var(--font-ui-small);
   color: var(--text-normal);
   user-select: none;
@@ -2193,25 +2098,6 @@ button.sprout-settings-tab-btn {
 }
 .sprout-ss-item[aria-selected="true"] {
   font-weight: 500;
-}
-
-.sprout-ss-item-text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.sprout-ss-item-label {
-  line-height: 1.25;
-}
-
-.sprout-ss-item-desc {
-  margin-top: 2px;
-  color: var(--text-muted);
-  font-size: calc(var(--font-ui-small) - 1px);
-  line-height: 1.35;
-  font-weight: 400;
 }
 
 /* ---- Radio dot indicator ---- */
@@ -2242,7 +2128,7 @@ button.sprout-settings-tab-btn {
 .sprout-ss-separator {
   height: 1px;
   margin: 4px 8px;
-  background: var(--background-modifier-border);
+  background: var(--sprout-border-color);
 }
 
 /* ---- Empty state (filterable only) ---- */
@@ -2331,11 +2217,165 @@ button.sprout-settings-tab-btn {
   }
 
   .sprout-settings-view-tab-row .sprout-settings-tab-nav-main .sprout-settings-tab-btn:not(:nth-child(4n + 1)) {
-    border-left: 1px solid var(--background-modifier-border) !important;
+    border-left: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   }
 
   .sprout-settings-view-tab-row .sprout-settings-tab-nav-main .sprout-settings-tab-btn:nth-child(-n + 4) {
-    border-bottom: 1px solid var(--background-modifier-border);
+    border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  }
+}
+
+@media (max-width: 767px) {
+  body.is-mobile .sprout .sprout-settings-view-root {
+    max-width: 100vw;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.is-mobile .sprout .sprout-settings-tab-content-wrapper,
+  body.is-mobile .sprout .sprout-settings-tab-content,
+  body.is-mobile .sprout .sprout-settings-wrapper,
+  body.is-mobile .sprout .sprout-settings-layout,
+  body.is-mobile .sprout .sprout-guide-layout,
+  body.is-mobile .sprout .sprout-guide-content,
+  body.is-mobile .sprout .sprout-guide-content-inner {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  body.is-mobile .sprout .sprout-guide-content-inner {
+    padding: 16px 14px 24px;
+  }
+
+  body.is-mobile .sprout .sprout-settings-view-tab-row {
+    gap: 8px;
+  }
+
+  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 8px;
+    font-size: var(--sprout-font-2xs);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn .sprout-settings-tab-btn-label.is-hidden-mobile {
+    display: none;
+  }
+
+  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn-icon .svg-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  body.is-mobile .sprout .sprout-guide-nav {
+    gap: 4px;
+    padding: 10px 12px;
+  }
+
+  body.is-mobile .sprout .sprout-release-nav-frame {
+    padding: 10px 12px;
+  }
+
+  body.is-mobile .sprout .sprout-release-nav {
+    flex-wrap: wrap;
+    overflow-x: hidden;
+  }
+
+  body.is-mobile .sprout .sprout-release-nav-frame::before,
+  body.is-mobile .sprout .sprout-release-nav-frame::after {
+    display: none;
+  }
+
+  body.is-mobile .sprout .sprout-guide-nav-btn {
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: var(--sprout-font-2xs);
+    line-height: 1.2;
+  }
+
+  body.is-mobile .sprout .sprout-settings-action-btn,
+  body.is-mobile .sprout .sprout-ss-trigger {
+    height: 28px;
+    padding: 0 8px;
+    font-size: var(--sprout-font-2xs);
+    gap: 4px;
+  }
+
+  body.is-mobile .sprout .sprout-guide-dropdown,
+  body.is-mobile .sprout .sprout-guide-dropdown-menu {
+    min-width: 0;
+    width: max-content;
+    max-width: min(78vw, 320px);
+  }
+
+  body.is-mobile .sprout .sprout-settings-tab-content :is(
+    .setting-item,
+    .setting-item-info,
+    .setting-item-control,
+    .sprout-rv-live-preview,
+    .sprout-rv-preset-grid,
+    .sprout-rv-preset-card,
+    .sprout-rv-demo-card,
+    .sprout-pretty-card
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Mobile: let settings/guide/release panes expand to content height
+     so the outer view scrolls, instead of constraining to viewport-like
+     nested scroll areas. */
+  body.is-mobile .sprout .sprout-settings-tab-content-wrapper,
+  body.is-mobile .sprout .sprout-settings-tab-content,
+  body.is-mobile .sprout .sprout-settings-layout,
+  body.is-mobile .sprout .sprout-settings-layout-content,
+  body.is-mobile .sprout .sprout-settings-layout-content-frame,
+  body.is-mobile .sprout .sprout-guide-layout,
+  body.is-mobile .sprout .sprout-guide-content,
+  body.is-mobile .sprout .sprout-guide-content-inner {
+    flex: 0 0 auto;
+    min-height: auto;
+    height: auto;
+  }
+
+  body.is-mobile .sprout .sprout-settings-tab-content,
+  body.is-mobile .sprout .sprout-settings-layout,
+  body.is-mobile .sprout .sprout-guide-layout,
+  body.is-mobile .sprout .sprout-guide-content,
+  body.is-mobile .sprout .sprout-guide-content-inner {
+    overflow-y: visible;
+  }
+
+  /* Button groups: transparent backgrounds on mobile */
+  body.is-mobile .sprout .sprout-about-buttons {
+    background-color: transparent !important;
+  }
+
+  body.is-mobile .sprout .sprout-about-buttons .sprout-about-btn {
+    background-color: transparent !important;
+  }
+
+  body.is-mobile .sprout .sprout-about-actions {
+    background-color: transparent !important;
+  }
+
+  body.is-mobile .sprout .sprout-about-links-bar {
+    background-color: transparent !important;
+  }
+
+  body.is-mobile .sprout .sprout-about-links-row {
+    background-color: transparent !important;
   }
 }
 
@@ -2468,384 +2508,3 @@ button.sprout-settings-tab-btn {
   flex: 1;
 }
 
-/* ---- Folder suggest popover ---- */
-
-/* The wrapper sits inside .setting-item-control (a flex row).
-   We make it take no layout space so it doesn't push the input;
-   instead the dropdown list is anchored to the full control. */
-.setting-item-control:has(.sprout-folder-suggest) {
-  position: relative;
-}
-
-.sprout-folder-suggest {
-  /* Remove from flex flow so it doesn't affect the input width */
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  width: 0;
-  height: 0;
-  overflow: visible;
-}
-
-.sprout-folder-suggest-list {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: max-content;
-  min-width: 200px;
-  max-width: 400px;
-  z-index: var(--layer-popover, 30);
-  max-height: 300px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  padding: 4px;
-}
-
-.theme-dark .sprout-folder-suggest-list {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-}
-
-.sprout-folder-suggest-item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-shrink: 0;
-  gap: 8px;
-  width: 100%;
-  padding: 5px 8px;
-  border: none;
-  border-radius: var(--radius-s);
-  background: none;
-  color: var(--text-normal);
-  font-size: var(--font-ui-small);
-  line-height: var(--line-height-normal);
-  text-align: left;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sprout-folder-suggest-item:hover,
-.sprout-folder-suggest-item.is-active {
-  background-color: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-/* ── About Sprout page ── */
-
-/* Story card */
-.sprout-about-story-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: var(--radius-l);
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-  margin-top: 8px;
-  max-width: 400px;
-}
-
-.sprout-about-avatar {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--interactive-accent) 0%, var(--interactive-accent-hover) 100%);
-  color: var(--text-on-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: var(--sprout-font-sm);
-  letter-spacing: 0.5px;
-  user-select: none;
-  overflow: hidden;
-}
-
-.sprout-about-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.sprout-about-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sprout-about-name {
-  font-size: var(--sprout-font-sm);
-  font-weight: 700;
-  color: var(--text-normal);
-}
-
-.sprout-about-role {
-  font-size: var(--sprout-font-xs);
-  color: var(--text-muted);
-}
-
-.sprout-about-links-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.sprout-about-linkedin {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--sprout-font-xs);
-  font-weight: 600;
-  color: var(--interactive-accent);
-  text-decoration: none;
-  transition: color 0.15s ease;
-  cursor: pointer;
-}
-
-.sprout-about-linkedin:hover {
-  color: var(--interactive-accent-hover);
-  text-decoration: underline;
-}
-
-.sprout-about-linkedin-icon {
-  display: inline-flex;
-  align-items: center;
-}
-
-.sprout-about-linkedin-icon .svg-icon {
-  width: 14px;
-  height: 14px;
-}
-
-/* Button groups (feedback + support sections) */
-.sprout-about-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.sprout-about-btn {
-  appearance: none;
-  -webkit-appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  font-family: inherit;
-  font-size: var(--sprout-font-xs);
-  font-weight: 600;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  cursor: pointer;
-  text-decoration: none;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease,
-    box-shadow 0.2s ease;
-  line-height: 1.4;
-}
-
-.sprout-about-btn:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--text-muted);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
-  color: var(--text-normal);
-}
-
-.sprout-about-btn:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.sprout-about-btn-icon {
-  display: inline-flex;
-  align-items: center;
-}
-
-.sprout-about-btn-icon .svg-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.sprout-about-btn-label {
-  white-space: nowrap;
-}
-
-/* Star — spin only on hover */
-@keyframes sprout-about-star-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.25); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-
-.sprout-about-btn--star:hover .sprout-about-btn-icon .svg-icon {
-  animation: sprout-about-star-spin 0.6s ease-in-out;
-}
-
-/* Coffee — tip on hover */
-@keyframes sprout-about-coffee-tip {
-  0%   { transform: rotate(0deg); }
-  30%  { transform: rotate(-18deg); }
-  60%  { transform: rotate(6deg); }
-  100% { transform: rotate(0deg); }
-}
-
-.sprout-about-btn--coffee:hover .sprout-about-btn-icon .svg-icon {
-  animation: sprout-about-coffee-tip 0.5s ease-in-out;
-  transform-origin: bottom center;
-}
-
-/* Share button — copied state */
-.sprout-about-btn--share .sprout-about-btn-icon .svg-icon,
-.sprout-about-btn--share .sprout-about-btn-label {
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.sprout-about-btn--share.is-copied {
-  border-color: var(--text-normal);
-  background: var(--text-normal);
-  color: var(--background-primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.sprout-about-btn--share.is-copied .svg-icon {
-  color: var(--background-primary);
-}
-
-.sprout-about-btn--share.is-copied .sprout-about-btn-label {
-  color: var(--background-primary);
-}
-
-@keyframes sprout-about-check-pop {
-  0% { transform: scale(0.5); opacity: 0; }
-  60% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.sprout-about-btn--share.is-copied .sprout-about-btn-icon .svg-icon {
-  animation: sprout-about-check-pop 0.35s ease;
-}
-
-/* Colour-coded hover accents per button type */
-.sprout-about-btn--bug:hover {
-  border-color: var(--color-red);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-red) 30%, transparent);
-}
-
-.sprout-about-btn--feature:hover {
-  border-color: var(--color-orange);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-orange) 30%, transparent);
-}
-
-.sprout-about-btn--browse:hover {
-  border-color: var(--color-blue);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-blue) 30%, transparent);
-}
-
-.sprout-about-btn--star:hover {
-  border-color: var(--color-yellow);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-yellow) 30%, transparent);
-}
-
-.sprout-about-btn--share:hover {
-  border-color: var(--color-purple);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-purple) 30%, transparent);
-}
-
-.sprout-about-btn--coffee:hover {
-  border-color: var(--color-green);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-green) 30%, transparent);
-}
-
-.sprout-about-btn--star:hover {
-  border-color: #f1c40f;
-  box-shadow: 0 4px 12px rgba(241, 196, 15, 0.2);
-}
-
-.sprout-about-btn--coffee:hover {
-  border-color: #d4a574;
-  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.15);
-}
-
-/* Legacy support button styles (kept for backward compat) */
-
-.sprout-support-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.sprout-support-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  font-size: var(--sprout-font-xs);
-  font-weight: 600;
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-  line-height: 1.4;
-}
-
-.sprout-support-btn:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--text-muted);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  text-decoration: none;
-  color: var(--text-normal);
-}
-
-.sprout-support-btn:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.sprout-support-btn-icon {
-  display: inline-flex;
-  align-items: center;
-  font-size: 1.15em;
-}
-
-.sprout-support-btn-label {
-  white-space: nowrap;
-}
-
-@keyframes sprout-star-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.2); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-
-.sprout-support-star {
-  animation: sprout-star-spin 3s ease-in-out infinite;
-  display: inline-block;
-}
-
-.sprout-support-btn--star:hover .sprout-support-star {
-  animation-duration: 1s;
-}

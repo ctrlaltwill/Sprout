@@ -144,12 +144,12 @@ export function buildBrowserLayout(
   root.appendChild(top);
 
   const toolbarRow = document.createElement("div");
-  toolbarRow.className = "flex flex-row flex-wrap items-start gap-2 w-full";
+  toolbarRow.className = "flex flex-row flex-wrap items-start gap-2 w-full sprout-browser-toolbar-row";
   top.appendChild(toolbarRow);
 
   // Search input
   const searchGroup = document.createElement("div");
-  searchGroup.className = "flex flex-row items-stretch gap-2 flex-1 min-w-[300px]";
+  searchGroup.className = "flex flex-row items-stretch gap-2 flex-1 min-w-[300px] sprout-browser-search-group";
   applyAos(searchGroup, 200);
   toolbarRow.appendChild(searchGroup);
 
@@ -196,7 +196,7 @@ export function buildBrowserLayout(
 
   // Controls row
   const controlsRow = document.createElement("div");
-  controlsRow.className = "flex flex-row flex-wrap items-center gap-2";
+  controlsRow.className = "flex flex-row flex-wrap items-center gap-2 sprout-browser-controls-row";
   applyAos(controlsRow, 200);
   toolbarRow.appendChild(controlsRow);
 
@@ -217,6 +217,7 @@ export function buildBrowserLayout(
     onBeforeChange: () => ctx.setPageIndex(0),
     widthPx: 260,
   });
+  typeDd.root.classList.add("sprout-browser-filter", "sprout-browser-filter-type");
   controlsRow.appendChild(typeDd.root);
   uiCleanups.push(typeDd.dispose);
 
@@ -237,6 +238,7 @@ export function buildBrowserLayout(
     onBeforeChange: () => ctx.setPageIndex(0),
     widthPx: 240,
   });
+  stageDd.root.classList.add("sprout-browser-filter", "sprout-browser-filter-stage");
   controlsRow.appendChild(stageDd.root);
   uiCleanups.push(stageDd.dispose);
 
@@ -254,19 +256,21 @@ export function buildBrowserLayout(
     onBeforeChange: () => ctx.setPageIndex(0),
     widthPx: 220,
   });
+  dueDd.root.classList.add("sprout-browser-filter", "sprout-browser-filter-due");
   controlsRow.appendChild(dueDd.root);
   uiCleanups.push(dueDd.dispose);
 
   // Columns button
   const columnsWrap = document.createElement("div");
-  columnsWrap.className = "flex flex-row flex-wrap items-center gap-2";
+  columnsWrap.className = "flex flex-row flex-wrap items-center gap-2 sprout-browser-filter-columns-wrap";
   controlsRow.appendChild(columnsWrap);
+  colsDd.root.classList.add("sprout-browser-filter", "sprout-browser-filter-columns");
   columnsWrap.appendChild(colsDd.root);
 
   // Suspend button
   const suspendBtn = document.createElement("button");
   suspendBtn.type = "button";
-  suspendBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
+  suspendBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2 sprout-browser-action-btn sprout-browser-action-btn-suspend";
   suspendBtn.disabled = true;
   suspendBtn.setAttribute("data-tooltip", "Suspend or Unsuspend selected cards");
   suspendBtn.setAttribute("data-tooltip-position", "top");
@@ -280,7 +284,7 @@ export function buildBrowserLayout(
   // Edit button
   const editBtn = document.createElement("button");
   editBtn.type = "button";
-  editBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
+  editBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2 sprout-browser-action-btn sprout-browser-action-btn-edit";
   editBtn.disabled = true;
   editBtn.setAttribute("data-tooltip", "Edit selected cards");
   editBtn.setAttribute("data-tooltip-position", "top");
@@ -303,7 +307,7 @@ export function buildBrowserLayout(
   // Reset filters button
   const resetFiltersBtn = document.createElement("button");
   resetFiltersBtn.type = "button";
-  resetFiltersBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2";
+  resetFiltersBtn.className = "btn-outline h-9 px-3 text-sm inline-flex items-center gap-2 sprout-browser-action-btn sprout-browser-action-btn-reset";
   resetFiltersBtn.disabled = true;
   resetFiltersBtn.setAttribute("data-tooltip", "Reset filters");
   resetFiltersBtn.setAttribute("data-tooltip-position", "top");
@@ -457,18 +461,18 @@ export function buildBrowserLayout(
 
   // ── Bottom controls ──
   const bottom = document.createElement("div");
-  bottom.className = "flex flex-row flex-wrap items-center justify-between gap-2 mt-4";
+  bottom.className = "flex flex-row flex-wrap items-center justify-between gap-2 mt-4 sprout-browser-bottom-bar";
   applyAos(bottom, 600);
   root.appendChild(bottom);
 
   const summaryWrap = document.createElement("div");
-  summaryWrap.className = "flex flex-col gap-1";
+  summaryWrap.className = "flex flex-col gap-1 sprout-browser-summary-wrap";
   const summary = document.createElement("div");
-  summary.className = "text-sm text-muted-foreground";
+  summary.className = "text-sm text-muted-foreground sprout-browser-summary";
   const selectionRow = document.createElement("div");
-  selectionRow.className = "flex items-center gap-2";
+  selectionRow.className = "flex items-center gap-2 sprout-browser-selection-row";
   const selectionCount = document.createElement("div");
-  selectionCount.className = "text-sm text-muted-foreground";
+  selectionCount.className = "text-sm text-muted-foreground sprout-browser-selection-count";
   selectionCount.textContent = "No cards selected";
   summaryWrap.appendChild(summary);
   selectionRow.appendChild(selectionCount);
@@ -495,13 +499,17 @@ export function buildBrowserLayout(
   bottom.appendChild(summaryWrap);
 
   const right = document.createElement("div");
-  right.className = "flex flex-row flex-wrap items-center gap-2 ml-auto";
+  right.className = "flex flex-row flex-wrap items-center gap-2 ml-auto sprout-browser-bottom-right";
   bottom.appendChild(right);
 
+  const rowsControl = document.createElement("div");
+  rowsControl.className = "flex flex-row items-center gap-2 sprout-browser-rows-control";
+  right.appendChild(rowsControl);
+
   const rowsLbl = document.createElement("div");
-  rowsLbl.className = "text-sm text-muted-foreground";
+  rowsLbl.className = "text-sm text-muted-foreground sprout-browser-rows-label";
   rowsLbl.textContent = "Rows";
-  right.appendChild(rowsLbl);
+  rowsControl.appendChild(rowsLbl);
 
   const pageSizeDd = makeDropdownMenu<string>({
     label: "Rows per page",
@@ -516,11 +524,11 @@ export function buildBrowserLayout(
     widthPx: 140,
     dropUp: true,
   });
-  right.appendChild(pageSizeDd.root);
+  rowsControl.appendChild(pageSizeDd.root);
   uiCleanups.push(pageSizeDd.dispose);
 
   const pagerHost = document.createElement("div");
-  pagerHost.className = "flex items-center";
+  pagerHost.className = "flex items-center sprout-browser-pager-host";
   right.appendChild(pagerHost);
 
   return {
