@@ -808,6 +808,21 @@
 }
 
 @media (max-width: 700px) {
+  /*
+   * Obsidian mobile has a fixed bottom toolbar (~48px) that overlaps view content.
+   * env(safe-area-inset-bottom) is 0 inside the webview, so we use a generous
+   * hardcoded spacer via ::after on the session column to guarantee the card
+   * footer (Edit / Grade / More) can always be scrolled above the toolbar.
+   */
+  body.is-mobile .sprout .sprout-session-column::after {
+    content: "" !important;
+    display: block !important;
+    height: 104px !important;
+    min-height: 104px !important;
+    flex-shrink: 0 !important;
+    pointer-events: none !important;
+  }
+
   body.is-mobile .sprout .sprout-session-card .sprout-review-edit-icon-btn,
   body.is-mobile .sprout .sprout-session-card .sprout-review-more-icon-btn {
     width: 36px;
@@ -824,6 +839,12 @@
   body.is-mobile .sprout .sprout-session-card footer .btn-outline,
   body.is-mobile .sprout .sprout-session-card footer .btn-destructive {
     border-radius: var(--button-radius, var(--radius-m)) !important;
+  }
+
+  /* Hide tooltips on session footer buttons on mobile — tapping triggers :hover
+     which shows the ::after tooltip, making grading buttons look duplicated. */
+  body.is-mobile .sprout .sprout-session-card footer [data-tooltip]::after {
+    display: none !important;
   }
 
   /* Phone-sized mobile: fully disable AOS on session elements.

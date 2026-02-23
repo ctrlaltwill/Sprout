@@ -75,7 +75,8 @@ body.sprout-workspace-content-zoomed
 
 @media (max-width: 767px) {
   body.is-mobile .sprout .sprout-view-content {
-    padding-bottom: calc(40px + 50px + env(safe-area-inset-bottom));
+    /* 40px base + 60px for Obsidian's mobile bottom toolbar (env() is 0 in webview) */
+    padding-bottom: 100px !important;
   }
 
   /* Prevent horizontal scrolling on mobile across all Sprout views */

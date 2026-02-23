@@ -189,7 +189,7 @@
 /* ---- Deck sections ---- */
 
 .sprout .sprout-home-deck-section {
-  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border-radius: var(--radius-m) !important;
 }
 
 /* ---- Deck rows ---- */
@@ -405,7 +405,7 @@
   /* Promote each deck section to its own standalone card on mobile */
   body.is-mobile .sprout .sprout-home-deck-section {
     background-color: var(--background) !important;
-    border-radius: var(--button-radius, var(--radius-m)) !important;
+    border-radius: var(--radius-m) !important;
     border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
     box-shadow: none !important;
     padding: 16px !important;

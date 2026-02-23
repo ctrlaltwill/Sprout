@@ -147,9 +147,8 @@
 }
 
 .sprout .sprout-modals.modal .sprout-tag-box {
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
+  height: 38px !important;
+  min-height: 38px !important;
 }
 
 .sprout .sprout-modals.modal .textarea {
@@ -205,7 +204,7 @@
 .sprout .sprout-modals .sprout-popover-dropdown-below .bg-popover {
   background-color: var(--background-primary, var(--background, #fff)) !important;
   border: 1px solid var(--sprout-border-color) !important;
-  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border-radius: var(--radius-m) !important;
   color: var(--text-normal, var(--foreground, #111)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   opacity: 1 !important;
@@ -303,6 +302,8 @@
   max-height: 90% !important;
   box-sizing: border-box !important;
   overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
   border-radius: var(--radius-l) !important;
   z-index: 2147483001 !important;
   isolation: isolate;
@@ -313,7 +314,10 @@
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow: visible !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
 }
 
 .sprout .sprout-card-creator-modal [data-tooltip]:not([data-tooltip-position])::after,
