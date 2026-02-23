@@ -8,7 +8,7 @@
  *   - buildCardBlockMarkdown — Generates an array of Markdown lines representing a card in canonical pipe-delimited format
  */
 
-import type { CardRecord } from "../core/store";
+import { getCorrectIndices, type CardRecord } from "../core/store";
 import { normaliseGroupPath } from "../indexes/group-index";
 import { escapePipes } from "./fields";
 
@@ -118,12 +118,12 @@ export function buildCardBlockMarkdown(id: string, rec: CardRecord): string[] {
     pushPipeField("MCQ", (rec.stem || "").trim());
 
     const options = Array.isArray(rec.options) ? rec.options : [];
-    const correct = Number.isFinite(rec.correctIndex) ? (rec.correctIndex as number) : -1;
+    const correctSet = new Set(getCorrectIndices(rec));
 
     options.forEach((opt, idx) => {
       const txt = (opt || "").trim();
       if (!txt) return;
-      if (idx === correct) pushPipeField("A", txt);
+      if (correctSet.has(idx)) pushPipeField("A", txt);
       else pushPipeField("O", txt);
     });
   }

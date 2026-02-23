@@ -58,7 +58,7 @@
  *   - renderMarkdownWithImages — builds HTML string with images resolved and plain text preserved
  */
 
-import type { CardRecord } from "../core/store";
+import { getCorrectIndices, type CardRecord } from "../core/store";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
 import { log } from "../core/logger";
@@ -219,11 +219,11 @@ export function buildCardBlockPipeMarkdown(id: string, rec: CardRecord): string[
   } else if (rec.type === "mcq") {
     pushPipeField(out, "MCQ", (rec.stem || "").trim());
     const options = Array.isArray(rec.options) ? rec.options : [];
-    const correct = Number.isFinite(rec.correctIndex) ? (rec.correctIndex as number) : -1;
+    const correctSet = new Set(getCorrectIndices(rec));
     options.forEach((opt, idx) => {
       const txt = (opt || "").trim();
       if (!txt) return;
-      if (idx === correct) pushPipeField(out, "A", txt);
+      if (correctSet.has(idx)) pushPipeField(out, "A", txt);
       else pushPipeField(out, "O", txt);
     });
   } else if (rec.type === "io") {

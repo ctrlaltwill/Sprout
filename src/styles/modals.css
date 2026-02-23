@@ -60,7 +60,7 @@
 .sprout .sprout-modals.modal {
     border: var(--sprout-border-width) solid var(--sprout-border-color);
     background: var(--background);
-    border-radius: var(--button-radius, var(--radius-l));
+    border-radius: var(--radius-l);
     max-width: min(560px, 92vw);
     max-height: min(80vh, 720px);
     padding: 10px !important;
@@ -72,7 +72,7 @@
 
 .sprout .modal-container .modal {
   padding: 0;
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
@@ -258,7 +258,7 @@
   max-height: 90vh !important;
   overflow: auto !important;
   padding: 20px !important;
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
@@ -303,7 +303,7 @@
   max-height: 90% !important;
   box-sizing: border-box !important;
   overflow: visible !important;
-  border-radius: var(--button-radius, var(--radius-l)) !important;
+  border-radius: var(--radius-l) !important;
   z-index: 2147483001 !important;
   isolation: isolate;
 }
@@ -403,7 +403,7 @@
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  border-radius: var(--button-radius, var(--radius-l)) !important;
+  border-radius: var(--radius-l) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   background: var(--background) !important;
   position: relative !important;
@@ -437,7 +437,7 @@
   overflow-y: auto !important;
   overflow-x: hidden !important;
   -webkit-overflow-scrolling: touch;
-  flex: 1 1 0 !important;
+  flex: 1 1 auto !important;
   min-height: 0 !important;
   background: transparent !important;
   border: none !important;
@@ -840,7 +840,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   flex-shrink: 0;
   margin-left: auto;
 
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: 1px solid transparent;
   background: transparent;
   width: 32px;
@@ -855,7 +855,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   position: absolute;
   top: 12px;
   right: 12px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: 1px solid transparent;
   background: transparent;
   width: 32px;
@@ -905,7 +905,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   padding: 0;
   width: 90%;
   max-width: 600px;
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
@@ -1107,7 +1107,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   margin-top: 10px;
   padding: 10px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background-secondary, var(--background));
   font-size: var(--sprout-font-2xs);
   color: var(--text-normal);
@@ -1130,7 +1130,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   margin-top: 10px;
   padding: 10px 12px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background-modifier-message);
 }
 
@@ -1296,7 +1296,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   height: var(--sprout-io-height, 0);
   box-sizing: border-box;
   border: 2px dashed var(--interactive-accent);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.06);
   pointer-events: none;
 }
@@ -1309,7 +1309,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   height: var(--sprout-io-height, 0);
   box-sizing: border-box;
   border: 2px solid var(--interactive-accent);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -1334,7 +1334,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   font-weight: 700;
   font-size: var(--sprout-font-xs);
   padding: 2px 8px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: rgba(0, 0, 0, 0.55);
   color: white;
   pointer-events: none;
@@ -1379,7 +1379,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   align-items: center;
   gap: 6px;
   padding: 6px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
@@ -1392,7 +1392,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background-secondary);
 }
@@ -1407,7 +1407,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
 .sprout-io-btn {
   width: 28px;
   height: 28px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1442,7 +1442,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
 }
@@ -1456,7 +1456,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   height: 26px;
   font-size: var(--sprout-font-2xs);
   padding: 2px 6px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   color: var(--foreground);
@@ -1476,7 +1476,7 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   width: 26px;
   height: 26px;
   padding: 2px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   cursor: pointer;

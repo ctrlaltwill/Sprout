@@ -11,7 +11,7 @@
   gap: 12px;
   margin-top: 8px;
   padding: 16px 20px;
-  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border-radius: var(--radius-m, 8px);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background-color: var(--background-secondary);
 }
@@ -67,7 +67,7 @@
   flex: 1;
   overflow: hidden;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border-radius: var(--radius-m, 8px);
   background: var(--background-primary);
   position: relative;
 }
@@ -164,7 +164,7 @@
   font-size: var(--sprout-font-xs);
   font-weight: 500;
   cursor: pointer;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   color: var(--text-normal);
@@ -243,7 +243,7 @@
   padding: 4px;
   text-align: left;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border-radius: var(--radius-m, 8px);
   background: var(--background-primary);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -597,7 +597,7 @@ body.is-mobile .sprout-guide-dots-rail,
   gap: 0.35em;
   background-color: var(--background-modifier-hover);
   color: var(--text-muted);
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   padding: 0.125rem 0.6rem;
   font-size: var(--sprout-font-2xs);
   font-weight: 500;
@@ -748,7 +748,7 @@ body.is-mobile .sprout-guide-dots-rail,
   background: var(--background-primary);
   padding: 0 8px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border-radius: var(--radius-m, 8px);
 }
 
 .sprout-guide-body thead tr {
@@ -936,7 +936,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout-settings .sprout-settings-table-wrap {
   padding: 8px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   overflow-x: auto;
   overflow-y: hidden;
   background: var(--background-secondary, var(--background));
@@ -1057,7 +1057,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout-settings .sprout-settings-icon-btn {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   box-shadow: none;
   outline: none;
   padding: 0 !important;
@@ -1178,7 +1178,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
   display: inline-flex;
   flex-wrap: wrap;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   overflow: hidden;
 }
 
@@ -1208,13 +1208,13 @@ button.sprout-settings-tab-btn {
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn:first-child {
-  border-top-left-radius: var(--button-radius, var(--radius-m));
-  border-bottom-left-radius: var(--button-radius, var(--radius-m));
+  border-top-left-radius: var(--radius-m);
+  border-bottom-left-radius: var(--radius-m);
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn:last-child {
-  border-top-right-radius: var(--button-radius, var(--radius-m));
-  border-bottom-right-radius: var(--button-radius, var(--radius-m));
+  border-top-right-radius: var(--radius-m);
+  border-bottom-right-radius: var(--radius-m);
 }
 
 .sprout-settings-tab-btn:hover {
@@ -1276,7 +1276,7 @@ button.sprout-settings-tab-btn {
   gap: 16px;
   padding: 20px 30px 20px 20px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   background-color: var(--background-secondary);
   width: fit-content;
   margin-top: 18px;
@@ -1373,7 +1373,7 @@ button.sprout-settings-tab-btn {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   flex-shrink: 0;
@@ -1569,7 +1569,7 @@ button.sprout-settings-tab-btn {
 .sprout-settings-tab-content {
   background-color: var(--background-primary);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1624,7 +1624,7 @@ button.sprout-settings-tab-btn {
   flex: 1;
   overflow: hidden;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border-radius: var(--radius-m);
   background: var(--background-primary);
 }
 
@@ -1838,7 +1838,7 @@ button.sprout-settings-tab-btn {
   height: 36px;
   padding: 2px;
   border: 1.5px solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background-primary);
   cursor: pointer;
   vertical-align: middle;
@@ -1896,7 +1896,7 @@ button.sprout-settings-tab-btn {
 
 .sprout-rv-preset-card {
   border: 1.5px solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   padding: 12px 14px;
   cursor: pointer;
   background: var(--background-primary);
@@ -1939,7 +1939,7 @@ button.sprout-settings-tab-btn {
 
 .sprout-rv-live-preview {
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background-primary-alt);
   padding: 12px;
   margin: 8px 0 14px;
@@ -2039,7 +2039,7 @@ button.sprout-settings-tab-btn {
   background: var(--background-primary) !important;
   color: var(--text-normal) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
-  border-radius: var(--button-radius, var(--radius-m, 8px));
+  border-radius: var(--radius-m, 8px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 

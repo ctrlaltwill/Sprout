@@ -6,7 +6,7 @@
 .card {
   background-color: var(--background);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border-radius: var(--radius-l) !important;
   box-shadow: none;
   margin: 0;
   padding: 25px;

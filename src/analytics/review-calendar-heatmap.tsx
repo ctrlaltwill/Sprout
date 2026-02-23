@@ -13,7 +13,7 @@
 import { Platform } from "obsidian";
 import * as React from "react";
 import { useAnalyticsPopoverZIndex } from "./filter-styles";
-import { cssClassForProps, setCssProps } from "../core/ui";
+import { cssClassForProps } from "../core/ui";
 
 function InfoIcon(props: { text: string }) {
   return (
@@ -212,7 +212,6 @@ export function ReviewCalendarHeatmap(props: {
     y: number;
   } | null>(null);
   const chartWrapRef = React.useRef<HTMLDivElement | null>(null);
-  const tooltipRef = React.useRef<HTMLDivElement | null>(null);
   const dropdownWrapRef = React.useRef<HTMLDivElement | null>(null);
   const popoverRef = React.useRef<HTMLDivElement | null>(null);
   useAnalyticsPopoverZIndex(open, dropdownWrapRef);
@@ -235,16 +234,6 @@ export function ReviewCalendarHeatmap(props: {
   React.useEffect(() => {
     setDurationDays(props.rangeDays ?? 365);
   }, [props.rangeDays]);
-
-  React.useEffect(() => {
-    const el = tooltipRef.current;
-    if (!el) return;
-    if (!hovered) {
-      setCssProps(el, { "--sprout-ana-x": null, "--sprout-ana-y": null });
-      return;
-    }
-    setCssProps(el, { "--sprout-ana-x": `${hovered.x}px`, "--sprout-ana-y": `${hovered.y}px` });
-  }, [hovered]);
 
   const filteredEvents = React.useMemo(() => {
     return (props.revlog ?? []).filter((ev) => {
@@ -559,8 +548,11 @@ export function ReviewCalendarHeatmap(props: {
 
         {hovered ? (
           <div
-            ref={tooltipRef}
             className={"bc sprout-data-tooltip-surface sprout-ana-heatmap-tooltip"}
+            style={{
+              "--sprout-ana-x": `${hovered.x}px`,
+              "--sprout-ana-y": `${hovered.y}px`,
+            } as React.CSSProperties}
           >
             <div className={"bc text-sm font-medium text-background"}>{hovered.cell.dateLabel}</div>
             <div className={"bc text-background"}>Reviews: {hovered.cell.count}</div>

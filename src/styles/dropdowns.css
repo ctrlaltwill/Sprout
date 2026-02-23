@@ -19,7 +19,7 @@
 
 /* ---- Dropdown menu basics ---- */
 
-.dropdown-menu hr {margin: 0; border-radius: var(--button-radius, var(--radius-m));
+.dropdown-menu hr {margin: 0; border-radius: var(--radius-m);
     overflow: hidden;}
 
 
@@ -28,7 +28,7 @@
 .sprout.dropdown-menu .bg-popover {
   background-color: #fff;
   color: var(--popover-fg, var(--foreground));
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
 }
 
 /* Menu item hover/focus: light theme - very light grey */
@@ -137,7 +137,7 @@
 :where(.bc.p-1, .p-1) [role="button"] {
   color: var(--text-color) !important;
   margin: 1px 0 !important;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
 }
 
 :where(.bc.p-1, .p-1) [role="button"]:hover,
@@ -203,7 +203,7 @@ body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-ov
 /* "Reset filters" (clickable text row) */
 :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
   color: var(--text-color) !important;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   padding-top: 6px;
   padding-bottom: 6px;
 }

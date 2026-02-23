@@ -179,7 +179,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* Shared base (theme-inherited) for all macros */
 .sprout-pretty-card {
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   padding: 12px 12px 15px 12px;
   box-shadow: none;
   box-sizing: border-box;
@@ -227,7 +227,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card.sprout-macro-flashcards {
   background: var(--color-base-10);
   border: 1px solid var(--alt-accent-color);
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   padding: 0 !important;
   cursor: pointer;
   user-select: none;
@@ -459,7 +459,7 @@ mjx-container[jax="CHTML"][display="true"] {
   font-size: var(--sprout-font-2xs);
   font-weight: 500;
   padding: 5px 10px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   cursor: pointer;
   background: transparent;
   border: 1px solid rgba(0,0,0,0.06);
@@ -502,7 +502,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .sprout-pretty-card.sprout-macro-classic.accent .sprout-cloze {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   margin: 0 0px;
   padding: 1.5px 6px;
   -webkit-box-decoration-break: clone;
@@ -510,7 +510,7 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 .sprout-pretty-card.sprout-macro-classic.theme .sprout-cloze {
   background-color: var(--alt-accent-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   margin: 0 0px;
   padding: 1.5px 6px;
   -webkit-box-decoration-break: clone;
@@ -528,7 +528,7 @@ mjx-container[jax="CHTML"][display="true"] {
 /* Generic cloze styling */
 .sprout-cloze {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
-    border-radius: var(--button-radius, var(--radius-m));
+    border-radius: var(--radius-m);
     margin: 0 0px;
     padding: 1.5px 6px;
      -webkit-box-decoration-break: clone;
@@ -570,13 +570,13 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card.sprout-macro-classic.accent .sprout-section-io .sprout-section-content {
   padding: 18px;
   border: 1px dashed rgba(0,0,0,0.06);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   text-align: center;
 }
 .sprout-pretty-card.sprout-macro-classic.theme .sprout-section-io .sprout-section-content {
   padding: 18px;
   border: 1px dashed var(--alt-accent-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   text-align: center;
 }
 
@@ -625,7 +625,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .sprout-reading-view-cloze {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   margin: 0 0px;
   padding: 1px 4px;
   -webkit-box-decoration-break: clone;
@@ -652,7 +652,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-reading-view-cloze img,
 .sprout-cloze img {
   border: 2px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.5);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   padding: 2px;
 }
 
@@ -708,7 +708,7 @@ mjx-container[jax="CHTML"][display="true"] {
   position: relative;
   display: inline-block;
   max-width: 100%;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   overflow: hidden;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background-secondary);
@@ -788,7 +788,7 @@ mjx-container[jax="CHTML"][display="true"] {
   color: var(--text-muted);
   background: var(--background-modifier-error-hover, rgba(255, 0, 0, 0.05));
   border: 1px dashed var(--text-error, #e34040);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   font-style: italic;
 }
 
@@ -900,7 +900,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card.sprout-macro-custom {
   background: var(--background-primary);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
 }
 
 .sprout-pretty-card.sprout-macro-custom .sprout-custom-body {

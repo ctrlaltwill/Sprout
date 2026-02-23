@@ -24,7 +24,7 @@
   max-height: none !important;
   height: fit-content !important;
   max-height: max-content !important;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   box-shadow: none !important;
   padding-left: 0 !important;
@@ -506,7 +506,7 @@
   cursor: pointer;
   font-weight: 500;
   padding: 6px 16px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
   border: none;

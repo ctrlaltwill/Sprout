@@ -131,7 +131,7 @@
 .sprout .sprout-changelog-scroll {
   padding: 8px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   max-height: 165px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -227,7 +227,7 @@
 .sprout-release-summary {
   padding: 10px 12px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background);
   max-height: 200px;
   overflow-y: auto;
@@ -279,7 +279,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 8px 10px;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   background: var(--background-modifier-message);
   font-size: var(--sprout-font-2xs);
   color: var(--text-muted);

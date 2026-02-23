@@ -18,6 +18,8 @@
   overflow: auto !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
+  position: relative !important;
+  isolation: isolate !important;
 }
 
 .sprout .sprout-browser-view {
@@ -66,6 +68,11 @@
 .sprout .sprout-browser-cell {
   height: var(--sprout-row-height, auto) !important;
   vertical-align: top !important;
+}
+
+.sprout .sprout-browser-tbody td[data-col="location"] {
+  font-size: var(--sprout-font-2xs) !important;
+  line-height: 1.25 !important;
 }
 
 /* Allow tooltips to overflow browser cells */
@@ -398,8 +405,9 @@
 .sprout .sprout-sticky-th {
   position: sticky !important;
   top: var(--sprout-sticky-top, 0px) !important;
-  z-index: 2 !important; /* low enough to stay below tooltips (z-index ~9999) */
-  background: var(--background) !important;
+  z-index: 20 !important;
+  background-color: var(--background);
+  background-clip: padding-box !important;
   box-shadow: 0 1px 0 var(--sprout-border-color) !important;
   height: 44px !important;
   vertical-align: middle !important;
@@ -413,7 +421,7 @@
 .sprout .sprout-browser-io-frame {
   position: relative !important;
   display: inline-block !important;
-  border-radius: var(--button-radius, var(--radius-l)) !important;
+  border-radius: var(--radius-l) !important;
   overflow: hidden !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   background: var(--background-secondary) !important;
@@ -424,7 +432,7 @@
   max-width: 100% !important;
   max-height: calc(var(--sprout-editor-height, 140px) - 12px) !important;
   object-fit: contain !important;
-  border-radius: var(--button-radius, var(--radius-l)) !important;
+  border-radius: var(--radius-l) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   background: var(--background-secondary) !important;
 }
@@ -496,7 +504,10 @@
   width: 100% !important;
   z-index: 1 !important;
   position: relative !important;
+  background: #fff !important;
 }
+
+
 
 .sprout .sprout-icon-scale-80 {
   transform: scale(0.8) !important;
@@ -504,12 +515,12 @@
 
 /* Browser table hover: hide border seams by matching hover color */
 .sprout .sprout-browser-view .table tbody tr:hover {
-  background-color: var(--color-background) !important;
+  background-color: #fff !important;
 }
 .sprout .sprout-browser-view .table tbody tr:hover,
 .sprout .sprout-browser-view .table tbody tr:hover td {
-  border-color: var(--color-background) !important;
-  border-bottom-color: var(--color-background) !important;
+  border-color: #fff !important;
+  border-bottom-color: #fff !important;
 }
 
 /* ---- Pagination + row buttons ---- */

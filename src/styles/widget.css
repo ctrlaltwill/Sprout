@@ -61,7 +61,7 @@
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
 }
 
 .sprout .sprout-widget button:hover,
@@ -163,7 +163,7 @@
 .sprout .sprout-widget-card-body {
   margin: 10px auto 20px auto !important;
   gap: 0 !important;
-  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border-radius: var(--radius-l) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;
@@ -301,7 +301,7 @@
 .sprout-widget-teaser {
   margin: 10px auto 20px !important;
   gap: 0 !important;
-  border-radius: var(--button-radius, var(--radius-m)) !important;
+  border-radius: var(--radius-l) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;

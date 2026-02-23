@@ -1,17 +1,24 @@
 # Sprout 1.0.6
 
-Release date: 2026-02-18
+### Release Date
+2026-02-18
 
-Version 1.0.6 is a compatibility release focused on Obsidian Community Plugins linter compliance for plugin approval.
+### Summary
+Version 1.0.6 refines the major updates from 1.0.5 and improves compatibility for Obsidian Community Plugin approval.
 
 ## What's Changed
 
-### Compatibility
-- Updated plugin code and metadata for compatibility with Obsidian Community Plugins linter requirements
-- Applied targeted compatibility tidy-up to support the approval process
+### Cards and customisation
+- Multi-select MCQ and ordered questions
+- Typed cloze and image occlusion mask customisation
 
-### Fixes
-- Resolved linter-related compatibility findings that could block community plugin approval
+### Text-to-Speech
+- TTS for basic and cloze cards
+- Voice selection/tuning improvements
+
+### Reading view and settings
+- New Reading styles and expanded settings view
+- Updated in-app guide and ongoing mobile support
 
 ## Note
-This is a compatibility and approval-readiness release with no user-facing feature changes.
+If scheduling or analytics data appears missing after update, restore from backup via Settings → Storage and Backup.

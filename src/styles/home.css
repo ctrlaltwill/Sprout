@@ -148,7 +148,7 @@
   margin-top: 0.25rem;
   background: var(--bg-popover, var(--color-popover, var(--color-background))) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   box-shadow: var(--shadow-s) !important;
   z-index: 1000;
   max-height: 300px;
@@ -237,7 +237,7 @@
     background-color: var(--theme-accent);
     border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
     color: #fff;
-    border-radius: var(--button-radius, var(--radius-l));
+    border-radius: var(--radius-l);
     align-items: center;
   padding: 0.125rem 0.625rem;
     font-size: var(--sprout-font-3xs);
@@ -368,7 +368,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   border: 1px dashed rgba(var(--text-muted-rgb), 0.4);
   font-size: var(--sprout-font-xs);
   color: var(--text-muted);

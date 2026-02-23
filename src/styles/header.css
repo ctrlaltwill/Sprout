@@ -32,7 +32,7 @@
   margin: 40px 40px 0px 40px !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
-  border-radius: var(--button-radius, var(--radius-l)) !important;
+  border-radius: var(--radius-l) !important;
   background-color: var(--color-base-10) !important;
   box-shadow: none !important;
   display: flex !important;

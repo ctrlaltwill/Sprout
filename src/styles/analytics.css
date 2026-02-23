@@ -306,7 +306,7 @@
 .sprout .sprout-analytics-table-wrap {
   padding: 8px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--radius-m);
   overflow: auto;
   background: var(--background);
 }

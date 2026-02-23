@@ -40,7 +40,7 @@
 .sprout .sprout-deck-disclosure:focus-visible {
   outline: 2px solid rgba(var(--interactive-accent-rgb), 0.45);
   outline-offset: 2px;
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
 }
 
 .sprout .sprout-deck-disclosure svg {
@@ -87,7 +87,7 @@
   background: var(--background);
   color: var(--foreground);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   padding: 6px 10px;
   outline: none;
   box-shadow: none;
@@ -203,7 +203,7 @@ body.is-mobile .sprout .sprout-deck-expand-buttons .btn-outline {
 
 /* Group select popover: clip inner borders to rounded corners */
 .sprout .sprout-group-select-popover {
-  border-radius: var(--button-radius, var(--radius-l));
+  border-radius: var(--radius-l);
   overflow: hidden;
 }
 
