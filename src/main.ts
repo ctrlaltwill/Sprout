@@ -41,7 +41,7 @@ import {
 
 import { log } from "./core/logger";
 import { clamp, clonePlain, isPlainObject, type FlashcardType } from "./core/utils";
-import { getBasecoatApi, type BasecoatApi } from "./core/basecoat";
+import { getBasecoatApi } from "./core/basecoat";
 import { migrateSettingsInPlace } from "./settings/settings-migration";
 import { normaliseSettingsInPlace } from "./settings/settings-normalisation";
 import { registerReadingViewPrettyCards, teardownReadingView } from "./reading/reading-view";

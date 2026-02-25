@@ -46,6 +46,7 @@ import {
 } from "../card-editor/card-editor";
 import type { CardRecord } from "../core/store";
 import type { CardRecordType } from "../types/card";
+import { setCssProps } from "../core/ui";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // DOM helpers
@@ -791,7 +792,7 @@ export function scopeModalToWorkspace(modal: Modal) {
     }
 
     // Force the browser to resolve the new stacking context immediately.
-    el.style.setProperty("z-index", "2147483000", "important");
+    setCssProps(el, "z-index", "2147483000");
     void el.offsetHeight;
   });
 }

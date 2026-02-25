@@ -22,7 +22,7 @@
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
-import { placePopover, queryFirst } from "../core/ui";
+import { placePopover, queryFirst, setCssProps } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
 import { syncOneFile } from "../sync/sync-engine";
 
@@ -160,9 +160,9 @@ export class CardCreatorModal extends Modal {
     // scopeModalToWorkspace forces a repaint, which only works if the
     // positioning CSS (position:absolute, z-index, etc.) is already active.
     this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
-    this.containerEl.style.setProperty("z-index", "2147483000", "important");
+    setCssProps(this.containerEl, "z-index", "2147483000");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-card-creator-modal");
-    this.modalEl.style.setProperty("z-index", "2147483001", "important");
+    setCssProps(this.modalEl, "z-index", "2147483001");
     scopeModalToWorkspace(this);
     this.contentEl.addClass("bc", "sprout-card-creator-content");
 

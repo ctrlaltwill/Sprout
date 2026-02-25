@@ -30,6 +30,7 @@ import {
   groupsToInput,
 } from "./browser-helpers";
 import { setModalTitle, scopeModalToWorkspace } from "../modals/modal-utils";
+import { setCssProps } from "../core/ui";
 
 // ── Context interface ──────────────────────────────────────
 
@@ -72,9 +73,9 @@ export class BulkEditModal extends Modal {
     // scopeModalToWorkspace forces a repaint, which only works if the
     // positioning CSS (position:absolute, z-index, etc.) is already active.
     this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
-    this.containerEl.style.setProperty("z-index", "2147483000", "important");
+    setCssProps(this.containerEl, "z-index", "2147483000");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-bulk-edit-panel");
-    this.modalEl.style.setProperty("z-index", "2147483001", "important");
+    setCssProps(this.modalEl, "z-index", "2147483001");
     scopeModalToWorkspace(this);
     this.contentEl.addClass("bc", "sprout-bulk-edit-content");
 
