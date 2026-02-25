@@ -9,7 +9,7 @@
 
 
 > [!Important]
-> Thank you for all of your support following Sprout’s stable release and subsequent updates. I am actively working through early teething issues. Please raise bugs or feature requests via GitHub Issues. I
+> Thank you for all of your support following Sprout’s stable release and subsequent updates. I am actively working through early teething issues. Please raise bugs or feature requests via GitHub Issues.
 
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
