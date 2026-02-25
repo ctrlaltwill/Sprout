@@ -1,14 +1,18 @@
 /**
  * @file src/modals/bulk-edit.ts
- * @summary Full-screen "Edit flashcard" overlay used by the Card Browser and Reviewer views. Unlike the other modals (which extend Obsidian's Modal class), this builds a manual overlay appended to document.body so it can sit above Obsidian's own modal z-index. Supports single-card editing for basic, cloze, and MCQ types with read-only metadata fields and editable content fields including a dynamic MCQ options list and group tag-picker.
+ * @summary Full-screen "Edit flashcard" modal used by the Reviewer, Reading, and Widget views.
+ * Extends Obsidian's Modal class for consistent lifecycle, z-index, and paint behaviour.
+ * Supports single-card editing for basic, reversed, cloze, MCQ, and OQ types with read-only
+ * metadata fields and editable content fields including a dynamic MCQ options list, OQ step
+ * reordering, and group tag-picker.
  *
  * @exports
- *  - openBulkEditModalForCards — opens the bulk-edit overlay for one or more card records, returning a promise that resolves when the user saves or cancels
+ *  - BulkEditCardModal — Obsidian Modal subclass for editing card records
+ *  - openBulkEditModalForCards — convenience wrapper that creates and opens BulkEditCardModal
  */
 
-import { Notice, Platform, setIcon } from "obsidian";
-import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+import { Modal, Notice, setIcon, type App } from "obsidian";
+
 import type SproutPlugin from "../main";
 import type { CardRecord } from "../core/store";
 import { normalizeCardOptions, getCorrectIndices } from "../core/store";
@@ -26,6 +30,8 @@ import {
   fmtLocation,
   parseGroupsInput,
   createThemedDropdown,
+  setModalTitle,
+  scopeModalToWorkspace,
 } from "./modal-utils";
 import { coerceGroups } from "../indexes/group-format";
 
@@ -82,61 +88,47 @@ function getSharedEditableFieldValue(cards: CardRecord[], field: EditableField):
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// openBulkEditModalForCards
+// BulkEditCardModal
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Opens a bulk edit modal for a single card (or multiple cards) in review mode.
- * Focuses on basic, cloze, and MCQ cards. IO cards are excluded.
+ * Obsidian Modal subclass for editing one or more card records in review mode.
+ * Supports basic, reversed, cloze, MCQ, and OQ cards. IO cards are excluded.
  */
-export function openBulkEditModalForCards(
-  plugin: SproutPlugin,
-  cards: CardRecord[],
-  onSave: (updatedCards: CardRecord[]) => Promise<void>,
-) {
-  if (!cards.length) return;
+export class BulkEditCardModal extends Modal {
+  private plugin: SproutPlugin;
+  private cards: CardRecord[];
+  private onSaveCallback: (updatedCards: CardRecord[]) => Promise<void>;
 
-  // Filter out IO cards and their children
-  cards = cards.filter((c) => !["io", "io-child"].includes(String(c.type || "")));
-  if (!cards.length) return;
+  constructor(app: App, plugin: SproutPlugin, cards: CardRecord[], onSave: (updatedCards: CardRecord[]) => Promise<void>) {
+    super(app);
+    this.plugin = plugin;
+    this.cards = cards.filter((c) => !["io", "io-child"].includes(String(c.type || "")));
+    this.onSaveCallback = onSave;
+  }
 
-  // Container — matches Obsidian's native Modal DOM structure:
-  //   div.modal-container  >  div.modal-bg  +  div.modal
-  const container = document.createElement("div");
-  container.className = "modal-container sprout-modal-container sprout-modal-dim sprout mod-dim";
-  setCssProps(container, "z-index", "2147483000");
+  onOpen() {
+    const { plugin, cards, onSaveCallback: onSave } = this;
+    if (!cards.length) { this.close(); return; }
 
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-bg";
-  container.appendChild(backdrop);
+    // ── Modal chrome ──────────────────────────────────────────────────────
+    setModalTitle(this, "Edit flashcard");
 
-  // ── Panel container ─────────────────────────────────────────────────────
-  const panel = document.createElement("div");
-  panel.className = "modal bc sprout-modals sprout-bulk-edit-panel";
-  setCssProps(panel, "z-index", "2147483001");
-  container.appendChild(panel);
+    // Apply all CSS classes and z-index BEFORE scoping to workspace.
+    // scopeModalToWorkspace forces a repaint, which only works if the
+    // positioning CSS (position:absolute, z-index, etc.) is already active.
+    this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
+    this.containerEl.style.setProperty("z-index", "2147483000", "important");
+    this.modalEl.addClass("bc", "sprout-modals", "sprout-bulk-edit-panel");
+    this.modalEl.style.setProperty("z-index", "2147483001", "important");
+    scopeModalToWorkspace(this);
+    this.contentEl.addClass("bc", "sprout-bulk-edit-content");
 
-  // ── Close button (matches Obsidian modal-close-button) ──────────────────
-  const close = document.createElement("div");
-  close.className = "modal-close-button mod-raised clickable-icon";
-  close.setAttribute("data-tooltip", "Close");
-  close.setAttribute("data-tooltip-position", "top");
-  setIcon(close, "x");
-  panel.appendChild(close);
+    // Escape key closes modal
+    this.scope.register([], "Escape", () => { this.close(); return false; });
 
-  // ── Header (matches Obsidian modal-header) ──────────────────────────────
-  const header = document.createElement("div");
-  header.className = "modal-header";
-  const heading = document.createElement("div");
-  heading.className = "modal-title";
-  heading.textContent = "Edit flashcard";
-  header.appendChild(heading);
-  panel.appendChild(header);
-
-  // ── Content wrapper (matches Obsidian modal-content) ────────────────────
-  const contentWrap = document.createElement("div");
-  contentWrap.className = "modal-content bc sprout-bulk-edit-content";
-  panel.appendChild(contentWrap);
+    const { contentEl } = this;
+    contentEl.empty();
 
   // ── Form body ─────────────────────────────────────────────────────────────
   const form = document.createElement("div");
@@ -571,7 +563,7 @@ export function openBulkEditModalForCards(
   // Location (read-only)
   form.appendChild(createReadonlyField("Location", fmtLocation(card0.sourceNotePath)));
 
-  contentWrap.appendChild(form);
+  contentEl.appendChild(form);
 
   // ── Footer buttons ────────────────────────────────────────────────────────
   const footer = document.createElement("div");
@@ -601,18 +593,9 @@ export function openBulkEditModalForCards(
 
   footer.appendChild(cancel);
   footer.appendChild(save);
-  contentWrap.appendChild(footer);
+  contentEl.appendChild(footer);
 
-  /** Remove the container from the DOM and clean up the Escape listener. */
-  function removeOverlay() {
-    document.removeEventListener("keydown", onKeyDown, true);
-    try {
-      container.remove();
-    } catch (e) { log.swallow("remove overlay", e); }
-  }
-
-  cancel.addEventListener("click", removeOverlay);
-  close.addEventListener("click", removeOverlay);
+  cancel.addEventListener("click", () => this.close());
 
   // ── Save handler ──────────────────────────────────────────────────────────
   save.addEventListener("click", () => { void (async () => {
@@ -722,50 +705,31 @@ export function openBulkEditModalForCards(
       }
 
       await onSave(updatedCards);
-      removeOverlay();
+      this.close();
     } catch (err: unknown) {
       new Notice(`${err instanceof Error ? err.message : String(err)}`);
     }
   })(); });
-
-  // Click backdrop = close
-  backdrop.addEventListener("click", () => removeOverlay());
-
-  // Escape key = close
-  const onKeyDown = (ev: KeyboardEvent) => {
-    if (ev.key !== "Escape") return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    removeOverlay();
-  };
-  document.addEventListener("keydown", onKeyDown, true);
-
-  // On mobile, always attach to document.body so the overlay is never clipped
-  // by a leaf container's overflow rules. On desktop, scope to the active leaf
-  // in the main (root) workspace so it appears in the centre pane even when
-  // triggered from a sidebar widget.
-  let target: HTMLElement = document.body;
-  if (!Platform.isMobileApp) {
-    const rootLeaf = document.querySelector(
-      ".mod-root .workspace-leaf.mod-active",
-    );
-    const leafContent = rootLeaf?.querySelector<HTMLElement>(".workspace-leaf-content");
-    if (leafContent) target = leafContent;
   }
-  target.appendChild(container);
 
-  // On mobile WebViews the compositor may not paint newly-appended
-  // absolutely-positioned content until the next user interaction
-  // (e.g. a swipe or tab switch). Force a synchronous reflow and
-  // promote the element to its own compositing layer so the browser
-  // paints it immediately.
-  if (Platform.isMobileApp) {
-    void container.offsetHeight;
-    requestAnimationFrame(() => {
-      setCssProps(container, "transform", "translateZ(0)");
-      requestAnimationFrame(() => {
-        setCssProps(container, "transform", null);
-      });
-    });
+  onClose() {
+    this.contentEl.empty();
   }
+}
+
+// ── Convenience wrapper ────────────────────────────────────
+
+/**
+ * Creates and opens a BulkEditCardModal for the given cards.
+ * Drop-in replacement for the old function-based overlay.
+ */
+export function openBulkEditModalForCards(
+  plugin: SproutPlugin,
+  cards: CardRecord[],
+  onSave: (updatedCards: CardRecord[]) => Promise<void>,
+) {
+  if (!cards.length) return;
+  const filtered = cards.filter((c) => !["io", "io-child"].includes(String(c.type || "")));
+  if (!filtered.length) return;
+  new BulkEditCardModal(plugin.app, plugin, filtered, onSave).open();
 }

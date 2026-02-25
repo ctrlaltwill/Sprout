@@ -14,7 +14,11 @@
 }
 
 .sprout .sprout-session-column {
-  gap: 10px !important;
+  gap: calc(var(--spacing)*4) !important;
+}
+
+.sprout .sprout-session-header-left {
+  gap: calc(var(--spacing)*4) !important;
 }
 
 .sprout-session-card.card {

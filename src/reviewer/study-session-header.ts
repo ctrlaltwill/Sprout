@@ -45,7 +45,7 @@ export function renderStudySessionHeader(container: HTMLElement, applyAOS?: bool
 
   // Left column: title and timer stacked
   const leftColumn = document.createElement("div");
-  leftColumn.className = "bc flex flex-col gap-2.5";
+  leftColumn.className = "bc flex flex-col sprout-session-header-left";
 
   const studySessionLabel = document.createElement("div");
   studySessionLabel.className = "bc text-xl font-semibold tracking-tight";

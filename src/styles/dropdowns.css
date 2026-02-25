@@ -174,11 +174,12 @@
   display: block !important;
 }
 
-body.sprout-workspace-content-zoomed .sprout .dropdown-menu.sprout-popover-overlay,
-body.sprout-workspace-content-zoomed .sprout.dropdown-menu.sprout-popover-overlay,
-body.sprout-workspace-content-zoomed .sprout .sprout-ss-popover.sprout-popover-overlay,
-body.sprout-workspace-content-zoomed .sprout.sprout-ss-popover.sprout-popover-overlay {
-  zoom: var(--sprout-workspace-content-zoom, 1);
+/* Sprout-scoped zoom for portalled popovers / dropdowns */
+.sprout .dropdown-menu.sprout-popover-overlay,
+.sprout.dropdown-menu.sprout-popover-overlay,
+.sprout .sprout-ss-popover.sprout-popover-overlay,
+.sprout.sprout-ss-popover.sprout-popover-overlay {
+  zoom: var(--sprout-leaf-zoom, 1);
 }
 
 .sprout .sprout-overflow-visible {

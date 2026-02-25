@@ -28,7 +28,7 @@
 .sprout .sprout-analytics-root {
   min-height: 0;
   max-height: none;
-  gap: 12px;
+  gap: calc(var(--spacing)*4) !important;
 }
 
 .sprout .sprout-analytics-width {

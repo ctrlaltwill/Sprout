@@ -1416,7 +1416,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       return "flashcards";
     };
 
-    const isMacroComingSoon = (key: "flashcards" | "classic" | "markdown" | "custom") => key === "classic" || key === "custom";
+    const isMacroComingSoon = (key: "flashcards" | "classic" | "markdown" | "custom") => key === "classic" || key === "custom" || key === "markdown";
 
     rv.activeMacro = normaliseMacro(rv.activeMacro ?? rv.preset);
     if (isMacroComingSoon(rv.activeMacro)) rv.activeMacro = "flashcards";

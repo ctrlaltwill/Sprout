@@ -25,7 +25,7 @@
 .sprout .sprout-browser-view {
   min-height: 0;
   max-height: 100%;
-  gap: 10px;
+  gap: calc(var(--spacing)*4) !important;
 }
 
 .sprout .sprout-browser-width {
@@ -504,7 +504,7 @@
   width: 100% !important;
   z-index: 1 !important;
   position: relative !important;
-  background: #fff !important;
+  background: var(--background) !important;
 }
 
 
@@ -515,12 +515,12 @@
 
 /* Browser table hover: hide border seams by matching hover color */
 .sprout .sprout-browser-view .table tbody tr:hover {
-  background-color: #fff !important;
+  background-color: var(--background-secondary) !important;
 }
 .sprout .sprout-browser-view .table tbody tr:hover,
 .sprout .sprout-browser-view .table tbody tr:hover td {
-  border-color: #fff !important;
-  border-bottom-color: #fff !important;
+  border-color: var(--background-secondary) !important;
+  border-bottom-color: var(--background-secondary) !important;
 }
 
 /* ---- Pagination + row buttons ---- */

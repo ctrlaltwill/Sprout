@@ -144,7 +144,7 @@ export function buildBrowserLayout(
   root.appendChild(top);
 
   const toolbarRow = document.createElement("div");
-  toolbarRow.className = "flex flex-row flex-wrap items-start gap-2 w-full sprout-browser-toolbar-row";
+  toolbarRow.className = "flex flex-row flex-wrap items-start gap-4 w-full sprout-browser-toolbar-row";
   top.appendChild(toolbarRow);
 
   // Search input
@@ -461,7 +461,7 @@ export function buildBrowserLayout(
 
   // ── Bottom controls ──
   const bottom = document.createElement("div");
-  bottom.className = "flex flex-row flex-wrap items-center justify-between gap-2 mt-4 sprout-browser-bottom-bar";
+  bottom.className = "flex flex-row flex-wrap items-center justify-between gap-2 sprout-browser-bottom-bar";
   applyAos(bottom, 600);
   root.appendChild(bottom);
 

@@ -13,6 +13,7 @@
 .sprout-widget.sprout {
   background: none !important;
   background-color: transparent !important;
+  zoom: var(--sprout-leaf-zoom, 1);
 }
 
 /* Widget: remove all box-shadows (cards + buttons + any child) */

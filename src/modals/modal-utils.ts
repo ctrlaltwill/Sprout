@@ -45,7 +45,6 @@ import {
   createCardEditor,
 } from "../card-editor/card-editor";
 import type { CardRecord } from "../core/store";
-import { setCssProps } from "../core/ui";
 import type { CardRecordType } from "../types/card";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -770,27 +769,29 @@ export function scopeModalToWorkspace(modal: Modal) {
     return; // Fallback to default behavior if leaf content not found
   }
 
-  // Move the modal container from document.body to leaf content
-  try {
-    leafContent.appendChild(modal.containerEl);
-  } catch {
-    // If the element is already in the leaf content or fails to move, continue silently
-    return;
-  }
+  const el = modal.containerEl;
 
-  // On mobile WebViews the compositor may not paint newly-appended
-  // absolutely-positioned content until the next user interaction
-  // (e.g. a swipe or tab switch). Force a synchronous reflow and
-  // promote the element to its own compositing layer so the browser
-  // paints it immediately.
-  if (Platform.isMobileApp) {
-    const el = modal.containerEl;
+  // Reparenting from document.body into the workspace leaf during a
+  // button-click handler causes Chromium to defer painting the element
+  // in its new stacking context until the next user interaction (mouse
+  // move / key press).  Keyboard shortcuts don't have this problem
+  // because the keydown event already triggers an interaction-level paint.
+  //
+  // Fix: defer the reparent to a requestAnimationFrame callback so it
+  // happens AFTER the click handler's paint cycle.  The modal is already
+  // visible at document.body (placed there by Obsidian's Modal.open()),
+  // so the user sees it immediately.  On the next frame we move it into
+  // the leaf, and Chromium paints the move normally because we're no
+  // longer inside the click handler's synchronous callstack.
+  requestAnimationFrame(() => {
+    try {
+      leafContent.appendChild(el);
+    } catch {
+      return;
+    }
+
+    // Force the browser to resolve the new stacking context immediately.
+    el.style.setProperty("z-index", "2147483000", "important");
     void el.offsetHeight;
-    requestAnimationFrame(() => {
-      setCssProps(el, "transform", "translateZ(0)");
-      requestAnimationFrame(() => {
-        setCssProps(el, "transform", null);
-      });
-    });
-  }
+  });
 }

@@ -515,7 +515,7 @@ export class SproutCardBrowserView extends ItemView {
       return;
     }
 
-    openBulkEditModal(cards, {
+    openBulkEditModal(this.app, cards, {
       cellTextClass: this._cellTextClass,
       readCardField: (card, col) => readCardField(card, col, this.plugin),
       applyValueToCard: (card, col, value) => applyValueToCard(card, col, value),

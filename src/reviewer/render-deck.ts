@@ -451,7 +451,7 @@ export function renderDeckMode(args: Args) {
 
   // ===== Body (table) =====
   const bodyWrap = document.createElement("div");
-  bodyWrap.className = "mt-3 sprout-deck-body";
+  bodyWrap.className = "sprout-deck-body";
   applyAos(bodyWrap, 400);
   root.appendChild(bodyWrap);
 

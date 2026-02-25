@@ -1963,6 +1963,10 @@ button.sprout-settings-tab-btn {
   width: 100%;
 }
 
+.sprout-rv-live-preview .sprout-rv-demo-card .sprout-groups-list {
+  display: none !important;
+}
+
 /* ============================================================================
    SETTINGS SELECT — Custom popover-style dropdown for settings.
    Two variants:

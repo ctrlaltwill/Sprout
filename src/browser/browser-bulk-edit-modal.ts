@@ -1,21 +1,23 @@
 /**
  * @file src/browser/browser-bulk-edit-modal.ts
- * @summary Full-screen bulk-edit overlay for the Flashcard Browser. Displays a
- * modal form allowing the user to edit one or more selected cards at once,
- * including title, question, answer/options (with MCQ support), extra info, and
- * a group tag-picker with search, add, and remove capabilities. Supports cloze
- * keyboard shortcuts and writes changes back to source markdown files.
+ * @summary Full-screen bulk-edit modal for the Flashcard Browser. Extends
+ * Obsidian's Modal class for consistent lifecycle, z-index, and paint
+ * behaviour. Displays a form allowing the user to edit one or more selected
+ * cards at once, including title, question, answer/options (with MCQ support),
+ * extra info, and a group tag-picker with search, add, and remove capabilities.
+ * Supports cloze keyboard shortcuts and writes changes back to source markdown
+ * files.
  *
  * @exports
  *   - BulkEditContext — interface providing callbacks and state the modal needs from its host
- *   - openBulkEditModal — creates and displays the bulk-edit overlay for a set of selected cards
+ *   - BulkEditModal — Obsidian Modal subclass for bulk editing
+ *   - openBulkEditModal — convenience wrapper that creates and opens BulkEditModal
  */
 
-import { Notice, Platform, setIcon } from "obsidian";
+import { Modal, Notice, Platform, setIcon, type App } from "obsidian";
 import type { CardRecord } from "../core/store";
 import { normalizeCardOptions, getCorrectIndices } from "../core/store";
-import { log } from "../core/logger";
-import { setCssProps } from "../core/ui";
+
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import { getDelimiter } from "../core/delimiter";
 import type { ColKey } from "./browser-helpers";
@@ -27,6 +29,7 @@ import {
   parseGroupsInput,
   groupsToInput,
 } from "./browser-helpers";
+import { setModalTitle, scopeModalToWorkspace } from "../modals/modal-utils";
 
 // ── Context interface ──────────────────────────────────────
 
@@ -46,46 +49,40 @@ const PLACEHOLDER_QUESTION = "Enter the question you want to answer";
 const PLACEHOLDER_ANSWER = "Enter the answer to your question";
 const PLACEHOLDER_INFO = "Optional: Add extra context or explanation shown on the back of the card";
 
-// ── Main function ──────────────────────────────────────────
+// ── Modal class ────────────────────────────────────────────
 
-export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): void {
-  // Container — matches Obsidian's native Modal DOM structure:
-  //   div.modal-container  >  div.modal-bg  +  div.modal
-  const container = document.createElement("div");
-  container.className = "modal-container sprout-modal-container sprout-modal-dim sprout mod-dim";
-  setCssProps(container, "z-index", "2147483000");
+export class BulkEditModal extends Modal {
+  private cards: CardRecord[];
+  private ctx: BulkEditContext;
 
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-bg";
-  container.appendChild(backdrop);
+  constructor(app: App, cards: CardRecord[], ctx: BulkEditContext) {
+    super(app);
+    this.cards = cards;
+    this.ctx = ctx;
+  }
 
-  const panel = document.createElement("div");
-  panel.className = "modal bc sprout-modals sprout-bulk-edit-panel";
-  setCssProps(panel, "z-index", "2147483001");
-  container.appendChild(panel);
+  onOpen() {
+    const { cards, ctx } = this;
 
-  // Close button — direct child of panel, before header (matches Obsidian Modal layout)
-  const close = document.createElement("div");
-  close.className = "modal-close-button mod-raised clickable-icon";
-  close.setAttribute("data-tooltip", "Close");
-  close.setAttribute("data-tooltip-position", "top");
-  setIcon(close, "x");
-  close.addEventListener("click", () => {
-    removeOverlay();
-  });
-  panel.appendChild(close);
+    // ── Modal chrome ──────────────────────────────────────────────────────
+    const title = cards.length === 1 ? "Edit flashcard" : `Edit ${cards.length} selected cards`;
+    setModalTitle(this, title);
 
-  const header = document.createElement("div");
-  header.className = "modal-header";
-  const heading = document.createElement("div");
-  heading.className = "modal-title";
-  heading.textContent = cards.length === 1 ? "Edit flashcard" : `Edit ${cards.length} selected cards`;
-  header.appendChild(heading);
-  panel.appendChild(header);
+    // Apply all CSS classes and z-index BEFORE scoping to workspace.
+    // scopeModalToWorkspace forces a repaint, which only works if the
+    // positioning CSS (position:absolute, z-index, etc.) is already active.
+    this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
+    this.containerEl.style.setProperty("z-index", "2147483000", "important");
+    this.modalEl.addClass("bc", "sprout-modals", "sprout-bulk-edit-panel");
+    this.modalEl.style.setProperty("z-index", "2147483001", "important");
+    scopeModalToWorkspace(this);
+    this.contentEl.addClass("bc", "sprout-bulk-edit-content");
 
-  const contentWrap = document.createElement("div");
-  contentWrap.className = "modal-content bc sprout-bulk-edit-content";
-  panel.appendChild(contentWrap);
+    // Escape key closes modal
+    this.scope.register([], "Escape", () => { this.close(); return false; });
+
+    const { contentEl } = this;
+    contentEl.empty();
 
   const form = document.createElement("div");
   form.className = "flex flex-col gap-4";
@@ -412,7 +409,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
       if (cleanup) {
         try {
           cleanup();
-        } catch (e) { log.swallow("bulk edit popover cleanup", e); }
+        } catch { /* swallow */ }
         cleanup = null;
       }
     };
@@ -726,7 +723,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
     form.appendChild(mcqSection);
   }
 
-  contentWrap.appendChild(form);
+  contentEl.appendChild(form);
 
   // ── Footer (Cancel / Save) ────────────────────────────────
 
@@ -742,7 +739,7 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
   cancelText.textContent = "Cancel";
   cancel.appendChild(cancelIcon);
   cancel.appendChild(cancelText);
-  cancel.addEventListener("click", () => removeOverlay());
+  cancel.addEventListener("click", () => this.close());
   const save = document.createElement("button");
   save.type = "button";
   save.className = "btn-outline inline-flex items-center gap-2 h-9 px-3 text-sm";
@@ -782,55 +779,27 @@ export function openBulkEditModal(cards: CardRecord[], ctx: BulkEditContext): vo
         }
         await ctx.writeCardToMarkdown(updated);
       }
-      container.remove();
+      this.close();
     } catch (err: unknown) {
       new Notice(`${err instanceof Error ? err.message : String(err)}`);
     }
   })(); });
   footer.appendChild(cancel);
   footer.appendChild(save);
-  contentWrap.appendChild(footer);
-
-  // ── Overlay lifecycle ─────────────────────────────────────
-
-  const removeOverlay = () => {
-    document.removeEventListener("keydown", onKeyDown, true);
-    container.remove();
-  };
-
-  const onKeyDown = (ev: KeyboardEvent) => {
-    if (ev.key !== "Escape") return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    removeOverlay();
-  };
-  document.addEventListener("keydown", onKeyDown, true);
-
-  backdrop.addEventListener("click", () => removeOverlay());
-
-  // On mobile, always attach to document.body so the overlay is never clipped
-  // by a leaf container's overflow rules. On desktop, scope to the active leaf
-  // so it appears within the correct workspace pane.
-  let target: HTMLElement = document.body;
-  if (!Platform.isMobileApp) {
-    const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
-    const leafContent = activeLeaf?.querySelector<HTMLElement>(".workspace-leaf-content");
-    if (leafContent) target = leafContent;
+  contentEl.appendChild(footer);
   }
-  target.appendChild(container);
 
-  // On mobile WebViews the compositor may not paint newly-appended
-  // absolutely-positioned content until the next user interaction
-  // (e.g. a swipe or tab switch). Force a synchronous reflow and
-  // promote the element to its own compositing layer so the browser
-  // paints it immediately.
-  if (Platform.isMobileApp) {
-    void container.offsetHeight;
-    requestAnimationFrame(() => {
-      setCssProps(container, "transform", "translateZ(0)");
-      requestAnimationFrame(() => {
-        setCssProps(container, "transform", null);
-      });
-    });
+  onClose() {
+    this.contentEl.empty();
   }
+}
+
+// ── Convenience wrapper ────────────────────────────────────
+
+/**
+ * Creates and opens a BulkEditModal for the given cards.
+ * Drop-in replacement for the old function-based overlay.
+ */
+export function openBulkEditModal(app: App, cards: CardRecord[], ctx: BulkEditContext): void {
+  new BulkEditModal(app, cards, ctx).open();
 }

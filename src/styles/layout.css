@@ -27,10 +27,9 @@
   box-shadow: none !important;
 }
 
-/* Workspace pinch zoom: content-only (excludes tab headers / side chrome) */
-body.sprout-workspace-content-zoomed
-  .workspace-leaf-content {
-  zoom: var(--sprout-workspace-content-zoom, 1);
+/* Sprout-scoped pinch zoom: only Sprout leaves, never other plugins */
+.workspace-leaf-content.sprout {
+  zoom: var(--sprout-leaf-zoom, 1);
 }
 
 /* View-header wrappers: transparent so header card margins are clean */

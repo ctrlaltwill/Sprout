@@ -109,9 +109,9 @@ export default class SproutPlugin extends Plugin {
   private _whatsNewModalContainer: HTMLElement | null = null;
   private _whatsNewModalRoot: ReactRoot | null = null;
 
-  // Workspace content zoom (markdown + Sprout leaves only)
-  private _workspaceZoomValue = 1;
-  private _workspaceZoomSaveTimer: number | null = null;
+  // Sprout-scoped zoom (only Sprout leaves + widget, never other plugins)
+  private _sproutZoomValue = 1;
+  private _sproutZoomSaveTimer: number | null = null;
 
   private _disposeTooltipPositioner: (() => void) | null = null;
 
@@ -246,23 +246,29 @@ export default class SproutPlugin extends Plugin {
     normaliseSettingsInPlace(this.settings);
   }
 
-  private _applyWorkspaceContentZoom(value: number) {
+  // ── Sprout-scoped pinch zoom ───────────────────────────────────────────────
+
+  private _applySproutZoom(value: number) {
     const next = clamp(Number(value || 1), 0.8, 1.8);
-    this._workspaceZoomValue = next;
-    document.body.style.setProperty("--sprout-workspace-content-zoom", next.toFixed(3));
-    document.body.classList.toggle("sprout-workspace-content-zoomed", Math.abs(next - 1) > 0.001);
+    this._sproutZoomValue = next;
+    document.body.style.setProperty("--sprout-leaf-zoom", next.toFixed(3));
   }
 
-  private _queueWorkspaceZoomSave() {
-    if (this._workspaceZoomSaveTimer != null) window.clearTimeout(this._workspaceZoomSaveTimer);
-    this._workspaceZoomSaveTimer = window.setTimeout(() => {
-      this._workspaceZoomSaveTimer = null;
+  private _queueSproutZoomSave() {
+    if (this._sproutZoomSaveTimer != null) window.clearTimeout(this._sproutZoomSaveTimer);
+    this._sproutZoomSaveTimer = window.setTimeout(() => {
+      this._sproutZoomSaveTimer = null;
       void this.saveAll();
     }, 250);
   }
 
-  private _registerWorkspaceContentPinchZoom() {
-    this._applyWorkspaceContentZoom(this.settings.general.workspaceContentZoom ?? 1);
+  /**
+   * Register a Ctrl+Scroll / trackpad-pinch listener that only fires inside
+   * Sprout-owned views (`.workspace-leaf-content.sprout` or `.sprout-widget.sprout`).
+   * Events over non-Sprout leaves pass through untouched.
+   */
+  private _registerSproutPinchZoom() {
+    this._applySproutZoom(this.settings.general.workspaceContentZoom ?? 1);
 
     this.registerDomEvent(
       document,
@@ -272,21 +278,26 @@ export default class SproutPlugin extends Plugin {
 
         const target = ev.target as HTMLElement | null;
         if (!target) return;
+
+        // Don't intercept inside modals, menus, popovers, or suggestion lists
         if (target.closest(".modal-container, .menu, .popover, .suggestion-container")) return;
 
-        const leaf = target.closest<HTMLElement>(".workspace-leaf-content");
-        if (!leaf) return;
+        // Only intercept within Sprout-owned leaves or the Sprout widget
+        const sproutEl = target.closest<HTMLElement>(
+          ".workspace-leaf-content.sprout, .sprout-widget.sprout",
+        );
+        if (!sproutEl) return;
 
         ev.preventDefault();
         ev.stopPropagation();
 
         const factor = Math.exp(-ev.deltaY * 0.006);
-        const next = clamp(this._workspaceZoomValue * factor, 0.8, 1.8);
-        if (Math.abs(next - this._workspaceZoomValue) < 0.001) return;
+        const next = clamp(this._sproutZoomValue * factor, 0.8, 1.8);
+        if (Math.abs(next - this._sproutZoomValue) < 0.001) return;
 
-        this._applyWorkspaceContentZoom(next);
+        this._applySproutZoom(next);
         this.settings.general.workspaceContentZoom = Number(next.toFixed(3));
-        this._queueWorkspaceZoomSave();
+        this._queueSproutZoomSave();
       },
       { capture: true, passive: false },
     );
@@ -356,7 +367,7 @@ export default class SproutPlugin extends Plugin {
       this.settings = deepMerge(DEFAULT_SETTINGS, rootSettings);
       this._migrateSettingsInPlace();
       this._normaliseSettingsInPlace();
-      this._registerWorkspaceContentPinchZoom();
+      this._registerSproutPinchZoom();
 
       // Activate the user's chosen delimiter before any parsing occurs
       setDelimiter(this.settings.indexing.delimiter ?? "|");
@@ -441,11 +452,10 @@ export default class SproutPlugin extends Plugin {
     this._bc = null;
     this._destroyRibbonIcons();
     document.body.classList.remove("sprout-hide-status-bar");
-    document.body.classList.remove("sprout-workspace-content-zoomed");
-    document.body.style.removeProperty("--sprout-workspace-content-zoom");
-    if (this._workspaceZoomSaveTimer != null) {
-      window.clearTimeout(this._workspaceZoomSaveTimer);
-      this._workspaceZoomSaveTimer = null;
+    document.body.style.removeProperty("--sprout-leaf-zoom");
+    if (this._sproutZoomSaveTimer != null) {
+      window.clearTimeout(this._sproutZoomSaveTimer);
+      this._sproutZoomSaveTimer = null;
     }
 
     this._disposeTooltipPositioner?.();

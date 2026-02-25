@@ -20,7 +20,7 @@ export type SproutSettings = {
     showGreeting: boolean;
     hasOpenedHome: boolean;
     pinnedDecks: string[];
-    /** Workspace content-only zoom (markdown + Sprout leaf content). 1.0 = 100%. */
+    /** Sprout-scoped zoom level (only Sprout leaves + widget). 1.0 = 100%. */
     workspaceContentZoom: number;
     githubStars: {
       count: number | null;

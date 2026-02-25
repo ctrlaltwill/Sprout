@@ -22,7 +22,7 @@
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
 import type SproutPlugin from "../main";
 import { log } from "../core/logger";
-import { placePopover, queryFirst, setCssProps } from "../core/ui";
+import { placePopover, queryFirst } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
 import { syncOneFile } from "../sync/sync-engine";
 
@@ -156,13 +156,14 @@ export class CardCreatorModal extends Modal {
   onOpen() {
     setModalTitle(this, "Add flashcard");
 
-    scopeModalToWorkspace(this);
-    this.containerEl.addClass("sprout-modal-container");
-    this.containerEl.addClass("sprout-modal-dim");
-    this.containerEl.addClass("sprout");
-    setCssProps(this.containerEl, "z-index", "2147483000");
+    // Apply all CSS classes and z-index BEFORE scoping to workspace.
+    // scopeModalToWorkspace forces a repaint, which only works if the
+    // positioning CSS (position:absolute, z-index, etc.) is already active.
+    this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
+    this.containerEl.style.setProperty("z-index", "2147483000", "important");
     this.modalEl.addClass("bc", "sprout-modals", "sprout-card-creator-modal");
-    setCssProps(this.modalEl, "z-index", "2147483001");
+    this.modalEl.style.setProperty("z-index", "2147483001", "important");
+    scopeModalToWorkspace(this);
     this.contentEl.addClass("bc", "sprout-card-creator-content");
 
     // Escape key closes modal
