@@ -3,7 +3,25 @@
 All notable changes to Sprout are summarized here.
 
 <details open>
-<summary><strong>Latest release: 1.0.6 (2026-02-18)</strong></summary>
+<summary><strong>Latest release: 1.0.7 (2026-02-26)</strong></summary>
+
+### Release notes
+
+Hotfix release focused on minor bugs identified after 1.0.5 and 1.0.6.
+
+#### Fixed
+- Fixed modal launching behavior for more reliable open/close interactions
+- Fixed modal sizing to render consistently across screen sizes
+- Improved mobile layout to prevent UI elements from being obstructed
+- Fixed zoom interaction conflicts with other plugins
+
+#### Links
+<a href="https://github.com/ctrlaltwill/Sprout/issues" style="display:inline-block;padding:6px 12px;margin-right:8px;border:1px solid #1f6feb;border-radius:6px;text-decoration:none;color:#1f6feb;">GitHub issues</a>
+<a href="https://github.com/ctrlaltwill/Sprout/wiki" style="display:inline-block;padding:6px 12px;border:1px solid #1f6feb;border-radius:6px;text-decoration:none;color:#1f6feb;">Documentation wiki</a>
+</details>
+
+<details>
+<summary><strong>1.0.6 (2026-02-18)</strong></summary>
 
 ### Release notes
 
