@@ -214,6 +214,7 @@ export interface WidgetViewLike {
   answerOq(userOrder: number[]): Promise<void>;
   nextCard(): Promise<void>;
   openEditModalForCurrentCard(): void;
+  openCurrentInStudyView(): Promise<void>;
 
   renderMarkdownInto(containerEl: HTMLElement, md: string, sourcePath: string): Promise<void>;
   renderImageOcclusionInto(containerEl: HTMLElement, card: CardRecord, sourcePath: string, reveal: boolean): Promise<void>;

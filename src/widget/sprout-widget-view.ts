@@ -6,11 +6,13 @@
  *  - SproutWidgetView — Obsidian ItemView subclass implementing the sidebar flashcard-review widget
  */
 
-import { ItemView, type TFile, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, type TFile, type WorkspaceLeaf } from "obsidian";
 
-import { VIEW_TYPE_WIDGET } from "../core/constants";
+import { VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../core/constants";
 import { SproutMarkdownHelper } from "../reviewer/markdown-render";
 import { openSproutImageZoom } from "../reviewer/zoom";
+import { buildSession as buildReviewerSession } from "../reviewer/session";
+import type { Scope } from "../reviewer/types";
 import * as IO from "../imageocclusion/image-occlusion-index";
 import { renderImageOcclusionReviewInto } from "../imageocclusion/image-occlusion-review-render";
 import type SproutPlugin from "../main";
@@ -19,7 +21,7 @@ import type { Session, UndoFrame, ReviewMeta } from "./widget-helpers";
 import type { CardRecord } from "../types/card";
 import { isMultiAnswerMcq } from "../types/card";
 import { filterReviewableCards, getWidgetMcqDisplayOrder, isClozeLike } from "./widget-helpers";
-import { getCardsInActiveScope } from "./widget-scope";
+import { getCardsInActiveScope, getFolderNoteInfo, folderNotesAsDecksEnabled } from "./widget-scope";
 import {
   gradeCurrentRating as _gradeCurrentRating,
   canUndo as _canUndo,
@@ -187,43 +189,40 @@ export class SproutWidgetView extends ItemView {
   /*  Session builders                                                 */
   /* ---------------------------------------------------------------- */
 
+  private getStudyScopeForActiveFile(): Scope | null {
+    const f = this.activeFile;
+    if (!f) return null;
+
+    const folderInfo = getFolderNoteInfo(f);
+    if (folderInfo && folderNotesAsDecksEnabled(this.plugin.settings)) {
+      return {
+        type: "folder",
+        key: folderInfo.folderPath,
+        name: folderInfo.folderName,
+      };
+    }
+
+    return {
+      type: "note",
+      key: f.path,
+      name: f.basename,
+    };
+  }
+
   buildSessionForActiveNote(): Session | null {
     const f = this.activeFile;
     if (!f) return null;
 
-    const now = Date.now();
-    const cards = getCardsInActiveScope(this.plugin.store, f, this.plugin.settings);
-    const states = this.plugin.store.data.states || {};
+    const scope = this.getStudyScopeForActiveFile();
+    if (!scope) return null;
 
-    const learnDue = cards.filter(
-      (c) => states[c.id] && states[c.id].stage === "learning" && states[c.id].due <= now,
-    );
-    const reviewDue = cards.filter(
-      (c) => states[c.id] && states[c.id].stage === "review" && states[c.id].due <= now,
-    );
-    const news = cards.filter((c) => states[c.id] && states[c.id].stage === "new");
-
-    const reviewLimit = this.plugin.settings.study.dailyReviewLimit ?? 200;
-    const newLimit = this.plugin.settings.study.dailyNewLimit ?? 20;
-
-    const learnSorted = learnDue
-      .sort(
-        (a, b) => states[a.id].due - states[b.id].due || String(a.id).localeCompare(String(b.id)),
-      )
-      .slice(0, reviewLimit);
-    const reviewSorted = reviewDue
-      .sort(
-        (a, b) => states[a.id].due - states[b.id].due || String(a.id).localeCompare(String(b.id)),
-      )
-      .slice(0, reviewLimit);
-    const newSorted = news.sort((a, b) => String(a.id).localeCompare(String(b.id))).slice(0, newLimit);
-
-    const queue = learnSorted.concat(reviewSorted).concat(newSorted);
+    const reviewSession = buildReviewerSession(this.plugin, scope);
+    const queue = reviewSession.queue || [];
 
     return {
-      scopeName: f.basename,
+      scopeName: scope.name || f.basename,
       queue,
-      index: 0,
+      index: Math.max(0, Math.min(Number(reviewSession.index ?? 0), queue.length)),
       graded: {},
       stats: { total: queue.length, done: 0 },
       mode: "scheduled",
@@ -334,6 +333,60 @@ export class SproutWidgetView extends ItemView {
     this.render();
   }
 
+  async openCurrentInStudyView(): Promise<void> {
+    const scope = this.getStudyScopeForActiveFile();
+    if (!scope) return;
+
+    const card = this.currentCard();
+    const currentCardId = card ? String(card.id ?? "") : "";
+
+    const currentMcqOrder = (() => {
+      if (!card || card.type !== "mcq") return undefined;
+      const id = String(card.id ?? "");
+      const order = this.session?.mcqOrderMap?.[id];
+      return Array.isArray(order) ? order.slice() : undefined;
+    })();
+
+    type StudyHandoff = {
+      scope: Scope;
+      currentCardId?: string;
+      showAnswer?: boolean;
+      currentMcqOrder?: number[];
+    };
+
+    type ReviewerViewLike = {
+      openSessionFromWidget?: (payload: StudyHandoff) => void;
+      openSession?: (scope: Scope) => void;
+    };
+
+    try {
+      await this.plugin.openReviewerTab();
+      const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER)[0];
+      const view = leaf?.view as ReviewerViewLike | undefined;
+
+      const payload: StudyHandoff = {
+        scope,
+        currentCardId: currentCardId || undefined,
+        showAnswer: !!this.showAnswer,
+        currentMcqOrder,
+      };
+
+      if (view && typeof view.openSessionFromWidget === "function") {
+        view.openSessionFromWidget(payload);
+        return;
+      }
+
+      if (view && typeof view.openSession === "function") {
+        view.openSession(scope);
+        return;
+      }
+
+      new Notice("Study view not ready yet. Try again.");
+    } catch {
+      new Notice("Unable to open study.");
+    }
+  }
+
   /* ---------------------------------------------------------------- */
   /*  Keyboard handler                                                 */
   /* ---------------------------------------------------------------- */
@@ -386,6 +439,11 @@ export class SproutWidgetView extends ItemView {
       ev.preventDefault();
       if (isPractice) return;
       void this.buryCurrentCard();
+      return;
+    }
+    if (key === "y" && !isCtrl) {
+      ev.preventDefault();
+      void this.openCurrentInStudyView();
       return;
     }
     if (key === "s" && !isCtrl) {

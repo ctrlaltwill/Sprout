@@ -7,6 +7,7 @@
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
 [![Wiki - 30 pages](https://img.shields.io/badge/wiki-30%20pages-blue)](https://github.com/ctrlaltwill/Sprout/wiki)
 
+![Sprout Social Banner](branding/Github%20Banner.png)
 
 > [!Important]
 > Thank you for all of your support following Sprout’s stable release and subsequent updates. I am actively working through early teething issues. Please raise bugs or feature requests via GitHub Issues.
@@ -14,6 +15,11 @@
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
 ![Sprout – Demo Image](https://github.com/user-attachments/assets/57fdf7ac-4c89-44c4-b70b-ec09c9b6fa40)
+
+## Latest updates
+
+- Updated branding assets and added the social banner to the repository
+- Added a widget More-menu action to open the current study context in the main Study view
 
 📖 **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 

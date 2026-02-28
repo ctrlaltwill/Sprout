@@ -2,6 +2,15 @@
 
 All notable changes to Sprout are summarized here.
 
+## Unreleased
+
+### Added
+- Widget More-menu action to open the current question/scope context in the main Study view
+- Context handoff for current MCQ option order when opening from widget to Study
+
+### Changed
+- Updated repository branding assets and added social banner usage in README
+
 <details open>
 <summary><strong>Latest release: 1.0.7 (2026-02-26)</strong></summary>
 

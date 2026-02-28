@@ -93,6 +93,13 @@ type UndoFrame = {
   prevState: CardState | null;
 };
 
+export type WidgetSessionHandoffPayload = {
+  scope: Scope;
+  currentCardId?: string;
+  showAnswer?: boolean;
+  currentMcqOrder?: number[];
+};
+
 export class SproutReviewerView extends ItemView {
   plugin: SproutPlugin;
 
@@ -1339,6 +1346,38 @@ export class SproutReviewerView extends ItemView {
     }
 
     this.showAnswer = false;
+    this.render();
+  }
+
+  openSessionFromWidget(payload: WidgetSessionHandoffPayload) {
+    if (!payload || !payload.scope) return;
+
+    this.openSession(payload.scope);
+    if (!this.session) return;
+
+    const wantedId = String(payload.currentCardId ?? "").trim();
+    if (wantedId) {
+      const idx = this.session.queue.findIndex((c) => String(c?.id ?? "") === wantedId);
+      if (idx >= 0) this.session.index = idx;
+    }
+
+    const card = this.currentCard();
+    const providedOrder = Array.isArray(payload.currentMcqOrder) ? payload.currentMcqOrder.slice() : null;
+
+    if (card?.type === "mcq" && providedOrder) {
+      const optionCount = Array.isArray(card.options) ? card.options.length : 0;
+      const seen = new Set<number>();
+      const valid =
+        providedOrder.length === optionCount &&
+        providedOrder.every((x) => Number.isInteger(x) && x >= 0 && x < optionCount && !seen.has(x) && !!seen.add(x));
+
+      if (valid) {
+        if (!this.session.mcqOrderMap || typeof this.session.mcqOrderMap !== "object") this.session.mcqOrderMap = {};
+        this.session.mcqOrderMap[String(card.id)] = providedOrder;
+      }
+    }
+
+    this.showAnswer = !!payload.showAnswer;
     this.render();
   }
 

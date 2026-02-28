@@ -135,6 +135,7 @@ export function attachWidgetMoreMenu(opts: {
   canBurySuspend: boolean;
   onBury: () => void;
   onSuspend: () => void;
+  openStudy?: () => void;
   openNote?: () => void;
 }): { toggle: () => void; close: () => void; isOpen: () => boolean } {
   const id = `bc-widget-menu-${Math.random().toString(36).slice(2, 8)}`;
@@ -212,8 +213,11 @@ export function attachWidgetMoreMenu(opts: {
     menu.appendChild(item);
   };
 
+  if (typeof opts.openStudy === "function") {
+    addItem("Open in Study", "Y", opts.openStudy, false);
+  }
   if (typeof opts.openNote === "function") {
-    addItem("Open", "O", opts.openNote, false);
+    addItem("Open in Note", "O", opts.openNote, false);
   }
   addItem("Bury", "B", opts.onBury, !opts.canBurySuspend);
   addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend);
@@ -221,7 +225,7 @@ export function attachWidgetMoreMenu(opts: {
 
   let cleanup: (() => void) | null = null;
 
-  const place = () => placePopover({ trigger, panel, popoverEl: popover });
+  const place = () => placePopover({ trigger, panel, popoverEl: popover, align: "right" });
 
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");

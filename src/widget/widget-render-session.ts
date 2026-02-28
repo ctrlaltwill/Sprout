@@ -961,6 +961,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
     canBurySuspend,
     onBury: () => void view.buryCurrentCard(),
     onSuspend: () => void view.suspendCurrentCard(),
+    openStudy: () => void view.openCurrentInStudyView(),
     openNote: () => {
       const c = view.currentCard?.();
       if (!c) return;
