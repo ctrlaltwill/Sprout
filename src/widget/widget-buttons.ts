@@ -94,7 +94,7 @@ export function makeTextButton(opts: {
 
   if (opts.kbd) {
     const kbd = document.createElement("kbd");
-    kbd.className = "bc kbd ml-2 text-xs";
+    kbd.className = "bc kbd ml-2";
     kbd.textContent = opts.kbd;
     btn.appendChild(kbd);
   }

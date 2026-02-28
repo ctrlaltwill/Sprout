@@ -75,13 +75,13 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
     view.backToSummary();
   });
 
-  const studyingWrap = el("div", "bc flex flex-col items-start mr-auto");
+  const studyingWrap = el("div", "bc flex flex-col items-start mr-auto sprout-widget-header-labels");
   const studyingScope = `${view.session?.scopeName || "Note"} ${isFolderNote(view.activeFile) ? "Folder" : "Note"}`;
-  const studyingTitle = el("div", "bc text-xs sprout-widget-study-label", `Studying ${studyingScope}`);
+  const studyingTitle = el("div", "bc sprout-widget-study-label", `Studying ${studyingScope}`);
 
   const remainingCount = Math.max(0, (view.session?.stats.total || 0) - (view.session?.stats.done || 0));
   const remainingLabel = `${remainingCount} Card${remainingCount === 1 ? "" : "s"} Remaining`;
-  const remainingLine = el("div", "bc text-xs sprout-widget-remaining-label", remainingLabel);
+  const remainingLine = el("div", "bc sprout-widget-remaining-label", remainingLabel);
 
   studyingWrap.appendChild(studyingTitle);
   studyingWrap.appendChild(remainingLine);
@@ -145,7 +145,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
     cardTitle = cardTitle.replace(/\s*•\s*[AQ]\u2192[AQ]\s*$/, "").trim();
   }
 
-  const titleEl = el("div", "bc text-xs font-semibold sprout-widget-text");
+  const titleEl = el("div", "bc font-semibold sprout-widget-text");
   if (!cardTitle) titleEl.hidden = true;
   replaceChildrenWithHTML(titleEl, processMarkdownFeatures(cardTitle));
   applySectionStyles(titleEl);
@@ -205,7 +205,7 @@ function renderBasicCard(
 ) {
   const qEl = el("div", "bc");
   // For reversed-child cards, use reversedDirection to swap content
-  const isBackDirection = card.type === "reversed-child" && (card as unknown).reversedDirection === "back";
+  const isBackDirection = card.type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
   const isOldReversed = card.type === "reversed";
   const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
   if (qText.includes("$") || qText.includes("[[") || hasMarkdownTable(qText)) {
@@ -351,7 +351,7 @@ function renderMcqCard(
 
   // Label for multi-answer
   if (isMulti && !graded) {
-    const hint = el("div", "bc text-xs text-muted-foreground mb-1 text-center");
+    const hint = el("div", "bc text-muted-foreground mb-1 text-center sprout-widget-info");
     hint.textContent = "Select all correct answers";
     body.appendChild(hint);
   }
@@ -425,7 +425,7 @@ function renderMcqCard(
     submitBtn.appendChild(submitLabel);
 
     const submitKbd = document.createElement("kbd");
-    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.className = "bc kbd ml-2";
     submitKbd.textContent = "\u21B5";
     submitBtn.appendChild(submitKbd);
 
@@ -706,7 +706,7 @@ function renderOqCard(
     submitBtn.appendChild(submitLabel);
 
     const submitKbd = document.createElement("kbd");
-    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.className = "bc kbd ml-2";
     submitKbd.textContent = "\u21B5";
     submitBtn.appendChild(submitKbd);
 
@@ -843,7 +843,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       // Always show Again
       const againBtn = makeTextButton({
         label: "Again",
-        className: fourButton ? "bc btn-outline text-xs w-full" : "bc btn-outline text-xs flex-1",
+        className: fourButton ? "bc btn-outline w-full" : "bc btn-outline flex-1",
         onClick: () => {
           void (async () => {
             await view.gradeCurrentRating("again", {});
@@ -858,7 +858,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       if (fourButton) {
         const hardBtn = makeTextButton({
           label: "Hard",
-          className: "bc btn-outline text-xs w-full",
+          className: "bc btn-outline w-full",
           onClick: () => {
             void (async () => {
               await view.gradeCurrentRating("hard", {});
@@ -874,7 +874,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       // Always show Good
       const goodBtn = makeTextButton({
         label: "Good",
-        className: fourButton ? "bc btn-outline text-xs w-full" : "bc btn-outline text-xs flex-1",
+        className: fourButton ? "bc btn-outline w-full" : "bc btn-outline flex-1",
         onClick: () => {
           void (async () => {
             await view.gradeCurrentRating("good", {});
@@ -889,7 +889,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       if (fourButton) {
         const easyBtn = makeTextButton({
           label: "Easy",
-          className: "bc btn-outline text-xs w-full",
+          className: "bc btn-outline w-full",
           onClick: () => {
             void (async () => {
               await view.gradeCurrentRating("easy", {});
@@ -904,11 +904,11 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
 
       footer.appendChild(gradingGrid);
     } else if (card.type === "mcq") {
-      const mcqNote = el("div", "bc text-xs text-muted-foreground w-full text-center");
+      const mcqNote = el("div", "bc text-muted-foreground w-full text-center sprout-widget-info");
       mcqNote.textContent = isMultiAnswerMcq(card) ? "Select all correct answers, then submit" : "Select an option";
       footer.appendChild(mcqNote);
     } else if (card.type === "oq") {
-      const oqNote = el("div", "bc text-xs text-muted-foreground w-full text-center");
+      const oqNote = el("div", "bc text-muted-foreground w-full text-center sprout-widget-info");
       oqNote.textContent = "Drag to reorder, then submit";
       footer.appendChild(oqNote);
     }
@@ -929,7 +929,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
 
   const editBtn = makeTextButton({
     label: "Edit",
-    className: "bc btn-outline flex-1 text-xs",
+    className: "bc btn-outline flex-1",
     onClick: () => view.openEditModalForCurrentCard(),
     kbd: "E",
   });
@@ -938,7 +938,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
 
   const moreBtn = document.createElement("button");
   moreBtn.type = "button";
-  moreBtn.className = "bc btn-outline flex-1 text-xs flex items-center justify-center gap-2";
+  moreBtn.className = "bc btn-outline flex-1 flex items-center justify-center gap-2";
   moreBtn.setAttribute("data-tooltip", "More actions (M)");
   moreBtn.setAttribute("data-tooltip-position", "top");
   applyWidgetHoverDarken(moreBtn);
@@ -946,7 +946,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
   const moreText = document.createElement("span");
   moreText.textContent = "More";
   const moreKbd = document.createElement("kbd");
-  moreKbd.className = "bc kbd ml-2 text-xs";
+  moreKbd.className = "bc kbd ml-2";
   moreKbd.textContent = "M";
   moreBtn.appendChild(moreText);
   moreBtn.appendChild(moreKbd);

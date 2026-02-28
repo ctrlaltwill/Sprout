@@ -45,12 +45,12 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
 
   const summaryLabelWrap = el("div", "bc flex flex-col items-start");
   const summaryScope = titleCased;
-  const summaryTitle = el("div", "bc text-xs sprout-widget-summary-title", `Study ${summaryScope}`);
+  const summaryTitle = el("div", "bc sprout-widget-summary-title", `Study ${summaryScope}`);
   summaryLabelWrap.appendChild(summaryTitle);
 
   const remainingCount = counts.total;
   const remainingLabel = `${remainingCount} Flashcard${remainingCount === 1 ? "" : "s"}`;
-  const remainingLine = el("div", "bc text-xs sprout-widget-remaining-line", remainingLabel);
+  const remainingLine = el("div", "bc sprout-widget-remaining-line", remainingLabel);
   summaryLabelWrap.appendChild(remainingLine);
 
   header.appendChild(summaryLabelWrap);
@@ -85,9 +85,9 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   }
 
   // Teaser card: summary + next up preview
-  const teaser = el("div", "bc card px-4 py-4 space-y-3 sprout-widget-teaser");
+  const teaser = el("div", "bc card px-4 py-4 sprout-widget-teaser");
 
-  const teaserTitle = el("div", "bc text-xs font-semibold sprout-widget-teaser-title", titleCased);
+  const teaserTitle = el("div", "bc font-semibold sprout-widget-teaser-title", titleCased);
   teaser.appendChild(teaserTitle);
 
   const previewSession = view.buildSessionForActiveNote();
@@ -111,19 +111,18 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const estTotalMs = queueCount * roundedAvgMs;
   const estMinutes = queueCount > 0 ? Math.max(1, Math.round(estTotalMs / 60_000)) : 0;
   const dueLabel = queueCount > 0 ? `${queueCount} Cards Due` : "No Cards Due";
-  const countsLine = el("div", "bc text-xs sprout-widget-counts-line", `${dueLabel}  •  ${counts.total} Cards Total`);
+  const countsLine = el("div", "bc sprout-widget-counts-line", `${dueLabel}  •  ${counts.total} Cards Total`);
   teaser.appendChild(countsLine);
 
   if (queueCount > 0) {
-    const timeLine = el("div", "bc text-xs sprout-widget-info-line", `Estimated Time: ${estMinutes} min`);
+    const timeLine = el("div", "bc sprout-widget-info-line", `Estimated Time: ${estMinutes} min`);
     teaser.appendChild(timeLine);
   } else {
     const practiceLine = el(
       "div",
-      "bc text-xs",
+      "bc sprout-widget-info-line",
       "Would you like to start a practice session? This won't count towards card scheduling and you cannot bury cards or undo answers in this mode.",
     );
-    practiceLine.classList.add("sprout-widget-info-line");
     teaser.appendChild(practiceLine);
   }
 
@@ -134,13 +133,13 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const studyLabel = queueCount > 0 ? "Start Studying" : "Start A Practice Session";
   const studyBtn = makeTextButton({
     label: studyLabel,
-    className: "bc btn-outline w-full text-xs flex items-center justify-center gap-2",
+    className: "bc btn-outline w-full flex items-center justify-center gap-2",
     onClick: () => (queueCount > 0 ? view.startSession() : view.startPracticeSession()),
   });
   applyWidgetActionButtonStyles(studyBtn);
 
   const studyKbd = document.createElement("kbd");
-  studyKbd.className = "bc kbd ml-2 text-xs";
+  studyKbd.className = "bc kbd ml-2";
   studyKbd.textContent = "↵";
   studyBtn.appendChild(studyKbd);
 

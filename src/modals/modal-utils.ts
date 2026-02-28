@@ -762,8 +762,16 @@ export function createThemedDropdown(
  * @param modal - The Obsidian Modal instance
  */
 export function scopeModalToWorkspace(modal: Modal) {
-  // Find the active workspace leaf content
-  const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+  // Prefer a main-workspace (non-sidedock) leaf so that modals triggered
+  // from sidebar views (e.g. the widget) still appear in the main area.
+  // Priority:
+  //   1. Active leaf inside the main workspace root
+  //   2. Any visible leaf inside the main workspace root
+  //   3. Whatever leaf happens to be active (sidedock fallback)
+  const activeLeaf =
+    document.querySelector(".mod-root .workspace-leaf.mod-active") ??
+    document.querySelector(".mod-root .workspace-leaf:not([style*='display: none'])") ??
+    document.querySelector(".workspace-leaf.mod-active");
   const leafContent = activeLeaf?.querySelector(".workspace-leaf-content");
   
   if (!leafContent || !modal.containerEl) {

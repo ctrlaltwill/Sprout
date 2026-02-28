@@ -3,7 +3,7 @@
    ========================================================================== */
 
 .sprout .sprout-header-wrap {
-  background: transparent !important;
+  background: var(--background-primary) !important;
   background-color: transparent !important;
   position: sticky !important;
   top: 0 !important;
@@ -21,7 +21,7 @@
   right: 0;
   bottom: 0;
   height: 50px;
-  transform: translateY(100%);
+  transform: translateY(101%);
   background: linear-gradient(to bottom, var(--background), transparent);
   pointer-events: none;
   z-index: 1;

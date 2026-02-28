@@ -135,12 +135,12 @@ export default class SproutPlugin extends Plugin {
   private _registerCommands() {
     this._addCommand("sync-flashcards", "Sync flashcards", async () => this._runSync());
     this._addCommand("open", "Open home", async () => this.openHomeTab());
+    this._addCommand("open-widget", "Open widget", async () => this.openWidgetSafe());
     this._addCommand("open-analytics", "Open analytics", async () => this.openAnalyticsTab());
     this._addCommand("open-settings", "Open plugin settings", () => this.openPluginSettingsInObsidian());
     this._addCommand("open-guide", "Open guide", async () => this.openSettingsTab(false, "guide"));
     this._addCommand("edit-flashcards", "Edit flashcards", async () => this.openBrowserTab());
     this._addCommand("new-study-session", "New study session", async () => this.openReviewerTab());
-    this._addCommand("add-flashcard", "Add flashcard to note", () => this.openAddFlashcardModal());
 
     const flashcardCommands: Array<{ id: string; name: string; type: FlashcardType }> = [
       { id: "add-basic-flashcard", name: "Add basic flashcard to note", type: "basic" },
@@ -421,9 +421,6 @@ export default class SproutPlugin extends Plugin {
       );
 
       this.app.workspace.onLayoutReady(() => {
-        if (this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET).length === 0) {
-          void this.openWidgetSafe();
-        }
         // Ensure status bar class matches the active view after layout settles
         this._updateStatusBarVisibility(null);
         
@@ -1064,19 +1061,21 @@ export default class SproutPlugin extends Plugin {
   }
 
   async openWidget() {
-    const existing = this._ensureSingleLeafOfType(VIEW_TYPE_WIDGET);
-    if (existing) {
-      void this.app.workspace.revealLeaf(existing);
-      return;
+    const ws = this.app.workspace;
+    let leaf: WorkspaceLeaf | null = ws.getRightLeaf(false);
+
+    if (leaf) {
+      ws.setActiveLeaf(leaf, { focus: false });
+      leaf = ws.getLeaf(false) ?? leaf;
+    } else {
+      leaf = ws.getRightLeaf(true);
+      if (leaf) ws.setActiveLeaf(leaf, { focus: false });
     }
 
-    // Always create a new leaf in the right sidebar to avoid hijacking another plugin's leaf
-    let leaf = this.app.workspace.getRightLeaf(true);
-    if (!leaf) leaf = this.app.workspace.getLeaf("tab");
     if (!leaf) return;
 
     await leaf.setViewState({ type: VIEW_TYPE_WIDGET, active: true, state: {} });
-    void this.app.workspace.revealLeaf(leaf);
+    void ws.revealLeaf(leaf);
   }
 
   // --------------------------------

@@ -27,7 +27,7 @@
   pointer-events: none;
   transition: opacity 0.15s ease;
   transition-delay: 0s;
-  z-index: 2147483647 !important;
+  z-index: 950 !important;
   /* Theme-aware: inverted surface/text — !important to beat any theme overrides */
   background-color: var(--foreground) !important;
   color: var(--background) !important;
@@ -42,14 +42,14 @@
 
 /* Lift the hovered element above any parent stacking context (e.g. sticky header) */
 [data-tooltip]:hover {
-  z-index: 2147483646 !important;
+  z-index: 949 !important;
 }
 
 /* Escalate ancestor stacking context within .sprout so the tooltip
    ::after is never trapped behind sibling layers.
    Exclude scroll containers to prevent glitchy behavior. */
 .sprout *:has([data-tooltip]:hover):not(.sprout-browser-table-wrap) {
-  z-index: 2147483646 !important;
+  z-index: 949 !important;
 }
 
 /* Only allow overflow:visible on table cells and rows, not on scroll containers */

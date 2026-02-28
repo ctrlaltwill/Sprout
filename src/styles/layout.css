@@ -8,11 +8,10 @@
 .view-content .sprout,
 .view-content:has(.sprout),
 .workspace-leaf.sprout,
-.workspace-leaf .sprout,
+.workspace-leaf .sprout:not(.workspace-leaf-content),
 .workspace-leaf:has(.sprout) {
-  background: var(--background) !important;
   border-radius: none !important;
-  background-color: var(--background) !important;
+  background-color: rgba(0,0,0,0);
   box-shadow: none !important;
 }
 
@@ -43,6 +42,14 @@
 }
 
 /* High-level view backgrounds */
+.workspace-leaf-content.sprout[data-type="sprout-analytics"],
+.workspace-leaf-content.sprout[data-type="sprout-home"],
+.workspace-leaf-content.sprout[data-type="sprout-browser"],
+.workspace-leaf-content.sprout[data-type="sprout-reviewer"],
+.workspace-leaf-content.sprout[data-type="sprout-settings"] {
+  background-color: var(--background-primary) !important;
+}
+
 .sprout .sprout-view-content,
 .sprout .sprout-browser-view,
 .sprout .sprout-analytics-root {

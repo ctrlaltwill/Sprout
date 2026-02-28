@@ -207,9 +207,7 @@
 
 /* ---- Global Obsidian button padding reset ---- */
 
-body:not(.is-mobile) button:not(.ant-btn):not(.ant-switch):not(.sprout-flashcard-action-btn):not(.excalidraw button) {
-  padding: 7px 15px !important;
-}
+
 
 /* ---- Pagination current-page button ---- */
 

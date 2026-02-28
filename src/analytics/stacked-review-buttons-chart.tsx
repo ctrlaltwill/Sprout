@@ -586,7 +586,7 @@ export function StackedReviewButtonsChart(props: {
                     })}
                   </div>
                 ) : null}
-                <div className="h-px bg-border my-2" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
                 <div
                   className="flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
                   role="button"
@@ -634,7 +634,7 @@ export function StackedReviewButtonsChart(props: {
                     })}
                   </div>
                 ) : null}
-                <div className="h-px bg-border my-2" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
                 <div className="text-sm text-muted-foreground px-2 py-1">Decks</div>
                 <div className="px-2 pb-2">
                   <input
@@ -677,7 +677,7 @@ export function StackedReviewButtonsChart(props: {
                     </div>
                   </div>
                 ) : null}
-                <div className="h-px bg-border my-2" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
                 <div className="text-sm text-muted-foreground px-2 py-1">Groups</div>
                 <div className="px-2 pb-2">
                   <input
@@ -720,8 +720,8 @@ export function StackedReviewButtonsChart(props: {
                     </div>
                   </div>
                 ) : null}
-                <div className="h-px bg-border my-2" role="separator" />
-                <div className="px-2 pb-2">
+                <div className="h-px bg-border my-1" role="separator" />
+                <div className="px-2">
                   <div className="text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
                     Reset filters
                   </div>

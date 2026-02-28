@@ -518,7 +518,7 @@ export function NewCardsPerDayChart(props: {
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-2" role="separator" />
+                <div className="bc h-px bg-border my-1" role="separator" />
 
                 <div
                   className="bc flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
@@ -569,7 +569,7 @@ export function NewCardsPerDayChart(props: {
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-2" role="separator" />
+                <div className="bc h-px bg-border my-1" role="separator" />
 
                 <div className="bc text-sm text-muted-foreground px-2 py-1">Decks</div>
                 <div className="bc px-2 pb-2">
@@ -615,7 +615,7 @@ export function NewCardsPerDayChart(props: {
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-2" role="separator" />
+                <div className="bc h-px bg-border my-1" role="separator" />
 
                 <div className="bc text-sm text-muted-foreground px-2 py-1">Groups</div>
                 <div className="bc px-2 pb-2">
@@ -661,9 +661,9 @@ export function NewCardsPerDayChart(props: {
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-2" role="separator" />
+                <div className="bc h-px bg-border my-1" role="separator" />
 
-                <div className="bc px-2 pb-2">
+                <div className="bc px-2">
                   <div className="bc text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
                     Reset filters
                   </div>

@@ -963,10 +963,17 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   padding: 16px 20px 20px !important;
 }
 
-/* Allow tooltips to overflow outside the modal */
-[data-tooltip] {
+/* Keep tooltip hosts neutral globally; only raise tooltip layer inside modals */
+.sprout .modal-container [data-tooltip],
+.sprout .sprout-modals [data-tooltip],
+.sprout .sprout-modal [data-tooltip] {
   overflow: visible !important;
-  z-index: 9999999 !important;
+}
+
+.sprout .modal-container [data-tooltip]::after,
+.sprout .sprout-modals [data-tooltip]::after,
+.sprout .sprout-modal [data-tooltip]::after {
+  z-index: 2147483647 !important;
 }
 
 /* ---- Image zoom modal ---- */
