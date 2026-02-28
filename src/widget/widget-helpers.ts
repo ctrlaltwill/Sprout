@@ -39,6 +39,8 @@ export type ReviewMeta = {
 /** State of a widget study session. */
 export type Session = {
   scopeName: string;
+  scopeType: "note" | "folder";
+  scopeKey: string;
   queue: CardRecord[];
   index: number;
   graded: Record<string, { rating: ReviewRating; at: number; meta: ReviewMeta | null }>;

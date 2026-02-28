@@ -10,7 +10,6 @@ import {
   ItemView,
   Notice,
   type WorkspaceLeaf,
-  MarkdownView,
   TFile,
   setIcon,
 } from "obsidian";
@@ -52,6 +51,7 @@ import { logFsrsIfNeeded, logUndoIfNeeded } from "./fsrs-log";
 import { renderTitleMarkdownIfNeeded } from "./title-markdown";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "./markdown-block";
 import { getTtsService } from "../tts/tts-service";
+import { openCardAnchorInNote } from "../core/open-card-anchor";
 
 import type { CardState } from "../core/store";
 
@@ -826,51 +826,7 @@ export class SproutReviewerView extends ItemView {
     const path = String(card.sourceNotePath || "");
     if (!id || !path) return;
 
-    const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) return;
-
-    const leaf = this.app.workspace.getLeaf(true);
-
-    await leaf.setViewState(
-      {
-        type: "markdown",
-        state: { file: file.path, mode: "source" },
-        active: true,
-      },
-      { focus: true },
-    );
-
-    const view = leaf.view;
-    if (!(view instanceof MarkdownView)) return;
-
-    const waitForEditor = async () => {
-      for (let i = 0; i < 30; i++) {
-        const ed = view.editor;
-        if (ed) return ed;
-        await new Promise((r) => setTimeout(r, 25));
-      }
-      return null;
-    };
-
-    const ed = await waitForEditor();
-    if (!ed) return;
-
-    const needle = `^sprout-${id}`;
-    const text = await this.app.vault.read(file);
-    const lines = text.split(/\r?\n/);
-
-    let lineNo = lines.findIndex((l) => l.includes(needle));
-    if (lineNo < 0) return;
-
-    if (lines[lineNo].trim() === needle) {
-      let t = lineNo + 1;
-      while (t < lines.length && lines[t].trim() === "") t++;
-      if (t < lines.length) lineNo = t;
-    }
-
-    ed.setCursor({ line: lineNo, ch: 0 });
-    ed.scrollIntoView({ from: { line: lineNo, ch: 0 }, to: { line: lineNo, ch: 0 } }, true);
-    ed.focus();
+    await openCardAnchorInNote(this.app, path, id);
   }
 
   openEditModalForCurrentCard() {

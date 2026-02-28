@@ -108,11 +108,18 @@ export class SproutWidgetView extends ItemView {
   onFileOpen(file: TFile | null) {
     this.activeFile = file || null;
     if (this.mode === "session") {
-      this.mode = "summary";
-      this.session = null;
-      this.showAnswer = false;
+      if (this.isSessionComplete()) {
+        this.backToSummary();
+        return;
+      }
+      return;
     }
     this.render();
+  }
+
+  private isSessionComplete(): boolean {
+    if (!this.session) return true;
+    return this.session.index >= this.session.queue.length;
   }
 
   /* ---------------------------------------------------------------- */
@@ -221,6 +228,8 @@ export class SproutWidgetView extends ItemView {
 
     return {
       scopeName: scope.name || f.basename,
+      scopeType: scope.type,
+      scopeKey: scope.key,
       queue,
       index: Math.max(0, Math.min(Number(reviewSession.index ?? 0), queue.length)),
       graded: {},
@@ -232,6 +241,8 @@ export class SproutWidgetView extends ItemView {
   private buildPracticeSessionForActiveNote(): Session | null {
     const f = this.activeFile;
     if (!f) return null;
+    const scope = this.getStudyScopeForActiveFile();
+    if (!scope) return null;
 
     const cards = getCardsInActiveScope(this.plugin.store, f, this.plugin.settings);
     const queue = filterReviewableCards(cards).sort((a, b) => {
@@ -246,7 +257,9 @@ export class SproutWidgetView extends ItemView {
     });
 
     return {
-      scopeName: f.basename,
+      scopeName: scope.name || f.basename,
+      scopeType: scope.type,
+      scopeKey: scope.key,
       queue,
       index: 0,
       graded: {},
@@ -441,7 +454,7 @@ export class SproutWidgetView extends ItemView {
       void this.buryCurrentCard();
       return;
     }
-    if (key === "y" && !isCtrl) {
+    if (key === "t" && !isCtrl) {
       ev.preventDefault();
       void this.openCurrentInStudyView();
       return;

@@ -17,6 +17,7 @@ import type { CardRecord } from "../core/store";
 import { normalizeCardOptions } from "../core/store";
 import { getCorrectIndices, isMultiAnswerMcq } from "../types/card";
 import type { ClozeRenderOptions } from "./question-cloze";
+import { openCardAnchorInNote } from "../core/open-card-anchor";
 
 declare global {
   interface Window {
@@ -118,18 +119,6 @@ interface CardRenderCtx {
   card: CardRecord;
   graded: { meta?: Record<string, unknown> } | null;
   sourcePath: string;
-}
-
-function buildCardAnchorFragment(cardId: string | null | undefined): string {
-  const raw = String(cardId ?? "").trim();
-  if (!raw) return "";
-  const cleaned = raw.startsWith("^") ? raw.slice(1) : raw;
-  const normalized = cleaned.startsWith("sprout-")
-    ? cleaned
-    : /^\d{9}$/.test(cleaned)
-      ? `sprout-${cleaned}`
-      : cleaned;
-  return `#^${normalized}`;
 }
 
 function formatBreadcrumbs(s: string): string {
@@ -442,7 +431,7 @@ function makeHeaderMenu(opts: {
 
   // Open Note button
   if (window.sproutOpenCurrentCardNote) {
-    addItem("Open", "O", window.sproutOpenCurrentCardNote, false);
+    addItem("Open in Note", "O", window.sproutOpenCurrentCardNote, false);
   }
   addItem("Bury", "B", opts.onBury, !opts.canBurySuspend);
   addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend);
@@ -1579,10 +1568,9 @@ export function renderSessionMode(args: Args) {
     if (!card) return;
     const filePath = card.sourceNotePath;
     if (!filePath) return;
-    const anchorStr = buildCardAnchorFragment(card.id);
     const app = window.app;
-    if (app && app.workspace && typeof app.workspace.openLinkText === 'function') {
-      void app.workspace.openLinkText(filePath + anchorStr, filePath, true);
+    if (app) {
+      void openCardAnchorInNote(app, filePath, String(card.id ?? ""));
     }
   };
   footerRight.appendChild(

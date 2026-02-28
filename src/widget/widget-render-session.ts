@@ -23,7 +23,8 @@ import {
   attachWidgetMoreMenu,
 } from "./widget-buttons";
 import { processMarkdownFeatures, setupInternalLinkHandlers } from "./widget-markdown";
-import { isFolderNote } from "./widget-scope";
+import { openCardAnchorInNote } from "../core/open-card-anchor";
+import { MarkdownView } from "obsidian";
 
 /** Returns true if the text contains a markdown table (pipe-delimited with a separator row). */
 function hasMarkdownTable(text: string): boolean {
@@ -33,18 +34,6 @@ function hasMarkdownTable(text: string): boolean {
 /* ------------------------------------------------------------------ */
 /*  renderWidgetSession                                                */
 /* ------------------------------------------------------------------ */
-
-function buildCardAnchorFragment(cardId: string | null | undefined): string {
-  const raw = String(cardId ?? "").trim();
-  if (!raw) return "";
-  const cleaned = raw.startsWith("^") ? raw.slice(1) : raw;
-  const normalized = cleaned.startsWith("sprout-")
-    ? cleaned
-    : /^\d{9}$/.test(cleaned)
-      ? `sprout-${cleaned}`
-      : cleaned;
-  return `#^${normalized}`;
-}
 
 /**
  * Build and append the session-mode DOM tree into `root`.
@@ -76,7 +65,8 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   });
 
   const studyingWrap = el("div", "bc flex flex-col items-start mr-auto sprout-widget-header-labels");
-  const studyingScope = `${view.session?.scopeName || "Note"} ${isFolderNote(view.activeFile) ? "Folder" : "Note"}`;
+  const scopeLabel = view.session?.scopeType === "folder" ? "Folder" : "Note";
+  const studyingScope = `${view.session?.scopeName || "Note"} ${scopeLabel}`;
   const studyingTitle = el("div", "bc sprout-widget-study-label", `Studying ${studyingScope}`);
 
   const remainingCount = Math.max(0, (view.session?.stats.total || 0) - (view.session?.stats.done || 0));
@@ -965,10 +955,25 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, graded: { ra
     openNote: () => {
       const c = view.currentCard?.();
       if (!c) return;
-      const filePath = c.sourceNotePath || view.activeFile?.path;
+      const isFolderScope = view.session?.scopeType === "folder";
+      const filePath = (isFolderScope ? c.sourceNotePath : view.session?.scopeKey) || c.sourceNotePath || view.activeFile?.path;
       if (!filePath) return;
-      const anchorStr = buildCardAnchorFragment(c.id);
-      void view.app.workspace.openLinkText(filePath + anchorStr, filePath, true);
+
+      if (isFolderScope) {
+        void openCardAnchorInNote(view.app, filePath, String(c.id ?? ""));
+        return;
+      }
+
+      const markdownLeaves = view.app.workspace.getLeavesOfType("markdown");
+      const preferredLeaf = markdownLeaves.find((leaf) => {
+        const markdownView = leaf.view;
+        return markdownView instanceof MarkdownView && markdownView.file?.path === filePath;
+      });
+
+      void openCardAnchorInNote(view.app, filePath, String(c.id ?? ""), {
+        openInNewLeaf: false,
+        preferredLeaf,
+      });
     },
   });
   view._moreMenuToggle = () => moreMenu.toggle();

@@ -288,7 +288,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
     menu.appendChild(undoItem);
   }
 
-  const openItem = createMenuItem("Open Note", "O", () => void view.openCurrentCardInNote());
+  const openItem = createMenuItem("Open in Note", "O", () => void view.openCurrentCardInNote());
   openItem.dataset.sproutAction = "open-note";
   menu.appendChild(openItem);
 

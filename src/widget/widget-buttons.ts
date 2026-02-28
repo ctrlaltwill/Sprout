@@ -213,14 +213,14 @@ export function attachWidgetMoreMenu(opts: {
     menu.appendChild(item);
   };
 
-  if (typeof opts.openStudy === "function") {
-    addItem("Open in Study", "Y", opts.openStudy, false);
-  }
   if (typeof opts.openNote === "function") {
     addItem("Open in Note", "O", opts.openNote, false);
   }
   addItem("Bury", "B", opts.onBury, !opts.canBurySuspend);
   addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend);
+  if (typeof opts.openStudy === "function") {
+    addItem("Transfer to Study", "T", opts.openStudy, false);
+  }
   addItem("Undo last grade", "U", opts.onUndo, !opts.canUndo);
 
   let cleanup: (() => void) | null = null;

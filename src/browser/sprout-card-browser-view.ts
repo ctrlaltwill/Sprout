@@ -24,6 +24,7 @@ import { refreshAOS } from "../core/aos-loader";
 import { log } from "../core/logger";
 import { queryFirst, setCssProps } from "../core/ui";
 import { findCardBlockRangeById } from "../reviewer/markdown-block";
+import { openCardAnchorInNote } from "../core/open-card-anchor";
 
 // ✅ shared header
 import { type SproutHeader, createViewHeader } from "../core/header";
@@ -446,8 +447,7 @@ export class SproutCardBrowserView extends ItemView {
   // ── Card operations ─────────────────────────────────────
 
   private openSource(card: CardRecord) {
-    const link = `${card.sourceNotePath}#^sprout-${card.id}`;
-    void this.app.workspace.openLinkText(link, card.sourceNotePath, true);
+    void openCardAnchorInNote(this.app, String(card.sourceNotePath || ""), String(card.id || ""));
   }
 
   private async writeCardToMarkdown(card: CardRecord) {
