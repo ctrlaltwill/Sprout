@@ -4,15 +4,37 @@ All notable changes to Sprout are summarized here.
 
 ## Unreleased
 
-### Added
-- Widget More-menu action to open the current question/scope context in the main Study view
-- Context handoff for current MCQ option order when opening from widget to Study
-
-### Changed
-- Updated repository branding assets and added social banner usage in README
+- No entries yet.
 
 <details open>
-<summary><strong>Latest release: 1.0.7 (2026-02-26)</strong></summary>
+<summary><strong>Latest release: 1.0.8 (2026-03-01)</strong></summary>
+
+### Release notes
+
+Hotfix release focused on reliability and widget UX improvements after 1.0.7.
+
+#### Added
+- Added transfer of active study context/session from the widget into the main Sprout Study tab
+- Refreshed plugin iconography in branding assets
+
+#### Changed
+- Updated widget launch behavior to open from command palette instead of auto-opening on app reload
+- Updated widget colors for better readability in non-translucent windows
+
+#### Fixed
+- Adjusted z-index layering for study buttons and modals to prevent overlap conflicts
+- Fixed modal launching behavior for more reliable open/close interactions
+- Fixed modal sizing to render consistently across screen sizes
+- Improved mobile layout to prevent UI elements from being obstructed
+- Fixed zoom interaction conflicts with other plugins
+
+#### Links
+<a href="https://github.com/ctrlaltwill/Sprout/issues" style="display:inline-block;padding:6px 12px;margin-right:8px;border:1px solid #1f6feb;border-radius:6px;text-decoration:none;color:#1f6feb;">GitHub issues</a>
+<a href="https://github.com/ctrlaltwill/Sprout/wiki" style="display:inline-block;padding:6px 12px;border:1px solid #1f6feb;border-radius:6px;text-decoration:none;color:#1f6feb;">Documentation wiki</a>
+</details>
+
+<details>
+<summary><strong>1.0.7 (2026-02-26)</strong></summary>
 
 ### Release notes
 

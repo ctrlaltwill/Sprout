@@ -12,6 +12,7 @@ sprout-latest/
 # Source maps in root (if any)
 *.js.map
 coverage/
+release/
 
 # Design source files (keep exported assets like PNG/SVG trackable)
 *.afdesign
