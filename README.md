@@ -47,7 +47,7 @@ We are waiting on approval to be listed in Obsidian community plugins – watch 
 
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) is a community plugin for Obsidian that lets you install community plugins and receive updates automatically. Install BRAT, then add `ctrlaltwill/Sprout` as a community plugin.
 
-### Option 2 — Download a release
+### Option 2 — Manual install from release
 
 1. Go to [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release
 2. Copy `main.js`, `styles.css`, and `manifest.json` into:
@@ -56,25 +56,6 @@ We are waiting on approval to be listed in Obsidian community plugins – watch 
    <Your Vault>/.obsidian/plugins/sprout/
    ```
 3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
-
-### Option 3 — Build from source
-
-Requires [Node.js](https://nodejs.org/) 18+.
-
-```bash
-git clone https://github.com/ctrlaltwill/Sprout.git
-cd Sprout
-npm install
-npm run build
-```
-
-The built plugin files are output to `dist/`. Copy or symlink that folder into your vault:
-
-```bash
-ln -s "$(pwd)/dist" "<Your Vault>/.obsidian/plugins/sprout"
-```
-
-Restart Obsidian → Settings → Community Plugins → Enable **Sprout**.
 
 ## License
 
