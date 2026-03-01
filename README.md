@@ -13,8 +13,6 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 
 ## Getting started
 
-Choose one install path:
-
 ### Option 1 — BRAT (Recommended)
 
 1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) in Obsidian
@@ -30,6 +28,8 @@ Choose one install path:
    <Your Vault>/.obsidian/plugins/sprout/
    ```
 3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
+
+### Guides & Support
 
 💡 Need help in-app? Open the built-in Sprout guide inside Obsidian.
 
