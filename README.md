@@ -7,7 +7,11 @@
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
 [![Wiki - 30 pages](https://img.shields.io/badge/wiki-30%20pages-blue)](https://github.com/ctrlaltwill/Sprout/wiki)
 
-![Sprout Social Banner](branding/Github%20Banner.png)
+![Sprout Banner One - Welcome](branding/Banner%20One%20-%20Welcome.png)
+![Sprout Banner Two - Rich Card Types](branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
+![Sprout Banner Three - Audio Functionality](branding/Banner%20Three%20-%20Audio%20Functionality.png)
+![Sprout Banner Four - FSRS Algorithm](branding/Banner%20Four%20-%20FSRS%20Algorithm.png)
+![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analyis.png)
 
 > [!Important]
 > Thank you for all of your support following Sprout’s stable release and subsequent updates. I am actively working through early teething issues. Please raise bugs or feature requests via GitHub Issues.
