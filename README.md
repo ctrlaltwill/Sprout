@@ -8,24 +8,18 @@
 [![Wiki - 30 pages](https://img.shields.io/badge/wiki-30%20pages-blue)](https://github.com/ctrlaltwill/Sprout/wiki)
 
 ![Sprout Banner One - Welcome](branding/Banner%20One%20-%20Welcome.png)
-![Sprout Banner Two - Rich Card Types](branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
-![Sprout Banner Three - Audio Functionality](branding/Banner%20Three%20-%20Audio%20Functionality.png)
-![Sprout Banner Four - FSRS Algorithm](branding/Banner%20Four%20-%20FSRS%20Algorithm.png)
-![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analyis.png)
-
-> [!Important]
-> Thank you for all of your support following Sprout’s stable release and subsequent updates. I am actively working through early teething issues. Please raise bugs or feature requests via GitHub Issues.
 
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
-![Sprout – Demo Image](https://github.com/user-attachments/assets/57fdf7ac-4c89-44c4-b70b-ec09c9b6fa40)
+## Quick start
 
-## Latest updates
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) in Obsidian
+2. Add `ctrlaltwill/Sprout` as a community plugin in BRAT
+3. Start creating flashcards
 
-- Updated branding assets and added the social banner to the repository
-- Added a widget More-menu action to open the current study context in the main Study view
+Need help in-app? Open the built-in Sprout guide inside Obsidian.
 
-📖 **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
+📖 Prefer online docs? **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 
 ## Key features
 
@@ -37,6 +31,13 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 - Inline editor, card browser, and bulk edit tools
 - Markdown-first workflow with note-linked cards
 - Reading view customisation to keep your notes clean
+
+## Feature highlights
+
+![Sprout Banner Two - Rich Card Types](branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
+![Sprout Banner Three - Audio Functionality](branding/Banner%20Three%20-%20Audio%20Functionality.png)
+![Sprout Banner Four - FSRS Algorithm](branding/Banner%20Four%20-%20FSRS%20Algorithm.png)
+![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analyis.png)
 
 ## Installation
 
