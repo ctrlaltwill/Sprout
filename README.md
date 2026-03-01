@@ -11,13 +11,27 @@
 
 Sprout is an Obsidian plugin for writing flashcards directly inside Markdown notes and reviewing them with an FSRS-based scheduler.
 
-## Quick start
+## Getting started
+
+Choose one install path:
+
+### Option 1 — BRAT (Recommended)
 
 1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) in Obsidian
 2. Add `ctrlaltwill/Sprout` as a community plugin in BRAT
 3. Start creating flashcards
 
-Need help in-app? Open the built-in Sprout guide inside Obsidian.
+### Option 2 — Manual install from Releases
+
+1. Go to [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release
+2. Copy `main.js`, `styles.css`, and `manifest.json` into:
+
+   ```
+   <Your Vault>/.obsidian/plugins/sprout/
+   ```
+3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
+
+💡 Need help in-app? Open the built-in Sprout guide inside Obsidian.
 
 📖 Prefer online docs? **[Full Documentation & Guides →](https://github.com/ctrlaltwill/Sprout/wiki)**
 
@@ -37,25 +51,7 @@ Need help in-app? Open the built-in Sprout guide inside Obsidian.
 ![Sprout Banner Two - Rich Card Types](branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
 ![Sprout Banner Three - Audio Functionality](branding/Banner%20Three%20-%20Audio%20Functionality.png)
 ![Sprout Banner Four - FSRS Algorithm](branding/Banner%20Four%20-%20FSRS%20Algorithm.png)
-![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analyis.png)
-
-## Installation
-
-We are waiting on approval to be listed in Obsidian community plugins – watch this space!
-
-### Option 1 — BRAT (Recommended)
-
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) is a community plugin for Obsidian that lets you install community plugins and receive updates automatically. Install BRAT, then add `ctrlaltwill/Sprout` as a community plugin.
-
-### Option 2 — Manual install from release
-
-1. Go to [Releases](https://github.com/ctrlaltwill/Sprout/releases) and download the latest release
-2. Copy `main.js`, `styles.css`, and `manifest.json` into:
-
-   ```
-   <Your Vault>/.obsidian/plugins/sprout/
-   ```
-3. Restart Obsidian → Settings → Community Plugins → Enable **Sprout**
+![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analysis.png)
 
 ## License
 
