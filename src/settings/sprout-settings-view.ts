@@ -218,7 +218,7 @@ export class SproutSettingsView extends ItemView {
 
     const topTabs = [
       { id: "guide", label: "Guide", icon: "book-open" },
-      { id: "about", label: isMobile ? "Releases" : "Release Notes", icon: "sprout" },
+      { id: "about", label: isMobile ? "Releases" : "Release Notes", icon: "sprout-brand" },
       { id: "settings", label: "Settings", icon: "settings" },
     ];
 

@@ -709,7 +709,7 @@ export class SproutHeader {
         { label: "Export to Anki", icon: "folder-up", onActivate: openAnkiExport },
       ]),
       { label: "Open guide", icon: "book-open", onActivate: openGuide },
-      { label: "Open release notes", icon: "sprout", onActivate: openReleaseNotes },
+      { label: "Open release notes", icon: "sprout-brand", onActivate: openReleaseNotes },
       { label: "Open settings", icon: "settings", onActivate: openSettings },
       { label: "Close tab", icon: "x", onActivate: closeTab },
     ];

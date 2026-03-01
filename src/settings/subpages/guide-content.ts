@@ -126,7 +126,7 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   Settings: "settings",
   Syncing: "refresh-cw",
   Backups: "database-backup",
-  "Support-Sprout": "sprout",
+  "Support-Sprout": "sprout-brand",
 };
 
 export async function loadGuidePages(app: App, pluginDir?: string): Promise<GuidePage[]> {

@@ -82,7 +82,7 @@ export class SproutWidgetView extends ItemView {
   }
 
   getIcon() {
-    return "lucide-sprout";
+    return "sprout-brand";
   }
 
   async onOpen() {

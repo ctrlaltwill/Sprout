@@ -68,7 +68,7 @@ export class SproutHomeView extends ItemView {
   }
 
   getIcon() {
-    return "sprout";
+    return "sprout-brand";
   }
 
   async onOpen() {
@@ -197,7 +197,7 @@ export class SproutHomeView extends ItemView {
     if (showGreeting) {
       const greetingIconEl = document.createElement("span");
       greetingIconEl.className = "sprout-greeting-icon";
-      setIcon(greetingIconEl, "sprout");
+      setIcon(greetingIconEl, "sprout-brand");
       title.appendChild(greetingIconEl);
 
       const greetingPrefixEl = document.createElement("div");
