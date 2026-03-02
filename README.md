@@ -46,12 +46,20 @@ Sprout is an Obsidian plugin for writing flashcards directly inside Markdown not
 - Markdown-first workflow with note-linked cards
 - Reading view customisation to keep your notes clean
 
+## Planned enhancements
+
+1. Improved reading view styles with customisation
+2. Configurable homepage structure with different cards and graphs
+3. Language translations of the plugin
+
 ## Feature highlights
 
 ![Sprout Banner Two - Rich Card Types](branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
 ![Sprout Banner Three - Audio Functionality](branding/Banner%20Three%20-%20Audio%20Functionality.png)
 ![Sprout Banner Four - FSRS Algorithm](branding/Banner%20Four%20-%20FSRS%20Algorithm.png)
 ![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analysis.png)
+![Sprout Banner Six - Anki Compatibility](branding/Banner%20Six%20-%20Anki%20Compatibility.png)
+![Sprout Banner Seven - Card Creation](branding/Banner%20Seven%20-%20Card%20Creation.png)
 
 ## License
 
