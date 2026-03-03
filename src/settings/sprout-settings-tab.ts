@@ -1080,19 +1080,17 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Cloze mode")
-      .setDesc("Standard shows normal cloze blanks. Typed replaces blanks with a text input for active recall.")
+      .setDesc("Choose how cloze cards are answered: Standard shows normal blanks, while Typed uses an input box for active recall.")
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
             {
               value: "standard",
               label: "Standard",
-              description: "Classic cloze flow with highlighted deletions and reveal styling.",
             },
             {
               value: "typed",
               label: "Typed",
-              description: "Replaces blanks with a text input for active recall before reveal.",
             },
           ],
           value: cardsSettings.clozeMode ?? "standard",
@@ -1197,19 +1195,17 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Reveal mode")
-      .setDesc("For hide-all image occlusion cards, choose what is unmasked on reveal: reveal all unmasks every mask, while reveal group unmasks only the answer group. Hide-group cards are unaffected because other groups are never hidden.")
+      .setDesc("For hide-all image occlusion cards, choose reveal behavior: Reveal group unmasks only the answer group, while Reveal all unmasks every group. Hide-group cards are unaffected.")
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
             {
               value: "group",
               label: "Reveal group",
-              description: "On reveal, only the answer group is unmasked; other groups stay masked (Hide all only).",
             },
             {
               value: "all",
               label: "Reveal all",
-              description: "On reveal, all masks are unmasked (Hide all only).",
             },
           ],
           value: this.plugin.settings.imageOcclusion?.revealMode || "group",
@@ -2203,19 +2199,17 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Grading buttons")
-      .setDesc("Choose two buttons (again, good) or four buttons (again, hard, good, easy).")
+      .setDesc("Choose your grading layout: Two buttons shows Again + Good; Four buttons shows Again + Hard + Good + Easy.")
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
             {
               value: "two",
               label: "Two buttons",
-              description: "Again + Good only. Faster flow with simpler grading.",
             },
             {
               value: "four",
               label: "Four buttons",
-              description: "Again + Hard + Good + Easy. More control over intervals.",
             },
           ],
           value: this.plugin.settings.study.fourButtonMode ? "four" : "two",
@@ -2279,24 +2273,21 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Sibling card management")
-      .setDesc("Choose how sibling cards from the same note are managed during study sessions.")
+      .setDesc("Choose how sibling cards are handled: Standard queueing allows normal order, Disperse siblings spaces them apart, and Bury siblings shows one today and postpones the rest.")
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
           options: [
             {
               value: "standard",
               label: "Standard queueing",
-              description: "Uses normal FSRS ordering. Siblings can appear close together, especially early in a queue.",
             },
             {
               value: "disperse",
               label: "Disperse siblings",
-              description: "Spreads sibling cards out across the queue so they are less likely to appear back-to-back.",
             },
             {
               value: "bury",
               label: "Bury siblings",
-              description: "Shows one sibling card today and buries the rest until the next day.",
             },
           ],
           separatorAfterIndex: 0,
@@ -2501,7 +2492,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     gatekeeperScopeSetting = new Setting(wrapper)
       .setName("Gatekeeper scope")
       .setDesc(
-        "Choose what gatekeeper blocks. Current tab blocks only the active tab; full workspace blocks the entire workspace.",
+        "Choose what gatekeeper blocks: Full workspace blocks the whole workspace; Current tab blocks only the active tab.",
       )
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
@@ -2509,12 +2500,10 @@ export class SproutSettingsTab extends PluginSettingTab {
             {
               value: "workspace",
               label: "Full workspace",
-                description: "Blocks the entire workspace until gatekeeper is completed or bypassed.",
             },
             {
               value: "current-tab",
               label: "Current tab",
-              description: "Blocks only the current tab and allows switching to other tabs.",
             },
           ],
           value: this.plugin.settings.reminders.gatekeeperScope ?? "workspace",
@@ -2688,10 +2677,10 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Preset")
-      .setDesc("Apply a recommended configuration, or choose custom to keep your current values.")
+      .setDesc("Apply a scheduling preset to learning steps, relearning steps, and retention target, or choose Custom to keep current values.")
       .then((s) => {
         presetHandle = this._addSimpleSelect(s.controlEl, {
-          options: presets.map((p) => ({ value: p.key, label: p.label, description: p.desc })),
+          options: presets.map((p) => ({ value: p.key, label: p.label })),
           separatorAfterIndex: 0,
           value: detectPresetKey(),
 
@@ -3432,13 +3421,6 @@ export class SproutSettingsTab extends PluginSettingTab {
         txt.textContent = opt.label;
         textWrap.appendChild(txt);
 
-        if (opt.description) {
-          const desc = document.createElement("span");
-          desc.className = "sprout-ss-item-desc";
-          desc.textContent = opt.description;
-          textWrap.appendChild(desc);
-        }
-
         item.appendChild(textWrap);
 
         const activate = () => {
@@ -3693,13 +3675,6 @@ export class SproutSettingsTab extends PluginSettingTab {
         txt.className = "sprout-ss-item-label";
         txt.textContent = opt.label;
         textWrap.appendChild(txt);
-
-        if (opt.description) {
-          const desc = document.createElement("span");
-          desc.className = "sprout-ss-item-desc";
-          desc.textContent = opt.description;
-          textWrap.appendChild(desc);
-        }
 
         item.appendChild(textWrap);
 

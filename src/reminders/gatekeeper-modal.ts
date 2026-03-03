@@ -287,10 +287,10 @@ export class GatekeeperModal extends Modal {
 
   private renderBypassWarning(contentEl: HTMLElement) {
     const wrap = contentEl.createDiv({ cls: "bc sprout-gatekeeper-warning-wrap" });
-    wrap.createDiv({ cls: "bc sprout-gatekeeper-warning-text", text: "You are cheating..." });
+    wrap.createDiv({ cls: "bc sprout-gatekeeper-warning-text", text: "Bypass this round?" });
     wrap.createDiv({
       cls: "bc text-muted-foreground text-sm sprout-gatekeeper-warning-subtext",
-      text: "Bypassing means this gatekeeper round is not completed.",
+      text: "You've got cards due today — continuing may weaken your long-term retention!",
     });
 
     const actions = wrap.createDiv({ cls: "bc flex items-center justify-center gap-2" });

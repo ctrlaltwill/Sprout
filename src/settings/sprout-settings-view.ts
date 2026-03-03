@@ -578,6 +578,83 @@ export class SproutSettingsView extends ItemView {
     return getGuidePageIcon(pageKey);
   }
 
+  private _normalizeGuideLinkTarget(raw: string): string {
+    if (!raw) return "";
+    let value = raw.trim();
+    if (!value) return "";
+
+    value = value.replace(/^obsidian:\/\/open\?[^#]*file=/i, "");
+    value = value.replace(/^[./]+/, "");
+    value = value.split("#")[0]?.split("?")[0] ?? "";
+    if (!value) return "";
+
+    try {
+      value = decodeURIComponent(value);
+    } catch {
+      // keep raw value
+    }
+
+    value = value.replace(/\\/g, "/");
+    const pieces = value.split("/").filter(Boolean);
+    value = pieces.length ? pieces[pieces.length - 1] : value;
+    value = value.replace(/\.md$/i, "").trim();
+
+    return value
+      .toLowerCase()
+      .replace(/[_\s]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  private _wireGuideContentLinks(body: HTMLElement, pages: GuidePage[], sourcePath: string) {
+    const keyByNormalized = new Map<string, string>();
+
+    const addAlias = (alias: string, pageKey: string) => {
+      const normalized = this._normalizeGuideLinkTarget(alias);
+      if (!normalized) return;
+      if (!keyByNormalized.has(normalized)) keyByNormalized.set(normalized, pageKey);
+    };
+
+    for (const page of pages) {
+      addAlias(page.key, page.key);
+      addAlias(page.label, page.key);
+      addAlias(this._getGuidePageDisplayLabel(page.key), page.key);
+      addAlias(`${page.key}.md`, page.key);
+    }
+
+    body.addEventListener("click", (ev) => {
+      const target = ev.target as HTMLElement | null;
+      const link = target?.closest("a") as HTMLAnchorElement | null;
+      if (!link) return;
+
+      const dataHref = link.getAttribute("data-href") ?? "";
+      const hrefAttr = link.getAttribute("href") ?? "";
+      const rawTarget = dataHref || hrefAttr;
+      if (!rawTarget) return;
+
+      if (/^(https?:|mailto:|tel:)/i.test(rawTarget)) return;
+
+      const normalized = this._normalizeGuideLinkTarget(rawTarget);
+      if (!normalized) return;
+
+      const matchedKey = keyByNormalized.get(normalized);
+      if (matchedKey) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this._activeGuidePage = matchedKey;
+        this._renderActiveTabContent();
+        return;
+      }
+
+      const fallbackTarget = rawTarget.replace(/^\[\[|\]\]$/g, "");
+      if (!fallbackTarget || fallbackTarget.startsWith("#")) return;
+
+      ev.preventDefault();
+      ev.stopPropagation();
+      void this.app.workspace.openLinkText(fallbackTarget, sourcePath || "", false);
+    });
+  }
+
   private _ensureReleaseComponent(): Component {
     if (!this._releaseComponent) this._releaseComponent = new Component();
     return this._releaseComponent;
@@ -767,6 +844,8 @@ export class SproutSettingsView extends ItemView {
           selected.sourcePath,
           this._ensureReleaseComponent(),
         );
+
+        this._wireGuideContentLinks(body, pages, selected.sourcePath);
 
         /* Enhance About page when shown in the Guide tab */
         if (selected.key === "Support-Sprout") {

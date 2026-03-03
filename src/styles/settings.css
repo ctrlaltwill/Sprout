@@ -164,7 +164,7 @@
   font-size: var(--sprout-font-xs);
   font-weight: 500;
   cursor: pointer;
-  border-radius: var(--radius-m);
+  border-radius: var(--button-radius,var(--radius-m))!important;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
   color: var(--text-normal);
@@ -243,9 +243,13 @@
   padding: 4px;
   text-align: left;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-m, 8px);
+  border-radius: var(--radius-l, 8px);
   background: var(--background-primary);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.theme-dark .sprout-guide-dropdown-menu {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Dropdown page item ── */
@@ -1208,13 +1212,13 @@ button.sprout-settings-tab-btn {
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn:first-child {
-  border-top-left-radius: var(--radius-m);
-  border-bottom-left-radius: var(--radius-m);
+  border-top-left-radius: var(--button-radius,var(--radius-m))!important;
+  border-bottom-left-radius: var(--button-radius,var(--radius-m))!important;
 }
 
 .sprout-settings-tab-nav .sprout-settings-tab-btn:last-child {
-  border-top-right-radius: var(--radius-m);
-  border-bottom-right-radius: var(--radius-m);
+  border-top-right-radius: var(--button-radius,var(--radius-m))!important;
+  border-bottom-right-radius: var(--button-radius,var(--radius-m))!important;
 }
 
 .sprout-settings-tab-btn:hover {
@@ -2043,7 +2047,7 @@ button.sprout-settings-tab-btn {
   background: var(--background-primary) !important;
   color: var(--text-normal) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
-  border-radius: var(--radius-m, 8px);
+  border-radius: var(--radius-l)!important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
@@ -2102,6 +2106,7 @@ button.sprout-settings-tab-btn {
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
+  margin: 1px 0!important;
   border-radius: var(--radius-s, 4px);
   cursor: pointer;
   font-size: var(--font-ui-small);
@@ -2112,7 +2117,7 @@ button.sprout-settings-tab-btn {
 }
 .sprout-ss-item:hover,
 .sprout-ss-item:focus {
-  background: var(--background-modifier-hover);
+  background: var(--color-background);
   outline: none;
 }
 .sprout-ss-item[aria-selected="true"] {
