@@ -1,10 +1,12 @@
 name: Update Wiki Badge Count
 
 on:
+  workflow_run:
+    workflows: ["Sync GitHub Wiki"]
+    types: [completed]
   push:
     branches: [main]
     paths:
-      - "wiki/**/*.md"
       - ".github/workflows/wiki-page-count-badge.yml"
   workflow_dispatch:
 
@@ -14,6 +16,7 @@ permissions:
 
 jobs:
   update-wiki-badge:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
