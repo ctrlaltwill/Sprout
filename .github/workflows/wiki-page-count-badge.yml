@@ -1,0 +1,69 @@
+name: Update Wiki Badge Count
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "wiki/**/*.md"
+      - ".github/workflows/wiki-page-count-badge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-wiki-badge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Clone GitHub Wiki repository
+        run: |
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki-repo
+
+      - name: Count wiki pages
+        id: count
+        run: |
+          COUNT="$(find wiki-repo -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Update README wiki badge
+        env:
+          WIKI_COUNT: ${{ steps.count.outputs.count }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          count = os.environ["WIKI_COUNT"].strip()
+          readme_path = Path("README.md")
+          text = readme_path.read_text(encoding="utf-8")
+
+          pattern = re.compile(
+              r"(\[!\[Wiki - )\d+( pages\]\(https://img\.shields\.io/badge/wiki-)\d+(%20pages-[^)]+\)\]\(https://github\.com/[^/]+/[^/]+/wiki\))"
+          )
+          updated = pattern.sub(rf"\\g<1>{count}\\g<2>{count}\\g<3>", text)
+
+          if updated != text:
+              readme_path.write_text(updated, encoding="utf-8")
+              print(f"Updated wiki badge count to {count}")
+          else:
+              print("README badge already up to date")
+          PY
+
+      - name: Commit and push badge update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "No README badge changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(readme): update wiki badge page count to ${{ steps.count.outputs.count }}"
+          git push
