@@ -71,6 +71,7 @@ Faster, smoother studying designed specifically for mobile workflows.
 ![Sprout Banner Five - Data Analysis](branding/Banner%20Five%20-%20Data%20Analysis.png)
 ![Sprout Banner Six - Anki Compatibility](branding/Banner%20Six%20-%20Anki%20Compatibility.png)
 ![Sprout Banner Seven - Card Creation](branding/Banner%20Seven%20-%20Card%20Creation.png)
+![Sprout Banner Eight - Reminders & Gatekeeper](branding/Banner%20Eight%20-%20Reminders%20%26%20Gatekeeper.png)
 
 ## License
 
