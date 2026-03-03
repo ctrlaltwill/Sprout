@@ -973,7 +973,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
 
       const badge = document.createElement("kbd");
       badge.className = "bc kbd";
-      badge.textContent = String(displayIdx + 1);
+      badge.textContent = String(origIdx + 1);
       row.appendChild(badge);
 
       const textEl = document.createElement("span");
