@@ -4,7 +4,13 @@ All notable changes to Sprout are summarized here.
 
 ## Unreleased
 
-- No entries yet.
+- Draft release notes for `1.0.9`: see [release/1.0.9/RELEASE_NOTES.md](release/1.0.9/RELEASE_NOTES.md)
+
+### Added
+- Added reminders and gatekeeper popups.
+
+### Changed
+- Updated colour palette for grading buttons.
 
 <details open>
 <summary><strong>Latest release: 1.0.8 (2026-03-01)</strong></summary>

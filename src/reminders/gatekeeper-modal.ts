@@ -311,7 +311,7 @@ export class GatekeeperModal extends Modal {
   }
 
   private getCardLocationText(card: CardRecord): string {
-    const raw = String(card.sourceNotePath || card.location || card.sourcePath || "").trim();
+    const raw = String(card.sourceNotePath || "").trim();
     if (!raw) return "";
     const clean = raw.replace(/\\/g, "/").replace(/\.md$/i, "");
     return clean.split("/").filter(Boolean).join(" / ");
@@ -455,10 +455,12 @@ export class GatekeeperModal extends Modal {
       this.renderIoCard(body, card);
     } else {
       const q = body.createDiv({ cls: "whitespace-pre-wrap" });
-      q.textContent = String((card as unknown as Record<string, unknown>).q || "") || "(No question text)";
+      const maybeQuestion = (card as unknown as Record<string, unknown>).q;
+      q.textContent = typeof maybeQuestion === "string" ? maybeQuestion : "(No question text)";
       if (this.reveal) {
         const a = body.createDiv({ cls: "whitespace-pre-wrap mt-3" });
-        a.textContent = String((card as unknown as Record<string, unknown>).a || "") || "(No answer text)";
+        const maybeAnswer = (card as unknown as Record<string, unknown>).a;
+        a.textContent = typeof maybeAnswer === "string" ? maybeAnswer : "(No answer text)";
       }
     }
   }
@@ -637,7 +639,7 @@ export class GatekeeperModal extends Modal {
 
       const badge = body.ownerDocument.createElement("kbd");
       badge.className = "bc kbd";
-      badge.textContent = String(displayIdx + 1);
+      badge.textContent = String(origIdx + 1);
       row.appendChild(badge);
 
       const textEl = body.ownerDocument.createElement("span");

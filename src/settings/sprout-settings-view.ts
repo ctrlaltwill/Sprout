@@ -1661,11 +1661,11 @@ export class SproutSettingsView extends ItemView {
       storage: ["Attachment storage", "Data backup", "Syncing"],
       study: ["Study sessions", "Scheduling"],
       reminders: [
-        "Launch Reminders",
-        "Routine Reminders",
-        "Gatekeeper Popups",
-        "Gatekeeper Options",
-        "Gatekeeper Bypass",
+        "Launch reminders",
+        "Routine reminders",
+        "Gatekeeper popups",
+        "Gatekeeper behaviour",
+        "Gatekeeper bypass",
       ],
       reset: ["Reset", "Danger zone", "Quarantined cards"],
     };

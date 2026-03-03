@@ -2331,7 +2331,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     let gatekeeperBypassSetting: Setting | null = null;
     let gatekeeperBypassWarningSetting: Setting | null = null;
 
-    new Setting(wrapper).setName("Launch Reminders").setHeading();
+    new Setting(wrapper).setName("Launch reminders").setHeading();
 
     new Setting(wrapper)
       .setName("Enable reminders on launch")
@@ -2372,7 +2372,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(wrapper).setName("Routine Reminders").setHeading();
+    new Setting(wrapper).setName("Routine reminders").setHeading();
 
     new Setting(wrapper)
       .setName("Enable routine reminders")
@@ -2413,11 +2413,11 @@ export class SproutSettingsTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(wrapper).setName("Gatekeeper Popups").setHeading();
+    new Setting(wrapper).setName("Gatekeeper popups").setHeading();
 
     new Setting(wrapper)
       .setName("Enable gatekeeper popups")
-      .setDesc("Show recurring Gatekeeper popups with due questions.")
+      .setDesc("Show recurring gatekeeper popups with due questions.")
       .addToggle((t) => {
         t.setValue(!!this.plugin.settings.reminders.gatekeeperEnabled);
         t.onChange(async (v) => {
@@ -2441,7 +2441,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName("Enable gatekeeper on launch")
-      .setDesc("Show Gatekeeper once after Obsidian starts.")
+      .setDesc("Show gatekeeper once after Obsidian starts.")
       .addToggle((t) => {
         t.setValue(!!this.plugin.settings.reminders.gatekeeperOnStartup);
         t.onChange(async (v) => {
@@ -2456,11 +2456,11 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
-    new Setting(wrapper).setName("Gatekeeper Options").setHeading();
+    new Setting(wrapper).setName("Gatekeeper behaviour").setHeading();
 
     gatekeeperFrequencySetting = new Setting(wrapper)
       .setName("Gatekeeper frequency")
-      .setDesc("Time between Gatekeeper popups, in minutes.")
+      .setDesc("Time between gatekeeper popups, in minutes.")
       .addText((t) =>
         t
           .setPlaceholder("30")
@@ -2480,7 +2480,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     gatekeeperDueQuestionsSetting = new Setting(wrapper)
       .setName("Number of due questions")
-      .setDesc("Number of due questions to include in each Gatekeeper popup.")
+      .setDesc("Number of due questions to include in each gatekeeper popup.")
       .addText((t) =>
         t
           .setPlaceholder("3")
@@ -2499,9 +2499,9 @@ export class SproutSettingsTab extends PluginSettingTab {
       );
 
     gatekeeperScopeSetting = new Setting(wrapper)
-      .setName("Gatekeeper scoping")
+      .setName("Gatekeeper scope")
       .setDesc(
-        "Choose what Gatekeeper blocks. Current tab blocks only the active tab; Full workspace blocks the entire workspace.",
+        "Choose what gatekeeper blocks. Current tab blocks only the active tab; full workspace blocks the entire workspace.",
       )
       .then((s) => {
         this._addSimpleSelect(s.controlEl, {
@@ -2509,7 +2509,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             {
               value: "workspace",
               label: "Full workspace",
-              description: "Blocks the entire workspace until Gatekeeper is completed or bypassed.",
+                description: "Blocks the entire workspace until gatekeeper is completed or bypassed.",
             },
             {
               value: "current-tab",
@@ -2539,9 +2539,9 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
     gatekeeperPauseSetting = new Setting(wrapper)
-      .setName("Pause Gatekeeper while studying")
+      .setName("Pause gatekeeper while studying")
       .setDesc(
-        "Pause Gatekeeper while you are in Sprout study tabs. The countdown resumes when you leave.",
+        "Pause gatekeeper while you are in sprout study tabs. The countdown resumes when you leave.",
       )
       .addToggle((t) => {
         t.setValue(this.plugin.settings.reminders.gatekeeperPauseWhenStudying ?? true);
@@ -2557,11 +2557,11 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
-    new Setting(wrapper).setName("Gatekeeper Bypass").setHeading();
+    new Setting(wrapper).setName("Gatekeeper bypass").setHeading();
 
     gatekeeperBypassSetting = new Setting(wrapper)
       .setName("Enable gatekeeper bypass")
-      .setDesc("Allow bypassing or closing Gatekeeper before all shown questions are completed.")
+      .setDesc("Allow bypassing or closing gatekeeper before all shown questions are completed.")
       .addToggle((t) => {
         t.setValue(!!this.plugin.settings.reminders.gatekeeperAllowSkip);
         t.onChange(async (v) => {
@@ -2580,7 +2580,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     gatekeeperBypassWarningSetting = new Setting(wrapper)
       .setName("Enable bypass warning")
-      .setDesc("Show a confirmation warning before bypassing Gatekeeper.")
+      .setDesc("Show a confirmation warning before bypassing gatekeeper.")
       .addToggle((t) => {
         t.setValue(!!this.plugin.settings.reminders.gatekeeperBypassWarning);
         t.onChange(async (v) => {
@@ -2597,7 +2597,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     const gatekeeperNote = wrapper.createDiv({ cls: "setting-item-description" });
     gatekeeperNote.textContent =
-      "If fewer due questions are available than requested, all due cards are shown. If none are due, Gatekeeper is skipped.";
+      "If fewer due questions are available than requested, all due cards are shown. If none are due, gatekeeper is skipped.";
 
     startupDelaySetting.setDisabled(!this.plugin.settings.reminders.showOnStartup);
     repeatIntervalSetting.setDisabled(!this.plugin.settings.reminders.repeatEnabled);
