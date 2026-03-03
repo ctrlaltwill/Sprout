@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update-wiki-badge:
@@ -54,16 +55,22 @@ jobs:
               print("README badge already up to date")
           PY
 
-      - name: Commit and push badge update
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Create pull request for badge update
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(readme): update wiki badge page count to ${{ steps.count.outputs.count }}"
+          title: "chore(readme): update wiki badge page count to ${{ steps.count.outputs.count }}"
+          body: "Automated update of the wiki page count badge in README.md."
+          labels: "automation"
+          branch: "automation/wiki-page-count-badge"
+          delete-branch: true
 
-          git add README.md
-          if git diff --cached --quiet; then
-            echo "No README badge changes to commit."
-            exit 0
-          fi
-
-          git commit -m "chore(readme): update wiki badge page count to ${{ steps.count.outputs.count }}"
-          git push
+      - name: Enable auto-merge for badge PR
+        if: steps.cpr.outputs.pull-request-number != ''
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
