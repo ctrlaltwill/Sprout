@@ -320,6 +320,188 @@
   min-height: 0 !important;
 }
 
+/* ---- Gatekeeper modal ---- */
+
+.sprout .sprout-gatekeeper-modal {
+  backdrop-filter: none !important;
+  padding: 2rem 0 0 !important;
+  gap: 0 !important;
+  max-width: 90% !important;
+  max-height: 90% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: var(--radius-l) !important;
+  z-index: 2147483001 !important;
+  isolation: isolate;
+}
+
+.sprout .sprout-gatekeeper-top-row {
+  min-height: 40px;
+  padding: 8px 8px 0;
+}
+
+.sprout .sprout-gatekeeper-modal > .modal-header {
+  padding: 0 20px 0 !important;
+  border-bottom: none !important;
+  background: var(--background) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.sprout .sprout-gatekeeper-content {
+  padding: 16px 20px 20px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+.sprout .sprout-gatekeeper-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 14px;
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+}
+
+.sprout .sprout-gatekeeper-card-location {
+  padding-top: 4px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.sprout .sprout-gatekeeper-qa-section {
+  padding: 2rem 0;
+  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sprout .sprout-gatekeeper-progress-row {
+  margin: 0;
+}
+
+.sprout .sprout-gatekeeper-section-label {
+  margin: 0 !important;
+  margin-block-start: 0 !important;
+  margin-block-end: 0 !important;
+}
+
+.sprout .sprout-gatekeeper-section-label:not(:first-child) {
+  margin-top: 1rem !important;
+  margin-block-start: 1rem !important;
+}
+
+.sprout .sprout-gatekeeper-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words {
+  line-height: 1.75 !important;
+}
+
+.sprout .sprout-gatekeeper-question-block {
+  margin: 0;
+}
+
+.sprout .sprout-gatekeeper-footer {
+  padding-top: 2rem !important;
+}
+
+.sprout .sprout-gatekeeper-grade-grid {
+  width: 100%;
+}
+
+.sprout .sprout-gatekeeper-warning-wrap {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.sprout .sprout-gatekeeper-warning-text {
+  font-size: var(--sprout-font-md-plus);
+  font-weight: 600;
+}
+
+.sprout .sprout-gatekeeper-warning-subtext {
+  max-width: 420px;
+  line-height: 1.4;
+}
+
+.sprout .sprout-gatekeeper-modal.sprout-gatekeeper-warning-mode > .sprout-gatekeeper-top-row,
+.sprout .sprout-gatekeeper-modal.sprout-gatekeeper-warning-mode > .modal-header {
+  display: none !important;
+}
+
+.sprout .sprout-gatekeeper-modal.sprout-gatekeeper-warning-mode > .sprout-gatekeeper-content {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sprout .sprout-gatekeeper-bypass-btn {
+  border: var(--sprout-border-width) solid color-mix(in srgb, var(--destructive) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--destructive) 16%, var(--background)) !important;
+  color: color-mix(in srgb, var(--destructive) 72%, var(--foreground)) !important;
+}
+
+.sprout .sprout-gatekeeper-top-row .sprout-gatekeeper-bypass-btn {
+  gap: 0 !important;
+  padding-inline: 8px !important;
+  overflow: hidden;
+  transition: gap 180ms ease, padding-inline 180ms ease;
+}
+
+.sprout .sprout-gatekeeper-top-row .sprout-gatekeeper-bypass-label {
+  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transform: translateX(-4px);
+  transition: max-width 220ms ease, opacity 180ms ease, transform 220ms ease;
+}
+
+.sprout .sprout-gatekeeper-top-row .sprout-gatekeeper-bypass-btn:hover,
+.sprout .sprout-gatekeeper-top-row .sprout-gatekeeper-bypass-btn:focus-visible {
+  gap: 8px !important;
+  padding-inline: 12px !important;
+}
+
+.sprout .sprout-gatekeeper-top-row .sprout-gatekeeper-bypass-btn:hover .sprout-gatekeeper-bypass-label,
+.sprout .sprout-gatekeeper-top-row .sprout-gatekeeper-bypass-btn:focus-visible .sprout-gatekeeper-bypass-label {
+  max-width: 72px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sprout .sprout-gatekeeper-bypass-btn:hover,
+.sprout .sprout-gatekeeper-bypass-btn:focus-visible {
+  background: color-mix(in srgb, var(--destructive) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--destructive) 60%, transparent) !important;
+}
+
+.theme-dark .sprout .sprout-gatekeeper-bypass-btn {
+  background: color-mix(in srgb, var(--destructive) 26%, var(--background)) !important;
+  color: color-mix(in srgb, var(--destructive) 82%, var(--foreground)) !important;
+}
+
 .sprout .sprout-card-creator-modal [data-tooltip]:not([data-tooltip-position])::after,
 .sprout .sprout-bulk-edit-panel [data-tooltip]:not([data-tooltip-position])::after {
   bottom: calc(100% + 6px) !important;
@@ -395,6 +577,10 @@
 .sprout .sprout-modal-footer {
   padding-top: 20px !important;
   border-top: none;
+}
+
+.sprout .sprout-modal-footer.sprout-gatekeeper-footer {
+  padding-top: 2rem !important;
 }
 
 /* ---- Bulk edit modal (browser) ---- */
@@ -847,8 +1033,9 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   border-radius: var(--radius-m);
   border: 1px solid transparent;
   background: transparent;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -862,8 +1049,9 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   border-radius: var(--radius-m);
   border: 1px solid transparent;
   background: transparent;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -907,7 +1095,6 @@ body.is-mobile .sprout .sprout-bulk-edit-content {
   background-color: var(--background);
   backdrop-filter: none;
   padding: 0;
-  width: 90%;
   max-width: 600px;
   border-radius: var(--radius-l);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);

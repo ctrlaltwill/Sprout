@@ -28,6 +28,47 @@ export function normaliseSettingsInPlace(s: SproutSettings): void {
   );
   s.general.githubStars ??= { count: null, fetchedAt: null };
 
+  s.reminders ??= {} as SproutSettings["reminders"];
+  s.reminders.showOnStartup ??= DEFAULT_SETTINGS.reminders.showOnStartup;
+  s.reminders.startupDelayMs = clamp(
+    Number(s.reminders.startupDelayMs ?? DEFAULT_SETTINGS.reminders.startupDelayMs),
+    0,
+    60_000,
+  );
+  s.reminders.repeatEnabled ??= DEFAULT_SETTINGS.reminders.repeatEnabled;
+  s.reminders.repeatIntervalMinutes = clamp(
+    Number(s.reminders.repeatIntervalMinutes ?? DEFAULT_SETTINGS.reminders.repeatIntervalMinutes),
+    1,
+    1440,
+  );
+  s.reminders.gatekeeperEnabled ??= DEFAULT_SETTINGS.reminders.gatekeeperEnabled;
+  s.reminders.gatekeeperOnStartup ??= DEFAULT_SETTINGS.reminders.gatekeeperOnStartup;
+  s.reminders.gatekeeperIntervalMinutes = clamp(
+    Number(s.reminders.gatekeeperIntervalMinutes ?? DEFAULT_SETTINGS.reminders.gatekeeperIntervalMinutes),
+    1,
+    1440,
+  );
+  s.reminders.gatekeeperDueQuestionCount = clamp(
+    Number(s.reminders.gatekeeperDueQuestionCount ?? DEFAULT_SETTINGS.reminders.gatekeeperDueQuestionCount),
+    1,
+    200,
+  );
+  const gatekeeperScope = String(s.reminders.gatekeeperScope ?? DEFAULT_SETTINGS.reminders.gatekeeperScope);
+  s.reminders.gatekeeperScope =
+    gatekeeperScope === "workspace" || gatekeeperScope === "current-tab"
+      ? gatekeeperScope
+      : DEFAULT_SETTINGS.reminders.gatekeeperScope;
+  s.reminders.gatekeeperPauseWhenStudying ??= DEFAULT_SETTINGS.reminders.gatekeeperPauseWhenStudying;
+  s.reminders.gatekeeperAllowSkip ??= DEFAULT_SETTINGS.reminders.gatekeeperAllowSkip;
+  s.reminders.gatekeeperBypassWarning ??= DEFAULT_SETTINGS.reminders.gatekeeperBypassWarning;
+  s.reminders.showWhenNoDue ??= DEFAULT_SETTINGS.reminders.showWhenNoDue;
+  s.reminders.message = String(s.reminders.message ?? DEFAULT_SETTINGS.reminders.message);
+  const action = String(s.reminders.clickAction ?? DEFAULT_SETTINGS.reminders.clickAction);
+  s.reminders.clickAction =
+    action === "none" || action === "open-home" || action === "open-reviewer"
+      ? action
+      : DEFAULT_SETTINGS.reminders.clickAction;
+
   // Ensure imageOcclusion group exists (may have been deleted by an older migration)
   s.imageOcclusion ??= {} as SproutSettings["imageOcclusion"];
   s.imageOcclusion.defaultMaskMode ??= DEFAULT_SETTINGS.imageOcclusion.defaultMaskMode;

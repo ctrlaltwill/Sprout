@@ -26,6 +26,8 @@ const PREFERRED_GUIDE_FILES = [
   "Text-to-Speech.md",
   "Language-Settings.md",
   "Settings.md",
+  "Reminders.md",
+  "Gatekeeper.md",
   "Keyboard-Shortcuts.md",
   "Custom-Delimiters.md",
   "Anki-Export-&-Import.md",
@@ -82,7 +84,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
     label: "Maintenance",
     icon: "shield-check",
     sections: [
-      { pageKeys: ["Anki-Export-&-Import", "Backups", "Custom-Delimiters", "Keyboard-Shortcuts", "Settings"] },
+      { pageKeys: ["Anki-Export-&-Import", "Backups", "Custom-Delimiters", "Keyboard-Shortcuts", "Settings", "Reminders", "Gatekeeper"] },
     ],
   },
 ];
@@ -94,6 +96,8 @@ const GUIDE_LABEL_MAP: Record<string, string> = {
   "Support-Sprout": "About Sprout",
   "Reading-View-Styles": "Reading View Styles",
   "Custom-Reading-Styles": "Custom Reading Styles",
+  Reminders: "Reminders",
+  Gatekeeper: "Gatekeeper",
 };
 
 const GUIDE_ICON_MAP: Record<string, string> = {
@@ -122,6 +126,8 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   Charts: "line-chart",
   "Text-to-Speech": "volume-2",
   "Language-Settings": "languages",
+  Reminders: "bell",
+  Gatekeeper: "shield-alert",
   "Anki-Export-&-Import": "arrow-right-left",
   Settings: "settings",
   Syncing: "refresh-cw",

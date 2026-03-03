@@ -171,6 +171,14 @@
   display: none !important;
 }
 
+/* ---- Global keyboard keycap shape ---- */
+
+.sprout kbd,
+.sprout .kbd {
+  padding: 0px 8px !important;
+  border-radius: 10px !important;
+}
+
 /* ---- Mobile phones: hide keyboard hint badges ---- */
 
 @media (max-width: 767px) and (hover: none) and (pointer: coarse) {

@@ -53,6 +53,24 @@ export const DEFAULT_SETTINGS: SproutSettings = {
     treatFolderNotesAsDecks: true,
   },
 
+  reminders: {
+    showOnStartup: false,
+    startupDelayMs: 1000,
+    repeatEnabled: false,
+    repeatIntervalMinutes: 30,
+    gatekeeperEnabled: false,
+    gatekeeperOnStartup: false,
+    gatekeeperIntervalMinutes: 30,
+    gatekeeperDueQuestionCount: 3,
+    gatekeeperScope: "workspace",
+    gatekeeperPauseWhenStudying: true,
+    gatekeeperAllowSkip: false,
+    gatekeeperBypassWarning: true,
+    showWhenNoDue: false,
+    message: "",
+    clickAction: "open-home",
+  },
+
   // Reasonable “Balanced” defaults matching your UI copy
   scheduling: {
     learningStepsMinutes: [10, 1440],

@@ -99,3 +99,8 @@ Click any image during a review to open it in a full-screen overlay. Click again
 ## Time tracking
 
 Sprout records time spent per card (capped at 5 minutes) for analytics.
+
+## Related
+
+- [[Reminders]]
+- [[Gatekeeper]]

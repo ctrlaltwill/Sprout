@@ -67,6 +67,40 @@ export type SproutSettings = {
     treatFolderNotesAsDecks: boolean;
   };
 
+  // Reminders — startup and recurring study alerts
+  reminders: {
+    /** Show one reminder shortly after Obsidian layout is ready. */
+    showOnStartup: boolean;
+    /** Delay before startup reminder appears, in milliseconds. */
+    startupDelayMs: number;
+    /** Show recurring reminders while Obsidian remains open. */
+    repeatEnabled: boolean;
+    /** Interval between recurring reminders, in minutes. */
+    repeatIntervalMinutes: number;
+    /** Enable periodic gatekeeper popups that ask due questions. */
+    gatekeeperEnabled: boolean;
+    /** Show one gatekeeper popup when Obsidian opens. */
+    gatekeeperOnStartup: boolean;
+    /** Interval between gatekeeper popups, in minutes. */
+    gatekeeperIntervalMinutes: number;
+    /** Number of due questions shown per gatekeeper popup. */
+    gatekeeperDueQuestionCount: number;
+    /** Scope blocked by gatekeeper: full workspace or current tab only. */
+    gatekeeperScope: "workspace" | "current-tab";
+    /** Pause gatekeeper countdown while actively studying in Sprout tabs. */
+    gatekeeperPauseWhenStudying: boolean;
+    /** Allow skipping/closing gatekeeper popup before completing all questions. */
+    gatekeeperAllowSkip: boolean;
+    /** Show a confirmation warning before bypassing gatekeeper. */
+    gatekeeperBypassWarning: boolean;
+    /** Show reminders even when there are zero cards due. */
+    showWhenNoDue: boolean;
+    /** Optional custom reminder message. Use {due} to inject the due count. */
+    message: string;
+    /** Click action for reminder notices. */
+    clickAction: "none" | "open-home" | "open-reviewer";
+  };
+
   // Scheduling — FSRS algorithm parameters
   scheduling: {
     learningStepsMinutes: number[];

@@ -52,6 +52,7 @@ export function migrateSettingsInPlace(settings: Record<string, unknown>): void 
   move(s, "reviewer", "study");
   move(s, "widget", "study");
   move(s, "scheduler", "scheduling");
+  move(s, "notifications", "reminders");
 
   // Merge legacy imageOcclusion.attachmentFolderPath + cardAttachments → storage
   // NOTE: imageOcclusion is now reused for mask appearance/review settings (maskTargetColor,

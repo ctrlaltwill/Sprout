@@ -77,6 +77,10 @@
   gap: 0.25rem !important;
 }
 
+.sprout .sprout-session-location-text {
+  font-size: 0.8rem !important;
+}
+
 .sprout .sprout-aos-reset {
   opacity: 1 !important;
   transform: none !important;
@@ -150,6 +154,21 @@
     margin: 0 2.5rem 0rem !important;
     display: flex;
     padding: 2.5rem 0rem;
+}
+
+/* Allow text selection in header + Q/A, but keep footer controls non-selectable */
+.bc-session-card > header,
+.bc-session-card > section,
+.sprout-session-card > header,
+.sprout-session-card > section {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.bc-session-card > footer,
+.sprout-session-card > footer {
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 /* Timer icon */
@@ -360,7 +379,7 @@
   border-radius: var(--button-radius, var(--radius-m)) !important;
   padding: 0.375rem !important;
   min-width: 32px;
-  min-height: 32px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -411,7 +430,7 @@
   color: var(--text-muted) !important;
   border: none !important;
   box-shadow: none !important;
-  border-radius: var(--radius-s) !important;
+  border-radius: var(--button-radius,var(--radius-m))!important;
   padding: 2px !important;
   min-width: 24px;
   min-height: 24px;
@@ -647,6 +666,18 @@
   border-radius: var(--button-radius, var(--radius-m)) !important;
 }
 
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-again {
+  border: var(--sprout-border-width) solid color-mix(in srgb, var(--destructive) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--destructive) 16%, var(--background)) !important;
+  color: color-mix(in srgb, var(--destructive) 72%, var(--foreground)) !important;
+}
+
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-again:hover,
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-again:focus-visible {
+  background: color-mix(in srgb, var(--destructive) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--destructive) 60%, transparent) !important;
+}
+
 .sprout-btn-hard {
   background-color: var(--sprout-hard-bg) !important;
   color: var(--sprout-hard-fg) !important;
@@ -666,6 +697,235 @@
   color: var(--sprout-easy-fg) !important;
   box-shadow: none !important;
   border-radius: var(--button-radius, var(--radius-m)) !important;
+}
+
+.sprout .sprout-session-card :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd),
+.sprout .sprout-gatekeeper-modal :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  border-width: 1px !important;
+  border-style: solid !important;
+  box-shadow: none !important;
+}
+
+.sprout .sprout-btn-again :is(kbd, .kbd) {
+  background: color-mix(in srgb,var(--destructive)50%,transparent)!important;
+  border-color: color-mix(in srgb, var(--destructive) 48%, transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--destructive) 12%) !important;
+}
+
+.sprout .sprout-btn-hard :is(kbd, .kbd) {
+  background: var(--sprout-hard-bg-light) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 35%, transparent) !important;
+  color: color-mix(in srgb, var(--sprout-hard-bg) 72%, rgb(0, 0, 0)) !important;
+}
+
+.sprout .sprout-btn-good :is(kbd, .kbd) {
+  background: var(--sprout-good-bg-light) !important;
+  border-color: color-mix(in srgb, var(--sprout-good-bg) 35%, transparent) !important;
+  color: color-mix(in srgb, var(--sprout-good-bg) 72%, rgb(0, 0, 0)) !important;
+}
+
+.sprout .sprout-btn-easy :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--sprout-easy-bg) 14%, rgb(255, 255, 255)) !important;
+  border-color: color-mix(in srgb, var(--sprout-easy-bg) 38%, transparent) !important;
+  color: color-mix(in srgb, var(--sprout-easy-bg) 82%, rgb(255, 255, 255)) !important;
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) .sprout-btn-easy :is(kbd, .kbd) {
+  background: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 18%, rgb(255, 255, 255)) !important;
+  border-color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 36%, transparent) !important;
+  color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 80%, rgb(0, 0, 0)) !important;
+}
+
+/* Light theme grading palette (gatekeeper + study session) */
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) .sprout-btn-again {
+  --sprout-btn-tint: var(--destructive);
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) .sprout-btn-hard {
+  --sprout-btn-tint: var(--sprout-hard-bg);
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) .sprout-btn-good {
+  --sprout-btn-tint: var(--sprout-good-bg);
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) .sprout-btn-easy {
+  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  --sprout-btn-bg-mix: 16%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 45%;
+  --sprout-btn-bg-hover-mix: 24%;
+  --sprout-btn-border-hover-mix: 60%;
+  --sprout-kbd-tint: var(--sprout-btn-tint);
+  --sprout-kbd-bg-mix: 50%;
+  --sprout-kbd-border-mix: 48%;
+
+  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground)) !important;
+  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), transparent) !important;
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), transparent) !important;
+}
+
+.sprout :is(.sprout-gatekeeper-modal, .sprout-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-bg-mix), transparent) !important;
+  border-color: color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-border-mix), transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--sprout-kbd-tint) 12%) !important;
+}
+
+/* Dark theme grading palette (widget + gatekeeper + study session) */
+.theme-dark .sprout .sprout-btn-again {
+  --sprout-btn-tint: var(--destructive);
+  --sprout-btn-bg-mix: 26%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout .sprout-btn-hard {
+  --sprout-btn-tint: var(--sprout-hard-bg);
+  --sprout-btn-bg-mix: 54%;
+  --sprout-btn-fg-mix: 64%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout .sprout-btn-good {
+  --sprout-btn-tint: var(--sprout-good-bg);
+  --sprout-btn-bg-mix: 48%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout .sprout-btn-easy {
+  --sprout-btn-tint: var(--sprout-easy-bg);
+  --sprout-btn-bg-mix: 42%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout .sprout-gatekeeper-modal .sprout-btn-easy,
+.theme-dark .sprout .sprout-session-card .sprout-btn-easy {
+  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix, 42%), var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix, 82%), var(--foreground)) !important;
+  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix, 58%), transparent) !important;
+}
+
+.theme-dark .sprout .sprout-btn-again {
+  --sprout-kbd-tint: var(--sprout-btn-tint);
+}
+
+.theme-dark .sprout .sprout-btn-hard {
+  --sprout-kbd-tint: var(--sprout-btn-tint);
+}
+
+.theme-dark .sprout .sprout-btn-good {
+  --sprout-kbd-tint: var(--sprout-btn-tint);
+}
+
+.theme-dark .sprout .sprout-btn-easy {
+  --sprout-kbd-tint: var(--sprout-btn-tint);
+}
+
+.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--sprout-kbd-tint) 38%, transparent) !important;
+  border-color: color-mix(in srgb, var(--sprout-kbd-tint) 58%, transparent) !important;
+  color: rgb(255, 255, 255) !important;
+}
+
+.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  filter: brightness(1.08);
+}
+
+/* Canonical solid grading surfaces (study + gatekeeper) */
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-again {
+  --sprout-btn-tint: var(--destructive);
+}
+
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-hard {
+  --sprout-btn-tint: var(--sprout-hard-bg);
+  --sprout-btn-bg-mix: 24%;
+  --sprout-btn-border-mix: 60%;
+  --sprout-btn-bg-hover-mix: 32%;
+  --sprout-btn-border-hover-mix: 68%;
+}
+
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-good {
+  --sprout-btn-tint: var(--sprout-good-bg);
+}
+
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-easy {
+  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  --sprout-btn-bg-mix: 16%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 45%;
+  --sprout-btn-bg-hover-mix: 24%;
+  --sprout-btn-border-hover-mix: 60%;
+
+  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background-primary)) !important;
+  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), var(--background-primary)) !important;
+}
+
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background-primary)) !important;
+  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), var(--background-primary)) !important;
+}
+
+.theme-dark .sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-again {
+  --sprout-btn-bg-mix: 26%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 50%;
+  --sprout-btn-bg-hover-mix: 34%;
+  --sprout-btn-border-hover-mix: 58%;
+}
+
+.theme-dark .sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-hard {
+  --sprout-btn-bg-mix: 54%;
+  --sprout-btn-fg-mix: 64%;
+  --sprout-btn-border-mix: 58%;
+  --sprout-btn-bg-hover-mix: 62%;
+  --sprout-btn-border-hover-mix: 66%;
+}
+
+.theme-dark .sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-good {
+  --sprout-btn-bg-mix: 48%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 58%;
+  --sprout-btn-bg-hover-mix: 56%;
+  --sprout-btn-border-hover-mix: 66%;
+}
+
+.theme-dark .sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) .sprout-btn-easy {
+  --sprout-btn-bg-mix: 42%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 58%;
+  --sprout-btn-bg-hover-mix: 50%;
+  --sprout-btn-border-hover-mix: 66%;
+}
+
+.theme-dark .sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.theme-dark .sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  filter: none !important;
+}
+
+/* Keep grading kbd text white on coloured grading buttons in both themes */
+.sprout :is(.sprout-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  color: rgb(255, 255, 255) !important;
 }
 
 /* ---- AOS animation fallback ---- */

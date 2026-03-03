@@ -22,6 +22,13 @@ Settings are grouped by tab.
 |---------|---------|-------------|
 | Enable animations | On | Page-load fade-up animations |
 
+## Reminders and Gatekeeper
+
+Reminders and Gatekeeper are documented on dedicated pages:
+
+- [[Reminders]] — gentle launch/routine nudges
+- [[Gatekeeper]] — enforced review popups and bypass behavior
+
 ## Image Occlusion
 
 | Setting | Default | Description |

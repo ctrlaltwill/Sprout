@@ -709,24 +709,28 @@ function renderOqCard(
     body.appendChild(submitBtn);
 
   } else {
-    // ── Back: correct order with highlights ──
+    // ── Back: user order with highlights ──
     body.appendChild(makeDivider());
     const answerList = el("div", "bc flex flex-col gap-2 sprout-oq-answer-list");
     body.appendChild(answerList);
 
-    steps.forEach((stepText, correctIdx) => {
-      const wasCorrect = userOrder.length > 0 && userOrder[correctIdx] === correctIdx;
+    const identity = Array.from({ length: steps.length }, (_, i) => i);
+    const displayOrder = userOrder.length === steps.length ? userOrder : identity;
+
+    displayOrder.forEach((origIdx, displayIdx) => {
+      const stepText = steps[origIdx] || "";
+      const wasCorrect = origIdx === displayIdx;
       const row = document.createElement("div");
       row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
       if (wasCorrect) {
         row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
-      } else if (userOrder.length > 0) {
+      } else {
         row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
       }
 
       const badge = document.createElement("kbd");
       badge.className = "bc kbd";
-      badge.textContent = String(correctIdx + 1);
+      badge.textContent = String(displayIdx + 1);
       row.appendChild(badge);
 
       const textEl = document.createElement("span");
@@ -833,6 +837,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       // Always show Again
       const againBtn = makeTextButton({
         label: "Again",
+        title: "Grade question as again (1)",
         className: fourButton ? "bc btn-outline w-full" : "bc btn-outline flex-1",
         onClick: () => {
           void (async () => {
@@ -848,6 +853,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       if (fourButton) {
         const hardBtn = makeTextButton({
           label: "Hard",
+          title: "Grade question as hard (2)",
           className: "bc btn-outline w-full",
           onClick: () => {
             void (async () => {
@@ -864,6 +870,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       // Always show Good
       const goodBtn = makeTextButton({
         label: "Good",
+        title: fourButton ? "Grade question as good (3)" : "Grade question as good (2)",
         className: fourButton ? "bc btn-outline w-full" : "bc btn-outline flex-1",
         onClick: () => {
           void (async () => {
@@ -879,6 +886,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       if (fourButton) {
         const easyBtn = makeTextButton({
           label: "Easy",
+          title: "Grade question as easy (4)",
           className: "bc btn-outline w-full",
           onClick: () => {
             void (async () => {

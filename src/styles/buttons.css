@@ -13,27 +13,26 @@
   border-radius: var(--button-radius, var(--radius-m)) !important;
   padding: 0.375rem !important;
   min-width: 32px;
-  min-height: 32px;
-  max-height: 33px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .sprout .sprout-view-actions .btn-icon-outline {
-  height: 33px !important;
-  min-height: 33px !important;
+  height: 34px !important;
+  min-height: 34px !important;
 }
 .sprout .sprout-view-actions .btn-outline,
 .sprout .sprout-view-actions .btn-icon-outline {
-  height: 33px !important;
-  min-height: 33px !important;
+  height: 34px !important;
+  min-height: 34px !important;
   align-items: center;
 }
 .sprout .view-header-nav-buttons .btn-outline,
 .sprout .sprout-header .view-header-nav-buttons .btn-outline {
-  height: 33px !important;
-  min-height: 33px !important;
+  height: 34px !important;
+  min-height: 34px !important;
   align-items: center;
 }
 .sprout .btn-icon-outline:hover,
@@ -57,7 +56,6 @@
   color: var(--foreground) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-radius: var(--button-radius, var(--radius-m)) !important;
-  max-height: 33px;
 }
 .theme-dark .sprout .btn-icon-outline:hover,
 .theme-dark .sprout .btn-icon-outline:focus-visible {
@@ -108,7 +106,6 @@
   box-shadow: none !important;
   border-radius: var(--button-radius, var(--radius-m)) !important;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
-  max-height: 33px;
 }
 
 .sprout .btn-outline:hover,
@@ -143,7 +140,6 @@
   border-radius: 0 !important;
   border: none !important;
   border-right: var(--sprout-border-width) solid var(--sprout-border-color) !important;
-  max-height: 33px;
 }
 .sprout .button-group .btn-outline:last-child,
 .sprout .button-group .btn-icon-outline:last-child {
@@ -168,7 +164,6 @@
   color: var(--foreground) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   border-radius: var(--button-radius, var(--radius-m)) !important;
-  max-height: 33px;
 }
 .theme-dark .sprout .btn-outline:hover,
 .theme-dark .sprout .btn-outline:focus-visible {
@@ -227,6 +222,25 @@ button[aria-current="page"] {
 
 .btn-outline[data-sprout-expand-collapse] {
   min-width: 110px !important;
+}
+
+/* ---- Button height preview (uniform 34px minimum) ---- */
+
+.sprout :is(
+  button,
+  .btn,
+  .btn-outline,
+  .btn-primary,
+  .btn-destructive,
+  .btn-icon-outline,
+  .sprout-widget-back-btn,
+  .sprout-widget-action-btn
+) {
+  min-height: 34px !important;
+}
+
+.sprout :is(.btn, .btn-outline, .btn-primary, .btn-destructive, .btn-icon-outline) {
+  max-height: none !important;
 }
 
 /* ---- Unstyled button reset ---- */

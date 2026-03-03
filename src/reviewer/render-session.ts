@@ -949,27 +949,31 @@ function renderOqContent(ctx: CardRenderCtx): void {
     section.appendChild(submitWrap);
 
   } else {
-    // ── Back: show correct order with correctness highlighting ──
-    section.appendChild(labelRow("Correct Order"));
+    // ── Back: show user order with correctness highlighting ──
+    section.appendChild(labelRow("Your Order"));
 
     const answerList = document.createElement("div");
     answerList.className = "bc flex flex-col gap-2 sprout-oq-answer-list";
     section.appendChild(answerList);
 
-    steps.forEach((stepText, correctIdx) => {
-      const wasInCorrectPosition = userOrder.length > 0 && userOrder[correctIdx] === correctIdx;
+    const identity = Array.from({ length: steps.length }, (_, i) => i);
+    const displayOrder = userOrder.length === steps.length ? userOrder : identity;
+
+    displayOrder.forEach((origIdx, displayIdx) => {
+      const stepText = steps[origIdx] || "";
+      const wasInCorrectPosition = origIdx === displayIdx;
 
       const row = document.createElement("div");
       row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
       if (wasInCorrectPosition) {
         row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
-      } else if (userOrder.length > 0) {
+      } else {
         row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
       }
 
       const badge = document.createElement("kbd");
       badge.className = "bc kbd";
-      badge.textContent = String(correctIdx + 1);
+      badge.textContent = String(displayIdx + 1);
       row.appendChild(badge);
 
       const textEl = document.createElement("span");
@@ -1099,7 +1103,7 @@ export function renderSessionMode(args: Args) {
     header.appendChild(locationRow);
 
     const locationEl = document.createElement("div");
-    locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
+    locationEl.className = "bc text-muted-foreground pt-4 text-center italic sprout-session-location-text";
     locationEl.textContent = location || "Home";
     locationRow.appendChild(locationEl);
 
@@ -1198,7 +1202,7 @@ export function renderSessionMode(args: Args) {
   header.appendChild(locationRow);
 
   const locationEl = document.createElement("div");
-  locationEl.className = "bc text-muted-foreground pt-4 text-xs text-center italic";
+  locationEl.className = "bc text-muted-foreground pt-4 text-center italic sprout-session-location-text";
   locationEl.textContent = location || "Note";
   locationRow.appendChild(locationEl);
 
@@ -1474,6 +1478,7 @@ export function renderSessionMode(args: Args) {
 
         const againBtn = makeTextButton({
           label: "Again",
+          title: "Grade question as again (1)",
           className: "btn-destructive",
           onClick: () => void args.gradeCurrentRating("again", {}).then(goNext),
           kbd: "1",
@@ -1484,6 +1489,7 @@ export function renderSessionMode(args: Args) {
         if (four) {
           const hardBtn = makeTextButton({
             label: "Hard",
+            title: "Grade question as hard (2)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("hard", {}).then(goNext),
             kbd: "2",
@@ -1493,6 +1499,7 @@ export function renderSessionMode(args: Args) {
 
           const goodBtn = makeTextButton({
             label: "Good",
+            title: "Grade question as good (3)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "3",
@@ -1502,6 +1509,7 @@ export function renderSessionMode(args: Args) {
 
           const easyBtn = makeTextButton({
             label: "Easy",
+            title: "Grade question as easy (4)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("easy", {}).then(goNext),
             kbd: "4",
@@ -1511,6 +1519,7 @@ export function renderSessionMode(args: Args) {
         } else {
           const goodBtn = makeTextButton({
             label: "Good",
+            title: "Grade question as good (2)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "2",

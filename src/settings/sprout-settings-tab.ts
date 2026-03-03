@@ -93,6 +93,19 @@ export class SproutSettingsTab extends PluginSettingTab {
     dailyReviewLimit: (value: number) => `Daily review limit: ${fmtSettingValue(value)}`,
     autoAdvanceEnabled: (enabled: boolean) => `Auto-advance: ${enabled ? "On" : "Off"}`,
     autoAdvanceSeconds: (value: number) => `Auto-advance: ${fmtSettingValue(value)}s`,
+    remindersEnabled: (enabled: boolean) => `Reminders: ${enabled ? "On" : "Off"}`,
+    remindersLaunch: (enabled: boolean) => `Reminders on launch: ${enabled ? "On" : "Off"}`,
+    remindersLaunchDelay: (value: number) => `Launch delay: ${fmtSettingValue(value)}s`,
+    remindersRoutine: (enabled: boolean) => `Routine reminders: ${enabled ? "On" : "Off"}`,
+    remindersRoutineFrequency: (value: number) => `Reminder frequency: ${fmtSettingValue(value)} min`,
+    gatekeeperEnabled: (enabled: boolean) => `Gatekeeper popups: ${enabled ? "On" : "Off"}`,
+    gatekeeperOnStartup: (enabled: boolean) => `Gatekeeper on launch: ${enabled ? "On" : "Off"}`,
+    gatekeeperFrequency: (value: number) => `Gatekeeper frequency: ${fmtSettingValue(value)} min`,
+    gatekeeperDueQuestions: (value: number) => `Gatekeeper due questions: ${fmtSettingValue(value)}`,
+    gatekeeperScope: (label: string) => `Gatekeeper scoping: ${label}`,
+    gatekeeperPauseWhenStudying: (enabled: boolean) => `Gatekeeper pause while studying: ${enabled ? "On" : "Off"}`,
+    gatekeeperBypass: (enabled: boolean) => `Gatekeeper bypass: ${enabled ? "On" : "Off"}`,
+    gatekeeperBypassWarning: (enabled: boolean) => `Gatekeeper bypass warning: ${enabled ? "On" : "Off"}`,
     gradingButtons: (fourButtons: boolean) => `Grading buttons: ${fourButtons ? "Four" : "Two"}`,
     skipButton: (enabled: boolean) => `Skip button: ${enabled ? "On" : "Off"}`,
     folderNotes: (enabled: boolean) => `Folder notes: ${enabled ? "On" : "Off"}`,
@@ -2109,8 +2122,6 @@ export class SproutSettingsTab extends PluginSettingTab {
   }
 
   private renderStudySection(wrapper: HTMLElement): void {
-    // Study
-    // ----------------------------
     new Setting(wrapper).setName("Study sessions").setHeading();
 
     new Setting(wrapper)
@@ -2266,7 +2277,6 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
-    // ── Sibling card management ──
     new Setting(wrapper)
       .setName("Sibling card management")
       .setDesc("Choose how sibling cards from the same note are managed during study sessions.")
@@ -2311,6 +2321,292 @@ export class SproutSettingsTab extends PluginSettingTab {
           },
         });
       });
+
+    let startupDelaySetting: Setting | null = null;
+    let repeatIntervalSetting: Setting | null = null;
+    let gatekeeperFrequencySetting: Setting | null = null;
+    let gatekeeperDueQuestionsSetting: Setting | null = null;
+    let gatekeeperScopeSetting: Setting | null = null;
+    let gatekeeperPauseSetting: Setting | null = null;
+    let gatekeeperBypassSetting: Setting | null = null;
+    let gatekeeperBypassWarningSetting: Setting | null = null;
+
+    new Setting(wrapper).setName("Launch Reminders").setHeading();
+
+    new Setting(wrapper)
+      .setName("Enable reminders on launch")
+      .setDesc("Show a one-time reminder after Obsidian starts.")
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.reminders.showOnStartup);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.reminders.showOnStartup;
+          this.plugin.settings.reminders.showOnStartup = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          startupDelaySetting?.setDisabled(!v);
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.showOnStartup", SproutSettingsTab.NOTICE_LINES.remindersLaunch(v));
+          }
+        });
+      });
+
+    startupDelaySetting = new Setting(wrapper)
+      .setName("Launch delay")
+      .setDesc("Delay in seconds before launch reminders appear.")
+      .addText((t) =>
+        t
+          .setPlaceholder("1")
+          .setValue(String(Math.round((Number(this.plugin.settings.reminders.startupDelayMs) || 0) / 1000) || 1))
+          .onChange(async (v) => {
+            const prevSeconds = Math.round((Number(this.plugin.settings.reminders.startupDelayMs) || 0) / 1000) || 1;
+            const nextSeconds = clamp(toNonNegInt(v, 1), 0, 600);
+            this.plugin.settings.reminders.startupDelayMs = nextSeconds * 1000;
+            await this.plugin.saveAll();
+            this.plugin.refreshReminderEngine();
+
+            if (prevSeconds !== nextSeconds) {
+              this.queueSettingsNotice("reminders.startupDelayMs", SproutSettingsTab.NOTICE_LINES.remindersLaunchDelay(nextSeconds));
+            }
+          }),
+      );
+
+    new Setting(wrapper).setName("Routine Reminders").setHeading();
+
+    new Setting(wrapper)
+      .setName("Enable routine reminders")
+      .setDesc("Show recurring reminders while Obsidian stays open.")
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.reminders.repeatEnabled);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.reminders.repeatEnabled;
+          this.plugin.settings.reminders.repeatEnabled = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          repeatIntervalSetting?.setDisabled(!v);
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.repeatEnabled", SproutSettingsTab.NOTICE_LINES.remindersRoutine(v));
+          }
+        });
+      });
+
+    repeatIntervalSetting = new Setting(wrapper)
+      .setName("Reminder frequency")
+      .setDesc("Time between routine reminders, in minutes.")
+      .addText((t) =>
+        t
+          .setPlaceholder("30")
+          .setValue(String(Math.max(1, Number(this.plugin.settings.reminders.repeatIntervalMinutes) || 30)))
+          .onChange(async (v) => {
+            const prev = Math.max(1, Number(this.plugin.settings.reminders.repeatIntervalMinutes) || 30);
+            const next = clamp(toNonNegInt(v, 30), 1, 1440);
+            this.plugin.settings.reminders.repeatIntervalMinutes = next;
+            await this.plugin.saveAll();
+            this.plugin.refreshReminderEngine();
+
+            if (prev !== next) {
+              this.queueSettingsNotice("reminders.repeatIntervalMinutes", SproutSettingsTab.NOTICE_LINES.remindersRoutineFrequency(next));
+            }
+          }),
+      );
+
+    new Setting(wrapper).setName("Gatekeeper Popups").setHeading();
+
+    new Setting(wrapper)
+      .setName("Enable gatekeeper popups")
+      .setDesc("Show recurring Gatekeeper popups with due questions.")
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.reminders.gatekeeperEnabled);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.reminders.gatekeeperEnabled;
+          this.plugin.settings.reminders.gatekeeperEnabled = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          gatekeeperFrequencySetting?.setDisabled(!v);
+          gatekeeperDueQuestionsSetting?.setDisabled(!v);
+          gatekeeperScopeSetting?.setDisabled(!v);
+          gatekeeperPauseSetting?.setDisabled(!v);
+          gatekeeperBypassSetting?.setDisabled(!v);
+          gatekeeperBypassWarningSetting?.setDisabled(!v || !this.plugin.settings.reminders.gatekeeperAllowSkip);
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.gatekeeperEnabled", SproutSettingsTab.NOTICE_LINES.gatekeeperEnabled(v));
+          }
+        });
+      });
+
+    new Setting(wrapper)
+      .setName("Enable gatekeeper on launch")
+      .setDesc("Show Gatekeeper once after Obsidian starts.")
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.reminders.gatekeeperOnStartup);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.reminders.gatekeeperOnStartup;
+          this.plugin.settings.reminders.gatekeeperOnStartup = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.gatekeeperOnStartup", SproutSettingsTab.NOTICE_LINES.gatekeeperOnStartup(v));
+          }
+        });
+      });
+
+    new Setting(wrapper).setName("Gatekeeper Options").setHeading();
+
+    gatekeeperFrequencySetting = new Setting(wrapper)
+      .setName("Gatekeeper frequency")
+      .setDesc("Time between Gatekeeper popups, in minutes.")
+      .addText((t) =>
+        t
+          .setPlaceholder("30")
+          .setValue(String(Math.max(1, Number(this.plugin.settings.reminders.gatekeeperIntervalMinutes) || 30)))
+          .onChange(async (v) => {
+            const prev = Math.max(1, Number(this.plugin.settings.reminders.gatekeeperIntervalMinutes) || 30);
+            const next = clamp(toNonNegInt(v, 30), 1, 1440);
+            this.plugin.settings.reminders.gatekeeperIntervalMinutes = next;
+            await this.plugin.saveAll();
+            this.plugin.refreshReminderEngine();
+
+            if (prev !== next) {
+              this.queueSettingsNotice("reminders.gatekeeperIntervalMinutes", SproutSettingsTab.NOTICE_LINES.gatekeeperFrequency(next));
+            }
+          }),
+      );
+
+    gatekeeperDueQuestionsSetting = new Setting(wrapper)
+      .setName("Number of due questions")
+      .setDesc("Number of due questions to include in each Gatekeeper popup.")
+      .addText((t) =>
+        t
+          .setPlaceholder("3")
+          .setValue(String(Math.max(1, Number(this.plugin.settings.reminders.gatekeeperDueQuestionCount) || 3)))
+          .onChange(async (v) => {
+            const prev = Math.max(1, Number(this.plugin.settings.reminders.gatekeeperDueQuestionCount) || 3);
+            const next = clamp(toNonNegInt(v, 3), 1, 200);
+            this.plugin.settings.reminders.gatekeeperDueQuestionCount = next;
+            await this.plugin.saveAll();
+            this.plugin.refreshReminderEngine();
+
+            if (prev !== next) {
+              this.queueSettingsNotice("reminders.gatekeeperDueQuestionCount", SproutSettingsTab.NOTICE_LINES.gatekeeperDueQuestions(next));
+            }
+          }),
+      );
+
+    gatekeeperScopeSetting = new Setting(wrapper)
+      .setName("Gatekeeper scoping")
+      .setDesc(
+        "Choose what Gatekeeper blocks. Current tab blocks only the active tab; Full workspace blocks the entire workspace.",
+      )
+      .then((s) => {
+        this._addSimpleSelect(s.controlEl, {
+          options: [
+            {
+              value: "workspace",
+              label: "Full workspace",
+              description: "Blocks the entire workspace until Gatekeeper is completed or bypassed.",
+            },
+            {
+              value: "current-tab",
+              label: "Current tab",
+              description: "Blocks only the current tab and allows switching to other tabs.",
+            },
+          ],
+          value: this.plugin.settings.reminders.gatekeeperScope ?? "workspace",
+          onChange: (v) => {
+            void (async () => {
+              const prev = this.plugin.settings.reminders.gatekeeperScope ?? "workspace";
+              const next = v === "current-tab" ? "current-tab" : "workspace";
+              this.plugin.settings.reminders.gatekeeperScope = next;
+              await this.plugin.saveAll();
+              this.plugin.refreshReminderEngine();
+
+              if (prev !== next) {
+                const labels: Record<"workspace" | "current-tab", string> = {
+                  workspace: "Full workspace",
+                  "current-tab": "Current tab",
+                };
+                this.queueSettingsNotice("reminders.gatekeeperScope", SproutSettingsTab.NOTICE_LINES.gatekeeperScope(labels[next]));
+              }
+            })();
+          },
+        });
+      });
+
+    gatekeeperPauseSetting = new Setting(wrapper)
+      .setName("Pause Gatekeeper while studying")
+      .setDesc(
+        "Pause Gatekeeper while you are in Sprout study tabs. The countdown resumes when you leave.",
+      )
+      .addToggle((t) => {
+        t.setValue(this.plugin.settings.reminders.gatekeeperPauseWhenStudying ?? true);
+        t.onChange(async (v) => {
+          const prev = this.plugin.settings.reminders.gatekeeperPauseWhenStudying ?? true;
+          this.plugin.settings.reminders.gatekeeperPauseWhenStudying = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.gatekeeperPauseWhenStudying", SproutSettingsTab.NOTICE_LINES.gatekeeperPauseWhenStudying(v));
+          }
+        });
+      });
+
+    new Setting(wrapper).setName("Gatekeeper Bypass").setHeading();
+
+    gatekeeperBypassSetting = new Setting(wrapper)
+      .setName("Enable gatekeeper bypass")
+      .setDesc("Allow bypassing or closing Gatekeeper before all shown questions are completed.")
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.reminders.gatekeeperAllowSkip);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.reminders.gatekeeperAllowSkip;
+          this.plugin.settings.reminders.gatekeeperAllowSkip = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          gatekeeperBypassWarningSetting?.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled || !v);
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.gatekeeperAllowSkip", SproutSettingsTab.NOTICE_LINES.gatekeeperBypass(v));
+          }
+        });
+      });
+
+    gatekeeperBypassWarningSetting = new Setting(wrapper)
+      .setName("Enable bypass warning")
+      .setDesc("Show a confirmation warning before bypassing Gatekeeper.")
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.reminders.gatekeeperBypassWarning);
+        t.onChange(async (v) => {
+          const prev = !!this.plugin.settings.reminders.gatekeeperBypassWarning;
+          this.plugin.settings.reminders.gatekeeperBypassWarning = v;
+          await this.plugin.saveAll();
+          this.plugin.refreshReminderEngine();
+
+          if (prev !== v) {
+            this.queueSettingsNotice("reminders.gatekeeperBypassWarning", SproutSettingsTab.NOTICE_LINES.gatekeeperBypassWarning(v));
+          }
+        });
+      });
+
+    const gatekeeperNote = wrapper.createDiv({ cls: "setting-item-description" });
+    gatekeeperNote.textContent =
+      "If fewer due questions are available than requested, all due cards are shown. If none are due, Gatekeeper is skipped.";
+
+    startupDelaySetting.setDisabled(!this.plugin.settings.reminders.showOnStartup);
+    repeatIntervalSetting.setDisabled(!this.plugin.settings.reminders.repeatEnabled);
+    gatekeeperFrequencySetting.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled);
+    gatekeeperDueQuestionsSetting.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled);
+    gatekeeperScopeSetting.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled);
+    gatekeeperPauseSetting.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled);
+    gatekeeperBypassSetting.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled);
+    gatekeeperBypassWarningSetting.setDisabled(!this.plugin.settings.reminders.gatekeeperEnabled || !this.plugin.settings.reminders.gatekeeperAllowSkip);
   }
 
   private renderSchedulingSection(wrapper: HTMLElement): void {

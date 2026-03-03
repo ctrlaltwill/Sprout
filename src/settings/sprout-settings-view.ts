@@ -382,13 +382,14 @@ export class SproutSettingsView extends ItemView {
       type DisplayableSettingsAdapter = { containerEl: HTMLElement; display?: () => void };
       const displayableAdapter = adapter as unknown as DisplayableSettingsAdapter;
       const settingsSubTabs: Array<{ id: string; label: string; paneTitle?: string; method: Exclude<RenderMethodName, "renderAboutTab" | "renderGuideTab"> }> = [
-        { id: "general", label: "General", method: "renderGeneralTab" },
         { id: "audio", label: "Audio", method: "renderAudioTab" },
         { id: "cards", label: "Cards", method: "renderCardsTab" },
+        { id: "general", label: "General", method: "renderGeneralTab" },
         { id: "reading", label: "Reading", method: "renderReadingViewTab" },
+        { id: "reminders", label: "Reminders", method: "renderStudyTab" },
+        { id: "reset", label: "Reset", method: "renderResetTab" },
         { id: "storage", label: "Storage & Sync", paneTitle: "Storage and Sync", method: "renderStorageTab" },
         { id: "study", label: "Study", method: "renderStudyTab" },
-        { id: "reset", label: "Reset", method: "renderResetTab" },
       ];
 
       const methodMap: Record<string, RenderMethodName> = {
@@ -1659,6 +1660,13 @@ export class SproutSettingsView extends ItemView {
       reading: ["Reading view styles", "Macro styles", "Reading view fields", "Reading view colours", "Custom style CSS"],
       storage: ["Attachment storage", "Data backup", "Syncing"],
       study: ["Study sessions", "Scheduling"],
+      reminders: [
+        "Launch Reminders",
+        "Routine Reminders",
+        "Gatekeeper Popups",
+        "Gatekeeper Options",
+        "Gatekeeper Bypass",
+      ],
       reset: ["Reset", "Danger zone", "Quarantined cards"],
     };
 
@@ -1685,7 +1693,7 @@ export class SproutSettingsView extends ItemView {
    */
   public navigateToTab(tabId: string) {
     const topTabs = new Set(["guide", "about", "settings"]);
-    const settingsSubTabs = new Set(["general", "audio", "cards", "reading", "storage", "study", "reset"]);
+    const settingsSubTabs = new Set(["general", "audio", "cards", "reading", "storage", "study", "reminders", "reset"]);
 
     if (topTabs.has(tabId)) {
       this._activeTab = tabId;

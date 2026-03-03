@@ -72,6 +72,7 @@ import { setDelimiter } from "./core/delimiter";
 import { resetCardScheduling, type CardState } from "./scheduler/scheduler";
 import { WhatsNewModal, hasReleaseNotes } from "./modals/whats-new-modal";
 import { checkForVersionUpgrade, loadVersionTracking, getVersionTrackingData } from "./core/version-manager";
+import { ReminderEngine } from "./reminders/reminder-engine";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import React from "react";
 
@@ -119,6 +120,12 @@ export default class SproutPlugin extends Plugin {
   private _sproutZoomSaveTimer: number | null = null;
 
   private _disposeTooltipPositioner: (() => void) | null = null;
+  private _reminderEngine: ReminderEngine | null = null;
+  private readonly _reminderDevConsoleCommandNames = [
+    "sproutReminderLaunch",
+    "sproutReminderRoutine",
+    "sproutReminderGatekeeper",
+  ] as const;
 
   private readonly _refreshableViewTypes = [
     VIEW_TYPE_REVIEWER,
@@ -379,6 +386,8 @@ export default class SproutPlugin extends Plugin {
 
       this.store = new JsonStore(this);
       this.store.load(rootObj);
+      this._reminderEngine = new ReminderEngine(this);
+      this._registerReminderDevConsoleCommands();
 
       // Load version tracking from data.json
       loadVersionTracking(rootObj);
@@ -434,6 +443,8 @@ export default class SproutPlugin extends Plugin {
         
         // Check for version upgrades and show What's New modal if needed
         this._checkAndShowWhatsNewModal();
+
+        this._reminderEngine?.start();
       });
 
       await this.saveAll();
@@ -465,6 +476,9 @@ export default class SproutPlugin extends Plugin {
 
     this._disposeTooltipPositioner?.();
     this._disposeTooltipPositioner = null;
+    this._unregisterReminderDevConsoleCommands();
+    this._reminderEngine?.stop();
+    this._reminderEngine = null;
 
     // Clean up What's New modal
     this._closeWhatsNewModal();
@@ -1084,6 +1098,39 @@ export default class SproutPlugin extends Plugin {
 
     await leaf.setViewState({ type: VIEW_TYPE_WIDGET, active: true, state: {} });
     void ws.revealLeaf(leaf);
+  }
+
+  refreshReminderEngine() {
+    this._reminderEngine?.refresh();
+  }
+
+  private _registerReminderDevConsoleCommands() {
+    if (typeof window === "undefined") return;
+
+    const target = window as unknown as Record<string, unknown>;
+
+    target.sproutReminderLaunch = (force = false) => {
+      const ok = this._reminderEngine?.triggerStartupReminder(!!force) ?? false;
+      return ok ? "startup reminder triggered" : "startup reminder not shown";
+    };
+
+    target.sproutReminderRoutine = (force = false) => {
+      const ok = this._reminderEngine?.triggerRoutineReminder(!!force) ?? false;
+      return ok ? "routine reminder triggered" : "routine reminder not shown";
+    };
+
+    target.sproutReminderGatekeeper = (force = false) => {
+      const ok = this._reminderEngine?.triggerGatekeeper(!!force) ?? false;
+      return ok ? "gatekeeper popup opened" : "gatekeeper popup not opened";
+    };
+  }
+
+  private _unregisterReminderDevConsoleCommands() {
+    if (typeof window === "undefined") return;
+    const target = window as unknown as Record<string, unknown>;
+    for (const name of this._reminderDevConsoleCommandNames) {
+      delete target[name];
+    }
   }
 
   // --------------------------------

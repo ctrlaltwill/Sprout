@@ -140,6 +140,347 @@
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
 }
 
+/* Widget grading palette should follow theme-aware button tints */
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
+  --sprout-btn-tint: var(--destructive);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  --sprout-btn-tint: var(--sprout-hard-bg);
+  --sprout-btn-bg-mix: 24%;
+  --sprout-btn-border-mix: 60%;
+  --sprout-btn-bg-hover-mix: 32%;
+  --sprout-btn-border-hover-mix: 68%;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
+  --sprout-btn-tint: var(--sprout-good-bg);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
+  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  --sprout-btn-bg-mix: 16%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 45%;
+  --sprout-kbd-tint: var(--sprout-btn-tint);
+
+  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground)) !important;
+  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), transparent) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--sprout-kbd-tint) 50%, transparent) !important;
+  border-color: color-mix(in srgb, var(--sprout-kbd-tint) 48%, transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--sprout-kbd-tint) 12%) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--sprout-btn-tint) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-btn-tint) 60%, transparent) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
+  --sprout-btn-bg-mix: 26%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  --sprout-btn-bg-mix: 54%;
+  --sprout-btn-fg-mix: 64%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
+  --sprout-btn-bg-mix: 48%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
+  --sprout-btn-bg-mix: 42%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 58%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--sprout-kbd-tint) 38%, transparent) !important;
+  border-color: color-mix(in srgb, var(--sprout-kbd-tint) 58%, transparent) !important;
+  color: rgb(255, 255, 255) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  filter: brightness(1.08);
+}
+.sprout.sprout-widget .sprout-btn-again {
+  --sprout-widget-btn-tint: var(--destructive);
+}
+
+.sprout.sprout-widget .sprout-btn-hard {
+  --sprout-widget-btn-tint: var(--sprout-hard-bg);
+}
+
+.sprout.sprout-widget .sprout-btn-good {
+  --sprout-widget-btn-tint: var(--sprout-good-bg);
+}
+
+.sprout.sprout-widget .sprout-btn-easy {
+  --sprout-widget-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  background: color-mix(in srgb, var(--sprout-widget-btn-tint) 16%, var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-widget-btn-tint) 72%, var(--foreground)) !important;
+  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-widget-btn-tint) 45%, transparent) !important;
+}
+
+.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--sprout-widget-btn-tint) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 60%, transparent) !important;
+}
+
+.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--sprout-widget-btn-tint) 50%, transparent) !important;
+  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 48%, transparent) !important;
+}
+
+/* Ensure rating buttons keep tinted faces even with .sprout-widget-hover-darken */
+.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  background-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 16%, var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-widget-btn-tint) 72%, var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 45%, transparent) !important;
+}
+
+.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus,
+.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 60%, transparent) !important;
+}
+
+/* Explicit per-rating rules to beat neutral widget button reset in all builds */
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
+  background-color: color-mix(in srgb, var(--destructive) 16%, var(--background)) !important;
+  color: color-mix(in srgb, var(--destructive) 72%, var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--destructive) 45%, transparent) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 22%, var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-hard-bg) 72%, var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 50%, transparent) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 14%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 40%, transparent) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
+  background-color: color-mix(in srgb, var(--sprout-good-bg) 16%, var(--background)) !important;
+  color: color-mix(in srgb, var(--sprout-good-bg) 72%, var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--sprout-good-bg) 45%, transparent) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
+  background-color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 16%, var(--background)) !important;
+  color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 72%, var(--foreground)) !important;
+  border-color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 45%, transparent) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again:focus-visible,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus-visible,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus-visible,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus-visible {
+  --sprout-widget-hover-tint: var(--destructive);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus-visible {
+  --sprout-widget-hover-tint: var(--sprout-hard-bg);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 30%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 60%, transparent) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 20%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 52%, transparent) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus-visible {
+  --sprout-widget-hover-tint: var(--sprout-good-bg);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:hover,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus,
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus-visible {
+  --sprout-widget-hover-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--sprout-widget-hover-tint) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-widget-hover-tint) 60%, transparent) !important;
+}
+
+/* Final Hard tuning: light default uses prior hover intensity; dark default sits between prior default/hover */
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 60%, transparent) !important;
+  color: color-mix(in srgb, var(--sprout-hard-bg) 72%, var(--foreground)) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 32%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 68%, transparent) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 17%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 46%, transparent) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 24%, var(--background)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 56%, transparent) !important;
+}
+
+/* Canonical solid grading surfaces in widget (match study + gatekeeper) */
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
+  --sprout-btn-tint: var(--destructive);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  --sprout-btn-tint: var(--sprout-hard-bg);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
+  --sprout-btn-tint: var(--sprout-good-bg);
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
+  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  --sprout-btn-bg-mix: 16%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 45%;
+  --sprout-btn-bg-hover-mix: 24%;
+  --sprout-btn-border-hover-mix: 60%;
+
+  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background-primary)) !important;
+  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), var(--background-primary)) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background-primary)) !important;
+  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), var(--background-primary)) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
+  --sprout-btn-bg-mix: 26%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 50%;
+  --sprout-btn-bg-hover-mix: 34%;
+  --sprout-btn-border-hover-mix: 58%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  --sprout-btn-bg-mix: 54%;
+  --sprout-btn-fg-mix: 64%;
+  --sprout-btn-border-mix: 58%;
+  --sprout-btn-bg-hover-mix: 62%;
+  --sprout-btn-border-hover-mix: 66%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
+  --sprout-btn-bg-mix: 48%;
+  --sprout-btn-fg-mix: 72%;
+  --sprout-btn-border-mix: 58%;
+  --sprout-btn-bg-hover-mix: 56%;
+  --sprout-btn-border-hover-mix: 66%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
+  --sprout-btn-bg-mix: 42%;
+  --sprout-btn-fg-mix: 82%;
+  --sprout-btn-border-mix: 58%;
+  --sprout-btn-bg-hover-mix: 50%;
+  --sprout-btn-border-hover-mix: 66%;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  filter: none !important;
+}
+
+/* Final parity override: force widget dark Hard to match study-session values */
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 54%, var(--background-primary)) !important;
+  color: color-mix(in srgb, var(--sprout-hard-bg) 64%, var(--foreground)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 58%, var(--background-primary)) !important;
+}
+
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:hover,
+.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus-visible {
+  background-color: color-mix(in srgb, var(--sprout-hard-bg) 62%, var(--background-primary)) !important;
+  border-color: color-mix(in srgb, var(--sprout-hard-bg) 66%, var(--background-primary)) !important;
+}
+
+/* Keep grading kbd text aligned with button text color in both themes */
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  color: inherit !important;
+}
+
+/* Widget grading buttons: use neutral default widget styling (match Edit/More) */
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--sprout-border-color) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus,
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+  background-color: var(--color-base-25) !important;
+  border-color: var(--color-base-30) !important;
+  filter: none !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):is(:active) {
+  background-color: var(--muted) !important;
+  border-color: var(--muted) !important;
+}
+
+.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+  background: transparent !important;
+  border-color: var(--sprout-border-color) !important;
+  color: inherit !important;
+}
+
 /* ---- Widget cloze styling ---- */
 
 /* Widget-only cloze reveal styling */
@@ -185,6 +526,7 @@
   margin: 10px auto 20px auto !important;
   gap: 0 !important;
   border-radius: var(--radius-l) !important;
+  background: var(--background) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;
