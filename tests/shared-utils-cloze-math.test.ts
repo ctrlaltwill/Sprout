@@ -8,8 +8,8 @@ describe("processClozeForMath", () => {
     const front = processClozeForMath(input, false, null);
     const back = processClozeForMath(input, true, null);
 
-    expect(front).toBe("$$x = \\text{______}$$");
-    expect(back).toBe("$$x = \\boxed{\\frac{-b}{2a}}$$");
+    expect(front).toBe("$$x = \\underline{\\phantom{\\frac{-b}{2a}}}$$");
+    expect(back).toBe("$$x = \\frac{-b}{2a}$$");
   });
 
   it("only blanks/reveals the target cloze index", () => {
@@ -18,8 +18,8 @@ describe("processClozeForMath", () => {
     const front = processClozeForMath(input, false, 1);
     const back = processClozeForMath(input, true, 1);
 
-    expect(front).toBe("$$a=\\text{______}+2$$");
-    expect(back).toBe("$$a=\\boxed{1}+2$$");
+    expect(front).toBe("$$a=\\underline{\\phantom{1}}+2$$");
+    expect(back).toBe("$$a=1+2$$");
   });
 
   it("uses markdown-style replacements outside math", () => {
@@ -28,7 +28,7 @@ describe("processClozeForMath", () => {
     const front = processClozeForMath(input, false, null);
     const back = processClozeForMath(input, true, null);
 
-    expect(front).toBe("The identity is ______.");
+    expect(front).toBe("The identity is <span class=\"bc sprout-cloze-blank hidden-cloze\" style=\"--sprout-cloze-width:30px\"></span>.");
     expect(back).toBe("The identity is **true**.");
   });
 
@@ -36,6 +36,6 @@ describe("processClozeForMath", () => {
     const input = "Identity: $$\\sin^2 x + \\cos^2 x = {{c1::1}}$$ always.";
     const front = processClozeForMath(input, false, null);
 
-    expect(front).toBe("Identity: $\\sin^2 x + \\cos^2 x = \\text{______}$ always.");
+    expect(front).toBe("Identity: $\\sin^2 x + \\cos^2 x = \\underline{\\phantom{1}}$ always.");
   });
 });
