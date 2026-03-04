@@ -19,6 +19,10 @@ table:nth-of-type(3) .image-captions-figure {
 }
 
 table:nth-of-type(2) td:last-child span[style*="white-space: nowrap"] {
+	display: inline-flex !important;
+	align-items: center;
+	vertical-align: middle;
+	gap: 2px;
 	margin-bottom: 4px;
 	line-height: 26px;
 }
