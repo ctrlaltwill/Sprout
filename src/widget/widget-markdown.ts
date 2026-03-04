@@ -56,13 +56,13 @@ export function processMarkdownFeatures(text: string): string {
   // markdown formatting rules. We replace math blocks with placeholders,
   // apply markdown formatting to non-math text, then restore the math.
   const mathPlaceholders: string[] = [];
-  const MATH_PH = '\x00MATH';
+  const MATH_PH = "__SPROUT_MATH_";
 
   const mathBlockRe = /\$\$[\s\S]+?\$\$|(?<!\$)\$(?!\$)[^\s$](?:[^$]*[^\s$])?\$(?!\$)|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]/g;
   const withPlaceholders = source.replace(mathBlockRe, (match) => {
     const idx = mathPlaceholders.length;
     mathPlaceholders.push(match);
-    return `${MATH_PH}${idx}\x00`;
+    return `${MATH_PH}${idx}__`;
   });
 
   let result = withPlaceholders;
@@ -93,7 +93,7 @@ export function processMarkdownFeatures(text: string): string {
 
   // ── Restore math blocks ──
   if (mathPlaceholders.length) {
-    result = result.replace(/\x00MATH(\d+)\x00/g, (_m, idx) => {
+    result = result.replace(/__SPROUT_MATH_(\d+)__/g, (_m, idx) => {
       return mathPlaceholders[Number(idx)] ?? _m;
     });
   }

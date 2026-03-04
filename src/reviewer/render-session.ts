@@ -18,7 +18,7 @@ import { normalizeCardOptions } from "../core/store";
 import { getCorrectIndices, isMultiAnswerMcq } from "../types/card";
 import type { ClozeRenderOptions } from "./question-cloze";
 import { openCardAnchorInNote } from "../core/open-card-anchor";
-import { processClozeForMath, textContainsMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../core/shared-utils";
+import { processClozeForMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../core/shared-utils";
 
 declare global {
   interface Window {
