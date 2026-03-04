@@ -2,9 +2,7 @@
 
 Last modified: 04/03/2026
 
-Source: [HatScripts/circle-flags gallery](https://hatscripts.github.io/circle-flags/gallery)
-
-These tables are generated from the Circle Flags gallery format used by Sprout token rendering.
+These codes can be used inside {{...}} tokens to control audio voices (see the Text-to-Speech page for details), or simply as visual cues.
 
 <style>
 /* Obsidian rendering tweaks */
@@ -478,3 +476,10 @@ table:nth-of-type(2) td:last-child span[style*="white-space: nowrap"] {
 | <img src="https://hatscripts.github.io/circle-flags/flags/language/zu.svg" alt="zu" height="24" width="24" hspace="5" /> | <code>zu</code> | Zulu |
 
 > Note: Sprout currently validates <code>{{xx}}</code> and <code>{{xx-yyy}}</code> token shapes. Some upstream language entries include longer suffixes; those may not parse in Sprout until token validation is expanded.
+
+## Source
+
+Thanks to the Circle Flags project for the icon set and code references used on this page.
+
+- Gallery: [HatScripts/circle-flags gallery](https://hatscripts.github.io/circle-flags/gallery)
+- Repository: [HatScripts/circle-flags](https://github.com/HatScripts/circle-flags)
