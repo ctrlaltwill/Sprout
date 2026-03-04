@@ -6,6 +6,24 @@ Source: [HatScripts/circle-flags gallery](https://hatscripts.github.io/circle-fl
 
 These tables are generated from the Circle Flags gallery format used by Sprout token rendering.
 
+<style>
+/* Obsidian rendering tweaks */
+table:nth-of-type(1) .image-captions-caption,
+table:nth-of-type(3) .image-captions-caption {
+	display: none !important;
+}
+
+table:nth-of-type(1) .image-captions-figure,
+table:nth-of-type(3) .image-captions-figure {
+	margin: 0 !important;
+}
+
+table:nth-of-type(2) td:last-child span[style*="white-space: nowrap"] {
+	margin-bottom: 4px;
+	line-height: 26px;
+}
+</style>
+
 
 ## 1) Country and territory codes
 
