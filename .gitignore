@@ -13,6 +13,7 @@ sprout-latest/
 *.js.map
 coverage/
 release/
+CHANGELOG.md
 
 # Design source files (keep exported assets like PNG/SVG trackable)
 *.afdesign
