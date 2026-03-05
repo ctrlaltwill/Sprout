@@ -698,18 +698,38 @@ export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<
   return null;
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null;
+}
+
+function validateRestoreStates(value: unknown): Record<string, unknown> | null {
+  if (!isPlainRecord(value)) return null;
+
+  for (const state of Object.values(value)) {
+    if (!isPlainRecord(state)) return null;
+  }
+
+  return value;
+}
+
 // Helper: restore scheduling data from the latest backup
 export async function restoreSchedulingFromBackup(plugin: SproutPlugin): Promise<boolean> {
   // Restore from backup.json in the plugin folder, vault-relative path
   const filePath = `plugins/${plugin.manifest.id}/backup.json`;
   let data: unknown = {};
   try {
-    const raw = await plugin.app.vault.adapter.read(filePath);
-    data = JSON.parse(raw);
+    const raw: unknown = await plugin.app.vault.adapter.read(filePath);
+    if (typeof raw !== "string") return false;
+    const parsed: unknown = JSON.parse(raw);
+    data = parsed;
   } catch (e) { log.swallow("read backup.json", e); }
-  const obj = data as Record<string, unknown>;
-  if (!obj.states || typeof obj.states !== "object") return false;
-  plugin.store.data.states = obj.states as typeof plugin.store.data.states;
+
+  if (!isPlainRecord(data)) return false;
+  const states = validateRestoreStates(data.states);
+  if (!states) return false;
+
+  plugin.store.data.states = states as typeof plugin.store.data.states;
   await plugin.store.persist();
   new Notice("Scheduling restored from backup.");
   return true;

@@ -133,7 +133,7 @@ declare module "obsidian" {
 // ---------------------------------------------------------------------------
 // Global window augmentations for Obsidian environment
 // ---------------------------------------------------------------------------
-import type { App } from "obsidian";
+import type { App, Command, TFile } from "obsidian";
 
 interface BasecoatApi {
   start?(): void;

@@ -60,17 +60,28 @@ function forceRevealAosElements(root: ParentNode = document): void {
 }
 
 // Suppress AOS querySelector errors (removable handler)
+function isLikelyAosQuerySelectorError(event: ErrorEvent): boolean {
+  const message = String(event.message ?? "").toLowerCase();
+  if (!message.includes("queryselector")) return false;
+
+  const filename = String(event.filename ?? "").toLowerCase();
+  const stackRaw = (event.error as { stack?: unknown } | null)?.stack;
+  const stack = typeof stackRaw === "string" ? stackRaw.toLowerCase() : "";
+
+  return message.includes("aos") || filename.includes("aos") || stack.includes("aos");
+}
+
 function aosErrorHandler(event: ErrorEvent) {
-  if (event.message?.includes('querySelector')) {
+  if (isLikelyAosQuerySelectorError(event)) {
     event.preventDefault();
     return true;
   }
 }
-window.addEventListener('error', aosErrorHandler);
+window.addEventListener("error", aosErrorHandler);
 
 /** Remove the global AOS error suppression handler. Call on plugin unload. */
 export function removeAosErrorHandler(): void {
-  window.removeEventListener('error', aosErrorHandler);
+  window.removeEventListener("error", aosErrorHandler);
 }
 
 // Load AOS via dynamic import (resolves before plugin onload)

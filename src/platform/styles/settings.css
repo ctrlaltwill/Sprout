@@ -826,11 +826,13 @@ body.is-mobile .sprout-guide-dots-rail,
 
 /* Flag Codes guide page — Obsidian rendering tweaks moved from markdown */
 .sprout-guide-body.sprout-guide-page-flag-codes table:nth-of-type(1) .image-captions-caption,
+.sprout-guide-body.sprout-guide-page-flag-codes table:nth-of-type(2) .image-captions-caption,
 .sprout-guide-body.sprout-guide-page-flag-codes table:nth-of-type(3) .image-captions-caption {
   display: none !important;
 }
 
 .sprout-guide-body.sprout-guide-page-flag-codes table:nth-of-type(1) .image-captions-figure,
+.sprout-guide-body.sprout-guide-page-flag-codes table:nth-of-type(2) .image-captions-figure,
 .sprout-guide-body.sprout-guide-page-flag-codes table:nth-of-type(3) .image-captions-figure {
   margin: 0 !important;
 }

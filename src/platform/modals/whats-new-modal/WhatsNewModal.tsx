@@ -11,7 +11,7 @@
  * @exports WhatsNewModal - React component for the modal
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import { getReleaseNotes, type ReleaseNote } from "./release-notes";
 import { markVersionSeen } from "../../core/version-manager";
 
@@ -34,7 +34,7 @@ export function WhatsNewModal({ version, onClose }: WhatsNewModalProps) {
     onClose();
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       handleClose();
     }

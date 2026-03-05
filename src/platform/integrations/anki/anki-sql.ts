@@ -393,15 +393,28 @@ export function readRevlog(db: Database): AnkiRevlogRow[] {
   }));
 }
 
+function parseJsonObject<T>(raw: string): Record<string, T> {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed as Record<string, T>;
+  } catch {
+    return {};
+  }
+}
+
 /** Read note-type models from the collection. */
 export function readModels(db: Database): Map<number, AnkiModel> {
   const results = db.exec("SELECT models FROM col LIMIT 1");
   if (!results.length || !results[0].values.length) return new Map();
   const modelsJson = String(results[0].values[0][0]);
-  const models = JSON.parse(modelsJson) as Record<string, AnkiModel>;
+  const models = parseJsonObject<AnkiModel>(modelsJson);
   const map = new Map<number, AnkiModel>();
   for (const [key, model] of Object.entries(models)) {
-    map.set(Number(key), model);
+    if (!model || typeof model !== "object" || Array.isArray(model)) continue;
+    const id = Number(key);
+    if (!Number.isFinite(id)) continue;
+    map.set(id, model);
   }
   return map;
 }
@@ -411,10 +424,13 @@ export function readDecks(db: Database): Map<number, AnkiDeck> {
   const results = db.exec("SELECT decks FROM col LIMIT 1");
   if (!results.length || !results[0].values.length) return new Map();
   const decksJson = String(results[0].values[0][0]);
-  const decks = JSON.parse(decksJson) as Record<string, AnkiDeck>;
+  const decks = parseJsonObject<AnkiDeck>(decksJson);
   const map = new Map<number, AnkiDeck>();
   for (const [key, deck] of Object.entries(decks)) {
-    map.set(Number(key), deck);
+    if (!deck || typeof deck !== "object" || Array.isArray(deck)) continue;
+    const id = Number(key);
+    if (!Number.isFinite(id)) continue;
+    map.set(id, deck);
   }
   return map;
 }

@@ -67,6 +67,7 @@ export class SproutAnalyticsView extends ItemView {
   private _stackedButtonsRoot: ReactRoot | null = null;
   private _stabilityDistributionRoot: ReactRoot | null = null;
   private _forgettingCurveRoot: ReactRoot | null = null;
+  private _aosInitTimer: number | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
@@ -90,7 +91,12 @@ export class SproutAnalyticsView extends ItemView {
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.general?.enableAnimations ?? true) {
       // Delay init to ensure DOM is fully rendered
-      setTimeout(() => {
+      if (this._aosInitTimer !== null) {
+        window.clearTimeout(this._aosInitTimer);
+        this._aosInitTimer = null;
+      }
+      this._aosInitTimer = window.setTimeout(() => {
+        this._aosInitTimer = null;
         initAOS({
           duration: AOS_DURATION,
           easing: "ease-out",
@@ -103,6 +109,10 @@ export class SproutAnalyticsView extends ItemView {
   }
 
   async onClose() {
+    if (this._aosInitTimer !== null) {
+      window.clearTimeout(this._aosInitTimer);
+      this._aosInitTimer = null;
+    }
     try {
       this._header?.dispose?.();
     } catch (e: unknown) { log.swallow("dispose header", e); }

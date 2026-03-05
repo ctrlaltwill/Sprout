@@ -35,8 +35,5 @@ export default defineConfig([
         tsconfigRootDir: rootDir,
       },
     },
-    rules: {
-      "no-undef": "off",
-    },
   },
 ]);
