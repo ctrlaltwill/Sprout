@@ -4,46 +4,33 @@ layout: home
 hero:
   name: Sprout
   text: Documentation
-  tagline: Build, review, and master flashcards directly inside your Obsidian workflow.
+  tagline: Study smarter without leaving your Obsidian vault.
   image:
-    src: /avatar.png
+    src: /hero.png
     alt: Sprout
   actions:
     - theme: brand
-      text: Start with Installation
+      text: Get Started
       link: /Installation
-    - theme: alt
-      text: Explore on GitHub
-      link: https://github.com/ctrlaltwill/Sprout
 
 features:
-  - title: Workflow-first docs
-    details: "Follow the same card lifecycle as the plugin: setup, create, review, maintain."
-  - title: Built for real decks
-    details: Learn practical patterns for cloze, IO, MCQ, and ordered-question workflows.
-  - title: System-level mastery
-    details: Understand FSRS scheduling, analytics, backups, and long-term deck health.
+  - icon: |
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen-icon lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
+    title: Markdown First
+    details: "Build cards your way - write in Markdown or use simple forms, then edit them seamless during review or in the flashcard browser."
+  - icon: |
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star-icon lucide-star"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+    title: Rich Card Types
+    details: "Revise your notes with basic cards,cloze deletions, multiple choice questions, image occlusions and more."
+  - icon: |
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cpu-icon lucide-cpu"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
+    title: FSRS Scheduler
+    details: "Sprout is powered by the FSRS algorithm for optimal spacing: you see your card exactly when you need to."
+  - icon: |
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume2-icon lucide-volume-2"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>
+    title: Text to Speech
+    details: "Built-in audio features: reinforce your pronounciation and support language learning."
 ---
-
-## Highlights
-
-<div class="sprout-highlight-grid">
-  <article class="sprout-highlight-card">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18"></path><path d="M3 12h18"></path><path d="M3 19h18"></path><path d="M8 5v14"></path></svg>
-    <h3>Structured Guides</h3>
-    <p>Browse documentation grouped by the same categories used in the in-app Obsidian guide.</p>
-  </article>
-  <article class="sprout-highlight-card">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-2 10h4l-2 10"></path></svg>
-    <h3>Practical Workflows</h3>
-    <p>Move from installation to card creation, review sessions, and maintenance without guesswork.</p>
-  </article>
-  <article class="sprout-highlight-card">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 14 3-3 3 2 4-5"></path></svg>
-    <h3>Study System Depth</h3>
-    <p>Learn FSRS scheduling, analytics interpretation, and long-term deck hygiene strategies.</p>
-  </article>
-</div>
 
 ## What You Can Do With Sprout
 
