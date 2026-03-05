@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildCardBlockPipeMarkdown } from "../src/browser/browser-helpers";
-import type { CardRecord } from "../src/core/store";
+import { buildCardBlockPipeMarkdown } from "../src/views/browser/browser-helpers";
+import type { CardRecord } from "../src/platform/core/store";
 
 describe("browser helpers markdown builder", () => {
   it("serializes multi-answer MCQ using A/O markers for all correct options", () => {

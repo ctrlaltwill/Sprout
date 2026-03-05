@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TFile } from "obsidian";
-import type { AnkiNoteRow, AnkiCardRow, AnkiModel, AnkiDeck } from "../src/anki/anki-constants";
+import type { AnkiNoteRow, AnkiCardRow, AnkiModel, AnkiDeck } from "../src/platform/integrations/anki/anki-constants";
 
 const ankiSqlMock = vi.hoisted(() => ({
   mockNotes: [] as AnkiNoteRow[],
@@ -71,10 +71,10 @@ vi.mock("../src/sync/sync-engine", () => {
   };
 });
 
-import { importFromApkg } from "../src/anki/anki-import";
-import { exportToApkg } from "../src/anki/anki-export";
-import { ANKI_FIELD_SEPARATOR, DEFAULT_DECK_ID } from "../src/anki/anki-constants";
-import { packApkg } from "../src/anki/anki-zip";
+import { importFromApkg } from "../src/platform/integrations/anki/anki-import";
+import { exportToApkg } from "../src/platform/integrations/anki/anki-export";
+import { ANKI_FIELD_SEPARATOR, DEFAULT_DECK_ID } from "../src/platform/integrations/anki/anki-constants";
+import { packApkg } from "../src/platform/integrations/anki/anki-zip";
 
 class MemoryVault {
   files = new Map<string, { file: TFile; content: string }>();

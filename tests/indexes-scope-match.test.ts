@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { normPath, matchesScope } from "../src/indexes/scope-match";
-import type { Scope } from "../src/reviewer/types";
+import { normPath, matchesScope } from "../src/engine/indexing/scope-match";
+import type { Scope } from "../src/views/reviewer/types";
 
 describe("scope matching", () => {
   it("normalises paths", () => {

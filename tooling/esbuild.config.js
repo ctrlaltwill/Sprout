@@ -35,7 +35,7 @@ async function build() {
 
     // ✅ Add these two lines anywhere inside this object
     jsx: "automatic",
-    loader: { ".ts": "ts", ".tsx": "tsx", ".wasm": "binary" },
+    loader: { ".ts": "ts", ".tsx": "tsx", ".wasm": "binary", ".json": "json" },
 
     banner: {
       js:

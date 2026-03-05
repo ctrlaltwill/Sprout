@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TFile } from "obsidian";
-import { JsonStore } from "../src/core/store";
-import { syncOneFile, syncQuestionBank } from "../src/sync/sync-engine";
+import { JsonStore } from "../src/platform/core/store";
+import { syncOneFile, syncQuestionBank } from "../src/platform/integrations/sync/sync-engine";
 
 class MemoryVault {
   files = new Map<string, { file: TFile; content: string }>();

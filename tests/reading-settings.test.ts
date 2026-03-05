@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS } from "../src/core/default-settings";
+import { DEFAULT_SETTINGS } from "../src/platform/core/default-settings";
 
 describe("reading settings defaults", () => {
   it("enables reading styles by default", () => {

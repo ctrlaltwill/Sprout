@@ -1,0 +1,662 @@
+/* ============================================================================
+   MISC — GitHub Stars, Buy Me a Coffee, badges, checkboxes, selection,
+   MathJax, typography scale, form elements, and other one-off rules.
+   ========================================================================== */
+
+/* ---- GitHub Stars ---- */
+
+.sprout .sprout-github-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  border-radius: var(--radius-m);
+  background: #111;
+  color: #fff;
+  transition: background 0.18s;
+}
+.sprout .sprout-github-stars:hover {
+  background: #222;
+  text-decoration: none;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.sprout .sprout-github-stars-icon,
+.sprout .sprout-github-stars-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sprout .sprout-github-stars-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sprout .sprout-github-stars-star svg {
+  width: 18px;
+  height: 18px;
+  color: #f4b400;
+  transition: filter 0.18s;
+}
+
+.sprout .sprout-github-stars-value {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Force GitHub star to use accent color for fill */
+.sprout-github-stars-star svg {
+  fill: var(--theme-accent) !important;
+  color: var(--theme-accent) !important;
+}
+/* Spin the GitHub star on hover */
+.sprout-github-stars:hover .sprout-github-stars-star {
+  transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1);
+  transform: rotate(360deg);
+}
+
+/* Dark theme GitHub stars */
+.theme-dark .sprout .sprout-github-stars {
+  background: #f4b400;
+  color: #111111;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: background 0.18s;
+}
+.theme-dark .sprout .sprout-github-stars:hover {
+  background: #e2a800;
+}
+.theme-dark .sprout .sprout-github-stars-star svg {
+  color: #ffffff;
+  fill: #ffffff;
+  transition: filter 0.18s;
+}
+.theme-dark .sprout .sprout-github-stars-icon svg {
+  color: #ffffff;
+}
+.theme-dark .sprout .sprout-github-stars-value {
+  color: #111111;
+}
+
+/* ---- Buy Me a Coffee ---- */
+
+.sprout .sprout-bmc {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  font-size: var(--sprout-font-xs);
+  font-weight: 600;
+  border-radius: var(--radius-m);
+  background: #f4b400 !important;
+  color: #111 !important;
+  transition: background 0.18s;
+}
+.sprout .sprout-bmc:hover {
+  background: #e2a800 !important;
+  text-decoration: none;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.sprout .sprout-bmc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sprout .sprout-bmc-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Rotate the coffee icon on hover */
+.sprout-bmc:hover .sprout-bmc-icon {
+  transition: transform 0.3s cubic-bezier(0.4,0.2,0.2,1);
+  transform: rotate(-30deg);
+}
+
+/* ---- Utility: cursors/opacity ---- */
+
+.sprout :is(.alert, .alert-destructive) > h2,
+.sprout :is(.alert, .alert-destructive) > h3,
+.sprout :is(.alert, .alert-destructive) > h4,
+.sprout :is(.alert, .alert-destructive) > h5,
+.sprout :is(.alert, .alert-destructive) > h6,
+.sprout :is(.alert, .alert-destructive) > strong,
+.sprout :is(.alert, .alert-destructive) > [data-title] {
+  line-clamp: 1;
+}
+
+.sprout .sprout-cursor-grab {
+  cursor: grab !important;
+}
+
+.sprout .sprout-cursor-grabbing {
+  cursor: grabbing !important;
+}
+
+.sprout .sprout-cursor-crosshair {
+  cursor: crosshair !important;
+}
+
+.sprout .sprout-cursor-move {
+  cursor: move !important;
+}
+
+.sprout .sprout-cursor-nwse-resize {
+  cursor: nwse-resize !important;
+}
+
+.sprout .sprout-cursor-nesw-resize {
+  cursor: nesw-resize !important;
+}
+
+.sprout .sprout-display-flex {
+  display: flex !important;
+}
+
+.sprout .sprout-opacity-35 {
+  opacity: 0.35 !important;
+}
+
+.sprout .sprout-pointer-none {
+  pointer-events: none !important;
+}
+
+.sprout .sprout-hidden-important {
+  display: none !important;
+}
+
+/* ---- Global keyboard keycap shape ---- */
+
+.sprout kbd,
+.sprout .kbd {
+  padding: 0px 8px !important;
+  border-radius: 10px !important;
+}
+
+/* ---- Mobile phones: hide keyboard hint badges ---- */
+
+@media (max-width: 767px) and (hover: none) and (pointer: coarse) {
+  .sprout kbd,
+  .sprout .kbd {
+    display: none !important;
+  }
+}
+
+/* ---- Utility: rotation/animations ---- */
+
+.sprout .sprout-rotate {
+  transform: rotate(var(--sprout-rotate, 0deg));
+}
+
+.sprout .sprout-star-spin {
+  transition: transform 0.3s cubic-bezier(.4,2,.6,1);
+}
+
+.sprout .sprout-star-spin.is-fast {
+  transition: transform 0.15s cubic-bezier(.4,2,.6,1);
+}
+
+.sprout .sprout-bmc-rotate {
+  transition: transform 0.4s cubic-bezier(.4,2,.6,1);
+}
+
+/* ---- Utility: inline flex ---- */
+
+.sprout .sprout-inline-flex {
+  display: inline-flex !important;
+}
+
+.sprout .sprout-items-center {
+  align-items: center !important;
+}
+
+.sprout .sprout-gap-8 {
+  gap: 8px !important;
+}
+
+.sprout .sprout-stage-transform {
+  transform: var(--sprout-stage-transform, none) !important;
+}
+
+/* ---- Markdown code block spacing ---- */
+
+.sprout .markdown-rendered pre,
+.sprout .sprout-guide-body pre {
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+}
+
+/* ---- Image Occlusion review ---- */
+
+.sprout .sprout-io-container {
+  position: relative !important;
+  display: inline-block !important;
+  max-width: 100% !important;
+}
+
+.sprout .sprout-io-container--clip {
+  overflow: hidden !important;
+}
+
+.sprout .sprout-io-host-card {
+  position: relative !important;
+  display: inline-block !important;
+  border-radius: var(--radius-s) !important;
+  overflow: hidden !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  background: var(--background-secondary) !important;
+  max-width: 100% !important;
+}
+
+.sprout .sprout-io-image {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.sprout .sprout-io-image-zoomed {
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  cursor: zoom-out !important;
+  display: block !important;
+  margin: 0 auto !important;
+  object-fit: contain !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.sprout .sprout-io-image-inline {
+  max-height: 350px !important;
+  cursor: zoom-in !important;
+}
+
+.sprout .sprout-io-image-widget {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.sprout .sprout-io-zoom-in {
+  cursor: zoom-in !important;
+}
+
+.sprout .sprout-io-zoom-out {
+  cursor: zoom-out !important;
+}
+
+.sprout .sprout-io-overlay {
+  position: absolute !important;
+  left: var(--sprout-io-left, 0);
+  top: var(--sprout-io-top, 0);
+  width: var(--sprout-io-width, 0);
+  height: var(--sprout-io-height, 0);
+  max-width: var(--sprout-io-max-width, none);
+  max-height: var(--sprout-io-max-height, none);
+  border-radius: var(--sprout-io-radius, 0);
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.sprout .sprout-io-mask {
+  position: absolute !important;
+  left: var(--sprout-io-x, 0);
+  top: var(--sprout-io-y, 0);
+  width: var(--sprout-io-w, 0);
+  height: var(--sprout-io-h, 0);
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.sprout .sprout-io-mask-target {
+  background: var(--sprout-io-mask-target-color, var(--theme-accent)) !important;
+  border: 2px solid var(--foreground) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sprout .sprout-io-mask-other {
+  background: var(--sprout-io-mask-other-color, var(--foreground)) !important;
+  border: 2px solid var(--foreground) !important;
+}
+
+.sprout .sprout-io-mask-hidden {
+  background: var(--background)00 !important;
+  border: none !important;
+}
+
+.sprout .sprout-io-mask-circle {
+  border-radius: 50% !important;
+}
+
+.sprout .sprout-io-mask-rect {
+  border-radius: var(--radius-s) !important;
+}
+
+.sprout .sprout-io-mask-hint {
+  color: #fff !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  font-size: var(--sprout-io-hint-size, var(--sprout-font-2xs)) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* SVG icons rendered by setIcon inside the hint span */
+.sprout .sprout-io-mask-hint .svg-icon {
+  width: var(--sprout-io-hint-size, 12px) !important;
+  height: var(--sprout-io-hint-size, 12px) !important;
+  stroke: #fff !important;
+}
+
+/* ── IO icon picker in settings ───────────────────────────────── */
+.sprout-io-icon-picker {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.sprout-io-icon-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  padding: 0 10px !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--radius-m) !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  font-size: var(--sprout-font-xs) !important;
+  cursor: pointer !important;
+  transition: border-color 0.15s, background-color 0.15s !important;
+}
+
+.sprout-io-icon-chip:hover {
+  background-color: var(--secondary) !important;
+}
+
+.sprout-io-icon-chip.is-active {
+  border-color: var(--theme-accent) !important;
+  background-color: var(--theme-accent) !important;
+  color: #fff !important;
+}
+
+.sprout-io-icon-chip.is-active .svg-icon {
+  stroke: #fff !important;
+}
+
+.sprout-io-icon-chip .svg-icon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.sprout-io-icon-custom-input {
+  height: 32px !important;
+  width: 60px !important;
+  padding: 0 8px !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--radius-m) !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  font-size: var(--sprout-font-xs) !important;
+}
+
+.theme-dark .sprout .sprout-bmc {
+  color: #111214 !important;
+  background: #ffffff !important;
+  transition: background 0.18s;
+  box-shadow: 0 2px 8px #0000002e;
+}
+.theme-dark .sprout .sprout-bmc:hover {
+  background: #f2f2f2 !important;
+}
+.theme-dark .sprout .sprout-bmc:active {
+  background: #e6e6e6 !important;
+}
+.theme-dark .sprout .sprout-bmc-icon svg {
+  color: #111214;
+}
+
+/* ---- Badges ---- */
+
+.sprout .badge {
+    background-color: var(--theme-accent);
+}
+
+.sprout-badge-success {
+  background-color: oklch(0.8 0.1 142);
+  color: oklch(0.2 0 0);
+}
+
+.sprout-badge-info {
+  background-color: var(--theme-accent);
+  color: oklch(0.985 0 0);
+}
+
+.sprout-badge-default {
+  background-color: var(--secondary);
+  color: #111;
+}
+
+/* ---- Checkboxes / radio ---- */
+
+input[type="radio"]:checked:after,
+input[type="checkbox"]:checked:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  background-color: var(--muted-foreground);
+}
+
+input[type="checkbox"]:checked:hover::after {
+  background-color: var(--foreground);
+}
+
+/* ---- Inline sorting icon hover ---- */
+
+.inline-flex.text-muted-foreground.cursor-pointer {
+  transition: color 0.15s, fill 0.15s;
+}
+.inline-flex.text-muted-foreground.cursor-pointer:hover,
+.inline-flex.text-muted-foreground.cursor-pointer:focus,
+.inline-flex.text-muted-foreground.cursor-pointer:active {
+  color: var(--foreground) !important;
+}
+.inline-flex.text-muted-foreground.cursor-pointer:hover .svg-icon,
+.inline-flex.text-muted-foreground.cursor-pointer:focus .svg-icon,
+.inline-flex.text-muted-foreground.cursor-pointer:active .svg-icon {
+  stroke: var(--foreground) !important;
+  color: var(--foreground) !important;
+}
+
+/* ---- Tickbox inner dot ---- */
+
+.tickbox > span {
+  background-color: var(--foreground) !important;
+}
+
+/* ---- Selection highlight ---- */
+
+:where(.sprout) ::selection {
+  background-color: var(--theme-accent) !important;
+  color: #fff !important;
+}
+:where(.sprout) ::-moz-selection {
+  background-color: var(--theme-accent) !important;
+  color: #fff !important;
+}
+
+/* ---- MathJax: remove block margins inside Sprout cards/widgets ---- */
+
+.sprout .sprout-session-card mjx-container[jax="CHTML"][display="true"],
+.sprout.sprout-widget mjx-container[jax="CHTML"][display="true"],
+.sprout .sprout-widget mjx-container[jax="CHTML"][display="true"],
+.sprout-widget-card-body mjx-container[jax="CHTML"][display="true"] {
+  margin: 0 !important;
+}
+
+.sprout .sprout-pretty-card mjx-container[jax="CHTML"][display="true"],
+.sprout .sprout-pretty-card mjx-container[jax="CHTML"],
+.sprout .sprout-pretty-card mjx-math[display="true"],
+.sprout .sprout-pretty-card .MathJax,
+.sprout .sprout-pretty-card .MJX-TEX {
+  margin: 0 !important;
+  margin-block-start: 0 !important;
+  margin-block-end: 0 !important;
+}
+
+/* ---- Override theme math-block styling inside Sprout card views ---- */
+/* Themes like the user's may set background, padding, border-radius on
+   .math.math-block.is-loaded which clashes with card/widget/gatekeeper layout.
+   Reset those properties so Sprout cards look consistent regardless of theme. */
+
+.sprout .sprout-session-card .math.math-block.is-loaded,
+.sprout.sprout-widget .math.math-block.is-loaded,
+.sprout .sprout-widget .math.math-block.is-loaded,
+.sprout-widget-card-body .math.math-block.is-loaded,
+.sprout .sprout-gatekeeper-modal .math.math-block.is-loaded,
+.sprout .sprout-pretty-card .math.math-block.is-loaded {
+  background-color: transparent !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+}
+
+/* ---- Inline math: slight left margin so LaTeX doesn't touch preceding text ---- */
+.sprout .sprout-session-card .math.is-loaded,
+.sprout.sprout-widget .math.is-loaded,
+.sprout .sprout-widget .math.is-loaded,
+.sprout-widget-card-body .math.is-loaded,
+.sprout .sprout-gatekeeper-modal .math.is-loaded,
+.sprout .sprout-pretty-card .math.is-loaded {
+  margin-left: 0.15em !important;
+}
+
+/* Also reset the inner MathJax container inside math blocks */
+.sprout .sprout-session-card .math.math-block.is-loaded mjx-container,
+.sprout.sprout-widget .math.math-block.is-loaded mjx-container,
+.sprout .sprout-widget .math.math-block.is-loaded mjx-container,
+.sprout-widget-card-body .math.math-block.is-loaded mjx-container,
+.sprout .sprout-gatekeeper-modal .math.math-block.is-loaded mjx-container,
+.sprout .sprout-pretty-card .math.math-block.is-loaded mjx-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Inline math: remove any theme-added background/padding */
+.sprout .sprout-session-card .math.math-inline.is-loaded,
+.sprout.sprout-widget .math.math-inline.is-loaded,
+.sprout .sprout-widget .math.math-inline.is-loaded,
+.sprout-widget-card-body .math.math-inline.is-loaded,
+.sprout .sprout-gatekeeper-modal .math.math-inline.is-loaded,
+.sprout .sprout-pretty-card .math.math-inline.is-loaded {
+  background-color: transparent !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ---- Background helper ---- */
+
+.sprout .bg-background, .sprout .bg-background {
+    background-color: var(--background);
+}
+
+/* ---- Info text styling ---- */
+
+.sprout-info {
+    color: var(--text-color);
+    opacity: 0.9;
+    font-size: var(--sprout-font-2xs);
+    line-height: 1.9;
+}
+
+.sprout-info br {
+    margin-bottom: 0.5em !important;
+}
+
+/* ---- Typography scale ---- */
+
+.sprout .text-xs {
+  font-size: var(--sprout-font-xs) !important;
+}
+.sprout .text-sm {
+  font-size: var(--sprout-font-xs) !important;
+}
+
+.sprout .text-md {font-size: var(--sprout-font-xs) !important;}
+.sprout .text-lg {font-size: var(--sprout-font-sm) !important;}
+.sprout .text-xl {font-size: var(--sprout-font-md) !important;}
+.sprout .text-2xl {font-size: var(--sprout-font-lg) !important;}
+
+/* ---- Global input and textarea focus styles ---- */
+
+.sprout input:not(.sprout-home-name-input):not(.sprout-ss-search-input):focus,
+.sprout textarea:focus,
+.sprout .input:focus,
+.sprout .textarea:focus,
+.sprout input[type="text"]:not(.sprout-home-name-input):not(.sprout-ss-search-input):focus,
+.sprout input[type="search"]:not(.sprout-ss-search-input):focus,
+.sprout input[type="number"]:focus,
+.sprout select:focus {
+  border: 1.5px solid var(--theme-accent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Typed cloze inputs override the global accent focus above */
+.sprout .sprout-cloze-typed-input,
+.sprout .sprout-cloze-typed-input:focus {
+  border-width: 1px !important;
+}
+.sprout .sprout-cloze-typed-input:focus {
+  border-color: var(--sprout-border-color) !important;
+  box-shadow: none !important;
+}
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial,
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-hard-bg) !important;
+}
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--correct,
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--correct:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-good-bg) !important;
+}
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--wrong,
+.sprout .sprout-cloze-typed-input.sprout-cloze-typed--wrong:focus {
+  border-width: 1px !important;
+  border-color: var(--sprout-again-bg) !important;
+}
+
+.sprout .rounded-lg {
+    border-radius: var(--radius-l) !important;
+}
+
+.sprout h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+}

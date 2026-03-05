@@ -10,14 +10,14 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from "vitest";
-import { formatSyncNotice } from "../src/sync/sync-engine";
+import { formatSyncNotice } from "../src/platform/integrations/sync/sync-engine";
 import {
   countObjectKeys,
   joinPath,
   likelySproutStateKey,
   extractStatesFromDataJsonObject,
   isPlainObject,
-} from "../src/sync/backup";
+} from "../src/platform/integrations/sync/backup";
 
 // ── formatSyncNotice ────────────────────────────────────────────────────────
 

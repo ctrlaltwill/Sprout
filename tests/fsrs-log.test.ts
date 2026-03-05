@@ -6,8 +6,8 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { logFsrsIfNeeded, logUndoIfNeeded } from "../src/reviewer/fsrs-log";
-import { log } from "../src/core/logger";
+import { logFsrsIfNeeded, logUndoIfNeeded } from "../src/views/reviewer/fsrs-log";
+import { log } from "../src/platform/core/logger";
 
 // ── Setup: spy on log.info so we can inspect output ─────────────────────────
 

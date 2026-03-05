@@ -7,15 +7,15 @@ import {
   ankiCardToCardState,
   markdownToHtml,
   cleanHtmlToMarkdown,
-} from "../src/anki/anki-mapper";
+} from "../src/platform/integrations/anki/anki-mapper";
 import {
   ANKI_FIELD_SEPARATOR,
   BASIC_MODEL_ID,
   type AnkiNoteRow,
   type AnkiCardRow,
   type AnkiModel,
-} from "../src/anki/anki-constants";
-import type { CardRecord } from "../src/types/card";
+} from "../src/platform/integrations/anki/anki-constants";
+import type { CardRecord } from "../src/platform/types/card";
 import { State as FsrsState } from "ts-fsrs";
 
 describe("anki mapper", () => {

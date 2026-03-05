@@ -5,12 +5,12 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { JsonStore } from "../src/core/store";
-import { inScope, isAvailableNow, buildSession, getNextDueInScope } from "../src/reviewer/session";
-import type { CardRecord } from "../src/types/card";
+import { JsonStore } from "../src/platform/core/store";
+import { inScope, isAvailableNow, buildSession, getNextDueInScope } from "../src/views/reviewer/session";
+import type { CardRecord } from "../src/platform/types/card";
 import type { CardState } from "../src/types/scheduler";
-import type { Scope } from "../src/reviewer/types";
-import type { ReviewLogEntry } from "../src/types/review";
+import type { Scope } from "../src/views/reviewer/types";
+import type { ReviewLogEntry } from "../src/platform/types/review";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

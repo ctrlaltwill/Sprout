@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints } from "../src/imageocclusion/image-geometry";
+import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints } from "../src/platform/image-occlusion/image-geometry";
 
 describe("image geometry", () => {
   it("clamps a rect within bounds", () => {

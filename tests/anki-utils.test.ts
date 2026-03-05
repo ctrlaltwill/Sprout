@@ -19,7 +19,7 @@ import {
   sproutGroupsToAnkiTags,
   ankiTagsToSproutGroups,
   _resetIdCounter,
-} from "../src/anki/anki-utils";
+} from "../src/platform/integrations/anki/anki-utils";
 
 // ── Deck ↔ Group path ──
 

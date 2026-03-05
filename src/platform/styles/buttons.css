@@ -1,0 +1,288 @@
+/* ============================================================================
+   BUTTONS — Icon-outline, icon-ghost, outline, button groups.
+   Light + dark theme variants.
+   ========================================================================== */
+
+/* ---- Icon outline buttons ---- */
+
+.sprout .btn-icon-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  box-shadow: none !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+  padding: 0.375rem !important;
+  min-width: 32px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sprout .sprout-view-actions .btn-icon-outline {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+.sprout .sprout-view-actions .btn-outline,
+.sprout .sprout-view-actions .btn-icon-outline {
+  height: 36px !important;
+  min-height: 36px !important;
+  align-items: center;
+}
+.sprout .view-header-nav-buttons .btn-outline,
+.sprout .sprout-header .view-header-nav-buttons .btn-outline {
+  height: 36px !important;
+  min-height: 36px !important;
+  align-items: center;
+}
+.sprout .btn-icon-outline:hover,
+.sprout .btn-icon-outline:focus-visible {
+  background: var(--color-base-25) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-30) !important
+}
+.sprout .btn-icon-outline:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+}
+.sprout .btn-icon-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+.theme-dark .sprout .btn-icon-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+}
+.theme-dark .sprout .btn-icon-outline:hover,
+.theme-dark .sprout .btn-icon-outline:focus-visible {
+  background: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-35) !important;
+}
+.theme-dark .sprout .btn-icon-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+/* ---- Ghost icon buttons (no background / border) ---- */
+
+.sprout .btn-icon-ghost {
+  background: transparent !important;
+  color: var(--foreground) !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sprout .btn-icon-ghost:hover,
+.sprout .btn-icon-ghost:focus-visible {
+  color: var(--text-normal) !important;
+  opacity: 0.8;
+}
+.sprout .btn-icon-ghost:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+  border-radius: var(--radius-s);
+}
+.sprout .btn-icon-ghost:active {
+  opacity: 0.6;
+}
+
+/* ---- Outline buttons ---- */
+
+.sprout .btn-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  box-shadow: none !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sprout .btn-outline:hover,
+.sprout .btn-outline:focus-visible {
+  background: var(--background-modifier-hover)!important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-30) !important;
+}
+.sprout .btn-outline:focus-visible {
+  outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
+  outline-offset: 2px;
+}
+
+.sprout .btn-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+
+/* ---- Button groups ---- */
+
+.sprout .button-group {
+  display: inline-flex;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+  overflow: hidden;
+  background: var(--background) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+}
+
+.sprout .button-group .btn-outline,
+.sprout .button-group .btn-icon-outline {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+}
+.sprout .button-group .btn-outline:last-child,
+.sprout .button-group .btn-icon-outline:last-child {
+  border-right: none !important;
+}
+
+/* First child inherits left radii from group */
+.sprout .button-group > :first-child {
+  border-top-left-radius: var(--button-radius, var(--radius-m)) !important;
+  border-bottom-left-radius: var(--button-radius, var(--radius-m)) !important;
+}
+/* Last child inherits right radii from group */
+.sprout .button-group > :last-child {
+  border-top-right-radius: var(--button-radius, var(--radius-m)) !important;
+  border-bottom-right-radius: var(--button-radius, var(--radius-m)) !important;
+}
+
+/* ---- Dark theme outline buttons & button groups ---- */
+
+.theme-dark .sprout .btn-outline {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+}
+.theme-dark .sprout .btn-outline:hover,
+.theme-dark .sprout .btn-outline:focus-visible {
+  background: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-35) !important;
+}
+.theme-dark .sprout .btn-outline:active {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-color: var(--muted) !important;
+}
+.theme-dark .sprout .button-group {
+  background: var(--background) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--button-radius, var(--radius-m)) !important;
+}
+.theme-dark .sprout .button-group .btn-outline,
+.theme-dark .sprout .button-group .btn-icon-outline {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+}
+.theme-dark .sprout .button-group .btn-outline:last-child,
+.theme-dark .sprout .button-group .btn-icon-outline:last-child {
+  border-right: none !important;
+}
+.theme-dark .sprout .button-group > :first-child {
+  border-top-left-radius: var(--button-radius, var(--radius-m)) !important;
+  border-bottom-left-radius: var(--button-radius, var(--radius-m)) !important;
+}
+.theme-dark .sprout .button-group > :last-child {
+  border-top-right-radius: var(--button-radius, var(--radius-m)) !important;
+  border-bottom-right-radius: var(--button-radius, var(--radius-m)) !important;
+}
+
+/* ---- Global Obsidian button padding reset ---- */
+
+.sprout :is(button, .button) {
+  height: auto !important;
+  padding: 8px 12px !important;
+}
+
+/* Keep icon-only/round controls compact. */
+.sprout :is(.btn-icon-ghost, .sprout-widget-back-btn, .sprout-io-close-btn, .sprout-btn-unstyled) {
+  padding: 0 !important;
+}
+
+.sprout .btn-icon-outline {
+  padding: 0.375rem !important;
+}
+
+
+
+/* ---- Pagination current-page button ---- */
+
+button[aria-current="page"] {
+    outline: none !important;
+    color: var(--foreground);
+    background-color: var(--background-modifier-hover);
+    box-shadow: none !important;
+  border: 0.5px solid var(--sprout-border-color) !important;
+}
+
+.theme-dark button[aria-current="page"] {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Expand/collapse button min width ---- */
+
+.btn-outline[data-sprout-expand-collapse] {
+  min-width: 110px !important;
+}
+
+/* ---- Button height preview (uniform 34px minimum) ---- */
+
+.sprout :is(
+  button,
+  .btn,
+  .btn-outline,
+  .btn-primary,
+  .btn-destructive,
+  .btn-icon-outline,
+  .sprout-widget-back-btn,
+  .sprout-widget-action-btn
+) {
+  min-height: 36px !important;
+}
+
+.sprout :is(.btn, .btn-outline, .btn-primary, .btn-destructive, .btn-icon-outline) {
+  max-height: none !important;
+}
+
+/* ---- Unstyled button reset ---- */
+/* Replaces inline: background:transparent; border:none; box-shadow:none;
+   outline:none; padding:0; cursor:pointer across 9+ files */
+
+.sprout .sprout-btn-unstyled {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  padding: 0 !important;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.sprout .sprout-btn-unstyled:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+
+button.sprout-guide-dropdown-item {
+    background-color: transparent !important;
+}
+
+button.sprout-guide-dropdown-item:hover {
+    background-color: var(--muted) !important;
+}

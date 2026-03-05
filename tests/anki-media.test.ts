@@ -3,7 +3,7 @@ import {
   collectMediaRefs,
   rewriteFieldForAnki,
   rewriteFieldForSprout,
-} from "../src/anki/anki-media";
+} from "../src/platform/integrations/anki/anki-media";
 
 describe("collectMediaRefs", () => {
   it("finds ![[...]] wiki-style image refs", () => {

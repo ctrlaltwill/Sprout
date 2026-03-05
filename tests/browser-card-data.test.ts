@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { applyValueToCard } from "../src/browser/browser-card-data";
-import type { CardRecord } from "../src/core/store";
+import { applyValueToCard } from "../src/views/browser/browser-card-data";
+import type { CardRecord } from "../src/platform/core/store";
 
 describe("browser card data", () => {
   it("applies edits without mutating original", () => {

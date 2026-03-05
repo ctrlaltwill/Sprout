@@ -8,8 +8,8 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from "vitest";
-import { defaultStore } from "../src/core/store";
-import { deepMerge } from "../src/core/constants";
+import { defaultStore } from "../src/platform/core/store";
+import { deepMerge } from "../src/platform/core/constants";
 
 // ── defaultStore ────────────────────────────────────────────────────────────
 

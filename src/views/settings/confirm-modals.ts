@@ -1,0 +1,563 @@
+/**
+ * @file src/settings/confirm-modals.ts
+ * @summary Confirmation-dialog modals used exclusively by SproutSettingsTab. Contains seven Modal subclasses for destructive or irreversible settings actions: scheduling reset, analytics reset, card deletion, defaults restoration, backup comparison, backup restoration, and backup deletion.
+ *
+ * @exports
+ *  - ConfirmResetSchedulingModal     — modal confirming a wipe of all card scheduling data (reset to New)
+ *  - ConfirmResetAnalyticsModal      — modal confirming clearance of review history and heatmap data
+ *  - ConfirmDeleteAllFlashcardsModal — modal confirming removal of every card from notes and the DB
+ *  - ConfirmResetDefaultsModal       — modal confirming restoration of plugin settings to factory defaults
+ *  - BackupCompareModal              — read-only modal showing a diff of the current DB vs. a backup snapshot
+ *  - CurrentDbSnapshot               — type describing the shape of a current-DB snapshot for comparison
+ *  - ConfirmRestoreBackupModal       — modal confirming overwrite of the DB from a chosen backup file
+ *  - ConfirmDeleteBackupModal        — modal confirming permanent deletion of a backup file on disk
+ */
+
+import { type App, Modal, Notice, Setting } from "obsidian";
+import type SproutPlugin from "../../main";
+import { log } from "../../platform/core/logger";
+import type { DataJsonBackupStats } from "../../platform/integrations/sync/backup";
+import { restoreFromDataJsonBackup, deleteDataJsonBackup } from "../../platform/integrations/sync/backup";
+import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
+import { t } from "../../platform/translations/translator";
+import { txCommon } from "../../platform/translations/ui-common";
+
+type ConfirmButtonKind = "default" | "danger";
+
+function tx(locale: unknown, token: string, fallback: string, vars?: Record<string, string | number>): string {
+  return t(locale, token, fallback, vars);
+}
+
+function styleConfirmActionButton(button: HTMLButtonElement, kind: ConfirmButtonKind = "default") {
+  button.type = "button";
+  button.classList.add("bc", "btn-outline", "inline-flex", "items-center", "gap-2", "h-9", "px-3", "text-sm", "sprout-settings-action-btn");
+  if (kind === "danger") button.classList.add("sprout-btn-danger");
+}
+
+// ────────────────────────────────────────────
+// 1) ConfirmResetSchedulingModal
+// ────────────────────────────────────────────
+
+/**
+ * Prompts the user to confirm resetting all card scheduling data.
+ * On confirm, calls `plugin.resetAllCardScheduling()` which sets every
+ * card back to "New" and clears FSRS scheduling fields.
+ */
+export class ConfirmResetSchedulingModal extends Modal {
+  plugin: SproutPlugin;
+
+  constructor(app: App, plugin: SproutPlugin) {
+    super(app);
+    this.plugin = plugin;
+  }
+
+  onOpen() {
+    const locale = this.plugin.settings?.general?.interfaceLanguage;
+    const common = txCommon(locale);
+    this.containerEl.addClass("sprout-confirm-modal");
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(locale, "ui.settings.modals.confirmResetScheduling", "Reset scheduling?")).setHeading();
+    contentEl.createEl("p", {
+      text: tx(locale, "ui.settings.modals.resetScheduling.body", "All cards will be reset to new. This can be restored from a backup."),
+    });
+
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row");
+
+    const cancelBtn = row.createEl("button", { text: common.cancel });
+    styleConfirmActionButton(cancelBtn, "default");
+    cancelBtn.onclick = () => this.close();
+
+    const resetBtn = row.createEl("button", { text: tx(locale, "ui.common.reset", "Reset") });
+    styleConfirmActionButton(resetBtn, "danger");
+    resetBtn.onclick = async () => {
+      this.close();
+      try {
+        await this.plugin.resetAllCardScheduling();
+        new Notice(tx(locale, "ui.settings.modals.resetScheduling.success", "Scheduling reset for all cards"));
+      } catch (e) {
+        log.error(e);
+        new Notice(tx(locale, "ui.settings.modals.resetScheduling.error", "Sprout: failed to reset scheduling (see console)."));
+      }
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+// ────────────────────────────────────────────
+// 2) ConfirmResetAnalyticsModal
+// ────────────────────────────────────────────
+
+/**
+ * Confirms clearing all analytics / review-history data.
+ * Scheduling (due dates, intervals) is preserved — only the review log,
+ * heatmaps, and statistics are wiped.
+ */
+export class ConfirmResetAnalyticsModal extends Modal {
+  plugin: SproutPlugin;
+
+  constructor(app: App, plugin: SproutPlugin) {
+    super(app);
+    this.plugin = plugin;
+  }
+
+  onOpen() {
+    const locale = this.plugin.settings?.general?.interfaceLanguage;
+    const common = txCommon(locale);
+    this.containerEl.addClass("sprout-confirm-modal");
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(locale, "ui.settings.modals.confirmResetAnalytics", "Reset analytics?")).setHeading();
+    contentEl.createEl("p", {
+      text: tx(locale, "ui.settings.modals.resetAnalytics.body", "All review history and statistics will be cleared. Scheduling is preserved. This can be restored from a backup."),
+    });
+
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row");
+
+    const cancelBtn = row.createEl("button", { text: common.cancel });
+    styleConfirmActionButton(cancelBtn, "default");
+    cancelBtn.onclick = () => this.close();
+
+    const resetBtn = row.createEl("button", { text: tx(locale, "ui.common.reset", "Reset") });
+    styleConfirmActionButton(resetBtn, "danger");
+    resetBtn.onclick = async () => {
+      this.close();
+      try {
+        await this.plugin.resetAllAnalyticsData();
+        new Notice(tx(locale, "ui.settings.modals.resetAnalytics.success", "Analytics data cleared"));
+      } catch (e) {
+        log.error(e);
+        new Notice(tx(locale, "ui.settings.modals.resetAnalytics.error", "Sprout: failed to reset analytics (see console)."));
+      }
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+// ────────────────────────────────────────────
+// 3) ConfirmDeleteAllFlashcardsModal
+// ────────────────────────────────────────────
+
+/**
+ * Destructive action: deletes every Sprout flashcard from every markdown
+ * note in the vault and clears the plugin database.  Accepts an `onConfirm`
+ * callback so the caller (SproutSettingsTab) can orchestrate vault-wide
+ * deletion and store clearing.
+ */
+export class ConfirmDeleteAllFlashcardsModal extends Modal {
+  plugin: SproutPlugin;
+  onConfirm: () => Promise<void>;
+
+  constructor(app: App, plugin: SproutPlugin, onConfirm: () => Promise<void>) {
+    super(app);
+    this.plugin = plugin;
+    this.onConfirm = onConfirm;
+  }
+
+  onOpen() {
+    const locale = this.plugin.settings?.general?.interfaceLanguage;
+    const common = txCommon(locale);
+    this.containerEl.addClass("sprout-confirm-modal");
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(locale, "ui.settings.modals.confirmDeleteAllFlashcards", "Delete all flashcards?")).setHeading();
+
+    contentEl.createEl("p", {
+      text: tx(locale, "ui.settings.modals.deleteAllFlashcards.body", "All flashcards will be permanently removed from your notes and database. Restore is only possible from a vault backup."),
+    });
+
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row");
+
+    const cancelBtn = row.createEl("button", { text: common.cancel });
+    styleConfirmActionButton(cancelBtn, "default");
+    cancelBtn.onclick = () => this.close();
+
+    const deleteBtn = row.createEl("button", { text: tx(locale, "ui.common.deleteAll", "Delete all") });
+    styleConfirmActionButton(deleteBtn, "danger");
+    deleteBtn.onclick = async () => {
+      this.close();
+      try {
+        await this.onConfirm();
+      } catch (e) {
+        log.error(e);
+        new Notice(tx(locale, "ui.settings.modals.deleteAllFlashcards.error", "Sprout: failed to delete flashcards (see console)."));
+      }
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+// ────────────────────────────────────────────
+// 4) ConfirmResetDefaultsModal
+// ────────────────────────────────────────────
+
+/**
+ * Confirms resetting all plugin settings back to their factory defaults.
+ * Card data and scheduling are not affected — only settings like daily
+ * limits, toggles, folder paths, etc.
+ */
+export class ConfirmResetDefaultsModal extends Modal {
+  plugin: SproutPlugin;
+  onConfirm: () => Promise<void>;
+
+  constructor(app: App, plugin: SproutPlugin, onConfirm: () => Promise<void>) {
+    super(app);
+    this.plugin = plugin;
+    this.onConfirm = onConfirm;
+  }
+
+  onOpen() {
+    const locale = this.plugin.settings?.general?.interfaceLanguage;
+    const common = txCommon(locale);
+    this.containerEl.addClass("sprout-confirm-modal");
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(locale, "ui.settings.modals.confirmResetSettings", "Reset settings?")).setHeading();
+    contentEl.createEl("p", {
+      text: tx(locale, "ui.settings.modals.resetSettings.body", "All settings will be restored to defaults. Cards and scheduling are not affected."),
+    });
+
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row");
+
+    const cancelBtn = row.createEl("button", { text: common.cancel });
+    styleConfirmActionButton(cancelBtn, "default");
+    cancelBtn.onclick = () => this.close();
+
+    const resetBtn = row.createEl("button", { text: tx(locale, "ui.common.reset", "Reset") });
+    styleConfirmActionButton(resetBtn, "danger");
+    resetBtn.onclick = async () => {
+      this.close();
+      try {
+        await this.onConfirm();
+      } catch (e) {
+        log.error(e);
+        new Notice(tx(locale, "ui.settings.modals.resetSettings.error", "Sprout: failed to reset settings (see console)."));
+      }
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+// ────────────────────────────────────────────
+// 5) BackupCompareModal
+// ────────────────────────────────────────────
+
+/** Compact type for the live DB stats passed into comparison modals. */
+export type CurrentDbSnapshot = {
+  cards: number;
+  states: number;
+  reviewLog: number;
+  quarantine: number;
+  io: number;
+  analyticsEvents?: number;
+};
+
+/**
+ * Read-only modal that shows a side-by-side comparison table of the
+ * current database versus a selected backup file.  Used when the user
+ * clicks a backup row's "compare" action.
+ */
+export class BackupCompareModal extends Modal {
+  locale: unknown;
+  current: CurrentDbSnapshot;
+  backup: DataJsonBackupStats;
+
+  constructor(app: App, backup: DataJsonBackupStats, current: CurrentDbSnapshot, locale?: unknown) {
+    super(app);
+    this.backup = backup;
+    this.current = current;
+    this.locale = locale;
+  }
+
+  /** Format a signed delta string (e.g. "+3" or "−2"). */
+  private fmtDelta(n: number): string {
+    if (n === 0) return "0";
+    return n > 0 ? `+${n}` : String(n);
+  }
+
+  onOpen() {
+    const common = txCommon(this.locale);
+    scopeModalToWorkspace(this);
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(this.locale, "ui.settings.modals.backupComparison", "Backup comparison")).setHeading();
+
+    contentEl.createEl("p", {
+      text: tx(this.locale, "ui.settings.modals.backupComparison.file", "File: {name}", { name: this.backup.name }),
+    });
+
+    /* ── comparison table ── */
+    const box = contentEl.createDiv();
+    box.classList.add("sprout-confirm-box");
+
+    const tbl = box.createEl("table");
+    tbl.classList.add("sprout-compare-table");
+
+    const header = tbl.createEl("tr");
+    [
+      tx(this.locale, "ui.settings.modals.backupComparison.table.metric", "Metric"),
+      tx(this.locale, "ui.settings.modals.backupComparison.table.current", "Current"),
+      tx(this.locale, "ui.settings.modals.backupComparison.table.backup", "Backup"),
+      tx(this.locale, "ui.settings.modals.backupComparison.table.delta", "Δ"),
+    ].forEach((h) => {
+      const th = header.createEl("th", { text: h });
+      th.classList.add("sprout-compare-th");
+    });
+
+    const addRow = (label: string, cur: number, bak: number) => {
+      const tr = tbl.createEl("tr");
+      const td1 = tr.createEl("td", { text: label });
+      const td2 = tr.createEl("td", { text: String(cur) });
+      const td3 = tr.createEl("td", { text: String(bak) });
+      const td4 = tr.createEl("td", { text: this.fmtDelta(bak - cur) });
+      [td1, td2, td3, td4].forEach((td) => {
+        td.classList.add("sprout-compare-td");
+      });
+    };
+
+    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.cards", "Cards"), this.current.cards, this.backup.cards);
+    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.states", "States"), this.current.states, this.backup.states);
+    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.reviewLog", "Review log"), this.current.reviewLog, this.backup.reviewLog);
+    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.quarantine", "Quarantine"), this.current.quarantine, this.backup.quarantine);
+    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.ioMap", "Io map entries"), this.current.io, this.backup.io);
+
+    /* ── metadata ── */
+    const meta = contentEl.createDiv();
+    meta.classList.add("sprout-confirm-meta");
+    meta.createDiv({
+      text: tx(this.locale, "ui.settings.modals.backupComparison.meta.modified", "Modified: {value}", {
+        value: this.backup.mtime ? new Date(this.backup.mtime).toLocaleString() : "—",
+      }),
+    });
+    meta.createDiv({
+      text: tx(this.locale, "ui.settings.modals.backupComparison.meta.size", "Size: {value}", {
+        value: this.backup.size ? `${Math.round(this.backup.size / 1024)} KB` : "—",
+      }),
+    });
+
+    const note = contentEl.createEl("p", {
+      text: tx(this.locale, "ui.settings.modals.backupComparison.note", "Restoring will overwrite the current database scheduling by card anchor. It will not affect question wording or Markdown."),
+    });
+    note.classList.add("sprout-confirm-muted");
+
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row-lg");
+
+    const closeBtn = row.createEl("button", { text: common.close });
+    styleConfirmActionButton(closeBtn, "default");
+    closeBtn.onclick = () => this.close();
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+// ────────────────────────────────────────────
+// 6) ConfirmRestoreBackupModal
+// ────────────────────────────────────────────
+
+/**
+ * Confirms restoring the Sprout database from a backup file.
+ * Shows a summary of what will change (cards, states, review log, etc.)
+ * and optionally creates a safety backup before proceeding.
+ */
+export class ConfirmRestoreBackupModal extends Modal {
+  plugin: SproutPlugin;
+  backup: DataJsonBackupStats;
+  current: CurrentDbSnapshot;
+  onRestored: () => void;
+
+  constructor(
+    app: App,
+    plugin: SproutPlugin,
+    backup: DataJsonBackupStats,
+    current: CurrentDbSnapshot,
+    onRestored: () => void,
+  ) {
+    super(app);
+    this.plugin = plugin;
+    this.backup = backup;
+    this.current = current;
+    this.onRestored = onRestored;
+  }
+
+  /** Format a signed delta string (e.g. "+3" or "−2"). */
+  private fmtDelta(n: number): string {
+    if (n === 0) return "0";
+    return n > 0 ? `+${n}` : String(n);
+  }
+
+  onOpen() {
+    const locale = this.plugin.settings?.general?.interfaceLanguage;
+    const common = txCommon(locale);
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(locale, "ui.settings.modals.confirmRestoreBackup", "Restore from backup?")).setHeading();
+
+    contentEl.createEl("p", {
+      text: tx(locale, "ui.settings.modals.restoreBackup.body", "This will restore scheduling data from: {name}", { name: this.backup.name }),
+    });
+
+    /* ── change summary ── */
+    const summary = contentEl.createDiv();
+    summary.classList.add("sprout-confirm-summary");
+
+    const add = (label: string, cur: number, bak: number) => {
+      summary.createDiv({
+        text: tx(locale, "ui.settings.modals.restoreBackup.summary", "{label}: current {current} → backup {backup} (Δ {delta})", {
+          label,
+          current: cur,
+          backup: bak,
+          delta: this.fmtDelta(bak - cur),
+        }),
+      });
+    };
+
+    add(tx(locale, "ui.settings.modals.restoreBackup.row.states", "States"), this.current.states, this.backup.states);
+    add(tx(locale, "ui.settings.modals.restoreBackup.row.reviewLog", "Review log"), this.current.reviewLog, this.backup.reviewLog);
+    add(tx(locale, "ui.settings.modals.restoreBackup.row.analytics", "Analytics events"), this.current.analyticsEvents ?? 0, this.backup.analyticsEvents ?? 0);
+    const hint = contentEl.createDiv({ cls: "sprout-confirm-hint" });
+    hint.createDiv({
+      cls: "sprout-confirm-hint-title",
+      text: tx(locale, "ui.settings.modals.restoreBackup.noteTitle", "Note"),
+    });
+    hint.createDiv({
+      cls: "sprout-confirm-hint-body",
+      text: tx(locale, "ui.settings.modals.restoreBackup.noteBody", "Card content ({count} cards) is unchanged. Restore does not edit markdown notes; it only restores scheduling and analytics data.", {
+        count: this.current.cards,
+      }),
+    });
+
+    /* ── safety-backup checkbox ── */
+    let makeSafetyBackup = true;
+
+    const checkRow = contentEl.createDiv();
+    checkRow.classList.add("sprout-confirm-check-row");
+
+    const cb = checkRow.createEl("input");
+    cb.type = "checkbox";
+    cb.checked = true;
+    cb.onchange = () => {
+      makeSafetyBackup = !!cb.checked;
+    };
+
+    checkRow.createEl("label", { text: tx(locale, "ui.settings.modals.restoreBackup.safety", "Create a safety backup before restoring") });
+
+    /* ── action buttons ── */
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row-lg");
+
+    const cancelBtn = row.createEl("button", { text: common.cancel });
+    styleConfirmActionButton(cancelBtn, "default");
+    cancelBtn.onclick = () => this.close();
+
+    const restoreBtn = row.createEl("button", { text: tx(locale, "ui.settings.modals.restoreBackup.cta", "Restore backup") });
+    styleConfirmActionButton(restoreBtn, "danger");
+
+    restoreBtn.onclick = async () => {
+      restoreBtn.setAttr("disabled", "true");
+      try {
+        const res = await restoreFromDataJsonBackup(this.plugin, this.backup.path, { makeSafetyBackup });
+        if (!res.ok) {
+          new Notice(tx(locale, "ui.settings.modals.restoreBackup.errorMessage", "Sprout: {message}", { message: res.message }));
+          restoreBtn.removeAttribute("disabled");
+          return;
+        }
+        new Notice(tx(locale, "ui.settings.modals.restoreBackup.success", "Scheduling data restored from backup"));
+        this.close();
+        this.onRestored();
+      } catch (e) {
+        log.error(e);
+        new Notice(tx(locale, "ui.settings.modals.restoreBackup.error", "Sprout: restore failed (see console)."));
+        restoreBtn.removeAttribute("disabled");
+      }
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
+// ────────────────────────────────────────────
+// 7) ConfirmDeleteBackupModal
+// ────────────────────────────────────────────
+
+/**
+ * Confirms permanent deletion of a single backup file from disk.
+ * Uses the vault adapter's `trash()` or `remove()` method.
+ */
+export class ConfirmDeleteBackupModal extends Modal {
+  plugin: SproutPlugin;
+  backup: DataJsonBackupStats;
+  onDone?: () => void;
+
+  constructor(app: App, plugin: SproutPlugin, backup: DataJsonBackupStats, onDone?: () => void) {
+    super(app);
+    this.plugin = plugin;
+    this.backup = backup;
+    this.onDone = onDone;
+  }
+
+  onOpen() {
+    const locale = this.plugin.settings?.general?.interfaceLanguage;
+    const common = txCommon(locale);
+    const { contentEl } = this;
+    contentEl.empty();
+
+    new Setting(contentEl).setName(tx(locale, "ui.settings.modals.confirmDeleteBackup", "Delete backup?")).setHeading();
+    contentEl.createEl("p", { text: tx(locale, "ui.settings.modals.deleteBackup.body", "This will permanently delete: {name}", { name: this.backup.name }) });
+
+    const row = contentEl.createDiv();
+    row.classList.add("sprout-confirm-row");
+
+    const cancelBtn = row.createEl("button", { text: common.cancel });
+    styleConfirmActionButton(cancelBtn, "default");
+    cancelBtn.onclick = () => this.close();
+
+    const deleteBtn = row.createEl("button", { text: tx(locale, "ui.settings.modals.deleteBackup.cta", "Delete backup") });
+    styleConfirmActionButton(deleteBtn, "danger");
+    deleteBtn.onclick = async () => {
+      this.close();
+      try {
+        const ok = await deleteDataJsonBackup(this.plugin, this.backup.path);
+        if (!ok) {
+          new Notice(tx(locale, "ui.settings.modals.deleteBackup.unavailable", "Sprout: cannot delete backup (no adapter or missing file)."));
+          return;
+        }
+        new Notice(tx(locale, "ui.settings.modals.deleteBackup.success", "Scheduling data backup deleted"));
+        this.onDone?.();
+      } catch (e) {
+        log.error(e);
+        new Notice(tx(locale, "ui.settings.modals.deleteBackup.error", "Sprout: failed to delete backup (see console)."));
+      }
+    };
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}

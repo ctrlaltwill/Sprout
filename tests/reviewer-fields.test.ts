@@ -6,8 +6,8 @@ import {
   validateClozeText,
   buildQuestionFor,
   buildAnswerOrOptionsFor,
-} from "../src/reviewer/fields";
-import type { CardRecord } from "../src/core/store";
+} from "../src/views/reviewer/fields";
+import type { CardRecord } from "../src/platform/core/store";
 
 describe("reviewer fields utilities", () => {
   it("escapes pipes and backslashes", () => {

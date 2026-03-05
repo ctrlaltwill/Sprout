@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { JsonStore } from "../src/core/store";
+import { JsonStore } from "../src/platform/core/store";
 import { State } from "ts-fsrs";
 
 type MockPlugin = {

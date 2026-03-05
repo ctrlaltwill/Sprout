@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { processClozeForMath } from "../src/core/shared-utils";
+import { processClozeForMath } from "../src/platform/core/shared-utils";
 
 describe("processClozeForMath", () => {
   it("keeps LaTeX valid for clozes with nested braces", () => {
