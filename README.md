@@ -72,7 +72,7 @@ FSRS scheduling in Sprout is powered by FSRS-6 via [open-spaced-repetition/ts-fs
 
 This project also uses Circle Flags assets from [HatScripts/circle-flags](https://github.com/HatScripts/circle-flags), licensed under MIT.
 
-See [here](THIRD_PARTY_NOTICES.md) for additional third-party attributions and license notices.
+See [here](NOTICES.md) for additional third-party attributions and license notices.
 
 ### Our Commitment 
 
