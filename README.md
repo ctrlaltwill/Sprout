@@ -1,7 +1,7 @@
 # Sprout - Flashcards & Spaced Repetition
 
 ![GitHub Release](https://img.shields.io/github/v/release/ctrlaltwill/sprout)
-[![License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/blob/main/LICENSE.md)
 [![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/Sprout/issues)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ctrlaltwill/sprout/total)
 [![CI](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
@@ -65,7 +65,7 @@ Rather than separating notes and flashcards, Sprout keeps everything in one plac
 ### License
 Sprout is released under the **MIT License**.
 
-See the [full license](LICENSE) for more details.
+See the [full license](LICENSE.md) for more details.
 
 ### Credits
 FSRS scheduling in Sprout is powered by FSRS-6 via [open-spaced-repetition/ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs).
