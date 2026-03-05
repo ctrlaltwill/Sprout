@@ -68,11 +68,11 @@ Sprout is released under the **MIT License**.
 See the [full license](LICENSE) for more details.
 
 ### Credits
-FSRS scheduling in Sprout is powered by [open-spaced-repetition/ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs).
+FSRS scheduling in Sprout is powered by FSRS-6 via [open-spaced-repetition/ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs).
 
 This project also uses Circle Flags assets from [HatScripts/circle-flags](https://github.com/HatScripts/circle-flags), licensed under MIT.
 
-Thanks to the maintainers and contributors of these open-source projects.
+See [here](THIRD_PARTY_NOTICES.md) for additional third-party attributions and license notices.
 
 ### Our Commitment 
 
