@@ -13,8 +13,8 @@
 }
 
 .VPNavBarTitle .logo {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 7px;
 }
 
@@ -47,9 +47,14 @@
 }
 
 .VPHome .VPHero .image-src {
-  width: 110%;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
   height: auto;
+}
+
+.VPFeatures .VPFeature {
+  background-color: transparent;
+  border-color: transparent;
 }
 
 .dark .VPHome .VPHero {
@@ -76,13 +81,16 @@
   border: 1px solid rgba(var(--sprout-primary-rgb), 0.28);
   border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 8px 22px rgba(var(--sprout-primary-rgb), 0.08);
+}
+
+.VPFeature .icon {
+  background-color: #ece3ff;
+  color: #6e40e6;
 }
 
 .dark .VPFeature .box {
   border-color: rgba(var(--sprout-primary-rgb), 0.34);
   background: #1a1628;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
 }
 
 .dark .VPFeature .title {
@@ -94,6 +102,7 @@
 }
 
 .dark .VPFeature .icon {
+  background-color: #2b2340;
   color: #c5a9ff;
 }
 
