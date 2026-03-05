@@ -16,8 +16,8 @@ import {
   resetCardScheduling,
   shuffleCardsWithinTimeWindow,
   shuffleCardsWithParentAwareness,
-} from "../src/scheduler/scheduler";
-import type { CardState, SchedulerSettings } from "../src/types/scheduler";
+} from "../src/engine/scheduler/scheduler";
+import type { CardState, SchedulerSettings } from "../src/platform/types/scheduler";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

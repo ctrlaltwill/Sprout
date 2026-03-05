@@ -5,8 +5,8 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from "vitest";
-import { parseCardsFromText } from "../src/parser/parser";
-import type { ParsedCard } from "../src/parser/parser";
+import { parseCardsFromText } from "../src/engine/parser/parser";
+import type { ParsedCard } from "../src/engine/parser/parser";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

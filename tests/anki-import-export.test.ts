@@ -17,7 +17,7 @@ const ankiSqlMock = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../src/anki/anki-sql", () => {
+vi.mock("../src/platform/integrations/anki/anki-sql", () => {
   return {
     getSqlJs: vi.fn(async () => ({
       Database: class {
@@ -38,14 +38,14 @@ vi.mock("../src/anki/anki-sql", () => {
   };
 });
 
-vi.mock("../src/anki/anki-zip", () => {
+vi.mock("../src/platform/integrations/anki/anki-zip", () => {
   return {
     unpackApkg: vi.fn(() => ({ db: new Uint8Array([9]), media: new Map() })),
     packApkg: vi.fn(() => new Uint8Array([7, 7])),
   };
 });
 
-vi.mock("../src/anki/anki-media", () => {
+vi.mock("../src/platform/integrations/anki/anki-media", () => {
   return {
     saveMediaToVault: vi.fn(async () => new Map()),
     rewriteFieldForSprout: (s: string) => s,
@@ -55,7 +55,7 @@ vi.mock("../src/anki/anki-media", () => {
   };
 });
 
-vi.mock("../src/sync/sync-engine", () => {
+vi.mock("../src/platform/integrations/sync/sync-engine", () => {
   return {
     syncOneFile: vi.fn(async () => ({
       idsInserted: 0,
