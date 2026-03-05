@@ -1627,6 +1627,9 @@ export class SproutSettingsView extends ItemView {
   }
 
   private _enhanceAboutPage(body: HTMLElement) {
+    const tx = (token: string, fallback: string): string =>
+      t(this.plugin.settings?.general?.interfaceLanguage, token, fallback);
+
     const storyCodeBlock = body.querySelector<HTMLElement>("pre > code");
     if (storyCodeBlock?.textContent?.includes("Sprout was built by William Guy")) {
       const paragraph = document.createElement("p");
