@@ -69,3 +69,5 @@ This project also uses Circle Flags assets from [HatScripts/circle-flags](https:
 Thanks to the maintainers and contributors of these open-source projects.
 
 See the [full license](LICENSE) for more details.
+
+![Sprout Banner Nine - Our Commitment](site/branding/Banner%20Nine%20-%20Commitment.png)
