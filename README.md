@@ -53,14 +53,14 @@ And now with Sprig, your AI-powered learning companion, reviewing your notes and
 - Reading view customisation to keep your notes clean
 - Sprig, an AI learning companion (currently in _beta_)
 
-## Meet Sprig
+### Sprig
 
-Sprig is your built-in AI learning companion within Sprout. It can:
-- Answer questions about your current note
-- Review your study notes and suggest improvements
-- Generate Sprout flashcards from your note content
+Sprig is your AI learning companion within Sprout. It can:
+- Answer questions about your current note 
+- Review your notes and suggest improvements or changes
+- Generate flashcards from your note content
 
-Sprig is currently in _beta_ – responses may vary by model and provider as the feature set is refined. We recommend utilising a model with strong reasoning and/or research ability. A formal release of Sprig is planned for v1.1.0. If you'd like to try it now, you can use the latest build in `dist`.
+Sprig is currently in _beta_. A formal release of Sprig is planned for v1.1.0. If you'd like to try it now, you can use the latest build in `dist`.
 
 ## Feature highlights
 
