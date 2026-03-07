@@ -60,7 +60,7 @@ Sprig is your AI learning companion within Sprout. It can:
 - Review your notes and suggest improvements or changes
 - Generate flashcards from your note content
 
-Sprig is currently in _beta_. It connects to external AI providers using a bring-your-own API key model, meaning requests are sent directly to the provider and usage is billed by them. This keeps pricing transparent and avoids hidden markups
+Sprig is currently in _beta_. It connects to external AI providers using a bring-your-own API key model, meaning requests are sent directly to the provider and usage is billed by them. This keeps pricing transparent and means you are only paying for what you use.
 
 ## Feature highlights
 
