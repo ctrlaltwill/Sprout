@@ -67,7 +67,6 @@ import {
   isIoRevealableType,
   renderImageOcclusionReviewInto,
 } from "../../platform/image-occlusion/image-occlusion-review-render";
-import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
 
 // ✅ shared header import (like browser.ts)
 import { type SproutHeader, createViewHeader } from "../../platform/core/header";
@@ -859,9 +858,7 @@ export class SproutReviewerView extends ItemView {
         new Notice(this.tx("ui.reviewer.notice.editIoMissingParent", "Cannot edit image occlusion card: missing parent card."));
         return;
       }
-      ImageOcclusionCreatorModal.openForParent(this.plugin, parentId, {
-        onClose: () => { this.render(); },
-      });
+      IO.ImageOcclusionEditorModal.openForParent(this.plugin, parentId);
       return;
     }
 

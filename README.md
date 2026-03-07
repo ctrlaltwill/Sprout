@@ -69,9 +69,9 @@ This is intentional: Sprout is open source, free, and not built for profit. Inst
 ## Feature highlights
 
 ![Sprout Banner Two - Rich Card Types](site/branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
-![Sprout Banner Three - Audio Functionality](site/branding/Banner%20Three%20-%20Audio%20Functionality.png)
+![Sprout Banner Three - Meet Sprig](site/branding/Banner%20Three%20-%20Meet%20Sprig.png)
 ![Sprout Banner Four - FSRS Algorithm](site/branding/Banner%20Four%20-%20FSRS%20Algorithm.png)
-![Sprout Banner Five - Meet Sprig](site/branding/Banner%20Five%20-%20Meet%20Sprig.png)
+![Sprout Banner Five - Audio Functionality](site/branding/Banner%20Five%20-%20Audio%20Functionality.png)
 ![Sprout Banner Six - Anki Compatibility](site/branding/Banner%20Six%20-%20Anki%20Compatibility.png)
 ![Sprout Banner Seven - Card Creation](site/branding/Banner%20Seven%20-%20Card%20Creation.png)
 ![Sprout Banner Eight - Reminders & Gatekeeper](site/branding/Banner%20Eight%20-%20Reminders%20%26%20Gatekeeper.png)

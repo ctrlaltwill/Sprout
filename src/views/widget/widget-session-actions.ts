@@ -18,7 +18,6 @@ import { MS_DAY } from "../../platform/core/constants";
 import { gradeFromRating } from "../../engine/scheduler/scheduler";
 import { deepClone, clampInt } from "../reviewer/utilities";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
-import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "../reviewer/markdown-block";
 import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
 
@@ -405,18 +404,8 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
 
   const cardType = String(card.type || "").toLowerCase();
 
-  // IO cards open the image occlusion editor
-  if (["io", "io-child"].includes(cardType)) {
-    const parentId = cardType === "io" ? String(card.id) : String(card.parentId || "");
-    if (!parentId) {
-      new Notice(tx(view, "ui.widget.notice.editIoMissingParent", "Cannot edit image occlusion card: missing parent card."));
-      return;
-    }
-    ImageOcclusionCreatorModal.openForParent(view.plugin as unknown as SproutPlugin, parentId, {
-      onClose: () => { view.render(); },
-    });
-    return;
-  }
+  // Skip IO cards – they have their own editor
+  if (["io", "io-child"].includes(cardType)) return;
 
   // If this is a cloze child or reversed child, edit the parent instead so changes persist
   let targetCard = card;
