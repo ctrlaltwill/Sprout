@@ -13,7 +13,7 @@ Sprout is an Obsidian plugin that lets you create flashcards directly inside you
 
 Rather than separating notes and flashcards, Sprout keeps everything in one place — turning Obsidian into a hub for learning.
 
-And now with Sprig, your AI-powered learning companion, reviewing your notes and creating flashcards is faster than ever before!
+And now with Sprig, your AI-powered learning companion, reviewing your notes and creating flashcards is quicker than ever!
 
 ## Getting started
 
@@ -60,7 +60,7 @@ Sprig is your AI learning companion within Sprout. It can:
 - Review your notes and suggest improvements or changes
 - Generate flashcards from your note content
 
-Sprig is currently in _beta_. A formal release of Sprig is planned for v1.1.0. If you'd like to try it now, you can use the latest build in `dist`.
+Sprig is currently in _beta_. It connects to external AI providers using a bring-your-own API key model, meaning requests are sent directly to the provider and usage is billed by them. This keeps pricing transparent and avoids hidden markups
 
 ## Feature highlights
 
