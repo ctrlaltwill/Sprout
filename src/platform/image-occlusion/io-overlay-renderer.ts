@@ -22,6 +22,31 @@ type ResizeMoveEvent = {
   deltaRect?: { left: number; top: number; width: number; height: number };
 };
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function createDeleteIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("xmlns", SVG_NS);
+  svg.setAttribute("width", "16");
+  svg.setAttribute("height", "16");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("class", "svg-icon lucide-x");
+
+  const pathA = document.createElementNS(SVG_NS, "path");
+  pathA.setAttribute("d", "M18 6 6 18");
+  const pathB = document.createElementNS(SVG_NS, "path");
+  pathB.setAttribute("d", "m6 6 12 12");
+
+  svg.appendChild(pathA);
+  svg.appendChild(pathB);
+  return svg;
+}
+
 // ── Public callback interface ───────────────────────────────────────────────
 
 export interface OverlayCallbacks {
@@ -158,8 +183,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     deleteBtn.className = "sprout-assistant-popup-close sprout-io-mask-delete";
     deleteBtn.setAttribute("aria-label", "Delete mask");
     deleteBtn.setAttribute("data-tooltip-position", "top");
-    deleteBtn.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>';
+    deleteBtn.appendChild(createDeleteIcon());
 
     deleteBtn.addEventListener("mousedown", (e) => {
       // Keep input focus behavior stable while clicking the delete affordance.
