@@ -3076,6 +3076,8 @@ export class SproutSettingsTab extends PluginSettingTab {
   private renderStudyAssistantSection(wrapper: HTMLElement): void {
     const dependentSettings: Setting[] = [];
     const provider = this.plugin.settings.studyAssistant.provider;
+    const getOpenRouterTier = (): "free" | "paid" =>
+      this._normaliseOpenRouterTier(this.plugin.settings.studyAssistant.openRouterTier);
     const modelLikelySupportsVision = (rawModel: string): boolean => {
       const model = String(rawModel || "").toLowerCase();
       if (!model) return false;
@@ -3135,7 +3137,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     const getProviderModelOptions = (selectedProvider: StudyAssistantProvider): StudyAssistantModelOption[] => {
       if (selectedProvider === "custom") return [];
       if (selectedProvider === "openrouter") {
-        return this._getOpenRouterModelOptions(this.plugin.settings.studyAssistant.openRouterTier);
+        return this._getOpenRouterModelOptions(getOpenRouterTier());
       }
       return staticModelOptions[selectedProvider];
     };
@@ -3239,10 +3241,10 @@ export class SproutSettingsTab extends PluginSettingTab {
                 { value: "free", label: "Free" },
                 { value: "paid", label: "Paid" },
               ],
-              value: this.plugin.settings.studyAssistant.openRouterTier,
+              value: getOpenRouterTier(),
               onChange: (value) => {
                 this.plugin.settings.studyAssistant.openRouterTier = value === "paid" ? "paid" : "free";
-                const available = this._getOpenRouterModelOptions(this.plugin.settings.studyAssistant.openRouterTier);
+                const available = this._getOpenRouterModelOptions(getOpenRouterTier());
                 if (!available.some((model) => model.value === this.plugin.settings.studyAssistant.model)) {
                   this.plugin.settings.studyAssistant.model = available[0]?.value || "";
                 }
@@ -3635,6 +3637,10 @@ export class SproutSettingsTab extends PluginSettingTab {
     return this._formatModelLabel(value);
   }
 
+  private _normaliseOpenRouterTier(rawTier: unknown): "free" | "paid" {
+    return rawTier === "paid" ? "paid" : "free";
+  }
+
   private _getOpenRouterModelOptions(tier: "free" | "paid"): StudyAssistantModelOption[] {
     const models = this._openRouterModelsCache ?? [];
     if (!models.length) return [];
@@ -3722,7 +3728,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       this._openRouterModelsCache = deduped;
 
       if (this.plugin.settings.studyAssistant.provider === "openrouter") {
-        const options = this._getOpenRouterModelOptions(this.plugin.settings.studyAssistant.openRouterTier);
+        const options = this._getOpenRouterModelOptions(this._normaliseOpenRouterTier(this.plugin.settings.studyAssistant.openRouterTier));
         if (options.length && !options.some((opt) => opt.value === this.plugin.settings.studyAssistant.model)) {
           this.plugin.settings.studyAssistant.model = options[0].value;
           await this.plugin.saveAll();

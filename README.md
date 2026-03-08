@@ -60,7 +60,15 @@ Sprig is your AI learning companion within Sprout. It can:
 - Review your notes and suggest improvements or changes
 - Generate flashcards from your note content
 
-Sprig is currently in _beta_. It connects to external AI providers using a bring-your-own API key model, meaning requests are sent directly to the provider and usage is billed by them. This keeps pricing transparent and means you are only paying for what you use.
+Sprig is currently in _beta_. It helps you understand notes faster, improve them with clear feedback, and turn them into ready-to-study flashcards in one flow.
+
+Watch Sprig in action:
+
+<a href="https://youtu.be/fe1htR7hjvY" target="_blank" rel="noopener noreferrer">
+   <img src="https://img.youtube.com/vi/fe1htR7hjvY/maxresdefault.jpg" alt="Sprig Demo video" width="720" />
+</a>
+
+You **bring your own API key**, so cost depends on the provider/model you choose. Sprig currently supports providers with free tiers (e.g. Google, OpenRouter) as well as premium platforms (e.g. Anthropic, OpenAI, Perplexity). Sprout adds no subscription fees or API markups.
 
 ## Feature highlights
 
@@ -90,5 +98,3 @@ See [here](NOTICES.md) for additional third-party attributions and license notic
 ### Our Commitment 
 
 Sprout is proudly open source and will always remain free. We firmly believe learning tools shouldn’t lock your knowledge behind subscriptions. That’s why your notes and your data will always remain entirely under your control.
-
-If Sprout helps your learning, then it’s doing exactly what it was built for.
