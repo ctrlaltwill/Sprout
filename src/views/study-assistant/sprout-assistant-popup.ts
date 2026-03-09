@@ -1488,7 +1488,7 @@ export class SproutAssistantPopup {
     audioBar.addClass("is-active");
     audioBar.toggleClass("is-paused", this._ttsPaused);
 
-    const btn = audioBar.querySelector(".sprout-assistant-reply-audio-btn");
+    const btn = audioBar.querySelector<HTMLElement>(".sprout-assistant-reply-audio-btn");
     if (!btn) return;
     const isPlaying = !this._ttsPaused;
     btn.setAttribute("aria-label", isPlaying ? "Pause reply audio" : "Play reply audio");
@@ -1541,7 +1541,7 @@ export class SproutAssistantPopup {
     if (!audioBar) return;
     audioBar.removeClass("is-active");
     audioBar.removeClass("is-paused");
-    const btn = audioBar.querySelector(".sprout-assistant-reply-audio-btn");
+    const btn = audioBar.querySelector<HTMLElement>(".sprout-assistant-reply-audio-btn");
     if (btn) this._setReplyAudioButtonIcon(btn, false);
   }
 
@@ -1564,7 +1564,7 @@ export class SproutAssistantPopup {
     audioBar.addClass("is-finishing");
     audioBar.removeClass("is-active");
     audioBar.removeClass("is-paused");
-    const btn = audioBar.querySelector(".sprout-assistant-reply-audio-btn");
+    const btn = audioBar.querySelector<HTMLElement>(".sprout-assistant-reply-audio-btn");
     if (btn) this._setReplyAudioButtonIcon(btn, false);
 
     const releaseFinishClass = () => {

@@ -1016,8 +1016,8 @@
 
 /* Guard against global button reset rules in Sprout core styles. */
 .sprout .sprout-assistant-popup-send {
-  height: 32px !important;
-  min-height: 32px !important;
+  height: 36px !important;
+  min-height: 36px !important;
   line-height: 0 !important;
 }
 
@@ -1041,7 +1041,7 @@
 
 /* Keep popup send button padding against global `.sprout button` resets. */
 .sprout-assistant-popup .sprout-assistant-popup-send {
-  padding: 2px 10px !important;
+  padding: 0px !important;
 }
 
 @keyframes sprout-assistant-spin {
@@ -1590,6 +1590,147 @@
   color: var(--text-muted);
   border-top: 1px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 75%, transparent);
   background: color-mix(in srgb, var(--background-secondary, #f5f5f5) 58%, var(--background-primary, #fff));
+}
+
+/* ---- Assistant reply read-aloud controls ---- */
+.sprout-assistant-reply-audio {
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin: 0;
+  margin-bottom: 0;
+  padding: 0;
+  border-radius: var(--button-radius);
+  display: flex;
+  background: var(--color-base-25) !important;
+  border: 1px solid transparent !important;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: max-height 0.22s ease, opacity 0.18s ease, margin-bottom 0.22s ease, padding 0.22s ease, transform 0.22s ease;
+}
+
+.sprout-assistant-popup-message-row.is-assistant:hover .sprout-assistant-reply-audio,
+.sprout-assistant-popup-message-bubble.is-assistant:hover .sprout-assistant-reply-audio,
+.sprout-assistant-reply-audio.is-active:not(.is-paused) {
+  max-height: 30px;
+  opacity: 1;
+  margin-bottom: 8px;
+  padding: 0.2rem 0.5rem;
+  pointer-events: auto;
+  transform: translateY(0);
+  border-color: var(--color-base-40) !important;
+}
+
+.sprout-assistant-reply-audio.is-finishing {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-2px) !important;
+}
+
+.sprout-assistant-reply-audio.is-paused {
+  opacity: 0.85;
+}
+
+.sprout-assistant-reply-audio-btn {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: var(--text-muted) !important;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sprout-assistant-reply-audio-btn:hover {
+  background: transparent !important;
+  color: var(--text-normal) !important;
+}
+
+.sprout-assistant-reply-audio-solid-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  color: inherit !important;
+  fill: currentColor !important;
+  animation: sprout-reply-audio-icon-in 0.26s ease;
+}
+
+.sprout-assistant-reply-audio-solid-icon path {
+  fill: currentColor !important;
+}
+
+.sprout-assistant-reply-audio-solid-icon.is-pause {
+  width: 13px;
+}
+
+.sprout .sprout-assistant-reply-audio-btn,
+.sprout-assistant-popup .sprout-assistant-reply-audio-btn {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sprout-assistant-reply-audio-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.5;
+  height: 18px;
+  padding-right: 2px;
+}
+
+.sprout-assistant-reply-audio-wave-bar {
+  display: block;
+  width: 3px;
+  height: 4px;
+  min-height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted);
+  opacity: 0.45;
+}
+
+.sprout-assistant-reply-audio.is-active .sprout-assistant-reply-audio-wave-bar {
+  opacity: 1;
+}
+
+.sprout-assistant-reply-audio.is-paused .sprout-assistant-reply-audio-wave-bar {
+  opacity: 0.5;
+}
+
+@keyframes sprout-reply-audio-icon-in {
+  0% {
+    transform: rotate(-160deg) scale(0.4);
+    opacity: 0;
+  }
+
+  50% {
+    transform: rotate(-8deg) scale(1.12);
+  }
+
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
 /* ---- Mobile responsive ---- */

@@ -232,7 +232,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     if (localScrollable) return local;
 
     const nativeSettings = local.closest(".vertical-tab-content-container");
-    if (nativeSettings) return nativeSettings;
+    if (nativeSettings instanceof HTMLElement) return nativeSettings;
 
     let node: HTMLElement | null = local.parentElement;
     while (node) {

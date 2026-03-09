@@ -52,6 +52,7 @@ export function normaliseSettingsInPlace(s: SproutSettings): void {
 
   s.studyAssistant ??= {} as SproutSettings["studyAssistant"];
   s.studyAssistant.enabled ??= DEFAULT_SETTINGS.studyAssistant.enabled;
+  s.studyAssistant.voiceChat ??= DEFAULT_SETTINGS.studyAssistant.voiceChat;
   const provider = String(s.studyAssistant.provider ?? DEFAULT_SETTINGS.studyAssistant.provider);
   s.studyAssistant.provider =
     provider === "openai" || provider === "anthropic" || provider === "deepseek" || provider === "xai" || provider === "google" || provider === "perplexity" || provider === "openrouter" || provider === "custom"

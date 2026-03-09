@@ -128,10 +128,17 @@ export function renderImageOcclusionReviewInto(args: {
       const modal = new (class extends Modal {
         onOpen() {
           scopeModalToWorkspace(this);
-          this.containerEl.addClass("sprout");
+          this.containerEl.addClass("sprout-modal-container", "sprout-modal-dim", "sprout");
+          this.modalEl.addClass("bc", "sprout-modals", "sprout-zoom-overlay");
+          queryFirst(this.modalEl, ".modal-header")?.remove();
+          queryFirst(this.modalEl, ".modal-close-button")?.remove();
+
+          this.contentEl.empty();
           this.contentEl.classList.add("sprout-zoom-content", "sprout-io-zoom-out");
+
           const zoomHost = this.contentEl.createDiv({ cls: "bc sprout-zoom-host sprout-io-zoom-out" });
           zoomHost.dataset.sproutIoWidget = "1";
+
           // Render with modal-specific sizing
           void renderImageOcclusionReviewInto({
             app,
@@ -144,6 +151,19 @@ export function renderImageOcclusionReviewInto(args: {
             renderMarkdownInto: args.renderMarkdownInto,
             enableWidgetModal: true, // signal modal mode
           });
+
+          const closeBtn = document.createElement("button");
+          closeBtn.type = "button";
+          closeBtn.setAttribute("aria-label", "Close");
+          closeBtn.classList.add("sprout-zoom-close");
+          setIcon(closeBtn, "x");
+          closeBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.close();
+          });
+          zoomHost.appendChild(closeBtn);
+
           // Close modal on click anywhere in modal
           this.contentEl.addEventListener("click", (e) => {
             e.preventDefault();
@@ -153,6 +173,8 @@ export function renderImageOcclusionReviewInto(args: {
         }
         onClose() {
           this.contentEl.empty();
+          this.modalEl.removeClass("sprout-modals", "sprout-zoom-overlay");
+          this.containerEl.removeClass("sprout-modal-container", "sprout-modal-dim", "sprout");
         }
       })(app);
       modal.open();

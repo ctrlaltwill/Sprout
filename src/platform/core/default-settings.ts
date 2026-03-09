@@ -57,6 +57,7 @@ export const DEFAULT_SETTINGS: SproutSettings = {
 
   studyAssistant: {
     enabled: false,
+    voiceChat: false,
     provider: "openai",
     openRouterTier: "free",
     model: "gpt-4.1-mini",
