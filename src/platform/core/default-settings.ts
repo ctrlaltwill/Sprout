@@ -98,6 +98,7 @@ export const DEFAULT_SETTINGS: SproutSettings = {
       includeImagesInFlashcard: true,
       previewPayload: true,
       saveChatHistory: true,
+      syncDeletesToProvider: false,
     },
   },
 

@@ -117,6 +117,7 @@ export type SproutSettings = {
       includeImagesInFlashcard: boolean;
       previewPayload: boolean;
       saveChatHistory: boolean;
+      syncDeletesToProvider: boolean;
     };
   };
 

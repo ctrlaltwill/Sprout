@@ -2,6 +2,12 @@ import type { SproutSettings } from "../../types/settings";
 
 export type StudyAssistantProvider = SproutSettings["studyAssistant"]["provider"];
 
+export type StudyAssistantConversationRef = {
+  provider: StudyAssistantProvider;
+  conversationId: string;
+  backend?: string;
+};
+
 export type StudyAssistantCardType = keyof SproutSettings["studyAssistant"]["generatorTypes"];
 
 export type StudyAssistantGeneratorInput = {
@@ -17,6 +23,7 @@ export type StudyAssistantGeneratorInput = {
   includeGroups: boolean;
   customInstructions: string;
   userRequestText?: string;
+  conversationId?: string;
 };
 
 export type StudyAssistantSuggestion = {
@@ -52,6 +59,7 @@ export type StudyAssistantGeneratorResult = {
   suggestions: StudyAssistantSuggestion[];
   payloadPreview: string;
   rawResponseText: string;
+  conversationId?: string;
 };
 
 export type StudyAssistantChatMode = "ask" | "review";
@@ -68,10 +76,12 @@ export type StudyAssistantChatInput = {
   userMessage: string;
   customInstructions: string;
   reviewDepth?: StudyAssistantReviewDepth;
+  conversationId?: string;
 };
 
 export type StudyAssistantChatResult = {
   reply: string;
   payloadPreview: string;
   rawResponseText: string;
+  conversationId?: string;
 };

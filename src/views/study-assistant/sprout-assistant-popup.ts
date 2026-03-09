@@ -22,9 +22,11 @@ import {
   generateStudyAssistantChatReply,
   generateStudyAssistantSuggestions,
 } from "../../platform/integrations/ai/study-assistant-generator";
+import { deleteStudyAssistantConversation } from "../../platform/integrations/ai/study-assistant-provider";
 import type {
   StudyAssistantCardType,
   StudyAssistantChatMode,
+  StudyAssistantConversationRef,
   StudyAssistantReviewDepth,
   StudyAssistantSuggestion,
 } from "../../platform/integrations/ai/study-assistant-types";
@@ -37,6 +39,13 @@ type ChatMessage = {
   role: "user" | "assistant";
   text: string;
 };
+
+type GenerateSuggestionBatch = {
+  assistantMessageIndex: number;
+  suggestions: StudyAssistantSuggestion[];
+};
+
+type ModeConversationRefs = Partial<Record<AssistantMode, StudyAssistantConversationRef>>;
 
 type IoSuggestionRect = {
   rectId?: string;
@@ -98,7 +107,8 @@ type AssistantLeafSession = {
   reviewError: string;
   generateMessages: ChatMessage[];
   generateDraft: string;
-  suggestions: StudyAssistantSuggestion[];
+  generateSuggestionBatches: GenerateSuggestionBatch[];
+  remoteConversationsByMode: ModeConversationRefs;
   generatorError: string;
   insertingSuggestionKey: string | null;
   isInsertingSuggestion: boolean;
@@ -151,7 +161,8 @@ export class SproutAssistantPopup {
   private generateMessages: ChatMessage[] = [];
   private generateDraft = "";
   private generatorError = "";
-  private suggestions: StudyAssistantSuggestion[] = [];
+  private generateSuggestionBatches: GenerateSuggestionBatch[] = [];
+  private remoteConversationsByMode: ModeConversationRefs = {};
   private insertingSuggestionKey: string | null = null;
   private isInsertingSuggestion = false;
   private _lastAnchoredResponseKeyByMode: Partial<Record<AssistantMode, string>> = {};
@@ -250,6 +261,8 @@ export class SproutAssistantPopup {
           reviewDraft?: string;
           generateMessages?: ChatMessage[];
           generateDraft?: string;
+          generateSuggestionBatches?: GenerateSuggestionBatch[];
+          remoteConversationsByMode?: ModeConversationRefs;
           suggestions?: StudyAssistantSuggestion[];
           reviewResult?: string;
           reviewDepth?: StudyAssistantReviewDepth;
@@ -259,7 +272,15 @@ export class SproutAssistantPopup {
         this.reviewDraft = typeof data.reviewDraft === "string" ? data.reviewDraft : "";
         this.generateMessages = Array.isArray(data.generateMessages) ? data.generateMessages : [];
         this.generateDraft = typeof data.generateDraft === "string" ? data.generateDraft : "";
-        this.suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+        const normalizedBatches = this._normalizeSuggestionBatches(data.generateSuggestionBatches, this.generateMessages);
+        if (normalizedBatches.length) {
+          this.generateSuggestionBatches = normalizedBatches;
+        } else {
+          // Backward compatibility with legacy single-bucket suggestions.
+          const legacySuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+          this.generateSuggestionBatches = this._legacyBatchesFromSuggestions(this.generateMessages, legacySuggestions);
+        }
+        this.remoteConversationsByMode = this._normalizeRemoteConversationRefs(data.remoteConversationsByMode);
         // Backward compat for legacy saved reviewResult text.
         if (!this.reviewMessages.length && typeof data.reviewResult === "string" && data.reviewResult.trim()) {
           this.reviewMessages = [{ role: "assistant", text: data.reviewResult.trim() }];
@@ -291,7 +312,10 @@ export class SproutAssistantPopup {
     const chatsFolder = this._getChatsFolderPath();
     if (!adapter || !chatPath || !chatsFolder) return;
 
-    const hasData = this.chatMessages.length > 0 || this.reviewMessages.length > 0 || this.generateMessages.length > 0;
+    const hasData = this.chatMessages.length > 0
+      || this.reviewMessages.length > 0
+      || this.generateMessages.length > 0
+      || this.generateSuggestionBatches.length > 0;
     if (!hasData) {
       // Remove stale file if nothing to save
       try {
@@ -310,7 +334,10 @@ export class SproutAssistantPopup {
         reviewDraft: this.reviewDraft || undefined,
         generateMessages: this.generateMessages,
         generateDraft: this.generateDraft || undefined,
-        suggestions: this.suggestions.length ? this.suggestions : undefined,
+        generateSuggestionBatches: this.generateSuggestionBatches.length ? this.generateSuggestionBatches : undefined,
+        remoteConversationsByMode: Object.keys(this.remoteConversationsByMode).length
+          ? this.remoteConversationsByMode
+          : undefined,
         reviewDepth: this.reviewDepth,
       };
       await adapter.write(chatPath, JSON.stringify(data, null, 2));
@@ -329,7 +356,8 @@ export class SproutAssistantPopup {
     this.generateMessages = [];
     this.generateDraft = "";
     this.generatorError = "";
-    this.suggestions = [];
+    this.generateSuggestionBatches = [];
+    this.remoteConversationsByMode = {};
     this.insertingSuggestionKey = null;
   }
 
@@ -389,7 +417,14 @@ export class SproutAssistantPopup {
     });
   }
 
-  private _resetCurrentModeConversation(): void {
+  private async _resetCurrentModeConversation(): Promise<void> {
+    const mode = this.mode;
+    const remoteRef = this._getRemoteConversationForMode(mode);
+    if (this._shouldSyncDeletesToProvider() && remoteRef) {
+      await this._bestEffortDeleteRemoteConversation(remoteRef);
+    }
+    this._clearRemoteConversationForMode(mode);
+
     if (this.mode === "assistant") {
       this.chatMessages = [];
       this.chatDraft = "";
@@ -404,7 +439,7 @@ export class SproutAssistantPopup {
       this.generateMessages = [];
       this.generateDraft = "";
       this.generatorError = "";
-      this.suggestions = [];
+      this.generateSuggestionBatches = [];
       this.insertingSuggestionKey = null;
       this.isGenerating = false;
       this._scheduleSave();
@@ -429,6 +464,27 @@ export class SproutAssistantPopup {
       this._saveChatTimer = null;
     }
 
+    let remoteDeletedCount = 0;
+    let remoteAttemptCount = 0;
+    if (this._shouldSyncDeletesToProvider()) {
+      const fromCurrent = Object.values(this._normalizeRemoteConversationRefs(this.remoteConversationsByMode));
+      const fromSaved = await this._collectRemoteConversationsFromSavedChats();
+      const deduped = new Map<string, StudyAssistantConversationRef>();
+      for (const ref of [...fromCurrent, ...fromSaved]) {
+        if (!ref) continue;
+        const key = `${ref.provider}::${ref.conversationId}`;
+        if (!deduped.has(key)) deduped.set(key, ref);
+      }
+      for (const ref of deduped.values()) {
+        remoteAttemptCount += 1;
+        const result = await deleteStudyAssistantConversation({
+          settings: this.plugin.settings.studyAssistant,
+          conversationId: ref.conversationId,
+        });
+        if (result.deleted) remoteDeletedCount += 1;
+      }
+    }
+
     this._clearConversationState();
     this._leafSessions = new WeakMap<WorkspaceLeaf, AssistantLeafSession>();
 
@@ -451,6 +507,13 @@ export class SproutAssistantPopup {
       }
       this._captureCurrentLeafSession();
       new Notice(this._tx("ui.studyAssistant.chat.clearedAll", "All chats have been cleared."));
+      if (remoteAttemptCount > 0) {
+        new Notice(this._tx(
+          "ui.studyAssistant.chat.remoteDeleteSummary",
+          "Remote delete requested for {attempted} conversation(s); deleted {deleted}.",
+          { attempted: remoteAttemptCount, deleted: remoteDeletedCount },
+        ));
+      }
     } catch (e) {
       log.swallow("delete all chat files", e);
       new Notice(this._tx("ui.studyAssistant.chat.clearAllFailed", "Could not clear all chats."));
@@ -606,7 +669,7 @@ export class SproutAssistantPopup {
       this.generateMessages = [];
       this.generateDraft = "";
       this.generatorError = "";
-      this.suggestions = [];
+      this.generateSuggestionBatches = [];
       this._maxObservedPopupHeight = 0;
       this.popupEl?.style.removeProperty("height");
       this.activeFile = file || null;
@@ -667,7 +730,7 @@ export class SproutAssistantPopup {
       return;
     }
     this.activeFile = this.plugin.app.workspace.getActiveFile();
-    if (!this.chatMessages.length && !this.reviewMessages.length && !this.generateMessages.length && !this.suggestions.length) {
+    if (!this.chatMessages.length && !this.reviewMessages.length && !this.generateMessages.length && !this.generateSuggestionBatches.length) {
       this._maxObservedPopupHeight = 0;
       this.popupEl?.style.removeProperty("height");
     }
@@ -758,16 +821,76 @@ export class SproutAssistantPopup {
     return body.includes(this._flashcardDisclaimerText().toLowerCase());
   }
 
+  private _generateNonFlashcardHintText(): string {
+    return this._tx(
+      "ui.studyAssistant.generator.nonFlashcardHint",
+      "Your request did not specify flashcard generation. Try something like 'Make 4 basic and cloze flashcards on this topic.' If you have a general question about your note, go to the Ask tab.",
+    );
+  }
+
+  private _shouldShowAskSwitch(text: string): boolean {
+    const body = String(text || "").toLowerCase();
+    return body.includes(this._generateNonFlashcardHintText().toLowerCase());
+  }
+
+  private _isGenerateFlashcardRequest(text: string): boolean {
+    const value = String(text || "").toLowerCase();
+    if (!value.trim()) return false;
+    if (/(flash\s*cards?|flashcards?|\bmcq\b|\boq\b|\bio\b|\bclozes?\b|\bbasic\b|\breversed\b|\banki\b)/i.test(value)) {
+      return true;
+    }
+    const hasPriorGenerateContext = this.generateMessages.length > 0 || this.generateSuggestionBatches.length > 0;
+    if (hasPriorGenerateContext && /\b(another|more|again|next|same|similar|harder|easier|variant|rephrase|one more|few more|give me)\b/i.test(value)) {
+      return true;
+    }
+    // Accept verbs paired with card intent, e.g. "make 5 cards on..."
+    return /\b(generate|make|create|build)\b[\s\S]{0,40}\b(cards?|questions?)\b/i.test(value);
+  }
+
+  private _extractRequestedGenerateCount(text: string): number | null {
+    const value = String(text || "").toLowerCase();
+    const countMatch = value.match(/\b(\d{1,3})\s+(flashcards?|cards?|questions?|mcqs?|clozes?|basics?|reversed|oqs?|ios?)\b/i);
+    if (!countMatch?.[1]) return null;
+    const count = Number.parseInt(countMatch[1], 10);
+    return Number.isFinite(count) ? count : null;
+  }
+
+  private _generateExcessiveCountHintText(count: number): string {
+    return this._tx(
+      "ui.studyAssistant.generator.tooManyRequested",
+      "You asked for {count} flashcards. Please break this down into smaller chunks of 20 or fewer focused on specific parts of the note or question types (for example: '10 clozes on prognosis' then '10 MCQs on treatment').",
+      { count },
+    );
+  }
+
   private _renderSwitchToGenerateButton(parent: HTMLElement): void {
-    const actions = parent.createDiv({ cls: "sprout-assistant-popup-message-actions" });
+    const actions = parent.createDiv({ cls: "sprout-assistant-popup-review-starters sprout-assistant-popup-message-actions" });
     const btn = actions.createEl("button", {
       cls: "sprout-assistant-popup-btn sprout-assistant-popup-switch-generate-btn",
       text: this._tx("ui.studyAssistant.chat.switchToGenerate", "Switch to Generate Tab"),
     });
     btn.type = "button";
+    btn.setAttr("aria-label", this._tx("ui.studyAssistant.chat.switchToGenerate", "Switch to Generate Tab"));
+    btn.setAttr("data-tooltip-position", "top");
     btn.addEventListener("click", () => {
       this.reviewDepthMenuOpen = false;
       this.mode = "generate";
+      this.render();
+    });
+  }
+
+  private _renderSwitchToAskButton(parent: HTMLElement): void {
+    const actions = parent.createDiv({ cls: "sprout-assistant-popup-review-starters sprout-assistant-popup-message-actions" });
+    const btn = actions.createEl("button", {
+      cls: "sprout-assistant-popup-btn sprout-assistant-popup-switch-ask-btn",
+      text: this._tx("ui.studyAssistant.chat.switchToAsk", "Switch to Ask Tab"),
+    });
+    btn.type = "button";
+    btn.setAttr("aria-label", this._tx("ui.studyAssistant.chat.switchToAsk", "Switch to Ask Tab"));
+    btn.setAttr("data-tooltip-position", "top");
+    btn.addEventListener("click", () => {
+      this.reviewDepthMenuOpen = false;
+      this.mode = "assistant";
       this.render();
     });
   }
@@ -912,7 +1035,8 @@ export class SproutAssistantPopup {
       reviewError: "",
       generateMessages: [],
       generateDraft: "",
-      suggestions: [],
+      generateSuggestionBatches: [],
+      remoteConversationsByMode: {},
       generatorError: "",
       insertingSuggestionKey: null,
       isInsertingSuggestion: false,
@@ -933,7 +1057,11 @@ export class SproutAssistantPopup {
       reviewError: this.reviewError,
       generateMessages: [...this.generateMessages],
       generateDraft: this.generateDraft,
-      suggestions: [...this.suggestions],
+      generateSuggestionBatches: this.generateSuggestionBatches.map((batch) => ({
+        assistantMessageIndex: batch.assistantMessageIndex,
+        suggestions: [...batch.suggestions],
+      })),
+      remoteConversationsByMode: { ...this.remoteConversationsByMode },
       generatorError: this.generatorError,
       insertingSuggestionKey: this.insertingSuggestionKey,
       isInsertingSuggestion: this.isInsertingSuggestion,
@@ -953,10 +1081,136 @@ export class SproutAssistantPopup {
     this.reviewError = snapshot.reviewError;
     this.generateMessages = [...snapshot.generateMessages];
     this.generateDraft = snapshot.generateDraft;
-    this.suggestions = [...snapshot.suggestions];
+    this.generateSuggestionBatches = snapshot.generateSuggestionBatches.map((batch) => ({
+      assistantMessageIndex: batch.assistantMessageIndex,
+      suggestions: [...batch.suggestions],
+    }));
+    this.remoteConversationsByMode = { ...snapshot.remoteConversationsByMode };
     this.generatorError = snapshot.generatorError;
     this.insertingSuggestionKey = snapshot.insertingSuggestionKey;
     this.isInsertingSuggestion = snapshot.isInsertingSuggestion;
+  }
+
+  private _normalizeSuggestionBatches(
+    value: unknown,
+    messages: ChatMessage[],
+  ): GenerateSuggestionBatch[] {
+    if (!Array.isArray(value)) return [];
+
+    const out: GenerateSuggestionBatch[] = [];
+    for (const raw of value) {
+      if (!raw || typeof raw !== "object") continue;
+      const batch = raw as Partial<GenerateSuggestionBatch>;
+      const assistantMessageIndex = Number(batch.assistantMessageIndex);
+      if (!Number.isInteger(assistantMessageIndex)) continue;
+      if (assistantMessageIndex < 0 || assistantMessageIndex >= messages.length) continue;
+      if (messages[assistantMessageIndex]?.role !== "assistant") continue;
+      const suggestions = Array.isArray(batch.suggestions) ? batch.suggestions : [];
+      if (!suggestions.length) continue;
+      out.push({ assistantMessageIndex, suggestions });
+    }
+
+    // Keep deterministic order by message index.
+    out.sort((a, b) => a.assistantMessageIndex - b.assistantMessageIndex);
+    return out;
+  }
+
+  private _normalizeRemoteConversationRefs(value: unknown): ModeConversationRefs {
+    const out: ModeConversationRefs = {};
+    if (!value || typeof value !== "object") return out;
+
+    const source = value as Partial<Record<AssistantMode, Partial<StudyAssistantConversationRef>>>;
+    const modes: AssistantMode[] = ["assistant", "review", "generate"];
+    for (const mode of modes) {
+      const raw = source[mode];
+      if (!raw || typeof raw !== "object") continue;
+      const provider = String(raw.provider || "").trim();
+      const conversationId = String(raw.conversationId || "").trim();
+      if (!provider || !conversationId) continue;
+      const normalized: StudyAssistantConversationRef = { provider: provider as StudyAssistantConversationRef["provider"], conversationId };
+      const backend = String(raw.backend || "").trim();
+      if (backend) normalized.backend = backend;
+      out[mode] = normalized;
+    }
+
+    return out;
+  }
+
+  private _setRemoteConversationForMode(mode: AssistantMode, conversationId: string | undefined): void {
+    const id = String(conversationId || "").trim();
+    if (!id) return;
+    const provider = this.plugin.settings.studyAssistant.provider;
+    this.remoteConversationsByMode[mode] = {
+      provider,
+      conversationId: id,
+      backend: provider === "custom" ? String(this.plugin.settings.studyAssistant.endpointOverride || "").trim() : undefined,
+    };
+  }
+
+  private _getRemoteConversationForMode(mode: AssistantMode): StudyAssistantConversationRef | null {
+    return this.remoteConversationsByMode[mode] ?? null;
+  }
+
+  private _clearRemoteConversationForMode(mode: AssistantMode): void {
+    delete this.remoteConversationsByMode[mode];
+  }
+
+  private _shouldSyncDeletesToProvider(): boolean {
+    return !!this.plugin.settings?.studyAssistant?.privacy?.syncDeletesToProvider;
+  }
+
+  private async _bestEffortDeleteRemoteConversation(ref: StudyAssistantConversationRef): Promise<void> {
+    const result = await deleteStudyAssistantConversation({
+      settings: this.plugin.settings.studyAssistant,
+      conversationId: ref.conversationId,
+    });
+
+    if (!result.deleted && !result.unsupported && result.detail) {
+      log.warn(`[study-assistant] Remote delete failed for ${ref.provider}:${ref.conversationId} (${result.detail})`);
+    }
+  }
+
+  private async _collectRemoteConversationsFromSavedChats(): Promise<StudyAssistantConversationRef[]> {
+    const adapter = this.plugin.app?.vault?.adapter;
+    const chatsFolder = this._getChatsFolderPath();
+    if (!adapter || !chatsFolder) return [];
+    if (!(await adapter.exists(chatsFolder))) return [];
+
+    const listResult = await (adapter as { list?: (path: string) => Promise<{ files: string[]; folders: string[] }> }).list?.(chatsFolder);
+    const files = listResult?.files ?? [];
+    const refs: StudyAssistantConversationRef[] = [];
+
+    for (const filePath of files) {
+      try {
+        const raw = await adapter.read(filePath);
+        const json = JSON.parse(raw) as { remoteConversationsByMode?: ModeConversationRefs };
+        const normalized = this._normalizeRemoteConversationRefs(json.remoteConversationsByMode);
+        const values = Object.values(normalized);
+        for (const ref of values) {
+          if (ref) refs.push(ref);
+        }
+      } catch (e) {
+        log.swallow("read saved remote conversation refs", e);
+      }
+    }
+
+    return refs;
+  }
+
+  private _legacyBatchesFromSuggestions(
+    messages: ChatMessage[],
+    legacySuggestions: StudyAssistantSuggestion[],
+  ): GenerateSuggestionBatch[] {
+    if (!legacySuggestions.length) return [];
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i]?.role !== "assistant") continue;
+      return [{ assistantMessageIndex: i, suggestions: [...legacySuggestions] }];
+    }
+    return [];
+  }
+
+  private _getSuggestionBatchForAssistantIndex(assistantMessageIndex: number): GenerateSuggestionBatch | null {
+    return this.generateSuggestionBatches.find((batch) => batch.assistantMessageIndex === assistantMessageIndex) ?? null;
   }
 
   private _getActiveMarkdownLeaf(): WorkspaceLeaf | null {
@@ -1676,6 +1930,7 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInAsk;
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const conversationId = this._getRemoteConversationForMode("assistant")?.conversationId;
 
       const result = await generateStudyAssistantChatReply({
         settings,
@@ -1688,6 +1943,7 @@ export class SproutAssistantPopup {
           includeImages,
           userMessage: draft,
           customInstructions: settings.prompts.assistant,
+          conversationId,
         },
       });
 
@@ -1695,6 +1951,7 @@ export class SproutAssistantPopup {
         "ui.studyAssistant.chat.emptyReply",
         "No response returned.",
       );
+      this._setRemoteConversationForMode("assistant", result.conversationId);
       this.chatMessages.push({ role: "assistant", text: reply });
       this._speakReply(reply, this.chatMessages.length - 1);
     } catch (e) {
@@ -1737,6 +1994,7 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInReview;
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const conversationId = this._getRemoteConversationForMode("review")?.conversationId;
 
       const result = await generateStudyAssistantChatReply({
         settings,
@@ -1750,6 +2008,7 @@ export class SproutAssistantPopup {
           userMessage: draft,
           customInstructions: settings.prompts.noteReview,
           reviewDepth: depthOverride ?? this.reviewDepth,
+          conversationId,
         },
       });
 
@@ -1757,6 +2016,7 @@ export class SproutAssistantPopup {
         "ui.studyAssistant.chat.emptyReply",
         "No response returned.",
       );
+      this._setRemoteConversationForMode("review", result.conversationId);
       this.reviewMessages.push({ role: "assistant", text: reply });
     } catch (e) {
       const userMessage = this._formatAssistantError(e);
@@ -2087,7 +2347,11 @@ export class SproutAssistantPopup {
     return null;
   }
 
-  private async insertSuggestion(suggestion: StudyAssistantSuggestion, idx: number): Promise<void> {
+  private async insertSuggestion(
+    suggestion: StudyAssistantSuggestion,
+    assistantMessageIndex: number,
+    suggestionIndex: number,
+  ): Promise<void> {
     if (this.isInsertingSuggestion) {
       new Notice(this._tx("ui.studyAssistant.generator.insertBusy", "Please wait for the current card insertion to finish."));
       return;
@@ -2097,7 +2361,7 @@ export class SproutAssistantPopup {
       new Notice(this._tx("ui.studyAssistant.generator.noNote", "Open a markdown note to insert generated cards."));
       return;
     }
-    const key = `${idx}-${suggestion.type}`;
+    const key = `${assistantMessageIndex}-${suggestionIndex}-${suggestion.type}`;
     this.insertingSuggestionKey = key;
     this.isInsertingSuggestion = true;
     this.render();
@@ -2108,7 +2372,15 @@ export class SproutAssistantPopup {
       if (validationError) throw new Error(validationError);
       await insertTextAtCursorOrAppend(this.plugin.app, file, text, true, true);
       await syncOneFile(this.plugin, file, { pruneGlobalOrphans: false });
-      this.suggestions = this.suggestions.filter((_, i) => i !== idx);
+      const batch = this._getSuggestionBatchForAssistantIndex(assistantMessageIndex);
+      if (batch) {
+        batch.suggestions = batch.suggestions.filter((_, i) => i !== suggestionIndex);
+        if (!batch.suggestions.length) {
+          this.generateSuggestionBatches = this.generateSuggestionBatches
+            .filter((item) => item.assistantMessageIndex !== assistantMessageIndex);
+        }
+      }
+      this._scheduleSave();
       new Notice(this._tx("ui.studyAssistant.generator.flashcardAdded", "Flashcard added"));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -2136,7 +2408,6 @@ export class SproutAssistantPopup {
     }
     this.isGenerating = true;
     this.generatorError = "";
-    this.suggestions = [];
     this.render();
     try {
       const noteContent = await this.readActiveMarkdown(file);
@@ -2146,8 +2417,11 @@ export class SproutAssistantPopup {
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
       const targetSuggestionCount = Math.max(1, Math.min(10, Math.round(Number(settings.generatorTargetCount) || 5)));
       const extraRequest = String(userMessage || "").trim();
+      const threadContext = this._buildGenerateThreadContext();
+      const conversationId = this._getRemoteConversationForMode("generate")?.conversationId;
       const customInstructions = [
         String(settings.prompts.generator || "").trim(),
+        threadContext,
         extraRequest
           ? this._tx(
             "ui.studyAssistant.generator.requestPrefix",
@@ -2171,10 +2445,12 @@ export class SproutAssistantPopup {
           includeGroups: !!settings.generatorOutput.includeGroups,
           customInstructions,
           userRequestText: extraRequest,
+          conversationId,
         },
       });
-      this.suggestions = result.suggestions;
-      const generatedCount = this.suggestions.length;
+      this._setRemoteConversationForMode("generate", result.conversationId);
+      const generatedSuggestions = Array.isArray(result.suggestions) ? result.suggestions : [];
+      const generatedCount = generatedSuggestions.length;
       const beVerb = generatedCount === 1 ? "is" : "are";
       const flashcardLabel = generatedCount === 1 ? "flashcard" : "flashcards";
       const assistantSummary = this._tx(
@@ -2183,17 +2459,62 @@ export class SproutAssistantPopup {
         { be: beVerb, count: generatedCount, label: flashcardLabel },
       );
       this.generateMessages.push({ role: "assistant", text: assistantSummary });
-      if (!this.suggestions.length) {
+      const assistantMessageIndex = this.generateMessages.length - 1;
+      if (generatedSuggestions.length) {
+        this.generateSuggestionBatches.push({
+          assistantMessageIndex,
+          suggestions: generatedSuggestions,
+        });
+      }
+      if (!generatedSuggestions.length) {
         this.generatorError = this._tx("ui.studyAssistant.generator.empty", "No valid suggestions were returned. Try adjusting your model, prompt, or enabled card types.");
       }
+      this._scheduleSave();
     } catch (e) {
       const userMessage = this._formatAssistantError(e);
       this._logAssistantRequestError("generate", e, userMessage);
       this.generatorError = userMessage;
     } finally {
       this.isGenerating = false;
+      this._scheduleSave();
       this.render();
     }
+  }
+
+  private _buildGenerateThreadContext(): string {
+    const recentMessages = this.generateMessages
+      .slice(-8)
+      .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${String(msg.text || "").trim()}`)
+      .filter((line) => line.trim().length > 0);
+
+    const priorGeneratedTopics = this.generateSuggestionBatches
+      .flatMap((batch) => batch.suggestions)
+      .flatMap((suggestion) => {
+        const primary = String(suggestion.question || suggestion.clozeText || suggestion.title || "").trim();
+        return primary ? [primary] : [];
+      })
+      .slice(-20);
+
+    if (!recentMessages.length && !priorGeneratedTopics.length) return "";
+
+    const blocks: string[] = [
+      "Generation thread context (most recent first):",
+    ];
+
+    if (recentMessages.length) {
+      blocks.push(recentMessages.reverse().join("\n"));
+    }
+
+    if (priorGeneratedTopics.length) {
+      blocks.push(
+        [
+          "Previously generated flashcard topics in this chat (avoid near-duplicates unless the user asks for variants):",
+          ...priorGeneratedTopics.map((topic, idx) => `${idx + 1}. ${topic}`),
+        ].join("\n"),
+      );
+    }
+
+    return blocks.join("\n\n");
   }
 
   private async sendGenerateMessage(): Promise<void> {
@@ -2202,6 +2523,23 @@ export class SproutAssistantPopup {
     if (!draft) return;
     this.generateDraft = "";
     this.generateMessages.push({ role: "user", text: draft });
+
+    if (!this._isGenerateFlashcardRequest(draft)) {
+      this.generateMessages.push({ role: "assistant", text: this._generateNonFlashcardHintText() });
+      this._scheduleSave();
+      this.render();
+      return;
+    }
+
+    const requestedCount = this._extractRequestedGenerateCount(draft);
+    if (requestedCount != null && requestedCount > 20) {
+      this.generateMessages.push({ role: "assistant", text: this._generateExcessiveCountHintText(requestedCount) });
+      this._scheduleSave();
+      this.render();
+      return;
+    }
+
+    this._scheduleSave();
     await this.generateSuggestions(draft);
   }
 
@@ -2760,13 +3098,13 @@ export class SproutAssistantPopup {
       e.preventDefault();
       e.stopPropagation();
       this._headerMenuOpen = false;
-      this._resetCurrentModeConversation();
+      void this._resetCurrentModeConversation();
     });
     resetCurrent.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
       this._headerMenuOpen = false;
-      this._resetCurrentModeConversation();
+      void this._resetCurrentModeConversation();
     });
 
     const clearAll = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item" });
@@ -3142,7 +3480,7 @@ export class SproutAssistantPopup {
     const generateTooltip = activeNoteName
       ? this._tx("ui.studyAssistant.generator.generateFor", "Generate flashcards for {name}", { name: activeNoteName })
       : this._tx("ui.studyAssistant.generator.generate", "Generate flashcards");
-    const hasGenerationActivity = this.generateMessages.length > 0 || this.isGenerating || this.suggestions.length > 0 || !!this.generatorError;
+    const hasGenerationActivity = this.generateMessages.length > 0 || this.isGenerating || this.generateSuggestionBatches.length > 0 || !!this.generatorError;
 
     if (!hasGenerationActivity) {
       const welcomeRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
@@ -3182,11 +3520,15 @@ export class SproutAssistantPopup {
         this.renderMarkdownMessage(bubble, msg.text);
         if (msg.role === "user" && userInitial) this.createUserAvatar(row, userInitial);
 
-        const isLastAssistant = msg.role === "assistant" && i === this.generateMessages.length - 1;
-        if (isLastAssistant && this.suggestions.length) {
+        if (msg.role === "assistant" && this._shouldShowAskSwitch(msg.text)) {
+          this._renderSwitchToAskButton(chatWrap);
+        }
+
+        const suggestionBatch = msg.role === "assistant" ? this._getSuggestionBatchForAssistantIndex(i) : null;
+        if (suggestionBatch?.suggestions.length) {
           const list = bubble.createDiv({ cls: "sprout-assistant-popup-generated-cards" });
-          this.suggestions.forEach((suggestion, idx) => {
-            const key = `${idx}-${suggestion.type}`;
+          suggestionBatch.suggestions.forEach((suggestion, idx) => {
+            const key = `${i}-${idx}-${suggestion.type}`;
             const isBusy = this.insertingSuggestionKey === key;
             const disableInsert = this.isInsertingSuggestion || isBusy;
             const typeLabelMap: Record<string, string> = {
@@ -3222,7 +3564,7 @@ export class SproutAssistantPopup {
             setIcon(insertBtn, isBusy ? "loader-2" : "plus");
             insertBtn.addEventListener("click", (evt) => {
               evt.stopPropagation();
-              void this.insertSuggestion(suggestion, idx);
+              void this.insertSuggestion(suggestion, i, idx);
             });
           });
         }

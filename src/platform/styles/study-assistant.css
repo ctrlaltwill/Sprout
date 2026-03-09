@@ -1201,7 +1201,9 @@
   padding: 2px 32px 0;
 }
 
-.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn {
+.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn,
+.sprout-assistant-popup-switch-generate-btn,
+.sprout-assistant-popup-switch-ask-btn {
   min-height: 32px;
   border-radius: var(--radius-l) !important;
   font-size: 0.9rem;
@@ -1214,7 +1216,11 @@
 }
 
 .sprout-assistant-popup-review-starters .sprout-assistant-popup-btn:hover:not(:disabled),
-.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn:focus-visible {
+.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn:focus-visible,
+.sprout-assistant-popup-switch-generate-btn:hover:not(:disabled),
+.sprout-assistant-popup-switch-generate-btn:focus-visible,
+.sprout-assistant-popup-switch-ask-btn:hover:not(:disabled),
+.sprout-assistant-popup-switch-ask-btn:focus-visible {
   background: var(--background-modifier-hover) !important;
   border-color: color-mix(in srgb, var(--sprout-border-color) 45%, var(--color-base-30)) !important;
   color: var(--color-base-100) !important;
@@ -1268,15 +1274,6 @@
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 14%, var(--background-primary, #fff));
 }
 
-.sprout-assistant-popup-message-actions {
-  margin-top: 0.6rem;
-}
-
-.sprout-assistant-popup-switch-generate-btn {
-  min-height: 30px;
-  font-size: 0.82rem;
-  padding: 4px 10px;
-}
 
 /* ---- Generate mode ---- */
 .sprout-assistant-popup-generate-starters {

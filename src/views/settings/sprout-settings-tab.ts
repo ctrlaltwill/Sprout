@@ -3445,6 +3445,21 @@ export class SproutSettingsTab extends PluginSettingTab {
         ),
     );
 
+    withDependentSetting(
+      new Setting(wrapper)
+        .setName(this._tx("ui.settings.studyAssistant.privacy.syncDeletesToProvider.name", "Sync delete/reset to provider"))
+        .setDesc(this._tx(
+          "ui.settings.studyAssistant.privacy.syncDeletesToProvider.desc",
+          "When supported by your provider, deleting or resetting conversations also requests remote deletion.",
+        ))
+        .addToggle((toggle) =>
+          toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.syncDeletesToProvider).onChange(async (value) => {
+            this.plugin.settings.studyAssistant.privacy.syncDeletesToProvider = !!value;
+            await this.plugin.saveAll();
+          }),
+        ),
+    );
+
     new Setting(wrapper).setName(this._tx("ui.settings.studyAssistant.sections.askMode", "Ask Mode")).setHeading();
 
     withDependentSetting(

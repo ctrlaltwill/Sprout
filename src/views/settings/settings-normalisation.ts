@@ -143,6 +143,7 @@ export function normaliseSettingsInPlace(s: SproutSettings): void {
     legacyIncludeImagesBool ?? DEFAULT_SETTINGS.studyAssistant.privacy.includeImagesInFlashcard;
   s.studyAssistant.privacy.previewPayload ??= DEFAULT_SETTINGS.studyAssistant.privacy.previewPayload;
   s.studyAssistant.privacy.saveChatHistory ??= DEFAULT_SETTINGS.studyAssistant.privacy.saveChatHistory;
+  s.studyAssistant.privacy.syncDeletesToProvider ??= DEFAULT_SETTINGS.studyAssistant.privacy.syncDeletesToProvider;
 
   s.reminders ??= {} as SproutSettings["reminders"];
   s.reminders.showOnStartup ??= DEFAULT_SETTINGS.reminders.showOnStartup;

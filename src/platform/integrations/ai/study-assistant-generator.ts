@@ -1,5 +1,5 @@
 import type { SproutSettings } from "../../types/settings";
-import { requestStudyAssistantCompletion } from "./study-assistant-provider";
+import { requestStudyAssistantCompletionDetailed } from "./study-assistant-provider";
 import { buildStudyAssistantHiddenPrompt } from "./study-assistant-hidden-prompts";
 import type {
   StudyAssistantChatInput,
@@ -90,6 +90,10 @@ function parseDelimitedRow(line: string): { key: string; value: string } | null 
   return { key, value };
 }
 
+function hasClozeDeletion(value: string): boolean {
+  return /\{\{c\d+::[\s\S]+?\}\}/i.test(String(value || ""));
+}
+
 function buildExistingFlashcardTopics(noteContent: string): string[] {
   const lines = String(noteContent || "").split(/\r?\n/);
   const out: string[] = [];
@@ -154,7 +158,18 @@ function userExplicitlyAllowsRepeatTopics(input: StudyAssistantGeneratorInput): 
 
 type UserRequestOverrides = {
   count?: number;
+  exactCountRequested?: boolean;
   types?: StudyAssistantCardType[];
+  topic?: string;
+};
+
+type GenerationIntent = {
+  requestedCount: number;
+  exactCountRequested: boolean;
+  requestedTypes: StudyAssistantCardType[] | null;
+  requestedTopic: string;
+  allowExternalKnowledge: boolean;
+  avoidRepeatingExistingTopics: boolean;
 };
 
 const TYPE_ALIASES: Record<string, StudyAssistantCardType> = {
@@ -179,9 +194,9 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
   const result: UserRequestOverrides = {};
 
   // Match patterns like "3 MCQs", "5 basic cards", "2 cloze questions"
-  const countTypePattern = /\b(\d{1,2})\s+(basic|reversed|cloze|mcqs?|multiple[- ]choice|oqs?|ordered[- ]questions?|ios?|image[- ]occlusions?)\b/gi;
-  const typeOnlyPattern = /\b(basic|reversed|cloze|mcqs?|multiple[- ]choice|oqs?|ordered[- ]questions?|ios?|image[- ]occlusions?)\s*(cards?|questions?|flashcards?)?\b/gi;
-  const countOnlyPattern = /\b(\d{1,2})\s+(cards?|questions?|flashcards?)\b/i;
+  const countTypePattern = /\b(\d{1,3})\s+(basic|reversed|clozes?|mcqs?|multiple[- ]choice|oqs?|ordered[- ]questions?|ios?|image[- ]occlusions?)\b/gi;
+  const typeOnlyPattern = /\b(basic|reversed|clozes?|mcqs?|multiple[- ]choice|oqs?|ordered[- ]questions?|ios?|image[- ]occlusions?)\s*(cards?|questions?|flashcards?)?\b/gi;
+  const countOnlyPattern = /\b(\d{1,3})\s+(cards?|questions?|flashcards?)\b/i;
 
   // Extract count+type pairs first
   const detectedTypes: StudyAssistantCardType[] = [];
@@ -192,7 +207,10 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
     const typeKey = match[2].replace(/s$/, "").toLowerCase();
     const mapped = TYPE_ALIASES[typeKey];
     if (mapped) {
-      if (!result.count) result.count = n;
+      if (!result.count) {
+        result.count = n;
+        result.exactCountRequested = true;
+      }
       if (!detectedTypes.includes(mapped)) detectedTypes.push(mapped);
     }
   }
@@ -209,15 +227,232 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
   // If no count from a count+type pair, look for standalone count like "3 cards"
   if (result.count == null) {
     const cm = countOnlyPattern.exec(t);
-    if (cm) result.count = parseInt(cm[1], 10);
+    if (cm) {
+      result.count = parseInt(cm[1], 10);
+      result.exactCountRequested = true;
+    }
     // Also handle "a card", "a question"
-    else if (/\ba\s+(card|question|flashcard)\b/i.test(t)) result.count = 1;
+    else if (/\ba\s+(card|question|flashcard)\b/i.test(t)) {
+      result.count = 1;
+      result.exactCountRequested = true;
+    }
   }
 
-  if (result.count != null) result.count = Math.max(1, Math.min(10, result.count));
+  if (result.count != null) result.count = Math.max(1, Math.floor(result.count));
   if (detectedTypes.length) result.types = detectedTypes;
+  result.topic = extractRequestedTopic(t);
 
   return result;
+}
+
+function extractRequestedTopic(value: string): string {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const patterns = [
+    /\b(?:on|about|regarding|focused on|focus on)\s+([^,.;!?\n]+)/i,
+    /\b(?:for)\s+([^,.;!?\n]+?)\s+(?:flashcards?|cards?|questions?|mcqs?|clozes?|reversed|basics?)\b/i,
+  ];
+
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (!m?.[1]) continue;
+    const topic = m[1]
+      .replace(/^the\s+/i, "")
+      .replace(/^this\s+/i, "")
+      .trim();
+    if (!topic) continue;
+    if (/^(topic|note|this topic|this note)$/i.test(topic)) continue;
+    return topic;
+  }
+
+  return "";
+}
+
+function userExplicitlyRequestsExternalKnowledge(input: StudyAssistantGeneratorInput): boolean {
+  const text = `${coerceString(input.userRequestText)}\n${coerceString(input.customInstructions)}`.toLowerCase();
+  if (!text) return false;
+  return [
+    /\bexternal\s+knowledge\b/i,
+    /\boutside\s+(?:the\s+)?note\b/i,
+    /\bgeneral\s+knowledge\b/i,
+    /\bnot\s+in\s+(?:the\s+)?note\b/i,
+  ].some((re) => re.test(text));
+}
+
+function buildGenerationIntent(input: StudyAssistantGeneratorInput, overrides: UserRequestOverrides): GenerationIntent {
+  const baseTarget = Math.max(1, Math.min(10, Math.round(Number(input.targetSuggestionCount) || 5)));
+  const requestedCount = overrides.count ?? baseTarget;
+  return {
+    requestedCount,
+    exactCountRequested: !!overrides.exactCountRequested,
+    requestedTypes: overrides.types?.length ? [...new Set(overrides.types)] : null,
+    requestedTopic: String(overrides.topic || "").trim(),
+    allowExternalKnowledge: userExplicitlyRequestsExternalKnowledge(input),
+    avoidRepeatingExistingTopics: !userExplicitlyAllowsRepeatTopics(input),
+  };
+}
+
+function suggestionTextForRelevance(s: StudyAssistantSuggestion): string {
+  const noteRows = Array.isArray(s.noteRows) ? s.noteRows.join(" ") : "";
+  return [
+    s.title,
+    s.question,
+    s.answer,
+    s.clozeText,
+    s.info,
+    noteRows,
+  ].map((v) => coerceString(v)).filter(Boolean).join(" ");
+}
+
+function topicRelevanceScore(topic: string, suggestion: StudyAssistantSuggestion): number {
+  const normalizedTopic = normalizeComparisonText(topic);
+  if (!normalizedTopic) return 1;
+
+  const haystack = normalizeComparisonText(suggestionTextForRelevance(suggestion));
+  if (!haystack) return 0;
+  if (haystack.includes(normalizedTopic)) return 1;
+
+  const topicTokens = tokenizeComparisonText(topic).filter((token) => token.length >= 4);
+  if (!topicTokens.length) return 1;
+
+  let overlap = 0;
+  for (const token of topicTokens) {
+    if (haystack.includes(token)) overlap += 1;
+  }
+
+  return overlap / topicTokens.length;
+}
+
+function topicRelevanceThreshold(topic: string): number {
+  const tokens = tokenizeComparisonText(topic).filter((token) => token.length >= 4);
+  if (tokens.length <= 1) return 1;
+  if (tokens.length === 2) return 0.5;
+  return 0.4;
+}
+
+function validateAndRepairSuggestions(
+  intent: GenerationIntent,
+  suggestions: StudyAssistantSuggestion[],
+  noteContent: string,
+): StudyAssistantSuggestion[] {
+  const out: StudyAssistantSuggestion[] = [];
+  const existingTopics = buildExistingFlashcardTopics(noteContent);
+  const topicThreshold = intent.requestedTopic ? topicRelevanceThreshold(intent.requestedTopic) : 0;
+
+  for (const suggestion of suggestions) {
+    if (intent.requestedTypes?.length && !intent.requestedTypes.includes(suggestion.type)) continue;
+    if (!intent.allowExternalKnowledge && suggestion.sourceOrigin === "external") continue;
+
+    if (intent.requestedTopic) {
+      const score = topicRelevanceScore(intent.requestedTopic, suggestion);
+      if (score < topicThreshold) continue;
+    }
+
+    const suggestionTopics = extractSuggestionTopics(suggestion);
+    if (intent.avoidRepeatingExistingTopics && suggestionTopics.length > 0) {
+      const duplicatesExisting = suggestionTopics.some((topic) =>
+        existingTopics.some((existing) => topicsLikelyEquivalent(topic, existing)));
+      if (duplicatesExisting) continue;
+    }
+
+    const duplicatesOutput = out.some((existingSuggestion) => {
+      const existingSuggestionTopics = extractSuggestionTopics(existingSuggestion);
+      if (!existingSuggestionTopics.length || !suggestionTopics.length) return false;
+      return suggestionTopics.some((topic) =>
+        existingSuggestionTopics.some((existingTopic) => topicsLikelyEquivalent(topic, existingTopic)));
+    });
+    if (duplicatesOutput) continue;
+
+    out.push(suggestion);
+  }
+
+  return out;
+}
+
+function resolveSuggestionsWithFallback(
+  intent: GenerationIntent,
+  suggestions: StudyAssistantSuggestion[],
+  noteContent: string,
+): StudyAssistantSuggestion[] {
+  const strict = validateAndRepairSuggestions(intent, suggestions, noteContent);
+  if (strict.length > 0 || suggestions.length === 0) return strict;
+
+  // Fallback path: keep type/duplicate guards, but relax topic/source strictness
+  // so short follow-up requests like "make a cloze on prognosis" do not collapse to zero.
+  const relaxedIntent: GenerationIntent = {
+    ...intent,
+    requestedTopic: "",
+    allowExternalKnowledge: true,
+  };
+  return validateAndRepairSuggestions(relaxedIntent, suggestions, noteContent);
+}
+
+function complexityScoreForSuggestion(s: StudyAssistantSuggestion): number {
+  const promptText = coerceString(s.question || s.clozeText || s.title || "");
+  const answerText = coerceString(s.answer || "");
+  const promptTokens = tokenizeComparisonText(promptText).length;
+  const answerTokens = tokenizeComparisonText(answerText).length;
+  const optionsCount = Array.isArray(s.options) ? s.options.length : 0;
+  const stepsCount = Array.isArray(s.steps) ? s.steps.length : 0;
+  const clozeCount = (String(s.clozeText || "").match(/\{\{c\d+::/gi) || []).length;
+
+  const typeWeight: Record<StudyAssistantCardType, number> = {
+    basic: 1.0,
+    reversed: 1.15,
+    cloze: 1.2,
+    mcq: 1.3,
+    oq: 1.35,
+    io: 1.25,
+  };
+
+  return (
+    (typeWeight[s.type] ?? 1)
+    + promptTokens * 0.06
+    + answerTokens * 0.03
+    + optionsCount * 0.07
+    + stepsCount * 0.08
+    + clozeCount * 0.12
+  );
+}
+
+function assignDifficultyLevels(suggestions: StudyAssistantSuggestion[]): StudyAssistantSuggestion[] {
+  if (!suggestions.length) return [];
+
+  const scored = suggestions.map((suggestion, idx) => ({
+    suggestion,
+    idx,
+    score: complexityScoreForSuggestion(suggestion),
+  }));
+
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.idx - b.idx;
+  });
+
+  const n = scored.length;
+  const withLevels = scored.map((item, rank) => {
+    let difficulty = 2;
+    if (n === 1) {
+      difficulty = 2;
+    } else if (n === 2) {
+      difficulty = rank === 0 ? 3 : 1;
+    } else {
+      const ratio = rank / (n - 1);
+      if (ratio <= 0.33) difficulty = 3;
+      else if (ratio <= 0.66) difficulty = 2;
+      else difficulty = 1;
+    }
+
+    return {
+      ...item.suggestion,
+      difficulty,
+    };
+  });
+
+  // Keep hardest first, matching current UI expectations.
+  withLevels.sort((a, b) => b.difficulty - a.difficulty);
+  return withLevels;
 }
 
 function wordCount(value: string): number {
@@ -485,7 +720,23 @@ function sanitizeSuggestion(raw: unknown): StudyAssistantSuggestion | null {
     if (!hasNoteRows && (!suggestion.question || !suggestion.answer)) return null;
   }
 
-  if (suggestion.type === "cloze" && !hasNoteRows && !suggestion.clozeText) return null;
+  if (suggestion.type === "cloze") {
+    if (!hasNoteRows && !suggestion.clozeText) return null;
+
+    const noteRows = hasNoteRows ? (suggestion.noteRows || []) : [];
+    const clozeRows = noteRows
+      .map((line) => parseDelimitedRow(String(line || "")))
+      .filter((row): row is { key: string; value: string } => !!row && row.key === "CQ")
+      .map((row) => row.value);
+
+    const hasDeletionInClozeText = hasClozeDeletion(suggestion.clozeText || "");
+    const hasDeletionInClozeRows = clozeRows.some((value) => hasClozeDeletion(value));
+    const hasInvalidQaRows = noteRows.some((line) => /^\s*(?:Q|A|RQ)\s*\|/i.test(String(line || "")));
+
+    // Cloze cards must be true cloze deletions and use CQ rows when noteRows are provided.
+    if (!hasDeletionInClozeText && !hasDeletionInClozeRows) return null;
+    if (hasNoteRows && (!clozeRows.length || hasInvalidQaRows)) return null;
+  }
 
   if (suggestion.type === "mcq") {
     if (!hasNoteRows) {
@@ -578,13 +829,18 @@ function buildSystemPrompt(customInstructions: string, canUseVisionForIo: boolea
     "",
     "Public-mode instructions:",
     "You are Sprout Study Assistant, generating flashcards from user notes.",
+    "Return strictly valid JSON only with exactly one top-level object: {\"suggestions\":[...]}",
+    "Do not output markdown, code fences, explanations, or extra keys outside the documented schema.",
     "Return valid JSON matching this schema:",
     '{"suggestions":[{"type":"basic|reversed|cloze|mcq|oq|io","difficulty":1-5,"sourceOrigin":"note|external","title":"optional","question":"optional","answer":"optional","clozeText":"optional","options":["..."],"correctOptionIndexes":[0],"steps":["..."],"ioSrc":"optional","ioOcclusions":[{"rectId":"r1","x":0.1,"y":0.2,"w":0.2,"h":0.08,"groupKey":"1","shape":"rect"}],"ioMaskMode":"solo|all","info":"optional","groups":["optional/group"],"noteRows":["KIND | value |"],"rationale":"optional"}]}',
     "Each suggestion must include parser-safe noteRows using Sprout row syntax.",
-    'Set sourceOrigin to "note" when the card tests content present in the note, or "external" when it relies on knowledge not found in the note.',
+    'Set sourceOrigin to "note" when the card tests content present in the note.',
+    'Only use sourceOrigin "external" if the user explicitly asks for external/background knowledge.',
     "MCQ noteRows format (use A for correct options, O for wrong options, NEVER numbered rows): [\"MCQ | question stem |\", \"A | correct option |\", \"O | wrong option |\", \"O | wrong option |\"]",
     "OQ noteRows format (use numbered rows for ordered steps, NEVER A/O rows): [\"OQ | question prompt |\", \"1 | first step |\", \"2 | second step |\", \"3 | third step |\"]",
     "MCQ uses A/O rows only. OQ uses numbered rows only. Do NOT mix these formats.",
+    "For type=cloze, every card must include at least one valid {{cN::...}} deletion and use CQ rows (never Q/A rows).",
+    "Never label a question-answer fact card as type=cloze unless it contains explicit cloze deletion markup.",
     "IO rows must include embedded image syntax in IO | ... |.",
     "For IO, include O row with occlusions JSON and C row with mask mode (solo/all).",
     "For IO occlusions, use normalized coordinates x,y,w,h in [0,1] plus rectId and groupKey.",
@@ -668,12 +924,15 @@ function buildChatUserPrompt(input: StudyAssistantChatInput): string {
 
 function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo: boolean, overrides: UserRequestOverrides): string {
   const baseTarget = Math.max(1, Math.min(10, Math.round(Number(input.targetSuggestionCount) || 5)));
-  const target = overrides.count ?? baseTarget;
-  const minCount = Math.max(1, target - 1);
-  const maxCount = Math.min(10, target + 1);
+  const exactTarget = overrides.exactCountRequested && overrides.count != null
+    ? Math.max(1, Math.min(20, overrides.count))
+    : null;
+  const target = exactTarget ?? baseTarget;
+  const minCount = exactTarget ?? Math.max(1, target - 1);
+  const maxCount = exactTarget ?? Math.min(10, target + 1);
 
-  const effectiveTypes = overrides.types
-    ? [...new Set([...input.enabledTypes, ...overrides.types])]
+  const effectiveTypes = overrides.types?.length
+    ? [...new Set(overrides.types)]
     : input.enabledTypes;
 
   const existingFlashcardTopics = buildExistingFlashcardTopics(input.noteContent);
@@ -698,17 +957,22 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
   };
 
   const lines = [
-    `Generate approximately ${target} high-quality flashcard suggestions from this note (allowed range: ${minCount}-${maxCount}).`,
+    exactTarget != null
+      ? `Generate exactly ${target} high-quality flashcard suggestions from this note.`
+      : `Generate approximately ${target} high-quality flashcard suggestions from this note (allowed range: ${minCount}-${maxCount}).`,
     "Sort by difficulty descending.",
     "Respect enabledTypes and generationOptions exactly.",
+    "Output must be strictly valid JSON and parse successfully with no non-JSON text.",
     allowRepeatTopics
       ? "User explicitly requested repeats/variants of existing cards, so reusing existing flashcard topics is allowed."
       : "The note already contains flashcards. Avoid proposing cards that test the same topic/question intent as existing cards unless the user explicitly asks for repeats.",
     canUseVisionForIo
       ? "For IO cards, use provided image inputs for precise occlusion placement. Emit one IO suggestion per image with multiple masks as needed; do not split one image into multiple single-mask IO suggestions."
       : "Do not generate IO cards in this run because image vision input is unavailable.",
+    "For cloze requests, return only true cloze cards with {{cN::...}} deletions and CQ rows.",
     "Keep LaTeX and language flags (e.g. {{es}}) unchanged.",
-    'Set sourceOrigin to "note" for cards based on note content, or "external" for cards requiring knowledge not present in the note.',
+    'Use note content as the default source of truth for all suggestions.',
+    'Use sourceOrigin "external" only when the user explicitly asks for external/background knowledge; otherwise use "note".',
     "Return JSON only.",
     JSON.stringify(preview, null, 2),
   ];
@@ -726,44 +990,102 @@ export async function generateStudyAssistantSuggestions(params: {
 }): Promise<StudyAssistantGeneratorResult> {
   const { settings, input } = params;
   const overrides = parseUserRequestOverrides(input.userRequestText || "");
+  const intent = buildGenerationIntent(input, overrides);
+  const exactRequested = overrides.exactCountRequested && overrides.count != null;
+  if (exactRequested && (overrides.count ?? 0) > 20) {
+    throw new Error("Requested flashcard count is too high. Please ask for 20 or fewer and break the request into smaller chunks by subtopic or card type.");
+  }
   const baseTarget = Math.max(1, Math.min(10, Math.round(Number(input.targetSuggestionCount) || 5)));
-  const target = overrides.count ?? baseTarget;
-  const maxAllowed = Math.min(10, target + 1);
-  const effectiveTypes = overrides.types
-    ? [...new Set([...input.enabledTypes, ...overrides.types])]
+  const target = exactRequested ? Math.max(1, Math.min(20, overrides.count ?? 1)) : (overrides.count ?? baseTarget);
+  const maxAllowed = exactRequested ? target : Math.min(10, target + 1);
+  const effectiveTypes = overrides.types?.length
+    ? [...new Set(overrides.types)]
     : input.enabledTypes;
   const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
   const canUseVisionForIo = !!input.includeImages && imageDataUrls.length > 0 && modelLikelySupportsVision(settings);
-  const existingTopics = buildExistingFlashcardTopics(input.noteContent);
-  const allowRepeatTopics = userExplicitlyAllowsRepeatTopics(input);
-
   const systemPrompt = buildSystemPrompt(input.customInstructions || settings.prompts.generator || "", canUseVisionForIo);
   const userPrompt = buildUserPrompt(input, canUseVisionForIo, overrides);
   const payloadPreview = `System prompt:\n${systemPrompt}\n\nUser prompt:\n${userPrompt}`;
 
-  const rawResponseText = await requestStudyAssistantCompletion({
+  let resolvedConversationId = input.conversationId;
+
+  const firstResponse = await requestStudyAssistantCompletionDetailed({
     settings,
     systemPrompt,
     userPrompt,
     imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
     mode: "json",
+    conversationId: resolvedConversationId,
   });
+  const rawResponseText = firstResponse.text;
+  resolvedConversationId = firstResponse.conversationId ?? resolvedConversationId;
 
-  const suggestions = parseSuggestions(rawResponseText)
+  let suggestions = parseSuggestions(rawResponseText)
     .filter((s) => canUseVisionForIo || s.type !== "io")
-    .filter((s) => effectiveTypes.includes(s.type))
-    .filter((s) => {
-      if (allowRepeatTopics || !existingTopics.length) return true;
-      const topics = extractSuggestionTopics(s);
-      if (!topics.length) return true;
-      return !topics.some((topic) => existingTopics.some((existing) => topicsLikelyEquivalent(topic, existing)));
-    })
-    .slice(0, maxAllowed);
+    .filter((s) => effectiveTypes.includes(s.type));
+
+  suggestions = resolveSuggestionsWithFallback(intent, suggestions, input.noteContent).slice(0, maxAllowed);
+
+  let refillRawResponseText = "";
+  if (intent.exactCountRequested && suggestions.length < target) {
+    const remaining = target - suggestions.length;
+    const existingGeneratedTopics = suggestions
+      .flatMap((s) => extractSuggestionTopics(s))
+      .filter(Boolean)
+      .slice(0, 25);
+
+    const refillInput: StudyAssistantGeneratorInput = {
+      ...input,
+      targetSuggestionCount: remaining,
+      customInstructions: [
+        input.customInstructions,
+        `Refill mode: Generate exactly ${remaining} additional suggestions to satisfy the requested exact count.`,
+        "Do not repeat or paraphrase topics already generated in this request.",
+        existingGeneratedTopics.length
+          ? `Already generated topics to avoid:\n${existingGeneratedTopics.map((topic, idx) => `${idx + 1}. ${topic}`).join("\n")}`
+          : "",
+      ].filter(Boolean).join("\n\n"),
+    };
+
+    const refillOverrides: UserRequestOverrides = {
+      ...overrides,
+      count: remaining,
+      exactCountRequested: true,
+    };
+    const refillSystemPrompt = buildSystemPrompt(refillInput.customInstructions || settings.prompts.generator || "", canUseVisionForIo);
+    const refillUserPrompt = buildUserPrompt(refillInput, canUseVisionForIo, refillOverrides);
+
+    const refillResponse = await requestStudyAssistantCompletionDetailed({
+      settings,
+      systemPrompt: refillSystemPrompt,
+      userPrompt: refillUserPrompt,
+      imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
+      mode: "json",
+      conversationId: resolvedConversationId,
+    });
+    refillRawResponseText = refillResponse.text;
+    resolvedConversationId = refillResponse.conversationId ?? resolvedConversationId;
+
+    const refillSuggestions = parseSuggestions(refillRawResponseText)
+      .filter((s) => canUseVisionForIo || s.type !== "io")
+      .filter((s) => effectiveTypes.includes(s.type));
+
+    suggestions = resolveSuggestionsWithFallback(
+      intent,
+      [...suggestions, ...refillSuggestions],
+      input.noteContent,
+    ).slice(0, target);
+  }
+
+  const calibratedSuggestions = assignDifficultyLevels(suggestions);
 
   return {
-    suggestions,
+    suggestions: calibratedSuggestions,
     payloadPreview,
-    rawResponseText,
+    conversationId: resolvedConversationId,
+    rawResponseText: refillRawResponseText
+      ? `${rawResponseText}\n\n--- refill ---\n${refillRawResponseText}`
+      : rawResponseText,
   };
 }
 
@@ -779,17 +1101,20 @@ export async function generateStudyAssistantChatReply(params: {
 
   const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
 
-  const rawResponseText = await requestStudyAssistantCompletion({
+  const response = await requestStudyAssistantCompletionDetailed({
     settings,
     systemPrompt,
     userPrompt,
     imageDataUrls: input.includeImages ? imageDataUrls : [],
     mode: "text",
+    conversationId: input.conversationId,
   });
+  const rawResponseText = response.text;
 
   return {
     reply: String(rawResponseText || "").trim(),
     payloadPreview,
     rawResponseText,
+    conversationId: response.conversationId ?? input.conversationId,
   };
 }

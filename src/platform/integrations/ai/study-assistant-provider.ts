@@ -4,6 +4,18 @@ import type { StudyAssistantProvider } from "./study-assistant-types";
 
 type CompletionMode = "text" | "json";
 
+type CompletionResult = {
+  text: string;
+  conversationId?: string;
+};
+
+type DeleteConversationResult = {
+  deleted: boolean;
+  unsupported?: boolean;
+  status?: number;
+  detail?: string;
+};
+
 type ProviderRequestError = Error & {
   provider?: StudyAssistantProvider;
   status?: number;
@@ -198,14 +210,46 @@ function extractTextFromAnthropicResponse(json: Record<string, unknown>): string
   return parts.join("\n").trim();
 }
 
-export async function requestStudyAssistantCompletion(params: {
+function extractConversationIdFromResponse(json: Record<string, unknown> | null): string | null {
+  if (!json) return null;
+
+  const directKeys = ["conversation_id", "conversationId", "thread_id", "threadId"] as const;
+  for (const key of directKeys) {
+    const value = json[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+
+  const nestedConversation = parseJsonFromUnknown(json.conversation);
+  if (nestedConversation && typeof nestedConversation.id === "string" && nestedConversation.id.trim()) {
+    return nestedConversation.id.trim();
+  }
+
+  const nestedThread = parseJsonFromUnknown(json.thread);
+  if (nestedThread && typeof nestedThread.id === "string" && nestedThread.id.trim()) {
+    return nestedThread.id.trim();
+  }
+
+  return null;
+}
+
+export async function requestStudyAssistantCompletionDetailed(params: {
   settings: SproutSettings["studyAssistant"];
   systemPrompt: string;
   userPrompt: string;
   imageDataUrls?: string[];
   mode?: CompletionMode;
-}): Promise<string> {
-  const { settings, systemPrompt, userPrompt, imageDataUrls = [], mode = "text" } = params;
+  conversationId?: string;
+  onConversationResolved?: (conversationId: string) => void;
+}): Promise<CompletionResult> {
+  const {
+    settings,
+    systemPrompt,
+    userPrompt,
+    imageDataUrls = [],
+    mode = "text",
+    conversationId,
+    onConversationResolved,
+  } = params;
 
   const apiKey = providerApiKey(settings.provider, settings.apiKeys);
   if (!apiKey) {
@@ -307,7 +351,11 @@ export async function requestStudyAssistantCompletion(params: {
     const json = parseJsonFromUnknown(res.json);
     const text = json ? extractTextFromAnthropicResponse(json) : "";
     if (!text) throw new Error("Anthropic response did not include text content.");
-    return text;
+    const resolvedConversationId = extractConversationIdFromResponse(json);
+    if (resolvedConversationId && typeof onConversationResolved === "function") {
+      onConversationResolved(resolvedConversationId);
+    }
+    return { text, conversationId: resolvedConversationId ?? conversationId };
   }
 
   const endpoint = `${base}/chat/completions`;
@@ -340,6 +388,9 @@ export async function requestStudyAssistantCompletion(params: {
                 : userPrompt,
             },
           ],
+          ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
+            ? { conversation_id: conversationId.trim() }
+            : {}),
           ...(shouldOmitTemperature(settings.provider, requestModel) ? {} : { temperature: 0.4 }),
           ...(shouldUseStructuredJsonResponse ? { response_format: { type: "json_object" } } : {}),
         }),
@@ -397,5 +448,109 @@ export async function requestStudyAssistantCompletion(params: {
   const json = parseJsonFromUnknown(res.json);
   const text = json ? extractTextFromOpenAiLikeResponse(json) : "";
   if (!text) throw new Error(`${settings.provider} response did not include text content.`);
-  return text;
+  const resolvedConversationId = extractConversationIdFromResponse(json);
+  if (resolvedConversationId && typeof onConversationResolved === "function") {
+    onConversationResolved(resolvedConversationId);
+  }
+  return { text, conversationId: resolvedConversationId ?? conversationId };
+}
+
+export async function requestStudyAssistantCompletion(params: {
+  settings: SproutSettings["studyAssistant"];
+  systemPrompt: string;
+  userPrompt: string;
+  imageDataUrls?: string[];
+  mode?: CompletionMode;
+  conversationId?: string;
+  onConversationResolved?: (conversationId: string) => void;
+}): Promise<string> {
+  const result = await requestStudyAssistantCompletionDetailed(params);
+  return result.text;
+}
+
+export async function deleteStudyAssistantConversation(params: {
+  settings: SproutSettings["studyAssistant"];
+  conversationId: string;
+}): Promise<DeleteConversationResult> {
+  const { settings } = params;
+  const conversationId = String(params.conversationId || "").trim();
+  if (!conversationId) return { deleted: false, unsupported: true, detail: "Missing conversation id." };
+
+  if (settings.provider !== "custom") {
+    return {
+      deleted: false,
+      unsupported: true,
+      detail: "Remote conversation deletion is currently only supported for Custom provider endpoints.",
+    };
+  }
+
+  const apiKey = providerApiKey(settings.provider, settings.apiKeys);
+  if (!apiKey) {
+    return { deleted: false, status: 401, detail: `Missing API key for provider: ${settings.provider}` };
+  }
+
+  const base = providerBaseUrl(settings);
+  if (!base) return { deleted: false, status: 400, detail: "Missing endpoint override for custom provider." };
+
+  const encoded = encodeURIComponent(conversationId);
+  const candidates = [
+    `${base}/conversations/${encoded}`,
+    `${base}/threads/${encoded}`,
+    `${base}/sessions/${encoded}`,
+  ];
+
+  let unsupportedHits = 0;
+  for (const endpoint of candidates) {
+    try {
+      const res = await requestUrl({
+        url: endpoint,
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+
+      if (res.status >= 200 && res.status < 300) {
+        return { deleted: true, status: res.status };
+      }
+
+      if (res.status === 404 || res.status === 405 || res.status === 501) {
+        unsupportedHits += 1;
+        continue;
+      }
+
+      return {
+        deleted: false,
+        status: res.status,
+        detail: providerErrorDetail(res) || `Delete request failed (${res.status}).`,
+      };
+    } catch (err) {
+      const status = statusFromUnknownError(err) ?? 0;
+      if (status === 404 || status === 405 || status === 501) {
+        unsupportedHits += 1;
+        continue;
+      }
+      return {
+        deleted: false,
+        status: status || undefined,
+        detail: responseTextFromUnknownError(err)
+          || (err instanceof Error
+            ? err.message
+            : typeof err === "string"
+              ? err
+              : "Unknown error"),
+      };
+    }
+  }
+
+  if (unsupportedHits >= candidates.length) {
+    return {
+      deleted: false,
+      unsupported: true,
+      detail: "Custom endpoint did not expose a supported delete conversation route.",
+    };
+  }
+
+  return { deleted: false, detail: "Conversation was not deleted." };
 }
