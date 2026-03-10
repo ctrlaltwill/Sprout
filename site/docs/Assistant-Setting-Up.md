@@ -1,6 +1,6 @@
 # Assistant Setting Up
 
-Last modified: 07/03/2026
+Last modified: 10/03/2026
 
 ## Overview
 
@@ -16,8 +16,9 @@ Sprig will not run until it is enabled and an API key is configured.
 
 In **Settings -> Assistant -> AI Provider**:
 
-- Choose a provider: **Anthropic**, **DeepSeek**, **Groq**, **OpenAI**, or **Custom**.
+- Choose a provider: **Anthropic**, **DeepSeek**, **Google**, **OpenAI**, **OpenRouter**, **Perplexity**, **xAI**, or **Custom**.
 - Choose a model for that provider.
+- If using **OpenRouter**, set **OpenRouter model access** to **Free** or **Paid**.
 - If using **Custom**, set **Endpoint override** to your provider URL.
 
 ## 3. Add API key
@@ -52,6 +53,7 @@ Read the full policy: [AI Usage Policy](./AI-Usage-Policy.md)
 
 - Sprig enabled
 - Provider selected
+- OpenRouter model access set (if using OpenRouter)
 - Model selected
 - API key saved
 - `.gitignore` includes `configuration/api-keys.json` only (if needed)

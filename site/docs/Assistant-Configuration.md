@@ -1,6 +1,6 @@
 # Assistant Configuration
 
-Last modified: 08/03/2026
+Last modified: 10/03/2026
 
 ## Overview
 
@@ -11,11 +11,14 @@ Sprig settings are grouped by mode so you can control privacy, prompts, and outp
 | Setting | What it controls |
 |---------|------------------|
 | Enable Sprig | Turns assistant features on/off globally |
+| Modal widget - button visibility | Controls whether the bottom-right note trigger is hidden, shown on hover, or always visible |
 | AI provider | Which backend receives requests |
+| OpenRouter model access | For OpenRouter only: filters model catalog to Free or Paid options |
 | Model | Model name used for requests |
 | Endpoint override | Custom provider base URL (custom provider only) |
 | API key | Provider credential stored locally |
 | Save chat history | Restores prior Ask/Review chats per note |
+| Sync delete/reset to provider | When supported, requests remote conversation deletion when you clear/reset chats |
 
 ## Ask mode settings
 
@@ -31,12 +34,12 @@ Sprig settings are grouped by mode so you can control privacy, prompts, and outp
 | Custom instructions | Prompt rules for Review responses |
 | Include images from note in messages | Sends embedded images with Review requests |
 
-## Generate mode settings
+## Flashcard mode settings
 
 | Setting | What it controls |
 |---------|------------------|
-| Custom instructions | Prompt rules for generated cards |
-| Include images from note in messages | Sends embedded images for generation (vision-capable models required) |
+| Custom instructions | Prompt rules for flashcard generation |
+| Include images from note in messages | Sends embedded images for flashcard generation (vision-capable models required) |
 | Approximate number of cards | Target count (1-10) |
 | What flashcard types to generate | Enable/disable Basic, Reversed, Cloze, MCQ, Ordered, IO |
 | Generated fields | Include/exclude `T`, `I`, and `G` output rows |
@@ -52,7 +55,7 @@ Sprig settings are grouped by mode so you can control privacy, prompts, and outp
 
 - Keep card count low (3-5) while tuning prompts.
 - Start with text card types (Basic/Cloze) before enabling all types.
-- Keep image input disabled unless you are intentionally using a vision model.
+- Keep image input disabled unless you are intentionally using a vision-capable model.
 - Keep custom instructions concise and test in one note first.
 
 ## Safety and policy

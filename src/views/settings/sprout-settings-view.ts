@@ -1642,16 +1642,16 @@ export class SproutSettingsView extends ItemView {
     }
 
     const remoteCandidates = [
+      "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/site/branding/Founder.jpg",
+      "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/site/branding/Founder.jpg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.png",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.jpg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.jpeg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/wiki/avatar.webp",
-      "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/site/branding/Founder.jpg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/site/docs/avatar.png",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/site/docs/avatar.jpg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/site/docs/avatar.jpeg",
       "https://raw.githubusercontent.com/ctrlaltwill/Sprout/main/site/docs/avatar.webp",
-      "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/site/branding/Founder.jpg",
       "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/wiki/avatar.png",
       "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/wiki/avatar.jpg",
       "https://cdn.jsdelivr.net/gh/ctrlaltwill/Sprout@main/site/docs/avatar.png",

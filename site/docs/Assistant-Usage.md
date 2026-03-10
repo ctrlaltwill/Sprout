@@ -1,6 +1,6 @@
 # Assistant Usage
 
-Last modified: 07/03/2026
+Last modified: 10/03/2026
 
 ## Overview
 
@@ -8,7 +8,7 @@ Sprig has three working modes:
 
 - **Ask**: Q&A against the open note.
 - **Review**: Structured note feedback and study-focused revision support.
-- **Generate**: Draft flashcards from the current note.
+- **Generate (Flashcard mode)**: Draft flashcards from the current note.
 
 ## Ask
 
@@ -44,7 +44,7 @@ Recommended workflow:
 ## Current limitations
 
 - Treat generated cards as drafts, not final truth.
-- Image occlusion generation is currently considered untested and should be validated manually.
+- Image occlusion generation can still be imperfect and should be validated manually.
 - Non-visual models are not suitable for image-based generation workflows.
 
 ## Quality guardrails
