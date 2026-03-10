@@ -51,7 +51,8 @@ With rich card types, FSRS scheduling, Anki import/export, study analytics, and 
 - Inline editor, card browser, and bulk edits for faster card management.
 - Markdown-first workflow with note-linked cards in your Obsidian vault.
 - Reading view customisation to keep notes clean and distraction-free.
-- AI learning companion (currently in _beta_) for understanding and quick flashcard generation.Study reminders + Gatekeeper (an optional lock on your Vault that blocks distractions until you review) nudges you to keep study habits consistent.
+- AI learning companion (currently in _beta_) for understanding and quick flashcard generation.
+- Study reminders + Gatekeeper (an optional lock on your Vault that blocks distractions until you review) nudges you to keep study habits consistent.
 
 ### Sprig
 
