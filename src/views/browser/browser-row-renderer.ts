@@ -18,11 +18,12 @@ import type SproutPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions, getCorrectIndices } from "../../platform/core/store";
 import { log } from "../../platform/core/logger";
-import { placePopover, queryFirst, renderFlagAndLatexPreviewInElement, replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
+import { placePopover, queryFirst, renderLatexMathInElement, renderMarkdownPreviewInElement, replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
 import { coerceGroups } from "../../engine/indexing/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { stageLabel } from "../reviewer/labels";
 import { t } from "../../platform/translations/translator";
+import { handleTabInTextarea } from "../../platform/card-editor/card-editor";
 
 import type { BrowserRow } from "./browser-card-data";
 import {
@@ -431,6 +432,7 @@ function makeImageEditorCell(
       overlay,
       renderMarkdownWithImages(ctx.app, md, sourcePath).replace(/\n/g, "<br>"),
     );
+    renderLatexMathInElement(overlay);
   };
   renderOverlay(initial);
 
@@ -446,6 +448,7 @@ function makeImageEditorCell(
   });
 
   ta.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (handleTabInTextarea(ta, ev)) return;
     if (ev.key === "Escape") {
       ev.preventDefault();
       ev.stopPropagation();
@@ -495,7 +498,7 @@ function wrapBrowserFlagPreviewInput(input: HTMLInputElement): HTMLElement {
   overlay.className = "sprout-browser-flag-overlay";
 
   const renderOverlay = () => {
-    renderFlagAndLatexPreviewInElement(overlay, String(input.value ?? ""));
+    renderMarkdownPreviewInElement(overlay, String(input.value ?? ""));
   };
 
   overlay.addEventListener("click", () => input.focus());
@@ -544,7 +547,7 @@ function makeFlagPreviewEditorCell(
   const overlay = document.createElement("div");
   overlay.className = "sprout-browser-flag-overlay sprout-browser-flag-overlay--multiline";
   const renderOverlay = (txt: string) => {
-    renderFlagAndLatexPreviewInElement(overlay, txt);
+    renderMarkdownPreviewInElement(overlay, txt);
   };
   renderOverlay(initial);
   overlay.addEventListener("click", () => ta.focus());
@@ -558,6 +561,7 @@ function makeFlagPreviewEditorCell(
   });
 
   ta.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (handleTabInTextarea(ta, ev)) return;
     if (ev.key === "Escape") {
       ev.preventDefault();
       ev.stopPropagation();

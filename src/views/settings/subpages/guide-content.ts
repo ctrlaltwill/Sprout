@@ -27,6 +27,7 @@ const PREFERRED_GUIDE_FILES = [
   "Installation.md",
   "Syncing.md",
   "Assistant-Configuration.md",
+  "Guide-for-Free-Usage.md",
   "Assistant-Setting-Up.md",
   "Assistant-Usage.md",
   "Creating-Cards.md",
@@ -81,7 +82,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
     key: "assistant",
     label: tx("ui.guide.categories.assistant", "Assistant"),
     icon: "sparkles",
-    sections: [{ pageKeys: ["Assistant-Configuration", "Assistant-Setting-Up", "Assistant-Usage"] }],
+    sections: [{ pageKeys: ["Assistant-Configuration", "Guide-for-Free-Usage", "Assistant-Setting-Up", "Assistant-Usage"] }],
   },
   {
     key: "audio",
@@ -125,6 +126,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
 
 const GUIDE_LABEL_MAP: Record<string, string> = {
   "Assistant-Configuration": "Configuration",
+  "Guide-for-Free-Usage": "Guide for Free Usage",
   "Assistant-Setting-Up": "Setting Up",
   "Assistant-Usage": "Usage",
   Cards: "Cards Overview",
@@ -142,6 +144,7 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   Home: "house",
   Installation: "download",
   "Assistant-Configuration": "settings-2",
+  "Guide-for-Free-Usage": "piggy-bank",
   "Assistant-Setting-Up": "key-round",
   "Assistant-Usage": "messages-square",
   "Creating-Cards": "plus-circle",

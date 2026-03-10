@@ -35,7 +35,8 @@ import {
   groupsToInput,
 } from "./browser-helpers";
 import { setModalTitle, scopeModalToWorkspace } from "../../platform/modals/modal-utils";
-import { renderFlagAndLatexPreviewInElement, setCssProps } from "../../platform/core/ui";
+import { renderMarkdownPreviewInElement, setCssProps } from "../../platform/core/ui";
+import { handleTabInTextarea } from "../../platform/card-editor/card-editor";
 import { t } from "../../platform/translations/translator";
 
 // ── Context interface ──────────────────────────────────────
@@ -171,6 +172,9 @@ export class BulkEditModal extends Modal {
       }
     };
 
+    let pendingSyncRaf = 0;
+    let lastPreviewHeight = 0;
+
     const syncPreviewHeight = () => {
       const scrollbarFudgePx = 5;
       const controlHeight = measureControlHeight();
@@ -180,12 +184,22 @@ export class BulkEditModal extends Modal {
         controlHeight + scrollbarFudgePx,
         overlayHeight,
       );
+      if (previewHeight === lastPreviewHeight) return;
+      lastPreviewHeight = previewHeight;
       wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
       applyControlHeight(previewHeight);
     };
 
+    const queueSyncPreviewHeight = () => {
+      if (pendingSyncRaf) return;
+      pendingSyncRaf = window.requestAnimationFrame(() => {
+        pendingSyncRaf = 0;
+        syncPreviewHeight();
+      });
+    };
+
     const renderOverlay = () => {
-      renderFlagAndLatexPreviewInElement(overlay, String(control.value ?? ""));
+      renderMarkdownPreviewInElement(overlay, String(control.value ?? ""));
       syncPreviewHeight();
       window.requestAnimationFrame(syncPreviewHeight);
       window.setTimeout(syncPreviewHeight, 80);
@@ -213,10 +227,16 @@ export class BulkEditModal extends Modal {
 
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => {
-        syncPreviewHeight();
+        queueSyncPreviewHeight();
       });
       ro.observe(overlay);
-      registerCloseCleanup(() => ro.disconnect());
+      registerCloseCleanup(() => {
+        if (pendingSyncRaf) {
+          window.cancelAnimationFrame(pendingSyncRaf);
+          pendingSyncRaf = 0;
+        }
+        ro.disconnect();
+      });
     }
 
     renderOverlay();
@@ -614,6 +634,11 @@ export class BulkEditModal extends Modal {
 
     wrapper.appendChild(shouldPreviewFlags ? attachFlagPreviewOverlay(input, modalFieldMin) : input);
     inputEls[field.key] = input;
+    if (input instanceof HTMLTextAreaElement) {
+      input.addEventListener("keydown", (ev: KeyboardEvent) => {
+        handleTabInTextarea(input, ev);
+      });
+    }
     if (field.key === "question" && input instanceof HTMLTextAreaElement && isClozeOnly) {
       attachClozeShortcuts(input);
       if (shouldShowMobileClozeButtons()) {

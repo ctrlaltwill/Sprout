@@ -1253,6 +1253,36 @@ export class SproutAssistantPopup {
     );
   }
 
+  private _allFlashcardsInsertedText(): string {
+    return this._tx(
+      "ui.studyAssistant.generator.allInserted",
+      "All flashcards inserted into the note.",
+    );
+  }
+
+  private _shouldShowGenerateMoreButton(text: string, assistantMessageIndex: number): boolean {
+    if (String(text || "").trim() !== this._allFlashcardsInsertedText()) return false;
+    const batch = this._getSuggestionBatchForAssistantIndex(assistantMessageIndex);
+    return !batch?.suggestions.length;
+  }
+
+  private _renderGenerateMoreButton(parent: HTMLElement, ariaLabel: string): void {
+    const actions = parent.createDiv({ cls: "sprout-assistant-popup-generate-starters" });
+    const btn = actions.createEl("button", {
+      cls: "sprout-assistant-popup-btn",
+      text: this._tx("ui.studyAssistant.generator.generateMore", "Generate more"),
+    });
+    btn.type = "button";
+    btn.disabled = this.isGenerating;
+    btn.setAttr("aria-label", ariaLabel);
+    btn.setAttr("data-tooltip-position", "top");
+    btn.addEventListener("click", () => {
+      const seedMessage = this._tx("ui.studyAssistant.generator.generateMore", "Generate more");
+      this.generateMessages.push({ role: "user", text: seedMessage });
+      void this.generateSuggestions(seedMessage);
+    });
+  }
+
   private _renderSwitchToGenerateButton(parent: HTMLElement): void {
     const actions = parent.createDiv({ cls: "sprout-assistant-popup-review-starters sprout-assistant-popup-message-actions" });
     const btn = actions.createEl("button", {
@@ -2563,7 +2593,7 @@ export class SproutAssistantPopup {
     const explicitRows = Array.isArray(suggestion.noteRows)
       ? suggestion.noteRows.map((row) => String(row || "").trim()).filter(Boolean)
       : [];
-    if (explicitRows.length) return [...explicitRows, ""];
+    if (explicitRows.length) return [...this.normalizeOptionalGeneratorRows(suggestion, explicitRows), ""];
 
     const lines: string[] = [];
     const title = String(suggestion.title || "").trim();
@@ -2619,6 +2649,60 @@ export class SproutAssistantPopup {
     }
     lines.push("");
     return lines;
+  }
+
+  private normalizeOptionalGeneratorRows(suggestion: StudyAssistantSuggestion, explicitRows: string[]): string[] {
+    const includeTitle = !!this.plugin.settings.studyAssistant.generatorOutput.includeTitle;
+    const includeInfo = !!this.plugin.settings.studyAssistant.generatorOutput.includeInfo;
+    const includeGroups = !!this.plugin.settings.studyAssistant.generatorOutput.includeGroups;
+
+    const coreRows: string[] = [];
+    let titleFromRows = "";
+    let infoFromRows = "";
+    let groupsFromRows: string[] = [];
+
+    for (const row of explicitRows) {
+      const m = String(row || "").match(/^\s*([^|]+?)\s*\|\s*(.*?)\s*(?:\|\s*)?$/);
+      if (!m) {
+        coreRows.push(row);
+        continue;
+      }
+      const key = String(m[1] || "").trim().toUpperCase();
+      const value = this.trimLine(m[2]);
+      if (!value) {
+        if (key !== "T" && key !== "I" && key !== "G") coreRows.push(row);
+        continue;
+      }
+      if (key === "T") {
+        if (!titleFromRows) titleFromRows = value;
+        continue;
+      }
+      if (key === "I") {
+        if (!infoFromRows) infoFromRows = value;
+        continue;
+      }
+      if (key === "G") {
+        if (!groupsFromRows.length) {
+          groupsFromRows = value.split(",").map((item) => this.trimLine(item)).filter(Boolean);
+        }
+        continue;
+      }
+      coreRows.push(row);
+    }
+
+    const title = this.trimLine(suggestion.title || titleFromRows);
+    const info = this.trimLine(suggestion.info || infoFromRows);
+    const groups = this.trimList(
+      (Array.isArray(suggestion.groups) && suggestion.groups.length ? suggestion.groups : groupsFromRows)
+        .map((item) => this.trimLine(item)),
+    );
+
+    const out: string[] = [];
+    if (includeTitle && title) pushDelimitedField(out, "T", title);
+    out.push(...coreRows);
+    if (includeInfo && info) pushDelimitedField(out, "I", info);
+    if (includeGroups && groups.length) pushDelimitedField(out, "G", groups.join(", "));
+    return out;
   }
 
   private formatInsertBlock(text: string): string {
@@ -2854,10 +2938,7 @@ export class SproutAssistantPopup {
             .filter((item) => item.assistantMessageIndex !== assistantMessageIndex);
           const summaryMessage = this.generateMessages[assistantMessageIndex];
           if (summaryMessage?.role === "assistant") {
-            summaryMessage.text = this._tx(
-              "ui.studyAssistant.generator.allInserted",
-              "All flashcards inserted into the note.",
-            );
+            summaryMessage.text = this._allFlashcardsInsertedText();
           }
         }
       }
@@ -4095,6 +4176,10 @@ export class SproutAssistantPopup {
 
         if (msg.role === "assistant" && this._shouldShowAskSwitch(msg.text)) {
           this._renderSwitchToAskButton(chatWrap);
+        }
+
+        if (msg.role === "assistant" && this._shouldShowGenerateMoreButton(msg.text, i)) {
+          this._renderGenerateMoreButton(chatWrap, generateTooltip);
         }
 
         const suggestionBatch = msg.role === "assistant" ? this._getSuggestionBatchForAssistantIndex(i) : null;

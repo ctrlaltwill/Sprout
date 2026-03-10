@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS: SproutSettings = {
       fetchedAt: null,
     },
     enableAnimations: true,
+    showLaunchNoticeModal: true,
     enableReadingStyles: true,
     prettifyCards: "accent", // default to 'accent', options: 'off' | 'accent' | 'theme'
   },

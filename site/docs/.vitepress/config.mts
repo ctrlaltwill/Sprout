@@ -4,6 +4,7 @@ const titleOverrides = new Map<string, string>([
   ["Home", "Overview"],
   ["Support-Sprout", "About Sprout"],
   ["Assistant-Configuration", "Configuration"],
+  ["Guide-for-Free-Usage", "Guide for Free Usage"],
   ["Assistant-Setting-Up", "Setting Up"],
   ["Assistant-Usage", "Usage"],
 ]);
@@ -86,6 +87,7 @@ export default defineConfig({
         text: "Assistant",
         items: [
           { text: toTitle("Assistant-Configuration"), link: toPath("Assistant-Configuration") },
+          { text: toTitle("Guide-for-Free-Usage"), link: toPath("Guide-for-Free-Usage") },
           { text: toTitle("Assistant-Setting-Up"), link: toPath("Assistant-Setting-Up") },
           { text: toTitle("Assistant-Usage"), link: toPath("Assistant-Usage") },
         ],

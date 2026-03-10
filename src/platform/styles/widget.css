@@ -31,6 +31,22 @@
   zoom: var(--sprout-leaf-zoom, 1);
 }
 
+/* Layout model: header/top controls fixed, card body adaptive + scrollable, footer pinned near bottom. */
+.sprout.sprout-widget {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.sprout.sprout-widget > .sprout-widget-header,
+.sprout.sprout-widget > .sprout-widget-footer,
+.sprout.sprout-widget > .sprout-widget-progress {
+  flex: 0 0 auto;
+}
+
 /* Widget: remove all box-shadows (cards + buttons + any child) */
 .sprout.sprout-widget,
 .sprout.sprout-widget * {
@@ -550,16 +566,38 @@
 
 /* Widget card body (replaces body inline styles) */
 .sprout .sprout-widget-card-body {
-  margin: 10px auto 20px auto !important;
+  margin: 10px auto 0 auto !important;
   gap: 0 !important;
   border-radius: var(--radius-l) !important;
   background: var(--background) !important;
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;
+  /* Content-sized by default; only shrink and scroll when viewport space is tight. */
+  flex: 0 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
   box-shadow: none !important;
   user-select: text !important;
   -webkit-user-select: text !important;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+}
+
+.sprout .sprout-widget-card-body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.sprout .sprout-widget-card-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--foreground) 40%, transparent);
+  border-radius: var(--radius-m);
+}
+
+.sprout .sprout-widget-card-body::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Widget header (replaces header inline styles) */
@@ -574,15 +612,23 @@
 .sprout .sprout-widget-footer {
   border: none !important;
   max-width: 90% !important;
-  margin: 10px auto !important;
-  padding: 0 0 15px 0 !important;
+  margin: 16px auto 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+.sprout .sprout-widget-footer > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
 }
 
 /* Widget progress bar (replaces progress bar inline styles) */
 .sprout .sprout-widget-progress {
   border: none !important;
   border-radius: 0 !important;
-  margin: 0 auto !important;
+  margin: auto auto 0 !important;
+  padding: 16px 0px 20px !important;
   max-width: 200px !important;
   width: 80% !important;
 }
@@ -607,6 +653,122 @@
   margin-block-start: 0em !important;
   margin-block-end: 0em !important;
 }
+
+/* ---- Lists inside widget / gatekeeper text blocks ---- */
+.sprout .sprout-widget-text :is(ul, ol),
+.sprout .sprout-widget-info :is(ul, ol),
+.sprout .sprout-gatekeeper-body :is(ul, ol) {
+  margin-top: 0.3rem !important;
+  margin-bottom: 0.3rem !important;
+  padding-inline-start: 1.5em !important;
+  line-height: 1.15 !important;
+}
+
+.sprout .sprout-widget-text ul,
+.sprout .sprout-widget-info ul,
+.sprout .sprout-gatekeeper-body ul {
+  list-style-type: disc !important;
+}
+
+.sprout .sprout-widget-text ol,
+.sprout .sprout-widget-info ol,
+.sprout .sprout-gatekeeper-body ol {
+  list-style-type: decimal !important;
+}
+
+.sprout .sprout-widget-text li,
+.sprout .sprout-widget-info li,
+.sprout .sprout-gatekeeper-body li {
+  margin: 0.3rem 0 !important;
+  padding: 0 !important;
+  line-height: 1.15 !important;
+}
+
+.sprout .sprout-widget-text li > p,
+.sprout .sprout-widget-info li > p,
+.sprout .sprout-gatekeeper-body li > p {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.sprout .sprout-widget-text li > :is(ul, ol),
+.sprout .sprout-widget-info li > :is(ul, ol),
+.sprout .sprout-gatekeeper-body li > :is(ul, ol) {
+  margin-top: 0.3rem !important;
+  margin-bottom: 0.3rem !important;
+}
+
+/* Override markdown wrapper line-height in gatekeeper/widget markdown containers. */
+.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol, li),
+.sprout .sprout-widget-text .whitespace-pre-wrap.break-words :is(ul, ol, li),
+.sprout .sprout-widget-info .whitespace-pre-wrap.break-words :is(ul, ol, li) {
+  line-height: 1.15 !important;
+}
+
+.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol),
+.sprout .sprout-widget-text .whitespace-pre-wrap.break-words :is(ul, ol),
+.sprout .sprout-widget-info .whitespace-pre-wrap.break-words :is(ul, ol) {
+  margin-block: 0.3rem !important;
+}
+
+/* MarkdownRenderer wrappers keep `pre-wrap`, which preserves whitespace text
+   nodes between block tags and inflates list spacing. Normalize only rendered
+   markdown blocks (identified by data-bc-md-rid), not plain-text wrappers. */
+.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words[data-bc-md-rid],
+.sprout .sprout-widget-text .whitespace-pre-wrap.break-words[data-bc-md-rid],
+.sprout .sprout-widget-info .whitespace-pre-wrap.break-words[data-bc-md-rid] {
+  white-space: normal !important;
+}
+
+.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li),
+.sprout .sprout-widget-text .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li),
+.sprout .sprout-widget-info .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li) {
+  white-space: normal !important;
+}
+
+/* ---- Markdown heading scale inside widget/gatekeeper blocks ---- */
+.sprout .sprout-widget-text :is(h1, h2, h3, h4, h5, h6),
+.sprout .sprout-widget-info :is(h1, h2, h3, h4, h5, h6),
+.sprout .sprout-gatekeeper-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.3rem 0 !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Match paragraph rhythm with heading spacing inside widget/gatekeeper markdown blocks. */
+.sprout .sprout-widget-text .sprout-md-block > p,
+.sprout .sprout-widget-info .sprout-md-block > p,
+.sprout .sprout-gatekeeper-body .sprout-md-block > p {
+  margin: 0.3rem 0 !important;
+}
+
+.sprout .sprout-widget-text h1,
+.sprout .sprout-widget-info h1,
+.sprout .sprout-gatekeeper-body h1 { font-size: 1.2rem !important; }
+
+.sprout .sprout-widget-text h2,
+.sprout .sprout-widget-info h2,
+.sprout .sprout-gatekeeper-body h2 { font-size: 1.15rem !important; }
+
+.sprout .sprout-widget-text h3,
+.sprout .sprout-widget-info h3,
+.sprout .sprout-gatekeeper-body h3 { font-size: 1.1rem !important; }
+
+.sprout .sprout-widget-text h4,
+.sprout .sprout-widget-info h4,
+.sprout .sprout-gatekeeper-body h4 { font-size: 1.05rem !important; }
+
+.sprout .sprout-widget-text h5,
+.sprout .sprout-widget-info h5,
+.sprout .sprout-gatekeeper-body h5 { font-size: 1rem !important; }
+
+.sprout .sprout-widget-text h6,
+.sprout .sprout-widget-info h6,
+.sprout .sprout-gatekeeper-body h6 { font-size: 0.95rem !important; }
 
 /* Widget header labels wrapper */
 .sprout.sprout-widget .sprout-widget-header-labels {
@@ -723,6 +885,12 @@
   border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
   padding: 20px !important;
   width: 90% !important;
+  flex: 0 0 auto !important;
+  flex-grow: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 170px) !important;
+  overflow-y: auto !important;
   box-shadow: none !important;
   font-size: var(--sprout-widget-font-teaser-title) !important;
 }
@@ -735,6 +903,7 @@
 .sprout-widget-info-line {
   color: var(--foreground) !important;
   opacity: 0.7 !important;
+  line-height: 1.5 !important;
 }
 
 .sprout-widget-counts-line {
@@ -746,6 +915,19 @@
   border: none !important;
   border-radius: 0 !important;
   max-width: 90% !important;
-  margin: 10px auto !important;
-  padding: 0 0 15px 0 !important;
+  margin: 8px auto 10px auto !important;
+  padding: 0 !important;
+}
+
+/* Session-complete text colors should be stable across light/dark themes. */
+.sprout .sprout-widget-session-complete-title {
+  color: var(--foreground) !important;
+}
+
+.sprout .sprout-widget-session-complete-meta {
+  color: color-mix(in srgb, var(--foreground) 72%, transparent) !important;
+}
+
+.theme-dark .sprout .sprout-widget-session-complete-meta {
+  color: color-mix(in srgb, var(--foreground) 78%, transparent) !important;
 }

@@ -17,7 +17,7 @@ import { normalizeCardOptions } from "../../platform/core/store";
 import { getCorrectIndices } from "../../platform/types/card";
 import { buildAnswerOrOptionsFor, escapePipes } from "../../views/reviewer/fields";
 import { escapeDelimiterText, getDelimiter } from "../../platform/core/delimiter";
-import { renderFlagAndLatexPreviewInElement, setCssProps } from "../../platform/core/ui";
+import { renderMarkdownPreviewInElement, setCssProps } from "../../platform/core/ui";
 import {
   clearNode,
   titleCaseGroupPath,
@@ -222,6 +222,9 @@ function attachFlagPreviewOverlay(control: HTMLInputElement | HTMLTextAreaElemen
     }
   };
 
+  let pendingSyncRaf = 0;
+  let lastPreviewHeight = 0;
+
   const syncPreviewHeight = () => {
     const scrollbarFudgePx = 5;
     const controlHeight = measureControlHeight();
@@ -231,12 +234,22 @@ function attachFlagPreviewOverlay(control: HTMLInputElement | HTMLTextAreaElemen
       controlHeight + scrollbarFudgePx,
       overlayHeight,
     );
+    if (previewHeight === lastPreviewHeight) return;
+    lastPreviewHeight = previewHeight;
     wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
     applyControlHeight(previewHeight);
   };
 
+  const queueSyncPreviewHeight = () => {
+    if (pendingSyncRaf) return;
+    pendingSyncRaf = window.requestAnimationFrame(() => {
+      pendingSyncRaf = 0;
+      syncPreviewHeight();
+    });
+  };
+
   const renderOverlay = () => {
-    renderFlagAndLatexPreviewInElement(overlay, String(control.value ?? ""));
+    renderMarkdownPreviewInElement(overlay, String(control.value ?? ""));
     syncPreviewHeight();
     window.requestAnimationFrame(syncPreviewHeight);
     window.setTimeout(syncPreviewHeight, 80);
@@ -268,6 +281,10 @@ function attachFlagPreviewOverlay(control: HTMLInputElement | HTMLTextAreaElemen
   let ro: ResizeObserver | null = null;
   let detachObserver: MutationObserver | null = null;
   const cleanup = () => {
+    if (pendingSyncRaf) {
+      window.cancelAnimationFrame(pendingSyncRaf);
+      pendingSyncRaf = 0;
+    }
     ro?.disconnect();
     ro = null;
     detachObserver?.disconnect();
@@ -276,7 +293,7 @@ function attachFlagPreviewOverlay(control: HTMLInputElement | HTMLTextAreaElemen
 
   if (typeof ResizeObserver !== "undefined") {
     ro = new ResizeObserver(() => {
-      syncPreviewHeight();
+      queueSyncPreviewHeight();
     });
     ro.observe(overlay);
   }
@@ -351,8 +368,244 @@ function applyFormatShortcut(textarea: HTMLTextAreaElement, fmt: FormatMarker) {
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+// ── List-marker regex helpers ──────────────────────────────────────────────
+const LIST_LINE_RE = /^([\t ]*)([-+*]|\d+[.)])\s(.*)/;
+
+/** Parse the current line under the cursor. */
+function currentLineInfo(textarea: HTMLTextAreaElement) {
+  const val = textarea.value;
+  const pos = textarea.selectionStart;
+  const lineStart = val.lastIndexOf("\n", pos - 1) + 1;
+  const lineEndIdx = val.indexOf("\n", pos);
+  const lineEnd = lineEndIdx === -1 ? val.length : lineEndIdx;
+  const line = val.slice(lineStart, lineEnd);
+  const cursorCol = pos - lineStart;
+  return { val, pos, lineStart, lineEnd, line, cursorCol };
+}
+
+/**
+ * Handle markdown editing keys inside a textarea:
+ *   Tab        → indent whole line(s) by one tab; re-number ordered lists
+ *   Shift-Tab  → outdent whole line(s); re-number ordered lists
+ *   Enter      → continue list with next marker (or exit list if empty)
+ *   Backspace  → at start of list marker, remove it (or outdent if indented)
+ *
+ * Returns true if the event was handled (and should not propagate).
+ */
+export function handleTabInTextarea(textarea: HTMLTextAreaElement, ev: KeyboardEvent): boolean {
+  // Enforce tab-only indentation for markdown lists.
+  if (ev.key === " " && !ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+    const { line, cursorCol } = currentLineInfo(textarea);
+    const m = line.match(LIST_LINE_RE);
+    if (m) {
+      const indent = m[1];
+      const markerStart = indent.length;
+      const markerEnd = markerStart + m[2].length + 1;
+      // Do not allow inserting spaces before or inside the list marker prefix.
+      if (cursorCol <= markerEnd) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        return true;
+      }
+    }
+  }
+
+  // ── Tab / Shift-Tab: whole-line indent/outdent ──
+  if (ev.key === "Tab") {
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    const val = textarea.value;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Find ALL lines that overlap the selection (or the cursor line)
+    const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+    const lineEndIdx = val.indexOf("\n", end);
+    const blockEnd = lineEndIdx === -1 ? val.length : lineEndIdx;
+    const block = val.slice(lineStart, blockEnd);
+    const lines = block.split("\n");
+
+    if (ev.shiftKey) {
+      // Outdent each line
+      const outdented = lines.map((l) => {
+        const listMatch = l.match(LIST_LINE_RE);
+        if (listMatch) {
+          const indent = listMatch[1];
+          // At root list depth, Shift+Tab removes list marker entirely.
+          if (!indent) {
+            return listMatch[3] ?? "";
+          }
+        }
+        return l.replace(/^(\t| {1,2})/, "");
+      });
+      const newBlock = outdented.join("\n");
+      const firstLineRemoved = lines[0].length - outdented[0].length;
+      const totalRemoved = block.length - newBlock.length;
+      textarea.value = val.slice(0, lineStart) + newBlock + val.slice(blockEnd);
+      textarea.setSelectionRange(
+        Math.max(lineStart, start - firstLineRemoved),
+        Math.max(lineStart, end - totalRemoved),
+      );
+    } else {
+      // Indent each line
+      const indented = lines.map(l => "\t" + l);
+      const newBlock = indented.join("\n");
+      textarea.value = val.slice(0, lineStart) + newBlock + val.slice(blockEnd);
+      textarea.setSelectionRange(start + 1, end + lines.length);
+    }
+
+    // Re-number ordered lists after indent change
+    renumberOrderedLists(textarea);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  }
+
+  // ── Enter: list continuation ──
+  if (ev.key === "Enter" && !ev.shiftKey && !ev.ctrlKey && !ev.metaKey) {
+    const { val, pos, lineStart, line, cursorCol } = currentLineInfo(textarea);
+    const m = line.match(LIST_LINE_RE);
+    if (!m) return false; // not on a list line — let default Enter happen
+
+    const [, indent, marker, content] = m;
+    const markerEnd = indent.length + marker.length + 1; // position after "- " or "1. "
+
+    // If cursor is before the marker content, let default Enter happen
+    if (cursorCol < markerEnd) return false;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    // If the content after the marker is empty → remove the marker (exit list)
+    if (content.trim() === "") {
+      // Replace this line's marker with empty line (or just the indent)
+      const end = textarea.selectionEnd;
+      const lineEndIdx = val.indexOf("\n", end);
+      const lineEnd = lineEndIdx === -1 ? val.length : lineEndIdx;
+      textarea.value = val.slice(0, lineStart) + val.slice(lineEnd);
+      textarea.setSelectionRange(lineStart, lineStart);
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      return true;
+    }
+
+    // Build next marker
+    let nextMarker: string;
+    if (/^\d+[.)]$/.test(marker)) {
+      const num = parseInt(marker, 10);
+      const suffix = marker.slice(-1); // '.' or ')'
+      nextMarker = `${num + 1}${suffix}`;
+    } else {
+      nextMarker = marker; // -, *, +
+    }
+
+    // Split current line at cursor and insert new list item
+    const beforeCursor = val.slice(0, pos);
+    const afterCursor = val.slice(pos);
+    const insertion = `\n${indent}${nextMarker} `;
+    textarea.value = beforeCursor + insertion + afterCursor;
+    const newPos = pos + insertion.length;
+    textarea.setSelectionRange(newPos, newPos);
+
+    renumberOrderedLists(textarea);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  }
+
+  // ── Backspace: remove list marker / outdent ──
+  if (ev.key === "Backspace" && !ev.shiftKey && !ev.ctrlKey && !ev.metaKey) {
+    const { val, pos, lineStart, line, cursorCol } = currentLineInfo(textarea);
+    const m = line.match(LIST_LINE_RE);
+    if (!m) return false; // not a list line
+
+    const [, indent, marker] = m;
+    const markerEnd = indent.length + marker.length + 1; // after "- " or "1. "
+
+    // Only act when cursor is at the start of content (right after marker+space)
+    if (cursorCol !== markerEnd) return false;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    if (indent.length > 0) {
+      // Outdent: remove one tab or up to 2 spaces from start
+      const outdented = line.replace(/^(\t| {1,2})/, "");
+      const removed = line.length - outdented.length;
+      const lineEndIdx = val.indexOf("\n", pos);
+      const lineEnd = lineEndIdx === -1 ? val.length : lineEndIdx;
+      textarea.value = val.slice(0, lineStart) + outdented + val.slice(lineEnd);
+      textarea.setSelectionRange(pos - removed, pos - removed);
+    } else {
+      // Remove list marker entirely, keep content
+      const content = line.slice(markerEnd);
+      const lineEndIdx = val.indexOf("\n", pos);
+      const lineEnd = lineEndIdx === -1 ? val.length : lineEndIdx;
+      textarea.value = val.slice(0, lineStart) + content + val.slice(lineEnd);
+      textarea.setSelectionRange(lineStart, lineStart);
+    }
+
+    renumberOrderedLists(textarea);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Re-number ordered list items in a textarea so each independent run
+ * at the same indent depth counts sequentially from 1.
+ * Preserves cursor position.
+ */
+function renumberOrderedLists(textarea: HTMLTextAreaElement) {
+  const pos = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const lines = textarea.value.split("\n");
+  // Track counts per indent level; reset when broken by non-list or different indent
+  const counters = new Map<string, number>();
+  let prevIndent: string | null = null;
+  let changed = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(LIST_LINE_RE);
+    if (!m) {
+      counters.clear();
+      prevIndent = null;
+      continue;
+    }
+    const [, indent, marker, content] = m;
+    // Reset deeper counters when we return to shallower indent
+    if (prevIndent !== null && indent.length < prevIndent.length) {
+      for (const [k] of counters) {
+        if (k.length > indent.length) counters.delete(k);
+      }
+    }
+    prevIndent = indent;
+
+    if (/^\d+[.)]$/.test(marker)) {
+      const suffix = marker.slice(-1);
+      const count = (counters.get(indent) ?? 0) + 1;
+      counters.set(indent, count);
+      const newLine = `${indent}${count}${suffix} ${content}`;
+      if (newLine !== lines[i]) {
+        lines[i] = newLine;
+        changed = true;
+      }
+    } else {
+      // Unordered list — just track that this indent had items (don't number)
+      // but reset ordered counter at this indent since it's now unordered
+      counters.delete(indent);
+    }
+  }
+
+  if (changed) {
+    textarea.value = lines.join("\n");
+    textarea.setSelectionRange(pos, end);
+  }
+}
+
 function attachFormatShortcuts(textarea: HTMLTextAreaElement) {
   textarea.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (handleTabInTextarea(textarea, ev)) return;
     const fmt = getFormatShortcut(ev);
     if (!fmt) return;
     ev.preventDefault();

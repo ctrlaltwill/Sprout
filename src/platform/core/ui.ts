@@ -12,7 +12,7 @@
 
 import createDOMPurify from "dompurify";
 import { finishRenderMath, renderMath, setIcon } from "obsidian";
-import { hydrateCircleFlagsInElement, renderFlagPreviewHtml } from "../../platform/flags/flag-tokens";
+import { hydrateCircleFlagsInElement, renderFlagPreviewHtml, replaceCircleFlagTokens, escapeFlagHtml } from "../../platform/flags/flag-tokens";
 
 export type CssPropValue = string | number | null | undefined;
 
@@ -355,13 +355,8 @@ function renderLatexInElement(container: HTMLElement): void {
       }
     };
 
-    collectMatches(LATEX_DISPLAY_DOLLAR_RE, (start, end) => {
-      // In these editable previews, treat $$..$$ as block only when it stands
-      // on its own visual line segment (typically split by <br> into a node).
-      const left = sourceText.slice(0, start).trim();
-      const right = sourceText.slice(end).trim();
-      return left.length === 0 && right.length === 0;
-    });
+    // Obsidian-style $$...$$ should always render as display math.
+    collectMatches(LATEX_DISPLAY_DOLLAR_RE, true);
     collectMatches(LATEX_DISPLAY_PARENS_RE, true);
     collectMatches(LATEX_INLINE_PARENS_RE, false);
     collectMatches(LATEX_INLINE_DOLLAR_RE, false);
@@ -417,6 +412,134 @@ function renderLatexInElement(container: HTMLElement): void {
 export function renderFlagAndLatexPreviewInElement(el: HTMLElement, input: string): void {
   replaceChildrenWithHTML(el, renderFlagPreviewHtml(String(input ?? "")));
   renderLatexInElement(el);
+}
+
+export function renderLatexMathInElement(el: HTMLElement): void {
+  renderLatexInElement(el);
+}
+
+/**
+ * Enhanced overlay renderer: renders inline markdown formatting (bold, italic,
+ * strikethrough, highlight), markdown lists (ul/ol), wiki links, circle-flag
+ * tokens, and LaTeX — giving a live-preview feel when a field is blurred.
+ */
+export function renderMarkdownPreviewInElement(el: HTMLElement, input: string): void {
+  replaceChildrenWithHTML(el, markdownPreviewHtml(String(input ?? "")));
+  renderLatexInElement(el);
+}
+
+/** Convert raw markdown text into preview HTML with formatting + lists. */
+function markdownPreviewHtml(source: string): string {
+  if (!source) return "";
+
+  // ── Protect LaTeX blocks from markdown formatting ──
+  const mathPlaceholders: string[] = [];
+  const MATH_PH = "@@SPROUTMATH";
+  const mathBlockRe = /\$\$[\s\S]+?\$\$|(?<!\$)\$(?!\$)[^\s$](?:[^$]*[^\s$])?\$(?!\$)|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]/g;
+
+  let work = source.replace(mathBlockRe, (match) => {
+    const idx = mathPlaceholders.length;
+    mathPlaceholders.push(match);
+    return `${MATH_PH}${idx}@@`;
+  });
+
+  // ── HTML-escape (preserving placeholders) ──
+  work = escapeFlagHtml(work);
+
+  // ── Wiki links [[Page]] or [[Page|Display]] ──
+  work = work.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_m, target: string, display?: string) => {
+    const linkText = display || target;
+    return `<a class="internal-link" data-href="${target}">${linkText}</a>`;
+  });
+
+  // ── Inline formatting (order: bold before italic) ──
+  work = work.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  work = work.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
+  work = work.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, "<em>$1</em>");
+  work = work.replace(/~~(.+?)~~/g, "<s>$1</s>");
+  work = work.replace(/==(.+?)==/g, "<mark>$1</mark>");
+
+  // ── Inline code ──
+  work = work.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // ── Circle-flag tokens ──
+  work = replaceCircleFlagTokens(work);
+
+  // ── Markdown lists ──
+  work = convertMarkdownLists(work);
+
+  // ── Restore LaTeX placeholders ──
+  if (mathPlaceholders.length) {
+    work = work.replace(/@@SPROUTMATH(\d+)@@/g, (_m, idx) => mathPlaceholders[Number(idx)] ?? _m);
+  }
+
+  return work;
+}
+
+/**
+ * Convert markdown list lines into proper nested <ul>/<ol> HTML.
+ * Non-list lines get \n→<br>. Handles unordered (-, *, +) and ordered (1., 2)) lists
+ * with indentation-based nesting (tab or 2-space indent per level).
+ */
+function convertMarkdownLists(text: string): string {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  // Stack tracks open list types at each nesting depth
+  const stack: Array<"ul" | "ol"> = [];
+
+  const closeTo = (depth: number) => {
+    while (stack.length > depth) {
+      out.push(`</${stack.pop()}>`);
+    }
+  };
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    const ulMatch = line.match(/^([\t ]*)[-+*]\s+(.*)/);
+    const olMatch = !ulMatch ? line.match(/^([\t ]*)\d+[.)]\s+(.*)/) : null;
+
+    if (ulMatch || olMatch) {
+      const indent = (ulMatch || olMatch)![1];
+      const content = (ulMatch || olMatch)![2];
+      // Calculate depth: each tab = 1 level, each 2 spaces = 1 level
+      const depth = indent.split("\t").length - 1 + Math.floor(indent.replace(/\t/g, "").length / 2);
+      const targetDepth = depth + 1; // 1-based (depth 0 = top level list)
+      const tag: "ul" | "ol" = ulMatch ? "ul" : "ol";
+
+      if (targetDepth > stack.length) {
+        // Open new list(s) to reach target depth
+        while (stack.length < targetDepth) {
+          out.push(`<${tag}>`);
+          stack.push(tag);
+        }
+      } else {
+        // Close lists down to target depth
+        closeTo(targetDepth);
+        // If the list type changed at this depth, swap it
+        if (stack.length > 0 && stack[stack.length - 1] !== tag) {
+          out.push(`</${stack.pop()}>`);
+          out.push(`<${tag}>`);
+          stack.push(tag);
+        }
+      }
+      out.push(`<li>${content}</li>`);
+    } else {
+      closeTo(0);
+      const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+      if (headingMatch) {
+        const level = Math.max(1, Math.min(6, headingMatch[1].length));
+        out.push(`<h${level}>${headingMatch[2]}</h${level}>`);
+      } else if (line === "") {
+        out.push("<br>");
+      } else {
+        out.push(line);
+        if (idx < lines.length - 1) out.push("<br>");
+      }
+    }
+  }
+  closeTo(0);
+
+  return out.join("");
 }
 
 export function queryFirst<T extends Element = Element>(root: ParentNode, selector: string): T | null {

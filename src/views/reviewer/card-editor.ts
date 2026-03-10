@@ -13,6 +13,7 @@ import type SproutPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions } from "../../platform/core/store";
 import { queryFirst } from "../../platform/core/ui";
+import { handleTabInTextarea } from "../../platform/card-editor/card-editor";
 import { setModalTitle, scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
 import { log } from "../../platform/core/logger";
@@ -221,6 +222,9 @@ export class CardEditModal extends Modal {
       ta.rows = rows;
       ta.classList.add("textarea", "w-full", "sprout-textarea-fixed");
       if (extraClass) ta.classList.add(extraClass);
+      ta.addEventListener("keydown", (ev: KeyboardEvent) => {
+        handleTabInTextarea(ta, ev);
+      });
       return ta;
     };
 

@@ -1,12 +1,20 @@
 # Settings
 
-Last modified: 13/02/2026
+Last modified: 10/03/2026
 
 ## Overview
 
 Open **Settings → Community plugins → Sprout** to configure the plugin.
 
 Settings are grouped by tab.
+
+## Storage & Sync
+
+Sprout stores its scheduling database in **SQLite**.
+
+- Markdown note content remains in your vault files.
+- Scheduling and review state are stored in the Sprout database.
+- Backups in the Data backup section are restore points for scheduling data.
 
 ## User details
 
@@ -41,6 +49,16 @@ Reminders and Gatekeeper are documented on dedicated pages:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | Card attachment folder | `Attachments/Cards/` | Where card media (images, audio) is saved |
+
+## Data backup
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Enable rolling daily backup | On | Keep one automatic daily backup (`daily-backup.db`). Manual backups are never auto-deleted. |
+
+Use **Create manual backup** before risky changes (large imports, schema/migration changes, or major cleanup).
+
+For restore flow, integrity status, and backup behavior details, see [Backups](./Backups.md).
 
 ## Study
 

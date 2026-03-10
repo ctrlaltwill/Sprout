@@ -568,7 +568,7 @@
 }
 
 .sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-header-note {
-  font-size: var(--sprout-widget-font-summary-count);
+  font-size: 0.9rem !important;
   color: var(--foreground);
   font-weight: 400;
 }

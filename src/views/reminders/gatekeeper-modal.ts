@@ -604,7 +604,7 @@ export class GatekeeperModal extends Modal {
     const text = card.clozeText || "";
     const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : undefined;
 
-    if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[")) {
+    if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[") || this.hasMarkdownList(text)) {
       const clozeEl = document.createElement("div");
       clozeEl.className = "bc sprout-widget-cloze sprout-widget-text w-full whitespace-pre-wrap break-words";
       const sourcePath = String(card.sourceNotePath || "");
@@ -633,7 +633,7 @@ export class GatekeeperModal extends Modal {
     const sourcePath = String(card.sourceNotePath || "");
     const cardId = String(card.id || "");
     const stemEl = body.createDiv({ cls: "whitespace-pre-wrap break-words sprout-gatekeeper-question-block" });
-    if (stemText.includes("$") || stemText.includes("\\(") || stemText.includes("\\[") || stemText.includes("[[")) {
+    if (stemText.includes("$") || stemText.includes("\\(") || stemText.includes("\\[") || stemText.includes("[[") || this.hasMarkdownList(stemText)) {
       void this.renderMarkdownInto(stemEl, convertInlineDisplayMath(stemText), sourcePath);
     } else {
       replaceChildrenWithHTML(stemEl, processMarkdownFeatures(stemText));
@@ -666,7 +666,7 @@ export class GatekeeperModal extends Modal {
       const textEl = body.ownerDocument.createElement("span");
       textEl.className = "bc min-w-0 whitespace-pre-wrap break-words sprout-widget-mcq-text";
       const optText = typeof opt === "string" ? opt : "";
-      if (optText.includes("$") || optText.includes("\\(") || optText.includes("\\[") || optText.includes("[[")) {
+      if (optText.includes("$") || optText.includes("\\(") || optText.includes("\\[") || optText.includes("[[") || this.hasMarkdownList(optText)) {
         void this.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(optText), sourcePath);
       } else {
         replaceChildrenWithHTML(textEl, processMarkdownFeatures(optText));
@@ -788,7 +788,7 @@ export class GatekeeperModal extends Modal {
 
           const textEl = body.ownerDocument.createElement("span");
           textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text sprout-widget-text";
-          if (stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[") || stepText.includes("[[")) {
+          if (stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[") || stepText.includes("[[") || this.hasMarkdownList(stepText)) {
             void this.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(stepText), sourcePath);
           } else {
             replaceChildrenWithHTML(textEl, processMarkdownFeatures(stepText));
@@ -869,7 +869,7 @@ export class GatekeeperModal extends Modal {
 
       const textEl = body.ownerDocument.createElement("span");
       textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-widget-text sprout-oq-step-text";
-      if (stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[") || stepText.includes("[[")) {
+      if (stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[") || stepText.includes("[[") || this.hasMarkdownList(stepText)) {
         void this.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(stepText), sourcePath);
       } else {
         replaceChildrenWithHTML(textEl, processMarkdownFeatures(stepText));
@@ -898,7 +898,7 @@ export class GatekeeperModal extends Modal {
   }
 
   private renderTextBlock(el: HTMLElement, text: string, card: CardRecord) {
-    if (this.hasMarkdownTable(text) || text.includes("[[") || text.includes("$") || text.includes("\\(") || text.includes("\\[")) {
+    if (this.hasMarkdownTable(text) || this.hasMarkdownList(text) || text.includes("[[") || text.includes("$") || text.includes("\\(") || text.includes("\\[")) {
       const sourcePath = String(card.sourceNotePath || "");
       void this.renderMarkdownInto(el, convertInlineDisplayMath(text), sourcePath);
       return;
@@ -910,6 +910,10 @@ export class GatekeeperModal extends Modal {
 
   private hasMarkdownTable(text: string): boolean {
     return /^\|.+\|\s*\n\|[\s:|-]+\|/m.test(String(text || ""));
+  }
+
+  private hasMarkdownList(text: string): boolean {
+    return /^[ \t]*(?:[-+*]|\d+[.)])\s/m.test(String(text || ""));
   }
 
   private shuffleInPlace(a: number[]) {

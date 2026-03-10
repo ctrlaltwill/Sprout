@@ -1078,6 +1078,17 @@ export class SproutSettingsTab extends PluginSettingTab {
         }),
       );
 
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.appearance.launchNotice.name", "Show launch notice"))
+      .setDesc(this._tx("ui.settings.appearance.launchNotice.desc", "Show a notice modal whenever Obsidian launches."))
+      .addToggle((t) =>
+        t.setValue(this.plugin.settings?.general?.showLaunchNoticeModal ?? true).onChange(async (v) => {
+          if (!this.plugin.settings.general) this.plugin.settings.general = {} as typeof this.plugin.settings.general;
+          this.plugin.settings.general.showLaunchNoticeModal = !!v;
+          await this.plugin.saveAll();
+        }),
+      );
+
     new Setting(wrapper).setName(this._tx("ui.settings.sections.language", "Language")).setHeading();
 
     const localeOptions = getSupportedInterfaceLocales().map((locale) => ({
@@ -1881,7 +1892,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       return "flashcards";
     };
 
-    const isMacroComingSoon = (key: "flashcards" | "classic" | "markdown" | "custom"): boolean => key === "classic" || key === "custom" || key === "markdown";
+    const isMacroComingSoon = (key: "flashcards" | "classic" | "markdown" | "custom"): boolean => key === "classic" || key === "custom";
 
     rv.activeMacro = normaliseMacro(rv.activeMacro ?? rv.preset);
     if (isMacroComingSoon(rv.activeMacro)) rv.activeMacro = "flashcards";
@@ -1986,12 +1997,14 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     const refreshReadingViews = () => {
       syncStyles();
-      this.plugin.refreshReadingViewMarkdownLeaves();
+      void this.plugin.refreshReadingViewMarkdownLeaves();
+      void this.plugin.refreshAllViews();
     };
 
     const fullRerenderRV = () => {
       syncStyles();
-      this.plugin.refreshReadingViewMarkdownLeaves();
+      void this.plugin.refreshReadingViewMarkdownLeaves();
+      void this.plugin.refreshAllViews();
     };
 
     const syncLegacyMirror = () => {
@@ -2483,7 +2496,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             await this.plugin.saveAll();
             syncStyles();
             rerenderLivePreview?.();
-            this.plugin.refreshReadingViewMarkdownLeaves();
+            void this.plugin.refreshReadingViewMarkdownLeaves();
           });
         });
 

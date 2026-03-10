@@ -240,6 +240,91 @@ mjx-container[jax="CHTML"][display="true"] {
   margin-bottom: 10px;
 }
 
+/* ---- Markdown heading scale inside reading view cards ---- */
+.sprout .sprout-pretty-card :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.2em 0 !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-inline: 0 !important;
+  margin-block-start: 0.2em !important;
+  margin-block-end: 0.2em !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.sprout .sprout-pretty-card :is(h1, h2, h3, h4, h5, h6)::before,
+.sprout .sprout-pretty-card :is(h1, h2, h3, h4, h5, h6)::after {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.sprout .sprout-pretty-card h1 { font-size: 1.2rem !important; }
+.sprout .sprout-pretty-card h2 { font-size: 1.15rem !important; }
+.sprout .sprout-pretty-card h3 { font-size: 1.1rem !important; }
+.sprout .sprout-pretty-card h4 { font-size: 1.05rem !important; }
+.sprout .sprout-pretty-card h5 { font-size: 1rem !important; }
+.sprout .sprout-pretty-card h6 { font-size: 0.95rem !important; }
+
+/* Obsidian's .markdown-rendered h1-h6 rules can override generic heading
+   resets, so flashcard body headings get a stronger, scoped reset. */
+.markdown-rendered .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6),
+.markdown-rendered.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6),
+.markdown-preview-view .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6),
+.markdown-preview-view.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6),
+.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.2em 0 !important;
+  margin-block-start: 0.2em !important;
+  margin-block-end: 0.2em !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Some themes style h1-p with broad selectors like `.markdown-rendered h1`
+   and `.markdown-preview-view p`; this keeps flashcard body copy isolated. */
+.markdown-rendered .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6, p),
+.markdown-rendered.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6, p),
+.markdown-preview-view .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6, p),
+.markdown-preview-view.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6, p),
+.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6, p) {
+  margin: 0.2em 0 !important;
+  margin-block-start: 0.2em !important;
+  margin-block-end: 0.2em !important;
+  padding: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  line-height: inherit !important;
+}
+
+.markdown-rendered .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::before,
+.markdown-rendered .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::after,
+.markdown-rendered.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::before,
+.markdown-rendered.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::after,
+.markdown-preview-view .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::before,
+.markdown-preview-view .sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::after,
+.markdown-preview-view.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::before,
+.markdown-preview-view.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::after,
+.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::before,
+.sprout .sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::after {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
 /* Flashcards macro */
 .sprout-pretty-card.sprout-macro-flashcards {
   background: var(--color-base-10);
@@ -291,7 +376,6 @@ mjx-container[jax="CHTML"][display="true"] {
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
-  padding: 0 !important;
   margin-top: 0 !important;
   margin-bottom: 12px !important;
   color: var(--text-normal);
@@ -655,12 +739,12 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 .sprout-pretty-card.sprout-macro-markdown .sprout-clean-markdown-cloze {
-  font-weight: 500;
-  background-color: var(--sprout-clean-md-cloze-bg, hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12));
+  font-weight: inherit;
+  background: none;
   color: var(--sprout-clean-md-cloze-text, var(--text-colour, var(--text-color, var(--text-normal))));
-  border-radius: var(--radius-s);
-  padding: 1px 5px;
-  margin: 0 1px;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
@@ -896,19 +980,19 @@ mjx-container[jax="CHTML"][display="true"] {
 /* ---- Macro styles ---- */
 
 .sprout-pretty-card.sprout-macro-markdown {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+  background: var(--background-primary) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--radius-m) !important;
+  padding: 4px 0px !important;
   margin-top: 0 !important;
   margin-bottom: 12px !important;
+  color: var(--text-normal);
 }
 
 .sprout-pretty-card.sprout-macro-markdown .sprout-markdown-lines {
   display: grid;
-  gap: 4px;
-  font-size: var(--font-text-size);
-  line-height: 1.55;
+  gap: 6px;
+  line-height: 1.6;
 }
 
 .sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line {
@@ -920,8 +1004,43 @@ mjx-container[jax="CHTML"][display="true"] {
   gap: 4px;
 }
 
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-plain-inline,
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-plain-block {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-plain-block {
+  padding-inline-start: 2px;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-plain-list {
+  margin: 0;
+  padding-inline-start: 1.25em;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-plain-list-item {
+  margin-inline-start: calc(var(--sprout-list-indent, 0) * 0.6ch);
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-list {
+  margin: 0 !important;
+  margin-inline: auto !important;
+  padding-inline-start: 1.35em !important;
+  list-style-type: disc;
+  display: inline-block;
+  text-align: left;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-list-item {
+  margin-inline-start: calc(var(--sprout-list-indent, 0) * 1.1em);
+}
+
 .sprout-pretty-card.sprout-macro-markdown .sprout-markdown-label {
-  font-weight: 600;
+  font-weight: 400;
+  opacity: 0.8;
   color: var(--text-muted);
 }
 
@@ -1000,7 +1119,7 @@ mjx-container[jax="CHTML"][display="true"] {
   line-height: 1.5;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   border-radius: calc(var(--radius-l) - 1px);
-  background: var(--color-base-20) !important;
+  background: var(--color-base-25) !important;
   padding: 12px;
   overflow: hidden;
 }
@@ -1029,13 +1148,55 @@ mjx-container[jax="CHTML"][display="true"] {
   margin: 0;
 }
 
+/* Flashcard mode (reading view): enforce session-like heading rhythm and
+   neutralize theme/markdown heading chrome with stronger, later selectors. */
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.3rem 0 !important;
+  margin-block-start: 0.3rem !important;
+  margin-block-end: 0.3rem !important;
+  padding: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-inline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+}
+
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body h1 { font-size: 1.2rem !important; }
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body h2 { font-size: 1.15rem !important; }
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body h3 { font-size: 1.1rem !important; }
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body h4 { font-size: 1.05rem !important; }
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body h5 { font-size: 1rem !important; }
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body h6 { font-size: 1rem !important; }
+
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::before,
+.sprout-pretty-card.sprout-macro-flashcards :is(.sprout-card-content, .sprout-reading-card-content)
+  :is(.sprout-flashcard-question, .sprout-flashcard-answer) .sprout-flashcard-body :is(h1, h2, h3, h4, h5, h6)::after {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
 .sprout-inline-flag,
 .sprout-pretty-card img.sprout-inline-flag {
   width: 1em !important;
-  height: 1em !important;
-  min-width: 1em !important;
-  min-height: 1em !important;
-  max-width: 1em !important;
+  margin: 0;
+  padding-inline-start: 1.35em;
+  list-style-type: disc;
   max-height: 1em !important;
   border-radius: 999px;
   object-fit: cover;

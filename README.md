@@ -62,7 +62,7 @@ Sprig is your AI learning companion within Sprout. It can:
 
 Sprig is currently in _beta_. It helps you understand notes faster, improve them with clear feedback, and turn them into ready-to-study flashcards in one workflow.
 
-To try Sprig, download the latest build from `dist` (`main.js`, `styles.css`, and `manifest.json`) and install it manually. This beta feature will be included in the next release.
+To try Sprig, download the latest release (1.1.0) from [Releases](https://github.com/ctrlaltwill/Sprout/releases) and install it manually.
 
 🎥 Watch Sprig in action: **[Sprig Demo →](https://youtu.be/fe1htR7hjvY)**
 

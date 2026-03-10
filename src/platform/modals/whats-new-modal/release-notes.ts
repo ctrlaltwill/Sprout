@@ -25,6 +25,41 @@ export interface ReleaseNote {
  * 3. The modal will automatically show for users upgrading to that version
  */
 export const RELEASE_NOTES: Record<string, ReleaseNote> = {
+  "1.1.0": {
+    version: "1.1.0",
+    title: "1.1.0",
+    releaseDate: "2026-03-10",
+    content: `
+# Sprout 1.1.0
+Release 1.1.0 focused on introducing Sprig, the built-in AI assistant.
+
+## What's New
+
+### Sprig - AI Assistant
+- Bring your own API key support so you can connect your preferred model provider.
+- Ask questions about your notes and study material directly inside Sprout.
+- Review your notes with AI-assisted summaries and guided understanding prompts.
+- Generate flashcards from your existing notes to speed up deck creation. These flashcards are context aware, and clicking on them in the chat will show what part of your note was used to inform their creation.
+- Configure Sprig settings for provider details, key management, and assistant behavior.
+
+## What's Updated
+
+### Data Storage
+- Transitioned storage from JSON to SQLite to improve reliability, scalability, and data consistency as Sprout grows.
+
+### Image Occlusion Editor
+- Added **Auto-Mask** feature in the IO editor toolbar to detect text regions and create masks automatically.
+
+### Reviewer
+- Enabled grading-card interval duration hints by default so next-interval timing appears under grade buttons.
+
+## Coming Next
+
+### Sync Efficiency
+- Future updates will focus on syncing data more efficiently so Sprout can avoid full database updates every session.
+    `.trim(),
+  },
+
   "1.0.6": {
     version: "1.0.6",
     title: "1.0.6",

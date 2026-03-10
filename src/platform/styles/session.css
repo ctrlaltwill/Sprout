@@ -257,6 +257,70 @@
   font-size: var(--sprout-font-sm-plus) !important; /* align with .sprout-a */
 }
 
+/* ---- Lists inside reviewer session cards ---- */
+.sprout-session-card :is(ul, ol) {
+  margin-top: 0.3rem !important;
+  margin-bottom: 0.3rem !important;
+  padding-inline-start: 1.5em !important;
+  line-height: 1.15 !important;
+}
+
+.sprout-session-card ul {
+  list-style-type: disc !important;
+}
+
+.sprout-session-card ol {
+  list-style-type: decimal !important;
+}
+
+.sprout-session-card li {
+  margin: 0.3rem 0 !important;
+  padding: 0 !important;
+  line-height: 1.15 !important;
+}
+
+.sprout-session-card li > p {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.sprout-session-card li > :is(ul, ol) {
+  margin-top: 0.3rem !important;
+  margin-bottom: 0.3rem !important;
+}
+
+/* Override .sprout-md-block line-height for list content specifically. */
+.sprout-session-card .sprout-md-block :is(ul, ol, li) {
+  line-height: 1.15 !important;
+}
+
+.sprout-session-card .sprout-md-block :is(ul, ol) {
+  margin-block: 0.3rem !important;
+}
+
+/* ---- Markdown heading scale inside session cards ---- */
+.sprout-session-card :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.3rem 0 !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Match paragraph rhythm with heading spacing inside study-session markdown blocks. */
+.sprout-session-card .sprout-md-block > p {
+  margin: 0.3rem 0 !important;
+}
+
+.sprout-session-card h1 { font-size: 1.2rem !important; }
+.sprout-session-card h2 { font-size: 1.15rem !important; }
+.sprout-session-card h3 { font-size: 1.1rem !important; }
+.sprout-session-card h4 { font-size: 1.05rem !important; }
+.sprout-session-card h5 { font-size: 1rem !important; }
+.sprout-session-card h6 { font-size: 0.95rem !important; }
+
 /* ---- Cloze reveals ---- */
 
 .sprout-cloze-revealed {

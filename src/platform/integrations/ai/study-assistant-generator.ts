@@ -965,6 +965,22 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
     noteContent: input.noteContent,
   };
 
+  const optionalRowsInstructions: string[] = [];
+  if (input.includeTitle) {
+    optionalRowsInstructions.push("For every suggestion, include exactly one title row in noteRows: T | ... |.");
+  }
+  if (input.includeInfo) {
+    optionalRowsInstructions.push("For every suggestion, include an extra information row in noteRows: I | ... |.");
+  }
+  if (input.includeGroups) {
+    optionalRowsInstructions.push("For every suggestion, include a groups row in noteRows as a comma-separated tag list: G | Parent/Child, Parent2/Child2, Lone, Lone2 |.");
+    optionalRowsInstructions.push("Generate smart, study-relevant tags that help group related questions by topic/system/theme; use hierarchical paths (Parent/Child) when helpful, and single-level tags when not.");
+    optionalRowsInstructions.push("Do not use JSON arrays for groups in noteRows; keep groups as one comma-separated string inside the G row.");
+  }
+  if (!input.includeTitle && !input.includeInfo && !input.includeGroups) {
+    optionalRowsInstructions.push("Do not include optional T/I/G rows in noteRows for this run.");
+  }
+
   const lines = [
     exactTarget != null
       ? `Generate exactly ${target} high-quality flashcard suggestions from this note.`
@@ -980,6 +996,7 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
       : "Do not generate IO cards in this run because image vision input is unavailable.",
     "For cloze requests, return only true cloze cards with {{cN::...}} deletions and CQ rows.",
     "When the user asks for a single cloze card with multiple deletions, return one CQ row containing all requested deletions, and grouped/shared indices are allowed.",
+    ...optionalRowsInstructions,
     "Keep LaTeX and language flags (e.g. {{es}}) unchanged.",
     'Use note content as the default source of truth for all suggestions.',
     'Use sourceOrigin "external" only when the user explicitly asks for external/background knowledge; otherwise use "note".',

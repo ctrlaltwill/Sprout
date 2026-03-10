@@ -34,7 +34,8 @@ import {
   scopeModalToWorkspace,
 } from "./modal-utils";
 import { coerceGroups } from "../../engine/indexing/group-format";
-import { renderFlagAndLatexPreviewInElement, setCssProps } from "../core/ui";
+import { renderMarkdownPreviewInElement, setCssProps } from "../core/ui";
+import { handleTabInTextarea } from "../card-editor/card-editor";
 
 type GroupPickerFieldFactory = (
   initialValue: string,
@@ -157,6 +158,7 @@ export class BulkEditCardModal extends Modal {
   const isClozeOnly = normalizedTypes.length > 0 && normalizedTypes.every((type) => type === "cloze");
   const isSingleMcq = cards.length === 1 && normalizedTypes[0] === "mcq";
   const isSingleOq = cards.length === 1 && normalizedTypes[0] === "oq";
+  const isSingleEdit = cards.length === 1;
 
   // Map of input elements by field key
   const inputEls: Record<string, HTMLInputElement | HTMLTextAreaElement> = {};
@@ -191,6 +193,9 @@ export class BulkEditCardModal extends Modal {
       }
     };
 
+    let pendingSyncRaf = 0;
+    let lastPreviewHeight = 0;
+
     const syncPreviewHeight = () => {
       const scrollbarFudgePx = 5;
       const controlHeight = measureControlHeight();
@@ -200,12 +205,22 @@ export class BulkEditCardModal extends Modal {
         controlHeight + scrollbarFudgePx,
         overlayHeight,
       );
+      if (previewHeight === lastPreviewHeight) return;
+      lastPreviewHeight = previewHeight;
       wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
       applyControlHeight(previewHeight);
     };
 
+    const queueSyncPreviewHeight = () => {
+      if (pendingSyncRaf) return;
+      pendingSyncRaf = window.requestAnimationFrame(() => {
+        pendingSyncRaf = 0;
+        syncPreviewHeight();
+      });
+    };
+
     const renderOverlay = () => {
-      renderFlagAndLatexPreviewInElement(overlay, String(control.value ?? ""));
+      renderMarkdownPreviewInElement(overlay, String(control.value ?? ""));
       syncPreviewHeight();
       window.requestAnimationFrame(syncPreviewHeight);
       window.setTimeout(syncPreviewHeight, 80);
@@ -233,10 +248,16 @@ export class BulkEditCardModal extends Modal {
 
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => {
-        syncPreviewHeight();
+        queueSyncPreviewHeight();
       });
       ro.observe(overlay);
-      registerCloseCleanup(() => ro.disconnect());
+      registerCloseCleanup(() => {
+        if (pendingSyncRaf) {
+          window.cancelAnimationFrame(pendingSyncRaf);
+          pendingSyncRaf = 0;
+        }
+        ro.disconnect();
+      });
     }
 
     renderOverlay();
@@ -268,6 +289,9 @@ export class BulkEditCardModal extends Modal {
     textarea.className = "bc textarea w-full sprout-textarea-fixed";
     textarea.rows = 3;
     textarea.value = getSharedEditableFieldValue(cards, field);
+    textarea.addEventListener("keydown", (ev: KeyboardEvent) => {
+      handleTabInTextarea(textarea, ev);
+    });
     wrapper.appendChild(attachFlagPreviewOverlay(textarea, fieldMinHeightPx(field)));
     inputEls[field] = textarea;
 
@@ -715,6 +739,13 @@ export class BulkEditCardModal extends Modal {
       const el = inputEls[field];
       if (!el) continue;
       const val = String(el.value ?? "").trim();
+
+      // In single-card edit mode, an empty text field means "clear this field".
+      // In multi-card bulk edit, empty means "leave existing values unchanged".
+      if (isSingleEdit && (field === "title" || field === "question" || field === "answer")) {
+        updates[field] = val;
+        continue;
+      }
 
       // Optional fields should be cleared when empty
       if (field === "info" || field === "groups") {

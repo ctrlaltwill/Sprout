@@ -171,6 +171,10 @@
   display: none !important;
 }
 
+.bg-transparent {
+  background: transparent !important;
+}
+
 /* ---- Global keyboard keycap shape ---- */
 
 .sprout kbd,
@@ -430,6 +434,11 @@
 
 .sprout .badge {
     background-color: var(--theme-accent);
+}
+
+.sprout .badge.group {
+  font-family: var(--font-interface) !important;
+  font-size: 0.85rem !important;
 }
 
 .sprout-badge-success {

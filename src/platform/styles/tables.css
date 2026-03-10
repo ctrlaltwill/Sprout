@@ -18,8 +18,7 @@
 .sprout .sprout-md-block,
 .sprout .sprout-section-content,
 .sprout .sprout-answer,
-.sprout .sprout-info,
-.sprout .sprout-widget-text {
+.sprout .sprout-info {
   overflow-x: auto;
 }
 

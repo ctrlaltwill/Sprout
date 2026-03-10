@@ -7,7 +7,7 @@
  */
 
 import type { App, Plugin, MarkdownPostProcessorContext } from "obsidian";
-import { Component, MarkdownRenderer, Notice, setIcon, TFile, renderMath, finishRenderMath } from "obsidian";
+import { Component, MarkdownRenderer, MarkdownView, Notice, setIcon, TFile, renderMath, finishRenderMath } from "obsidian";
 import { log } from "../../platform/core/logger";
 import { escapeDelimiterRe } from "../../platform/core/delimiter";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
@@ -24,6 +24,7 @@ import type { StoredIORect } from "../../platform/image-occlusion/image-occlusio
 import {
   ANCHOR_RE,
   clean,
+  escapeHtml,
   extractRawTextFromParagraph,
   extractTextWithLaTeX,
   extractCardFromSource,
@@ -517,6 +518,21 @@ export function syncReadingViewStyles(): void {
   css += `  font-size: ${effectiveFontSize}rem !important;\n`;
   css += `}\n`;
 
+  // Ensure hidden source fragments never leak below prettified cards,
+  // even when scoped stylesheet transforms miss plain markdown leaves.
+  css += `.markdown-preview-section > [data-sprout-hidden="true"] {\n`;
+  css += `  display: none !important;\n`;
+  css += `  max-height: 0 !important;\n`;
+  css += `  overflow: hidden !important;\n`;
+  css += `  margin: 0 !important;\n`;
+  css += `  padding: 0 !important;\n`;
+  css += `  border: none !important;\n`;
+  css += `}\n`;
+  css += `.markdown-preview-section > .el-p[data-sprout-processed] {\n`;
+  css += `  opacity: 1;\n`;
+  css += `  max-height: none;\n`;
+  css += `}\n`;
+
   // ── Layout ──
   if (effectiveLayout === 'vertical') {
     css += `.markdown-preview-section.sprout-layout-vertical > .sprout-reading-card-run {\n`;
@@ -705,6 +721,10 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
     const root = (e.currentTarget instanceof HTMLElement)
       ? e.currentTarget
       : (e.target instanceof HTMLElement ? e.target : null);
+    const refreshDetail = (e as CustomEvent<{ sourceContent?: string; sourcePath?: string }>).detail;
+    const sourceFromEvent = typeof refreshDetail?.sourceContent === 'string'
+      ? refreshDetail.sourceContent
+      : '';
 
     // When reading styles are disabled, remove all Sprout DOM adjustments
     if (!stylesEnabled) {
@@ -713,13 +733,10 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
       return;
     }
 
-    if (!root) {
-      void processCardElements(document.documentElement, undefined, '');
-      return;
-    }
-
-    refreshProcessedCards(root);
-    scheduleViewportReflow();
+    const refreshRoot = root ?? document.documentElement;
+    resetCardsToNativeReading(refreshRoot);
+    clearStaleReadingViewState(refreshRoot);
+    void processCardElements(refreshRoot, undefined, sourceFromEvent);
 
   }
 
@@ -747,6 +764,31 @@ function setupManualTrigger() {
   });
 
   debugLog('[Sprout] Manual trigger and event hook installed');
+}
+
+async function getLiveMarkdownSourceContent(): Promise<string> {
+  try {
+    const plugin = getSproutPlugin();
+    if (!plugin) return '';
+
+    const activeMarkdownView = plugin.app.workspace?.getActiveViewOfType?.(MarkdownView);
+    if (activeMarkdownView?.getMode?.() === 'source') {
+      const liveViewData =
+        typeof (activeMarkdownView as unknown as { getViewData?: () => string }).getViewData === 'function'
+          ? String((activeMarkdownView as unknown as { getViewData: () => string }).getViewData() ?? '')
+          : '';
+
+      if (liveViewData.trim()) return liveViewData;
+    }
+
+    const activeFile = plugin.app.workspace?.getActiveFile?.();
+    if (activeFile instanceof TFile && activeFile.extension === 'md') {
+      return await plugin.app.vault.read(activeFile);
+    }
+  } catch (e) {
+    debugLog('[Sprout] Could not read live markdown source content:', e);
+  }
+  return '';
 }
 
 /* =========================
@@ -935,19 +977,11 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
     }
   } catch { /* proceed if we can't read settings */ }
 
-  // If no source content provided, try to read it from the active file
+  // If no source content provided, prefer the live markdown view buffer
+  // (includes unsaved source edits during source -> reading transitions),
+  // then fall back to reading from the vault file.
   if (!sourceContent) {
-    try {
-      const plugin = getSproutPlugin();
-      if (plugin) {
-        const activeFile = plugin.app.workspace?.getActiveFile?.();
-        if (activeFile instanceof TFile && activeFile.extension === 'md') {
-          sourceContent = await plugin.app.vault.read(activeFile);
-        }
-      }
-    } catch (e) {
-      debugLog('[Sprout] Could not read source file in processCardElements:', e);
-    }
+    sourceContent = await getLiveMarkdownSourceContent();
   }
 
   const found: HTMLElement[] = [];
@@ -970,7 +1004,11 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
 
   if (found.length === 0) {
     debugLog('[Sprout] No unprocessed .el-p elements found in container');
+    // Field-only edits can change card bodies without creating new anchor
+    // paragraphs. Rebuild existing processed cards from latest source text.
+    void refreshProcessedCards(container, sourceContent);
     applyLayoutForContainer();
+    hideSectionLevelOrphanDelimitedParagraphs(container);
     return;
   }
 
@@ -1016,21 +1054,37 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
   // are attached to the DOM; this final pass ensures card-run wrappers
   // are created after all pending rendering settles.
   scheduleViewportReflow();
+  hideSectionLevelOrphanDelimitedParagraphs(container);
 
   await Promise.resolve();
 
 }
 
-function refreshProcessedCards(container: HTMLElement) {
+async function refreshProcessedCards(container: HTMLElement, sourceContent?: string) {
   const cards = Array.from(container.querySelectorAll<HTMLElement>('.sprout-pretty-card[data-sprout-raw-text], .el-p[data-sprout-processed][data-sprout-raw-text]'));
   if (!cards.length) return;
+
+  const latestSource = sourceContent?.trim() ? sourceContent : await getLiveMarkdownSourceContent();
 
   const touchedSections = new Set<HTMLElement>();
 
   for (const el of cards) {
     try {
       if (el.closest('.cm-content')) continue;
-      const rawText = String(el.getAttribute('data-sprout-raw-text') || '');
+
+      let rawText = String(el.getAttribute('data-sprout-raw-text') || '');
+      const anchorFromAttr = String(el.getAttribute('data-sprout-id') || '').trim();
+      const anchorFromRaw = rawText.match(ANCHOR_RE)?.[1] ?? '';
+      const anchorId = anchorFromAttr || anchorFromRaw;
+
+      if (latestSource && anchorId) {
+        const extracted = extractCardFromSource(latestSource, anchorId);
+        if (extracted) {
+          rawText = extracted;
+          el.setAttribute('data-sprout-raw-text', extracted);
+        }
+      }
+
       if (!rawText.trim()) continue;
       const card = parseSproutCard(rawText);
       if (!card) continue;
@@ -1049,6 +1103,7 @@ function refreshProcessedCards(container: HTMLElement) {
   if (!touchedSections.size) return;
   const rvSettings = getSproutPlugin()?.settings?.readingView;
   applyLayoutToSections(touchedSections, rvSettings);
+  touchedSections.forEach((section) => hideSectionLevelOrphanDelimitedParagraphs(section));
 }
 
 function resetCardsToNativeReading(container: HTMLElement) {
@@ -1103,6 +1158,36 @@ function resetCardsToNativeReading(container: HTMLElement) {
 
   sections.forEach((section) => {
     applySectionCardRunLayout(section, 'vertical');
+    section.classList.remove('sprout-layout-vertical', 'sprout-layout-masonry');
+  });
+}
+
+function clearStaleReadingViewState(container: HTMLElement) {
+  // Reveal any source fragments hidden by prior pretty-card passes.
+  container
+    .querySelectorAll<HTMLElement>('[data-sprout-hidden="true"], .sprout-hidden-important')
+    .forEach((el) => {
+      el.classList.remove('sprout-hidden-important');
+      el.removeAttribute('data-sprout-hidden');
+    });
+
+  // Drop stale processed markers so updated markdown paragraphs are reparsed.
+  container.querySelectorAll<HTMLElement>('.el-p[data-sprout-processed]').forEach((el) => {
+    el.removeAttribute('data-sprout-processed');
+    el.removeAttribute('data-sprout-raw-text');
+    el.removeAttribute('data-sprout-id');
+    el.removeAttribute('data-sprout-type');
+  });
+
+  const sections = new Set<HTMLElement>();
+  if (container.classList.contains('markdown-preview-section')) {
+    sections.add(container);
+  }
+  container.querySelectorAll<HTMLElement>('.markdown-preview-section').forEach((section) => sections.add(section));
+
+  // Ensure any stale wrappers/layout classes are rebuilt from a clean DOM.
+  sections.forEach((section) => {
+    unwrapCardRuns(section);
     section.classList.remove('sprout-layout-vertical', 'sprout-layout-masonry');
   });
 }
@@ -1371,6 +1456,8 @@ function scheduleViewportReflow(): void {
  */
 function stripMarkdownFormatting(s: string): string {
   let out = s;
+  // Remove list markers at line starts so DOM list text can match raw markdown.
+  out = out.replace(/^\s*(?:[-+*]|\d+[.)])\s+/gm, "");
   // Remove cloze wrappers: {{c1:: … }} → content
   out = out.replace(/\{\{c\d+::/g, "");
   out = out.replace(/\}\}/g, "");
@@ -1403,6 +1490,7 @@ function siblingTextBelongsToCard(
   siblingText: string,
   cardTextStripped: string,
   cardTextNorm: string,
+  cardTextRaw: string,
   cardMathSig: string,
   siblingEl: Element,
 ): boolean {
@@ -1418,6 +1506,26 @@ function siblingTextBelongsToCard(
   const sibStripped = stripMarkdownFormatting(rawNorm);
   if (cardTextStripped && sibStripped && cardTextStripped.includes(sibStripped)) {
     return true;
+  }
+
+  // Extra guard for rendered list blocks that may include formatting artifacts.
+  // If each list line can be mapped back to the raw card source (with or without
+  // markdown list marker), treat it as belonging to the same card.
+  if (siblingEl.classList.contains('el-ul') || siblingEl.classList.contains('el-ol')) {
+    const listLines = String(siblingText ?? '')
+      .split(/\r?\n/g)
+      .map((line) => clean(line).trim())
+      .filter(Boolean);
+
+    if (listLines.length > 0 && cardTextRaw) {
+      const allLinesFound = listLines.every((line) =>
+        cardTextRaw.includes(line) ||
+        cardTextRaw.includes(`- ${line}`) ||
+        cardTextRaw.includes(`* ${line}`) ||
+        cardTextRaw.includes(`+ ${line}`),
+      );
+      if (allLinesFound) return true;
+    }
   }
 
   // MathJax comparison
@@ -1444,6 +1552,41 @@ function siblingTextBelongsToCard(
   return false;
 }
 
+function isLikelyDanglingCardResidue(siblingText: string, siblingEl: Element): boolean {
+  // Only apply this heuristic to paragraph-like spillover blocks.
+  if (!(siblingEl.classList.contains('el-p') || siblingEl.classList.contains('el-div'))) {
+    return false;
+  }
+
+  const lines = String(siblingText ?? '')
+    .split(/\r?\n/g)
+    .map((line) => clean(line).trim())
+    .filter(Boolean);
+
+  if (!lines.length) return false;
+  if (lines.some((line) => ANCHOR_RE.test(line) || /^#{1,6}\s/.test(line))) return false;
+
+  const delimEsc = escapeDelimiterRe();
+  const fieldStartRe = new RegExp(`^([A-Za-z]+|\\d{1,2})\\s*${delimEsc}\\s*`);
+  const trailingDelimRe = new RegExp(`${delimEsc}\\s*$`);
+
+  // If this already looks like a valid card field start, leave it visible.
+  if (lines.some((line) => fieldStartRe.test(line))) return false;
+
+  // Typical orphan residue from malformed/unfinished multiline card fields
+  // contains a dangling trailing delimiter line (e.g. "What |", "Lol |").
+  if (!lines.some((line) => trailingDelimRe.test(line))) return false;
+
+  // Restrict to flashcard section context so ordinary prose elsewhere is untouched.
+  const section = siblingEl.closest<HTMLElement>('.markdown-preview-section');
+  if (section) {
+    const hasFlashcardRun = !!section.querySelector('.sprout-reading-card-run .sprout-pretty-card.sprout-macro-flashcards');
+    if (!hasFlashcardRun) return false;
+  }
+
+  return true;
+}
+
 /**
  * Hide duplicate siblings after individual cards.
  * Obsidian's reading-view renderer splits card blocks at blank lines,
@@ -1451,11 +1594,22 @@ function siblingTextBelongsToCard(
  * content already rendered inside the pretty-card.
  */
 function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
-  const cardTextNorm = cardRawText ? clean(cardRawText).replace(/\s+/g, " ").trim() : "";
-  const cardTextStripped = cardTextNorm ? stripMarkdownFormatting(cardTextNorm) : "";
+  const cardTextRaw = cardRawText ? clean(cardRawText) : "";
+  const cardTextNorm = cardTextRaw ? cardTextRaw.replace(/\s+/g, " ").trim() : "";
+  // Strip markdown from the raw multiline source (before whitespace collapse)
+  // so list markers at line starts are removed correctly.
+  const cardTextStripped = cardTextRaw ? stripMarkdownFormatting(cardTextRaw) : "";
   const cardMathSig = cardTextNorm ? normalizeMathSignature(cardTextNorm) : "";
-  
+
+  // Prefer card-local siblings first. If this is the last card in a run,
+  // fall back to the run's next sibling to catch trailing spillover nodes.
   let next = cardEl.nextElementSibling;
+  if (!next) {
+    const run = cardEl.closest('.sprout-reading-card-run');
+    if (run && cardEl.parentElement === run) {
+      next = run.nextElementSibling;
+    }
+  }
   const toHide: Element[] = [];
   
   while (next) {
@@ -1468,12 +1622,7 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
     }
     
     // Stop if we hit another sprout card (already processed)
-    if (classes.includes('sprout-pretty-card') || next.hasAttribute('data-sprout-processed')) {
-      break;
-    }
-    
-    // Stop if we hit a header
-    if (classes.match(/\bel-h[1-6]\b/)) {
+    if (classes.includes('sprout-pretty-card') || classes.includes('sprout-reading-card-run') || next.hasAttribute('data-sprout-processed')) {
       break;
     }
     
@@ -1514,7 +1663,13 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
       }
     }
 
-    if (siblingTextBelongsToCard(raw, cardTextStripped, cardTextNorm, cardMathSig, next)) {
+    if (siblingTextBelongsToCard(raw, cardTextStripped, cardTextNorm, cardTextRaw, cardMathSig, next)) {
+      toHide.push(next);
+      next = next.nextElementSibling;
+      continue;
+    }
+
+    if (isLikelyDanglingCardResidue(raw, next)) {
       toHide.push(next);
       next = next.nextElementSibling;
       continue;
@@ -1528,6 +1683,67 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   for (const el of toHide) {
     (el as HTMLElement).classList.add('sprout-hidden-important');
     (el as HTMLElement).setAttribute('data-sprout-hidden', 'true');
+  }
+}
+
+function scheduleDeferredSiblingHide(cardEl: HTMLElement, cardRawText?: string) {
+  const run = () => {
+    try {
+      hideCardSiblingElements(cardEl, cardRawText);
+    } catch {
+      // Best-effort cleanup only.
+    }
+  };
+
+  // Some structural blocks (lists/tables) are injected after the first pass.
+  window.requestAnimationFrame(run);
+  window.setTimeout(run, 0);
+  window.setTimeout(run, 50);
+  window.setTimeout(run, 150);
+}
+
+function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
+  const sections: HTMLElement[] = [];
+  if (scope instanceof HTMLElement) {
+    if (scope.classList.contains('markdown-preview-section')) {
+      sections.push(scope);
+    }
+    scope.querySelectorAll<HTMLElement>('.markdown-preview-section').forEach((sec) => sections.push(sec));
+  }
+
+  const delimEsc = escapeDelimiterRe();
+  const trailingDelimRe = new RegExp(`${delimEsc}\\s*$`);
+
+  for (const section of sections) {
+    const hasFlashcards = !!section.querySelector('.sprout-reading-card-run .sprout-pretty-card.sprout-macro-flashcards');
+    if (!hasFlashcards) continue;
+
+    const children = Array.from(section.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
+    for (let i = 0; i < children.length; i++) {
+      const el = children[i];
+      if (!el.classList.contains('el-p')) continue;
+      if (el.hasAttribute('data-sprout-processed')) continue;
+
+      const raw = extractRawTextFromParagraph(el);
+      const lines = String(raw ?? '')
+        .split(/\r?\n/g)
+        .map((line) => clean(line).trim())
+        .filter(Boolean);
+      if (!lines.length) continue;
+      if (lines.some((line) => ANCHOR_RE.test(line) || /^#{1,6}\s/.test(line))) continue;
+      if (!lines.some((line) => trailingDelimRe.test(line))) continue;
+
+      const prev = children[i - 1] ?? null;
+      const next = children[i + 1] ?? null;
+      const nearCardRun =
+        !!prev?.classList.contains('sprout-reading-card-run') ||
+        !!next?.classList.contains('sprout-reading-card-run');
+
+      if (!nearCardRun) continue;
+
+      el.classList.add('sprout-hidden-important');
+      el.setAttribute('data-sprout-hidden', 'true');
+    }
   }
 }
 
@@ -1596,6 +1812,7 @@ function toListField(value: string | string[] | undefined): string[] {
 type CleanMarkdownClozeStyle = {
   bgColor?: string;
   textColor?: string;
+  renderAsTokenText?: boolean;
 };
 
 function sanitizeHexColor(value: string | undefined): string {
@@ -1635,8 +1852,8 @@ function resolveCleanMarkdownClozeStyle(plugin: SproutPluginLike | null): CleanM
     if (!text && lightText) text = deriveTextForDark(lightText);
   }
 
-  if (!bg && !text) return undefined;
-  return { bgColor: bg, textColor: text };
+  if (!bg && !text) return { renderAsTokenText: true };
+  return { bgColor: bg, textColor: text, renderAsTokenText: true };
 }
 
 /* =========================
@@ -1882,7 +2099,12 @@ function renderMarkdownLineWithClozeSpans(value: string, style?: CleanMarkdownCl
     }
     const answer = cm.content.trim();
     if (answer) {
-      if (isInsideMath(cm.index)) {
+      if (style?.renderAsTokenText) {
+        const clozeIdMatch = cm.fullMatch.match(/^\{\{c(\d+)::/i);
+        const clozeId = clozeIdMatch?.[1] ?? '1';
+        const tokenText = `{{c${clozeId}::${answer}}}`;
+        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${escapeHtml(tokenText)}</span>`;
+      } else if (isInsideMath(cm.index)) {
         out += `\\boxed{${answer}}`;
       } else {
         out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${processMarkdownFeatures(answer)}</span>`;
@@ -1919,8 +2141,289 @@ function renderMarkdownTextWithExplicitBreaks(value: string, style?: CleanMarkdo
   return out;
 }
 
+function renderSanitizedPlainTextWithCloze(value: string, style?: CleanMarkdownClozeStyle): string {
+  const source = String(value ?? '');
+  if (!source) return '';
+
+  const clozeMatches = matchClozeTokensBraceAware(source);
+  const spanStyle = buildCleanMarkdownClozeSpanStyle(style);
+  let last = 0;
+  let out = '';
+
+  for (const cm of clozeMatches) {
+    if (cm.index > last) {
+      out += escapeHtml(source.slice(last, cm.index));
+    }
+    const answer = cm.content.trim();
+    if (answer) {
+      if (style?.renderAsTokenText) {
+        const clozeIdMatch = cm.fullMatch.match(/^\{\{c(\d+)::/i);
+        const clozeId = clozeIdMatch?.[1] ?? '1';
+        const tokenText = `{{c${clozeId}::${answer}}}`;
+        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${escapeHtml(tokenText)}</span>`;
+      } else {
+        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${escapeHtml(answer)}</span>`;
+      }
+    }
+    last = cm.index + cm.fullMatch.length;
+  }
+
+  if (last < source.length) {
+    out += escapeHtml(source.slice(last));
+  }
+
+  return out;
+}
+
+function renderSanitizedPlainTextWithBreaks(value: string, style?: CleanMarkdownClozeStyle): string {
+  const source = String(value ?? '');
+  if (!source) return '';
+  return renderSanitizedPlainTextWithCloze(source, style).replace(/\r?\n/g, '<br>');
+}
+
+type ParsedListLine = {
+  indent: number;
+  ordered: boolean;
+  content: string;
+};
+
+function parseListLines(value: string): ParsedListLine[] | null {
+  const source = String(value ?? '').replace(/\r/g, '');
+  if (!source.trim()) return null;
+
+  const lines = source.split('\n');
+  const parsed: ParsedListLine[] = [];
+  const listLineRe = /^(\s*)([-+*]|\d+[.)])\s+(.*)$/;
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const m = line.match(listLineRe);
+    if (!m) return null;
+    // Normalize indentation depth so one tab or two spaces == one list level.
+    const indentRaw = String(m[1] ?? '').replace(/\t/g, '  ');
+    const indent = Math.floor(indentRaw.length / 2);
+    const marker = String(m[2] ?? '');
+    parsed.push({
+      indent,
+      ordered: /^\d/.test(marker),
+      content: String(m[3] ?? ''),
+    });
+  }
+
+  return parsed.length ? parsed : null;
+}
+
+function renderListLinesHtml(
+  lines: ParsedListLine[],
+  renderItem: (value: string) => string,
+  className: string,
+): string {
+  if (!lines.length) return '';
+  const ordered = lines.every((line) => line.ordered);
+  const tag = ordered ? 'ol' : 'ul';
+  const items = lines
+    .map((line) => `<li class="${className}-item" style="--sprout-list-indent:${line.indent}">${renderItem(line.content)}</li>`)
+    .join('');
+  return `<${tag} class="${className}">${items}</${tag}>`;
+}
+
+function renderSanitizedPlainFieldValue(
+  value: string,
+  style?: CleanMarkdownClozeStyle,
+): { html: string; isBlock: boolean } {
+  const parsedList = parseListLines(value);
+  if (parsedList) {
+    return {
+      html: renderListLinesHtml(parsedList, (item) => renderSanitizedPlainTextWithCloze(item, style), 'sprout-markdown-plain-list'),
+      isBlock: true,
+    };
+  }
+
+  // Mixed content support: render contiguous list blocks as lists and
+  // markdown heading lines as real heading tags.
+  const source = String(value ?? '').replace(/\r/g, '');
+  const lines = source.split('\n');
+  const listLineRe = /^(\s*)([-+*]|\d+[.)])\s+(.+)$/;
+  const headingLineRe = /^\s*(#{1,6})\s+(.+)$/;
+  if (lines.some((line) => listLineRe.test(line) || headingLineRe.test(line))) {
+    const parts: string[] = [];
+
+    const flushListBlock = (blockLines: string[]) => {
+      if (!blockLines.length) return;
+      const parsed = parseListLines(blockLines.join('\n'));
+      if (parsed) {
+        parts.push(
+          renderListLinesHtml(
+            parsed,
+            (item) => renderSanitizedPlainTextWithCloze(item, style),
+            'sprout-markdown-plain-list',
+          ),
+        );
+        return;
+      }
+      for (let k = 0; k < blockLines.length; k++) {
+        parts.push(renderSanitizedPlainTextWithCloze(blockLines[k], style));
+        if (k < blockLines.length - 1) parts.push('<br>');
+      }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      if (listLineRe.test(line)) {
+        const block: string[] = [line];
+        let j = i + 1;
+        while (j < lines.length && listLineRe.test(lines[j])) {
+          block.push(lines[j]);
+          j++;
+        }
+        flushListBlock(block);
+        i = j - 1;
+        if (i < lines.length - 1 && lines[i + 1].trim() !== '') parts.push('<br>');
+        continue;
+      }
+
+      if (line === '') {
+        parts.push('<br>');
+        continue;
+      }
+
+      const headingMatch = line.match(headingLineRe);
+      if (headingMatch) {
+        const level = Math.max(1, Math.min(6, headingMatch[1].length));
+        const headingText = String(headingMatch[2] ?? '').trim();
+        parts.push(`<h${level}>${renderSanitizedPlainTextWithCloze(headingText, style)}</h${level}>`);
+        continue;
+      }
+
+      parts.push(renderSanitizedPlainTextWithCloze(line, style));
+      if (i < lines.length - 1 && lines[i + 1].trim() !== '' && !listLineRe.test(lines[i + 1])) {
+        parts.push('<br>');
+      }
+    }
+
+    return {
+      html: parts.join(''),
+      isBlock: true,
+    };
+  }
+
+  const hasLineBreaks = /\r?\n/.test(value);
+  if (hasLineBreaks) {
+    return {
+      html: renderSanitizedPlainTextWithBreaks(value, style),
+      isBlock: true,
+    };
+  }
+
+  return {
+    html: renderSanitizedPlainTextWithCloze(value, style),
+    isBlock: false,
+  };
+}
+
+function renderFlashcardTextWithListSupport(value: string): string {
+  const source = String(value ?? '').replace(/<br\s*\/?\s*>/gi, '\n');
+  if (!source) return '';
+
+  const parsedList = parseListLines(source);
+  if (parsedList) {
+    return renderListLinesHtml(parsedList, (item) => renderMarkdownLineWithClozeSpans(item), 'sprout-flashcard-list');
+  }
+
+  // Support mixed markdown blocks (headings + lists + paragraphs) in flashcard
+  // reading view so list markers don't render as literal text.
+  const lines = source.replace(/\r/g, '').split('\n');
+  const parts: string[] = [];
+  const listLineRe = /^(\s*)([-+*]|\d+[.)])\s+(.+)$/;
+
+  const flushListBlock = (blockLines: string[]) => {
+    if (!blockLines.length) return;
+    const parsed = parseListLines(blockLines.join('\n'));
+    if (parsed) {
+      parts.push(renderListLinesHtml(parsed, (item) => renderMarkdownLineWithClozeSpans(item), 'sprout-flashcard-list'));
+    } else {
+      // Defensive fallback: render raw lines with breaks if parsing fails.
+      for (let k = 0; k < blockLines.length; k++) {
+        parts.push(renderMarkdownLineWithClozeSpans(blockLines[k]));
+        if (k < blockLines.length - 1) parts.push('<br>');
+      }
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (listLineRe.test(line)) {
+      const listBlock: string[] = [line];
+      let j = i + 1;
+      while (j < lines.length && listLineRe.test(lines[j])) {
+        listBlock.push(lines[j]);
+        j++;
+      }
+      flushListBlock(listBlock);
+      i = j - 1;
+      if (i < lines.length - 1 && lines[i + 1].trim() !== '') parts.push('<br>');
+      continue;
+    }
+
+    const headingMatch = line.match(/^\s*(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = Math.max(1, Math.min(6, headingMatch[1].length));
+      const content = renderMarkdownLineWithClozeSpans(String(headingMatch[2] ?? '').trim());
+      parts.push(`<h${level}>${content}</h${level}>`);
+      continue;
+    }
+
+    if (line === '') {
+      parts.push('<br>');
+      continue;
+    }
+
+    parts.push(renderMarkdownLineWithClozeSpans(line));
+    if (i < lines.length - 1 && lines[i + 1].trim() !== '' && !listLineRe.test(lines[i + 1])) {
+      parts.push('<br>');
+    }
+  }
+
+  return parts.join('');
+}
+
 function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeStyle?: CleanMarkdownClozeStyle): string {
   const lines: string[] = [];
+  type MarkdownQuestionLabelType = SproutCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child';
+  const questionLabelByType: Partial<Record<MarkdownQuestionLabelType, string>> = {
+    basic: 'Basic Question',
+    reversed: 'Reversed Question',
+    'reversed-child': 'Reversed Question',
+    mcq: 'Multiple Choice Question',
+    oq: 'Ordered Question',
+    cloze: 'Cloze Question',
+    'cloze-child': 'Cloze Question',
+    io: 'Image Occlusion Question',
+    'io-child': 'Image Occlusion Question',
+  };
+  const questionLabel = questionLabelByType[card.type] ?? 'Question';
+
+  const addPlainField = (label: string, value: string) => {
+    const v = String(value ?? '').trim();
+    if (!v) return;
+    const renderedField = renderSanitizedPlainFieldValue(v, clozeStyle);
+    if (renderedField.isBlock) {
+      if (showLabels) {
+        lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block"><div class="sprout-markdown-label">${escapeHtml(label)}:</div><div class="sprout-markdown-plain-block">${renderedField.html}</div></div>`);
+      } else {
+        lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block"><div class="sprout-markdown-plain-block">${renderedField.html}</div></div>`);
+      }
+      return;
+    }
+    if (showLabels) {
+      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-label">${escapeHtml(label)}:</span> <span class="sprout-markdown-plain-inline">${renderedField.html}</span></div>`);
+    } else {
+      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-plain-inline">${renderedField.html}</span></div>`);
+    }
+  };
+
   const addLine = (label: string, value: string) => {
     const v = value.trim();
     if (!v) return;
@@ -1958,11 +2461,29 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block">${showLabels ? `<div class="sprout-markdown-label">${label}:</div>` : ''}${listHtml}</div>`);
   };
 
+  const addGroupsLine = (groups: string[]) => {
+    if (!groups.length) return;
+    const safeGroups = groups.map((g) => escapeHtml(String(g))).join(', ');
+    if (showLabels) {
+      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-label">Groups:</span> <span class="sprout-markdown-plain-inline">${safeGroups}</span></div>`);
+    } else {
+      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-plain-inline">${safeGroups}</span></div>`);
+    }
+  };
+
+  if (showLabels) {
+    addPlainField('Title', String(card.title ?? ''));
+  }
+
   if (card.type === 'mcq') {
     const question = toTextField(card.fields.MCQ);
     const answers = toListField(card.fields.A);
     const optionsRaw = toListField(card.fields.O);
-    addLine('Question', question);
+    if (showLabels) {
+      addPlainField(questionLabel, question);
+    } else {
+      addLine(questionLabel, question);
+    }
 
     const seen = new Set<string>();
     const options = [...answers, ...optionsRaw].filter((option) => {
@@ -1972,37 +2493,41 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
       return true;
     });
 
-    addListSection('Options', options, false);
-    addListSection('Answer', answers, false);
+    if (showLabels) {
+      addPlainField('Options', options.join('\n'));
+      addPlainField('Answer', answers.join('\n'));
+    } else {
+      addListSection('Options', options, false);
+      addListSection('Answer', answers, false);
+    }
   } else if (card.type === 'oq') {
-    addLine('Question', toTextField(card.fields.OQ));
+    if (showLabels) {
+      addPlainField(questionLabel, toTextField(card.fields.OQ));
+    } else {
+      addLine(questionLabel, toTextField(card.fields.OQ));
+    }
     const steps = getOqSteps();
-    addListSection('Answer', steps, true);
+    if (showLabels) {
+      addPlainField('Answer', steps.join('\n'));
+    } else {
+      addListSection('Answer', steps, true);
+    }
   } else if (card.type === 'cloze') {
-    addLine('Question', toTextField(card.fields.CQ));
-    addLine('Extra information', toTextField(card.fields.I));
+    addPlainField(questionLabel, toTextField(card.fields.CQ));
+    addPlainField('Extra Information', toTextField(card.fields.I));
   } else if (card.type === 'io') {
-    const ioQuestionId = `sprout-io-question-${Math.random().toString(36).slice(2, 8)}`;
-    const ioAnswerId = `sprout-io-answer-${Math.random().toString(36).slice(2, 8)}`;
-    lines.push(
-      `<div class="sprout-markdown-io-entry">${showLabels ? 'Image occlusion: ' : ''}<div class="sprout-markdown-io-slot" id="${ioQuestionId}"></div></div>`,
-    );
-    lines.push(
-      `<div class="sprout-markdown-io-entry">${showLabels ? 'Answer: ' : ''}<div class="sprout-markdown-io-slot" id="${ioAnswerId}"></div></div>`,
-    );
-    addLine('Extra information', toTextField(card.fields.I));
+    addPlainField(questionLabel, toTextField(card.fields.IO));
+    addPlainField('Answer', toTextField(card.fields.A));
+    addPlainField('Extra Information', toTextField(card.fields.I));
   } else {
     const question = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
-    addLine('Question', question);
-    addLine('Answer', toTextField(card.fields.A));
-    addLine('Extra information', toTextField(card.fields.I));
+    addPlainField(questionLabel, question);
+    addPlainField('Answer', toTextField(card.fields.A));
+    addPlainField('Extra Information', toTextField(card.fields.I));
   }
 
   const groups = normalizeGroupsForDisplay(card.fields.G);
-  if (groups.length) {
-    const gText = groups.map((g) => renderMarkdownLineWithClozeSpans(String(g), clozeStyle)).join(', ');
-    lines.push(showLabels ? `Groups: ${gText}` : gText);
-  }
+  addGroupsLine(groups);
 
   return `<div class="sprout-markdown-lines">${lines.join('')}</div>`;
 }
@@ -2033,7 +2558,7 @@ function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
   let out = '';
   let last = 0;
   for (const cm of clozeMatches) {
-    if (cm.index > last) out += renderMarkdownLineWithClozeSpans(source.slice(last, cm.index));
+    if (cm.index > last) out += renderMarkdownTextWithExplicitBreaks(source.slice(last, cm.index));
     const ans = cm.content.trim();
     const inMath = isInsideMath(cm.index);
     if (mode === 'front') {
@@ -2042,11 +2567,11 @@ function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
     } else {
       out += inMath
         ? `\\boxed{${ans}}`
-        : `<span class="sprout-reading-view-cloze"><span class="sprout-cloze-text">${renderMarkdownLineWithClozeSpans(ans)}</span></span>`;
+        : `<span class="sprout-reading-view-cloze"><span class="sprout-cloze-text">${renderMarkdownTextWithExplicitBreaks(ans)}</span></span>`;
     }
     last = cm.index + cm.fullMatch.length;
   }
-  if (last < source.length) out += renderMarkdownLineWithClozeSpans(source.slice(last));
+  if (last < source.length) out += renderMarkdownTextWithExplicitBreaks(source.slice(last));
   return out;
 }
 
@@ -2145,8 +2670,8 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
   } else {
     const q = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
     const a = toTextField(card.fields.A);
-    front = `<div>${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
-    back = `<div>${renderMarkdownTextWithExplicitBreaks(a)}</div>`;
+    front = `<div>${renderFlashcardTextWithListSupport(q)}</div>`;
+    back = `<div>${renderFlashcardTextWithListSupport(a)}</div>`;
   }
 
   const frontBodyClass = card.type === 'cloze'
@@ -2431,7 +2956,7 @@ function enhanceCardElement(
     const headerHTML = macroPreset === 'flashcards'
       ? ``
       : macroPreset === 'markdown'
-        ? `<div class="sprout-card-header sprout-reading-card-header"><div class="sprout-card-title sprout-reading-card-title">${processMarkdownFeatures(card.title || '')}</div></div>`
+        ? ``
         : `<div class="sprout-card-header sprout-reading-card-header"><div class="sprout-card-title sprout-reading-card-title">${processMarkdownFeatures(card.title || '')}</div><span class="sprout-card-edit-btn" role="button" aria-label="Edit card" data-tooltip-position="top" tabindex="0"></span></div>`;
 
     const innerHTML = `
@@ -2467,6 +2992,7 @@ function enhanceCardElement(
   // (Obsidian renders block math as separate <div class="el-div"> siblings)
   if (!skipSiblingHiding) {
     hideCardSiblingElements(el, cardRawText);
+    scheduleDeferredSiblingHide(el, cardRawText);
   }
 
   if (macroPreset === 'guidebook') setupGuidebookCarousel(el);
@@ -2556,8 +3082,9 @@ function enhanceCardElement(
           const { start, end } = findCardBlockRangeById(lines, updatedCard.id);
           const block = buildCardBlockMarkdown(updatedCard.id, updatedCard);
           lines.splice(start, end - start, ...block);
+          const updatedSource = lines.join("\n");
 
-          await plugin.app.vault.modify(file, lines.join("\n"));
+          await plugin.app.vault.modify(file, updatedSource);
 
           // Persist only this edited card (plus required siblings), avoiding full bank sync.
           await persistEditedCardAndSiblings(plugin as unknown as SproutPlugin, updatedCard);
@@ -2565,59 +3092,28 @@ function enhanceCardElement(
             plugin.refreshAllViews();
           }
 
-          // Update the pretty-card content in-place
-          try {
-            const original = el.querySelector<HTMLElement>(".sprout-original-content")?.innerHTML ?? "";
-            const rec = updatedCard;
-            const sproutCard: SproutCard = {
-              anchorId: String(rec.id || cardId),
-              type: (String(rec.type || "basic").toLowerCase() as SproutCard["type"]),
-              title: String(rec.title || ""),
-              fields: {
-                T: rec.title || "",
-                Q: rec.q || "",
-                OQ: rec.q || "",
-                A: rec.a || "",
-                CQ: rec.clozeText || "",
-                MCQ: rec.stem || "",
-                O: Array.isArray(rec.options) ? rec.options : [],
-                I: rec.info || "",
-              },
-            };
-            if (sproutCard.type === "mcq") {
-              const options = Array.isArray(rec.options) ? rec.options : [];
-              const correctIndex = Number.isFinite(rec.correctIndex)
-                ? Number(rec.correctIndex)
-                : -1;
-              sproutCard.fields.A = correctIndex >= 0 && options[correctIndex] ? options[correctIndex] : "";
-              sproutCard.fields.O = options;
-            } else if (sproutCard.type === "oq") {
-              const oqSteps = Array.isArray(rec.oqSteps)
-                ? rec.oqSteps.map((s) => String(s || "").trim()).filter(Boolean)
-                : [];
-              sproutCard.fields.A = oqSteps;
-              const fieldsAny = sproutCard.fields as Record<string, string | string[] | undefined>;
-              oqSteps.forEach((step, idx) => {
-                fieldsAny[String(idx + 1)] = step;
-              });
-            }
-            enhanceCardElement(el, sproutCard, original);
-          } catch (e) {
-            log.warn("Failed to refresh pretty-card DOM after edit", e);
+          // Rebuild reading cards from the updated markdown source so both
+          // front/back faces and hidden spillover siblings stay in sync.
+          const refreshLeaves = (plugin as unknown as {
+            refreshReadingViewMarkdownLeaves?: () => Promise<void> | void;
+          }).refreshReadingViewMarkdownLeaves;
+
+          if (typeof refreshLeaves === "function") {
+            void Promise.resolve(refreshLeaves.call(plugin));
+          } else {
+            setTimeout(() => {
+              document
+                .querySelectorAll<HTMLElement>(
+                  ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
+                )
+                .forEach((node) => {
+                  node.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", {
+                    bubbles: true,
+                    detail: { sourceContent: updatedSource, sourcePath: file.path },
+                  }));
+                });
+            }, 50);
           }
-
-          // Nudge current markdown view to refresh pretty cards
-          try {
-            plugin.app.workspace.trigger("file-open", file);
-          } catch (e) { log.swallow("trigger file-open after edit", e); }
-
-          setTimeout(() => {
-            document
-              .querySelectorAll<HTMLElement>(
-                ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
-              )
-              .forEach((node) => node.dispatchEvent(new Event("sprout:prettify-cards-refresh")));
-          }, 50);
         } catch (err: unknown) {
           log.error("Failed to update card from reading view", err);
           new Notice(`Failed to update card: ${err instanceof Error ? err.message : String(err)}`);  

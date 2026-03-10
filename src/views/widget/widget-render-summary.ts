@@ -43,6 +43,8 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
 
   // Create title (not a button)
   const isFolder = isFolderNote(f);
+  const folderDecksEnabled = folderNotesAsDecksEnabled(view.plugin.settings);
+  const studyingAsFolder = isFolder && folderDecksEnabled;
   const titleText = noteName.replace(/\.md$/, ""); // Remove .md extension
   const titleCased = toTitleCase(titleText);
 
@@ -50,7 +52,13 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const summaryTitle = el("div", "bc sprout-widget-summary-title", tx("ui.widget.summary.headerTitle", "Sprout – Flashcards"));
   summaryLabelWrap.appendChild(summaryTitle);
 
-  const remainingLabel = tx("ui.widget.summary.studyScope", "Study {scope}", { scope: titleText });
+  const scopeKind = studyingAsFolder
+    ? tx("ui.widget.scope.folder", "Folder")
+    : tx("ui.widget.scope.note", "Note");
+  const remainingLabel = tx("ui.widget.summary.studyScopeWithKind", "Study {scope} {kind}", {
+    scope: titleText,
+    kind: scopeKind,
+  });
   const remainingLine = el("div", "bc sprout-widget-remaining-line", remainingLabel);
   summaryLabelWrap.appendChild(remainingLine);
 
@@ -69,8 +77,6 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
 
   if (!cards.length) {
     const body = el("div", "bc px-4 py-6 sprout-widget-empty-body");
-    const folderDecksEnabled = folderNotesAsDecksEnabled(view.plugin.settings);
-
     let msg = tx("ui.widget.summary.noFlashcardsInNote", "No flashcards found in this note.");
     if (isFolder && folderDecksEnabled) {
       msg = tx("ui.widget.summary.noFlashcardsInFolder", "No flashcards found in this note or folder.");

@@ -51,6 +51,7 @@ See [Study Sessions](./Study-Sessions.md), [Scheduling](./Scheduling.md), and [G
 - [Setting Up](./Assistant-Setting-Up.md) for API key and safety setup
 - [Configuration](./Assistant-Configuration.md) for provider and mode options
 - [Usage](./Assistant-Usage.md) for Ask, Review, and Generate workflows
+- [Guide for Free Usage](./Guide-for-Free-Usage.md) for low-cost setup and cost-control tips
 - [AI Usage Policy](./AI-Usage-Policy.md) for privacy, data handling, and risk guidance
 
 ## Important notes

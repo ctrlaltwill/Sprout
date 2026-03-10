@@ -6,7 +6,9 @@ Sprout was built by William Guy, a final-year medical student in New Zealand, to
 
 Sprout is proudly open source and will always remain free. No hidden fees. No subscriptions. Learning tools should not lock your knowledge behind paywalls, and your notes and data should stay entirely under your control.
 
-Sprig, the AI assistant introduced in Sprout 1.10, runs on a bring-your-own API key model. You choose which provider to use and pay only for what you use, not a fixed monthly fee set by us.
+Sprig, the AI assistant introduced in Sprout 1.1.0, runs on a bring-your-own API key model. You choose which provider to use and pay only for what you use, not a fixed monthly fee set by us.
+
+![William Guy](../branding/Founder.jpg)
 
 - [Find out more about Will](https://www.linkedin.com/in/williamguy/)
 

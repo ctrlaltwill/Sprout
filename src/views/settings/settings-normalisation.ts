@@ -49,6 +49,7 @@ export function normaliseSettingsInPlace(s: SproutSettings): void {
     1.8,
   );
   s.general.githubStars ??= { count: null, fetchedAt: null };
+  s.general.showLaunchNoticeModal ??= DEFAULT_SETTINGS.general.showLaunchNoticeModal;
 
   s.studyAssistant ??= {} as SproutSettings["studyAssistant"];
   s.studyAssistant.enabled ??= DEFAULT_SETTINGS.studyAssistant.enabled;

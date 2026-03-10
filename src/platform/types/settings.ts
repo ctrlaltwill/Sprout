@@ -29,6 +29,8 @@ export type SproutSettings = {
       fetchedAt: number | null;
     };
     enableAnimations: boolean;
+    /** Show a launch notice modal when Obsidian starts. */
+    showLaunchNoticeModal: boolean;
     /** Master switch for Sprout card styling in Reading View. false = native Obsidian rendering. */
     enableReadingStyles: boolean;
     /** "off" disables card styling; "accent" uses theme accent colour; "theme" uses background/text alt colours. */

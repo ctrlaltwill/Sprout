@@ -43,7 +43,6 @@ import {
   FIELD_START_READING_RE,
   unescapeDelimiterText,
   splitAtDelimiterTerminator,
-  getDelimiter,
   escapeDelimiterRe,
 } from "../../platform/core/delimiter";
 
@@ -63,6 +62,36 @@ export const FIELD_START_RE = { test: (s: string) => FIELD_START_READING_RE().te
 /** Match a string against the field-start regex. Works as a drop-in for `str.match(FIELD_START_RE)`. */
 function matchFieldStart(s: string): RegExpMatchArray | null {
   return s.match(FIELD_START_READING_RE());
+}
+
+function isKnownReadingFieldKey(key: string): boolean {
+  const normalized = String(key || '').trim().toUpperCase();
+  if (!normalized) return false;
+
+  if (/^\d{1,2}$/.test(normalized)) {
+    const n = Number(normalized);
+    return Number.isFinite(n) && n >= 1 && n <= 20;
+  }
+
+  return (
+    normalized === 'T' ||
+    normalized === 'Q' ||
+    normalized === 'RQ' ||
+    normalized === 'A' ||
+    normalized === 'I' ||
+    normalized === 'MCQ' ||
+    normalized === 'CQ' ||
+    normalized === 'O' ||
+    normalized === 'G' ||
+    normalized === 'IO' ||
+    normalized === 'OQ'
+  );
+}
+
+function matchKnownFieldStart(s: string): RegExpMatchArray | null {
+  const m = matchFieldStart(s);
+  if (!m) return null;
+  return isKnownReadingFieldKey(m[1] || '') ? m : null;
 }
 
 export type FieldKey = "T" | "Q" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO";
@@ -356,32 +385,37 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
     
     // Stop if we hit another anchor
     if (trimmed.match(ANCHOR_RE)) break;
+
+    // If we're in a delimited field, keep consuming until the closing delimiter.
+    // This must run before header/non-field checks so markdown headings/lists
+    // inside Q/A/I/etc do not terminate extraction early.
+    if (inPipeField) {
+      cardLines.push(line);
+      const { terminated } = splitAtPipeTerminator(line);
+      if (terminated) {
+        inPipeField = false;
+        lastFieldHadClosingPipe = true;
+      }
+      continue;
+    }
     
     // Stop if we hit a markdown header
     if (trimmed.match(/^#{1,6}\s/)) break;
     
     // Check if this line starts a new field
-    if (matchFieldStart(trimmed)) {
+    if (matchKnownFieldStart(trimmed)) {
       inPipeField = true;
       lastFieldHadClosingPipe = false;
       
       // Check if the field closes on the same line
-      const d = getDelimiter();
-      if (trimmed.endsWith(d) && trimmed.indexOf(d) !== trimmed.lastIndexOf(d)) {
+      const fm = matchKnownFieldStart(trimmed);
+      const initialContent = fm?.[2] || '';
+      const { terminated } = splitAtPipeTerminator(initialContent);
+      if (terminated) {
         inPipeField = false;
         lastFieldHadClosingPipe = true;
       }
       cardLines.push(line);
-      continue;
-    }
-    
-    // If we're in a pipe field, continue until we find the closing pipe
-    if (inPipeField) {
-      cardLines.push(line);
-      if (trimmed.endsWith(getDelimiter())) {
-        inPipeField = false;
-        lastFieldHadClosingPipe = true;
-      }
       continue;
     }
     
@@ -391,7 +425,7 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
       if (i + 1 < lines.length) {
         const nextLine = lines[i + 1].trim();
         // If next line is a header, another anchor, or doesn't start a field, we're done
-        if (nextLine.match(/^#{1,6}\s/) || nextLine.match(ANCHOR_RE) || !matchFieldStart(nextLine)) {
+        if (nextLine.match(/^#{1,6}\s/) || nextLine.match(ANCHOR_RE) || !matchKnownFieldStart(nextLine)) {
           break;
         }
       }
@@ -400,7 +434,7 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
     }
     
     // If we're not in a field and hit a non-empty line that isn't a field start, we're done
-    if (trimmed && !matchFieldStart(trimmed)) {
+    if (trimmed && !matchKnownFieldStart(trimmed)) {
       break;
     }
     
@@ -431,13 +465,13 @@ export interface SproutCard {
 
 export function parseSproutCard(text: string): SproutCard | null {
   // Don't filter empty lines - they're significant for multi-line LaTeX blocks
-  const lines = text.split('\n').map(l => clean(l).trim());
-  if (lines.every(l => l.length === 0)) return null;
+  const lines = text.split('\n').map((l) => clean(l));
+  if (lines.every((l) => l.trim().length === 0)) return null;
 
   let anchorLineIndex = -1;
   let anchorId = '';
   for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(ANCHOR_RE);
+    const m = lines[i].trim().match(ANCHOR_RE);
     if (m) { anchorId = m[1]; anchorLineIndex = i; break; }
   }
   if (!anchorId) return null;
@@ -449,7 +483,8 @@ export function parseSproutCard(text: string): SproutCard | null {
 
   for (let i = parseFrom; i < lines.length; i++) {
     const line = lines[i];
-    const fm = matchFieldStart(line);
+    const trimmed = line.trim();
+    const fm = matchKnownFieldStart(trimmed);
     if (fm) {
       const raw = fm[1].toUpperCase();
       if (currentField && currentContent.length > 0) saveField(fields, currentField, currentContent);
@@ -466,14 +501,14 @@ export function parseSproutCard(text: string): SproutCard | null {
     } else if (currentField) {
       const { content, terminated } = splitAtPipeTerminator(line);
       // Preserve empty lines for LaTeX block spacing (don't skip empty content)
-      currentContent.push(content.trim());
+      currentContent.push(content.replace(/[ \t]+$/g, ''));
 
       if (terminated) {
         saveField(fields, currentField, currentContent);
         currentField = null;
         currentContent = [];
       }
-    } else if (line) {
+    } else if (trimmed) {
       // ignore stray lines
     }
   }
@@ -508,8 +543,8 @@ export function parseSproutCard(text: string): SproutCard | null {
   else if (fields.RQ) type = "reversed";
   else if (fields.Q) type = "basic";
 
-  // Use full T field (join if multiple lines) to ensure full title displayed
-  let title = `Card ${anchorId}`;
+  // Only show an explicit title when the card defines a T field.
+  let title = "";
   if (fields.T) {
     title = Array.isArray(fields.T) ? fields.T.join(' ') : String(fields.T);
     title = title.trim();
@@ -521,7 +556,13 @@ export function parseSproutCard(text: string): SproutCard | null {
 export function saveField(fields: Record<string, string | string[]>, fieldName: string, content: string[]) {
   if (!fields[fieldName]) fields[fieldName] = [];
   const arr = fields[fieldName];
-  const joined = content.map(c => String(c).trim()).join('\n').trim();
+  const normalized = content
+    .map((c) => String(c).replace(/\r/g, '').replace(/[ \t]+$/g, ''));
+
+  while (normalized.length > 0 && normalized[0].trim().length === 0) normalized.shift();
+  while (normalized.length > 0 && normalized[normalized.length - 1].trim().length === 0) normalized.pop();
+
+  const joined = normalized.join('\n');
   if (joined.length > 0 && Array.isArray(arr)) arr.push(joined);
 }
 

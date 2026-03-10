@@ -90,6 +90,8 @@ export function buildCardBlockMarkdown(id: string, rec: CardRecord): string[] {
   // Canonical marker only
   out.push(`^sprout-${id}`);
 
+  const startsWithListMarker = (line: string): boolean => /^\s*(?:[-+*]|\d+[.)])\s+/.test(String(line ?? ''));
+
   const pushPipeField = (key: string, value: string) => {
     const raw = String(value ?? "");
     const lines = raw.split(/\r?\n/);
@@ -97,10 +99,19 @@ export function buildCardBlockMarkdown(id: string, rec: CardRecord): string[] {
       out.push(`${key} | |`);
       return;
     }
-    if (lines.length === 1) {
+    if (lines.length === 1 && !startsWithListMarker(lines[0])) {
       out.push(`${key} | ${escapePipes(lines[0])} |`);
       return;
     }
+
+    const startOnNewLine = startsWithListMarker(lines[0]);
+    if (startOnNewLine) {
+      out.push(`${key} |`);
+      for (let i = 0; i < lines.length - 1; i++) out.push(escapePipes(lines[i]));
+      out.push(`${escapePipes(lines[lines.length - 1])} |`);
+      return;
+    }
+
     out.push(`${key} | ${escapePipes(lines[0])}`);
     for (let i = 1; i < lines.length - 1; i++) out.push(escapePipes(lines[i]));
     out.push(`${escapePipes(lines[lines.length - 1])} |`);

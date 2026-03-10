@@ -196,6 +196,18 @@
   min-height: 80px !important;
 }
 
+/* ---- Markdown-editor feel for card editing textareas ---- */
+.sprout .sprout-textarea-fixed,
+.sprout .sprout-modals.modal .textarea,
+.sprout .sprout-edit-modal .textarea,
+.sprout .sprout-browser-textarea--editable {
+  font-family: var(--font-monospace) !important;
+  font-size: 0.85rem !important;
+  line-height: 1.6 !important;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+
 /* Hidden/shown toggle via class */
 .sprout-is-hidden {
   display: none !important;
@@ -206,6 +218,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.sprout-group-picker .sprout-badge-inline {
+  font-family: var(--font-interface) !important;
 }
 
 /* Search input (borderless, transparent) */
@@ -322,6 +338,21 @@
 .sprout .sprout-flag-editor-control {
   position: relative;
   z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Keep editable markdown input shell consistent even when themes style textarea globally. */
+.sprout .sprout-flag-editor-control,
+.sprout .sprout-browser-textarea--editable {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+  background: var(--background-modifier-form-field) !important;
+  color: var(--text-normal) !important;
+  border: var(--sprout-border-width) solid var(--sprout-border-color) !important;
+  border-radius: var(--input-radius) !important;
+  padding: 6px 8px !important;
 }
 
 .sprout .sprout-flag-editor-wrap .sprout-flag-editor-control.sprout-textarea-fixed {
@@ -343,7 +374,7 @@
   overflow: auto;
   text-overflow: clip;
   cursor: text;
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 1;
 }
 
@@ -364,6 +395,8 @@
 
 .sprout .sprout-flag-editor--focused .sprout-flag-editor-control {
   z-index: 2;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sprout .sprout-flag-editor--focused .sprout-flag-editor-overlay {
@@ -371,6 +404,74 @@
   pointer-events: none;
   z-index: 0;
 }
+
+/* ---- Markdown preview in overlay (rendered on blur) ---- */
+.sprout .sprout-flag-editor-overlay :is(ul, ol) {
+  margin: 0.15em 0 !important;
+  padding-inline-start: 1.5em !important;
+}
+
+.sprout .sprout-flag-editor-overlay ul {
+  list-style-type: disc !important;
+}
+
+.sprout .sprout-flag-editor-overlay ol {
+  list-style-type: decimal !important;
+}
+
+.sprout .sprout-flag-editor-overlay li {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.sprout .sprout-flag-editor-overlay strong {
+  font-weight: 700;
+}
+
+.sprout .sprout-flag-editor-overlay em {
+  font-style: italic;
+}
+
+.sprout .sprout-flag-editor-overlay mark {
+  background-color: var(--text-highlight-bg, rgba(255, 208, 0, 0.4));
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.sprout .sprout-flag-editor-overlay code {
+  font-family: var(--font-monospace) !important;
+  font-size: 0.9em;
+  background: var(--code-background, rgba(0, 0, 0, 0.05));
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.sprout .sprout-flag-editor-overlay s {
+  text-decoration: line-through;
+}
+
+.sprout .sprout-flag-editor-overlay .internal-link {
+  color: var(--link-color, var(--text-accent));
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.sprout .sprout-flag-editor-overlay :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.15em 0 !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.sprout .sprout-flag-editor-overlay h1 { font-size: 1.2rem !important; }
+.sprout .sprout-flag-editor-overlay h2 { font-size: 1.15rem !important; }
+.sprout .sprout-flag-editor-overlay h3 { font-size: 1.1rem !important; }
+.sprout .sprout-flag-editor-overlay h4 { font-size: 1.05rem !important; }
+.sprout .sprout-flag-editor-overlay h5 { font-size: 1rem !important; }
+.sprout .sprout-flag-editor-overlay h6 { font-size: 0.95rem !important; }
 
 /* List unbounded (no max-height/overflow) */
 .sprout-list-unbounded {

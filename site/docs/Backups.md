@@ -1,35 +1,28 @@
 # Backups
 
-Last modified: 05/03/2026
+Last modified: 10/03/2026
 
 ## What backups are for
 
-Backups save your **scheduling data** so you can recover from mistakes or bad imports.
+Backups save your **scheduling data** from Sprout's SQLite-backed store so you can recover from mistakes or bad imports.
 They do not back up your note text.
 
-## Create a backup
+## Backup settings
 
-1. Open **Settings → Reset**.
-2. Click **Create backup now**.
+Configure backups in **Settings → Storage & Sync → Data backup**.
+
+| Setting | Default | What it does |
+|---|---|---|
+| **Enable rolling daily backup** | On | Keeps one automatic daily backup (`daily-backup.db`) refreshed over time |
+
+Manual backups are always user-created and are never removed by the rolling daily policy.
+
+## Create a manual backup
+
+1. Open **Settings → Storage & Sync → Data backup**.
+2. Click **Create manual backup**.
 
 The backup is saved immediately.
-
-## Automatic backup policy (Anki-style tiers)
-
-Sprout uses a hybrid retention policy with short-term and long-term snapshots.
-You can configure this in **Settings → Data backup**.
-
-Default policy:
-
-- 8 recent backups (every 6 hours)
-- 7 daily backups (every 1 day)
-- 4 weekly backups (every 7 days)
-- 1 monthly backup (every 30 days)
-- 250 MB total backup size cap
-
-When total backup size exceeds the cap, Sprout prunes oldest tier entries first.
-
-Routine backups use the **Recent interval (hours)** setting.
 
 ## Restore a backup
 
@@ -54,6 +47,7 @@ This action cannot be undone.
 - review history
 - FSRS parameters
 - card-to-note mappings
+- analytics review/session event history used by progress views
 
 ## What is not included
 

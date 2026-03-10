@@ -44,6 +44,11 @@ function hasMarkdownTable(text: string): boolean {
   return /^\|.+\|\s*\n\|[\s:|-]+\|/m.test(text);
 }
 
+/** Returns true if the text contains a markdown list (unordered or ordered). */
+function hasMarkdownList(text: string): boolean {
+  return /^[ \t]*(?:[-+*]|\d+[.)])\s/m.test(text);
+}
+
 /* ------------------------------------------------------------------ */
 /*  renderWidgetSession                                                */
 /* ------------------------------------------------------------------ */
@@ -59,7 +64,6 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   if (!view.session) return;
   const wrap = el("div", "bc bg-background");
   wrap.classList.add("sprout-widget", "sprout");
-
   // ---- Header -------------------------------------------------------
   const header = el("div", "bc flex items-center justify-between px-4 py-3 gap-2 sprout-widget-header");
 
@@ -107,11 +111,17 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
 
   if (!card) {
     const body = el("div", "bc px-4 py-6 text-center space-y-2");
-    body.appendChild(el("div", "bc text-lg font-semibold text-foreground", tx(view, "ui.widget.sessionComplete", "Session Complete!")));
     body.appendChild(
       el(
         "div",
-        "bc text-sm text-muted-foreground",
+        "bc text-lg font-semibold text-foreground sprout-widget-session-complete-title",
+        tx(view, "ui.widget.sessionComplete", "Session Complete!"),
+      ),
+    );
+    body.appendChild(
+      el(
+        "div",
+        "bc text-sm text-muted-foreground sprout-widget-session-complete-meta",
         tx(view, "ui.widget.reviewedProgress", "Reviewed: {done}/{total}", {
           done: view.session?.stats?.done || 0,
           total: view.session?.stats?.total || 0,
@@ -225,7 +235,7 @@ function renderBasicCard(
   const isBackDirection = card.type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
   const isOldReversed = card.type === "reversed";
   const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
-  if (qText.includes("$") || qText.includes("[[") || qText.includes("\\(") || qText.includes("\\[") || hasMarkdownTable(qText)) {
+  if (qText.includes("$") || qText.includes("[[") || qText.includes("\\(") || qText.includes("\\[") || hasMarkdownTable(qText) || hasMarkdownList(qText)) {
     const qContainer = document.createElement("div");
     qContainer.className = "bc whitespace-pre-wrap break-words";
     const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
@@ -249,7 +259,7 @@ function renderBasicCard(
 
     const aEl = el("div", "bc");
     const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
-    if (aText.includes("$") || aText.includes("[[") || aText.includes("\\(") || aText.includes("\\[") || hasMarkdownTable(aText)) {
+    if (aText.includes("$") || aText.includes("[[") || aText.includes("\\(") || aText.includes("\\[") || hasMarkdownTable(aText) || hasMarkdownList(aText)) {
       const aContainer = document.createElement("div");
       aContainer.className = "bc whitespace-pre-wrap break-words";
       const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
@@ -314,7 +324,7 @@ function renderClozeCard(
   const reveal = view.showAnswer || !!graded;
   const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : undefined;
 
-  if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[") || hasMarkdownTable(text)) {
+  if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[") || hasMarkdownTable(text) || hasMarkdownList(text)) {
     const clozeEl = el("div", "bc sprout-widget-cloze sprout-widget-text w-full");
     applySectionStyles(clozeEl);
 
@@ -588,7 +598,7 @@ function renderOqCard(
   // Question text
   const qEl = el("div", "bc sprout-widget-text");
   const qText = card.q || "";
-  if (qText.includes("$") || qText.includes("\\(") || qText.includes("\\[") || qText.includes("[[") || hasMarkdownTable(qText)) {
+  if (qText.includes("$") || qText.includes("\\(") || qText.includes("\\[") || qText.includes("[[") || hasMarkdownTable(qText) || hasMarkdownList(qText)) {
     const qContainer = document.createElement("div");
     qContainer.className = "bc whitespace-pre-wrap break-words";
     void view.renderMarkdownInto(qContainer, convertInlineDisplayMath(qText), sourcePath);
@@ -795,7 +805,7 @@ function renderInfoBlock(
   card?: CardRecord,
 ) {
   const infoEl = el("div", "bc sprout-widget-info");
-  if (view && hasMarkdownTable(infoText)) {
+  if (view && (hasMarkdownTable(infoText) || hasMarkdownList(infoText))) {
     const infoContainer = document.createElement("div");
     infoContainer.className = "bc whitespace-pre-wrap break-words";
     const sourcePath = String(card?.sourceNotePath || view.activeFile?.path || "");

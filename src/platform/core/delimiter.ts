@@ -288,14 +288,23 @@ export function pushDelimitedField(out: string[], key: string, value: string) {
   const d = _delim;
   const raw = String(value ?? "");
   const lines = raw.split(/\r?\n/);
+  const startsWithListMarker = (line: string): boolean => /^\s*(?:[-+*]|\d+[.)])\s+/.test(String(line ?? ""));
   if (lines.length === 0) {
     out.push(`${key} ${d} ${d}`);
     return;
   }
-  if (lines.length === 1) {
+  if (lines.length === 1 && !startsWithListMarker(lines[0])) {
     out.push(`${key} ${d} ${escapeDelimiterText(lines[0])} ${d}`);
     return;
   }
+
+  if (startsWithListMarker(lines[0])) {
+    out.push(`${key} ${d}`);
+    for (let i = 0; i < lines.length - 1; i++) out.push(escapeDelimiterText(lines[i]));
+    out.push(`${escapeDelimiterText(lines[lines.length - 1])} ${d}`);
+    return;
+  }
+
   out.push(`${key} ${d} ${escapeDelimiterText(lines[0])}`);
   for (let i = 1; i < lines.length - 1; i++) out.push(escapeDelimiterText(lines[i]));
   out.push(`${escapeDelimiterText(lines[lines.length - 1])} ${d}`);
@@ -310,9 +319,18 @@ export function formatDelimitedField(key: string, value: string): string[] {
   const d = _delim;
   const raw = String(value ?? "");
   const parts = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const startsWithListMarker = (line: string): boolean => /^\s*(?:[-+*]|\d+[.)])\s+/.test(String(line ?? ""));
 
-  if (parts.length <= 1) {
+  if (parts.length <= 1 && !startsWithListMarker(parts[0] ?? "")) {
     return [`${key} ${d} ${escapeDelimiterText(parts[0] ?? "")} ${d}`];
+  }
+
+  if (startsWithListMarker(parts[0] ?? "")) {
+    const out: string[] = [];
+    out.push(`${key} ${d}`);
+    for (let i = 0; i < parts.length - 1; i++) out.push(escapeDelimiterText(parts[i] ?? ""));
+    out.push(`${escapeDelimiterText(parts[parts.length - 1] ?? "")} ${d}`);
+    return out;
   }
 
   const out: string[] = [];

@@ -1,6 +1,6 @@
 # Image Occlusion
 
-Last modified: 09/03/2026
+Last modified: 10/03/2026
 
 ## What it does
 
@@ -55,7 +55,10 @@ Masks can be rectangles or circles.
 
 The editor includes an **Auto-Mask** action that uses OCR to detect likely text regions and create masks automatically.
 
-- Works best on clear, high-contrast images.
+- OCR runs locally in-app and does not require a cloud OCR service.
+- Each detected region is added as a new mask with its own group key (starting from the next available group number).
+- Existing masks are kept; Auto-Mask adds new masks rather than replacing current work.
+- Works best on clear, high-contrast images with readable labels.
 - Generated masks are editable: you can move, resize, regroup, or delete them before saving.
 - If no regions are detected, use manual mask drawing as usual.
 

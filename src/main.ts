@@ -71,6 +71,7 @@ import { joinPath, safeStatMtime, createDataJsonBackupNow } from "./platform/int
 import { CardCreatorModal } from "./platform/modals/card-creator-modal";
 import { ImageOcclusionCreatorModal } from "./platform/modals/image-occlusion-creator-modal";
 import { ParseErrorModal } from "./platform/modals/parse-error-modal";
+import { LaunchNoticeModal } from "./platform/modals/launch-notice-modal";
 import { setDelimiter } from "./platform/core/delimiter";
 // Anki modals are lazy-loaded to defer sql.js WASM parsing until needed
 // import { AnkiImportModal } from "./platform/modals/anki-import-modal";
@@ -156,6 +157,10 @@ export default class SproutPlugin extends Plugin {
   private _disposeTooltipPositioner: (() => void) | null = null;
   private _reminderEngine: ReminderEngine | null = null;
   private _assistantPopup: SproutAssistantPopup | null = null;
+  private _readingViewRefreshTimer: number | null = null;
+  private _readingModeWatcherInterval: number | null = null;
+  private readonly _markdownLeafModeSnapshot = new WeakMap<WorkspaceLeaf, "source" | "preview">();
+  private readonly _markdownLeafContentSnapshot = new WeakMap<WorkspaceLeaf, string>();
   private readonly _reminderDevConsoleCommandNames = [
     "sproutReminderLaunch",
     "sproutReminderRoutine",
@@ -557,11 +562,16 @@ export default class SproutPlugin extends Plugin {
         // Check for version upgrades and show What's New modal if needed
         this._checkAndShowWhatsNewModal();
 
+        if (this.settings?.general?.showLaunchNoticeModal ?? true) {
+          new LaunchNoticeModal(this.app, this).open();
+        }
+
         // Mount per-leaf assistant popup triggers
         this._assistantPopup = new SproutAssistantPopup(this);
         this._assistantPopup.mount();
         this._assistantPopup.onActiveLeafChange();
         this.refreshAssistantPopupFromSettings();
+        this._startMarkdownModeWatcher();
 
         this._reminderEngine?.start();
       });
@@ -595,6 +605,14 @@ export default class SproutPlugin extends Plugin {
     if (this._sproutZoomSaveTimer != null) {
       window.clearTimeout(this._sproutZoomSaveTimer);
       this._sproutZoomSaveTimer = null;
+    }
+    if (this._readingViewRefreshTimer != null) {
+      window.clearTimeout(this._readingViewRefreshTimer);
+      this._readingViewRefreshTimer = null;
+    }
+    if (this._readingModeWatcherInterval != null) {
+      window.clearInterval(this._readingModeWatcherInterval);
+      this._readingModeWatcherInterval = null;
     }
 
     this._disposeTooltipPositioner?.();
@@ -862,26 +880,32 @@ export default class SproutPlugin extends Plugin {
     });
   }
 
-  public refreshReadingViewMarkdownLeaves(): void {
-    const leaves = this.app.workspace.getLeavesOfType("markdown");
-    for (const leaf of leaves) {
+  public async refreshReadingViewMarkdownLeaves(): Promise<void> {
+    const leaves = this.app.workspace
+      .getLeavesOfType("markdown")
+      .filter((leaf) => this._isMainWorkspaceMarkdownLeaf(leaf));
+    await Promise.all(leaves.map(async (leaf) => {
       const container = leaf.view?.containerEl ?? null;
-      if (!(container instanceof HTMLElement)) continue;
+      if (!(container instanceof HTMLElement)) return;
 
       const content = queryFirst(
         container,
         ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
       );
-      if (!(content instanceof HTMLElement)) continue;
+      if (!(content instanceof HTMLElement)) return;
 
       const scrollHost =
         content.closest(".markdown-reading-view, .markdown-preview-view, .markdown-rendered") ??
         content;
       const prevTop = Number(scrollHost.scrollTop || 0);
       const prevLeft = Number(scrollHost.scrollLeft || 0);
+      const sourcePayload = await this._getMarkdownLeafSource(leaf);
 
       try {
-        content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
+        content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", {
+          bubbles: true,
+          detail: sourcePayload,
+        }));
       } catch (e) {
         log.swallow("dispatch reading view refresh", e);
       }
@@ -905,13 +929,139 @@ export default class SproutPlugin extends Plugin {
           }
 
           try {
-            content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", { bubbles: true }));
+            content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", {
+              bubbles: true,
+              detail: sourcePayload,
+            }));
           } catch (e) {
             log.swallow("dispatch reading view refresh (post-rerender)", e);
           }
         });
       });
+    }));
+  }
+
+  private _scheduleReadingViewRefresh(delayMs = 90): void {
+    if (this._readingViewRefreshTimer != null) {
+      window.clearTimeout(this._readingViewRefreshTimer);
+      this._readingViewRefreshTimer = null;
     }
+
+    this._readingViewRefreshTimer = window.setTimeout(() => {
+      this._readingViewRefreshTimer = null;
+      try {
+        void this.refreshReadingViewMarkdownLeaves();
+      } catch (e) {
+        log.swallow("schedule reading view refresh", e);
+      }
+    }, Math.max(0, Number(delayMs) || 0));
+  }
+
+  private _isMainWorkspaceMarkdownLeaf(leaf: WorkspaceLeaf): boolean {
+    const view = leaf.view;
+    if (!(view instanceof MarkdownView)) return false;
+
+    const container = view.containerEl;
+    if (!(container instanceof HTMLElement)) return false;
+
+    // Ignore leaves docked in sidebars; only central note workspace leaves
+    // should drive reading refresh scheduling.
+    const inSidebar = !!container.closest(
+      ".workspace-split.mod-left-split, .workspace-split.mod-right-split",
+    );
+
+    return !inSidebar;
+  }
+
+  private _computeContentSignature(text: string): string {
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) {
+      hash ^= text.charCodeAt(i);
+      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    return `${text.length}:${(hash >>> 0).toString(16)}`;
+  }
+
+  private async _getMarkdownLeafSource(leaf: WorkspaceLeaf): Promise<{ sourceContent: string; sourcePath: string }> {
+    try {
+      const view = leaf.view;
+      if (!(view instanceof MarkdownView)) return { sourceContent: "", sourcePath: "" };
+
+      const sourcePath = view.file instanceof TFile ? view.file.path : "";
+      const mode = view.getMode?.();
+      if (mode === "source") {
+        const liveViewData =
+          typeof (view as unknown as { getViewData?: () => string }).getViewData === "function"
+            ? String((view as unknown as { getViewData: () => string }).getViewData() ?? "")
+            : "";
+
+        if (liveViewData.trim()) {
+          return { sourceContent: liveViewData, sourcePath };
+        }
+      }
+
+      if (view.file instanceof TFile && view.file.extension === "md") {
+        const fileContent = await this.app.vault.read(view.file);
+        return { sourceContent: String(fileContent ?? ""), sourcePath };
+      }
+    } catch (e) {
+      log.swallow("get markdown leaf source", e);
+    }
+
+    return { sourceContent: "", sourcePath: "" };
+  }
+
+  private _startMarkdownModeWatcher(): void {
+    if (this._readingModeWatcherInterval != null) return;
+
+    const scanModes = () => {
+      try {
+        const leaves = this.app.workspace
+          .getLeavesOfType("markdown")
+          .filter((leaf) => this._isMainWorkspaceMarkdownLeaf(leaf));
+        let sawModeChange = false;
+
+        for (const leaf of leaves) {
+          const view = leaf.view;
+          if (!(view instanceof MarkdownView)) continue;
+
+          const mode = view.getMode?.();
+          if (mode !== "source" && mode !== "preview") continue;
+
+          const prev = this._markdownLeafModeSnapshot.get(leaf);
+          if (prev !== mode) {
+            this._markdownLeafModeSnapshot.set(leaf, mode);
+            // Ignore first-seen snapshot to avoid startup noise.
+            if (prev) sawModeChange = true;
+          }
+
+          // Track source text changes as well, so field edits (including
+          // multi-line blocks) in source mode trigger reading refresh.
+          const sourcePath = view.file instanceof TFile ? view.file.path : "";
+          const liveViewData =
+            typeof (view as unknown as { getViewData?: () => string }).getViewData === "function"
+              ? String((view as unknown as { getViewData: () => string }).getViewData() ?? "")
+              : "";
+          const signature = `${sourcePath}|${this._computeContentSignature(liveViewData)}`;
+          const prevSignature = this._markdownLeafContentSnapshot.get(leaf);
+          if (prevSignature !== signature) {
+            this._markdownLeafContentSnapshot.set(leaf, signature);
+            if (prevSignature) sawModeChange = true;
+          }
+        }
+
+        if (sawModeChange) {
+          this._scheduleReadingViewRefresh(40);
+        }
+      } catch (e) {
+        log.swallow("scan markdown mode changes", e);
+      }
+    };
+
+    // Prime snapshots before starting interval.
+    scanModes();
+    this._readingModeWatcherInterval = window.setInterval(scanModes, 180);
+    this.registerInterval(this._readingModeWatcherInterval);
   }
 
   async _runSync() {
