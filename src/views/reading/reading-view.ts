@@ -1925,7 +1925,12 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     const v = value.trim();
     if (!v) return;
     const rendered = renderMarkdownLineWithClozeSpans(v, clozeStyle);
-    lines.push(showLabels ? `${label}: ${rendered}` : rendered);
+    const isBlock = /^\s*<(?:ul|ol|table|blockquote|pre)\b/i.test(rendered);
+    if (showLabels && isBlock) {
+      lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block"><div class="sprout-markdown-label">${label}:</div>${rendered}</div>`);
+      return;
+    }
+    lines.push(`<div class="sprout-markdown-line">${showLabels ? `<span class="sprout-markdown-label">${label}:</span> ` : ''}${rendered}</div>`);
   };
 
   const getOqSteps = (): string[] => {
@@ -1950,7 +1955,7 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
   const addListSection = (label: string, items: string[], ordered = false) => {
     if (!items.length) return;
     const listHtml = renderList(items, ordered);
-    lines.push(showLabels ? `${label}: ${listHtml}` : listHtml);
+    lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block">${showLabels ? `<div class="sprout-markdown-label">${label}:</div>` : ''}${listHtml}</div>`);
   };
 
   if (card.type === 'mcq') {
@@ -1999,7 +2004,7 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     lines.push(showLabels ? `Groups: ${gText}` : gText);
   }
 
-  return `<div class="sprout-markdown-lines">${lines.map((line) => `<div class="sprout-markdown-line">${line}</div>`).join('')}</div>`;
+  return `<div class="sprout-markdown-lines">${lines.join('')}</div>`;
 }
 
 function normalizeGroupsForDisplay(groupsField: string | string[] | undefined): string[] {
