@@ -9,11 +9,11 @@
 
 ![Sprout Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
-Sprout is an Obsidian plugin that lets you create flashcards directly inside your Markdown notes and review them with an FSRS-based scheduler.
+Sprout is a full-featured flashcard and spaced-repetition system built natively for Obsidian, with AI-powered study workflows that help you learn faster from your own notes.
 
-Rather than separating notes and flashcards, Sprout keeps everything in one place — turning Obsidian into a hub for learning.
+Flashcards are at the heart of Sprout, but the goal is bigger: to be the memory layer for your vault - connecting note-taking, review, and long-term retention in one low-friction workflow.
 
-And now with Sprig, your AI-powered learning companion, reviewing your notes and creating flashcards is quicker than ever!
+With rich card types, FSRS scheduling, Anki import/export, study analytics, and built-in AI assistance for understanding and card creation, Sprout helps you spend less time managing and more time remembering.
 
 ## Getting started
 

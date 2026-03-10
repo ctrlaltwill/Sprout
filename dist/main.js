@@ -749,7 +749,7 @@ Version 1.0.5 is a major feature release introducing new card types, reading vie
 
 ## Our Story
 
-Sprout was built by William Guy, a final-year medical student in New Zealand, to bring modern spaced-repetition directly into your Obsidian vault so your flashcards, notes, and study sessions all live in one place.
+Sprout was built by William Guy, a final-year medical student in New Zealand, to bring modern spaced-repetition directly into your Obsidian vault. Flashcards are at the heart of Sprout, but the goal is bigger: to be the memory layer for Obsidian - linking your notes to review, recall, and long-term retention in one system.
 
 Sprout is proudly open source and will always remain free. No hidden fees. No subscriptions. Learning tools should not lock your knowledge behind paywalls, and your notes and data should stay entirely under your control.
 
