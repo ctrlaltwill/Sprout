@@ -915,9 +915,21 @@ mjx-container[jax="CHTML"][display="true"] {
   color: var(--text-normal);
 }
 
-.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line :is(ul, ol) {
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line-block {
+  display: grid;
+  gap: 4px;
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line :is(ul, ol),
+.sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line-block :is(ul, ol) {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
+  padding-inline-start: 1.5em;
 }
 
 .sprout-pretty-card.sprout-macro-markdown .sprout-markdown-line .internal-embed.image-embed {
