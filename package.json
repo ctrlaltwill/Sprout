@@ -62,7 +62,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^3.7.0",
-    "sql.js": "^1.14.0",
+    "sql.js": "^1.14.1",
     "tailwind-merge": "^3.5.0",
     "tesseract.js": "^5.1.1",
     "ts-fsrs": "^5.2.3"
