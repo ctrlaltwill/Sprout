@@ -58,7 +58,7 @@
     "dompurify": "^3.0.11",
     "fflate": "^0.8.2",
     "interactjs": "^1.10.27",
-    "marked": "^15.0.12",
+    "marked": "^17.0.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^3.7.0",
