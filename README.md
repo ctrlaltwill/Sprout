@@ -1,7 +1,6 @@
 # LearnKit - Flashcards & Spaced Repetition
 
 ![GitHub Release](https://img.shields.io/github/v/release/ctrlaltwill/LearnKit)
-[![GitHub License](https://img.shields.io/github/license/ctrlaltwill/LearnKit)](https://github.com/ctrlaltwill/LearnKit/blob/main/LICENSE.md)
 [![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/LearnKit)](https://github.com/ctrlaltwill/LearnKit/issues)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ctrlaltwill/LearnKit/total)
 [![CI](https://github.com/ctrlaltwill/LearnKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/LearnKit/actions/workflows/ci.yml)
