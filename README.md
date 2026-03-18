@@ -10,13 +10,7 @@
 
 > [!IMPORTANT]
 > **1.2 update:** This release introduces major new features, but it is not fully polished yet.
-> LearnKit 1.2.0 is still a proof of concept. The immediate focus is on polishing the UI and fixing bugs; the longer-term focus is on improving stability and delivering a smooth mobile experience.
->
-> As part of this update, scheduling storage has been migrated to SQLite for better stability and cross-compatibility.
-> This currently affects flashcard sync for Obsidian Sync users.
-> To fix this, go to LearnKit settings and enable **Vault storage for scheduling databases**.
-> Obsidian Sync does not sync non-core plugin files in the plugin folder, so your scheduling database must be stored in your vault.
-> Thanks for your understanding and support.
+> LearnKit is still a proof of concept. The immediate focus is on polishing the UI and fixing bugs; the longer-term focus is on improving stability and delivering a smooth mobile experience.
 
 LearnKit brings flashcards, spaced repetition, and AI-powered study tools directly into Obsidian, so you can learn faster from the notes you already write.
 
