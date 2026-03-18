@@ -1,11 +1,11 @@
 # LearnKit - Flashcards & Spaced Repetition
 
-![GitHub Release](https://img.shields.io/github/v/release/ctrlaltwill/LearnKit)
-[![GitHub License](https://img.shields.io/github/license/ctrlaltwill/LearnKit)](https://github.com/ctrlaltwill/LearnKit/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/LearnKit)](https://github.com/ctrlaltwill/LearnKit/issues)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ctrlaltwill/LearnKit/total)
-[![CI](https://github.com/ctrlaltwill/LearnKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/LearnKit/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-vitepress-blue)](https://ctrlaltwill.github.io/LearnKit/)
+![GitHub Release](https://img.shields.io/github/v/release/ctrlaltwill/Sprout)
+[![GitHub License](https://img.shields.io/github/license/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/LearnKit/blob/main/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/ctrlaltwill/Sprout)](https://github.com/ctrlaltwill/LearnKit/issues)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ctrlaltwill/Sprout/total)
+[![CI](https://github.com/ctrlaltwill/LearnKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ctrlaltwill/Sprout/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-vitepress-blue)](https://ctrlaltwill.github.io/Sprout/)
 
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
