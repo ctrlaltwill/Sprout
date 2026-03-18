@@ -9,9 +9,9 @@
 
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
-LearnKit is a full-featured flashcard and spaced-repetition system built natively for Obsidian, with AI-powered study workflows that help you learn faster from your own notes.
+LearnKit is a full-featured flashcard and spaced-repetition system built natively for Obsidian, with AI-powered study workflows that help you learn faster from your own notes. 
 
-Flashcards are at the heart of LearnKit, but the goal is bigger: to be the memory layer for your vault - connecting note-taking, review, and long-term retention in one low-friction workflow.
+Flashcards are at the heart of LearnKit, but the goal is bigger: to be the memory layer for your vault - connecting note-taking, review, and long-term retention in one low-friction workflow. LearnKit now includes a range of beta-features that go beyond flashcards: note review, generated tests and study plans.
 
 With rich card types, FSRS scheduling, Anki import/export, study analytics, and built-in AI assistance for understanding and card creation, LearnKit helps you spend less time managing and more time remembering.
 
@@ -46,19 +46,22 @@ With rich card types, FSRS scheduling, Anki import/export, study analytics, and 
 - FSRS scheduler for optimised spaced repetition and fewer unnecessary reviews.
 - Flexible card types: cloze, basic, multiple choice, image occlusion, and more.
 - Built-in text-to-speech and audio playback for language and listening practice.
-- Anki import/export _(experimental)_ with scheduling data and media support.
+- Anki import/export with scheduling data and media support.
 - Analytics dashboard with charts and heatmaps for study and retention trends.
 - Inline editor, card browser, and bulk edits for faster card management.
 - Markdown-first workflow with note-linked cards in your Obsidian vault.
 - Reading view customisation to keep notes clean and distraction-free.
-- AI learning companion (currently in _beta_) for understanding and quick flashcard generation.
+- AI learning companion for understanding and quick flashcard generation.
+- Note review for spaced repetition of whole notes and chapters of your vault.
+- Coach, an exam-planning tool to support and guide you as you prepare for your next big exam!
 
-### Companion (AI)
+### LearnKit Companion
 
 Companion is your AI learning assistant inside LearnKit. It can:
 - Answer questions about your current note
 - Review your notes and suggest improvements
-- Generate flashcards from your note content
+- Generate flashcards from your note content (and external context)
+- Generate tests and assessments based on your note and folder contents
 
 Companion is currently in _beta_. It helps you understand notes faster, improve them with clear feedback, and turn them into ready-to-study flashcards in one workflow.
 
@@ -73,11 +76,11 @@ You **bring your own API key**, so cost depends on the provider and model you ch
 ![LearnKit Banner Two - Rich Card Types](site/branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
 ![LearnKit Banner Three - FSRS Algorithm](site/branding/Banner%20Three%20-%20FSRS%20Algorithm.png)
 ![LearnKit Banner Four - Meet Companion](site/branding/Banner%20Four%20-%20Meet%20Companion.png)
-![LearnKit Banner Five - Audio Functionality](site/branding/Banner%20Five%20-%20Audio%20Functionality.png)
 ![LearnKit Banner Six - Reminders & Gatekeeper](site/branding/Banner%20Six%20-%20Reminders%20%26%20Gatekeeper.png)
 ![LearnKit Banner Seven - Card Creation](site/branding/Banner%20Seven%20-%20Card%20Creation.png)
-![LearnKit Banner Eight - Anki Compatibility](site/branding/Banner%20Eight%20-%20Anki%20Compatibility.png)
-![LearnKit Banner Nine - Data Analysis](site/branding/Banner%20Nine%20-%20Data%20Analysis.png)
+![LearnKit Banner Five - Audio Functionality](site/branding/Banner%20Five%20-%20Audio%20Functionality.png)
+![LearnKit Banner Eight - Data Analysis](site/branding/Banner%20Eight%20-%20Data%20Analysis.png)
+![LearnKit Banner Nine - Anki Compatibility](site/branding/Banner%20Nine%20-%20Anki%20Compatibility.png)
 
 ## License & Credits
 
