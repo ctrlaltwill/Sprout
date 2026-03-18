@@ -8,11 +8,21 @@
 
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
-LearnKit brings flashcards, spaced repetition, and AI-powered study tools natively into Obsidian — so you can learn faster from the notes you already write.
+> [!IMPORTANT]
+> **1.2.0 update:** This release introduces major new features, but it is not fully polished yet.
+> LearnKit 1.2.0 is still a proof of concept. The immediate focus is on polishing the UI and fixing bugs; the longer-term focus is on improving stability and delivering a smooth mobile experience.
+>
+> As part of this update, scheduling storage has been migrated to SQLite for better stability and cross-compatibility.
+> This currently affects flashcard sync for Obsidian Sync users.
+> To fix this, go to LearnKit settings and enable **Vault storage for scheduling databases**.
+> Obsidian Sync does not sync non-core plugin files in the plugin folder, so your scheduling database must be stored in your vault.
+> Thanks for your understanding and support.
 
-Flashcards are at its core, but the vision is bigger: a memory layer for your vault that ties note-taking, review, and long-term retention into one seamless workflow.
+LearnKit brings flashcards, spaced repetition, and AI-powered study tools directly into Obsidian, so you can learn faster from the notes you already write.
 
-Rich card types, FSRS scheduling, Anki compatibility, study analytics, and a built-in AI assistant — less managing, more remembering.
+Flashcards are where LearnKit started, but the goal has always been bigger: to become the memory layer for your vault, connecting note-taking, review, and long-term retention in one system.
+
+Build your own study setup with the features that suit you: create and review flashcards, run note review sessions, generate tests from your notes, get AI-powered study guidance, and plan exams with built-in coaching.
 
 ## Getting started
 
@@ -28,7 +38,7 @@ Rich card types, FSRS scheduling, Anki compatibility, study analytics, and a bui
 2. Copy `main.js`, `styles.css`, and `manifest.json` into:
 
    ```
-   <Your Vault>/.obsidian/plugins/sprout/
+   <Your Vault>/.obsidian/plugins/learnkit/
    ```
 3. Restart Obsidian → Settings → Community Plugins → Enable **LearnKit**
 
