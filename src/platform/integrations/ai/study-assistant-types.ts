@@ -15,6 +15,7 @@ export type StudyAssistantGeneratorInput = {
   noteContent: string;
   imageRefs: string[];
   imageDataUrls?: string[];
+  attachedFileDataUrls?: string[];
   includeImages: boolean;
   enabledTypes: StudyAssistantCardType[];
   targetSuggestionCount: number;
@@ -72,6 +73,7 @@ export type StudyAssistantChatInput = {
   noteContent: string;
   imageRefs: string[];
   imageDataUrls?: string[];
+  attachedFileDataUrls?: string[];
   includeImages: boolean;
   userMessage: string;
   customInstructions: string;

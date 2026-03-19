@@ -193,6 +193,7 @@ async function requestExamChunk(params: {
   questionCount: number;
   fallbackPath: string;
   idPrefix: string;
+  attachedFileDataUrls?: string[];
 }): Promise<GeneratedExamQuestion[]> {
   const {
     settings,
@@ -203,6 +204,7 @@ async function requestExamChunk(params: {
     questionCount,
     fallbackPath,
     idPrefix,
+    attachedFileDataUrls,
   } = params;
 
   const userPrompt = JSON.stringify(
@@ -222,6 +224,7 @@ async function requestExamChunk(params: {
     settings,
     systemPrompt,
     userPrompt,
+    attachedFileDataUrls,
     mode: "json",
   });
 
@@ -242,8 +245,9 @@ export async function generateExamQuestions(params: {
   settings: SproutSettings["studyAssistant"];
   notes: ExamSourceNote[];
   config: ExamGeneratorConfig;
+  attachedFileDataUrls?: string[];
 }): Promise<GeneratedExamQuestion[]> {
-  const { settings, notes, config } = params;
+  const { settings, notes, config, attachedFileDataUrls } = params;
   const candidates = notes.slice(0, MAX_SOURCE_NOTES).map((note) => {
     const educationalContent = filterEducationalContent(note.content);
     return {
@@ -267,15 +271,15 @@ export async function generateExamQuestions(params: {
     remainingChars -= chunk.length;
   }
 
-  if (preparedNotes.length === 0) {
-    throw new Error("Select at least one note to generate an exam.");
+  if (preparedNotes.length === 0 && (!attachedFileDataUrls || attachedFileDataUrls.length === 0)) {
+    throw new Error("Select at least one note or attach a file to generate an exam.");
   }
 
   const requestedType = config.questionMode === "mixed" ? "mixed" : config.questionMode;
   const systemPrompt = [
     "You are LearnKit Exam Generator (beta).",
-    "Generate exam questions ONLY from provided notes.",
-    "Do not include facts that are not present in the notes.",
+    "Generate exam questions ONLY from provided notes and attached files.",
+    "Do not include facts that are not present in the notes or attachments.",
     "Do not ask questions about vault organization, note names, file paths, table of contents, indexes, navigation sections, or system/admin metadata.",
     "Prioritize educational subject matter (concepts, definitions, mechanisms, diagnosis, management, reasoning, examples, or factual learning content).",
     "Return valid JSON only with this schema:",
@@ -299,6 +303,7 @@ export async function generateExamQuestions(params: {
       questionCount: config.questionCount,
       fallbackPath,
       idPrefix: "single",
+      attachedFileDataUrls,
     });
   } else {
     const chunks = splitIntoChunks(preparedNotes, EXAM_CHUNK_SIZE);
@@ -317,6 +322,7 @@ export async function generateExamQuestions(params: {
         questionCount: counts[i] || 1,
         fallbackPath: chunkNotes[0]?.path || fallbackPath,
         idPrefix: `chunk${i + 1}`,
+        attachedFileDataUrls,
       });
       allChunkQuestions.push(...chunkQuestions);
     }

@@ -85,6 +85,15 @@ import {
   setRemoteConversationForMode,
   shouldSyncDeletesToProvider,
 } from "./assistant-popup-remote";
+import type { AttachedFile } from "../../../platform/integrations/ai/attachment-helpers";
+import {
+  isImageExt,
+  isSupportedAttachmentExt,
+  MAX_ATTACHMENTS,
+  readVaultFileAsAttachment,
+  readFileInputAsAttachment,
+  SUPPORTED_FILE_ACCEPT,
+} from "../../../platform/integrations/ai/attachment-helpers";
 
 // ---------------------------------------------------------------------------
 //  SproutAssistantPopup
@@ -177,6 +186,9 @@ export class SproutAssistantPopup {
   private _ttsStartGraceUntil = 0;
   private _ttsWaveformFrame: number | null = null;
   private _suppressAssistantComposerFocusOnce = false;
+
+  // Attachments for the current message
+  private _attachedFiles: AttachedFile[] = [];
 
   // Per-leaf session state
   private _activeSessionLeaf: WorkspaceLeaf | null = null;
@@ -1208,6 +1220,76 @@ export class SproutAssistantPopup {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  //  Attachment helpers
+  // ---------------------------------------------------------------------------
+
+  private async _openAttachmentPicker(): Promise<void> {
+    if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
+      new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
+      return;
+    }
+    const allFiles = this.plugin.app.vault.getFiles();
+    const candidates = allFiles.filter(f => isSupportedAttachmentExt(f.extension));
+
+    const modal = new AttachmentPickerModal(this.plugin.app, candidates, (file) => {
+      void (async () => {
+        if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
+          new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
+          return;
+        }
+        if (this._attachedFiles.some(af => af.name === file.name)) return;
+        const attached = await readVaultFileAsAttachment(this.plugin.app, file);
+        if (!attached) {
+          new Notice(this._tx("ui.studyAssistant.chat.attachFailed", "Failed to read file or file too large."));
+          return;
+        }
+        this._attachedFiles.push(attached);
+        this.render();
+      })();
+    }, (attached) => {
+      if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
+        new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
+        return;
+      }
+      if (this._attachedFiles.some(af => af.name === attached.name)) return;
+      this._attachedFiles.push(attached);
+      this.render();
+    });
+    modal.open();
+  }
+
+  private _renderAttachmentChips(parent: HTMLElement): void {
+    if (!this._attachedFiles.length) return;
+    const strip = parent.createDiv({ cls: "sprout-assistant-popup-attachments" });
+    for (let i = 0; i < this._attachedFiles.length; i++) {
+      const af = this._attachedFiles[i];
+      const chip = strip.createDiv({ cls: "sprout-assistant-popup-attachment-chip" });
+      const ext = af.extension || af.name.split(".").pop() || "";
+      chip.createSpan({ text: ext.toUpperCase(), cls: "sprout-assistant-popup-attachment-ext" });
+      const baseName = af.name.includes(".") ? af.name.slice(0, af.name.lastIndexOf(".")) : af.name;
+      chip.createSpan({ text: baseName, cls: "sprout-assistant-popup-attachment-name" });
+      const removeBtn = chip.createEl("button", { cls: "sprout-assistant-popup-attachment-remove" });
+      removeBtn.type = "button";
+      removeBtn.setAttribute("aria-label", "Remove");
+      setIcon(removeBtn, "x");
+      removeBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._attachedFiles.splice(i, 1);
+        this.render();
+      });
+    }
+  }
+
+  private _collectAttachedFileDataUrls(): string[] {
+    return this._attachedFiles.map(f => f.dataUrl);
+  }
+
+  private _clearAttachments(): void {
+    this._attachedFiles = [];
+  }
+
   private _isAssistantBusy(): boolean {
     return this.isSendingChat || this.isReviewingNote || this.isGenerating;
   }
@@ -1579,6 +1661,32 @@ export class SproutAssistantPopup {
       }
     }
 
+    return out;
+  }
+
+  /**
+   * Resolve non-image embedded file refs (PDFs, docs, etc.) from note content
+   * and return them as base64 data URLs. Skips images (handled by
+   * {@link buildVisionImageDataUrls}) and markdown files (avoids recursive
+   * wikilink expansion).
+   */
+  private async buildNoteEmbedNonImageAttachmentUrls(file: TFile, embedRefs: string[]): Promise<string[]> {
+    if (!Array.isArray(embedRefs) || !embedRefs.length) return [];
+    const out: string[] = [];
+    for (const ref of embedRefs) {
+      const resolved = resolveImageFile(this.plugin.app, file.path, ref);
+      if (!(resolved instanceof TFile)) continue;
+      const ext = String(resolved.extension || "").toLowerCase();
+      if (isImageExt(ext)) continue;
+      if (ext === "md") continue;
+      if (!isSupportedAttachmentExt(ext)) continue;
+      try {
+        const attached = await readVaultFileAsAttachment(this.plugin.app, resolved);
+        if (attached) out.push(attached.dataUrl);
+      } catch {
+        // Skip unreadable embedded files.
+      }
+    }
     return out;
   }
 
@@ -2120,9 +2228,10 @@ export class SproutAssistantPopup {
   private async sendChatMessage(): Promise<void> {
     if (this._isAssistantBusy()) return;
     const draft = this.chatDraft.trim();
-    if (!draft) return;
+    const hasAttachments = this._attachedFiles.length > 0;
+    if (!draft && !hasAttachments) return;
 
-    if (this._isGenerateFlashcardRequest(draft)) {
+    if (draft && this._isGenerateFlashcardRequest(draft)) {
       this.chatDraft = "";
       this.chatMessages.push({ role: "user", text: draft });
 
@@ -2140,36 +2249,48 @@ export class SproutAssistantPopup {
     }
 
     const file = this.getActiveMarkdownFile();
-    if (!file) {
+    if (!file && !hasAttachments) {
       this.chatError = this._tx("ui.studyAssistant.chat.noNote", "Open a markdown note to chat with Companion.");
       this.render();
       return;
     }
 
+    const displayText = draft || this._attachedFiles.map(f => f.name).join(", ");
+    const userMessage = draft || this._tx("ui.studyAssistant.chat.analyzeAttachments", "Analyze the attached file(s).");
+
     this.isSendingChat = true;
     this.chatError = "";
     this.chatDraft = "";
-    this.chatMessages.push({ role: "user", text: draft });
+    const attachmentNames = this._attachedFiles.map(f => f.name);
+    const attachedFileDataUrls = this._collectAttachedFileDataUrls();
+    this._clearAttachments();
+    const chatMsg: ChatMessage = { role: "user", text: displayText };
+    if (attachmentNames.length) chatMsg.attachmentNames = attachmentNames;
+    this.chatMessages.push(chatMsg);
     this.render();
 
     try {
-      const noteContent = await this.readActiveMarkdown(file);
-      const imageRefs = this.extractImageRefs(noteContent);
+      const noteContent = file ? await this.readActiveMarkdown(file) : "";
+      const imageRefs = file ? this.extractImageRefs(noteContent) : [];
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInAsk;
-      const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const imageDataUrls = includeImages && file ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const noteEmbedUrls = settings.privacy.includeAttachmentsInCompanion && file
+        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, imageRefs)
+        : [];
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "assistant")?.conversationId;
 
       const result = await generateStudyAssistantChatReply({
         settings,
         input: {
           mode: "ask" as StudyAssistantChatMode,
-          notePath: file.path,
+          notePath: file?.path || "",
           noteContent,
           imageRefs,
           imageDataUrls,
+          attachedFileDataUrls: [...attachedFileDataUrls, ...noteEmbedUrls],
           includeImages,
-          userMessage: draft,
+          userMessage,
           customInstructions: settings.prompts.assistant,
           conversationId,
         },
@@ -2212,6 +2333,8 @@ export class SproutAssistantPopup {
     if (depthOverride) this.reviewDepth = depthOverride;
 
     this.chatMessages.push({ role: "user", text: draft });
+    const threadReviewAttachedUrls = this._collectAttachedFileDataUrls();
+    this._clearAttachments();
     this.isReviewingNote = true;
     this.chatError = "";
     this.reviewError = "";
@@ -2223,6 +2346,9 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInReview;
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const noteEmbedUrls = settings.privacy.includeAttachmentsInCompanion
+        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, imageRefs)
+        : [];
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "review")?.conversationId;
 
       const result = await generateStudyAssistantChatReply({
@@ -2233,6 +2359,7 @@ export class SproutAssistantPopup {
           noteContent,
           imageRefs,
           imageDataUrls,
+          attachedFileDataUrls: [...threadReviewAttachedUrls, ...noteEmbedUrls],
           includeImages,
           userMessage: draft,
           customInstructions: settings.prompts.noteReview,
@@ -2277,6 +2404,8 @@ export class SproutAssistantPopup {
     if (depthOverride) this.reviewDepth = depthOverride;
 
     this.reviewMessages.push({ role: "user", text: draft });
+    const reviewAttachedUrls = this._collectAttachedFileDataUrls();
+    this._clearAttachments();
 
     this.isReviewingNote = true;
     this.reviewError = "";
@@ -2288,6 +2417,9 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInReview;
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const noteEmbedUrls = settings.privacy.includeAttachmentsInCompanion
+        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, imageRefs)
+        : [];
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "review")?.conversationId;
 
       const result = await generateStudyAssistantChatReply({
@@ -2298,6 +2430,7 @@ export class SproutAssistantPopup {
           noteContent,
           imageRefs,
           imageDataUrls,
+          attachedFileDataUrls: [...reviewAttachedUrls, ...noteEmbedUrls],
           includeImages,
           userMessage: draft,
           customInstructions: settings.prompts.noteReview,
@@ -2592,6 +2725,8 @@ export class SproutAssistantPopup {
     }
     this.isGenerating = true;
     this.generatorError = "";
+    const genAttachedUrls = this._collectAttachedFileDataUrls();
+    this._clearAttachments();
     this.render();
     try {
       const noteContent = await this.readActiveMarkdown(file);
@@ -2619,6 +2754,7 @@ export class SproutAssistantPopup {
         noteContent,
         imageRefs,
         imageDataUrls,
+        attachedFileDataUrls: genAttachedUrls,
         includeImages,
         enabledTypes,
         targetSuggestionCount,
@@ -2824,6 +2960,8 @@ export class SproutAssistantPopup {
     this.isGenerating = true;
     this.chatError = "";
     this.generatorError = "";
+    const threadGenAttachedUrls = this._collectAttachedFileDataUrls();
+    this._clearAttachments();
     this.render();
 
     try {
@@ -2832,6 +2970,9 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInFlashcard;
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const noteEmbedUrls = settings.privacy.includeAttachmentsInCompanion
+        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, imageRefs)
+        : [];
       const targetSuggestionCount = Math.max(1, Math.min(10, Math.round(Number(settings.generatorTargetCount) || 5)));
       const extraRequest = String(userMessage || "").trim();
       const threadContext = this._buildAssistantThreadGenerationContext();
@@ -2852,6 +2993,7 @@ export class SproutAssistantPopup {
         noteContent,
         imageRefs,
         imageDataUrls,
+        attachedFileDataUrls: [...threadGenAttachedUrls, ...noteEmbedUrls],
         includeImages,
         enabledTypes,
         targetSuggestionCount,
@@ -3367,13 +3509,14 @@ export class SproutAssistantPopup {
 
       const popup = this.popupEl;
       const viewportCap = Math.min(700, Math.max(360, Math.floor(window.innerHeight * 0.6)));
+      const minInitialAssistantHeight = this.mode === "assistant" && this.chatMessages.length === 0 ? 520 : 0;
 
       // Measure natural content height first, then lock to the tallest observed height.
       setCssProps(popup, "height", "auto");
       const naturalHeight = Math.ceil(popup.getBoundingClientRect().height);
       if (naturalHeight > this._maxObservedPopupHeight) this._maxObservedPopupHeight = naturalHeight;
 
-      const targetHeight = Math.min(this._maxObservedPopupHeight, viewportCap);
+      const targetHeight = Math.min(Math.max(this._maxObservedPopupHeight, minInitialAssistantHeight), viewportCap);
       if (targetHeight > 0) setCssProps(popup, "height", `${targetHeight}px`);
     });
   }
@@ -3430,7 +3573,7 @@ export class SproutAssistantPopup {
     const headerActions = header.createDiv({ cls: "sprout-assistant-popup-header-actions" });
     const menuWrap = headerActions.createDiv({ cls: "sprout-assistant-popup-header-menu" });
 
-    const menuBtn = menuWrap.createEl("button", { cls: "bc btn-icon-outline sprout-btn-toolbar sprout-assistant-popup-overflow" });
+    const menuBtn = menuWrap.createEl("button", { cls: "sprout-assistant-popup-overflow" });
     const menuActionsLabel = "Actions";
     menuBtn.type = "button";
     menuBtn.setAttribute("aria-label", menuActionsLabel);
@@ -3438,11 +3581,7 @@ export class SproutAssistantPopup {
     menuBtn.setAttribute("aria-haspopup", "menu");
     menuBtn.setAttribute("aria-expanded", this._headerMenuOpen ? "true" : "false");
     menuBtn.setAttribute("data-tooltip-position", "top");
-    const menuIconWrap = menuBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
-    menuIconWrap.setAttribute("aria-hidden", "true");
-    setIcon(menuIconWrap, "ellipsis");
-    const menuLabel = menuBtn.createSpan({ text: menuActionsLabel });
-    menuLabel.setAttribute("data-sprout-label", "true");
+    setIcon(menuBtn, "ellipsis");
     menuBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -3655,19 +3794,22 @@ export class SproutAssistantPopup {
     const welcomeRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
     this.createAssistantAvatar(welcomeRow);
     const welcomeBubble = welcomeRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
-    const noteName = this.getActiveNoteDisplayName() || this._tx("ui.studyAssistant.chat.currentNoteFallback", "this note");
     this.renderMarkdownMessage(
       welcomeBubble,
       [
         this._tx(
           "ui.studyAssistant.chat.welcome",
-          "Hi, I'm Companion. You can think of me as your AI learning assistant. I can answer questions about your Obsidian notes, provide feedback, and generate LearnKit flashcards you can quickly add to your notes.",
+          "Hi, I'm Companion. You can think of me as your AI learning assistant. I can answer questions about your Obsidian notes, provide feedback, and generate LearnKit flashcards.",
+        ),
+        "",
+        this._tx(
+          "ui.studyAssistant.chat.welcome.attachments",
+          "You can also attach files like PDFs, images, PowerPoints or Word documents to give me more context for your requests.",
         ),
         "",
         this._tx(
           "ui.studyAssistant.chat.welcome.currentNote",
-          "It looks like you're viewing **{name}**. Ask me anything, or choose an action below to get started.",
-          { name: noteName },
+          "It looks like you're viewing Home. Ask me anything, or choose an action below to get started.",
         ),
       ].join("\n"),
     );
@@ -3718,6 +3860,16 @@ export class SproutAssistantPopup {
       }
 
       this.renderMarkdownMessage(bubbleContent, msg.text);
+
+      if (msg.role === "user" && msg.attachmentNames?.length) {
+        const attachIndicator = bubble.createDiv({ cls: "sprout-assistant-popup-msg-attachments" });
+        for (const name of msg.attachmentNames) {
+          const tag = attachIndicator.createDiv({ cls: "sprout-assistant-popup-msg-attachment-tag" });
+          const tagIcon = tag.createSpan({ cls: "sprout-assistant-popup-msg-attachment-icon" });
+          setIcon(tagIcon, "paperclip");
+          tag.createSpan({ text: name });
+        }
+      }
 
       if (msg.role === "user" && userInitial) {
         this.createUserAvatar(row, userInitial);
@@ -3795,7 +3947,20 @@ export class SproutAssistantPopup {
 
     // ---- Composer ----
     const composer = parent.createDiv({ cls: "sprout-assistant-popup-composer" });
+    this._renderAttachmentChips(composer);
     const shell = composer.createDiv({ cls: "sprout-assistant-popup-composer-shell" });
+
+    const attachmentsEnabled = !!this.plugin.settings.studyAssistant.privacy.includeAttachmentsInCompanion;
+    if (attachmentsEnabled) {
+      const attachBtn = shell.createEl("button", { cls: "sprout-assistant-popup-attach-btn" });
+      attachBtn.type = "button";
+      attachBtn.disabled = this._isAssistantBusy();
+      attachBtn.setAttribute("aria-label", this._tx("ui.studyAssistant.chat.attachFile", "Attach file"));
+      attachBtn.setAttribute("data-tooltip-position", "top");
+      setIcon(attachBtn, "paperclip");
+      attachBtn.addEventListener("click", () => void this._openAttachmentPicker());
+    }
+
     const input = shell.createEl("textarea", { cls: "sprout-assistant-popup-input" });
     input.rows = 1;
     input.value = this.chatDraft;
@@ -4173,5 +4338,118 @@ export class SproutAssistantPopup {
       chatWrap.scrollTop = nextScrollTop;
     });
     return true;
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  AttachmentPickerModal – fuzzy file picker for images & PDFs
+// ---------------------------------------------------------------------------
+class AttachmentPickerModal extends Modal {
+  private _files: TFile[];
+  private _onPick: (file: TFile) => void;
+  private _onPickExternal: (attached: AttachedFile) => void;
+  private _filteredFiles: TFile[] = [];
+  private _listEl: HTMLDivElement | null = null;
+
+  constructor(
+    app: import("obsidian").App,
+    files: TFile[],
+    onPick: (file: TFile) => void,
+    onPickExternal: (attached: AttachedFile) => void,
+  ) {
+    super(app);
+    this._files = files.sort((a, b) => a.path.localeCompare(b.path));
+    this._onPick = onPick;
+    this._onPickExternal = onPickExternal;
+    this._filteredFiles = [...this._files];
+  }
+
+  onOpen(): void {
+    this.containerEl.addClass("sprout");
+    this.modalEl.addClass("bc", "sprout-attachment-picker");
+    this.contentEl.addClass("bc");
+
+    // ---- "Choose from computer" button ----
+    const systemBtn = this.contentEl.createEl("button", {
+      cls: "bc sprout-attachment-picker-system-btn",
+      text: "Choose from local files",
+    });
+    setIcon(systemBtn.createSpan({ cls: "sprout-attachment-picker-system-icon" }), "hard-drive");
+    systemBtn.addEventListener("click", () => this._pickSystemFile());
+
+    // ---- Divider ----
+    this.contentEl.createEl("div", { cls: "sprout-attachment-picker-divider", text: "Or choose from vault" });
+
+    const search = this.contentEl.createEl("input", {
+      cls: "bc input w-full sprout-attachment-picker-search",
+      attr: { type: "text", placeholder: "Search vault files..." },
+    });
+
+    this._listEl = this.contentEl.createDiv({ cls: "sprout-attachment-picker-list" });
+    this._renderList();
+
+    search.addEventListener("input", () => {
+      const q = search.value.toLowerCase().trim();
+      this._filteredFiles = q
+        ? this._files.filter(f => f.path.toLowerCase().includes(q))
+        : [...this._files];
+      this._renderList();
+    });
+
+    search.focus();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+
+  private _pickSystemFile(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = SUPPORTED_FILE_ACCEPT;
+    setCssProps(input, "display", "none");
+    input.addEventListener("change", () => {
+      void (async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const attached = await readFileInputAsAttachment(file);
+        if (!attached) {
+          new Notice("File is unsupported or too large.");
+          return;
+        }
+        this._onPickExternal(attached);
+        this.close();
+      })();
+    });
+    document.body.appendChild(input);
+    input.click();
+    input.remove();
+  }
+
+  private _renderList(): void {
+    if (!this._listEl) return;
+    this._listEl.empty();
+    const max = 100;
+    const shown = this._filteredFiles.slice(0, max);
+    for (const file of shown) {
+      const item = this._listEl.createDiv({ cls: "sprout-attachment-picker-item" });
+      item.createSpan({ text: file.path });
+      item.addEventListener("click", () => {
+        this._onPick(file);
+        this.close();
+      });
+    }
+    if (this._filteredFiles.length > max) {
+      this._listEl.createDiv({
+        cls: "sprout-attachment-picker-overflow",
+        text: `… and ${this._filteredFiles.length - max} more`,
+      });
+    }
+    if (!shown.length) {
+      this._listEl.createDiv({
+        cls: "sprout-attachment-picker-empty",
+        text: "No matching files",
+      });
+    }
   }
 }

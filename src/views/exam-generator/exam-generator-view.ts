@@ -19,6 +19,15 @@ import type {
   GeneratedExamQuestion,
   SaqGradeResult,
 } from "./exam-generator-types";
+import type { AttachedFile } from "../../platform/integrations/ai/attachment-helpers";
+import {
+  isSupportedAttachmentExt,
+  MAX_ATTACHMENTS,
+  readVaultFileAsAttachment,
+  readFileInputAsAttachment,
+  SUPPORTED_FILE_ACCEPT,
+} from "../../platform/integrations/ai/attachment-helpers";
+import { resolveImageFile } from "../../platform/image-occlusion/io-helpers";
 
 type ExamViewMode = "setup" | "generating" | "taking" | "grading" | "results" | "review";
 
@@ -100,6 +109,8 @@ export class SproutExamGeneratorView extends ItemView {
   private _finalPercent: number | null = null;
   private _reviewWrongOnly = true;
 
+  private _attachedFiles: AttachedFile[] = [];
+
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
     this.plugin = plugin;
@@ -162,7 +173,7 @@ export class SproutExamGeneratorView extends ItemView {
 
   setCoachScope(scope: Scope | null): void {
     if (!scope) return;
-    void this._applyCoachScope(scope);
+    this._applyCoachScope(scope);
   }
 
   private _tx(token: string, fallback: string): string {
@@ -176,7 +187,7 @@ export class SproutExamGeneratorView extends ItemView {
     setCssProps(this._rootEl, "--sprout-exam-generator-max-width", maxWidth);
   }
 
-  private async _applyCoachScope(scope: Scope): Promise<void> {
+  private _applyCoachScope(scope: Scope): void {
     this._reloadNotes();
 
     this._mode = "setup";
@@ -471,32 +482,35 @@ export class SproutExamGeneratorView extends ItemView {
       cls: "sprout-popover-dropdown sprout-popover-dropdown-below sprout-exam-generator-saved-tests-popover",
     });
     const panel = savedTestsPanel.createDiv({ cls: "bc rounded-md border border-border bg-popover text-popover-foreground p-1 flex flex-col sprout-pointer-auto sprout-exam-generator-saved-tests-panel" });
-    const searchInput = panel.createEl("input", {
-      type: "search",
+    const searchWrap = panel.createDiv({ cls: "sprout-exam-generator-saved-tests-search-wrap" });
+    const searchIcon = searchWrap.createSpan({ cls: "sprout-exam-generator-saved-tests-search-icon" });
+    setIcon(searchIcon, "search");
+    const searchInput = searchWrap.createEl("input", {
+      type: "text",
       cls: "bc input h-9 sprout-exam-generator-saved-tests-search",
-      attr: { placeholder: "Search saved tests" },
+      attr: { placeholder: "Search saved tests", autocomplete: "off", spellcheck: "false" },
     });
     searchInput.value = this._savedTestsSearchQuery;
     const savedList = panel.createDiv({ cls: "bc flex flex-col max-h-60 overflow-auto sprout-exam-generator-saved-tests-list" });
+    savedList.setAttr("role", "listbox");
 
-    const canOpenSavedTests = this._savedTests.length > 0;
-    if (!canOpenSavedTests) {
-      this._savedTestsPopoverOpen = false;
-      savedTestsBtn.disabled = true;
-      savedTestsBtn.setAttribute("aria-disabled", "true");
-      savedTestsBtn.setAttribute("data-tooltip-position", "bottom");
-      savedTestsBtn.title = "No saved tests yet";
-    } else {
-      savedTestsBtn.setAttribute("aria-haspopup", "dialog");
-      savedTestsBtn.setAttribute("aria-expanded", this._savedTestsPopoverOpen ? "true" : "false");
-    }
+    savedTestsBtn.setAttribute("aria-haspopup", "dialog");
+    savedTestsBtn.setAttribute("aria-expanded", this._savedTestsPopoverOpen ? "true" : "false");
+
+    const formatSavedDate = (timestamp: number): string => {
+      const d = new Date(timestamp);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    };
 
     const filteredSavedTests = () => {
       const q = this._savedTestsSearchQuery.trim().toLowerCase();
       if (!q) return this._savedTests;
       return this._savedTests.filter((test) => {
         const label = (test.label || "").toLowerCase();
-        const createdAt = new Date(test.createdAt).toLocaleString().toLowerCase();
+        const createdAt = formatSavedDate(test.createdAt).toLowerCase();
         const questionCount = String(test.questionCount || "");
         return label.includes(q) || createdAt.includes(q) || questionCount.includes(q);
       });
@@ -506,75 +520,84 @@ export class SproutExamGeneratorView extends ItemView {
       savedList.empty();
       const results = filteredSavedTests();
       if (results.length === 0) {
-        savedList.createDiv({
-          cls: "px-2 py-1 text-sm sprout-settings-text-muted",
-          text: this._savedTests.length === 0 ? "No saved tests yet." : "No saved tests match your search.",
-        });
+        const emptyMsg = savedList.createDiv({ cls: "px-2 py-2 text-sm sprout-settings-text-muted" });
+        if (this._savedTests.length === 0) {
+          emptyMsg.createDiv({ text: "No saved tests yet." });
+          emptyMsg.createDiv({ cls: "mt-1", text: "Generate a test and it will be saved here automatically." });
+        } else {
+          emptyMsg.textContent = "No saved tests match your search.";
+        }
         return;
       }
       for (const test of results) {
-        const row = savedList.createEl("button", {
-          cls: "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground sprout-exam-generator-saved-tests-option",
+        const row = savedList.createDiv({
+          cls: "sprout-exam-generator-saved-tests-item",
+        });
+        row.setAttr("role", "option");
+        const lineBtn = row.createEl("button", {
+          cls: "bc sprout-exam-generator-saved-tests-line",
           attr: { type: "button" },
         });
-        const left = row.createDiv({ cls: "min-w-0 flex-1" });
-        left.createDiv({
-          cls: "sprout-exam-generator-note-title",
-          text: test.label || `Test ${new Date(test.createdAt).toLocaleString()}`,
+        lineBtn.createSpan({
+          cls: "sprout-exam-generator-saved-tests-line-text",
+          text: `${test.label || "Saved test"} . ${formatSavedDate(test.createdAt)}`,
         });
-        left.createDiv({
-          cls: "sprout-settings-text-muted sprout-exam-generator-note-path",
-          text: `${test.questionCount} questions`,
-        });
-        const right = row.createSpan({ cls: "sprout-settings-text-muted", text: "Retake" });
-        right.setAttr("aria-hidden", "true");
-        row.addEventListener("click", () => {
+        lineBtn.addEventListener("click", () => {
           this._savedTestsPopoverOpen = false;
           this._savedTestsSearchQuery = "";
           this._loadSavedTest(test.testId);
+        });
+
+        const deleteBtn = row.createEl("button", {
+          cls: "bc sprout-exam-generator-saved-tests-delete",
+          attr: { type: "button", "aria-label": `Delete ${test.label || "saved test"}` },
+        });
+        setIcon(deleteBtn, "x");
+        deleteBtn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          void this._deleteSavedTest(test.testId);
         });
       }
     };
 
     const syncSavedPopoverState = () => {
-      savedTestsPanel.toggleClass("is-open", canOpenSavedTests && this._savedTestsPopoverOpen);
-      savedTestsPanel.setAttr("aria-hidden", canOpenSavedTests && this._savedTestsPopoverOpen ? "false" : "true");
-      savedTestsBtn.setAttribute("aria-expanded", canOpenSavedTests && this._savedTestsPopoverOpen ? "true" : "false");
-      chevronWrap.classList.toggle("is-open", canOpenSavedTests && this._savedTestsPopoverOpen);
+      savedTestsPanel.toggleClass("is-open", this._savedTestsPopoverOpen);
+      savedTestsPanel.setAttr("aria-hidden", this._savedTestsPopoverOpen ? "false" : "true");
+      savedTestsBtn.setAttribute("aria-expanded", this._savedTestsPopoverOpen ? "true" : "false");
+      chevronWrap.classList.toggle("is-open", this._savedTestsPopoverOpen);
       renderSavedTestsList();
     };
 
-    if (canOpenSavedTests) {
-      savedTestsBtn.addEventListener("click", () => {
-        this._savedTestsPopoverOpen = !this._savedTestsPopoverOpen;
+    savedTestsBtn.addEventListener("click", () => {
+      this._savedTestsPopoverOpen = !this._savedTestsPopoverOpen;
+      syncSavedPopoverState();
+      if (this._savedTestsPopoverOpen) searchInput.focus();
+    });
+    searchInput.addEventListener("input", () => {
+      this._savedTestsSearchQuery = searchInput.value;
+      renderSavedTestsList();
+    });
+    searchInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        this._savedTestsPopoverOpen = false;
         syncSavedPopoverState();
-        if (this._savedTestsPopoverOpen) searchInput.focus();
-      });
-      searchInput.addEventListener("input", () => {
-        this._savedTestsSearchQuery = searchInput.value;
-        renderSavedTestsList();
-      });
-      searchInput.addEventListener("keydown", (ev) => {
-        if (ev.key === "Escape") {
-          ev.preventDefault();
-          this._savedTestsPopoverOpen = false;
-          syncSavedPopoverState();
-        }
-      });
+      }
+    });
 
-      const onDocPointerDown = (ev: Event) => {
-        const target = ev.target as Node | null;
-        if (!target) return;
-        if (!savedTestsWrap.contains(target)) {
-          this._savedTestsPopoverOpen = false;
-          syncSavedPopoverState();
-        }
-      };
-      document.addEventListener("pointerdown", onDocPointerDown, true);
-      this._savedTestsPopoverCleanup = () => {
-        document.removeEventListener("pointerdown", onDocPointerDown, true);
-      };
-    }
+    const onDocPointerDown = (ev: Event) => {
+      const target = ev.target as Node | null;
+      if (!target) return;
+      if (!savedTestsWrap.contains(target)) {
+        this._savedTestsPopoverOpen = false;
+        syncSavedPopoverState();
+      }
+    };
+    document.addEventListener("pointerdown", onDocPointerDown, true);
+    this._savedTestsPopoverCleanup = () => {
+      document.removeEventListener("pointerdown", onDocPointerDown, true);
+    };
 
     syncSavedPopoverState();
     savedTestsWrap.appendChild(savedTestsBtn);
@@ -660,6 +683,7 @@ export class SproutExamGeneratorView extends ItemView {
     const selectedScopeCount = (): number => this._selectedPaths.size + this._selectedFolders.size;
 
     const canGenerateNow = (): boolean => {
+      if (this._attachedFiles.length > 0) return true;
       if (this._config.sourceMode === "selected") {
           return selectedCandidateCount() > 0;
       }
@@ -670,7 +694,7 @@ export class SproutExamGeneratorView extends ItemView {
       page.createEl("h3", { text: "Choose your source content" });
       page.createEl("p", {
         cls: "sprout-coach-step-copy",
-        text: "Search and select one or more notes to generate test questions from. Selecting folders will include all descendant folders and notes.",
+        text: "Select notes and folders, attach files, or use both to generate test questions.",
       });
 
       let nextBtn: HTMLButtonElement | null = null;
@@ -967,6 +991,80 @@ export class SproutExamGeneratorView extends ItemView {
       renderSelected();
       renderScopeList();
 
+      // ---- Attachments (optional) ----
+      const attachmentsEnabled = !!this.plugin.settings.studyAssistant.privacy.includeAttachmentsInExam;
+      if (attachmentsEnabled) {
+        const attachArea = page.createDiv({ cls: "sprout-exam-generator-attachments" });
+        attachArea.createDiv({ cls: "sprout-coach-field-label", text: "Attachments are optional." });
+        attachArea.createEl("p", {
+          cls: "sprout-coach-step-copy",
+          text: "Attach files to include as reference material for test generation.",
+        });
+        const attachChips = attachArea.createDiv({ cls: "sprout-exam-generator-attachment-chips" });
+        const renderAttachChips = () => {
+          attachChips.empty();
+          for (let i = 0; i < this._attachedFiles.length; i++) {
+            const af = this._attachedFiles[i];
+            const chip = attachChips.createDiv({ cls: "sprout-assistant-popup-attachment-chip" });
+            chip.createSpan({ text: af.name, cls: "sprout-assistant-popup-attachment-name" });
+            const removeBtn = chip.createEl("button", { cls: "sprout-assistant-popup-attachment-remove" });
+            removeBtn.type = "button";
+            removeBtn.setAttribute("aria-label", "Remove");
+            setIcon(removeBtn, "x");
+            removeBtn.addEventListener("click", (e: MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              this._attachedFiles.splice(i, 1);
+              renderAttachChips();
+              syncFooter();
+            });
+          }
+        };
+        renderAttachChips();
+
+        const addBtn = attachArea.createEl("button", {
+          cls: "bc sprout-btn-toolbar h-9 inline-flex items-center gap-2",
+        });
+        addBtn.type = "button";
+        const addBtnIcon = addBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+        setIcon(addBtnIcon, "paperclip");
+        addBtn.createSpan({ text: "Attach file" });
+        addBtn.addEventListener("click", () => {
+          if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
+            new Notice(`Maximum ${MAX_ATTACHMENTS} attachments.`);
+            return;
+          }
+          const allFiles = this.app.vault.getFiles().filter((f: TFile) => isSupportedAttachmentExt(f.extension));
+          const modal = new ExamAttachmentPickerModal(this.app, allFiles, (file: TFile) => {
+            void (async () => {
+              if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
+                new Notice(`Maximum ${MAX_ATTACHMENTS} attachments.`);
+                return;
+              }
+              if (this._attachedFiles.some(af => af.name === file.name)) return;
+              const attached = await readVaultFileAsAttachment(this.app, file);
+              if (!attached) {
+                new Notice("Failed to read file or file too large.");
+                return;
+              }
+              this._attachedFiles.push(attached);
+              renderAttachChips();
+              syncFooter();
+            })();
+          }, (attached) => {
+            if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
+              new Notice(`Maximum ${MAX_ATTACHMENTS} attachments.`);
+              return;
+            }
+            if (this._attachedFiles.some(af => af.name === attached.name)) return;
+            this._attachedFiles.push(attached);
+            renderAttachChips();
+            syncFooter();
+          });
+          modal.open();
+        });
+      }
+
       const footer = page.createDiv({ cls: "sprout-coach-wizard-footer" });
       nextBtn = footer.createEl("button", {
         cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2",
@@ -1077,8 +1175,9 @@ export class SproutExamGeneratorView extends ItemView {
 
   private async _generateExam(): Promise<void> {
     let selectedFiles = this._collectSourceFiles();
-    if (selectedFiles.length === 0) {
-      new Notice(this._config.sourceMode === "folder" ? "No notes found in that folder." : "Select at least one note.");
+    const hasAttachments = this._attachedFiles.length > 0;
+    if (selectedFiles.length === 0 && !hasAttachments) {
+      new Notice(this._config.sourceMode === "folder" ? "No notes found in that folder." : "Select at least one note or attach a file.");
       return;
     }
 
@@ -1103,11 +1202,49 @@ export class SproutExamGeneratorView extends ItemView {
         ? this._rankNotesByEducationalDensity(notes).slice(0, this._config.maxFolderNotes)
         : notes;
 
+      // Auto-include embedded attachments (images, PDFs, docs) from source notes.
+      const noteEmbedUrls: string[] = [];
+      if (this.plugin.settings.studyAssistant.privacy.includeAttachmentsInExam) {
+        for (const note of rankedNotes) {
+          const refs = new Set<string>();
+          const wikiRe = /!\[\[([^\]]+)\]\]/g;
+          let m: RegExpExecArray | null;
+          while ((m = wikiRe.exec(note.content)) !== null) {
+            const raw = String(m[1] || "").trim();
+            if (!raw) continue;
+            const filePart = raw.split("|")[0]?.split("#")[0]?.trim();
+            if (filePart) refs.add(filePart);
+          }
+          const mdRe = /!\[[^\]]*\]\(([^)]+)\)/g;
+          while ((m = mdRe.exec(note.content)) !== null) {
+            const raw = String(m[1] || "").trim();
+            if (!raw) continue;
+            refs.add(raw.replace(/^<|>$/g, ""));
+          }
+          for (const ref of refs) {
+            const resolved = resolveImageFile(this.app, note.path, ref);
+            if (!(resolved instanceof TFile)) continue;
+            const ext = String(resolved.extension || "").toLowerCase();
+            if (ext === "md") continue;
+            if (!isSupportedAttachmentExt(ext)) continue;
+            try {
+              const attached = await readVaultFileAsAttachment(this.app, resolved);
+              if (attached) noteEmbedUrls.push(attached.dataUrl);
+            } catch {
+              // Skip unreadable embedded files.
+            }
+          }
+        }
+      }
+
       const questions = await generateExamQuestions({
         settings: this.plugin.settings.studyAssistant,
         notes: rankedNotes,
         config: this._config,
+        attachedFileDataUrls: [...this._attachedFiles.map(f => f.dataUrl), ...noteEmbedUrls],
       });
+
+      this._attachedFiles = [];
 
       this._questions = questions;
       this._answers = new Map();
@@ -1667,6 +1804,24 @@ export class SproutExamGeneratorView extends ItemView {
     this._render();
   }
 
+  private async _deleteSavedTest(id: string): Promise<void> {
+    if (!this._testsDb) return;
+    try {
+      const deleted = this._testsDb.deleteTest(id);
+      if (!deleted) {
+        new Notice("Saved test no longer exists.");
+        return;
+      }
+      await this._testsDb.persist();
+      if (this._activeTestId === id) this._activeTestId = null;
+      this._savedTests = this._testsDb.listTests(25);
+      this._savedTestsSearchQuery = this._savedTestsSearchQuery.trim();
+      this._render();
+    } catch {
+      new Notice("Failed to delete saved test.");
+    }
+  }
+
   private _resetToSetup(): void {
     this._stopTimer();
     this._clearAutoSubmitGrace();
@@ -1682,5 +1837,120 @@ export class SproutExamGeneratorView extends ItemView {
     this._activeTestId = null;
     this._savedTests = this._testsDb?.listTests(25) ?? this._savedTests;
     this._render();
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  ExamAttachmentPickerModal – file picker for exam attachments
+// ---------------------------------------------------------------------------
+import { Modal } from "obsidian";
+
+class ExamAttachmentPickerModal extends Modal {
+  private _files: TFile[];
+  private _onPick: (file: TFile) => void;
+  private _onPickExternal: (attached: AttachedFile) => void;
+  private _filteredFiles: TFile[] = [];
+  private _listEl: HTMLDivElement | null = null;
+
+  constructor(
+    app: InstanceType<typeof Modal>["app"],
+    files: TFile[],
+    onPick: (file: TFile) => void,
+    onPickExternal: (attached: AttachedFile) => void,
+  ) {
+    super(app);
+    this._files = files.sort((a, b) => a.path.localeCompare(b.path));
+    this._onPick = onPick;
+    this._onPickExternal = onPickExternal;
+    this._filteredFiles = [...this._files];
+  }
+
+  onOpen(): void {
+    this.containerEl.addClass("sprout");
+    this.modalEl.addClass("bc", "sprout-attachment-picker");
+    this.contentEl.addClass("bc");
+
+    // ---- "Choose from computer" button ----
+    const systemBtn = this.contentEl.createEl("button", {
+      cls: "bc sprout-attachment-picker-system-btn",
+      text: "Choose from computer",
+    });
+    setIcon(systemBtn.createSpan({ cls: "sprout-attachment-picker-system-icon" }), "hard-drive");
+    systemBtn.addEventListener("click", () => this._pickSystemFile());
+
+    // ---- Divider ----
+    this.contentEl.createEl("div", { cls: "sprout-attachment-picker-divider", text: "Or choose from vault" });
+
+    const search = this.contentEl.createEl("input", {
+      cls: "bc input w-full sprout-attachment-picker-search",
+      attr: { type: "text", placeholder: "Search vault files..." },
+    });
+
+    this._listEl = this.contentEl.createDiv({ cls: "sprout-attachment-picker-list" });
+    this._renderList();
+
+    search.addEventListener("input", () => {
+      const q = search.value.toLowerCase().trim();
+      this._filteredFiles = q
+        ? this._files.filter(f => f.path.toLowerCase().includes(q))
+        : [...this._files];
+      this._renderList();
+    });
+
+    search.focus();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+
+  private _pickSystemFile(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = SUPPORTED_FILE_ACCEPT;
+    setCssProps(input, "display", "none");
+    input.addEventListener("change", () => {
+      void (async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const attached = await readFileInputAsAttachment(file);
+        if (!attached) {
+          new Notice("File is unsupported or too large.");
+          return;
+        }
+        this._onPickExternal(attached);
+        this.close();
+      })();
+    });
+    document.body.appendChild(input);
+    input.click();
+    input.remove();
+  }
+
+  private _renderList(): void {
+    if (!this._listEl) return;
+    this._listEl.empty();
+    const max = 100;
+    const shown = this._filteredFiles.slice(0, max);
+    for (const file of shown) {
+      const item = this._listEl.createDiv({ cls: "sprout-attachment-picker-item" });
+      item.createSpan({ text: file.path });
+      item.addEventListener("click", () => {
+        this._onPick(file);
+        this.close();
+      });
+    }
+    if (this._filteredFiles.length > max) {
+      this._listEl.createDiv({
+        cls: "sprout-attachment-picker-overflow",
+        text: `… and ${this._filteredFiles.length - max} more`,
+      });
+    }
+    if (!shown.length) {
+      this._listEl.createDiv({
+        cls: "sprout-attachment-picker-empty",
+        text: "No matching files",
+      });
+    }
   }
 }

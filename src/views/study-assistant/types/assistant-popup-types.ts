@@ -13,6 +13,7 @@ export type StudyAssistantModalButtonVisibility = SproutSettings["studyAssistant
 export type ChatMessage = {
   role: "user" | "assistant";
   text: string;
+  attachmentNames?: string[];
 };
 
 export type GenerateSuggestionBatch = {

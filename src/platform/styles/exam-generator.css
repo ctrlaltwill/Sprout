@@ -4,7 +4,7 @@
   background: var(--background-primary) !important;
 }
 
-.sprout .sprout-exam-generator-root {
+.sprout .sprout-view-content.sprout-exam-generator-root {
   max-width: var(--sprout-exam-generator-max-width, 1280px);
   width: 100%;
   margin: 0 auto;
@@ -17,6 +17,8 @@
   margin: 0 auto;
   padding: var(--lk-title-strip-padding-desktop);
   box-sizing: border-box;
+  position: relative;
+  z-index: 10;
 }
 
 .sprout .sprout-exam-generator-saved-tests-wrap {
@@ -41,28 +43,101 @@
 }
 
 .sprout .sprout-exam-generator-saved-tests-popover {
-  min-width: 280px;
+  min-width: 460px;
   right: 0;
   left: auto;
 }
 
 .sprout .sprout-exam-generator-saved-tests-panel {
   box-shadow: var(--lk-shadow-popover-md);
+  width: 460px;
+  max-width: min(460px, calc(100vw - 24px));
 }
 
-.sprout .sprout-exam-generator-saved-tests-search {
+.sprout .sprout-exam-generator-saved-tests-search-wrap {
+  position: relative;
   margin-bottom: 4px;
 }
 
-.sprout .sprout-exam-generator-saved-tests-list {
-  min-width: 280px;
+.sprout .sprout-exam-generator-saved-tests-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.sprout .sprout-exam-generator-saved-tests-option {
+.sprout .sprout-exam-generator-saved-tests-search-icon .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.sprout .sprout-exam-generator-saved-tests-search {
+  padding-left: 30px;
+}
+
+.sprout .sprout-exam-generator-saved-tests-list {
+  min-width: 420px;
+  gap: 2px;
+}
+
+.sprout .sprout-exam-generator-saved-tests-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sprout .sprout-exam-generator-saved-tests-line {
+  flex: 1;
   width: 100%;
   text-align: left;
+  border-radius: 6px;
   border: 0;
   background: transparent;
+  color: var(--text-normal);
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.sprout .sprout-exam-generator-saved-tests-line:hover,
+.sprout .sprout-exam-generator-saved-tests-line:focus-visible {
+  background: var(--background-modifier-hover);
+}
+
+.sprout .sprout-exam-generator-saved-tests-line-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.sprout .sprout-exam-generator-saved-tests-delete {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-faint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sprout .sprout-exam-generator-saved-tests-delete:hover,
+.sprout .sprout-exam-generator-saved-tests-delete:focus-visible {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.sprout .sprout-exam-generator-saved-tests-delete .svg-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .sprout .sprout-exam-generator-content-shell {
@@ -70,6 +145,9 @@
   flex-direction: column;
   gap: 14px;
   padding: var(--lk-shell-padding-desktop);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .sprout .sprout-exam-generator-card {
@@ -429,4 +507,28 @@
   .sprout .sprout-exam-generator-options {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- Attachment area (source stage) ---- */
+.sprout .sprout-exam-generator-attachments {
+  padding: 12px 0 0;
+}
+
+.sprout .sprout-exam-generator-attachments label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.sprout .sprout-exam-generator-attachments .setting-item-description {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.sprout .sprout-exam-generator-attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
 }

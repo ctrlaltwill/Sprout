@@ -308,6 +308,12 @@ export class ExamTestsSqlite {
     }
   }
 
+  deleteTest(testId: string): boolean {
+    if (!this.db) return false;
+    this.db.run("DELETE FROM tests WHERE test_id = ?", [testId]);
+    return this.db.getRowsModified() > 0;
+  }
+
   listAttempts(limit = 500): SavedExamAttemptRecord[] {
     if (!this.db) return [];
     const out: SavedExamAttemptRecord[] = [];

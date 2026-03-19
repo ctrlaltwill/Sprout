@@ -381,7 +381,6 @@
 
 .sprout :is(button, .button) {
   height: auto !important;
-  padding: 8px 12px !important;
   font-weight: 400 !important;
 }
 

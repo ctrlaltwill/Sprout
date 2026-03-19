@@ -3018,6 +3018,30 @@ export class SproutSettingsTab extends PluginSettingTab {
         ),
     );
 
+    withDependentSetting(
+      new Setting(wrapper)
+        .setName(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInCompanion.name", "Allow file attachments in Companion"))
+        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInCompanion.desc", "Allow attaching vault files (images and PDFs) to Companion messages. This may increase token usage."))
+        .addToggle((toggle) =>
+          toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.includeAttachmentsInCompanion).onChange(async (value) => {
+            this.plugin.settings.studyAssistant.privacy.includeAttachmentsInCompanion = !!value;
+            await this.plugin.saveAll();
+          }),
+        ),
+    );
+
+    withDependentSetting(
+      new Setting(wrapper)
+        .setName(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInExam.name", "Allow file attachments in Tests"))
+        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInExam.desc", "Allow attaching vault files (images and PDFs) when generating tests. This may increase token usage."))
+        .addToggle((toggle) =>
+          toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.includeAttachmentsInExam).onChange(async (value) => {
+            this.plugin.settings.studyAssistant.privacy.includeAttachmentsInExam = !!value;
+            await this.plugin.saveAll();
+          }),
+        ),
+    );
+
     new Setting(wrapper).setName(this._tx("ui.settings.studyAssistant.sections.askMode", "Ask Mode")).setHeading();
 
     withDependentSetting(

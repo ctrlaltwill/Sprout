@@ -70,7 +70,7 @@ Understand faster, write better, and create study-ready cards without leaving Ob
 
 🎥 **[Watch Companion in action →](https://youtu.be/fe1htR7hjvY)**
 
-You **bring your own API key** — zero subscriptions, zero markups. Works with free-tier providers (Google, OpenRouter) and premium platforms (Anthropic, OpenAI, Perplexity). To start for free, try Auto Router via OpenRouter.
+You **bring your own API key** — zero subscriptions, zero markupsWorks with free-tier providers (Google, OpenRouter) and premium platforms (Anthropic, OpenAI, Perplexity). To start for free, try Auto Router via OpenRouter.
 
 ## Feature highlights
 

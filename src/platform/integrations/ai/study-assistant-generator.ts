@@ -1176,6 +1176,7 @@ export async function generateStudyAssistantSuggestions(params: {
     ? [...new Set(overrides.types)]
     : input.enabledTypes;
   const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
+  const attachedFileDataUrls = Array.isArray(input.attachedFileDataUrls) ? input.attachedFileDataUrls.filter(Boolean) : [];
   const canUseVisionForIo = !!input.includeImages && imageDataUrls.length > 0 && modelLikelySupportsVision(settings);
   const systemPrompt = buildSystemPrompt(input.customInstructions || settings.prompts.generator || "", canUseVisionForIo);
   const userPrompt = buildUserPrompt(input, canUseVisionForIo, overrides);
@@ -1188,6 +1189,7 @@ export async function generateStudyAssistantSuggestions(params: {
     systemPrompt,
     userPrompt,
     imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
+    attachedFileDataUrls,
     mode: "json",
     conversationId: resolvedConversationId,
   });
@@ -1234,6 +1236,7 @@ export async function generateStudyAssistantSuggestions(params: {
       systemPrompt: refillSystemPrompt,
       userPrompt: refillUserPrompt,
       imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
+      attachedFileDataUrls,
       mode: "json",
       conversationId: resolvedConversationId,
     });
@@ -1274,12 +1277,14 @@ export async function generateStudyAssistantChatReply(params: {
   const payloadPreview = `System prompt:\n${systemPrompt}\n\nUser prompt:\n${userPrompt}`;
 
   const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
+  const attachedFileDataUrls = Array.isArray(input.attachedFileDataUrls) ? input.attachedFileDataUrls.filter(Boolean) : [];
 
   const response = await requestStudyAssistantCompletionDetailed({
     settings,
     systemPrompt,
     userPrompt,
     imageDataUrls: input.includeImages ? imageDataUrls : [],
+    attachedFileDataUrls,
     mode: "text",
     conversationId: input.conversationId,
   });

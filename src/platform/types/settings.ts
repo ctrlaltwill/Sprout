@@ -138,6 +138,10 @@ export type SproutSettings = {
       includeImagesInAsk: boolean;
       includeImagesInReview: boolean;
       includeImagesInFlashcard: boolean;
+      /** Allow attaching vault files (images/PDFs) to Companion messages. */
+      includeAttachmentsInCompanion: boolean;
+      /** Allow attaching vault files (images/PDFs) to exam/test generation. */
+      includeAttachmentsInExam: boolean;
       previewPayload: boolean;
       saveChatHistory: boolean;
       syncDeletesToProvider: boolean;

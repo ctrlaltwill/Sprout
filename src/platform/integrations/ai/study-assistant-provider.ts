@@ -254,11 +254,54 @@ function extractConversationIdFromResponse(json: Record<string, unknown> | null)
   return null;
 }
 
+type ParsedAttachment = {
+  kind: "image" | "document";
+  mimeType: string;
+  base64: string;
+  dataUrl: string;
+};
+
+function parseAttachmentDataUrls(urls: string[]): ParsedAttachment[] {
+  const out: ParsedAttachment[] = [];
+  for (const raw of urls) {
+    const url = String(raw || "").trim();
+    const match = url.match(/^data:([a-z0-9.+/-]+);base64,([a-z0-9+/=]+)$/i);
+    if (!match) continue;
+    const mime = match[1];
+    const base64 = match[2];
+    const kind = mime.startsWith("image/") ? "image" : "document";
+    out.push({ kind, mimeType: mime, base64, dataUrl: url });
+  }
+  return out;
+}
+
+function buildAnthropicContentBlocks(attachments: ParsedAttachment[]): unknown[] {
+  return attachments
+    .map((att) => ({
+      type: att.kind === "image" ? "image" : "document",
+      source: { type: "base64", media_type: att.mimeType, data: att.base64 },
+    }))
+    .filter((block) => block.source.data);
+}
+
+function buildOpenAiContentBlocks(attachments: ParsedAttachment[]): unknown[] {
+  return attachments.map((att) => {
+    if (att.kind === "image") {
+      return { type: "image_url", image_url: { url: att.dataUrl } };
+    }
+    // Documents (PDF, docx, pptx, xlsx, csv, txt, md) — use the OpenAI file
+    // content block format supported by GPT-4o and compatible providers.
+    const extGuess = att.mimeType.split("/").pop()?.replace(/^vnd\..+\./, "") || "file";
+    return { type: "file", file: { filename: `attachment.${extGuess}`, file_data: att.dataUrl } };
+  });
+}
+
 export async function requestStudyAssistantCompletionDetailed(params: {
   settings: SproutSettings["studyAssistant"];
   systemPrompt: string;
   userPrompt: string;
   imageDataUrls?: string[];
+  attachedFileDataUrls?: string[];
   mode?: CompletionMode;
   conversationId?: string;
   onConversationResolved?: (conversationId: string) => void;
@@ -268,6 +311,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     systemPrompt,
     userPrompt,
     imageDataUrls = [],
+    attachedFileDataUrls = [],
     mode = "text",
     conversationId,
     onConversationResolved,
@@ -287,9 +331,8 @@ export async function requestStudyAssistantCompletionDetailed(params: {
 
   if (!model) throw new Error("Missing model name in Study Companion settings.");
 
-  const usableImageDataUrls = imageDataUrls
-    .map((url) => String(url || "").trim())
-    .filter((url) => /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i.test(url));
+  const allDataUrls = [...imageDataUrls, ...attachedFileDataUrls];
+  const attachments = parseAttachmentDataUrls(allDataUrls);
 
   if (settings.provider === "anthropic") {
     const endpoint = `${base}/messages`;
@@ -310,30 +353,10 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           system: systemPrompt,
           messages: [{
             role: "user",
-            content: usableImageDataUrls.length
+            content: attachments.length
               ? [
                   { type: "text", text: userPrompt },
-                  ...usableImageDataUrls.map((url) => {
-                    const match = url.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
-                    if (!match) {
-                      return {
-                        type: "image",
-                        source: {
-                          type: "base64",
-                          media_type: "image/png",
-                          data: "",
-                        },
-                      };
-                    }
-                    return {
-                      type: "image",
-                      source: {
-                        type: "base64",
-                        media_type: match[1],
-                        data: match[2],
-                      },
-                    };
-                  }).filter((block) => block.source.data),
+                  ...buildAnthropicContentBlocks(attachments),
                 ]
               : userPrompt,
           }],
@@ -400,13 +423,10 @@ export async function requestStudyAssistantCompletionDetailed(params: {
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: usableImageDataUrls.length
+              content: attachments.length
                 ? [
                     { type: "text", text: userPrompt },
-                    ...usableImageDataUrls.map((url) => ({
-                      type: "image_url",
-                      image_url: { url },
-                    })),
+                    ...buildOpenAiContentBlocks(attachments),
                   ]
                 : userPrompt,
             },
@@ -483,6 +503,7 @@ export async function requestStudyAssistantCompletion(params: {
   systemPrompt: string;
   userPrompt: string;
   imageDataUrls?: string[];
+  attachedFileDataUrls?: string[];
   mode?: CompletionMode;
   conversationId?: string;
   onConversationResolved?: (conversationId: string) => void;

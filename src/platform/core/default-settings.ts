@@ -109,6 +109,8 @@ export const DEFAULT_SETTINGS: SproutSettings = {
       includeImagesInAsk: true,
       includeImagesInReview: true,
       includeImagesInFlashcard: true,
+      includeAttachmentsInCompanion: true,
+      includeAttachmentsInExam: true,
       previewPayload: true,
       saveChatHistory: true,
       syncDeletesToProvider: false,
