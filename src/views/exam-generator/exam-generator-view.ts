@@ -394,6 +394,13 @@ export class SproutExamGeneratorView extends ItemView {
     return path.trim() || "Home";
   }
 
+  private _formatFolderChipLabel(path: string): string {
+    const normalized = path.trim();
+    if (!normalized) return "Home";
+    const parts = normalized.split("/").filter(Boolean);
+    return parts[parts.length - 1] || normalized;
+  }
+
   private _previewFolderSelection(candidates: TFile[]): TFile[] {
     const educationalTokens = [
       "study",
@@ -966,7 +973,7 @@ export class SproutExamGeneratorView extends ItemView {
           const selectedFolders = Array.from(this._selectedFolders).sort((a, b) => a.localeCompare(b));
           for (const folder of selectedFolders) {
             const chip = chips.createDiv({ cls: "sprout-coach-chip" });
-            const folderLabel = this._formatFolderLabel(folder);
+            const folderLabel = this._formatFolderChipLabel(folder);
             const count = this._notes.filter((n) => this._folderIncludesPath(folder, n.path)).length;
             chip.createSpan({ text: `Folder: ${folderLabel} (${count})` });
             const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });

@@ -142,6 +142,13 @@ function formatScopePlanTitle(scopeName: string): { title: string; hierarchy: st
   };
 }
 
+function formatFolderChipLabel(path: string): string {
+  const normalized = String(path || "").trim();
+  if (!normalized) return "Home";
+  const parts = normalized.split("/").filter(Boolean);
+  return parts[parts.length - 1] || normalized;
+}
+
 export class SproutCoachView extends ItemView {
   plugin: SproutPlugin;
 
@@ -775,7 +782,13 @@ export class SproutCoachView extends ItemView {
           const option = options.find((entry) => toScopeId(entry.scope) === scopeId);
           if (!option) continue;
           const chip = chips.createDiv({ cls: "sprout-coach-chip" });
-          chip.createSpan({ text: option.label });
+          if (option.scope.type === "folder") {
+            const folderPath = String(option.scope.key || option.scope.name || "").trim();
+            const count = this._allFiles().filter((file) => file.path.startsWith(`${folderPath}/`)).length;
+            chip.createSpan({ text: `Folder: ${formatFolderChipLabel(folderPath)} (${count})` });
+          } else {
+            chip.createSpan({ text: option.label });
+          }
           const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
           remove.type = "button";
           remove.setAttr("aria-label", "Remove");
