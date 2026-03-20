@@ -1065,7 +1065,7 @@ export class SproutExamGeneratorView extends ItemView {
       const attachmentsLabel = attachArea.createDiv({ cls: "sprout-coach-field-label" });
       attachArea.createEl("p", {
         cls: "sprout-coach-step-copy",
-        text: "Attach files, for example PowerPoint or PDF documents, to use as reference material for test generation.",
+        text: "Attach files to use as reference material for test generation.",
       });
       const attachChips = attachArea.createDiv({ cls: "sprout-exam-generator-attachment-chips" });
       const renderAttachChips = () => {

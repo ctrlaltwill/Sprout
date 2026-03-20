@@ -27,16 +27,22 @@ function titleCaseWords(input: string): string {
     .join(" ");
 }
 
+function toNormalizedPrimitive(raw: unknown): string {
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number" || typeof raw === "boolean" || typeof raw === "bigint") return String(raw);
+  return "";
+}
+
 function normalizeTagToken(raw: unknown): string {
-  return String(raw || "").trim().toLowerCase().replace(/^#+/, "");
+  return toNormalizedPrimitive(raw).trim().toLowerCase().replace(/^#+/, "");
 }
 
 function normalizePropertyKey(raw: unknown): string {
-  return String(raw || "").trim().toLowerCase();
+  return toNormalizedPrimitive(raw).trim().toLowerCase();
 }
 
 function normalizePropertyValue(raw: unknown): string {
-  return String(raw || "").trim().toLowerCase();
+  return toNormalizedPrimitive(raw).trim().toLowerCase();
 }
 
 function addTag(tags: Set<string>, raw: unknown): void {
