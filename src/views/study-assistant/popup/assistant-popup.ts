@@ -1311,7 +1311,7 @@ export class SproutAssistantPopup {
   //  Attachment helpers
   // ---------------------------------------------------------------------------
 
-  private async _openAttachmentPicker(): Promise<void> {
+  private _openAttachmentPicker(): void {
     if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
       new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
       return;
