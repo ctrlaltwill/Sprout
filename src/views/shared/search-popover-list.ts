@@ -62,6 +62,12 @@ function listWithAnd(items: string[]): string {
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
+export function buildScopeSearchPlaceholder(terms: string[]): string {
+  const scopedTerms = terms.filter((term) => String(term || "").trim().length > 0);
+  if (!scopedTerms.length || scopedTerms.length >= 3) return "Search...";
+  return `Search for ${listWithAnd(scopedTerms)}`;
+}
+
 function getPropertyDisplayKey(option: SearchPopoverOption): string {
   if (option.propertyKey) return String(option.propertyKey).trim();
   const label = String(option.label || "").trim();
@@ -161,12 +167,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
 
   const applyTypeFilterLabel = (): void => {
     if (!typeFilterBtn || !typeFilterBtnLabel) return;
-    if (!visibleTypeFilterDefs.length || visibleTypeFilterDefs.every((entry) => enabledTypes.has(entry.type))) {
-      typeFilterBtnLabel.setText("Filters");
-      return;
-    }
-    const activeVisibleCount = visibleTypeFilterDefs.filter((entry) => enabledTypes.has(entry.type)).length;
-    typeFilterBtnLabel.setText(`Filters (${activeVisibleCount})`);
+    typeFilterBtnLabel.setText("Filters");
   };
 
   const renderTypeFilterList = (): void => {
@@ -285,12 +286,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
     const scopedTypeTerms = allVisibleTypesEnabled ? [] : enabledTypeLabels;
     const terms = [...scopedTypeTerms, ...propertyNames];
 
-    if (!terms.length) {
-      args.searchInput.placeholder = "Search...";
-      return;
-    }
-
-    args.searchInput.placeholder = `Search for ${listWithAnd(terms)}`;
+    args.searchInput.placeholder = buildScopeSearchPlaceholder(terms);
   };
 
   const setTypeFilterOpen = (open: boolean): void => {
