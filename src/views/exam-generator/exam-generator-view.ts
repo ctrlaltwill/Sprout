@@ -32,6 +32,7 @@ import { resolveImageFile } from "../../platform/image-occlusion/io-helpers";
 import { mountSearchPopoverList, type SearchPopoverOption } from "../shared/search-popover-list";
 import { collectVaultTagAndPropertyPairs, decodePropertyPair, extractFilePropertyPairs, extractFileTags } from "../shared/scope-metadata";
 import { formatAttachmentChipLabel } from "../shared/attachment-chip-label";
+import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import {
   rowToSavedScopePreset,
   selectionMatchesPreset,
@@ -2395,7 +2396,7 @@ export class SproutExamGeneratorView extends ItemView {
     quitBtn.setAttr("data-tooltip-position", "top");
     const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
     setIcon(quitIconWrap, "x");
-    quitBtn.createSpan({ cls: "bc", text: "Quit test" });
+    quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Quit test" });
     quitBtn.addEventListener("click", () => {
       this._resetToSetup();
     });
@@ -2933,6 +2934,8 @@ class ExamAttachmentPickerModal extends Modal {
   private _onPickExternal: (attached: AttachedFile) => void;
   private _filteredFiles: TFile[] = [];
   private _listEl: HTMLDivElement | null = null;
+  private _selectedFilePath: string | null = null;
+  private _addBtnEl: HTMLButtonElement | null = null;
 
   constructor(
     app: InstanceType<typeof Modal>["app"],
@@ -2948,27 +2951,56 @@ class ExamAttachmentPickerModal extends Modal {
   }
 
   onOpen(): void {
-    this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "sprout-attachment-picker");
+    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout", "mod-dim");
+    this.modalEl.addClass("bc", "lk-modals", "sprout-attachment-picker");
+    scopeModalToWorkspace(this);
     this.contentEl.addClass("bc");
 
+    const headerEl = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header");
+    if (headerEl) {
+      const titleEl = headerEl.querySelector<HTMLElement>(":scope > .modal-title");
+      if (titleEl) titleEl.setText("Add attachment");
+
+      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .sprout-attachment-picker-close-btn");
+      if (existingCloseBtn) existingCloseBtn.remove();
+
+      const closeBtn = headerEl.createEl("button", {
+        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-attachment-picker-close-btn",
+        attr: { type: "button", "aria-label": "Close" },
+      });
+      closeBtn.setAttr("data-tooltip-position", "top");
+      const closeIconWrap = closeBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      setIcon(closeIconWrap, "x");
+      closeBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Close" });
+      closeBtn.addEventListener("click", () => this.close());
+    }
+
+    const legacyCloseBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
+    if (legacyCloseBtn) legacyCloseBtn.remove();
+
+    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-attachment-picker-footer");
+    if (existingFooter) existingFooter.remove();
+
+    const root = this.contentEl.createDiv({ cls: "sprout-attachment-picker-root" });
+    const body = root.createDiv({ cls: "sprout-attachment-picker-body" });
+
     // ---- "Choose from computer" button ----
-    const systemBtn = this.contentEl.createEl("button", {
-      cls: "bc sprout-attachment-picker-system-btn",
+    const systemBtn = body.createEl("button", {
+      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-attachment-picker-system-btn",
       text: "Choose from computer",
     });
     setIcon(systemBtn.createSpan({ cls: "sprout-attachment-picker-system-icon" }), "hard-drive");
     systemBtn.addEventListener("click", () => this._pickSystemFile());
 
     // ---- Divider ----
-    this.contentEl.createEl("div", { cls: "sprout-attachment-picker-divider", text: "Or choose from vault" });
+    body.createEl("div", { cls: "sprout-attachment-picker-divider", text: "Or choose from vault" });
 
-    const search = this.contentEl.createEl("input", {
+    const search = body.createEl("input", {
       cls: "bc input w-full sprout-attachment-picker-search",
       attr: { type: "text", placeholder: "Search vault files..." },
     });
 
-    this._listEl = this.contentEl.createDiv({ cls: "sprout-attachment-picker-list" });
+    this._listEl = body.createDiv({ cls: "sprout-attachment-picker-list" });
     this._renderList();
 
     search.addEventListener("input", () => {
@@ -2979,11 +3011,45 @@ class ExamAttachmentPickerModal extends Modal {
       this._renderList();
     });
 
+    const footer = this.modalEl.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer sprout-attachment-picker-footer" });
+
+    const cancelBtn = footer.createEl("button", {
+      cls: "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm",
+      attr: { type: "button", "aria-label": "Cancel" },
+    });
+    cancelBtn.setAttr("data-tooltip-position", "top");
+    const cancelIcon = cancelBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    setIcon(cancelIcon, "x");
+    cancelBtn.createSpan({ text: "Cancel" });
+    cancelBtn.addEventListener("click", () => this.close());
+
+    const addBtn = footer.createEl("button", {
+      cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2",
+      attr: { type: "button", "aria-label": "Add selected attachment" },
+    });
+    addBtn.setAttr("data-tooltip-position", "top");
+    const addIcon = addBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    setIcon(addIcon, "plus");
+    addBtn.createSpan({ text: "Add" });
+    addBtn.disabled = true;
+    addBtn.addEventListener("click", () => this._submitSelectedVaultFile());
+    this._addBtnEl = addBtn;
+
     search.focus();
   }
 
   onClose(): void {
+    this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "sprout", "mod-dim");
+    this.modalEl.removeClass("bc", "lk-modals", "sprout-attachment-picker");
+    this.contentEl.removeClass("bc");
+    const footerEl = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-attachment-picker-footer");
+    if (footerEl) footerEl.remove();
+    const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header .sprout-attachment-picker-close-btn");
+    if (closeBtn) closeBtn.remove();
     this.contentEl.empty();
+    this._addBtnEl = null;
+    this._listEl = null;
+    this._selectedFilePath = null;
   }
 
   private _pickSystemFile(): void {
@@ -3025,10 +3091,16 @@ class ExamAttachmentPickerModal extends Modal {
     const shown = this._filteredFiles.slice(0, max);
     for (const file of shown) {
       const item = this._listEl.createDiv({ cls: "sprout-attachment-picker-item" });
+      if (file.path === this._selectedFilePath) item.addClass("is-selected");
       item.createSpan({ text: file.path });
       item.addEventListener("click", () => {
-        this._onPick(file);
-        this.close();
+        this._selectedFilePath = file.path;
+        this._syncSelectionState();
+        this._renderList();
+      });
+      item.addEventListener("dblclick", () => {
+        this._selectedFilePath = file.path;
+        this._submitSelectedVaultFile();
       });
     }
     if (this._filteredFiles.length > max) {
@@ -3043,5 +3115,27 @@ class ExamAttachmentPickerModal extends Modal {
         text: "No matching files",
       });
     }
+
+    this._syncSelectionState();
+  }
+
+  private _syncSelectionState(): void {
+    if (!this._addBtnEl) return;
+    this._addBtnEl.disabled = !this._selectedFilePath;
+  }
+
+  private _submitSelectedVaultFile(): void {
+    if (!this._selectedFilePath) return;
+    const selected = this._files.find((file) => file.path === this._selectedFilePath);
+    if (!selected) {
+      new Notice("Selected file is no longer available.");
+      this._selectedFilePath = null;
+      this._syncSelectionState();
+      this._renderList();
+      return;
+    }
+
+    this._onPick(selected);
+    this.close();
   }
 }

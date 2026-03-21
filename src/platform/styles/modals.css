@@ -64,10 +64,10 @@
 .sprout .lk-modals.modal {
     border: var(--sprout-border-width) solid var(--sprout-border-color);
     background: var(--background);
-    border-radius: var(--radius-l);
+    border-radius: var(--radius-lg);
   max-width: min(1080px, 95%);
     max-height: min(80vh);
-    padding: 1rem 0 1rem 1rem;
+    padding: 1.2rem;
     overflow: hidden;
     outline: none;
     height: auto;
@@ -82,7 +82,7 @@
     max-width: min(1080px, 95%);
     height: auto;
     max-height: min(80vh, 720px);
-    padding: 30px 30px 20px 30px;
+    padding: 1.2rem;
     position: relative;
     overflow: hidden;
 }
@@ -95,11 +95,12 @@
 /* ---- Header + content spacing ---- */
 
 .sprout .lk-modals.modal .modal-header {
-  padding: 1rem 0 0.5rem 0;
+  padding: 0 0 1.5rem 0;
   border-bottom: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 0rem;
 }
 
 .sprout .modal-container .modal-header {
@@ -111,7 +112,7 @@
 }
 
 .sprout .lk-modals.modal .modal-content {
-  padding :0rem 1.5rem 1rem 1rem !important;
+  padding: 0 !important;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -377,7 +378,7 @@
   border-radius: var(--radius-l);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0px 48px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
 }
 
@@ -766,7 +767,7 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
 /* ---- Consistent modal footer spacing ---- */
 
 .sprout .lk-modal-footer {
-  padding-top: 20px;
+    padding: 1.5rem 0 0;
   border-top: none;
 }
 

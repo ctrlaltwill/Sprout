@@ -815,6 +815,32 @@
   gap: 8px;
 }
 
+.sprout .sprout-exam-generator-topline-right .sprout-scope-clear-btn {
+  min-width: 36px;
+  padding-left: 8px;
+  padding-right: 8px;
+  gap: 0;
+  overflow: hidden;
+}
+
+.sprout .sprout-exam-generator-topline-right .sprout-scope-clear-btn [data-sprout-label="true"] {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  transform: translateX(-4px);
+  transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.sprout .sprout-exam-generator-topline-right .sprout-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+  max-width: 9rem;
+  opacity: 1;
+  margin-left: 6px;
+  transform: translateX(0);
+}
+
 .sprout .sprout-exam-generator-question-prompt,
 .sprout .sprout-exam-generator-card .sprout-mcq-option-text {
   -webkit-user-select: text;

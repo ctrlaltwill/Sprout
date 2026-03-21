@@ -5,7 +5,17 @@
 
 /* ---- LearnKit-wide button shadow reset ---- */
 
-.sprout button {
+.sprout button,
+.sprout textarea,
+.sprout .multi-select-container,
+.sprout input.metadata-input-text,
+.sprout input[type=date],
+.sprout input[type=datetime-local],
+.sprout input[type=text],
+.sprout input[type=search],
+.sprout input[type=email],
+.sprout input[type=password],
+.sprout input[type=number] {
   box-shadow: none !important;
 }
 

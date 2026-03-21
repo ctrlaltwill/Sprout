@@ -57,7 +57,7 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: 0.5rem !important;
   min-width: 0;
   flex: 1 1 0;
   order: 3;
@@ -260,6 +260,12 @@
   opacity: 1;
   margin-left: 8px;
   transform: translateX(0);
+}
+
+.sprout-attachment-picker {
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  border: 1px solid var(--color-base-40);
 }
 
 .sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:hover,
