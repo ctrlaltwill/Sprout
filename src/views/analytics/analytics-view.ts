@@ -15,7 +15,7 @@
 import { ItemView, type WorkspaceLeaf, setIcon } from "obsidian";
 import * as React from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
-import { initAOS, refreshAOS, resetAOS } from "../../platform/core/aos-loader";
+import { initAOS, resetAOS } from "../../platform/core/aos-loader";
 import { type SproutHeader, createViewHeader } from "../../platform/core/header";
 import { log } from "../../platform/core/logger";
 import type { CardState, ReviewLogEntry } from "../../platform/core/store";
@@ -79,7 +79,6 @@ export class SproutAnalyticsView extends ItemView {
   private _noteReviewAnalyticsRoot: ReactRoot | null = null;
   private _examAttemptsCache: SavedExamAttemptRecord[] = [];
   private _examAttemptsHydrated = false;
-  private _aosInitTimer: number | null = null;
   private _hasPlayedEntryAnimation = false;
 
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
@@ -102,31 +101,20 @@ export class SproutAnalyticsView extends ItemView {
   async onOpen() {
     this.render();
     void this._hydrateExamAttempts();
-    // Init AOS after render completes (DOM ready)
+    // Initialize AOS immediately; delayed init causes a visible snap when
+    // classes/measurements are applied after first paint.
     if (this.plugin.settings?.general?.enableAnimations ?? true) {
-      // Delay init to ensure DOM is fully rendered
-      if (this._aosInitTimer !== null) {
-        window.clearTimeout(this._aosInitTimer);
-        this._aosInitTimer = null;
-      }
-      this._aosInitTimer = window.setTimeout(() => {
-        this._aosInitTimer = null;
-        initAOS({
-          duration: AOS_DURATION,
-          easing: "ease-out",
-          once: true,
-          offset: 50,
-        });
-      }, 100);
+      initAOS({
+        duration: AOS_DURATION,
+        easing: "ease-out",
+        once: true,
+        offset: 50,
+      });
     }
     await Promise.resolve();
   }
 
   async onClose() {
-    if (this._aosInitTimer !== null) {
-      window.clearTimeout(this._aosInitTimer);
-      this._aosInitTimer = null;
-    }
     try {
       this._header?.dispose?.();
     } catch (e: unknown) { log.swallow("dispose header", e); }
@@ -185,10 +173,20 @@ export class SproutAnalyticsView extends ItemView {
     try {
       const db = new ExamTestsSqlite(this.plugin);
       await db.open();
-      this._examAttemptsCache = db.listAttempts(2000);
+      const nextAttempts = db.listAttempts(2000);
       await db.close();
+      const hadHydrated = this._examAttemptsHydrated;
+      const prevCount = this._examAttemptsCache.length;
+      this._examAttemptsCache = nextAttempts;
       this._examAttemptsHydrated = true;
-      this.render();
+
+      // Avoid re-rendering flashcards/notes immediately after open just because
+      // test attempts finished loading; that second render can visually look
+      // like an animation "snap" in KPI cards.
+      const attemptsChanged = !hadHydrated || prevCount !== nextAttempts.length;
+      if (attemptsChanged && this._activeSection === "tests") {
+        this.render();
+      }
     } catch (e: unknown) {
       log.swallow("hydrate exam attempts", e);
     }
@@ -330,7 +328,13 @@ export class SproutAnalyticsView extends ItemView {
     };
     const applyRootAos = (el: HTMLElement, delay?: number, animation = "fade-up") => {
       if (!shouldAnimateEntry) return;
+      // Pre-seed AOS init state before first paint so elements do not flash at
+      // final position and then snap to their animated start state.
+      el.classList.remove("aos-animate", "sprout-aos-fallback");
+      el.classList.add("aos-init");
       el.setAttribute("data-aos", animation);
+      el.setAttribute("data-aos-anchor-placement", "top-top");
+      el.setAttribute("data-aos-duration", String(AOS_DURATION));
       if (Number.isFinite(delay)) el.setAttribute("data-aos-delay", String(delay));
     };
 
@@ -380,7 +384,7 @@ export class SproutAnalyticsView extends ItemView {
       return btn;
     };
 
-    filtersWrap.appendChild(mkFilterBtn("flashcards", tx("ui.analytics.filter.flashcards", "Flashcards"), "layers"));
+    filtersWrap.appendChild(mkFilterBtn("flashcards", tx("ui.analytics.filter.flashcards", "Flashcards"), "star"));
     filtersWrap.appendChild(mkFilterBtn("notes", tx("ui.analytics.filter.notes", "Notes"), "notebook-text"));
     filtersWrap.appendChild(mkFilterBtn("tests", tx("ui.analytics.filter.tests", "Tests"), "clipboard-check"));
     titleRight.appendChild(filtersWrap);
@@ -540,8 +544,22 @@ export class SproutAnalyticsView extends ItemView {
     }
 
     if (shouldAnimateEntry) {
-      refreshAOS();
+      titleStrip.classList.remove("aos-animate");
+      contentShell.classList.remove("aos-animate");
+      window.requestAnimationFrame(() => {
+        if (!titleStrip.isConnected || !contentShell.isConnected) return;
+        titleStrip.classList.add("aos-animate");
+        contentShell.classList.add("aos-animate");
+      });
       this._hasPlayedEntryAnimation = true;
+    } else {
+      for (const el of [titleStrip, contentShell]) {
+        el.removeAttribute("data-aos");
+        el.removeAttribute("data-aos-anchor-placement");
+        el.removeAttribute("data-aos-duration");
+        el.removeAttribute("data-aos-delay");
+        el.classList.add("aos-animate", "sprout-aos-fallback");
+      }
     }
   }
 
@@ -1543,7 +1561,6 @@ export class SproutAnalyticsView extends ItemView {
         });
       }
 
-      if (animationsEnabled) refreshAOS();
     };
 
     const rowsLbl = right.createDiv({ cls: "bc text-sm text-muted-foreground" });
@@ -1879,7 +1896,6 @@ export class SproutAnalyticsView extends ItemView {
     renderTable();
     renderPager();
 
-    if (animationsEnabled) refreshAOS();
   }
 
 }

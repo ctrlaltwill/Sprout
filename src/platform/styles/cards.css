@@ -237,7 +237,7 @@
   font-family: var(--font-monospace);
   font-size: 0.85rem;
   line-height: 1.6;
-  border: var(--color-base-50) 1px solid;
+  border: var(--color-base-40) 1px solid;
   tab-size: 2;
   -moz-tab-size: 2;
 }
@@ -374,7 +374,7 @@
   position: relative;
   width: 100%;
   min-height: var(--sprout-flag-preview-height, auto);
-  border: 1px solid var(--color-base-50);
+  border: 1px solid var(--color-base-40);
   border-radius: var(--radius-md);
   background: var(--background-modifier-form-field);
   overflow: hidden;
@@ -398,7 +398,7 @@
   box-sizing: border-box;
   background: transparent;
   color: var(--text-normal);
-  border: 1px solid var(--color-base-50);
+  border: 1px solid var(--color-base-40);
   border-radius: inherit;
   padding: 6px 8px;
 }
@@ -544,6 +544,10 @@
 
 .sprout .sprout-coach-shell {
   gap: 16px;
+}
+
+.sprout .sprout-coach-shell.sprout-coach-shell--empty {
+  gap: 0;
 }
 
 /* Allow floating popovers to escape card bounds in Coach and Tests setup flows. */
@@ -1255,7 +1259,7 @@ margin: 0.1rem 0 0;
   max-height: 400px;
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   padding: 6px;
   background: var(--popover);
   color: var(--popover-foreground, var(--text-normal));
@@ -1372,7 +1376,7 @@ margin: 0.1rem 0 0;
 .sprout .sprout-coach-scope-item.is-selected {
   background-color: var(--color-base-30);
   color: var(--text-normal);
-  border-color: var(--color-base-50);
+  border-color: var(--color-base-40);
 }
 
 .sprout .sprout-coach-scope-item.is-selected:hover,
@@ -1381,7 +1385,7 @@ margin: 0.1rem 0 0;
 .sprout .sprout-coach-scope-item.is-selected.is-active {
   background-color: var(--color-base-30);
   color: var(--text-normal);
-  border-color: var(--color-base-50);
+  border-color: var(--color-base-40);
 }
 
 .sprout .sprout-coach-scope-empty {
@@ -1459,7 +1463,7 @@ margin: 0.1rem 0 0;
 .sprout .sprout-coach-scope-row.is-selected,
 .sprout .sprout-coach-scope-row[aria-selected="true"] {
   background: var(--color-base-30) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
 }
 
 .sprout .sprout-scope-preset-apply {
@@ -1782,7 +1786,7 @@ body.is-mobile .sprout .sprout-coach-scope-actions-grid {
 
 .sprout .sprout-coach-summary {
   border: 1px solid var(--color-base-35);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   padding: 10px;
   display: flex;
   flex-direction: column;

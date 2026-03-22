@@ -316,8 +316,10 @@ export class BulkEditCardModal extends Modal {
     const preview = document.createElement("div");
     preview.className = "bc sprout-single-edit-markdown-preview markdown-rendered";
     setCssProps(preview, "min-height", `${minControlHeight}px`);
-    textarea.style.resize = "vertical";
-    textarea.style.overflowY = "auto";
+    setCssProps(textarea, {
+      resize: "vertical",
+      "overflow-y": "auto",
+    });
     let isEditing = false;
     let lastSyncedHeight = minControlHeight;
 
@@ -426,7 +428,7 @@ export class BulkEditCardModal extends Modal {
       isEditing = true;
       wrap.classList.remove("is-preview");
       applyModeVisibility(true);
-      wrap.style.overflow = "visible";
+      setCssProps(wrap, "overflow", "visible");
       syncFieldHeights();
     });
     textarea.addEventListener("blur", (ev: FocusEvent) => {
@@ -469,7 +471,7 @@ export class BulkEditCardModal extends Modal {
     renderPreview();
     syncFieldHeights();
     wrap.classList.add("is-preview");
-    wrap.style.overflow = "hidden";
+    setCssProps(wrap, "overflow", "hidden");
     applyModeVisibility(false);
     wrap.appendChild(textarea);
     wrap.appendChild(preview);

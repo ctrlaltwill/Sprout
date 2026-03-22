@@ -267,11 +267,11 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
 
   // Mode picker row
   const modeRow = footer.createDiv({ cls: "bc flex flex-col gap-1 items-start w-full" });
-  const modeLabel = modeRow.createEl("label", {
+  modeRow.createEl("label", {
     cls: "bc text-sm font-medium inline-flex items-center gap-1",
     text: "Mask behavior",
   });
-  const modeHelp = modeRow.createDiv({
+  modeRow.createDiv({
     cls: "bc text-xs text-muted-foreground",
     text: "Hide group hides only masks the by group when studying, other masks will not be present. Hide all hides every group when studying. Reveal settings are available in the plugin settings.",
   });

@@ -410,27 +410,27 @@
   min-width: 250px;
 }
 
-/* Heatmap filter popover: match shared menu hover/active treatment */
-.sprout #sprout-heatmap-filter-popover :is([role="menuitem"], [role="menuitemradio"]).group {
+/* Analytics filter popovers: shared menu hover/active treatment */
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group {
   border: 1px solid var(--color-base-00);
 }
 
-.sprout #sprout-heatmap-filter-popover :is([role="menuitem"], [role="menuitemradio"]).group:is(:hover, :focus, :focus-visible, :active),
-.sprout #sprout-heatmap-filter-popover [role="menuitemradio"].group[aria-checked="true"],
-.sprout #sprout-heatmap-filter-popover [role="menuitem"].group[aria-current="true"],
-.sprout #sprout-heatmap-filter-popover [role="menuitem"].group[aria-selected="true"] {
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group:is(:hover, :focus, :focus-visible, :active),
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitemradio"].group[aria-checked="true"],
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-current="true"],
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-selected="true"] {
   background-color: var(--color-base-20);
   color: var(--text-color);
   border: 1px solid var(--color-base-35);
 }
 
-.sprout #sprout-heatmap-filter-popover [role="button"],
-.sprout #sprout-heatmap-filter-popover .text-sm.text-muted-foreground.cursor-pointer {
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"],
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer {
   border: 1px solid var(--color-base-00);
 }
 
-.sprout #sprout-heatmap-filter-popover [role="button"]:hover,
-.sprout #sprout-heatmap-filter-popover .text-sm.text-muted-foreground.cursor-pointer:is(:hover, :focus, :focus-visible, :active) {
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"]:hover,
+.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer:is(:hover, :focus, :focus-visible, :active) {
   background-color: var(--color-base-20);
   color: var(--text-color);
   border: 1px solid var(--color-base-35);

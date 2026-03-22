@@ -576,7 +576,7 @@ export function NewCardsPerDayChart(props: {
                   <input
                     type="text"
                     placeholder="Search decks"
-                    className="bc input w-full text-sm"
+                    className="bc input w-full text-sm sprout-filter-search-input"
                     value={deckQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -622,7 +622,7 @@ export function NewCardsPerDayChart(props: {
                   <input
                     type="text"
                     placeholder="Search groups"
-                    className="bc input w-full text-sm"
+                    className="bc input w-full text-sm sprout-filter-search-input"
                     value={groupQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;

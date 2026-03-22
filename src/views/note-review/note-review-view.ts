@@ -5,7 +5,7 @@ import { setCssProps } from "../../platform/core/ui";
 import { SPROUT_HOME_CONTENT_SHELL_CLASS, SPROUT_TITLE_STRIP_LABEL_CLASS } from "../../platform/core/ui-classes";
 import type SproutPlugin from "../../main";
 import { t } from "../../platform/translations/translator";
-import { initAOS, cascadeAOSOnLoad, resetAOS } from "../../platform/core/aos-loader";
+import { initAOS, resetAOS } from "../../platform/core/aos-loader";
 import { NoteReviewSqlite, type NoteReviewRow } from "../../platform/core/note-review-sqlite";
 import { computeLkrsLoadFactor, initialLkrsDueTime, reviewWithLkrs } from "../../engine/note-review/lkrs";
 import { defaultFsrsNoteRow, gradeNoteFsrs, gradeNoteFsrsPass } from "../../engine/note-review/fsrs";
@@ -1105,19 +1105,16 @@ export class SproutNoteReviewView extends ItemView {
     }
     clearAos(titleTimerHost);
     if (animationsEnabled && !this._didEntranceAos && !coachShellMode && !suppressEntranceAos) {
-      applyAos(stripEl, 0, "fade-up");
-      applyAos(contentShell, 100, "fade-up");
-      const maxDelay = cascadeAOSOnLoad(root, { stepMs: 0, baseDelayMs: 0, durationMs: AOS_DURATION, overwriteDelays: false });
-      const fallbackAfterMs = Math.max(600, Math.floor(maxDelay + AOS_DURATION + 250));
-      setTimeout(() => {
-        root.querySelectorAll("[data-aos]").forEach((el) => {
-          if (!(el instanceof HTMLElement) || !el.isConnected) return;
-          const style = getComputedStyle(el);
-          if (style.opacity === "0" || style.visibility === "hidden") {
-            el.classList.add("sprout-aos-fallback");
-          }
-        });
-      }, fallbackAfterMs);
+      if (stripEl) {
+        clearAos(stripEl);
+        stripEl.classList.remove("sprout-note-review-enter-title");
+        void stripEl.offsetWidth;
+        stripEl.classList.add("sprout-note-review-enter-title");
+      }
+      clearAos(contentShell);
+      contentShell.classList.remove("sprout-note-review-enter-shell");
+      void contentShell.offsetWidth;
+      contentShell.classList.add("sprout-note-review-enter-shell");
       this._didEntranceAos = true;
     } else if (!animationsEnabled) {
       root.querySelectorAll("[data-aos]").forEach((el) => {

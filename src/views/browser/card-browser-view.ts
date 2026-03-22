@@ -20,7 +20,7 @@ import type { CardRecord } from "../../platform/core/store";
 import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
 import { unsuspendCard, suspendCard } from "../../engine/scheduler/scheduler";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
-import { initAOS, cascadeAOSOnLoad, resetAOS } from "../../platform/core/aos-loader";
+import { initAOS, resetAOS } from "../../platform/core/aos-loader";
 import { log } from "../../platform/core/logger";
 import { queryFirst, setCssProps } from "../../platform/core/ui";
 import { createTitleStripFrame } from "../../platform/core/view-primitives";
@@ -141,6 +141,7 @@ export class SproutCardBrowserView extends ItemView {
 
   private _rootEl: HTMLElement | null = null;
   private _titleStripEl: HTMLElement | null = null;
+  private _didEntranceAos = false;
   // ✅ shared view header renderer
   private _header: SproutHeader | null = null;
 
@@ -179,6 +180,7 @@ export class SproutCardBrowserView extends ItemView {
     this._header = null;
     this._titleStripEl?.remove();
     this._titleStripEl = null;
+    this._didEntranceAos = false;
     this._disposeMobileKeyboardSync();
     this._disposeUiPopovers();
     resetAOS();
@@ -894,44 +896,41 @@ export class SproutCardBrowserView extends ItemView {
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
     const titleStripEl =
       this._titleStripEl ?? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.lk-browser-title-strip");
-    if (animationsEnabled) {
+    if (animationsEnabled && !this._didEntranceAos) {
       if (titleStripEl) {
-        titleStripEl.setAttribute("data-aos", "fade-up");
-        titleStripEl.setAttribute("data-aos-delay", "0");
-        titleStripEl.setAttribute("data-aos-anchor-placement", "top-top");
-        titleStripEl.setAttribute("data-aos-duration", String(AOS_DURATION));
+        titleStripEl.removeAttribute("data-aos");
+        titleStripEl.removeAttribute("data-aos-delay");
+        titleStripEl.removeAttribute("data-aos-anchor-placement");
+        titleStripEl.removeAttribute("data-aos-duration");
+        titleStripEl.classList.remove("lk-browser-enter-title");
+        // Force reflow so reopening the view can replay the entrance class.
+        void titleStripEl.offsetWidth;
+        titleStripEl.classList.add("lk-browser-enter-title");
       }
-      contentShell.setAttribute("data-aos", "fade-up");
-      contentShell.setAttribute("data-aos-delay", "100");
-      contentShell.setAttribute("data-aos-anchor-placement", "top-top");
-      contentShell.setAttribute("data-aos-duration", String(AOS_DURATION));
-
-      try {
-        initAOS({ duration: AOS_DURATION, easing: "ease-out", once: true, offset: 50 });
-      } catch {
-        // best-effort
-      }
+      contentShell.removeAttribute("data-aos");
+      contentShell.removeAttribute("data-aos-delay");
+      contentShell.removeAttribute("data-aos-anchor-placement");
+      contentShell.removeAttribute("data-aos-duration");
+      contentShell.classList.remove("lk-browser-enter-shell");
+      void contentShell.offsetWidth;
+      contentShell.classList.add("lk-browser-enter-shell");
 
       titleStripEl?.classList.remove("aos-animate", "sprout-aos-fallback");
       contentShell.classList.remove("aos-animate", "sprout-aos-fallback");
-      cascadeAOSOnLoad(root, {
-        stepMs: 0,
-        baseDelayMs: 0,
-        durationMs: AOS_DURATION,
-        overwriteDelays: false,
-      });
     } else {
       if (titleStripEl) {
         titleStripEl.removeAttribute("data-aos");
         titleStripEl.removeAttribute("data-aos-delay");
         titleStripEl.removeAttribute("data-aos-anchor-placement");
         titleStripEl.removeAttribute("data-aos-duration");
+        titleStripEl.classList.remove("lk-browser-enter-title");
         titleStripEl.classList.add("aos-animate", "sprout-aos-fallback");
       }
       contentShell.removeAttribute("data-aos");
       contentShell.removeAttribute("data-aos-delay");
       contentShell.removeAttribute("data-aos-anchor-placement");
       contentShell.removeAttribute("data-aos-duration");
+      contentShell.classList.remove("lk-browser-enter-shell");
       contentShell.classList.add("aos-animate", "sprout-aos-fallback");
     }
 
@@ -1022,6 +1021,10 @@ export class SproutCardBrowserView extends ItemView {
     this._updateSuspendButtonState();
     this.refreshTable();
     this._setupMobileKeyboardSync();
+
+    if (animationsEnabled && !this._didEntranceAos) {
+      this._didEntranceAos = true;
+    }
 
   }
 }

@@ -36,7 +36,6 @@ import { renderClozeFront } from "./question-cloze";
 import type { ClozeRenderOptions } from "./question-cloze";
 import { renderDeckMode } from "./render-deck";
 import { renderSessionMode } from "./render-session";
-import { cascadeAOSOnLoad } from "../../platform/core/aos-loader";
 
 import { openSproutImageZoom } from "./zoom";
 import { SproutMarkdownHelper } from "./markdown-render";
@@ -2018,15 +2017,21 @@ export class SproutReviewerView extends ItemView {
         if (animationsEnabled && !suppressEntranceAos) {
           const titleStrip = this._titleStripEl;
           if (titleStrip) {
-            titleStrip.setAttribute("data-aos", "fade-up");
-            titleStrip.setAttribute("data-aos-anchor-placement", "top-top");
-            titleStrip.setAttribute("data-aos-duration", String(AOS_DURATION));
+            titleStrip.removeAttribute("data-aos");
+            titleStrip.removeAttribute("data-aos-delay");
+            titleStrip.removeAttribute("data-aos-anchor-placement");
+            titleStrip.removeAttribute("data-aos-duration");
+            titleStrip.classList.remove("lk-review-enter-title");
+            void titleStrip.offsetWidth;
+            titleStrip.classList.add("lk-review-enter-title");
           }
-          contentHost.setAttribute("data-aos", "fade-up");
-          contentHost.setAttribute("data-aos-delay", "100");
-          contentHost.setAttribute("data-aos-anchor-placement", "top-top");
-          contentHost.setAttribute("data-aos-duration", String(AOS_DURATION));
-          cascadeAOSOnLoad(root, { stepMs: 0, baseDelayMs: 0, durationMs: AOS_DURATION, overwriteDelays: false });
+          contentHost.removeAttribute("data-aos");
+          contentHost.removeAttribute("data-aos-delay");
+          contentHost.removeAttribute("data-aos-anchor-placement");
+          contentHost.removeAttribute("data-aos-duration");
+          contentHost.classList.remove("lk-review-enter-shell");
+          void contentHost.offsetWidth;
+          contentHost.classList.add("lk-review-enter-shell");
         }
         this._firstDeckRender = false;
       }
@@ -2195,19 +2200,25 @@ export class SproutReviewerView extends ItemView {
     // Only arm timer on first render of session, not on card/reveal changes
     if (this._firstSessionRender) {
       const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
-      // Initialize AOS animations for reviewer cards
+      // Animate reviewer title strip first, then shell, with Coach-matching timing.
       if (animationsEnabled && !coachShellMode && !suppressEntranceAos) {
         const titleStrip = this._titleStripEl;
         if (titleStrip) {
-          titleStrip.setAttribute("data-aos", "fade-up");
-          titleStrip.setAttribute("data-aos-anchor-placement", "top-top");
-          titleStrip.setAttribute("data-aos-duration", String(AOS_DURATION));
+          titleStrip.removeAttribute("data-aos");
+          titleStrip.removeAttribute("data-aos-delay");
+          titleStrip.removeAttribute("data-aos-anchor-placement");
+          titleStrip.removeAttribute("data-aos-duration");
+          titleStrip.classList.remove("lk-review-enter-title");
+          void titleStrip.offsetWidth;
+          titleStrip.classList.add("lk-review-enter-title");
         }
-        contentHost.setAttribute("data-aos", "fade-up");
-        contentHost.setAttribute("data-aos-delay", "100");
-        contentHost.setAttribute("data-aos-anchor-placement", "top-top");
-        contentHost.setAttribute("data-aos-duration", String(AOS_DURATION));
-        cascadeAOSOnLoad(root, { stepMs: 0, baseDelayMs: 0, durationMs: AOS_DURATION, overwriteDelays: false });
+        contentHost.removeAttribute("data-aos");
+        contentHost.removeAttribute("data-aos-delay");
+        contentHost.removeAttribute("data-aos-anchor-placement");
+        contentHost.removeAttribute("data-aos-duration");
+        contentHost.classList.remove("lk-review-enter-shell");
+        void contentHost.offsetWidth;
+        contentHost.classList.add("lk-review-enter-shell");
       }
       this._firstSessionRender = false;
       this.armTimer();

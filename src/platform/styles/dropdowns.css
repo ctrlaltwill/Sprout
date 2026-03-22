@@ -21,7 +21,7 @@
 
 /* ---- Dropdown menu basics ---- */
 
-.sprout .dropdown-menu hr {margin: 0; border-radius: var(--radius-m);
+.sprout .dropdown-menu hr {margin: 0; border-radius: var(--radius-md);
     overflow: hidden;}
 
 
@@ -30,7 +30,7 @@
 .sprout.dropdown-menu .bg-popover {
   background-color: #fff;
   color: var(--popover-fg, var(--foreground));
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
 }
 
 /* Menu item hover/focus: light theme - very light grey */
@@ -67,7 +67,7 @@
 
 /* Inherit theme border-radius on all popover panels (overrides Tailwind rounded-lg) */
 .sprout :where(.rounded-lg.border.bg-popover) {
-  border-radius: var(--button-radius, var(--radius-m));
+  border-radius: var(--button-radius, var(--radius-md));
 }
 
 /* Menu items: role=menuitem + role=menuitemradio */
@@ -140,7 +140,7 @@
 .sprout :where(.bc.p-1, .p-1) [role="button"] {
   color: var(--text-color);
   margin: 1px 0;
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
 }
 
 .sprout :where(.bc.p-1, .p-1) [role="button"]:hover,
@@ -242,7 +242,7 @@
 /* "Reset filters" (clickable text row) */
 .sprout :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
   color: var(--text-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   padding-top: 6px;
   padding-bottom: 6px;
 }

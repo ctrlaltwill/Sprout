@@ -134,7 +134,7 @@
 .sprout .sprout-btn-toolbar:active {
   background: var(--color-base-35)!important;
   color: var(--color-base-100) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
 }
 
 /* ---- Generic reusable button variants ---- */

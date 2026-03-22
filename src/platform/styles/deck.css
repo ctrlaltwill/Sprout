@@ -2,6 +2,26 @@
    DECK — Disclosure chevrons, group-select popover, search, expand icons.
    ========================================================================== */
 
+@keyframes lk-review-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 100px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.sprout .lk-review-title-strip.lk-review-enter-title {
+  animation: lk-review-fade-up 600ms ease-out 0ms both;
+}
+
+.sprout .lk-review-content-shell.lk-review-enter-shell {
+  opacity: 0;
+  animation: lk-review-fade-up 600ms ease-out 100ms both;
+}
+
 /* ---- Disclosure chevrons ---- */
 
 .sprout .sprout-deck-disclosure {

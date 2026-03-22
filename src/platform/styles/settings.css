@@ -165,20 +165,20 @@
 
 .sprout-guide-nav-btn.is-active {
   background-color: var(--color-base-30) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
 .sprout-guide-nav-btn.is-active:hover,
 .sprout-guide-nav-btn.is-active:focus-visible {
   background-color: var(--color-base-30) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
 }
 
 .sprout-guide-nav-btn[aria-expanded="true"],
 .sprout-guide-nav-group:has(.sprout-guide-dropdown.is-visible) > .sprout-guide-nav-btn {
   background-color: var(--color-base-30) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
@@ -982,7 +982,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout-settings .sprout-settings-table-wrap {
   padding: 8px;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   overflow-x: auto;
   overflow-y: hidden;
   background: var(--background-secondary, var(--background));
@@ -1187,7 +1187,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout-settings .sprout-settings-icon-btn {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   box-shadow: none;
   outline: none;
   padding: 0;
@@ -1310,7 +1310,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
   display: inline-flex;
   flex-wrap: wrap;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -1374,7 +1374,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 
 .sprout-settings-tab-btn-standalone {
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-m, var(--radius-m));
+  border-radius: var(--radius-m, var(--radius-md));
   box-shadow: none;
 }
 
@@ -1496,7 +1496,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   background: var(--interactive-accent);
   color: var(--text-on-accent);
   flex-shrink: 0;
@@ -1716,7 +1716,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
   border: 1px solid var(--color-base-30);
   padding: 10px 0;
   background-color: var(--background-primary);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1771,7 +1771,7 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
   flex: 1;
   overflow: hidden;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   background: var(--background-primary);
 }
 
@@ -1932,13 +1932,13 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 .sprout .sprout-settings-action-btn:not(.sprout-ss-trigger):hover,
 .sprout .sprout-settings-action-btn:not(.sprout-ss-trigger):focus-visible {
   background-color: var(--color-base-30) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
 .sprout .sprout-settings-action-btn:not(.sprout-ss-trigger):is(.is-active, [aria-pressed="true"], [aria-expanded="true"]) {
   background-color: var(--color-base-30) !important;
-  border-color: var(--color-base-50) !important;
+  border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
@@ -1992,7 +1992,7 @@ color: #fff !important;
 
 .sprout-settings-tab-content textarea {
 color: var(--color-base-100);
-    border: 1px solid var(--color-base-50) !important;
+    border: 1px solid var(--color-base-40) !important;
     resize: vertical;
     border-radius: var(--radius-md);
     width: 100%;
@@ -2011,7 +2011,7 @@ color: var(--color-base-100);
 .sprout-settings-tab-content input[type="password"],
 .sprout-settings-tab-content input[type="number"] {
   min-height: 38px;
-  border: 1px solid var(--color-base-50);
+  border: 1px solid var(--color-base-40);
   color: var(--color-base-100);
   font-size: 0.9rem !important;
 }
@@ -2055,7 +2055,7 @@ color: var(--color-base-100);
   height: 36px;
   padding: 2px;
   border: 1.5px solid var(--sprout-border-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   background: var(--background-primary);
   cursor: pointer;
   vertical-align: middle;
@@ -2126,7 +2126,7 @@ color: var(--color-base-100);
 
 .sprout-rv-preset-card {
   border: 1.5px solid var(--sprout-border-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   cursor: pointer;
   background: var(--background-primary);
@@ -2169,7 +2169,7 @@ color: var(--color-base-100);
 
 .sprout-rv-live-preview {
   border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   background: var(--background-primary-alt);
   padding: 12px;
   margin: 8px 0 14px;
@@ -2228,17 +2228,17 @@ color: var(--color-base-100);
 
 .sprout-ss-trigger:hover {
       background-color: var(--color-base-30) !important;
-    border: 1px solid var(--color-base-50) !important;
+    border: 1px solid var(--color-base-40) !important;
 }
 
 .sprout-ss-trigger:focus-visible {
       background-color: var(--color-base-30) !important;
-    border: 1px solid var(--color-base-50) !important;
+    border: 1px solid var(--color-base-40) !important;
 }
 
 .sprout-ss-trigger[aria-expanded="true"] {
       background-color: var(--color-base-30) !important;
-    border: 1px solid var(--color-base-50) !important;
+    border: 1px solid var(--color-base-40) !important;
 }
 
 .sprout-ss-trigger-label {
@@ -2388,13 +2388,13 @@ color: var(--color-base-100);
 }
 .sprout-ss-item[aria-selected="true"] {
   background-color: var(--color-base-30);
-    border: 1px solid var(--color-base-50);
+    border: 1px solid var(--color-base-40);
 }
 
 .sprout-ss-item[aria-selected="true"]:hover,
 .sprout-ss-item[aria-selected="true"]:focus {
   background-color: var(--color-base-30);
-    border: 1px solid var(--color-base-50);
+    border: 1px solid var(--color-base-40);
 }
 
 /* ---- Radio dot indicator ---- */

@@ -1812,6 +1812,7 @@ export class SproutCoachView extends ItemView {
     const freshPlans = this._coachDb.listPlans();
     const maxPlans = 4;
     const shownPlans = [...freshPlans].sort((a, b) => a.exam_date_utc - b.exam_date_utc || a.scope_name.localeCompare(b.scope_name)).slice(0, maxPlans);
+    shell.classList.toggle("sprout-coach-shell--empty", shownPlans.length === 0);
     const shownIds = new Set(shownPlans.map((plan) => planScopeId(plan)));
     if (!this._selectedPlanScopeId || !shownIds.has(this._selectedPlanScopeId)) {
       this._selectedPlanScopeId = shownPlans[0] ? planScopeId(shownPlans[0]) : null;

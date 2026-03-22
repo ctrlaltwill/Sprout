@@ -2,6 +2,26 @@
    NOTE REVIEW — full-note reading surface + floating action dock.
    ========================================================================== */
 
+@keyframes lk-note-review-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 100px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.sprout .sprout-note-review-title-strip.sprout-note-review-enter-title {
+  animation: lk-note-review-fade-up 600ms ease-out 0ms both;
+}
+
+.sprout .sprout-note-review-content-shell.sprout-note-review-enter-shell {
+  opacity: 0;
+  animation: lk-note-review-fade-up 600ms ease-out 100ms both;
+}
+
 .workspace-leaf-content.sprout[data-type="learnkit-note-review"] {
   background-color: var(--background-primary) !important;
 }

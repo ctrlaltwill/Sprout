@@ -213,9 +213,9 @@ export class BulkEditModal extends Modal {
         "min-height": `${minControlHeight}px`,
         height: `${minControlHeight}px`,
         "max-height": `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`,
+        resize: "vertical",
+        "overflow-y": "auto",
       });
-      control.style.resize = "vertical";
-      control.style.overflowY = "auto";
     }
 
     const clampHeight = (height: number) => {
@@ -292,14 +292,14 @@ export class BulkEditModal extends Modal {
     control.addEventListener("focus", () => {
       wrap.classList.add("sprout-flag-editor--focused");
       if (control instanceof HTMLTextAreaElement) {
-        wrap.style.overflow = "visible";
+        setCssProps(wrap, "overflow", "visible");
       }
       syncPreviewHeight();
     });
     control.addEventListener("blur", () => {
       wrap.classList.remove("sprout-flag-editor--focused");
       if (control instanceof HTMLTextAreaElement) {
-        wrap.style.overflow = "hidden";
+        setCssProps(wrap, "overflow", "hidden");
       }
       renderOverlay();
     });

@@ -45,8 +45,6 @@ const CLOZE_TOOLTIP =
   "Use cloze syntax to hide text in your prompt.\n{{c1::text}} creates the first blank.\nUse {{c2::text}} for a different blank, or reuse {{c1::text}} to reveal together.\nShortcuts: Cmd/Ctrl+Shift+C (new blank), Cmd/Ctrl+Shift+Alt/Option+C (same blank number).";
 const FORMAT_TOOLTIP =
   "Formatting: Cmd+B (bold), Cmd+I (italic).";
-const OQ_TOOLTIP =
-  "Write the steps in the correct order.\nYou must have at least 2 steps.\nDrag the grip handles to reorder steps.\nSteps are shuffled during review.";
 const PLACEHOLDER_TITLE = "Enter a descriptive title for this flashcard";
 const PLACEHOLDER_CLOZE =
   "Type your text and wrap parts to hide with {{c1::text}}. Use {{c2::text}} for separate deletions, or {{c1::text}} again to hide together.";

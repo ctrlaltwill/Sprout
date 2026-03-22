@@ -197,42 +197,24 @@ function TestsTooltipContent(props: {
   active?: boolean;
   payload?: Array<{ dataKey?: string | number; payload?: unknown }>;
   label?: number | string;
+  averagesByDay: Map<number, DailyAveragePoint>;
 }) {
-  if (!props.active || !props.payload || !props.payload.length) return null;
-
-  const scatterItem = props.payload.find((entry) => entry.dataKey === "score");
-  const dailyItem = props.payload.find((entry) => entry.dataKey === "averageScore");
-
-  const scatterDatum = scatterItem?.payload as ScatterPoint | undefined;
-  const dailyDatum = dailyItem?.payload as DailyAveragePoint | undefined;
+  if (!props.active) return null;
 
   const hoveredDayIndex =
     typeof props.label === "number"
       ? props.label
-      : scatterDatum?.dayIndex ?? dailyDatum?.dayIndex;
+      : Number(props.label);
 
-  const hasStudyOnDay =
-    Boolean(scatterDatum) || (dailyDatum != null && dailyDatum.attempts > 0 && dailyDatum.averageScore != null);
+  if (!Number.isFinite(hoveredDayIndex)) return null;
 
-  if (!Number.isFinite(hoveredDayIndex) || !hasStudyOnDay) return null;
-
-  if (scatterDatum) {
-    return (
-      <div className="sprout-data-tooltip-surface">
-        <div className="text-sm font-medium text-background">{scatterDatum.date}</div>
-        <div className="text-background">Test result: {scatterDatum.score}%</div>
-        {scatterDatum.autoSubmitted ? <div className="text-background">Auto-submitted</div> : null}
-      </div>
-    );
-  }
-
+  const dailyDatum = props.averagesByDay.get(hoveredDayIndex);
   if (!dailyDatum || dailyDatum.averageScore == null) return null;
 
   return (
     <div className="sprout-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{dailyDatum.date}</div>
-      <div className="text-background">Daily average: {dailyDatum.averageScore.toFixed(1)}%</div>
-      <div className="text-background">Attempts: {dailyDatum.attempts}</div>
+      <div className="text-background">Average test result: {dailyDatum.averageScore.toFixed(1)}%</div>
     </div>
   );
 }
@@ -355,6 +337,13 @@ export function TestsAnalyticsCard(props: {
     () => buildDailyAverageSeries(allRows, durationDays, formatter, tz, todayIdx),
     [allRows, durationDays, formatter, tz, todayIdx],
   );
+  const averagesByDay = React.useMemo(() => {
+    const grouped = new Map<number, DailyAveragePoint>();
+    for (const point of dailyAverageSeries) {
+      grouped.set(point.dayIndex, point);
+    }
+    return grouped;
+  }, [dailyAverageSeries]);
 
   const xTicks = React.useMemo(() => {
     const endIdx = startIdx + durationDays - 1;
@@ -365,6 +354,10 @@ export function TestsAnalyticsCard(props: {
     formatAxisLabel(value, todayIdx, (idx) => formatDayLabel(idx, tz));
 
   const durationOptions = React.useMemo(() => [7, 30, 90], []);
+  const resetFilters = React.useCallback(() => {
+    setDurationDays(30);
+    setDurationOpen(false);
+  }, []);
 
   return (
     <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
@@ -441,6 +434,8 @@ export function TestsAnalyticsCard(props: {
                     ))}
                   </div>
                 ) : null}
+                <div className="h-px bg-border my-1" role="separator" />
+                <div className="text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>Reset filters</div>
               </div>
             </div>
           ) : null}
@@ -463,17 +458,31 @@ export function TestsAnalyticsCard(props: {
                   tick={{ fontSize: 11 }}
                 />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={30} tickFormatter={(v: number) => `${v}%`} />
-                <Tooltip content={<TestsTooltipContent />} cursor={{ fill: "var(--background-modifier-hover)", opacity: 0.5 }} />
-                <Scatter data={scatterData} dataKey="score" name="Score" fill="var(--chart-accent-2)" fillOpacity={0.8} />
+                <Tooltip
+                  content={(
+                    <TestsTooltipContent
+                      averagesByDay={averagesByDay}
+                    />
+                  )}
+                  cursor={{ stroke: "var(--border)", strokeDasharray: "3 3", strokeWidth: 1 }}
+                />
+                <Scatter
+                  data={scatterData}
+                  dataKey="score"
+                  name="Score"
+                  fill="var(--chart-accent-2)"
+                  fillOpacity={0.8}
+                />
                 <Line
                   data={dailyAverageSeries}
                   dataKey="averageScore"
                   name="Daily average"
+                  type="monotoneX"
                   stroke="var(--chart-accent-3)"
                   strokeWidth={2}
-                  connectNulls={false}
-                  dot={{ r: 2 }}
-                  activeDot={{ r: 4 }}
+                  connectNulls
+                  dot={false}
+                  activeDot={false}
                 />
               </ComposedChart>
             </ResponsiveContainer>

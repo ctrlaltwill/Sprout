@@ -208,7 +208,7 @@
 }
 
 .sprout .sprout-deck-search-dropdown [role="menuitem"].sprout-deck-search-item {
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   outline: none;
 }
 

@@ -68,6 +68,27 @@
   --lk-browser-row-hover-border: var(--color-base-35);
 }
 
+/* Deterministic Browser entrance sequence: title strip first, shell second. */
+@keyframes lk-browser-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 100px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.sprout .lk-browser-title-strip.lk-browser-enter-title {
+  animation: lk-browser-fade-up 600ms ease-out 0ms both;
+}
+
+.sprout .lk-browser-content-shell.lk-browser-enter-shell {
+  opacity: 0;
+  animation: lk-browser-fade-up 600ms ease-out 100ms both;
+}
+
 /* ---- Density toggle ---- */
 
 .sprout .lk-browser-density-toggle {

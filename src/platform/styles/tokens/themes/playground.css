@@ -45,7 +45,7 @@ body[data-sprout-theme-preset="playground"] .sprout,
   --sidebar-accent-foreground: var(--color-base-100);
 
   /* Muted text */
-  --muted-foreground: var(--color-base-50);
+  --muted-foreground: var(--color-base-40);
 
   /* Destructive */
   --destructive: rgb(231, 0, 11);

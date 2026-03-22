@@ -815,7 +815,7 @@
 
 .sprout-assistant-popup-overflow:focus-visible,
 .sprout-assistant-popup-overflow:active {
-  border-color: var(--color-base-50);
+  border-color: var(--color-base-40);
 }
 
 .sprout-assistant-popup-overflow .svg-icon {
@@ -870,7 +870,7 @@
 .sprout-assistant-popup-header-menu-item[aria-current="true"],
 .sprout-assistant-popup-header-menu-item[aria-selected="true"] {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.04));
-  border: 1px solid var(--color-base-50);
+  border: 1px solid var(--color-base-40);
 }
 
 .sprout-assistant-popup-header-menu-item.is-danger {
@@ -1421,7 +1421,7 @@
 
 .sprout-assistant-popup-attach-btn:focus-visible,
 .sprout-assistant-popup-attach-btn:active {
-  border-color: var(--color-base-50);
+  border-color: var(--color-base-40);
 }
 
 .sprout-assistant-popup-attach-btn:disabled {
@@ -1845,7 +1845,7 @@
 .sprout-assistant-popup-switch-ask-btn:hover:not(:disabled),
 .sprout-assistant-popup-switch-ask-btn:focus-visible {
   background: var(--background-modifier-hover);
-  border-color: var(--color-base-50);
+  border-color: var(--color-base-40);
   color: var(--color-base-100);
   box-shadow: none;
 }
@@ -1952,7 +1952,7 @@
 }
 
 .sprout-assistant-popup-generated-card.is-clickable:hover {
-  border-color: var(--color-base-50);
+  border-color: var(--color-base-40);
   background: color-mix(in srgb, var(--interactive-accent, var(--text-accent)) 4%, transparent);
 }
 

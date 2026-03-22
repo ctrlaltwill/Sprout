@@ -482,7 +482,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
                   <input
                     type="text"
                     placeholder="Search decks"
-                    className={"input w-full text-sm"}
+                    className={"input w-full text-sm sprout-filter-search-input"}
                     value={deckQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -528,7 +528,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
                   <input
                     type="text"
                     placeholder="Search groups"
-                    className={"input w-full text-sm"}
+                    className={"input w-full text-sm sprout-filter-search-input"}
                     value={tagQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
