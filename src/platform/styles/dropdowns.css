@@ -75,6 +75,7 @@
   :is([role="menuitem"], [role="menuitemradio"]).group {
   color: var(--text-color);
   margin: 1px 0;
+  min-height: 36px;
   outline: none;
 }
 

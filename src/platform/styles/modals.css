@@ -50,19 +50,33 @@
 
 .sprout .lk-modal-container .modal-bg,
 .sprout .modal-container.mod-dim .modal-bg,
-.lk-modal-dim .modal-bg {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  opacity: 0.6;
-  background-color: var(--background);
-  position: absolute;
-  inset: 0;
+.sprout .lk-modal-dim .modal-bg,
+.sprout .modal-container .modal-bg,
+.lk-modal-container .modal-bg,
+.modal-container.mod-dim .modal-bg,
+.lk-modal-dim .modal-bg,
+.modal-container .modal-bg,
+.modal-container.lk-modal-container.lk-modal-dim.mod-dim > .modal-bg,
+.modal-container.lk-modal-container.lk-modal-dim.sprout.mod-dim > .modal-bg {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  inset-inline-start: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  opacity: 0.6 !important;
+  background: var(--background) !important;
+  background-color: var(--background) !important;
 }
 
 /* ---- Panel ---- */
 
 .sprout .lk-modals.modal {
     border: var(--sprout-border-width) solid var(--sprout-border-color);
+    width: min(720px, 100%);
     background: var(--background);
     border-radius: var(--radius-lg);
   max-width: min(1080px, 95%);
@@ -71,17 +85,15 @@
     overflow: hidden;
     outline: none;
     height: auto;
-    box-shadow: var(--lk-shadow-modal);
 }
 
 .sprout .modal-container .modal {
   border-radius: var(--radius-lg);
     border: 1px solid var(--color-base-40);
     background: var(--color-base-00);
-    box-shadow: var(--lk-shadow-modal);
     max-width: min(1080px, 95%);
     height: auto;
-    max-height: min(80vh, 720px);
+    max-height: min(85vh);
     padding: 1.2rem;
     position: relative;
     overflow: hidden;
@@ -120,6 +132,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   text-align: left;
+  padding: 0 0 0.2rem 0 !important;
 }
 
 .sprout .modal-container .modal-content {
@@ -151,9 +164,78 @@
 }
 
 .sprout .lk-modals.modal .sprout-btn-toolbar {
-  min-height: 40px;
+  max-height: 36px !important;
   background-color: var(--color-base-20);
     border: 1px solid var(--color-base-35);
+}
+
+/* Standard modal shell buttons: lock compact spacing regardless of theme defaults. */
+.sprout .lk-modals.modal :is(
+  .sprout-card-creator-close-btn,
+  .sprout-attachment-picker-close-btn,
+  .sprout-card-creator-footer .sprout-btn-toolbar,
+  .sprout-attachment-picker-footer .sprout-btn-toolbar
+) {
+  padding: 4px 12px !important;
+}
+
+.sprout .lk-modals.modal.sprout-card-creator-modal .modal-header .sprout-btn-toolbar.sprout-card-creator-close-btn {
+  padding: 4px 8px !important;
+}
+
+.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-card-creator-close-btn {
+  min-width: 36px;
+  gap: 0;
+  overflow: hidden;
+}
+
+.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-card-creator-close-btn [data-sprout-label="true"] {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  transform: translateX(-4px);
+  transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-card-creator-close-btn:is(:hover, :focus-visible, :active) [data-sprout-label="true"] {
+  max-width: 7rem;
+  opacity: 1;
+  margin-left: 6px;
+  transform: translateX(0);
+}
+
+.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-panel {
+  background: var(--color-base-00);
+  border: 1px solid var(--color-base-40);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  padding: 4px 6px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.sprout .sprout-card-creator-type-popover [role="menu"] {
+  width: 100%;
+}
+
+.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-item {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-normal);
+}
+
+.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-item:is(:hover, :focus, :focus-visible, :active),
+.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-item[aria-checked="true"] {
+  background: var(--color-base-20) !important;
+  border-color: var(--color-base-35) !important;
+  color: var(--color-base-100) !important;
 }
 
 .sprout .lk-modals.modal .sprout-tag-box {
@@ -178,6 +260,7 @@
   display: inline-block !important;
   object-fit: cover;
   vertical-align: text-bottom;
+  padding: 0px !important;
   margin: 0 0.3em;
 }
 
@@ -204,6 +287,40 @@
   min-height: 36px !important;
   height: 36px !important;
   max-height: 36px !important;
+  font-family: var(--font-monospace);
+  font-size: 0.85rem;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+
+/* Center compact MCQ/OQ row text vertically in both preview and edit states. */
+.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-flag-editor-control {
+  line-height: 1.2;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-flag-editor-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  line-height: 1.2;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row)
+  .sprout-flag-editor-overlay.sprout-flag-editor-overlay--multiline {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  overflow-y: hidden;
+}
+
+.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row)
+  .sprout-flag-editor-overlay > * {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-input-fixed,
@@ -211,6 +328,63 @@
   min-height: 36px !important;
   height: 36px !important;
   max-height: 36px !important;
+}
+
+/* OQ row chrome (grip + index + delete) should align to the same 36px centerline as the input. */
+.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) {
+  align-items: center;
+}
+
+.sprout .lk-modals.modal .sprout-oq-editor-row :is(.sprout-oq-grip, .sprout-oq-step-index, .sprout-oq-del-btn) {
+  min-height: 36px !important;
+  height: 36px !important;
+  max-height: 36px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1 !important;
+  margin: 0;
+  align-self: center;
+}
+
+/* MCQ row chrome (checkbox + delete) aligns to the same centerline as the 36px input lane. */
+.sprout .lk-modals.modal .sprout-edit-mcq-option-row :is(.sprout-mcq-correct-checkbox, .sprout-remove-btn-ghost) {
+  margin: 0;
+  align-self: center;
+}
+
+.sprout .lk-modals.modal .sprout-edit-mcq-option-row .sprout-remove-btn-ghost {
+  min-height: 36px;
+  height: 36px;
+  max-height: 36px;
+}
+
+.sprout .lk-modals.modal .sprout-oq-editor-row .sprout-flag-editor-wrap,
+.sprout .lk-modals.modal .sprout-oq-add-row .sprout-flag-editor-wrap {
+  align-self: center;
+}
+
+/* Add flashcard modal: title/question/answer/extra start at 50px, allow resize up to 150px. */
+.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline {
+  --sprout-flag-preview-height: 60px;
+  --sprout-flag-preview-max-height: 150px;
+  min-height: 60px;
+  max-height: 150px;
+}
+
+.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control {
+  min-height: 60px;
+  max-height: 150px;
+}
+
+.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline .sprout-flag-editor-overlay {
+  min-height: 60px;
+  height: var(--sprout-flag-preview-height, 50px);
+  max-height: var(--sprout-flag-preview-max-height, 150px);
+}
+
+.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control.sprout-textarea-fixed {
+  resize: vertical;
 }
 
 /* Quick edit modal — panel structure matching card-creator & bulk-edit */
@@ -415,7 +589,7 @@
   backdrop-filter: none;
   padding: 0;
   gap: 0;
-  width: min(640px, 100%);
+width: min(720px, 100%);
   max-width: min(640px, 92vw);
   max-height: 90vh;
   box-sizing: border-box;
@@ -663,7 +837,8 @@
   max-width: 100%;
 }
 
-.sprout .lk-modals.modal .sprout-location-input {
+.sprout .lk-modals.modal .sprout-location-input,
+.sprout .lk-modals.modal .sprout-card-meta-grid input.input[disabled] {
   min-height: 40px;
   max-height: 40px;
   height: 40px;
@@ -677,7 +852,11 @@
   opacity: 1;
   color: var(--text-muted);
   background-color: var(--background-secondary, var(--background-primary));
-  border: 1px solid var(--color-base-50);
+  border: 1px solid var(--color-base-50) !important;
+  cursor: default;
+}
+
+.sprout .lk-modals.modal .sprout-card-meta-grid input.input[disabled] {
   cursor: not-allowed;
 }
 
@@ -687,16 +866,17 @@
   height: 40px;
 }
 
-.sprout .lk-modals.modal .sprout-card-meta-field .input {
-  min-height: 40px;
-  max-height: 40px;
-  height: 40px;
-}
-
 .sprout .lk-modals.modal .sprout-card-meta-type-btn {
-  min-height: 40px;
+  min-height: 40px !important;
   max-height: 40px;
   height: 40px;
+  border-radius: var(--radius-md);
+  box-shadow: none !important;
+  color: var(--text-muted);
+  background-color: var(--background-secondary, var(--background-primary));
+  border: 1px solid var(--color-base-50) !important;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .sprout :is(.sprout-btn-primary-action, .sprout-card-creator-add-btn, .sprout-bulk-edit-save-btn, .sprout-io-save-btn) {
@@ -824,23 +1004,59 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
 
 .sprout .sprout-bulk-edit-panel .input,
 .sprout .sprout-bulk-edit-panel input[type="text"].input {
-  height: 100px;
-  min-height: 100px;
+  height: 40px;
+  min-height: 40px;
 }
 
 .sprout .sprout-bulk-edit-panel .sprout-flag-editor-overlay {
   pointer-events: auto;
 }
 
+.sprout .sprout-bulk-edit-panel .sprout-bulk-edit-form--multi .sprout-flag-editor-wrap--multiline {
+  --sprout-flag-preview-height: 50px;
+  --sprout-flag-preview-max-height: 150px;
+  min-height: 50px !important;
+  max-height: 150px !important;
+}
+
+.sprout .sprout-bulk-edit-panel .sprout-bulk-edit-form--multi .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control {
+  min-height: 50px !important;
+  max-height: 150px !important;
+}
+
+.sprout .sprout-bulk-edit-panel .sprout-bulk-edit-form--multi .sprout-flag-editor-wrap--multiline .sprout-flag-editor-overlay {
+  min-height: 50px !important;
+  height: var(--sprout-flag-preview-height, 50px) !important;
+  max-height: var(--sprout-flag-preview-max-height, 150px) !important;
+}
+
 .sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field {
   position: relative;
   width: 100%;
+  border: 1px solid var(--color-base-50) !important;
+  border-radius: var(--radius-md);
+  background: var(--background-modifier-form-field);
+  overflow: hidden;
+  --sprout-single-edit-height: 60px;
+  --sprout-single-edit-max-height: 150px;
+}
+
+.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field:not(.is-preview) {
+  overflow: visible;
 }
 
 .sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field textarea {
   box-sizing: border-box;
   padding: 6px 8px;
-  border: 1px solid var(--sprout-border-color);
+  border: 0 !important;
+  background: transparent;
+  min-height: var(--sprout-single-edit-height, 50px) !important;
+  max-height: var(--sprout-single-edit-max-height, 150px) !important;
+  resize: vertical;
+}
+
+.sprout .sprout-bulk-edit-panel .sprout-flag-editor-wrap.sprout-flag-editor--focused {
+  overflow: visible;
 }
 
 .sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field.is-preview textarea {
@@ -849,9 +1065,9 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
 
 .sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview {
   display: none;
-  border: 1px solid var(--sprout-border-color);
-  border-radius: var(--radius-md);
-  background: var(--background-modifier-form-field);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text-normal);
   padding: 6px 8px;
   box-sizing: border-box;
@@ -859,6 +1075,9 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   overflow-wrap: anywhere;
   overflow: auto;
   cursor: text;
+  min-height: var(--sprout-single-edit-height, 50px) !important;
+  height: var(--sprout-single-edit-height, 50px) !important;
+  max-height: var(--sprout-single-edit-max-height, 150px) !important;
 }
 
 .sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field.is-preview .sprout-single-edit-markdown-preview {
@@ -909,9 +1128,9 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
 }
 
 .sprout .sprout-bulk-tag-box {
-  height: 100px;
-  min-height: 100px;
-  max-height: 100px;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   overflow: auto;
   padding: 6px 8px;
   box-sizing: border-box;
@@ -977,13 +1196,16 @@ body.is-mobile .sprout .sprout-edit-modal {
 /* ---- Image occlusion creator modal ---- */
 
 .sprout .sprout-io-creator-modal {
-  width: min(96vw, 900px);
-  max-width: 96%;
+  width: auto;
+  max-width: min(1080px, 95%);
   height: auto;
-  max-height: 90%;
-  overflow: visible;
-  padding: 0;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  max-height: min(80vh, 720px);
+  overflow: hidden;
+  padding: 1.2rem;
+  border: 1px solid var(--color-base-40);
+  border-radius: var(--radius-lg);
+  background: var(--color-base-00);
+  box-shadow: var(--lk-shadow-modal);
 }
 
 .sprout :is(.sprout-io-creator-modal > .modal-header, .sprout-io-creator-content > .modal-header) {
@@ -1017,14 +1239,35 @@ body.is-mobile .sprout .sprout-edit-modal {
   padding-top: 0;
 }
 
-.sprout .sprout-io-title-input {
-  resize: none;
+.sprout .lk-modals.sprout-io-creator-modal .sprout-io-title-input {
+  resize: vertical;
   min-height: 60px;
+  max-height: 150px;
 }
 
-.sprout .sprout-io-info-input {
-  resize: none;
-  min-height: 80px;
+.sprout .lk-modals.sprout-io-creator-modal .sprout-io-info-input {
+  resize: vertical;
+  min-height: 60px;
+  max-height: 150px;
+}
+
+.sprout .lk-modals.sprout-io-creator-modal .sprout-flag-editor-wrap--multiline {
+  --sprout-flag-preview-height: 60px;
+  --sprout-flag-preview-max-height: 150px;
+  min-height: 60px !important;
+  max-height: 150px !important;
+}
+
+.sprout .lk-modals.sprout-io-creator-modal .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control {
+  min-height: 60px;
+  height: var(--sprout-flag-preview-height, 60px);
+  max-height: 150px;
+}
+
+.sprout .lk-modals.sprout-io-creator-modal .sprout-flag-editor-wrap--multiline .sprout-flag-editor-overlay {
+  min-height: 60px !important;
+  height: var(--sprout-flag-preview-height, 60px) !important;
+  max-height: var(--sprout-flag-preview-max-height, 150px) !important;
 }
 
 .sprout .sprout-io-canvas {
@@ -1039,6 +1282,7 @@ body.is-mobile .sprout .sprout-edit-modal {
   align-self: flex-start;
 }
 
+
 .sprout .sprout-io-file-input {
   display: none;
 }
@@ -1052,6 +1296,8 @@ body.is-mobile .sprout .sprout-edit-modal {
   background-color: var(--background-secondary);
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   border-radius: var(--radius-md, var(--radius-md));
+  background-color: var(--color-base-10) !important;
+    border: 1px solid var(--color-base-40) !important;
 }
 
 .sprout .sprout-io-canvas-placeholder {
@@ -1071,6 +1317,10 @@ body.is-mobile .sprout .sprout-edit-modal {
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.sprout .sprout-io-canvas-container:has(.sprout-io-viewport:not(.sprout-is-hidden)) .sprout-io-canvas-placeholder {
+  display: none !important;
 }
 
 .sprout .sprout-io-stage {
@@ -1107,6 +1357,35 @@ body.is-mobile .sprout .sprout-edit-modal {
   margin-top: 16px;
   padding-top: 16px;
   border-top: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.sprout .sprout-io-creator-modal .sprout-io-creator-close-btn {
+  min-width: 36px;
+  padding: 4px 8px;
+  gap: 0;
+  overflow: hidden;
+}
+
+.sprout .sprout-io-creator-modal .sprout-io-creator-close-btn [data-sprout-label="true"] {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  transform: translateX(-4px);
+  transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.sprout .sprout-io-creator-modal .sprout-io-creator-close-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+  max-width: 7rem;
+  opacity: 1;
+  margin-left: 6px;
+  transform: translateX(0);
 }
 
 /* Ensure modal widths are based on workspace container width, not viewport width. */
@@ -1115,44 +1394,14 @@ body.is-mobile .sprout .sprout-edit-modal {
   max-width: min(1080px, 95%);
 }
 
-/* IO mode picker — button-style dropdown menu */
-.sprout .sprout-io-mode-menu {
-  position: fixed;
-  z-index: var(--lk-z-modal-menu);
-  min-width: 132px;
-  max-width: min(320px, calc(100vw - 16px));
-  padding: 4px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
-  border-radius: var(--radius-md, var(--radius-md));
-  background-color: var(--background);
-  box-shadow: var(--lk-shadow-popover-sm);
-}
-
 .sprout .sprout-io-mode-trigger {
   min-width: 112px;
   justify-content: space-between;
 }
 
-.sprout .sprout-io-mode-menu.hidden {
-  display: none;
-}
-
-.sprout .sprout-io-mode-menu-item {
-  padding: 5px 10px;
-  border-radius: var(--radius-s);
-  font-size: var(--sprout-font-xs);
-  color: var(--foreground);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.sprout .sprout-io-mode-menu-item:hover {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
-}
-
-.sprout .sprout-io-mode-menu-item.is-selected {
-  font-weight: 600;
+.sprout .sprout-io-creator-modal .sprout-io-creator-content,
+.sprout .sprout-io-creator-modal .sprout-io-creator-root {
+  overflow: visible;
 }
 
 .sprout .sprout-io-dlg-cancel {
@@ -1478,6 +1727,11 @@ left: 50px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* IO modal uses a custom Add-style close button in header; hide Obsidian root close control. */
+.sprout .sprout-io-creator-modal > .modal-close-button {
+  display: none !important;
 }
 
 /* Tag-box: ensure visible border inside modals */
@@ -2057,12 +2311,14 @@ left: 50px;
 }
 
 .sprout-io-btn {
+  padding: 4px 8px;
+  min-width: 36px;
   height: 28px;
   border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-base-40);
   background: transparent;
   color: var(--foreground);
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;

@@ -47,6 +47,13 @@ type ScatterPoint = {
   autoSubmitted: boolean;
 };
 
+type DailyAveragePoint = {
+  dayIndex: number;
+  averageScore: number | null;
+  attempts: number;
+  date: string;
+};
+
 function makeDatePartsFormatter(timeZone: string) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -186,34 +193,48 @@ function toRows(
   return Array.from(deduped.values()).sort((a, b) => a.at - b.at);
 }
 
-function ScatterTooltipContent(props: { active?: boolean; payload?: Array<{ payload?: unknown }> }) {
+function TestsTooltipContent(props: {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string | number; payload?: unknown }>;
+  label?: number | string;
+}) {
   if (!props.active || !props.payload || !props.payload.length) return null;
-  const datum = props.payload[0]?.payload as ScatterPoint | undefined;
-  if (!datum) return null;
+
+  const scatterItem = props.payload.find((entry) => entry.dataKey === "score");
+  const dailyItem = props.payload.find((entry) => entry.dataKey === "averageScore");
+
+  const scatterDatum = scatterItem?.payload as ScatterPoint | undefined;
+  const dailyDatum = dailyItem?.payload as DailyAveragePoint | undefined;
+
+  const hoveredDayIndex =
+    typeof props.label === "number"
+      ? props.label
+      : scatterDatum?.dayIndex ?? dailyDatum?.dayIndex;
+
+  const hasStudyOnDay =
+    Boolean(scatterDatum) || (dailyDatum != null && dailyDatum.attempts > 0 && dailyDatum.averageScore != null);
+
+  if (!Number.isFinite(hoveredDayIndex) || !hasStudyOnDay) return null;
+
+  if (scatterDatum) {
+    return (
+      <div className="sprout-data-tooltip-surface">
+        <div className="text-sm font-medium text-background">{scatterDatum.date}</div>
+        <div className="text-background">Test result: {scatterDatum.score}%</div>
+        {scatterDatum.autoSubmitted ? <div className="text-background">Auto-submitted</div> : null}
+      </div>
+    );
+  }
+
+  if (!dailyDatum || dailyDatum.averageScore == null) return null;
+
   return (
     <div className="sprout-data-tooltip-surface">
-      <div className="text-sm font-medium text-background">{datum.date}</div>
-      <div className="text-background">Score: {datum.score}%</div>
-      {datum.autoSubmitted ? <div className="text-background">Auto-submitted</div> : null}
+      <div className="text-sm font-medium text-background">{dailyDatum.date}</div>
+      <div className="text-background">Daily average: {dailyDatum.averageScore.toFixed(1)}%</div>
+      <div className="text-background">Attempts: {dailyDatum.attempts}</div>
     </div>
   );
-}
-
-function linearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
-  const n = points.length;
-  if (n < 2) return { slope: 0, intercept: n === 1 ? points[0].y : 0 };
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-  for (const p of points) {
-    sumX += p.x;
-    sumY += p.y;
-    sumXY += p.x * p.y;
-    sumX2 += p.x * p.x;
-  }
-  const denom = n * sumX2 - sumX * sumX;
-  if (denom === 0) return { slope: 0, intercept: sumY / n };
-  const slope = (n * sumXY - sumX * sumY) / denom;
-  const intercept = (sumY - slope * sumX) / n;
-  return { slope, intercept };
 }
 
 function buildScatterData(
@@ -234,6 +255,40 @@ function buildScatterData(
       score: row.score,
       date: formatDayTitle(idx, tz),
       autoSubmitted: row.autoSubmitted,
+    });
+  }
+  return out;
+}
+
+function buildDailyAverageSeries(
+  rows: ExamAttemptRow[],
+  durationDays: number,
+  formatter: Intl.DateTimeFormat,
+  tz: string,
+  todayIdx: number,
+): DailyAveragePoint[] {
+  const startIdx = todayIdx - (durationDays - 1);
+  const sums = new Map<number, { total: number; count: number }>();
+
+  for (const row of rows) {
+    const idx = localDayIndex(row.at, formatter);
+    if (idx < startIdx || idx > todayIdx) continue;
+    if (shouldExcludeNoStudyAttempt(row)) continue;
+    const existing = sums.get(idx) ?? { total: 0, count: 0 };
+    existing.total += row.score;
+    existing.count += 1;
+    sums.set(idx, existing);
+  }
+
+  const out: DailyAveragePoint[] = [];
+  for (let idx = startIdx; idx <= todayIdx; idx += 1) {
+    const bucket = sums.get(idx);
+    const attempts = bucket?.count ?? 0;
+    out.push({
+      dayIndex: idx,
+      averageScore: attempts > 0 ? bucket!.total / attempts : null,
+      attempts,
+      date: formatDayTitle(idx, tz),
     });
   }
   return out;
@@ -296,18 +351,10 @@ export function TestsAnalyticsCard(props: {
     () => buildScatterData(allRows, durationDays, formatter, tz, todayIdx),
     [allRows, durationDays, formatter, tz, todayIdx],
   );
-
-  const trendData = React.useMemo(() => {
-    if (scatterData.length < 2) return [];
-    const reg = linearRegression(scatterData.map((p) => ({ x: p.dayIndex, y: p.score })));
-    const minIdx = scatterData[0].dayIndex;
-    const maxIdx = scatterData[scatterData.length - 1].dayIndex;
-    const clamp = (v: number) => Math.max(0, Math.min(100, v));
-    return [
-      { dayIndex: minIdx, trendScore: clamp(reg.slope * minIdx + reg.intercept) },
-      { dayIndex: maxIdx, trendScore: clamp(reg.slope * maxIdx + reg.intercept) },
-    ];
-  }, [scatterData]);
+  const dailyAverageSeries = React.useMemo(
+    () => buildDailyAverageSeries(allRows, durationDays, formatter, tz, todayIdx),
+    [allRows, durationDays, formatter, tz, todayIdx],
+  );
 
   const xTicks = React.useMemo(() => {
     const endIdx = startIdx + durationDays - 1;
@@ -325,7 +372,7 @@ export function TestsAnalyticsCard(props: {
         <div>
           <div className="flex items-center gap-1">
             <div className="font-semibold lk-home-section-title">Tests performance</div>
-            <InfoIcon text="Individual test scores with trend over time." />
+            <InfoIcon text="Individual test scores with daily average over time." />
           </div>
           <div className="text-xs text-muted-foreground">Score distribution over time</div>
         </div>
@@ -416,18 +463,25 @@ export function TestsAnalyticsCard(props: {
                   tick={{ fontSize: 11 }}
                 />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={30} tickFormatter={(v: number) => `${v}%`} />
-                <Tooltip content={<ScatterTooltipContent />} cursor={{ fill: "var(--background-modifier-hover)", opacity: 0.5 }} />
+                <Tooltip content={<TestsTooltipContent />} cursor={{ fill: "var(--background-modifier-hover)", opacity: 0.5 }} />
                 <Scatter data={scatterData} dataKey="score" name="Score" fill="var(--chart-accent-2)" fillOpacity={0.8} />
-                {trendData.length >= 2 ? (
-                  <Line data={trendData} dataKey="trendScore" name="Trend" stroke="var(--chart-accent-3)" strokeWidth={2} dot={false} strokeDasharray="6 3" />
-                ) : null}
+                <Line
+                  data={dailyAverageSeries}
+                  dataKey="averageScore"
+                  name="Daily average"
+                  stroke="var(--chart-accent-3)"
+                  strokeWidth={2}
+                  connectNulls={false}
+                  dot={{ r: 2 }}
+                  activeDot={{ r: 4 }}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
 
           <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
             <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-dot" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-2)" }} />Score</div>
-            <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-line sprout-ana-legend-line-dashed" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-3)" }} />Trend</div>
+            <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-line" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-3)" }} />Daily average</div>
           </div>
         </>
       )}

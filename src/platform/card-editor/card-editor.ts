@@ -195,6 +195,7 @@ export function attachFlagPreviewOverlay(
   control: HTMLInputElement | HTMLTextAreaElement,
   minControlHeight = 100,
   maxControlHeight = Number.POSITIVE_INFINITY,
+  opts?: { preferInlineControlHeight?: boolean; deferMeasuredHeightUntilInteraction?: boolean },
 ): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = `bc sprout-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-wrap--multiline" : ""}`;
@@ -207,12 +208,19 @@ export function attachFlagPreviewOverlay(
   if (control instanceof HTMLTextAreaElement) {
     // Let actual content drive height instead of keeping a fixed multi-row baseline.
     control.rows = 1;
+    setCssProps(control, "resize", "vertical");
   }
 
   const measureControlHeight = () => {
+    if (opts?.preferInlineControlHeight && control instanceof HTMLTextAreaElement) {
+      const inlineHeight = Number.parseFloat(control.style.height || "");
+      if (Number.isFinite(inlineHeight) && inlineHeight > 0) {
+        return Math.max(minControlHeight, Math.ceil(inlineHeight));
+      }
+    }
     if (control instanceof HTMLTextAreaElement) {
-      setCssProps(control, "height", "auto");
-      return Math.max(minControlHeight, Math.ceil(control.scrollHeight || 0));
+      const renderedHeight = Math.ceil(control.getBoundingClientRect().height || 0);
+      return Math.max(minControlHeight, renderedHeight);
     }
     return Math.max(minControlHeight, Math.ceil(control.getBoundingClientRect().height || 0));
   };
@@ -233,26 +241,28 @@ export function attachFlagPreviewOverlay(
 
   let pendingSyncRaf = 0;
   let lastPreviewHeight = 0;
+  let allowMeasuredHeight = !opts?.deferMeasuredHeightUntilInteraction;
+
+  const unlockMeasuredHeight = () => {
+    if (allowMeasuredHeight) return;
+    allowMeasuredHeight = true;
+    queueSyncPreviewHeight();
+  };
 
   const syncPreviewHeight = () => {
-    const scrollbarFudgePx = 5;
-    const controlHeight = measureControlHeight();
-    const overlayHeight = Math.ceil(overlay.scrollHeight || 0);
-    const rawPreviewHeight = Math.max(
-      minControlHeight,
-      controlHeight + scrollbarFudgePx,
-      overlayHeight,
-    );
+    const controlHeight = allowMeasuredHeight ? measureControlHeight() : minControlHeight;
     const previewHeight = Number.isFinite(maxControlHeight)
-      ? Math.min(Math.max(minControlHeight, Math.floor(maxControlHeight)), rawPreviewHeight)
-      : rawPreviewHeight;
+      ? Math.min(Math.max(minControlHeight, Math.floor(maxControlHeight)), controlHeight)
+      : controlHeight;
+    // Keep textarea and preview dimensions locked even when the clamped
+    // preview height value did not change (for example drag-resize past max).
+    applyControlHeight(previewHeight);
     if (previewHeight === lastPreviewHeight) return;
     lastPreviewHeight = previewHeight;
     wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
     if (Number.isFinite(maxControlHeight)) {
       wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
     }
-    applyControlHeight(previewHeight);
   };
 
   const queueSyncPreviewHeight = () => {
@@ -279,17 +289,12 @@ export function attachFlagPreviewOverlay(
   };
 
   wrap.addEventListener("mousedown", (ev: MouseEvent) => {
+    if (ev.target !== wrap) return;
     if (ev.button !== 0) return;
     if (document.activeElement === control) return;
     ev.preventDefault();
     focusEditorFromPreview();
   });
-
-  overlay.addEventListener("pointerdown", (ev: PointerEvent) => {
-    if (ev.button !== 0) return;
-    ev.preventDefault();
-    focusEditorFromPreview();
-  }, true);
 
   overlay.addEventListener("click", () => focusEditorFromPreview());
 
@@ -314,8 +319,17 @@ export function attachFlagPreviewOverlay(
   });
 
   control.addEventListener("input", () => {
+    unlockMeasuredHeight();
     syncPreviewHeight();
     if (!wrap.classList.contains("sprout-flag-editor--focused")) renderOverlay();
+  });
+
+  control.addEventListener("pointerdown", () => {
+    unlockMeasuredHeight();
+  });
+
+  control.addEventListener("keydown", () => {
+    unlockMeasuredHeight();
   });
 
   let ro: ResizeObserver | null = null;
@@ -337,6 +351,7 @@ export function attachFlagPreviewOverlay(
       queueSyncPreviewHeight();
     });
     ro.observe(overlay);
+    ro.observe(control);
   }
 
   if (document.body) {
@@ -347,8 +362,14 @@ export function attachFlagPreviewOverlay(
   }
 
   renderOverlay();
+  applyControlHeight(minControlHeight);
+  wrap.style.setProperty("--sprout-flag-preview-height", `${minControlHeight}px`);
+  if (Number.isFinite(maxControlHeight)) {
+    wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
+  }
   wrap.appendChild(control);
   wrap.appendChild(overlay);
+  queueSyncPreviewHeight();
   return wrap;
 }
 
@@ -675,6 +696,7 @@ interface CardEditorConfig {
   locationPath?: string;
   showReadOnlyFields?: boolean;
   forceType?: CardType;
+  editableFieldHeights?: Partial<Record<"title" | "question" | "answer" | "info", { min: number; max: number }>>;
 }
 
 export interface CardEditorResult {
@@ -841,13 +863,18 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
     }
 
     const shouldPreviewFlags = field.editable && ["title", "question", "answer", "info"].includes(field.key);
+    const editableFieldKey =
+      field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info"
+        ? field.key
+        : null;
+    const configuredHeights = editableFieldKey ? config.editableFieldHeights?.[editableFieldKey] : undefined;
     const modalFieldMin =
-      field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")
-        ? fieldMinHeightPx(field.key)
+      field.editable && editableFieldKey
+        ? (configuredHeights?.min ?? fieldMinHeightPx(field.key))
         : 38;
     const modalFieldMax =
-      field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")
-        ? fieldMaxHeightPx(field.key)
+      field.editable && editableFieldKey
+        ? (configuredHeights?.max ?? fieldMaxHeightPx(field.key))
         : Number.POSITIVE_INFINITY;
 
     wrapper.appendChild(shouldPreviewFlags ? attachFlagPreviewOverlay(input, modalFieldMin, modalFieldMax) : input);
@@ -1011,7 +1038,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   list.className = "bc flex flex-col max-h-60 overflow-auto p-1";
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full min-h-[38px]";
+  searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full min-h-[44px]";
 
   const searchIcon = document.createElement("span");
   searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
@@ -1247,19 +1274,13 @@ function createOqEditor(card: CardRecord) {
 
   const label = document.createElement("label");
   label.className = "bc text-sm font-medium inline-flex items-center gap-1";
-  label.textContent = "Steps (correct order)";
+  label.append("Steps", " ", "(", "Correct", " ", "Order", ")");
   label.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
-  const stepsInfoIcon = document.createElement("span");
-  stepsInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
-  stepsInfoIcon.setAttribute("aria-label", OQ_TOOLTIP);
-  stepsInfoIcon.setAttribute("data-tooltip-position", "top");
-  setIcon(stepsInfoIcon, "info");
-  label.appendChild(stepsInfoIcon);
   container.appendChild(label);
 
   const hint = document.createElement("div");
   hint.className = "bc text-xs text-muted-foreground";
-  hint.textContent = "Enter the steps in their correct order. Drag the grip handles to reorder. Steps are shuffled during review.";
+  hint.textContent = "List each step in the correct sequence. Drag the grip handle to reorder. Steps will be shuffled during review.";
   container.appendChild(hint);
 
   const listContainer = document.createElement("div");
@@ -1302,7 +1323,7 @@ function createOqEditor(card: CardRecord) {
 
     // Number badge
     const badge = document.createElement("span");
-    badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0";
+    badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0 sprout-oq-step-index";
     badge.textContent = String(idx + 1);
     row.appendChild(badge);
 
@@ -1316,6 +1337,14 @@ function createOqEditor(card: CardRecord) {
         "min-height": "36px",
         height: "36px",
         "max-height": "36px",
+      });
+      input.addEventListener("keydown", (ev: KeyboardEvent) => {
+        if (ev.key === "Enter" && !ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          return;
+        }
+        handleTabInTextarea(input, ev);
       });
       row.appendChild(attachFlagPreviewOverlay(input, 36, 36));
 
@@ -1391,11 +1420,11 @@ function createOqEditor(card: CardRecord) {
   // "Add step" button
   const addRow = document.createElement("div");
   addRow.className = "bc flex items-center gap-2 sprout-oq-add-row";
-  const addInput = document.createElement("input");
-  addInput.type = "text";
-  addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
+  const addInput = document.createElement("textarea");
+  addInput.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+  addInput.rows = 1;
   addInput.placeholder = "Add another step (press enter)";
-  addInput.addEventListener("keydown", (ev) => {
+  addInput.addEventListener("keydown", (ev: KeyboardEvent) => {
     if (ev.key === "Enter") {
       ev.preventDefault();
       ev.stopPropagation();
@@ -1405,7 +1434,9 @@ function createOqEditor(card: CardRecord) {
       addStepRow(val);
       renumber();
       addInput.value = "";
+      return;
     }
+    handleTabInTextarea(addInput, ev);
   });
   addInput.addEventListener("blur", () => {
     const val = addInput.value.trim();
@@ -1437,20 +1468,20 @@ function createMcqEditor(card: CardRecord) {
 
   const label = document.createElement("label");
   label.className = "bc text-sm font-medium inline-flex items-center gap-1";
-  label.textContent = "Answers and options";
-  const mcqInfoIcon = document.createElement("span");
-  mcqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
-  mcqInfoIcon.setAttribute("aria-label", "Check the box next to each correct answer. At least one correct and one incorrect option required.");
-  mcqInfoIcon.setAttribute("data-tooltip-position", "top");
-  setIcon(mcqInfoIcon, "info");
-  label.appendChild(mcqInfoIcon);
+  label.append("Correct", " ", "and", " ", "Incorrect", " ", "Options");
+  label.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
   container.appendChild(label);
+
+  const hint = document.createElement("div");
+  hint.className = "bc text-xs text-muted-foreground";
+  hint.textContent = "Select at least one correct option and one incorrect option. Mark each correct option using its checkbox.";
+  container.appendChild(hint);
 
   const optionsContainer = document.createElement("div");
   optionsContainer.className = "bc flex flex-col gap-2";
   container.appendChild(optionsContainer);
 
-  type OptionRowEntry = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
+  type OptionRowEntry = { row: HTMLElement; input: HTMLTextAreaElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
   const optionRows: OptionRowEntry[] = [];
 
   const updateRemoveButtons = () => {
@@ -1474,11 +1505,19 @@ function createMcqEditor(card: CardRecord) {
     checkbox.setAttribute("data-tooltip-position", "top");
     row.appendChild(checkbox);
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "bc input flex-1 text-sm sprout-input-fixed";
+    const input = document.createElement("textarea");
+    input.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+    input.rows = 1;
     input.placeholder = "Enter an answer option";
     input.value = value;
+    input.addEventListener("keydown", (ev: KeyboardEvent) => {
+      if (ev.key === "Enter" && !ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        return;
+      }
+      handleTabInTextarea(input, ev);
+    });
     row.appendChild(attachFlagPreviewOverlay(input, 36, 36));
 
     const removeBtn = document.createElement("button");
@@ -1507,11 +1546,11 @@ function createMcqEditor(card: CardRecord) {
     updateRemoveButtons();
   };
 
-  const addInput = document.createElement("input");
-  addInput.type = "text";
-  addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
+  const addInput = document.createElement("textarea");
+  addInput.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+  addInput.rows = 1;
   addInput.placeholder = "Add another option (press enter)";
-  addInput.addEventListener("keydown", (ev) => {
+  addInput.addEventListener("keydown", (ev: KeyboardEvent) => {
     if (ev.key === "Enter") {
       ev.preventDefault();
       ev.stopPropagation();
@@ -1519,7 +1558,9 @@ function createMcqEditor(card: CardRecord) {
       if (!value) return;
       addOptionRow(value, false);
       addInput.value = "";
+      return;
     }
+    handleTabInTextarea(addInput, ev);
   });
   addInput.addEventListener("blur", () => {
     const value = addInput.value.trim();

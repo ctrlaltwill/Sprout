@@ -328,12 +328,18 @@
 }
 
 .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover {
-  background-color: color-mix(in oklab, var(--background-modifier-hover, var(--background)) 65%, transparent 35%);
+  background-color: var(--theme-base-90);
+  color: #fff;
 }
 
 .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td {
-  background-color: color-mix(in oklab, var(--background-modifier-hover, var(--background)) 65%, transparent 35%);
+  background-color: var(--theme-base-90);
   border-color: var(--sprout-border-color);
+  color: #fff;
+}
+
+.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td .text-muted-foreground {
+  color: rgb(245, 245, 245);
 }
 
 .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td:first-child {

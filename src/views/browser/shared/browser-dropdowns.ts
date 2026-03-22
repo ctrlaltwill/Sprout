@@ -27,6 +27,7 @@ export interface DropdownMenuArgs<T extends string> {
   onChange: (v: T) => void;
   widthPx?: number;
   dropUp?: boolean;
+  triggerClassName?: string;
   /** Called right before onChange fires (e.g. to reset pageIndex). */
   onBeforeChange?: () => void;
 }
@@ -43,7 +44,7 @@ export function makeDropdownMenu<T extends string>(
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.id = `${id}-trigger`;
-  trigger.className = "sprout-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2";
+  trigger.className = `sprout-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2${args.triggerClassName ? ` ${args.triggerClassName}` : ""}`;
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("aria-label", args.label);
@@ -56,7 +57,7 @@ export function makeDropdownMenu<T extends string>(
   trigger.appendChild(trigText);
 
   const chevron = document.createElement("span");
-  chevron.className = "inline-flex items-center justify-center [&_svg]:size-4";
+  chevron.className = "inline-flex items-center justify-center [&_svg]:size-4 transition-transform duration-150 ease-out";
   chevron.setAttribute("aria-hidden", "true");
   setIcon(chevron, "chevron-down");
   trigger.appendChild(chevron);
@@ -174,6 +175,7 @@ export function makeDropdownMenu<T extends string>(
 
   const close = () => {
     trigger.setAttribute("aria-expanded", "false");
+    chevron.classList.remove("rotate-180");
     popover.setAttribute("aria-hidden", "true");
     popover.classList.remove("is-open");
 
@@ -192,6 +194,7 @@ export function makeDropdownMenu<T extends string>(
     buildItems();
 
     trigger.setAttribute("aria-expanded", "true");
+    chevron.classList.add("rotate-180");
     popover.setAttribute("aria-hidden", "false");
     popover.classList.add("is-open");
 

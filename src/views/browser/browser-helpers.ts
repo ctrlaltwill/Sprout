@@ -445,7 +445,6 @@ export function buildIoOccludedHtml(
   _displayRef: string,
   occlusions: unknown[] | null,
   title: string,
-  cardForLabels?: CardRecord | { rects: unknown[] },
 ): string {
   const safeSrc = escapeHtml(resolvedSrc);
   const safeTitle = escapeHtml(title);
@@ -490,12 +489,9 @@ export function buildIoOccludedHtml(
     })
     .join("");
 
-  const badges = cardForLabels ? renderOcclusionBadgesHtml(cardForLabels) : "";
-
   return `
 <div class="bc lk-browser-io-wrap" title="${safeTitle}">
   <div class="bc lk-browser-io-frame">
-    ${badges}
     <img class="bc lk-browser-io-img-inner" src="${safeSrc}" alt="${safeTitle}" />
     ${overlays}
   </div>

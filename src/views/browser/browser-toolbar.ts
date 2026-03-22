@@ -51,7 +51,7 @@ export interface ToolbarContext {
   sortKey: SortKey;
   sortAsc: boolean;
   colWidths: Record<ColKey, number>;
-  visibleCols: Set<ColKey>;
+  getVisibleCols: () => Set<ColKey>;
   allCols: ColKey[];
 
   cellWrapClass: string;
@@ -188,7 +188,7 @@ export function buildBrowserLayout(
       autoCloseMs: 10000,
     },
     {
-      getVisibleCols: () => ctx.visibleCols,
+      getVisibleCols: () => ctx.getVisibleCols(),
       setVisibleCols: (cols) => ctx.setVisibleCols(cols),
       applyColumnVisibility: () => ctx.applyColumnVisibility(),
     },
@@ -528,8 +528,9 @@ export function buildBrowserLayout(
     label: tx("ui.browser.rows.perPage", "Rows per page"),
     value: String(ctx.pageSize),
     options: ["100", "50", "25", "10", "5"].map((v) => ({ v, label: v })),
+    triggerClassName: "sprout-btn-filter h-7 px-3 text-sm",
     onChange: (v) => {
-      const next = Math.max(1, Math.floor(Number(v) || 25));
+      const next = Math.max(1, Math.floor(Number(v) || 5));
       ctx.setPageSize(next);
       ctx.setPageIndex(0);
       ctx.refreshTable();

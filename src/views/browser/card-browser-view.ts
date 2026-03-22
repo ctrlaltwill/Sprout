@@ -80,7 +80,7 @@ export class SproutCardBrowserView extends ItemView {
   sortKey: SortKey = "title";
   sortAsc = true;
 
-  pageSize = 25;
+  pageSize = 5;
   pageIndex = 0;
 
   private _rowHeightPx = 150;
@@ -404,7 +404,16 @@ export class SproutCardBrowserView extends ItemView {
   private _setDensityMode(mode: BrowserDensityMode, refresh = true) {
     if (mode !== "comfortable" && mode !== "compact") return;
     if (this._densityMode === mode) return;
+    const prevMode = this._densityMode;
     this._densityMode = mode;
+
+    // Returning to comfortable should restore full column visibility.
+    if (prevMode === "compact" && mode === "comfortable") {
+      this._comfortableCols.clear();
+      for (const col of this._allCols) this._comfortableCols.add(col);
+      this._saveColumnPrefs();
+    }
+
     this._applyDensityPreset();
     this._syncDensityDataset();
     this._saveDensityMode();
@@ -769,7 +778,7 @@ export class SproutCardBrowserView extends ItemView {
     );
     const total = rows.length;
 
-    const size = Math.max(1, Math.floor(Number(this.pageSize) || 25));
+    const size = Math.max(1, Math.floor(Number(this.pageSize) || 5));
     const totalPages = Math.max(1, Math.ceil(total / size));
     if (this.pageIndex > totalPages - 1) this.pageIndex = Math.max(0, totalPages - 1);
     if (this.pageIndex < 0) this.pageIndex = 0;
@@ -883,16 +892,47 @@ export class SproutCardBrowserView extends ItemView {
     root.appendChild(contentShell);
 
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
+    const titleStripEl =
+      this._titleStripEl ?? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.lk-browser-title-strip");
     if (animationsEnabled) {
-      const titleStripEl = root.querySelector<HTMLElement>(".lk-home-title-strip");
       if (titleStripEl) {
         titleStripEl.setAttribute("data-aos", "fade-up");
         titleStripEl.setAttribute("data-aos-delay", "0");
         titleStripEl.setAttribute("data-aos-anchor-placement", "top-top");
+        titleStripEl.setAttribute("data-aos-duration", String(AOS_DURATION));
       }
       contentShell.setAttribute("data-aos", "fade-up");
       contentShell.setAttribute("data-aos-delay", "100");
       contentShell.setAttribute("data-aos-anchor-placement", "top-top");
+      contentShell.setAttribute("data-aos-duration", String(AOS_DURATION));
+
+      try {
+        initAOS({ duration: AOS_DURATION, easing: "ease-out", once: true, offset: 50 });
+      } catch {
+        // best-effort
+      }
+
+      titleStripEl?.classList.remove("aos-animate", "sprout-aos-fallback");
+      contentShell.classList.remove("aos-animate", "sprout-aos-fallback");
+      cascadeAOSOnLoad(root, {
+        stepMs: 0,
+        baseDelayMs: 0,
+        durationMs: AOS_DURATION,
+        overwriteDelays: false,
+      });
+    } else {
+      if (titleStripEl) {
+        titleStripEl.removeAttribute("data-aos");
+        titleStripEl.removeAttribute("data-aos-delay");
+        titleStripEl.removeAttribute("data-aos-anchor-placement");
+        titleStripEl.removeAttribute("data-aos-duration");
+        titleStripEl.classList.add("aos-animate", "sprout-aos-fallback");
+      }
+      contentShell.removeAttribute("data-aos");
+      contentShell.removeAttribute("data-aos-delay");
+      contentShell.removeAttribute("data-aos-anchor-placement");
+      contentShell.removeAttribute("data-aos-duration");
+      contentShell.classList.add("aos-animate", "sprout-aos-fallback");
     }
 
     // Build the full layout via browser-toolbar.ts
@@ -909,7 +949,7 @@ export class SproutCardBrowserView extends ItemView {
       sortKey: this.sortKey,
       sortAsc: this.sortAsc,
       colWidths: this.colWidths,
-      visibleCols: this._visibleCols,
+      getVisibleCols: () => this._visibleCols,
       allCols: this._allCols,
       cellWrapClass: this._cellWrapClass,
       colMin: this._colMin,
@@ -983,28 +1023,5 @@ export class SproutCardBrowserView extends ItemView {
     this.refreshTable();
     this._setupMobileKeyboardSync();
 
-    // Match other views: cascadeAOSOnLoad + fallback for stuck elements.
-    if (animationsEnabled) {
-      const maxDelay = cascadeAOSOnLoad(root, {
-        stepMs: 0,
-        baseDelayMs: 0,
-        durationMs: AOS_DURATION,
-        overwriteDelays: false,
-      });
-      const fallbackAfterMs = Math.max(600, Math.floor(maxDelay + AOS_DURATION + 250));
-      setTimeout(() => {
-        root.querySelectorAll("[data-aos]").forEach((el) => {
-          if (!(el instanceof HTMLElement) || !el.isConnected) return;
-          const style = getComputedStyle(el);
-          if (style.opacity === "0" || style.visibility === "hidden") {
-            el.classList.add("sprout-aos-fallback");
-          }
-        });
-      }, fallbackAfterMs);
-    } else {
-      root.querySelectorAll("[data-aos]").forEach((el) => {
-        el.classList.add("sprout-aos-fallback");
-      });
-    }
   }
 }

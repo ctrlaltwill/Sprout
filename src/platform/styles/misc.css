@@ -443,8 +443,19 @@
 }
 
 .sprout .badge.group {
-  font-family: var(--font-interface);
-  font-size: 0.85rem;
+    font-family: var(--font-interface);
+    border: 1px solid var(--theme-base-35);
+    border-radius: var(--radius-md);
+    background-color: var(--theme-base-15);
+    height: 22px;
+    min-height: 26px;
+    max-height: 26px;
+    color: var(--theme-base-95);
+    font-size: var(--sprout-font-2xs);
+    align-items: center;
+    gap: 3px;
+    padding: 5px 8px;
+    font-weight: 500;
 }
 
 .sprout .sprout-badge-success {
@@ -698,6 +709,42 @@
 ):is(:active, :focus, :focus-visible) {
   box-shadow: none !important;
   outline: none !important;
+}
+
+/* Borderless input surfaces for LearnKit controls */
+.sprout :is(
+  textarea,
+  .multi-select-container,
+  input.metadata-input-text,
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='text']:not(.sprout-cloze-typed-input),
+  input[type='search'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number']
+),
+.lk-modals :is(
+  textarea,
+  .multi-select-container,
+  input.metadata-input-text,
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='text']:not(.sprout-cloze-typed-input),
+  input[type='search'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number']
+) {
+  border: none !important;
+}
+
+/* Keep browser editable textareas styled in comfortable/non-compact density. */
+.sprout [data-lk-browser-density='comfortable'] :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea),
+.sprout [data-lk-browser-root='1']:not([data-lk-browser-density='compact']) :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea) {
+  border: 1px solid var(--theme-accent) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.75rem !important;
 }
 
 /* Typed cloze inputs override the global accent focus above */

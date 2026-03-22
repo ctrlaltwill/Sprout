@@ -1109,7 +1109,6 @@ function makeIoCell(
         ? rects.filter((r) => rectIds.includes(String((r as Record<string, unknown>).rectId)))
         : rects;
     }
-    const labelsCard = Array.isArray(maskedRects) ? { rects: maskedRects } : card;
     replaceChildrenWithHTML(
       box,
       buildIoOccludedHtml(
@@ -1117,7 +1116,6 @@ function makeIoCell(
         io.displayRef,
         maskedRects,
         `IO (occluded) — ${buildPrimaryCardAnchor(String(card.id))}`,
-        labelsCard,
       ),
     );
   } else {
@@ -1201,7 +1199,7 @@ function makeGroupsEditorCell(
     for (const tag of selected) {
       const badge = document.createElement("span");
       badge.className =
-        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-inline lk-browser-tag-badge";
+        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder sprout-badge-inline lk-browser-tag-badge";
 
       const txt = document.createElement("span");
       txt.textContent = formatGroupDisplay(tag);
@@ -1209,7 +1207,7 @@ function makeGroupsEditorCell(
 
       const removeBtn = document.createElement("span");
       removeBtn.className =
-        "ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white";
+        "ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer lk-browser-tag-remove";
       setIcon(removeBtn, "x");
       removeBtn.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();

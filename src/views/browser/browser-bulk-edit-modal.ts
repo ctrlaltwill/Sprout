@@ -51,7 +51,17 @@ export interface BulkEditContext {
 }
 
 function fieldMinHeightPx(field: "title" | "question" | "answer" | "info"): number {
-  return 100;
+  if (field === "title" || field === "question" || field === "answer" || field === "info") {
+    return 50;
+  }
+  return 50;
+}
+
+function fieldMaxHeightPx(field: "title" | "question" | "answer" | "info"): number {
+  if (field === "title" || field === "question" || field === "answer" || field === "info") {
+    return 150;
+  }
+  return 150;
 }
 
 // ── Modal class ────────────────────────────────────────────
@@ -88,10 +98,31 @@ export class BulkEditModal extends Modal {
     scopeModalToWorkspace(this);
     this.contentEl.addClass("bc", "sprout-bulk-edit-content");
 
-    // Move close button into header for inline title + close layout
+    // Replace native close icon with card-creator style close button.
     const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
     const headerEl = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header");
-    if (closeBtn && headerEl) headerEl.appendChild(closeBtn);
+    if (closeBtn) closeBtn.remove();
+    if (headerEl) {
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-card-creator-close-btn sprout-bulk-edit-close-btn";
+      close.setAttribute("aria-label", tx("ui.common.close", "Close"));
+      close.setAttribute("data-tooltip-position", "top");
+
+      const closeIcon = document.createElement("span");
+      closeIcon.className = "bc inline-flex items-center justify-center";
+      setIcon(closeIcon, "x");
+
+      const closeLabel = document.createElement("span");
+      closeLabel.className = "bc";
+      closeLabel.setAttribute("data-sprout-label", "true");
+      closeLabel.textContent = tx("ui.common.close", "Close");
+
+      close.appendChild(closeIcon);
+      close.appendChild(closeLabel);
+      close.addEventListener("click", () => this.close());
+      headerEl.appendChild(close);
+    }
 
     // Escape key closes modal
     this.scope.register([], "Escape", () => { this.close(); return false; });
@@ -122,9 +153,14 @@ export class BulkEditModal extends Modal {
     });
 
   const form = document.createElement("div");
-  form.className = "flex flex-col gap-4";
+  form.className = `flex flex-col gap-4 sprout-bulk-edit-form${cards.length > 1 ? " sprout-bulk-edit-form--multi" : ""}`;
 
   const normalizedTypes = cards.map((card) => String(card?.type ?? "").toLowerCase());
+  const canBulkToggleType =
+    cards.length > 1 &&
+    normalizedTypes.length > 0 &&
+    normalizedTypes.every((type) => type === "basic" || type === "reversed");
+  let selectedBulkType: "basic" | "reversed" = normalizedTypes[0] === "reversed" ? "reversed" : "basic";
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
   const hasMcq = normalizedTypes.some((type) => type === "mcq");
   const answerLabel = hasMcq
@@ -173,14 +209,19 @@ export class BulkEditModal extends Modal {
     if (control instanceof HTMLTextAreaElement) {
       // Let actual content drive height instead of keeping a fixed multi-row baseline.
       control.rows = 1;
+      setCssProps(control, {
+        "min-height": `${minControlHeight}px`,
+        height: `${minControlHeight}px`,
+        "max-height": `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`,
+      });
+      control.style.resize = "vertical";
+      control.style.overflowY = "auto";
     }
 
-    const measureControlHeight = () => {
-      if (control instanceof HTMLTextAreaElement) {
-        setCssProps(control, "height", "auto");
-        return Math.max(minControlHeight, Math.ceil(control.scrollHeight || 0));
-      }
-      return Math.max(minControlHeight, Math.ceil(control.getBoundingClientRect().height || 0));
+    const clampHeight = (height: number) => {
+      const boundedMin = Math.max(minControlHeight, Math.ceil(height || 0));
+      if (!Number.isFinite(maxControlHeight)) return boundedMin;
+      return Math.min(Math.max(minControlHeight, Math.floor(maxControlHeight)), boundedMin);
     };
 
     const applyControlHeight = (height: number) => {
@@ -195,27 +236,18 @@ export class BulkEditModal extends Modal {
     };
 
     let pendingSyncRaf = 0;
-    let lastPreviewHeight = 0;
+    let lastPreviewHeight = clampHeight(minControlHeight);
 
     const syncPreviewHeight = () => {
-      const scrollbarFudgePx = 5;
-      const controlHeight = measureControlHeight();
-      const overlayHeight = Math.ceil(overlay.scrollHeight || 0);
-      const rawPreviewHeight = Math.max(
-        minControlHeight,
-        controlHeight + scrollbarFudgePx,
-        overlayHeight,
-      );
-      const previewHeight = Number.isFinite(maxControlHeight)
-        ? Math.min(Math.max(minControlHeight, Math.floor(maxControlHeight)), rawPreviewHeight)
-        : rawPreviewHeight;
-      if (previewHeight === lastPreviewHeight) return;
-      lastPreviewHeight = previewHeight;
-      wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
+      const nextHeight = clampHeight(lastPreviewHeight);
+      if (nextHeight !== lastPreviewHeight) {
+        lastPreviewHeight = nextHeight;
+      }
+      wrap.style.setProperty("--sprout-flag-preview-height", `${lastPreviewHeight}px`);
       if (Number.isFinite(maxControlHeight)) {
         wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
       }
-      applyControlHeight(previewHeight);
+      applyControlHeight(lastPreviewHeight);
     };
 
     const queueSyncPreviewHeight = () => {
@@ -239,6 +271,14 @@ export class BulkEditModal extends Modal {
       control.focus();
     });
 
+    overlay.addEventListener("pointerdown", (ev: PointerEvent) => {
+      if (ev.button !== 0) return;
+      ev.preventDefault();
+      control.focus();
+    }, true);
+
+    overlay.addEventListener("click", () => control.focus());
+
     const handleDocumentPointerDown = (ev: PointerEvent) => {
       const target = ev.target;
       if (!(target instanceof Node)) return;
@@ -251,10 +291,16 @@ export class BulkEditModal extends Modal {
 
     control.addEventListener("focus", () => {
       wrap.classList.add("sprout-flag-editor--focused");
+      if (control instanceof HTMLTextAreaElement) {
+        wrap.style.overflow = "visible";
+      }
       syncPreviewHeight();
     });
     control.addEventListener("blur", () => {
       wrap.classList.remove("sprout-flag-editor--focused");
+      if (control instanceof HTMLTextAreaElement) {
+        wrap.style.overflow = "hidden";
+      }
       renderOverlay();
     });
     control.addEventListener("input", () => {
@@ -264,9 +310,14 @@ export class BulkEditModal extends Modal {
 
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => {
+        if (control instanceof HTMLTextAreaElement && wrap.classList.contains("sprout-flag-editor--focused")) {
+          const renderedHeight = Math.ceil(control.getBoundingClientRect().height || 0);
+          if (renderedHeight > 0) lastPreviewHeight = clampHeight(renderedHeight);
+        }
         queueSyncPreviewHeight();
       });
       ro.observe(overlay);
+      ro.observe(control);
       registerCloseCleanup(() => {
         if (pendingSyncRaf) {
           window.cancelAnimationFrame(pendingSyncRaf);
@@ -304,7 +355,7 @@ export class BulkEditModal extends Modal {
     container.className = "relative sprout-group-picker";
 
     const tagBox = document.createElement("div");
-    tagBox.className = `textarea w-full ${ctx.cellTextClass} sprout-bulk-tag-box`;
+    tagBox.className = `textarea w-full ${ctx.cellTextClass} sprout-tag-box`;
     container.appendChild(tagBox);
 
     let overwriteNotice: HTMLDivElement | null = null;
@@ -358,7 +409,7 @@ export class BulkEditModal extends Modal {
     panelEl.appendChild(list);
 
     const popover = document.createElement("div");
-    popover.className = "sprout-bulk-popover";
+    popover.className = "sprout-popover-dropdown";
     popover.setAttribute("aria-hidden", "true");
     popover.appendChild(panelEl);
     container.appendChild(popover);
@@ -606,7 +657,7 @@ export class BulkEditModal extends Modal {
 
   const createFieldWrapper = (field: { key: ColKey; label: string; editable: boolean }) => {
     const wrapper = document.createElement("div");
-    wrapper.className = "flex flex-col gap-1";
+    wrapper.className = `flex flex-col gap-1${field.key === "type" ? " sprout-card-meta-field" : ""}`;
 
     const label = document.createElement("label");
     label.className = "text-sm font-medium";
@@ -624,6 +675,154 @@ export class BulkEditModal extends Modal {
     let input: HTMLInputElement | HTMLTextAreaElement;
     const predicate = field.key === "answer" ? answerPredicate : undefined;
     const value = sharedValue(field.key, predicate);
+    if (field.key === "type" && canBulkToggleType) {
+      const typeRoot = document.createElement("div");
+      typeRoot.className = "sprout relative inline-flex";
+
+      const typeButton = document.createElement("button");
+      typeButton.type = "button";
+      typeButton.className = "sprout-btn-toolbar text-sm inline-flex items-center gap-2 h-7 px-2 cursor-pointer sprout-card-meta-type-btn";
+      typeButton.setAttribute("aria-label", tx("ui.browser.bulkEdit.field.type", "Type"));
+      typeButton.setAttribute("data-tooltip-position", "top");
+      typeButton.setAttribute("aria-haspopup", "menu");
+      typeButton.setAttribute("aria-expanded", "false");
+
+      const typeText = document.createElement("span");
+      typeText.className = "truncate";
+      const syncTypeText = () => {
+        typeText.textContent = selectedBulkType === "reversed"
+          ? tx("ui.browser.bulkEdit.type.reversed", "Basic (Reversed)")
+          : tx("ui.browser.bulkEdit.type.basic", "Basic");
+      };
+      syncTypeText();
+
+      const chevron = document.createElement("span");
+      chevron.className = "inline-flex items-center justify-center [&_svg]:size-3";
+      setIcon(chevron, "chevron-down");
+      typeButton.appendChild(typeText);
+      typeButton.appendChild(chevron);
+
+      const menu = document.createElement("div");
+      menu.className = "sprout-popover-dropdown sprout-popover-dropdown-below";
+      menu.setAttribute("aria-hidden", "true");
+
+      const panel = document.createElement("div");
+      panel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
+      const menuList = document.createElement("div");
+      menuList.setAttribute("role", "menu");
+      menuList.className = "flex flex-col";
+
+      const makeTypeItem = (type: "basic" | "reversed", labelText: string) => {
+        const item = document.createElement("div");
+        item.setAttribute("role", "menuitemradio");
+        item.setAttribute("tabindex", "0");
+        item.className =
+          "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+
+        const radioWrap = document.createElement("div");
+        radioWrap.className = "size-4 flex items-center justify-center";
+        const dot = document.createElement("div");
+        dot.className = "size-2 rounded-full bg-foreground";
+        radioWrap.appendChild(dot);
+        const text = document.createElement("span");
+        text.textContent = labelText;
+        item.appendChild(radioWrap);
+        item.appendChild(text);
+
+        const syncChecked = () => {
+          const checked = selectedBulkType === type;
+          item.setAttribute("aria-checked", checked ? "true" : "false");
+          dot.classList.toggle("invisible", !checked);
+        };
+
+        const apply = () => {
+          selectedBulkType = type;
+          syncTypeText();
+          for (const child of Array.from(menuList.children)) {
+            if (child instanceof HTMLElement) {
+              const isChecked = child === item;
+              child.setAttribute("aria-checked", isChecked ? "true" : "false");
+              const marker = child.querySelector<HTMLElement>(".size-2");
+              marker?.classList.toggle("invisible", !isChecked);
+            }
+          }
+          menu.setAttribute("aria-hidden", "true");
+          menu.classList.remove("is-open");
+          typeButton.setAttribute("aria-expanded", "false");
+        };
+
+        item.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          apply();
+        });
+        item.addEventListener("keydown", (ev: KeyboardEvent) => {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          apply();
+        });
+
+        syncChecked();
+        return item;
+      };
+
+      menuList.appendChild(makeTypeItem("basic", tx("ui.browser.bulkEdit.type.basic", "Basic")));
+      menuList.appendChild(makeTypeItem("reversed", tx("ui.browser.bulkEdit.type.reversed", "Basic (Reversed)")));
+
+      panel.appendChild(menuList);
+      menu.appendChild(panel);
+
+      let cleanupTypeMenu: (() => void) | null = null;
+      const closeTypeMenu = () => {
+        menu.setAttribute("aria-hidden", "true");
+        menu.classList.remove("is-open");
+        typeButton.setAttribute("aria-expanded", "false");
+        if (cleanupTypeMenu) {
+          cleanupTypeMenu();
+          cleanupTypeMenu = null;
+        }
+      };
+
+      const openTypeMenu = () => {
+        menu.setAttribute("aria-hidden", "false");
+        menu.classList.add("is-open");
+        typeButton.setAttribute("aria-expanded", "true");
+        const onDocPointerDown = (ev: PointerEvent) => {
+          const target = ev.target;
+          if (!(target instanceof Node)) return;
+          if (typeRoot.contains(target)) return;
+          closeTypeMenu();
+        };
+        const onDocKeyDown = (ev: KeyboardEvent) => {
+          if (ev.key !== "Escape") return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          closeTypeMenu();
+        };
+        document.addEventListener("pointerdown", onDocPointerDown, true);
+        document.addEventListener("keydown", onDocKeyDown, true);
+        cleanupTypeMenu = () => {
+          document.removeEventListener("pointerdown", onDocPointerDown, true);
+          document.removeEventListener("keydown", onDocKeyDown, true);
+        };
+      };
+
+      registerCloseCleanup(() => closeTypeMenu());
+
+      typeButton.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (menu.classList.contains("is-open")) closeTypeMenu();
+        else openTypeMenu();
+      });
+
+      typeRoot.appendChild(typeButton);
+      typeRoot.appendChild(menu);
+      wrapper.appendChild(typeRoot);
+      return wrapper;
+    }
+
     if (field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")) {
       const textarea = document.createElement("textarea");
       textarea.className = "textarea w-full sprout-textarea-fixed";
@@ -639,7 +838,7 @@ export class BulkEditModal extends Modal {
     } else {
       const txt = document.createElement("input");
       txt.type = "text";
-      txt.className = "input w-full";
+      txt.className = `input w-full${field.key === "location" ? " sprout-location-input" : ""}`;
       txt.value = value;
       txt.disabled = !field.editable;
       input = txt;
@@ -654,7 +853,7 @@ export class BulkEditModal extends Modal {
         : tx("ui.browser.bulkEdit.cardPlural", "cards");
       overwriteNotice.textContent = tx(
         "ui.browser.bulkEdit.overwriteHint",
-        "You have selected {count} {label}. Any input in this field will overwrite all {count} {label}. To leave all cards in their current form, leave this field blank.",
+        "You have selected {count} {label}. Any input in this field will overwrite this field for all cards. To leave all cards in their current form, leave this field blank.",
         { count: cardCount, label: cardLabel },
       );
       overwriteNotice.classList.add("sprout-is-hidden");
@@ -673,8 +872,12 @@ export class BulkEditModal extends Modal {
       field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")
         ? fieldMinHeightPx(field.key)
         : 38;
+    const modalFieldMax =
+      field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")
+        ? fieldMaxHeightPx(field.key)
+        : Number.POSITIVE_INFINITY;
 
-    wrapper.appendChild(shouldPreviewFlags ? attachFlagPreviewOverlay(input, modalFieldMin) : input);
+    wrapper.appendChild(shouldPreviewFlags ? attachFlagPreviewOverlay(input, modalFieldMin, modalFieldMax) : input);
     inputEls[field.key] = input;
     if (input instanceof HTMLTextAreaElement) {
       input.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -843,7 +1046,7 @@ export class BulkEditModal extends Modal {
   // ── Assemble the form ─────────────────────────────────────
 
   const topGrid = document.createElement("div");
-  topGrid.className = "grid grid-cols-1 gap-3 md:grid-cols-2";
+  topGrid.className = "grid grid-cols-1 gap-3 md:grid-cols-2 sprout-card-meta-grid";
   for (const key of topKeys) {
     const field = fields.find((f) => f.key === key);
     if (!field) continue;
@@ -867,28 +1070,25 @@ export class BulkEditModal extends Modal {
 
   // ── Footer (Cancel / Save) ────────────────────────────────
 
+  this.modalEl.querySelectorAll<HTMLElement>(":scope > .lk-modal-footer.sprout-bulk-edit-footer").forEach((node) => node.remove());
   const footer = document.createElement("div");
-  footer.className = "bc flex items-center justify-end gap-4 lk-modal-footer";
+  footer.className = "bc flex items-center justify-end gap-4 lk-modal-footer sprout-card-creator-footer sprout-bulk-edit-footer";
   const cancel = document.createElement("button");
   cancel.type = "button";
-  cancel.className = "bc sprout-btn-toolbar sprout-btn-outline-muted inline-flex items-center gap-2 h-9 px-3 text-sm";
-  const cancelIcon = document.createElement("span");
-  cancelIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
-  setIcon(cancelIcon, "x");
+  cancel.className = "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm";
+  cancel.setAttribute("aria-label", tx("ui.common.cancel", "Cancel"));
+  cancel.setAttribute("data-tooltip-position", "top");
   const cancelText = document.createElement("span");
   cancelText.textContent = tx("ui.common.cancel", "Cancel");
-  cancel.appendChild(cancelIcon);
   cancel.appendChild(cancelText);
   cancel.addEventListener("click", () => this.close());
   const save = document.createElement("button");
   save.type = "button";
-  save.className = "bc sprout-btn-toolbar sprout-btn-primary-action inline-flex items-center gap-2 h-9 px-3 text-sm";
-  const saveIcon = document.createElement("span");
-  saveIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
-  setIcon(saveIcon, "save");
+  save.className = "bc sprout-btn-toolbar sprout-btn-accent sprout-bulk-edit-save-btn h-9 inline-flex items-center gap-2";
+  save.setAttribute("aria-label", tx("ui.common.save", "Save"));
+  save.setAttribute("data-tooltip-position", "top");
   const saveText = document.createElement("span");
   saveText.textContent = tx("ui.common.save", "Save");
-  save.appendChild(saveIcon);
   save.appendChild(saveText);
   save.addEventListener("click", () => { void (async () => {
     const updates: Partial<Record<ColKey, string>> = {};
@@ -900,7 +1100,8 @@ export class BulkEditModal extends Modal {
       if (!val) continue;
       updates[field.key] = val;
     }
-    if (!Object.keys(updates).length) {
+    const hasTypeChange = canBulkToggleType && cards.some((card) => String(card.type ?? "") !== selectedBulkType);
+    if (!Object.keys(updates).length && !hasTypeChange) {
       new Notice(tx("ui.browser.bulkEdit.notice.enterOneField", "Enter a value for at least one editable field."));
       return;
     }
@@ -914,6 +1115,9 @@ export class BulkEditModal extends Modal {
     try {
       for (const card of cards) {
         let updated = card;
+        if (canBulkToggleType && String(updated.type ?? "") !== selectedBulkType) {
+          updated = ctx.applyValueToCard(updated, "type", selectedBulkType);
+        }
         for (const [key, value] of Object.entries(updates)) {
           updated = ctx.applyValueToCard(updated, key as ColKey, value);
         }
@@ -926,7 +1130,7 @@ export class BulkEditModal extends Modal {
   })(); });
   footer.appendChild(cancel);
   footer.appendChild(save);
-  contentEl.appendChild(footer);
+  this.modalEl.appendChild(footer);
   }
 
   onClose() {

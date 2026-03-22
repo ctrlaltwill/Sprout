@@ -9,7 +9,7 @@
 .sprout .lk-browser-card {
   margin: 0;
   border: 1px solid var(--color-base-30);
-  border-radius: var(--radius-m);
+  border-radius: var(--radius-md);
   background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
   transition: background-color 0.2s ease;
 }
@@ -61,7 +61,7 @@
   border-radius: 0;
   --lk-browser-surface: var(--background);
   --lk-browser-surface-hover: var(--background);
-  --lk-browser-header-bg: color-mix(in oklab, var(--theme-base-10) 30%, var(--background) 70%);
+  --lk-browser-header-bg: var(--color-base-20);
   --lk-browser-border-soft: var(--color-base-15);
   --lk-browser-border-strong: var(--color-base-25);
   --lk-browser-row-hover: var(--color-base-00);
@@ -97,8 +97,20 @@
 }
 
 .sprout [data-lk-browser-density="compact"] .lk-browser-cell {
-  padding-top: 2px;
-  padding-bottom: 2px;
+  border-right: 1px solid var(--color-base-35);
+}
+
+.sprout [data-lk-browser-density="compact"] .lk-browser-cell:last-child {
+  border-right: none;
+}
+
+.sprout [data-lk-browser-density="compact"] .lk-browser-th {
+  border-left: none;
+  border-right: none;
+}
+
+.sprout [data-lk-browser-density="compact"] .lk-browser-cell {
+  padding: 3px;
   font-size: var(--sprout-font-2xs);
   height: auto;
   vertical-align: top;
@@ -108,18 +120,43 @@
   height: auto;
 }
 
+.sprout [data-lk-browser-density="compact"] .lk-browser-flag-editor-wrap,
+.sprout [data-lk-browser-density="compact"] .lk-browser-flag-editor-wrap--multiline,
+.sprout [data-lk-browser-density="compact"] .lk-browser-textarea,
+.sprout [data-lk-browser-density="compact"] .lk-browser-contenteditable,
+.sprout [data-lk-browser-density="compact"] .lk-browser-flag-overlay,
+.sprout [data-lk-browser-density="compact"] .lk-browser-flag-overlay--multiline,
+.sprout [data-lk-browser-density="compact"] .lk-browser-tag-box,
+.sprout [data-lk-browser-density="compact"] .lk-browser-img-overlay,
+.sprout [data-lk-browser-density="compact"] .lk-browser-io-box,
+.sprout [data-lk-browser-density="compact"] .lk-browser-mcq-input,
+.sprout [data-lk-browser-density="compact"] .lk-browser-mcq-add,
+.sprout [data-lk-browser-density="compact"] .lk-browser-oq-input,
+.sprout [data-lk-browser-density="compact"] .lk-browser-oq-add {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sprout [data-lk-browser-density="compact"] .lk-browser-cell:focus-within {
+  outline: 1px solid color-mix(in oklab, var(--theme-accent) 50%, var(--color-base-35));
+  outline-offset: -1px;
+  background: color-mix(in oklab, var(--theme-accent) 8%, var(--color-base-00));
+}
+
 .sprout [data-lk-browser-density="compact"] .lk-browser-textarea,
 .sprout [data-lk-browser-density="compact"] .lk-browser-contenteditable,
 .sprout [data-lk-browser-density="compact"] .lk-browser-flag-editor-wrap--multiline,
 .sprout [data-lk-browser-density="compact"] .lk-browser-tag-box {
-  padding-top: 2px;
-  padding-bottom: 2px;
+  padding: 0 !important;
   height: var(--sprout-editor-height, 38px);
   min-height: var(--sprout-editor-height, 38px);
   max-height: var(--sprout-editor-height, 38px);
 }
 
 .sprout [data-lk-browser-density="compact"] .lk-browser-flag-editor-wrap {
+  padding: 0 !important;
   height: var(--sprout-editor-height, 38px);
   min-height: var(--sprout-editor-height, 38px);
   max-height: var(--sprout-editor-height, 38px);
@@ -127,7 +164,7 @@
 
 .sprout [data-lk-browser-density="compact"] .lk-browser-mcq-cell,
 .sprout [data-lk-browser-density="compact"] .lk-browser-oq-cell {
-  padding: 2px 3px;
+  padding: 0 !important;
   gap: 1px;
   height: var(--sprout-editor-height, 56px);
   min-height: var(--sprout-editor-height, 56px);
@@ -147,7 +184,7 @@
 .sprout [data-lk-browser-density="compact"] .lk-browser-oq-add {
   height: 22px;
   min-height: 22px;
-  padding: 1px 4px;
+  padding: 0 !important;
   font-size: var(--sprout-font-3xs);
 }
 
@@ -162,7 +199,7 @@
 }
 
 .sprout [data-lk-browser-density="compact"] .lk-browser-io-box {
-  padding: 2px;
+  padding: 0 !important;
 }
 
 /* Compact textarea font: override the hardcoded 0.85rem so typed-in
@@ -170,12 +207,14 @@
 .sprout [data-lk-browser-density="compact"] textarea.lk-browser-textarea,
 .sprout [data-lk-browser-density="compact"] textarea.lk-browser-textarea--editable,
 .sprout [data-lk-browser-density="compact"] textarea.lk-browser-flag-textarea {
-  font-size: var(--sprout-font-2xs);
+  font-size: 0.7rem !important;
   line-height: 1.35;
+  padding: 0 !important;
+  overflow: scroll !important;
 }
 
 .sprout [data-lk-browser-density="compact"] .lk-browser-flag-overlay {
-  padding: 3px 6px;
+  padding: 0 !important;
   font-size: var(--sprout-font-2xs);
   line-height: 1.3;
   height: 100%;
@@ -302,7 +341,16 @@
 .sprout textarea.lk-browser-textarea,
 .sprout textarea.lk-browser-textarea--editable,
 .sprout textarea.lk-browser-flag-textarea {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+}
+
+/* Comfortable textarea styling: keep clear field boundaries and readable text. */
+.sprout [data-lk-browser-density="comfortable"] textarea.lk-browser-textarea,
+.sprout [data-lk-browser-density="comfortable"] textarea.lk-browser-textarea--editable,
+.sprout [data-lk-browser-density="comfortable"] textarea.lk-browser-flag-textarea {
+  border: 1px solid var(--theme-accent) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.75rem !important;
 }
 
 /* Contenteditable cells with image support */
@@ -368,7 +416,9 @@
 
 .sprout .lk-browser-flag-input {
   position: relative;
+  opacity: 0;
   z-index: 0;
+  pointer-events: none;
 }
 
 .sprout .lk-browser-flag-overlay {
@@ -582,6 +632,18 @@
   z-index: 0;
 }
 
+.sprout .lk-browser-tag-badge,
+.sprout .lk-browser-tag-empty {
+  color: #fff;
+}
+
+.sprout .lk-browser-tag-remove,
+.sprout .lk-browser-tag-remove .svg-icon,
+.sprout .lk-browser-tag-remove .svg-icon.lucide-x {
+  color: var(--theme-base-95) !important;
+  stroke: currentColor;
+}
+
 .sprout .lk-browser-search-wrap {
   width: 100%;
 }
@@ -615,6 +677,18 @@
 .sprout .lk-browser-textarea:focus {
   border: 1.5px solid var(--theme-accent);
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--theme-accent) 10%, transparent);
+  outline: none;
+}
+
+.sprout [data-lk-browser-density="compact"] .lk-browser-textarea:focus,
+.sprout [data-lk-browser-density="compact"] .lk-browser-mcq-input:focus,
+.sprout [data-lk-browser-density="compact"] .lk-browser-mcq-add:focus,
+.sprout [data-lk-browser-density="compact"] .lk-browser-oq-input:focus,
+.sprout [data-lk-browser-density="compact"] .lk-browser-oq-add:focus,
+.sprout [data-lk-browser-density="compact"] .lk-browser-tag-box:focus,
+.sprout [data-lk-browser-density="compact"] .lk-browser-tag-box:focus-within {
+  border: none !important;
+  box-shadow: none !important;
   outline: none;
 }
 
@@ -654,8 +728,16 @@
   text-align: center;
 }
 
+.sprout .lk-browser-select-th:has(.lk-browser-select-all) {
+  padding: 0;
+  vertical-align: middle;
+}
+
 .sprout .lk-browser-select-all {
+  display: block;
   margin: 0;
+  margin-left: auto;
+  margin-right: auto;
   accent-color: var(--theme-accent);
 }
 
@@ -709,7 +791,7 @@
 .sprout .lk-browser-io-frame {
   position: relative;
   display: inline-block;
-  border-radius: var(--radius-l);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   border: var(--sprout-border-width) solid var(--sprout-border-color);
   background: var(--background-secondary);
@@ -824,6 +906,41 @@
   font-size: var(--font-ui-small);
 }
 
+/* Keep numeric pagination buttons exactly square across all states. */
+.sprout .lk-browser-view nav[role="navigation"] button[aria-label^="Page "] {
+  width: 37px !important;
+  min-width: 37px !important;
+  max-width: 37px !important;
+  height: 37px !important;
+  min-height: 37px !important;
+  max-height: 37px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 37px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transform: none !important;
+}
+
+.sprout .lk-browser-view nav[role="navigation"] button[aria-label^="Page "]:hover,
+.sprout .lk-browser-view nav[role="navigation"] button[aria-label^="Page "]:focus-visible,
+.sprout .lk-browser-view nav[role="navigation"] button[aria-label^="Page "]:active,
+.sprout .lk-browser-view nav[role="navigation"] button[aria-label^="Page "][aria-current="page"] {
+  width: 37px !important;
+  min-width: 37px !important;
+  max-width: 37px !important;
+  height: 37px !important;
+  min-height: 37px !important;
+  max-height: 37px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
 /* ---- Search input alignment ---- */
 
 .sprout [data-lk-browser-root="1"] .flex.items-start {
@@ -852,6 +969,7 @@
 }
 
 .sprout .lk-browser-view .table thead th {
+  background-color: var(--color-base-20);
   border-bottom: 1px solid var(--lk-browser-border-soft);
   font-size: var(--font-ui-small);
   color: var(--text-muted);
@@ -862,6 +980,20 @@
 .sprout .lk-browser-view .table tbody td {
   background-color: var(--color-base-00);
   border-bottom: 1px solid var(--color-base-35);
+}
+
+/* Checkbox column cells are emitted with utility classes that set `display:flex`.
+   Override to true table-cell layout so they match row height and stay centered. */
+.sprout .lk-browser-view .table tbody td.lk-browser-cell:has(input[type="checkbox"][data-card-id]) {
+  display: table-cell;
+  height: auto;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.sprout .lk-browser-view .table tbody td.lk-browser-cell:has(input[type="checkbox"][data-card-id]) > input[type="checkbox"][data-card-id] {
+  margin: 0 auto;
+  vertical-align: middle;
 }
 
 .sprout .lk-browser-view .table tbody tr:nth-child(even) {
@@ -1013,6 +1145,7 @@
   overflow-y: auto;
   padding: 4px;
   box-sizing: border-box;
+
 }
 
 .sprout .lk-browser-oq-row {
@@ -1059,6 +1192,14 @@
   border-color: var(--theme-accent);
   box-shadow: none;
   outline: none;
+}
+
+/* Comfortable browser cell chrome (and default non-compact fallback). */
+.sprout [data-lk-browser-density="comfortable"] :is(.lk-browser-tag-box, .lk-browser-oq-cell, .lk-browser-io-box, .lk-browser-mcq-cell),
+.sprout [data-lk-browser-root="1"]:not([data-lk-browser-density="compact"]) :is(.lk-browser-tag-box, .lk-browser-oq-cell, .lk-browser-io-box, .lk-browser-mcq-cell) {
+  border: 1px solid var(--color-base-40) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.75rem !important;
 }
 
 /* ---- Mobile browser toolbar layout ---- */
@@ -1160,7 +1301,7 @@ body.is-mobile .sprout .lk-browser-density-btn {
 
 .theme-dark .sprout .lk-browser-view {
   --lk-browser-surface: var(--background);
-  --lk-browser-header-bg: color-mix(in oklab, var(--theme-base-10) 25%, var(--background) 75%);
+  --lk-browser-header-bg: var(--color-base-20);
   --lk-browser-border-soft: var(--color-base-25);
   --lk-browser-border-strong: var(--color-base-30);
   --lk-browser-row-hover: var(--color-base-00);

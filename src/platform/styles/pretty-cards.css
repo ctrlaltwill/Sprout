@@ -1199,7 +1199,9 @@ mjx-container[jax="CHTML"][display="true"] {
 .sprout-pretty-card img.sprout-inline-flag {
   width: 1em;
   margin: 0;
-  padding-inline-start: 1.35em;
+padding: 0px !important;
+    max-height: 16px !important;
+    max-width: 16px !important;
   list-style-type: disc;
   max-height: 1em;
   border-radius: 999px;

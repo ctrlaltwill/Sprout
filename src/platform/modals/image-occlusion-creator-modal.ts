@@ -24,7 +24,7 @@
  * ---------------------------------------------------------------------------
  */
 
-import { Modal, Notice, type App } from "obsidian";
+import { Modal, Notice, setIcon, type App } from "obsidian";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import type SproutPlugin from "../../main";
@@ -35,7 +35,6 @@ import {
   buildToolbar,
   buildCanvasContainer,
   buildFooter,
-  buildImageLimitDialog,
 } from "../../platform/image-occlusion/io-modal-ui";
 import { autoDetectTextMasks } from "../../platform/image-occlusion/io-ocr";
 
@@ -85,9 +84,6 @@ export class ImageOcclusionCreatorModal extends Modal {
   private history: IOHistoryEntry[] = [];
   private historyIndex = -1;
 
-  // Auto-increment groupKey counter
-  private nextGroupNum = 1;
-
   // DOM elements for canvas
   private viewportEl?: HTMLElement;
   private stageEl?: HTMLElement;
@@ -103,7 +99,6 @@ export class ImageOcclusionCreatorModal extends Modal {
   private btnResetMasks?: HTMLButtonElement;
   private btnCrop?: HTMLButtonElement;
   private btnText?: HTMLButtonElement;
-  private imageLimitDialog?: HTMLDialogElement;
   private t: StageTransform = { scale: 1, tx: 0, ty: 0 };
   private canvasHeightDefaults = {
     height: "300px",
@@ -191,27 +186,52 @@ export class ImageOcclusionCreatorModal extends Modal {
     contentEl.empty();
 
     const headerEl = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header");
-    const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
     if (headerEl) {
-      if (closeBtn) headerEl.appendChild(closeBtn);
-      contentEl.appendChild(headerEl);
+      const titleEl = headerEl.querySelector<HTMLElement>(":scope > .modal-title");
+      if (titleEl) titleEl.setText(headerTitle);
+
+      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .sprout-io-creator-close-btn");
+      if (existingCloseBtn) existingCloseBtn.remove();
+      const legacyHeaderClose = headerEl.querySelector<HTMLElement>(":scope > .modal-close-button");
+      if (legacyHeaderClose) legacyHeaderClose.remove();
+
+      const closeBtn = headerEl.createEl("button", {
+        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-io-creator-close-btn",
+        attr: { type: "button", "aria-label": "Close" },
+      });
+      closeBtn.setAttr("data-tooltip-position", "top");
+      const closeIconWrap = closeBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      setIcon(closeIconWrap, "x");
+      closeBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Close" });
+      closeBtn.addEventListener("click", () => this.close());
     }
+
+    const legacyRootClose = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
+    if (legacyRootClose) legacyRootClose.remove();
+
+    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-io-footer");
+    if (existingFooter) existingFooter.remove();
 
     const modalRoot = contentEl;
     modalRoot.addClass("bc", "sprout-io-creator-root");
 
     const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-4" });
 
-    // ── Image limit dialog ──────────────────────────────────────────────────
-    this.imageLimitDialog = buildImageLimitDialog(modalRoot, () => this.deleteLoadedImage());
-
     // ── Title field ─────────────────────────────────────────────────────────
     const titleField = body.createDiv({ cls: "bc flex flex-col gap-1 sprout-io-title-field" });
     const titleLabel = titleField.createEl("label", { cls: "bc text-sm font-medium" });
     titleLabel.textContent = "Title";
     const titleInput = titleField.createEl("textarea", { cls: "bc textarea w-full sprout-io-title-input" });
-    titleInput.rows = 2;
-    titleField.appendChild(attachFlagPreviewOverlay(titleInput));
+    titleInput.rows = 1;
+    setCssProps(titleInput, "min-height", "60px");
+    setCssProps(titleInput, "height", "60px");
+    setCssProps(titleInput, "max-height", "150px");
+    titleField.appendChild(
+      attachFlagPreviewOverlay(titleInput, 60, 150, {
+        preferInlineControlHeight: true,
+        deferMeasuredHeightUntilInteraction: true,
+      }),
+    );
     this.titleInput = titleInput;
 
     // ── Canvas editor label ─────────────────────────────────────────────────
@@ -224,8 +244,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     const toolbarRefs = buildToolbar(body, {
       onFileSelected: (file: File) => {
         if (this.ioImageData) {
-          this.showImageLimitAlert();
-          return;
+          this.deleteLoadedImage();
         }
         void (async () => {
           try {
@@ -288,8 +307,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       ev.stopPropagation();
 
       if (this.ioImageData) {
-        this.showImageLimitAlert();
-        return;
+        this.deleteLoadedImage();
       }
 
       try {
@@ -320,8 +338,16 @@ export class ImageOcclusionCreatorModal extends Modal {
     const infoLabel = infoField.createEl("label", { cls: "bc text-sm font-medium" });
     infoLabel.textContent = "Extra information";
     const infoInput = infoField.createEl("textarea", { cls: "bc textarea w-full sprout-io-info-input" });
-    infoInput.rows = 3;
-    infoField.appendChild(attachFlagPreviewOverlay(infoInput));
+    infoInput.rows = 1;
+    setCssProps(infoInput, "min-height", "60px");
+    setCssProps(infoInput, "height", "60px");
+    setCssProps(infoInput, "max-height", "150px");
+    infoField.appendChild(
+      attachFlagPreviewOverlay(infoInput, 60, 150, {
+        preferInlineControlHeight: true,
+        deferMeasuredHeightUntilInteraction: true,
+      }),
+    );
     this.infoInput = infoInput;
 
     // ── Groups field ────────────────────────────────────────────────────────
@@ -373,12 +399,6 @@ export class ImageOcclusionCreatorModal extends Modal {
             shape: r.shape === "circle" ? "circle" : "rect",
           };
         });
-
-        const maxGroup = this.rects.reduce((acc, r) => {
-          const n = Number(String(r.groupKey).replace(/[^0-9]/g, ""));
-          return Number.isFinite(n) ? Math.max(acc, n) : acc;
-        }, 0);
-        this.nextGroupNum = Math.max(1, maxGroup + 1);
 
         this.history = this.rects.length || this.textBoxes.length
           ? [
@@ -435,10 +455,23 @@ export class ImageOcclusionCreatorModal extends Modal {
     }
 
     // ── Footer buttons ──────────────────────────────────────────────────────
-    buildFooter(modalRoot, {
+    const footerRefs = buildFooter(this.modalEl, {
       onCancel: () => this.close(),
       onSave: (mode) => void saveIo(mode),
     }, defaultMode);
+
+    // Move the mode picker into content so footer contains action buttons only.
+    const modeRow = footerRefs.footerEl.firstElementChild;
+    if (modeRow) body.appendChild(modeRow);
+
+    // Flatten footer structure to match Add modal: footer directly contains action buttons.
+    const footerButtonRow = footerRefs.footerEl.firstElementChild;
+    if (footerButtonRow) {
+      while (footerButtonRow.firstChild) {
+        footerRefs.footerEl.appendChild(footerButtonRow.firstChild);
+      }
+      footerButtonRow.remove();
+    }
 
     requestAnimationFrame(() => {
       (this.canvasContainerEl ?? this.viewportEl)?.focus();
@@ -491,6 +524,7 @@ export class ImageOcclusionCreatorModal extends Modal {
   private updatePlaceholderVisibility() {
     if (!this.placeholderEl || !this.viewportEl) return;
     if (this.ioImageData) {
+      this.placeholderEl.classList.remove("sprout-display-flex");
       this.placeholderEl.classList.add("sprout-is-hidden");
       this.viewportEl.classList.remove("sprout-is-hidden");
     } else {
@@ -521,15 +555,6 @@ export class ImageOcclusionCreatorModal extends Modal {
 
   // ── Image limit / delete ──────────────────────────────────────────────────
 
-  private showImageLimitAlert() {
-    if (!this.imageLimitDialog) return;
-    try {
-      this.imageLimitDialog.showModal();
-    } catch {
-      // If dialog already open, ignore
-    }
-  }
-
   private deleteLoadedImage() {
     this.ioImageData = null;
     this.rects = [];
@@ -548,8 +573,6 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.updateUndoRedoState();
     this.updateAutoMaskButtonState();
     this.updateResetMasksButtonState();
-    if (this.imageLimitDialog?.open) this.imageLimitDialog.close();
-
   }
 
   // ── Image loading ─────────────────────────────────────────────────────────
@@ -1132,6 +1155,14 @@ export class ImageOcclusionCreatorModal extends Modal {
     }
   }
 
+  private getNextGroupNumber(): number {
+    const maxGroup = this.rects.reduce((acc, r) => {
+      const n = Number.parseInt(String(r.groupKey ?? "").trim(), 10);
+      return Number.isFinite(n) && n > 0 ? Math.max(acc, n) : acc;
+    }, 0);
+    return Math.max(1, maxGroup + 1);
+  }
+
   // ── Rect finalization ─────────────────────────────────────────────────────
 
   private finalizeRect(x1: number, y1: number, x2: number, y2: number) {
@@ -1141,6 +1172,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     const top = Math.min(y1, y2);
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
+    const nextGroupNum = this.getNextGroupNumber();
 
     if (width < 5 || height < 5) return;
 
@@ -1150,7 +1182,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       normY: top / this.stageH,
       normW: width / this.stageW,
       normH: height / this.stageH,
-      groupKey: String(this.nextGroupNum++),
+      groupKey: String(nextGroupNum),
       shape,
     };
 
@@ -1286,7 +1318,7 @@ export class ImageOcclusionCreatorModal extends Modal {
         stageW: this.stageW,
         stageH: this.stageH,
         existingRects: existing,
-        startGroupNumber: this.nextGroupNum,
+        startGroupNumber: this.getNextGroupNumber(),
       });
 
       if (!masks.length) {
@@ -1295,7 +1327,6 @@ export class ImageOcclusionCreatorModal extends Modal {
       }
 
       this.rects.push(...masks);
-      this.nextGroupNum += masks.length;
       this.selectedRectId = null;
       this.selectedTextId = null;
       this.saveHistory();

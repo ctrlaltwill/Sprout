@@ -80,6 +80,7 @@ export class SproutAnalyticsView extends ItemView {
   private _examAttemptsCache: SavedExamAttemptRecord[] = [];
   private _examAttemptsHydrated = false;
   private _aosInitTimer: number | null = null;
+  private _hasPlayedEntryAnimation = false;
 
   constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
     super(leaf);
@@ -170,6 +171,7 @@ export class SproutAnalyticsView extends ItemView {
       this._noteReviewAnalyticsRoot?.unmount();
     } catch (e: unknown) { log.swallow("unmount note-review analytics root", e); }
     this._noteReviewAnalyticsRoot = null;
+    this._hasPlayedEntryAnimation = false;
     resetAOS();
     await Promise.resolve();
   }
@@ -306,6 +308,7 @@ export class SproutAnalyticsView extends ItemView {
     this._applyWidthMode();
 
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
+    const shouldAnimateEntry = animationsEnabled && !this._hasPlayedEntryAnimation;
     // AOS delay cascade: header.ts (external), then page title, then top 4 stat cards, then each row below that
     const headerDelay = 0; // header.ts is external, assumed to be 0
     const titleDelay = headerDelay + 100;
@@ -326,7 +329,7 @@ export class SproutAnalyticsView extends ItemView {
       return;
     };
     const applyRootAos = (el: HTMLElement, delay?: number, animation = "fade-up") => {
-      if (!animationsEnabled) return;
+      if (!shouldAnimateEntry) return;
       el.setAttribute("data-aos", animation);
       if (Number.isFinite(delay)) el.setAttribute("data-aos-delay", String(delay));
     };
@@ -536,7 +539,10 @@ export class SproutAnalyticsView extends ItemView {
       );
     }
 
-    if (animationsEnabled) refreshAOS();
+    if (shouldAnimateEntry) {
+      refreshAOS();
+      this._hasPlayedEntryAnimation = true;
+    }
   }
 
   private _renderKpiCards(
@@ -1390,16 +1396,16 @@ export class SproutAnalyticsView extends ItemView {
 
     allRows.sort((a, b) => b.idx - a.idx);
 
-    let pageSize = 25;
+    let pageSize = 5;
     let currentPage = 0;
 
     // Bottom controls need summary declared before first renderTable() call.
     const bottom = document.createElement("div");
-    bottom.className = "bc mt-2.5 flex flex-row flex-wrap items-center gap-2";
+    bottom.className = "bc mt-2.5 flex flex-row items-center gap-2";
     statsCard.appendChild(bottom);
 
     const summaryWrap = document.createElement("div");
-    summaryWrap.className = "bc flex flex-col gap-1";
+    summaryWrap.className = "bc flex flex-col gap-1 shrink-0";
     const summary = document.createElement("div");
     summary.className = "bc text-sm text-muted-foreground";
     summary.textContent = "";
@@ -1407,11 +1413,11 @@ export class SproutAnalyticsView extends ItemView {
     bottom.appendChild(summaryWrap);
 
     const center = document.createElement("div");
-    center.className = "bc mx-auto flex items-center justify-center";
+    center.className = "bc flex-1 min-w-0 flex items-center justify-center";
     bottom.appendChild(center);
 
     const right = document.createElement("div");
-    right.className = "bc flex flex-row flex-nowrap items-center gap-2";
+    right.className = "bc ml-auto shrink-0 flex flex-row flex-nowrap items-center gap-2";
     bottom.appendChild(right);
 
     const formatStudyTime = (minutes: number) => {
@@ -1544,14 +1550,21 @@ export class SproutAnalyticsView extends ItemView {
     rowsLbl.textContent = tx("ui.analytics.table.rows", "Rows");
 
     const rowsWrap = right.createDiv({ cls: "bc sprout relative inline-flex" });
-    const rowsBtn = rowsWrap.createEl("button", { cls: "bc sprout-btn-toolbar inline-flex h-7 min-w-11 items-center justify-center gap-2 px-2 text-sm" });
+    const rowsBtn = rowsWrap.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-filter inline-flex h-7 min-w-11 items-center justify-between gap-2 px-3 text-sm" });
     rowsBtn.setAttribute("aria-haspopup", "menu");
     rowsBtn.setAttribute("aria-expanded", "false");
+    rowsBtn.setAttribute("aria-label", tx("ui.analytics.table.rowsPerPage", "Rows per page"));
 
     const rowsBtnText = document.createElement("span");
     rowsBtnText.className = "bc truncate";
     rowsBtnText.textContent = String(pageSize);
     rowsBtn.appendChild(rowsBtnText);
+
+    const rowsChevron = document.createElement("span");
+    rowsChevron.className = "bc inline-flex items-center justify-center [&_svg]:size-4 transition-transform duration-150 ease-out";
+    rowsChevron.setAttribute("aria-hidden", "true");
+    setIcon(rowsChevron, "chevron-down");
+    rowsBtn.appendChild(rowsChevron);
 
     const rowsPopover = document.createElement("div");
     const sproutWrapper = document.createElement("div");
@@ -1587,6 +1600,7 @@ export class SproutAnalyticsView extends ItemView {
         activePointerHandler = null;
       }
       rowsBtn.setAttribute("aria-expanded", "false");
+      rowsChevron.classList.remove("rotate-180");
       rowsPopover.setAttribute("aria-hidden", "true");
       rowsPopover.classList.remove("is-open");
       try {
@@ -1626,7 +1640,7 @@ export class SproutAnalyticsView extends ItemView {
         item.appendChild(txt);
 
         const activate = () => {
-          pageSize = Math.max(1, Math.floor(Number(opt) || 25));
+          pageSize = Math.max(1, Math.floor(Number(opt) || 5));
           rowsBtnText.textContent = opt;
           currentPage = 0;
           renderTable();
@@ -1661,6 +1675,7 @@ export class SproutAnalyticsView extends ItemView {
     const openRowsMenu = () => {
       buildRowsOptions();
       rowsBtn.setAttribute("aria-expanded", "true");
+      rowsChevron.classList.add("rotate-180");
       rowsPopover.setAttribute("aria-hidden", "false");
       rowsPopover.classList.add("is-open");
       if (!sproutWrapper.parentElement) document.body.appendChild(sproutWrapper);
@@ -1698,7 +1713,7 @@ export class SproutAnalyticsView extends ItemView {
       while (pagerHost.firstChild) pagerHost.removeChild(pagerHost.firstChild);
 
       const totalRows = allRows.length;
-      const size = Math.max(1, Math.floor(Number(pageSize) || 25));
+      const size = Math.max(1, Math.floor(Number(pageSize) || 5));
       const totalPages = Math.max(1, Math.ceil(totalRows / size));
 
       if (!Number.isFinite(currentPage) || currentPage < 0) currentPage = 0;

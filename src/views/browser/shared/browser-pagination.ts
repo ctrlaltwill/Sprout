@@ -35,7 +35,7 @@ export function renderPagination(
 
   clearNode(host);
 
-  const size = Math.max(1, Math.floor(Number(ctx.pageSize) || 25));
+  const size = Math.max(1, Math.floor(Number(ctx.pageSize) || 5));
   const totalPages = Math.max(1, Math.ceil(totalRows / size));
 
   let pageIndex = ctx.pageIndex;

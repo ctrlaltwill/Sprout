@@ -201,6 +201,7 @@ export interface ModalCardEditorConfig {
   locationPath: string;
   locationTitle: string;
   plugin: SproutPlugin;
+  editableFieldHeights?: Partial<Record<"title" | "question" | "answer" | "info", { min: number; max: number }>>;
 }
 
 export interface ModalCardEditorResult {
@@ -217,7 +218,7 @@ export interface ModalCardEditorResult {
  * Returns the root element, input map, and helpers for groups/MCQ.
  */
 export function createModalCardEditor(config: ModalCardEditorConfig): ModalCardEditorResult {
-  const { type, locationPath, locationTitle, plugin } = config;
+  const { type, locationPath, locationTitle, plugin, editableFieldHeights } = config;
 
   // Build a minimal card record so the editor component can render
   const dummyCard: CardRecord = {
@@ -244,6 +245,7 @@ export function createModalCardEditor(config: ModalCardEditorConfig): ModalCardE
     locationTitle: locationTitle || "",
     showReadOnlyFields: false,
     forceType: type,
+    editableFieldHeights,
   });
 
   return {
