@@ -2016,7 +2016,7 @@ export class SproutReviewerView extends ItemView {
       if (this._firstDeckRender) {
         const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
         if (animationsEnabled && !suppressEntranceAos) {
-          const titleStrip = this._titleStripEl as HTMLElement | null;
+          const titleStrip = this._titleStripEl;
           if (titleStrip) {
             titleStrip.setAttribute("data-aos", "fade-up");
             titleStrip.setAttribute("data-aos-anchor-placement", "top-top");
@@ -2197,7 +2197,7 @@ export class SproutReviewerView extends ItemView {
       const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
       // Initialize AOS animations for reviewer cards
       if (animationsEnabled && !coachShellMode && !suppressEntranceAos) {
-        const titleStrip = this._titleStripEl as HTMLElement | null;
+        const titleStrip = this._titleStripEl;
         if (titleStrip) {
           titleStrip.setAttribute("data-aos", "fade-up");
           titleStrip.setAttribute("data-aos-anchor-placement", "top-top");

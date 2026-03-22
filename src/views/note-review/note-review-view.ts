@@ -527,7 +527,7 @@ export class SproutNoteReviewView extends ItemView {
     const homeBtn = actions.createEl("button", {
       cls: "h-9 flex items-center gap-2 equal-height-btn sprout-btn-control",
       text: isCoachSession
-        ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach Plan")
+        ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach")
         : t(lang, "ui.reviewer.session.returnToDecks", "Return to Home"),
     });
     homeBtn.setAttr("type", "button");
@@ -1092,7 +1092,7 @@ export class SproutNoteReviewView extends ItemView {
     const sessionHeader = contentShell.querySelector<HTMLElement>("[data-study-session-header]");
     clearAos(sessionHeader);
     const sessionTimerRow = sessionHeader?.querySelector<HTMLElement>(".sprout-session-header-left > div:nth-child(2)") ?? null;
-    const stripEl = this._titleStripEl as HTMLElement | null;
+    const stripEl = this._titleStripEl;
     const titleTimerHost = this._titleTimerHostEl as HTMLElement | null;
     if (titleTimerHost) {
       while (titleTimerHost.firstChild) titleTimerHost.removeChild(titleTimerHost.firstChild);

@@ -992,14 +992,16 @@ export class SproutExamGeneratorView extends ItemView {
     });
 
     if (this._coachScopePrefilled) {
+      const coachLabel = "Coach";
+      const backToCoachLabel = `Back to ${coachLabel}`;
       const setupToplineRight = setupTopline.createDiv({ cls: "sprout-exam-generator-setup-topline-right" });
       const backToCoachBtn = setupToplineRight.createEl("button", {
         cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
-        attr: { type: "button", "aria-label": "Back to Coach", "data-tooltip-position": "top" },
+        attr: { type: "button", "aria-label": backToCoachLabel, "data-tooltip-position": "top" },
       });
       const iconWrap = backToCoachBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
       setIcon(iconWrap, "x");
-      backToCoachBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Back to Coach" });
+      backToCoachBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: backToCoachLabel });
       backToCoachBtn.addEventListener("click", () => {
         void this.plugin.openCoachTab(false, { suppressEntranceAos: true, refresh: false }, this.leaf);
       });

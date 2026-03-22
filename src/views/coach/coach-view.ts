@@ -1668,7 +1668,6 @@ export class SproutCoachView extends ItemView {
     const scope = this._scopeFromParts(plan.scope_type, plan.scope_key, plan.scope_name);
     const dayUtc = startOfDayUtc(now);
     const progress = this._coachDb.getProgress(dayUtc, plan.scope_type, plan.scope_key);
-    const daysLeft = daysLeftToExam(plan.exam_date_utc, now);
     const dailyFlashTarget = Math.max(0, plan.daily_flashcard_target);
     const dailyNoteTarget = Math.max(0, plan.daily_note_target);
     const totalTarget = Math.max(1, dailyFlashTarget + dailyNoteTarget);
