@@ -29,7 +29,7 @@ export const DEFAULT_SETTINGS: SproutSettings = {
       fetchedAt: null,
     },
     enableAnimations: true,
-    themePreset: "playground",
+    themePreset: "glass",
     themeAccentOverride: "",
     showLaunchNoticeModal: true,
     enableReadingStyles: true,

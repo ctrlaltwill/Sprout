@@ -661,53 +661,7 @@
   outline: none !important;
 }
 
-/* Borderless input surfaces for LearnKit controls */
-.sprout :is(
-  textarea,
-  .multi-select-container,
-  input.metadata-input-text,
-  input[type='date']:not(.sprout-coach-date-input),
-  input[type='datetime-local'],
-  input[type='text']:not(.sprout-cloze-typed-input):not(.h-9),
-  input[type='search']:not(.h-9),
-  input[type='email'],
-  input[type='password'],
-  input[type='number']
-),
-.lk-modals :is(
-  textarea,
-  .multi-select-container,
-  input.metadata-input-text,
-  input[type='date']:not(.sprout-coach-date-input),
-  input[type='datetime-local'],
-  input[type='text']:not(.sprout-cloze-typed-input):not(.h-9),
-  input[type='search']:not(.h-9),
-  input[type='email'],
-  input[type='password'],
-  input[type='number']
-) {
-  border: none !important;
-}
 
-/* Keep analytics filter popover search inputs visibly bordered. */
-.sprout [id^="sprout-"][id$="-filter-popover"] input.sprout-filter-search-input.input[type="text"],
-.sprout [id^="sprout-"][id$="-filter-popover"] input.sprout-filter-search-input.input[type="search"],
-.lk-modals [id^="sprout-"][id$="-filter-popover"] input.sprout-filter-search-input.input[type="text"],
-.lk-modals [id^="sprout-"][id$="-filter-popover"] input.sprout-filter-search-input.input[type="search"] {
-  border: 1px solid var(--color-base-40) !important;
-  border-width: 1px !important;
-  border-style: solid !important;
-  border-color: var(--color-base-40) !important;
-}
-
-/* Keep bordered input look for specific Coach/Tests controls that use `input h-9`. */
-.sprout .sprout-coach-search-wrap input.input.h-9[type="search"],
-.sprout .sprout-coach-search-wrap input.input.h-9[type="text"],
-.sprout input.input.h-9.sprout-coach-date-input[type="date"],
-.sprout .sprout-exam-generator-root input.input.h-9[type="search"],
-.sprout input.input.w-full.sprout-attachment-picker-search[type="text"] {
-  border: 1px solid var(--border) !important;
-}
 
 /* Keep browser editable textareas styled in comfortable/non-compact density. */
 .sprout [data-lk-browser-density='comfortable'] :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea),

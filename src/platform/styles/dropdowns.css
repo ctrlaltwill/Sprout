@@ -177,6 +177,26 @@
   display: block;
 }
 
+/* Browser radio dropdown popovers: match analytics filter popover surface + states. */
+.sprout .sprout-dd-popover .sprout-dd-panel {
+  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  border: 1px solid var(--color-base-35) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.sprout .sprout-dd-popover [role="menuitemradio"].group {
+  border: 1px solid transparent;
+  background-color: transparent;
+}
+
+.sprout .sprout-dd-popover [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
+.sprout .sprout-dd-popover [role="menuitemradio"].group[aria-checked="true"] {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
+  color: var(--text-color);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
+}
+
 /* Sprout-scoped zoom for portalled popovers / dropdowns */
 .sprout .dropdown-menu.sprout-popover-overlay,
 .sprout.dropdown-menu.sprout-popover-overlay,
@@ -263,7 +283,8 @@
 }
 
 /* Header nav popover panel: transparent glass surface. */
-.sprout .sprout-header-menu-panel {
+.sprout .sprout-header-menu-panel,
+.sprout-header-menu-panel {
   background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
@@ -271,18 +292,21 @@
 }
 
 /* Keep header menu items visually soft: transparent base border + transparent hover fill. */
-.sprout .sprout-header-menu-panel .group {
+.sprout .sprout-header-menu-panel .group,
+.sprout-header-menu-panel .group {
   border: 1px solid transparent !important;
   background-color: transparent !important;
 }
 
-.sprout .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
+.sprout .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
+.sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
-  .sprout .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
+  .sprout .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
+  .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
     background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
     border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   }

@@ -41,7 +41,7 @@
   left: auto;
   right: auto;
   background: transparent;
-  padding: 0;
+  padding: var(--sprout-app-header-top) var(--sprout-app-header-inset) 0;
 }
 
 .sprout:has(.sprout-settings-view-root) .sprout-header-wrap + .sprout-view-content,
@@ -71,7 +71,7 @@
     align-items: center;
     column-gap: 6px;
     margin: 0;
-    padding: 8px 10px;
+    padding: 10px 12px;
     display: flex;
     position: relative;
 }
@@ -249,6 +249,13 @@
   border-radius: var(--radius-md);
   box-shadow: none;
   transition: all 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+/* Keep the Tools trigger (btn-icon-outline) visually consistent with other header actions. */
+.sprout .sprout-header .lk-more-wrap .btn-icon-outline.sprout-btn-toolbar {
+  background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
+  color: var(--text-normal) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
 }
 
 /* Keep header actions icon-first; text labels slide in on hover/focus. */

@@ -1,9 +1,9 @@
 /* ============================================================================
-   TOKENS / THEMES / PLAYGROUND
+  TOKENS / THEMES / GLASS
    Default LearnKit look-and-feel. Duplicate this file to create new theme packs.
    ========================================================================== */
 
-body[data-sprout-theme-preset="playground"] .sprout,
+body[data-sprout-theme-preset="glass"] .sprout,
 .sprout {
   /* Surfaces - using parent theme color-base variables */
   --background: var(--color-base-00);
@@ -144,7 +144,7 @@ body[data-sprout-theme-preset="playground"] .sprout,
   --lk-color-border: var(--border);
 }
 
-body.theme-dark[data-sprout-theme-preset="playground"] .sprout,
+body.theme-dark[data-sprout-theme-preset="glass"] .sprout,
 .theme-dark .sprout {
   --background: var(--color-base-00);
   --background-primary: var(--color-base-00);

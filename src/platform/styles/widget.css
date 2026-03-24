@@ -568,9 +568,9 @@ margin: 0 1px;
 .sprout .sprout-widget-card-body {
   margin: 10px auto 0 auto;
   gap: 0;
-  border-radius: var(--radius-l);
-  background: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+border-radius: var(--radius-md);
+border: 1px solid var(--theme-base-35);
+    background: var(--background);
   padding: 20px;
   width: 90%;
   /* Content-sized by default; only shrink and scroll when viewport space is tight. */
@@ -883,8 +883,9 @@ margin: 0 1px;
   width: 90%;
   margin: 10px auto;
   align-self: center;
-  border-radius: var(--radius-l);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+border-radius: var(--radius-md);
+border: 1px solid var(--theme-base-35);
+    background: var(--background);
   padding: 20px;
   gap: 10px;
   font-size: var(--sprout-widget-font-teaser-title);

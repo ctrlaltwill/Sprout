@@ -78,6 +78,8 @@
    ========================================================================== */
 
 .sprout-guide-layout {
+  --sprout-guide-topbar-inset: 16px;
+  --sprout-guide-topbar-clearance: 88px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -93,27 +95,48 @@
 /* ---- Category navigation with click popovers ---- */
 
 .sprout-guide-nav {
+  position: absolute;
+  top: var(--sprout-guide-topbar-inset);
+  left: var(--sprout-guide-topbar-inset);
+  right: var(--sprout-guide-topbar-inset);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   flex-shrink: 0;
-  padding: 16px 20px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
-  position: relative;
+  padding: 10px 12px;
+  border: 1px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 74%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   z-index: 10;
-  /* 10px safe margin so dropdown popovers never touch the layout edge */
-  margin: 0 10px;
+  margin: 0;
+}
+
+.sprout-guide-nav::-webkit-scrollbar {
+  display: none;
 }
 
 /* ---- Release notes nav (horizontal scroll with edge fades) ---- */
 
 .sprout-release-nav-frame {
-  position: relative;
+  position: absolute;
+  top: var(--sprout-guide-topbar-inset);
+  left: var(--sprout-guide-topbar-inset);
+  right: var(--sprout-guide-topbar-inset);
   flex-shrink: 0;
-  padding: 16px 20px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  padding: 10px 12px;
+  border: 1px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 74%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   overflow: hidden;
+  z-index: 10;
 }
 
 .sprout-release-nav {
@@ -170,6 +193,7 @@
 
 .sprout-guide-nav-group {
   position: relative;
+  flex: 0 0 auto;
 }
 
 /* ── Category buttons — standalone pill style ── */
@@ -229,13 +253,13 @@
 /* ── Dropdown panel ── */
 
 .sprout-guide-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: auto;
-  z-index: 100;
+  position: fixed;
+  top: var(--sprout-popover-top, auto);
+  left: var(--sprout-popover-left, auto);
+  z-index: 1000;
   min-width: 224px;
-  padding-top: 6px;
+  width: var(--sprout-popover-width, auto);
+  padding-top: 0;
   pointer-events: none;
   visibility: hidden;
   opacity: 0;
@@ -257,6 +281,8 @@
   flex-direction: column;
   min-width: 224px;
   text-align: left;
+  padding: 4px;
+  gap: 0;
   pointer-events: none;
 }
 
@@ -273,6 +299,7 @@
   gap: 8px;
   width: 100%;
   margin: 0;
+  padding: 6px 8px;
   border: 1px solid transparent;
   border-radius: var(--radius-md, 8px);
   background: transparent;
@@ -328,6 +355,7 @@
 /* ── Dropdown label (section header) ── */
 
 .sprout-guide-dropdown-label {
+  padding: 6px 8px;
   font-weight: 400;
   text-align: left;
   user-select: none;
@@ -337,6 +365,7 @@
 
 .sprout-guide-dropdown-divider {
   height: 1px;
+  margin: 4px 0;
 }
 
 /* ---- Content area — scrollable below the nav ---- */
@@ -346,6 +375,7 @@
   min-height: 0;
   overflow: hidden;
   position: relative;
+  padding: 16px 0;
   z-index: 1;
   --sprout-guide-dots-inset: 26px;
   --sprout-guide-dots-size: 8px;
@@ -377,7 +407,7 @@
 
 .sprout-guide-content-inner {
   height: 100%;
-  padding: 20px var(--sprout-guide-dots-safe-space) 35px 40px;
+  padding: calc(var(--sprout-guide-topbar-clearance, 88px) + 20px) var(--sprout-guide-dots-safe-space) 35px 40px;
   overflow-y: auto;
 }
 
@@ -1732,7 +1762,6 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 /* Tab content - scrollable container */
 .sprout-settings-tab-content {
   border: 1px solid var(--color-base-30);
-  padding: 10px 0;
   background-color: var(--background-primary);
   border-radius: var(--radius-md);
   display: flex;
@@ -1764,24 +1793,79 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 }
 
 .sprout-settings-subtab-nav {
-  margin-bottom: 0;
-  width: fit-content;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   max-width: 100%;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sprout-settings-subtab-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .sprout-settings-layout-header .sprout-settings-subtab-nav {
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
   width: 100%;
   max-width: 100%;
+  margin: 0;
   padding: 0;
+  border: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   border-bottom: none;
   gap: 6px;
 }
 
-.sprout-settings-layout-header .sprout-settings-subtab-nav .sprout-guide-nav-btn {
+.sprout :is(.sprout-settings-layout-header .sprout-settings-subtab-nav, .sprout-release-nav) .sprout-settings-subtab-btn {
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+  position: relative;
   box-shadow: none;
+  background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
+  color: var(--text-normal) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.sprout :is(.sprout-settings-layout-header .sprout-settings-subtab-nav, .sprout-release-nav) .sprout-settings-subtab-btn:hover {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  color: var(--color-base-100) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+}
+
+.sprout :is(.sprout-settings-layout-header .sprout-settings-subtab-nav, .sprout-release-nav) .sprout-settings-subtab-btn:focus-visible {
+  background-color: color-mix(in srgb, var(--color-base-45) 17%, transparent 83%) !important;
+  color: var(--color-base-100) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 28%, transparent 72%) !important;
+}
+
+.sprout :is(.sprout-settings-layout-header .sprout-settings-subtab-nav, .sprout-release-nav) .sprout-settings-subtab-btn:active {
+  background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
+  color: var(--color-base-100) !important;
+  border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
+}
+
+.sprout :is(.sprout-settings-layout-header .sprout-settings-subtab-nav, .sprout-release-nav) .sprout-settings-subtab-btn.is-active {
+  background-color: color-mix(in srgb, var(--color-base-40) 25%, transparent 75%) !important;
+  color: var(--color-base-100) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 35%, transparent 65%) !important;
 }
 
 .sprout-settings-layout {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1794,13 +1878,22 @@ body:not(.is-mobile) .sprout-guide-body pre button.copy-code-button.sprout-guide
 }
 
 .sprout-settings-layout-header {
+  position: absolute;
+  top: var(--sprout-guide-topbar-inset, 16px);
+  left: var(--sprout-guide-topbar-inset, 16px);
+  right: var(--sprout-guide-topbar-inset, 16px);
+  z-index: 10;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
-  overflow: visible;
+  overflow: hidden;
   flex-shrink: 0;
-  padding: 16px 20px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  padding: 10px 12px;
+  border: 1px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 74%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .sprout-settings-layout-content {
@@ -2308,11 +2401,13 @@ color: var(--color-base-100);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-base-00);
+  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%);
   color: var(--text-normal);
-  border: 1px solid var(--color-base-40) !important;
+  border: 1px solid var(--color-base-35) !important;
   border-radius: var(--radius-md);
   box-shadow: var(--lk-shadow-popover-md);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .theme-dark .sprout-ss-panel {
@@ -2391,28 +2486,33 @@ color: var(--color-base-100);
   margin: 4px 0;
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  border: 1px solid var(--color-base-00);
+  border: 1px solid transparent;
+  background-color: transparent;
   font-size: var(--font-ui-small);
   color: var(--text-normal);
   user-select: none;
   outline: none;
-  transition: background-color 80ms ease;
+  transition: background-color 80ms ease, border-color 80ms ease, color 80ms ease;
 }
 .sprout-ss-item:hover,
-.sprout-ss-item:focus {
-  background-color: var(--color-base-20);
-    border: 1px solid var(--color-base-35);
+.sprout-ss-item:focus,
+.sprout-ss-item:focus-visible,
+.sprout-ss-item:active {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
   outline: none;
 }
 .sprout-ss-item[aria-selected="true"] {
-  background-color: var(--color-base-30);
-    border: 1px solid var(--color-base-40);
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 .sprout-ss-item[aria-selected="true"]:hover,
-.sprout-ss-item[aria-selected="true"]:focus {
-  background-color: var(--color-base-30);
-    border: 1px solid var(--color-base-40);
+.sprout-ss-item[aria-selected="true"]:focus,
+.sprout-ss-item[aria-selected="true"]:focus-visible,
+.sprout-ss-item[aria-selected="true"]:active {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 /* ---- Radio dot indicator ---- */
@@ -2583,8 +2683,11 @@ color: var(--color-base-100);
   overflow-y: auto;
 }
 
-/* Override parent padding-bottom so content fills to the edge */
+/* Override parent padding so content aligns with other views.
+   The header is position:static on settings, so the default 60px top padding
+   (designed for an overlaying absolute header) is excessive. */
 .sprout .sprout-settings-view-root {
+  padding-top: 20px;
   padding-bottom: 20px;
 }
 

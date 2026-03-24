@@ -100,6 +100,8 @@ export class SproutExamGeneratorView extends ItemView {
     appliedScenarios: false,
     timed: false,
     durationMinutes: 20,
+    customInstructions: "",
+    includeFlashcards: false,
     sourceMode: "selected",
     folderPath: "",
     includeSubfolders: true,
@@ -1082,7 +1084,7 @@ export class SproutExamGeneratorView extends ItemView {
       search.value = this._noteSearchQuery;
       const popover = searchWrap.createDiv({ cls: "sprout-coach-scope-popover dropdown-menu hidden" });
       const scopeList = popover.createDiv({
-        cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto",
+        cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
       });
       scopeList.setAttr("role", "menu");
       scopeList.setAttr("aria-label", "Source matches");
@@ -1107,7 +1109,7 @@ export class SproutExamGeneratorView extends ItemView {
 
       const presetPopover = presetWrap.createDiv({ cls: "sprout-scope-preset-popover dropdown-menu hidden" });
       const presetList = presetPopover.createDiv({
-        cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto",
+        cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
       });
       presetList.setAttr("role", "listbox");
       presetList.setAttr("aria-label", "Saved presets");
@@ -1754,7 +1756,7 @@ export class SproutExamGeneratorView extends ItemView {
     testNameRow.createDiv({ cls: "sprout-exam-generator-label", text: "Test name (optional)" });
     const testNameInput = testNameRow.createEl("input", {
       type: "text",
-      cls: "sprout-exam-generator-input",
+      cls: "bc input h-9 sprout-exam-generator-input",
       attr: { maxlength: "120" },
     });
     testNameInput.value = this._config.testName;
@@ -1762,31 +1764,23 @@ export class SproutExamGeneratorView extends ItemView {
       this._config.testName = testNameInput.value;
     });
 
-    const timedRow = options.createDiv({ cls: "sprout-exam-generator-row" });
-    timedRow.createDiv({ cls: "sprout-exam-generator-label", text: "Exam options" });
-    const togglesWrap = timedRow.createDiv({ cls: "sprout-exam-generator-inline" });
+    type ExamOptionValue = "timed" | "appliedScenarios" | "customInstructions" | "includeFlashcards";
+    const selectedExamOptions = new Set<ExamOptionValue>();
+    if (this._config.timed) selectedExamOptions.add("timed");
+    if (this._config.appliedScenarios) selectedExamOptions.add("appliedScenarios");
+    if (this._config.customInstructions.trim()) selectedExamOptions.add("customInstructions");
+    if (this._config.includeFlashcards) selectedExamOptions.add("includeFlashcards");
 
-    const timedLabel = togglesWrap.createEl("label", { cls: "inline-flex items-center gap-2" });
-    const timedInput = timedLabel.createEl("input", { type: "checkbox" });
-    timedInput.checked = this._config.timed;
-    timedLabel.createSpan({ text: "Enable time limit" });
+    // Dynamic conditional rows container — only checked options show their inputs, no gaps.
+    const conditionalContainer = options.createDiv({ cls: "sprout-exam-generator-row sprout-exam-generator-conditional-rows" });
 
-    const appliedLabel = togglesWrap.createEl("label", { cls: "inline-flex items-center gap-2 ml-3" });
-    const appliedInput = appliedLabel.createEl("input", { type: "checkbox" });
-    appliedInput.checked = this._config.appliedScenarios;
-    appliedLabel.createSpan({ text: "Applied scenarios" });
-
-    appliedInput.addEventListener("change", () => {
-      this._config.appliedScenarios = appliedInput.checked;
-    });
-
-    const durationRow = options.createDiv({ cls: "sprout-exam-generator-row" });
+    const durationRow = conditionalContainer.createDiv({ cls: "sprout-exam-generator-conditional-item" });
     durationRow.classList.toggle("sprout-exam-generator-hidden", !this._config.timed);
     durationRow.createDiv({ cls: "sprout-exam-generator-label", text: "Time limit" });
     const durationInputWrap = durationRow.createDiv({ cls: "sprout-exam-generator-input-wrap" });
     const durationInput = durationInputWrap.createEl("input", {
       type: "number",
-      cls: "sprout-exam-generator-input",
+      cls: "bc input h-9 sprout-exam-generator-input",
       attr: { min: "1", step: "1", inputmode: "numeric", placeholder: "20" },
     });
     const durationUnit = durationInputWrap.createSpan({
@@ -1816,10 +1810,56 @@ export class SproutExamGeneratorView extends ItemView {
     });
     syncDurationSuffix();
 
-    timedInput.addEventListener("change", () => {
-      this._config.timed = timedInput.checked;
-      durationRow.classList.toggle("sprout-exam-generator-hidden", !this._config.timed);
+    const customInstructionsRow = conditionalContainer.createDiv({ cls: "sprout-exam-generator-conditional-item" });
+    customInstructionsRow.classList.toggle("sprout-exam-generator-hidden", !selectedExamOptions.has("customInstructions"));
+    customInstructionsRow.createDiv({ cls: "sprout-exam-generator-label", text: "Custom instructions" });
+    const customInstructionsInput = customInstructionsRow.createEl("textarea", {
+      cls: "bc input sprout-exam-generator-input sprout-exam-generator-custom-instructions",
+      attr: { maxlength: "500", placeholder: "Add additional instructions for the exam generator\u2026", rows: "3" },
     });
+    customInstructionsInput.value = this._config.customInstructions;
+    customInstructionsInput.addEventListener("input", () => {
+      this._config.customInstructions = customInstructionsInput.value;
+    });
+
+    const syncConditionalVisibility = () => {
+      const timedEnabled = selectedExamOptions.has("timed");
+      const customEnabled = selectedExamOptions.has("customInstructions");
+      durationRow.classList.toggle("sprout-exam-generator-hidden", !timedEnabled);
+      customInstructionsRow.classList.toggle("sprout-exam-generator-hidden", !customEnabled);
+      // Hide the entire container when no conditional rows are visible
+      const anyVisible = timedEnabled || customEnabled;
+      conditionalContainer.classList.toggle("sprout-exam-generator-hidden", !anyVisible);
+    };
+    syncConditionalVisibility();
+
+    this._renderMultiSelectOption(
+      options,
+      "Exam options",
+      ["timed", "appliedScenarios", "customInstructions", "includeFlashcards"],
+      selectedExamOptions,
+      (selectedValues) => {
+        selectedExamOptions.clear();
+        for (const value of selectedValues) selectedExamOptions.add(value as ExamOptionValue);
+
+        this._config.timed = selectedExamOptions.has("timed");
+        this._config.appliedScenarios = selectedExamOptions.has("appliedScenarios");
+        this._config.includeFlashcards = selectedExamOptions.has("includeFlashcards");
+
+        if (!selectedExamOptions.has("customInstructions")) {
+          this._config.customInstructions = "";
+          customInstructionsInput.value = "";
+        }
+
+        syncConditionalVisibility();
+      },
+      {
+        timed: "Enable time limit",
+        appliedScenarios: "Applied scenarios",
+        customInstructions: "Custom instructions",
+        includeFlashcards: "Include flashcards",
+      },
+    );
 
     const footer = page.createDiv({ cls: "sprout-coach-wizard-footer sprout-exam-generator-settings-footer" });
     const backBtn = footer.createEl("button", {
@@ -1868,7 +1908,7 @@ export class SproutExamGeneratorView extends ItemView {
     const wrap = row.createDiv({ cls: "sprout-exam-generator-select-wrap" });
     const id = `sprout-dd-${Math.random().toString(36).slice(2, 9)}`;
     const trigger = wrap.createEl("button", {
-      cls: "bc sprout-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 sprout-pointer-auto sprout-exam-generator-select-trigger",
+      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-pointer-auto sprout-exam-generator-select-trigger",
       attr: {
         type: "button",
         id: `${id}-trigger`,
@@ -1971,6 +2011,144 @@ export class SproutExamGeneratorView extends ItemView {
     popover.addEventListener("click", (evt) => {
       evt.stopPropagation();
     });
+  }
+
+  private _renderMultiSelectOption<T extends string>(
+    host: HTMLElement,
+    label: string,
+    values: T[],
+    selected: Set<T>,
+    onChange: (values: T[]) => void,
+    labels?: Record<string, string>,
+  ): void {
+    const row = host.createDiv({ cls: "sprout-exam-generator-row" });
+    row.createDiv({ cls: "sprout-exam-generator-label", text: label });
+
+    const getTextForValue = (value: string): string => labels?.[value] ?? value
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const getTriggerText = (): string => {
+      const selectedValues = values.filter((value) => selected.has(value));
+      if (selectedValues.length === 0) return "None";
+      if (selectedValues.length <= 2) return selectedValues.map(getTextForValue).join(", ");
+      return `${selectedValues.length} selected`;
+    };
+
+    const wrap = row.createDiv({ cls: "sprout-exam-generator-select-wrap" });
+    const id = `sprout-dd-${Math.random().toString(36).slice(2, 9)}`;
+    const trigger = wrap.createEl("button", {
+      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-pointer-auto sprout-exam-generator-select-trigger",
+      attr: {
+        type: "button",
+        id: `${id}-trigger`,
+        "aria-haspopup": "menu",
+        "aria-expanded": "false",
+        "aria-label": label,
+      },
+    });
+    const triggerText = trigger.createSpan({ cls: "truncate", text: getTriggerText() });
+    const chevron = trigger.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-4" });
+    chevron.setAttr("aria-hidden", "true");
+    setIcon(chevron, "chevron-down");
+
+    const popover = wrap.createDiv({ cls: "sprout-exam-generator-select-popover dropdown-menu hidden" });
+    const panel = popover.createDiv({
+      cls: "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-exam-generator-select-panel",
+    });
+    const menu = panel.createDiv({ cls: "flex flex-col" });
+    menu.setAttr("role", "menu");
+    menu.setAttr("id", `${id}-menu`);
+
+    const close = (): void => {
+      popover.classList.add("hidden");
+      trigger.setAttr("aria-expanded", "false");
+      document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+    };
+
+    const open = (): void => {
+      popover.classList.remove("hidden");
+      trigger.setAttr("aria-expanded", "true");
+      document.addEventListener("pointerdown", onOutsidePointerDown, true);
+    };
+
+    const onOutsidePointerDown = (evt: PointerEvent): void => {
+      const target = evt.target;
+      if (target instanceof Node && wrap.contains(target)) return;
+      close();
+    };
+
+    const setChecked = (item: HTMLElement, checked: boolean): void => {
+      item.setAttr("aria-checked", checked ? "true" : "false");
+    };
+
+    const items = new Map<T, HTMLElement>();
+
+    const syncUi = (): void => {
+      for (const value of values) {
+        const item = items.get(value);
+        if (!item) continue;
+        setChecked(item, selected.has(value));
+      }
+      triggerText.setText(getTriggerText());
+    };
+
+    for (const value of values) {
+      const item = menu.createDiv({
+        cls: "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+      });
+      item.setAttr("role", "menuitemcheckbox");
+      item.setAttr("tabindex", "0");
+      setChecked(item, selected.has(value));
+
+      const dotWrap = item.createDiv({ cls: "size-4 flex items-center justify-center" });
+      dotWrap.createDiv({ cls: "size-2 rounded-full bg-foreground invisible group-aria-checked:visible" });
+      item.createSpan({ text: getTextForValue(value) });
+
+      const toggle = (): void => {
+        if (selected.has(value)) selected.delete(value);
+        else selected.add(value);
+        syncUi();
+        onChange(values.filter((entry) => selected.has(entry)));
+      };
+
+      item.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        toggle();
+      });
+
+      item.addEventListener("keydown", (evt: KeyboardEvent) => {
+        if (evt.key === "Enter" || evt.key === " ") {
+          evt.preventDefault();
+          evt.stopPropagation();
+          toggle();
+          return;
+        }
+        if (evt.key === "Escape") {
+          evt.preventDefault();
+          evt.stopPropagation();
+          close();
+          trigger.focus();
+        }
+      });
+
+      items.set(value, item);
+    }
+
+    trigger.addEventListener("click", (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      const isOpen = !popover.classList.contains("hidden");
+      if (isOpen) close();
+      else open();
+    });
+
+    popover.addEventListener("click", (evt) => {
+      evt.stopPropagation();
+    });
+
+    syncUi();
   }
 
   private _collectSourceFiles(): TFile[] {
@@ -2909,6 +3087,8 @@ export class SproutExamGeneratorView extends ItemView {
       ...parsedConfig,
       testName: String(parsedConfig?.testName || saved.label || ""),
       appliedScenarios: Boolean(parsedConfig?.appliedScenarios ?? false),
+      customInstructions: String(parsedConfig?.customInstructions || ""),
+      includeFlashcards: Boolean(parsedConfig?.includeFlashcards ?? false),
       sourceMode: parsedConfig?.sourceMode === "folder" ? "folder" : "selected",
       folderPath: String(parsedConfig?.folderPath || ""),
       includeSubfolders: Boolean(parsedConfig?.includeSubfolders ?? true),

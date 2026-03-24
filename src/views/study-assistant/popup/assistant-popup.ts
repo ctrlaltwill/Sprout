@@ -11,7 +11,7 @@ import { marked } from "marked";
 import { log } from "../../../platform/core/logger";
 import { joinPath } from "../../../platform/integrations/sync/backup";
 import type SproutPlugin from "../../../main";
-import { replaceChildrenWithHTML, setCssProps } from "../../../platform/core/ui";
+import { placePopover, replaceChildrenWithHTML, setCssProps } from "../../../platform/core/ui";
 import { mimeFromExt, resolveImageFile } from "../../../platform/image-occlusion/io-helpers";
 import { insertTextAtCursorOrAppend } from "../../../platform/image-occlusion/io-save";
 import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
@@ -157,6 +157,8 @@ export class SproutAssistantPopup {
   private _reviewDepthMenuAbort: AbortController | null = null;
   private _headerMenuOpen = false;
   private _headerMenuAbort: AbortController | null = null;
+  private _headerMenuPortalRoot: HTMLDivElement | null = null;
+  private _headerMenuPopoverEl: HTMLDivElement | null = null;
   private _suppressToggleUntil = 0;
   private _maxObservedPopupHeight = 0;
   private _popupHeightFrame: number | null = null;
@@ -702,6 +704,7 @@ export class SproutAssistantPopup {
       if (this._suspendPopupAutoClose) return;
       const target = e.target as Node;
       if (this.popupEl?.contains(target)) return;
+      if (this._headerMenuPopoverEl?.contains(target)) return;
       if (this.triggerBtn?.contains(target)) return;
       if (this._headerMenuOpen || this.reviewDepthMenuOpen) {
         this._headerMenuOpen = false;
@@ -772,6 +775,7 @@ export class SproutAssistantPopup {
     if (!this.isEmbeddedMode) return;
     void this._saveChatForActiveFile();
     this._captureCurrentLeafSession();
+    this._teardownHeaderMenuPortal();
     this.popupEl?.remove();
     this.popupEl = null;
     this.isEmbeddedMode = false;
@@ -791,6 +795,7 @@ export class SproutAssistantPopup {
     this._reviewDepthMenuAbort = null;
     this._headerMenuAbort?.abort();
     this._headerMenuAbort = null;
+    this._teardownHeaderMenuPortal();
     if (this._popupHeightFrame != null) {
       cancelAnimationFrame(this._popupHeightFrame);
       this._popupHeightFrame = null;
@@ -997,6 +1002,7 @@ export class SproutAssistantPopup {
     this._headerMenuOpen = false;
     this._headerMenuAbort?.abort();
     this._headerMenuAbort = null;
+    this._teardownHeaderMenuPortal();
     this.reviewDepthMenuOpen = false;
     this._reviewDepthMenuAbort?.abort();
     this._reviewDepthMenuAbort = null;
@@ -2558,6 +2564,8 @@ export class SproutAssistantPopup {
         appliedScenarios: false,
         timed: false,
         durationMinutes: 15,
+        customInstructions: "",
+        includeFlashcards: false,
         sourceMode: "selected",
         folderPath: "",
         includeSubfolders: false,
@@ -3743,6 +3751,13 @@ export class SproutAssistantPopup {
     this._applyPresentationState();
   }
 
+  private _teardownHeaderMenuPortal(): void {
+    this._headerMenuPopoverEl?.remove();
+    this._headerMenuPopoverEl = null;
+    this._headerMenuPortalRoot?.remove();
+    this._headerMenuPortalRoot = null;
+  }
+
   private _schedulePopupHeightSync(): void {
     if (!this.popupEl || this.popupEl.hasClass("is-hidden")) return;
     if (this._popupHeightFrame != null) cancelAnimationFrame(this._popupHeightFrame);
@@ -3799,6 +3814,7 @@ export class SproutAssistantPopup {
     this._reviewDepthMenuAbort = null;
     this._headerMenuAbort?.abort();
     this._headerMenuAbort = null;
+    this._teardownHeaderMenuPortal();
 
     const root = this.popupEl;
     const preservedAssistantScrollTop = (root.querySelector(".sprout-assistant-popup-chat-wrap"))?.scrollTop ?? null;
@@ -3833,18 +3849,25 @@ export class SproutAssistantPopup {
       this.render();
     });
 
-    const menuPopover = menuWrap.createDiv({
-      cls: "sprout-assistant-popup-header-popover rounded-md bg-popover text-popover-foreground shadow-lg",
-    });
+    const menuPortalRoot = document.createElement("div");
+    menuPortalRoot.className = "sprout";
+    const menuPopover = document.createElement("div");
+    menuPopover.className = "sprout-assistant-popup-header-popover sprout-popover-overlay dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel";
+    menuPortalRoot.appendChild(menuPopover);
+    this._headerMenuPortalRoot = menuPortalRoot;
+    this._headerMenuPopoverEl = menuPopover;
     menuPopover.setAttribute("role", "menu");
     menuPopover.setAttribute("aria-hidden", this._headerMenuOpen ? "false" : "true");
-    menuPopover.toggleClass("is-open", this._headerMenuOpen);
+    menuPopover.classList.toggle("is-open", this._headerMenuOpen);
+    if (this._headerMenuOpen) {
+      document.body.appendChild(menuPortalRoot);
+    }
     const menuList = menuPopover.createDiv({ cls: "sprout-assistant-popup-header-menu-list" });
 
-    const openGuide = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item" });
+    const openGuide = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
     openGuide.setAttribute("role", "menuitem");
     openGuide.setAttribute("tabindex", "0");
-    const openGuideIcon = openGuide.createSpan({ cls: "sprout-assistant-popup-header-menu-icon" });
+    const openGuideIcon = openGuide.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openGuideIcon.setAttribute("aria-hidden", "true");
     setIcon(openGuideIcon, "book-open");
     openGuide.createSpan({ text: this._tx("ui.studyAssistant.chat.openGuide", "Companion guide") });
@@ -3863,10 +3886,10 @@ export class SproutAssistantPopup {
       void this.plugin.openSettingsTab(false, "guide");
     });
 
-    const openSettings = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item" });
+    const openSettings = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
     openSettings.setAttribute("role", "menuitem");
     openSettings.setAttribute("tabindex", "0");
-    const openSettingsIcon = openSettings.createSpan({ cls: "sprout-assistant-popup-header-menu-icon" });
+    const openSettingsIcon = openSettings.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openSettingsIcon.setAttribute("aria-hidden", "true");
     setIcon(openSettingsIcon, "settings");
     openSettings.createSpan({ text: this._tx("ui.studyAssistant.chat.openSettings", "Companion settings") });
@@ -3888,11 +3911,11 @@ export class SproutAssistantPopup {
     // Voice chat toggle (only shown when speech recognition is available)
     if (this._speechRecognitionSupported) {
       const voiceEnabled = !!this.plugin.settings.studyAssistant.voiceChat;
-      const voiceToggle = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item" });
+      const voiceToggle = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
       voiceToggle.setAttribute("role", "menuitemcheckbox");
       voiceToggle.setAttribute("aria-checked", voiceEnabled ? "true" : "false");
       voiceToggle.setAttribute("tabindex", "0");
-      const voiceIcon = voiceToggle.createSpan({ cls: "sprout-assistant-popup-header-menu-icon" });
+      const voiceIcon = voiceToggle.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
       voiceIcon.setAttribute("aria-hidden", "true");
       setIcon(voiceIcon, voiceEnabled ? "volume-2" : "volume-x");
       voiceToggle.createSpan({
@@ -3931,10 +3954,10 @@ export class SproutAssistantPopup {
     const menuDivider = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-divider" });
     menuDivider.setAttribute("role", "separator");
 
-    const resetCurrent = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item" });
+    const resetCurrent = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
     resetCurrent.setAttribute("role", "menuitem");
     resetCurrent.setAttribute("tabindex", "0");
-    const resetCurrentIcon = resetCurrent.createSpan({ cls: "sprout-assistant-popup-header-menu-icon" });
+    const resetCurrentIcon = resetCurrent.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     resetCurrentIcon.setAttribute("aria-hidden", "true");
     setIcon(resetCurrentIcon, "history");
     resetCurrent.createSpan({ text: this._tx("ui.studyAssistant.chat.resetCurrent", "Reset this conversation") });
@@ -3951,10 +3974,10 @@ export class SproutAssistantPopup {
       void this._resetCurrentModeConversation();
     });
 
-    const clearAll = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item" });
+    const clearAll = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
     clearAll.setAttribute("role", "menuitem");
     clearAll.setAttribute("tabindex", "0");
-    const clearAllIcon = clearAll.createSpan({ cls: "sprout-assistant-popup-header-menu-icon" });
+    const clearAllIcon = clearAll.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     clearAllIcon.setAttribute("aria-hidden", "true");
     setIcon(clearAllIcon, "trash");
     clearAll.createSpan({ text: this._tx("ui.studyAssistant.chat.deleteAllConversations", "Delete all conversations") });
@@ -3972,13 +3995,26 @@ export class SproutAssistantPopup {
     });
 
     if (this._headerMenuOpen) {
+      const placeHeaderMenu = () => {
+        placePopover({
+          trigger: menuBtn,
+          panel: menuPopover,
+          popoverEl: menuPopover,
+          width: 224,
+          align: "right",
+          dropUp: false,
+          gap: 6,
+        });
+      };
+      requestAnimationFrame(() => placeHeaderMenu());
+
       const controller = new AbortController();
       this._headerMenuAbort = controller;
       document.addEventListener("mousedown", (e) => {
         const target = e.target as Node;
         // Keep clicks on header actions (menu and close button) intact.
         // Rendering here would remove the close button before its click event fires.
-        if (!headerActions.contains(target)) {
+        if (!headerActions.contains(target) && !menuPopover.contains(target)) {
           this._headerMenuOpen = false;
           this.render();
         }
@@ -3989,6 +4025,8 @@ export class SproutAssistantPopup {
           this.render();
         }
       }, { signal: controller.signal });
+      window.addEventListener("resize", placeHeaderMenu, { signal: controller.signal });
+      window.addEventListener("scroll", placeHeaderMenu, { capture: true, passive: true, signal: controller.signal });
     }
 
     if (!this.isEmbeddedMode) {

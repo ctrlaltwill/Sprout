@@ -866,7 +866,7 @@ export class SproutCoachView extends ItemView {
     const search = searchWrap.createEl("input", { cls: "bc input h-9", attr: { type: "search", placeholder: "Search notes, folders, tags, or properties..." } });
     search.value = this._searchQuery;
     const popover = searchWrap.createDiv({ cls: "sprout-coach-scope-popover dropdown-menu hidden" });
-    const list = popover.createDiv({ cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto" });
+    const list = popover.createDiv({ cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel" });
     list.setAttr("role", "menu");
     list.setAttr("aria-label", "Content matches");
 
@@ -889,7 +889,7 @@ export class SproutCoachView extends ItemView {
     const presetBtnLabel = presetBtn.createSpan({ cls: "bc", text: "Saved presets" });
     const presetPopover = presetWrap.createDiv({ cls: "sprout-scope-preset-popover dropdown-menu hidden" });
     const presetList = presetPopover.createDiv({
-      cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto",
+      cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
     });
     presetList.setAttr("role", "listbox");
     presetList.setAttr("aria-label", "Saved presets");

@@ -384,6 +384,20 @@ export async function generateExamQuestions(params: {
     "Prioritize educational subject matter (concepts, definitions, mechanisms, diagnosis, management, reasoning, examples, or factual learning content).",
     "Every question must test domain knowledge from educational content, not document structure.",
     ...appliedModeRules,
+    ...(config.includeFlashcards
+      ? [
+        "Include flashcards mode is ON.",
+        "Questions may reuse or adapt the learner's existing flashcard content from the source notes.",
+        "Flashcards can be repeated as MCQ (turn the Q/A pair into a multiple-choice question with plausible distractors) or adapted into SAQ format.",
+        "Treat flashcard content as high-priority study material worth testing.",
+      ]
+      : []),
+    ...(config.customInstructions?.trim()
+      ? [
+        "The user has provided additional custom instructions for this exam:",
+        config.customInstructions.trim(),
+      ]
+      : []),
     "Return valid JSON only with this schema:",
     "{\"questions\":[{\"id\":\"q1\",\"type\":\"mcq|saq\",\"prompt\":\"...\",\"sourcePath\":\"...\",\"options\":[\"...\"],\"correctIndex\":0,\"explanation\":\"...\",\"markingGuide\":[\"...\"]}]}",
     "Rules:",

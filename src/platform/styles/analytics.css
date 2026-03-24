@@ -480,8 +480,8 @@
   height: 36px;
   padding: 0 12px;
   border-radius: var(--radius-s, 4px);
-  border: 1px solid transparent !important;
-  background-color: var(--color-base-20) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
   box-shadow: none;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
@@ -494,14 +494,14 @@
 }
 
 .sprout .sprout-ana-card .sprout-btn-filter:focus-visible {
-  background-color: color-mix(in srgb, var(--color-base-50) 20%, transparent 80%) !important;
-  border-color: color-mix(in srgb, var(--color-base-70) 32%, transparent 68%) !important;
+  background-color: color-mix(in srgb, var(--color-base-45) 17%, transparent 83%) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 28%, transparent 72%) !important;
   color: var(--color-base-100) !important;
 }
 
 .sprout .sprout-ana-card .sprout-btn-filter:active {
-  background-color: color-mix(in srgb, var(--color-base-60) 24%, transparent 76%) !important;
-  border-color: color-mix(in srgb, var(--color-base-80) 36%, transparent 64%) !important;
+  background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
+  border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
   color: var(--color-base-100) !important;
 }
 
@@ -524,13 +524,9 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background-color: transparent;
+  padding-left: 8px;
+  padding-right: 8px;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-/* Reset row has an outer px-2 wrapper; remove inner px-2 to keep width aligned. */
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer {
-  padding-left: 0;
-  padding-right: 0;
 }
 
 .sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"]:is(:hover, :focus, :focus-visible, :active),

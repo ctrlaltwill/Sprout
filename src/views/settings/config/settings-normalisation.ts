@@ -62,7 +62,7 @@ export function normaliseSettingsInPlace(s: SproutSettings): void {
   );
   s.general.githubStars ??= { count: null, fetchedAt: null };
   s.general.showLaunchNoticeModal ??= DEFAULT_SETTINGS.general.showLaunchNoticeModal;
-  s.general.themePreset = "playground";
+  s.general.themePreset = "glass";
   s.general.themeAccentOverride = normaliseHexColorOrEmpty(
     s.general.themeAccentOverride ?? DEFAULT_SETTINGS.general.themeAccentOverride,
   );

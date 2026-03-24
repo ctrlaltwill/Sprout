@@ -572,7 +572,7 @@
 
 .sprout .sprout-exam-generator-step-header h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.9rem;
 }
 
 .sprout .sprout-exam-generator-step-header {
@@ -715,8 +715,25 @@
 .sprout .sprout-exam-generator-select-trigger {
   width: 100%;
   justify-content: space-between;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
+  color: var(--text-normal) !important;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.sprout .sprout-exam-generator-select-trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  color: var(--color-base-100) !important;
+}
+
+.sprout .sprout-exam-generator-select-trigger:active {
+  background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
+  border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
+  color: var(--color-base-100) !important;
 }
 
 .sprout .sprout-exam-generator-select-popover {
@@ -730,6 +747,22 @@
 .sprout .sprout-exam-generator-select-panel {
   width: 100%;
   box-sizing: border-box;
+  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  border: 1px solid var(--color-base-35) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.sprout .sprout-exam-generator-select-panel [role="menuitemradio"].group {
+  border: 1px solid transparent;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.sprout .sprout-exam-generator-select-panel [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
+.sprout .sprout-exam-generator-select-panel [role="menuitemradio"].group[aria-checked="true"] {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
+  color: var(--text-color);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 .sprout .sprout-exam-generator-label {
@@ -738,13 +771,21 @@
 }
 
 .sprout .sprout-exam-generator-select,
-.sprout .sprout-exam-generator-input,
 .sprout .sprout-exam-generator-textarea {
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
   color: var(--text-normal);
   padding: 8px;
+}
+
+.sprout .sprout-exam-generator-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sprout .sprout-exam-generator-input::placeholder {
+  color: var(--text-muted);
 }
 
 .sprout .sprout-exam-generator-input-wrap {
@@ -766,7 +807,6 @@
   pointer-events: none;
 }
 
-.sprout .sprout-exam-generator-options .sprout-exam-generator-select-trigger,
 .sprout .sprout-exam-generator-options .sprout-exam-generator-select,
 .sprout .sprout-exam-generator-options .sprout-exam-generator-input {
   height: 36px;
@@ -796,6 +836,46 @@
 .sprout .sprout-exam-generator-inline input[type="checkbox"] {
   margin: 0;
   align-self: center;
+}
+
+.sprout .sprout-exam-generator-inline-wrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  align-items: center;
+}
+
+.sprout .sprout-exam-generator-inline-wrap label {
+  display: inline-flex;
+  width: 100%;
+  min-height: 28px;
+}
+
+.sprout .sprout-exam-generator-options-row-full {
+  grid-column: 1 / -1;
+}
+
+.sprout .sprout-exam-generator-conditional-rows {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sprout .sprout-exam-generator-conditional-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sprout .sprout-exam-generator-custom-instructions {
+  resize: vertical;
+  line-height: 1.5;
+  min-height: 72px;
+  max-height: 200px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: var(--font-ui-small);
 }
 
 .sprout .sprout-exam-generator-actions {
@@ -1141,6 +1221,10 @@
   }
 
   .sprout .sprout-exam-generator-options {
+    grid-template-columns: 1fr;
+  }
+
+  .sprout .sprout-exam-generator-inline-wrap {
     grid-template-columns: 1fr;
   }
 }

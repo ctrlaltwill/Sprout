@@ -1270,6 +1270,40 @@ margin: 0.1rem 0 0;
   gap: 2px;
 }
 
+.sprout .sprout-coach-scope-list.sprout-header-menu-panel .sprout-coach-scope-row {
+  margin: 0;
+  border: 1px solid transparent;
+  background: transparent !important;
+}
+
+.sprout .sprout-coach-scope-list.sprout-header-menu-panel .sprout-coach-scope-row:is(:hover, :focus-within) {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  color: var(--color-base-100, var(--text-normal)) !important;
+}
+
+.sprout .sprout-coach-scope-list.sprout-header-menu-panel .sprout-coach-scope-row:is(.is-selected, [aria-selected="true"]) {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  color: var(--color-base-100, var(--text-normal)) !important;
+}
+
+.sprout .sprout-coach-scope-list.sprout-header-menu-panel .sprout-scope-preset-apply {
+  border: 1px solid transparent;
+  border-radius: inherit;
+}
+
+.sprout .sprout-coach-scope-list.sprout-header-menu-panel .sprout-scope-preset-remove {
+  border: 1px solid transparent;
+  border-radius: var(--radius-s, var(--radius-md));
+}
+
+.sprout .sprout-coach-scope-list.sprout-header-menu-panel .sprout-scope-preset-remove:is(:hover, :focus-visible) {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  color: var(--color-base-100, var(--text-normal));
+}
+
 .sprout .sprout-coach-scope-section-title {
   padding: 6px 8px;
   font-size: var(--font-ui-small);

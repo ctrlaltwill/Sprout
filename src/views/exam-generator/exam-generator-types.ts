@@ -12,6 +12,8 @@ export type ExamGeneratorConfig = {
   appliedScenarios: boolean;
   timed: boolean;
   durationMinutes: number;
+  customInstructions: string;
+  includeFlashcards: boolean;
   sourceMode: "selected" | "folder";
   folderPath: string;
   includeSubfolders: boolean;

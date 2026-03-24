@@ -1014,6 +1014,33 @@ export class SproutNoteReviewView extends ItemView {
     }
   }
 
+  private _positionDockMorePopover(moreWrap: HTMLElement, popover: HTMLElement) {
+    const gapPx = 8;
+    const stage = popover.parentElement;
+    if (!stage) return;
+
+    const stageRect = stage.getBoundingClientRect();
+    const triggerRect = moreWrap.getBoundingClientRect();
+
+    // Right-align with moreWrap
+    popover.style.left = "auto";
+    popover.style.right = `${stageRect.right - triggerRect.right}px`;
+
+    // Default: open above
+    popover.style.top = "auto";
+    popover.style.bottom = `${stageRect.bottom - triggerRect.top + gapPx}px`;
+
+    const popoverRect = popover.getBoundingClientRect();
+    const spaceAbove = triggerRect.top - stageRect.top;
+    const spaceBelow = stageRect.bottom - triggerRect.bottom;
+    const shouldOpenBelow = spaceAbove < popoverRect.height + gapPx && spaceBelow > spaceAbove;
+
+    if (shouldOpenBelow) {
+      popover.style.bottom = "auto";
+      popover.style.top = `${triggerRect.bottom - stageRect.top + gapPx}px`;
+    }
+  }
+
   private _toggleDockMore() {
     if (this._dockMoreOpen) {
       this._closeDockMore();
@@ -1032,7 +1059,7 @@ export class SproutNoteReviewView extends ItemView {
 
     const popover = document.createElement("div");
     popover.className =
-      "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-note-review-more-popover";
+      "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-note-review-more-popover sprout-header-menu-panel";
 
     const menu = document.createElement("div");
     menu.className = "bc sprout flex flex-col";
@@ -1089,13 +1116,18 @@ export class SproutNoteReviewView extends ItemView {
 
     addItem(coachShellMode ? backToCoachLabel : "Exit to Decks", "Q", () => void this._quitToHome());
 
-    moreWrap.appendChild(popover);
+    const stage = moreWrap.closest<HTMLElement>(".sprout-note-review-stage");
+    (stage ?? moreWrap).appendChild(popover);
     this._morePopoverEl = popover;
+
+    const positionPopover = () => this._positionDockMorePopover(moreWrap, popover);
+    positionPopover();
+    const rafId = window.requestAnimationFrame(positionPopover);
 
     const onDocPointerDown = (ev: PointerEvent) => {
       const t = ev.target as Node | null;
       if (!t) return;
-      if (moreWrap.contains(t)) return;
+      if (moreWrap.contains(t) || popover.contains(t)) return;
       this._closeDockMore();
     };
     const onDocKeydown = (ev: KeyboardEvent) => {
@@ -1104,15 +1136,22 @@ export class SproutNoteReviewView extends ItemView {
       ev.stopPropagation();
       this._closeDockMore();
     };
+    const onWindowResize = () => {
+      if (!this._dockMoreOpen) return;
+      positionPopover();
+    };
 
     const tid = window.setTimeout(() => {
       document.addEventListener("pointerdown", onDocPointerDown, true);
       document.addEventListener("keydown", onDocKeydown, true);
+      window.addEventListener("resize", onWindowResize);
     }, 0);
     this._moreCleanup = () => {
       window.clearTimeout(tid);
+      window.cancelAnimationFrame(rafId);
       document.removeEventListener("pointerdown", onDocPointerDown, true);
       document.removeEventListener("keydown", onDocKeydown, true);
+      window.removeEventListener("resize", onWindowResize);
     };
 
     const firstItem = popover.querySelector<HTMLElement>("[role='menuitem']");
@@ -1326,7 +1365,7 @@ export class SproutNoteReviewView extends ItemView {
     setCssProps(countCard, "--sprout-note-review-progress", `${Math.round(progress * 100)}%`);
     countCard.createDiv({
       cls: "sprout-note-review-queue-count-label",
-      text: `${remainingCount} of ${totalCount} remaining`,
+      text: `${remainingCount} out of ${totalCount} remaining`,
     });
 
     const buttonGroup = controls.createDiv({ cls: "sprout-note-review-dock-buttons" });

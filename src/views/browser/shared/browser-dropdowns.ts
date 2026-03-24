@@ -72,10 +72,10 @@ export function makeDropdownMenu<T extends string>(
   const popover = document.createElement("div");
   popover.id = `${id}-popover`;
   popover.setAttribute("aria-hidden", "true");
-  popover.classList.add("sprout-popover-overlay");
+  popover.classList.add("sprout-popover-overlay", "sprout-dd-popover");
 
   const panel = document.createElement("div");
-  panel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
+  panel.className = "bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-dd-panel";
   popover.appendChild(panel);
   sproutWrapper.appendChild(popover);
 
@@ -83,7 +83,7 @@ export function makeDropdownMenu<T extends string>(
   menu.setAttribute("role", "menu");
   menu.id = `${id}-menu`;
 
-  menu.className = "flex flex-col";
+  menu.className = "bc flex flex-col";
   panel.appendChild(menu);
 
   const items: Array<{ v: T; el: HTMLElement }> = [];
@@ -103,15 +103,15 @@ export function makeDropdownMenu<T extends string>(
       item.tabIndex = 0;
 
       item.className = (
-        "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+        "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
       );
 
       const dotWrap = document.createElement("div");
-      dotWrap.className = "size-4 flex items-center justify-center";
+      dotWrap.className = "bc size-4 flex items-center justify-center";
       item.appendChild(dotWrap);
 
       const dot = document.createElement("div");
-      dot.className = "size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
+      dot.className = "bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
       dot.setAttribute("aria-hidden", "true");
       dotWrap.appendChild(dot);
 

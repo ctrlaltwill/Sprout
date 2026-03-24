@@ -578,14 +578,33 @@
 }
 
 /* Guard popup surface against broad `.sprout` reset selectors in view containers. */
-.view-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded),
-.workspace-leaf .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded),
-.workspace-leaf-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded) {
+.view-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-modal-location),
+.workspace-leaf .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-modal-location),
+.workspace-leaf-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-modal-location) {
   border-radius: var(--radius-md);
   background: var(--background-primary, #fff);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
   width: 400px;
   max-width: 95%;
+}
+
+/* Modal Companion only: glass panel treatment (do not affect embedded/sidebar mode). */
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) {
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 18%, transparent 82%);
+  background: color-mix(in srgb, var(--color-base-00) 52%, transparent 48%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  backdrop-filter: blur(16px) saturate(125%);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header,
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-composer {
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-content {
+  background: transparent;
 }
 
 .sprout-assistant-popup.is-hidden {
@@ -727,7 +746,7 @@
   min-height: 36px !important;
   max-width: 36px !important;
   max-height: 36px !important;
-  border-radius: 50% !important;
+  border-radius: var(--radius-md);
   border: var(--color-base-40) 1px solid !important;
   background: transparent;
   color: var(--text-muted);
@@ -764,7 +783,7 @@
   min-height: 36px !important;
   max-width: 36px !important;
   max-height: 36px !important;
-  border-radius: 50% !important;
+  border-radius: var(--radius-md);
   border: var(--color-base-40) 1px solid !important;
   background: var(--background);
   color: var(--foreground);
@@ -826,14 +845,21 @@
 
 .sprout-assistant-popup-header-popover {
   display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  min-width: 220px;
-  z-index: 30;
-  border: 1px solid var(--color-base-40);
+  position: fixed;
+  top: auto;
+  right: auto;
+  left: var(--sprout-popover-left, auto);
+  width: var(--sprout-popover-width, auto);
+  min-width: 224px;
+  z-index: var(--lk-z-popover-overlay);
+  border: 1px solid var(--color-base-35) !important;
+  border-radius: var(--radius-md);
   padding: 4px;
-  background: var(--background-primary, #fff);
+  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  color: var(--text-normal);
+  box-shadow: var(--shadow-s, 0 10px 28px rgba(0, 0, 0, 0.18));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .sprout-assistant-popup-header-popover.is-open {
@@ -855,23 +881,38 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 32px;
   padding: 6px 8px;
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid transparent !important;
   cursor: pointer;
   user-select: none;
   outline: none;
   color: var(--text-normal);
+  font-size: 0.875rem;
+  line-height: 1.2;
+  background-color: transparent !important;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
 
 .sprout-assistant-popup-header-menu-item:hover,
-.sprout-assistant-popup-header-menu-item:focus-visible,
+.sprout-assistant-popup-header-menu-item:focus-visible {
+  background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  color: var(--text-normal);
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+}
+
 .sprout-assistant-popup-header-menu-item:active,
 .sprout-assistant-popup-header-menu-item[aria-checked="true"],
 .sprout-assistant-popup-header-menu-item[aria-current="true"],
 .sprout-assistant-popup-header-menu-item[aria-selected="true"] {
-  background: var(--background-modifier-hover, rgba(0, 0, 0, 0.04));
-  border: 1px solid var(--color-base-40);
+  background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  color: var(--text-normal);
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+}
+
+.sprout-assistant-popup-header-menu-item:focus-visible {
+  box-shadow: none;
 }
 
 .sprout-assistant-popup-header-menu-item.is-danger {
@@ -887,6 +928,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-muted);
+  transition: color 0.14s ease;
+}
+
+.sprout-assistant-popup-header-menu-item:hover .sprout-assistant-popup-header-menu-icon,
+.sprout-assistant-popup-header-menu-item:focus-visible .sprout-assistant-popup-header-menu-icon,
+.sprout-assistant-popup-header-menu-item:active .sprout-assistant-popup-header-menu-icon,
+.sprout-assistant-popup-header-menu-item[aria-checked="true"] .sprout-assistant-popup-header-menu-icon,
+.sprout-assistant-popup-header-menu-item[aria-current="true"] .sprout-assistant-popup-header-menu-icon,
+.sprout-assistant-popup-header-menu-item[aria-selected="true"] .sprout-assistant-popup-header-menu-icon {
   color: inherit;
 }
 
@@ -1282,11 +1333,21 @@
   background: var(--background-primary, #fff);
   display: flex;
   align-items: center;
-  transition: border-color 0.12s ease;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
 .sprout-assistant-popup-composer-shell:focus-within {
-  border: 1px solid var(--theme-base-80) !important;
+  border-color: var(--theme-base-80, color-mix(in srgb, var(--interactive-accent, #6a8dff) 42%, var(--background-modifier-border, rgba(0, 0, 0, 0.12)))) !important;
+  background: var(--theme-base-05, color-mix(in srgb, var(--interactive-accent, #6a8dff) 8%, var(--background-primary, #fff))) !important;
+}
+
+.sprout-assistant-popup-composer-shell:focus-within :is(
+  .sprout-assistant-popup-attach-btn,
+  .sprout-assistant-popup-send
+) {
+  background: var(--theme-base-85) !important;
+  border-color: var(--theme-base-95) !important;
+  color: #fff !important;
 }
 
 .sprout-assistant-popup-input {
@@ -1336,7 +1397,7 @@
   min-height: 36px !important;
   max-width: 36px !important;
   max-height: 36px !important;
-  border-radius: 50% !important;
+  border-radius: var(--radius-md);
   border: var(--color-base-40) 1px solid !important;
   background: transparent !important;
   color: var(--text-muted);
@@ -1403,7 +1464,7 @@
   min-height: 36px !important;
   max-width: 36px !important;
   max-height: 36px !important;
-  border-radius: 50% !important;
+  border-radius: var(--radius-md);
   border: var(--color-base-40) 1px solid !important;
   background: transparent !important;
   color: var(--text-muted);
@@ -1532,6 +1593,71 @@
   padding-block: 0 !important;
   padding-inline: 0 !important;
   margin: 0 !important;
+}
+
+/* Modal Companion: subtle transparent internals (single outer glass panel remains the primary effect). */
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-message-bubble.is-assistant {
+  background: color-mix(in srgb, var(--color-base-00) 24%, transparent 76%);
+  border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-message-bubble.is-user {
+  background: color-mix(in srgb, var(--theme-accent) 16%, transparent 84%);
+  border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--theme-base-95) 72%);
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-composer-shell {
+  background: color-mix(in srgb, var(--color-base-00) 20%, transparent 80%);
+  border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-composer-shell:focus-within {
+  background: color-mix(in srgb, var(--color-base-00) 34%, transparent 66%) !important;
+  border-color: color-mix(in srgb, var(--theme-accent, var(--interactive-accent, #6a8dff)) 34%, var(--color-base-70) 66%) !important;
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-input {
+  background: color-mix(in srgb, var(--color-base-00) 10%, transparent 90%);
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
+  .sprout-assistant-popup-overflow,
+  .sprout-assistant-popup-close,
+  .sprout-assistant-popup-attach-btn,
+  .sprout-assistant-popup-send,
+  .sprout-assistant-popup-btn,
+  .sprout-assistant-popup-insert-btn
+) {
+  border-radius: var(--radius-md) !important;
+  background: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
+  color: var(--text-normal);
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
+  .sprout-assistant-popup-overflow,
+  .sprout-assistant-popup-close,
+  .sprout-assistant-popup-attach-btn,
+  .sprout-assistant-popup-send,
+  .sprout-assistant-popup-btn,
+  .sprout-assistant-popup-insert-btn
+):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) {
+  background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  color: var(--color-base-100) !important;
+  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+}
+
+.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
+  .sprout-assistant-popup-overflow,
+  .sprout-assistant-popup-close,
+  .sprout-assistant-popup-attach-btn,
+  .sprout-assistant-popup-send,
+  .sprout-assistant-popup-btn,
+  .sprout-assistant-popup-insert-btn
+):active {
+  background: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
+  color: var(--color-base-100) !important;
+  border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
 }
 
 /* ---- Attachment picker modal ---- */
@@ -1940,7 +2066,7 @@
     var(--sprout-assistant-insert-btn-size) + var(--sprout-assistant-insert-btn-offset) + 4px
   );
   border: 1px solid var(--color-base-40);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: transparent;
   padding: 8px 10px 10px;
   position: relative;

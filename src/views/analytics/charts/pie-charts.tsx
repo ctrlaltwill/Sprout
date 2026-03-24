@@ -573,10 +573,8 @@ export function StagePieCard(props: {
             ) : null}
 
             <div className="h-px bg-border my-1" role="separator" />
-            <div className="px-2">
-              <div className="text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
-                Reset filters
-              </div>
+            <div className="text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
+              Reset filters
             </div>
           </div>
         </div>
@@ -940,19 +938,17 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
             ) : null}
 
             <div className="h-px bg-border my-1" role="separator" />
-            <div className="px-2">
-              <div
-                className="text-sm text-muted-foreground cursor-pointer px-2"
-                onClick={() => {
-                  setSelectedType("all");
-                  setSelectedDecks([]);
-                  setSelectedGroups([]);
-                  setDeckQuery("");
-                  setGroupQuery("");
-                }}
-              >
-                Reset filters
-              </div>
+            <div
+              className="text-sm text-muted-foreground cursor-pointer px-2"
+              onClick={() => {
+                setSelectedType("all");
+                setSelectedDecks([]);
+                setSelectedGroups([]);
+                setDeckQuery("");
+                setGroupQuery("");
+              }}
+            >
+              Reset filters
             </div>
           </div>
         </div>

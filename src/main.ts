@@ -402,7 +402,7 @@ export default class SproutPlugin extends Plugin {
   }
 
   private _applySproutThemePreset() {
-    const preset = String(this.settings?.general?.themePreset ?? "playground").trim() || "playground";
+    const preset = String(this.settings?.general?.themePreset ?? "glass").trim() || "glass";
     document.body.setAttribute("data-sprout-theme-preset", preset);
   }
 

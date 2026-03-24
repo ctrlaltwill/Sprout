@@ -279,7 +279,11 @@ export function attachFlagPreviewOverlay(
   };
 
   const focusEditorFromPreview = () => {
-    control.focus({ preventScroll: true });
+    try {
+      control.focus({ preventScroll: true });
+    } catch {
+      control.focus();
+    }
     if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) {
       const end = control.value.length;
       control.setSelectionRange(end, end);
@@ -289,6 +293,16 @@ export function attachFlagPreviewOverlay(
   const handlePreviewPointerDown = (ev: PointerEvent) => {
     if (ev.button !== 0) return;
     if (document.activeElement === control) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    focusEditorFromPreview();
+  };
+
+  const handlePreviewMouseDown = (ev: MouseEvent) => {
+    if (ev.button !== 0) return;
+    if (document.activeElement === control) return;
+    ev.preventDefault();
+    ev.stopPropagation();
     focusEditorFromPreview();
   };
 
@@ -297,6 +311,8 @@ export function attachFlagPreviewOverlay(
     handlePreviewPointerDown(ev);
   });
   overlay.addEventListener("pointerdown", handlePreviewPointerDown);
+  wrap.addEventListener("mousedown", handlePreviewMouseDown);
+  overlay.addEventListener("mousedown", handlePreviewMouseDown, true);
 
   // Keep click as a fallback for environments that do not dispatch pointer events.
   overlay.addEventListener("click", (ev: MouseEvent) => {

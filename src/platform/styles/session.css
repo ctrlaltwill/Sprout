@@ -251,6 +251,53 @@
     padding: 1.5rem 0 2rem;
 }
 
+/* Flashcard study mode: sticky action dock (note-review style) */
+.sprout .lk-session-card.sprout-session-has-dock {
+  --sprout-session-dock-space: 128px;
+}
+
+.sprout .lk-session-card.sprout-session-has-dock > section {
+  padding-bottom: var(--sprout-session-dock-space);
+}
+
+.sprout .lk-session-card > footer.sprout-session-study-dock {
+  position: sticky;
+  bottom: 16px;
+  z-index: 80;
+  margin: 0 16px 16px;
+  padding: 12px;
+  border: 1px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 74%, transparent);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.sprout .lk-session-card > footer.sprout-session-study-dock :is(button, [id^="bc-menu-"]) {
+  position: relative;
+  z-index: 81;
+}
+
+.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-left,
+.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-right {
+  display: flex;
+  align-items: center;
+}
+
+.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-right {
+  justify-content: flex-end;
+}
+
+.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-center,
+.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 /* Allow text selection in header + Q/A, but keep footer controls non-selectable */
 .sprout .bc-session-card > header,
 .sprout .bc-session-card > section,
@@ -1405,6 +1452,16 @@
     min-height: 104px;
     flex-shrink: 0;
     pointer-events: none;
+  }
+
+  body.is-mobile .sprout .lk-session-card.sprout-session-has-dock {
+    --sprout-session-dock-space: 152px;
+  }
+
+  body.is-mobile .sprout .lk-session-card > footer.sprout-session-study-dock {
+    bottom: 72px;
+    margin: 0 12px 12px;
+    padding: 10px;
   }
 
   body.is-mobile .sprout .lk-session-card .lk-review-edit-icon-btn,

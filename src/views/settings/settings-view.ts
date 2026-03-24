@@ -14,7 +14,7 @@ import { ItemView, setIcon, type WorkspaceLeaf, MarkdownRenderer, Component, TFi
 import { type SproutHeader, createViewHeader } from "../../platform/core/header";
 import { log } from "../../platform/core/logger";
 import { AOS_CASCADE_STEP, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_SETTINGS } from "../../platform/core/constants";
-import { setCssProps } from "../../platform/core/ui";
+import { placePopover, setCssProps } from "../../platform/core/ui";
 import { createTitleStripFrame } from "../../platform/core/view-primitives";
 import { SPROUT_HOME_CONTENT_SHELL_CLASS } from "../../platform/core/ui-classes";
 import { refreshAOS } from "../../platform/core/aos-loader";
@@ -76,6 +76,7 @@ export class SproutSettingsView extends ItemView {
 
   /** Window-level listener cleanups registered by active tab content. */
   private _windowListenerCleanups: Array<() => void> = [];
+  private _guideDropdownPortal: HTMLDivElement | null = null;
 
   /**
    * Lazily-created SettingsTab adapter used to call the existing render methods.
@@ -112,6 +113,8 @@ export class SproutSettingsView extends ItemView {
       this._releaseComponent?.unload?.();
     } catch (e) { log.swallow("dispose settings header", e); }
     this._clearWindowListeners();
+    this._guideDropdownPortal?.remove();
+    this._guideDropdownPortal = null;
     this._header = null;
     this._titleStripEl?.remove();
     this._titleStripEl = null;
@@ -457,13 +460,13 @@ export class SproutSettingsView extends ItemView {
         { id: "general", label: tx("ui.settings.subTabs.general", "General"), method: "renderGeneralTab" },
         { id: "appearance", label: tx("ui.settings.subTabs.appearance", "Appearance"), method: "renderReadingViewTab" },
         { id: "audio", label: tx("ui.settings.subTabs.audio", "Audio"), method: "renderAudioTab" },
-        { id: "cards", label: tx("ui.settings.subTabs.cards", "Flashcards"), method: "renderCardsTab" },
         {
           id: "assistant",
           label: tx("ui.settings.subTabs.assistant", "Companion"),
           paneTitle: tx("ui.settings.subTabs.assistantPane", "Companion"),
           method: "renderStudyTab",
         },
+        { id: "cards", label: tx("ui.settings.subTabs.cards", "Flashcards"), method: "renderCardsTab" },
         { id: "note-review", label: tx("ui.settings.subTabs.noteReview", "Notes"), paneTitle: tx("ui.settings.subTabs.noteReviewPane", "Notes"), method: "renderStudyTab" },
         { id: "reminders", label: tx("ui.settings.subTabs.reminders", "Reminders"), method: "renderStudyTab" },
         { id: "reset", label: tx("ui.settings.subTabs.reset", "Reset"), method: "renderResetTab" },
@@ -494,7 +497,7 @@ export class SproutSettingsView extends ItemView {
         settingsLayout.appendChild(settingsHeader);
 
         const subNav = document.createElement("nav");
-        subNav.className = "sprout-guide-nav sprout-settings-subtab-nav";
+        subNav.className = "sprout-settings-subtab-nav";
         settingsHeader.appendChild(subNav);
 
         const settingsContentFrame = document.createElement("div");
@@ -517,7 +520,7 @@ export class SproutSettingsView extends ItemView {
           group.className = "sprout-guide-nav-group";
 
           const btn = document.createElement("button");
-          btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-guide-nav-btn sprout-settings-action-btn";
+          btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-subtab-btn sprout-settings-action-btn";
           btn.type = "button";
           const tooltipMap: Record<string, string> = {
             audio: tx("ui.settings.subTabs.tooltip.audio", "Open audio options"),
@@ -546,6 +549,24 @@ export class SproutSettingsView extends ItemView {
           group.appendChild(btn);
           subNav.appendChild(group);
         });
+
+        const updateSettingsHeaderClearance = () => {
+          setCssProps(settingsLayout, "--sprout-guide-topbar-clearance", "55px");
+        };
+
+        requestAnimationFrame(() => updateSettingsHeaderClearance());
+        this._trackWindowListener("resize", updateSettingsHeaderClearance, { passive: true });
+        if (typeof ResizeObserver !== "undefined") {
+          const ro = new ResizeObserver(() => updateSettingsHeaderClearance());
+          ro.observe(settingsHeader);
+          this._windowListenerCleanups.push(() => {
+            try {
+              ro.disconnect();
+            } catch {
+              // no-op
+            }
+          });
+        }
 
         const selected = settingsSubTabs.find((s) => s.id === this._activeSettingsSubTab) ?? settingsSubTabs[0];
         methodMap.settings = selected.method;
@@ -824,6 +845,12 @@ export class SproutSettingsView extends ItemView {
         const navCategoryBtns: Array<{ btn: HTMLButtonElement; pageKeys: Set<string> }> = [];
         const navPageItems: Array<{ item: HTMLButtonElement; pageKey: string }> = [];
         let openDropdownGroup: HTMLDivElement | null = null;
+        let openDropdownEl: HTMLDivElement | null = null;
+
+        const dropdownPortal = document.createElement("div");
+        dropdownPortal.className = "sprout";
+        document.body.appendChild(dropdownPortal);
+        this._guideDropdownPortal = dropdownPortal;
 
         for (const category of categories) {
           const categoryPages = category.sections
@@ -925,31 +952,30 @@ export class SproutSettingsView extends ItemView {
           const SAFE_MARGIN = 10;
 
           const show = () => {
-            // Reset to default left-aligned position before measuring
-            setCssProps(dropdown, { left: "0", right: "auto" });
+            const navRect = nav.getBoundingClientRect();
+            const triggerRect = btn.getBoundingClientRect();
+            const align: "left" | "right" = triggerRect.left + 224 > (navRect.right - SAFE_MARGIN) ? "right" : "left";
+
+            placePopover({
+              trigger: btn,
+              panel: dropdown,
+              popoverEl: dropdown,
+              width: 224,
+              align,
+              dropUp: false,
+              gap: 6,
+            });
             dropdown.classList.add("is-visible");
             btn.setAttribute("aria-expanded", "true");
             openDropdownGroup = group;
-
-            // After it becomes visible, check for right-edge overflow
-            requestAnimationFrame(() => {
-              const navRect = nav.getBoundingClientRect();
-              const ddRect = dropdown.getBoundingClientRect();
-              const overflowRight = ddRect.right - (navRect.right - SAFE_MARGIN);
-              if (overflowRight > 0) {
-                // Shift the dropdown left so it stays within the nav boundary
-                const groupRect = group.getBoundingClientRect();
-                const newLeft = Math.min(0, (navRect.right - SAFE_MARGIN) - ddRect.width - groupRect.left);
-                setCssProps(dropdown, "left", `${newLeft}px`);
-              }
-            });
+            openDropdownEl = dropdown;
           };
 
           const hide = () => {
             dropdown.classList.remove("is-visible");
-            setCssProps(dropdown, { left: null, right: null });
             btn.setAttribute("aria-expanded", "false");
             if (openDropdownGroup === group) openDropdownGroup = null;
+            if (openDropdownEl === dropdown) openDropdownEl = null;
           };
 
           btn.addEventListener("click", (ev) => {
@@ -960,15 +986,12 @@ export class SproutSettingsView extends ItemView {
               return;
             }
             if (openDropdownGroup && openDropdownGroup !== group) {
-              const openDropdown = openDropdownGroup.querySelector<HTMLElement>(".sprout-guide-dropdown");
+              const openDropdown = openDropdownEl;
               const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".sprout-guide-nav-btn");
-              if (openDropdown) {
-                openDropdown.classList.remove("is-visible");
-                setCssProps(openDropdown, { left: null, right: null });
-              }
-              if (openBtn) {
-                openBtn.setAttribute("aria-expanded", "false");
-              }
+              if (openDropdown) openDropdown.classList.remove("is-visible");
+              if (openBtn) openBtn.setAttribute("aria-expanded", "false");
+              openDropdownGroup = null;
+              openDropdownEl = null;
             }
             show();
           });
@@ -982,12 +1005,12 @@ export class SproutSettingsView extends ItemView {
 
           group.addEventListener("focusout", (ev) => {
             const next = ev.relatedTarget as Node | null;
-            if (!next || !group.contains(next)) {
+            if (!next || (!group.contains(next) && !dropdown.contains(next))) {
               hide();
             }
           });
 
-          group.appendChild(dropdown);
+          dropdownPortal.appendChild(dropdown);
         }
 
           group.appendChild(btn);
@@ -1240,33 +1263,25 @@ export class SproutSettingsView extends ItemView {
 
         layout.addEventListener("click", (ev) => {
           const target = ev.target as Node | null;
-          if (!target || !openDropdownGroup || openDropdownGroup.contains(target)) return;
-          const openDropdown = openDropdownGroup.querySelector<HTMLElement>(".sprout-guide-dropdown");
+          if (!target || !openDropdownGroup || openDropdownGroup.contains(target) || openDropdownEl?.contains(target)) return;
+          const openDropdown = openDropdownEl;
           const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".sprout-guide-nav-btn");
-          if (openDropdown) {
-            openDropdown.classList.remove("is-visible");
-            setCssProps(openDropdown, { left: null, right: null });
-          }
-          if (openBtn) {
-            openBtn.setAttribute("aria-expanded", "false");
-          }
+          if (openDropdown) openDropdown.classList.remove("is-visible");
+          if (openBtn) openBtn.setAttribute("aria-expanded", "false");
           openDropdownGroup = null;
+          openDropdownEl = null;
         });
 
         for (const { item, pageKey } of navPageItems) {
           item.addEventListener("click", () => {
             if (pageKey === this._activeGuidePage) return;
             if (openDropdownGroup) {
-              const openDropdown = openDropdownGroup.querySelector<HTMLElement>(".sprout-guide-dropdown");
+              const openDropdown = openDropdownEl;
               const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".sprout-guide-nav-btn");
-              if (openDropdown) {
-                openDropdown.classList.remove("is-visible");
-                setCssProps(openDropdown, { left: null, right: null });
-              }
-              if (openBtn) {
-                openBtn.setAttribute("aria-expanded", "false");
-              }
+              if (openDropdown) openDropdown.classList.remove("is-visible");
+              if (openBtn) openBtn.setAttribute("aria-expanded", "false");
               openDropdownGroup = null;
+              openDropdownEl = null;
             }
             this._activeGuidePage = pageKey;
             void renderSelectedPage(true);
@@ -1365,10 +1380,12 @@ export class SproutSettingsView extends ItemView {
 
       const btn = document.createElement("button");
       const isActive = page.key === this._activeReleasePage;
-      btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-guide-nav-btn sprout-settings-action-btn sprout-release-nav-btn";
+      btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-subtab-btn sprout-settings-action-btn sprout-release-nav-btn";
       btn.classList.toggle("is-active", isActive);
       btn.type = "button";
-      btn.textContent = page.label;
+      const label = document.createElement("span");
+      label.textContent = page.label;
+      btn.appendChild(label);
       const tooltip = page.version
         ? `Open ${page.version} release notes`
         : `Open ${page.label.toLowerCase()}`;
@@ -2128,6 +2145,9 @@ export class SproutSettingsView extends ItemView {
 
     if (topTabs.has(normalizedTabId)) {
       this._activeTab = normalizedTabId;
+      if (normalizedTabId === "settings") {
+        this._activeSettingsSubTab = "general";
+      }
     } else if (settingsSubTabs.has(normalizedTabId)) {
       this._activeTab = "settings";
       this._activeSettingsSubTab = normalizedTabId;

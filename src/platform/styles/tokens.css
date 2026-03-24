@@ -5,10 +5,10 @@
    - provide a layered token architecture (core -> typography -> theme pack)
 
    Theme packs:
-   - Current preset: Playground (`./tokens/themes/playground.css`)
-   - To create a new visual flavor, duplicate playground.css and adjust only tokens.
+   - Current preset: Glass (`./tokens/themes/glass.css`)
+   - To create a new visual flavor, duplicate glass.css and adjust only tokens.
    ========================================================================== */
 
 @import "./tokens/core.css";
 @import "./tokens/typography.css";
-@import "./tokens/themes/playground.css";
+@import "./tokens/themes/glass.css";

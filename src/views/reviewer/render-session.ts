@@ -410,7 +410,7 @@ function makeHeaderMenu(opts: {
   popover.classList.add("sprout-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto";
+  panel.className = "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-header-menu-panel";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
@@ -966,6 +966,7 @@ export function renderSessionMode(args: Args) {
   const card = args.currentCard();
   const id = card ? String(card.id) : "";
   const graded = args.session?.graded?.[id] || null;
+  const isFlashcardStudyMode = args.session?.mode === "scheduled" || args.session?.mode === "practice";
 
   // ===== Render Study Session header (persists across all card renders) =====
   renderStudySessionHeader(args.container, args.interfaceLanguage, applyAOS, {
@@ -1146,6 +1147,7 @@ export function renderSessionMode(args: Args) {
 
   // Card present
   args.clearCountdown();
+  if (isFlashcardStudyMode) wrap.classList.add("sprout-session-has-dock");
 
   const sourcePath = card.sourceNotePath || "";
 
@@ -1357,11 +1359,13 @@ export function renderSessionMode(args: Args) {
   // ===== Footer (actions) =====
   const footer = document.createElement("footer");
   footer.className = "bc flex flex-row items-center justify-between gap-4 p-10";
+  if (isFlashcardStudyMode) footer.classList.add("sprout-session-study-dock");
   wrap.appendChild(footer);
 
   // Left: Edit button
   const footerLeft = document.createElement("div");
   footerLeft.className = "bc flex items-center gap-2";
+  if (isFlashcardStudyMode) footerLeft.classList.add("sprout-session-study-dock-left");
 
   const editBtn = isPhoneMobile
     ? makeTextButton({
@@ -1393,6 +1397,7 @@ export function renderSessionMode(args: Args) {
   // Center: Reveal/Grade/Next buttons
   const footerCenter = document.createElement("div");
   footerCenter.className = "bc flex flex-wrap gap-2 items-center justify-center";
+  if (isFlashcardStudyMode) footerCenter.classList.add("sprout-session-study-dock-center");
   footer.appendChild(footerCenter);
 
   const canGradeNow =
@@ -1421,6 +1426,7 @@ export function renderSessionMode(args: Args) {
   // Grading / next buttons (in center)
   const mainRow = document.createElement("div");
   mainRow.className = "bc flex flex-wrap items-center justify-center gap-2";
+  if (isFlashcardStudyMode) mainRow.classList.add("sprout-session-study-dock-buttons");
   let hasMainRowContent = false;
 
   if (!graded) {
@@ -1578,6 +1584,7 @@ export function renderSessionMode(args: Args) {
   // Right: More menu
   const footerRight = document.createElement("div");
   footerRight.className = "bc flex items-center gap-2";
+  if (isFlashcardStudyMode) footerRight.classList.add("sprout-session-study-dock-right");
 
   // Provide open note handler globally for menu
   window.sproutOpenCurrentCardNote = () => {

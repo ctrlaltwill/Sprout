@@ -743,10 +743,8 @@ export function ForgettingCurveChart(props: {
                 ) : null}
 
                 <div className="bc h-px bg-border my-1" role="separator" />
-                <div className="bc px-2">
-                  <div className="bc text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
-                    Reset filters
-                  </div>
+                <div className="bc text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
+                  Reset filters
                 </div>
               </div>
             </div>

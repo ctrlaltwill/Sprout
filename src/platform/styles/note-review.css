@@ -274,31 +274,34 @@ border: 1px solid var(--color-base-30);
 }
 
 .sprout .sprout-note-review-queue-count {
-border-radius: var(--radius-s, 4px);
-    min-height: 37px;
-    color: var(--text-normal);
-    font-size: var(--font-ui-small);
-    white-space: nowrap;
-    text-align: center;
-    box-shadow: none;
-    justify-content: center;
-    align-items: center;
-    padding: 8px 14px;
-    transition: border-color .12s, background-color .12s, color .12s;
-    display: inline-flex
-;
-    border: 1px solid var(--color-base-35) !important;
-    background-color: var(--color-base-20) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--color-base-35) !important;
+  background-color: var(--color-base-20) !important;
+  color: var(--text-normal) !important;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+  box-shadow: none;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-note-review-queue-count:is(:hover, :focus-within) {
+.sprout .sprout-note-review-queue-count:is(:hover, :focus-within, :active) {
   background-color: var(--color-base-30) !important;
   border-color: var(--color-base-40) !important;
-  color: var(--color-base-100);
+  color: var(--color-base-100) !important;
 }
 
 .sprout .sprout-note-review-queue-count-label {
-  font-weight: 400;
+  font-weight: inherit;
+  font-size: inherit;
+  line-height: inherit;
   letter-spacing: 0.01em;
   text-align: center;
 }
@@ -403,35 +406,35 @@ border-radius: var(--radius-s, 4px);
   justify-content: center;
   gap: 8px;
   height: 28px;
-  padding: 0 12px;
+  padding: 0 8px;
   border-radius: var(--radius-s, 4px);
   border: 1px solid var(--color-base-35) !important;
   background-color: var(--color-base-20) !important;
   color: var(--text-normal) !important;
-  font-size: var(--font-ui-small);
   font-weight: 500;
   line-height: 1;
   box-shadow: none;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-note-review-more-trigger:hover:not(:disabled),
-.sprout .sprout-note-review-more-trigger:focus-visible {
+.sprout .sprout-note-review-more-trigger:is(:hover, :focus-visible, :active):not(:disabled) {
   background-color: var(--color-base-30) !important;
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
+.sprout .sprout-note-review-more-trigger:focus-visible {
+  outline: none;
+}
+
 .sprout .sprout-note-review-more-popover {
   position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
+  width: max-content;
   min-width: 230px;
-  border-radius: var(--radius-m, 8px);
-  border: 1px solid var(--color-base-35);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  box-shadow: var(--shadow-s);
+  border: 1px solid var(--color-base-35) !important;
+  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   z-index: 5000;
 }
 
@@ -443,8 +446,8 @@ border-radius: var(--radius-s, 4px);
   width: 100%;
   font-size: var(--sprout-font-sm);
   text-align: left;
-  border-radius: var(--radius-s);
-  border: 0 !important;
+  border-radius: var(--radius-s, var(--radius-md));
+  border: 1px solid transparent !important;
   background: transparent !important;
   padding: 6px 8px;
   cursor: pointer;
@@ -453,9 +456,13 @@ border-radius: var(--radius-s, 4px);
 }
 
 .sprout .sprout-note-review-more-item:hover:not(:disabled),
-.sprout .sprout-note-review-more-item:focus-visible {
-  background: var(--background-modifier-hover) !important;
-  color: var(--text-normal) !important;
+.sprout .sprout-note-review-more-item:focus-visible,
+.sprout .sprout-note-review-more-item:active,
+.sprout .sprout-note-review-more-item[aria-current="true"],
+.sprout .sprout-note-review-more-item[aria-selected="true"] {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  color: var(--color-base-100, var(--text-normal)) !important;
 }
 
 .sprout .sprout-note-review-more-item :is(kbd, .kbd) {

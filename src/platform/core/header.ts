@@ -380,7 +380,7 @@ export class SproutHeader {
     const hide =
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
     this.widthBtnEl.classList.toggle("sprout-is-hidden", hide);
-    this.widthBtnEl.setAttribute("aria-label", isWide ? "Collapse table" : "Expand table");
+    this.widthBtnEl.setAttribute("aria-label", "Expand / Collapse Page");
     this.widthBtnEl.setAttribute("data-tooltip-position", "bottom");
 
     const text = isWide ? "Collapse" : "Expand";

@@ -237,7 +237,7 @@ export function renderDeckMode(args: Args) {
   const groupPopover = createBodyPortalPopover({
     trigger: comboTrigger,
     align: "right",
-    panelClasses: ["sprout-ss-panel"],
+    panelClasses: ["sprout-ss-panel", "sprout-header-menu-panel"],
     overlayClasses: ["sprout-ss-popover"],
     width: 320,
     buildContent(panel, close) {

@@ -265,8 +265,12 @@ export class BulkEditModal extends Modal {
       window.setTimeout(syncPreviewHeight, 80);
     };
 
-    const focusEditorFromPreview = (ev: Event) => {
-      control.focus({ preventScroll: true });
+    const focusEditorFromPreview = () => {
+      try {
+        control.focus({ preventScroll: true });
+      } catch {
+        control.focus();
+      }
       if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) {
         const end = control.value.length;
         control.setSelectionRange(end, end);
@@ -276,18 +280,38 @@ export class BulkEditModal extends Modal {
     wrap.addEventListener("pointerdown", (ev: PointerEvent) => {
       if (ev.button !== 0) return;
       if (document.activeElement === control) return;
-      focusEditorFromPreview(ev);
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
     });
 
     overlay.addEventListener("pointerdown", (ev: PointerEvent) => {
       if (ev.button !== 0) return;
       if (document.activeElement === control) return;
-      focusEditorFromPreview(ev);
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
+    }, true);
+
+    wrap.addEventListener("mousedown", (ev: MouseEvent) => {
+      if (ev.button !== 0) return;
+      if (document.activeElement === control) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
+    });
+
+    overlay.addEventListener("mousedown", (ev: MouseEvent) => {
+      if (ev.button !== 0) return;
+      if (document.activeElement === control) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
     }, true);
 
     overlay.addEventListener("click", (ev: MouseEvent) => {
       if (document.activeElement === control) return;
-      focusEditorFromPreview(ev);
+      focusEditorFromPreview();
     });
 
     const handleDocumentPointerDown = (ev: PointerEvent) => {

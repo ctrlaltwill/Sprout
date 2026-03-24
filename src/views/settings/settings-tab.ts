@@ -764,18 +764,18 @@ export class SproutSettingsTab extends PluginSettingTab {
       .setName(this._tx("ui.settings.appearance.theme.name", "Theme"))
       .setDesc(this._tx("ui.settings.appearance.theme.desc", "Choose the Sprout theme preset."))
       .then((s) => {
-        const preset = this.plugin.settings.general.themePreset ?? "playground";
+        const preset = this.plugin.settings.general.themePreset ?? "glass";
         this._addSimpleSelect(s.controlEl, {
           options: [
             {
-              value: "playground",
-              label: this._tx("ui.settings.appearance.theme.option.playground", "Playground"),
+              value: "glass",
+              label: this._tx("ui.settings.appearance.theme.option.glass", "Glass"),
             },
           ],
           value: preset,
           onChange: (value) => {
             void (async () => {
-              this.plugin.settings.general.themePreset = value === "playground" ? "playground" : "playground";
+              this.plugin.settings.general.themePreset = value === "glass" ? "glass" : "glass";
               await this.plugin.saveAll();
             })();
           },
@@ -2642,7 +2642,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           });
 
           const popover = searchWrap.createDiv({ cls: "sprout-coach-scope-popover dropdown-menu hidden" });
-          const list = popover.createDiv({ cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto" });
+          const list = popover.createDiv({ cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel" });
           list.setAttr("role", "menu");
           list.setAttr("aria-label", `${title} matches`);
 
@@ -4684,7 +4684,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     popover.classList.add("sprout-popover-overlay", "sprout-ss-popover");
 
     const panel = document.createElement("div");
-    panel.className = "sprout-ss-panel";
+    panel.className = "sprout-ss-panel sprout-header-menu-panel";
     popover.appendChild(panel);
     sproutWrapper.appendChild(popover);
 
@@ -4939,7 +4939,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     popover.classList.add("sprout-popover-overlay", "sprout-ss-popover");
 
     const panel = document.createElement("div");
-    panel.className = "sprout-ss-panel";
+    panel.className = "sprout-ss-panel sprout-header-menu-panel";
     popover.appendChild(panel);
     sproutWrapper.appendChild(popover);
 

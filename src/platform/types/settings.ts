@@ -29,8 +29,8 @@ export type SproutSettings = {
       fetchedAt: number | null;
     };
     enableAnimations: boolean;
-    /** Active Sprout appearance theme preset. Currently only "playground" is available. */
-    themePreset: "playground";
+    /** Active Sprout appearance theme preset. Currently only "glass" is available. */
+    themePreset: "glass";
     /** Optional Sprout-local accent override. Empty string inherits Obsidian theme accent. */
     themeAccentOverride: string;
     /** Show a launch notice modal when Obsidian starts. */
