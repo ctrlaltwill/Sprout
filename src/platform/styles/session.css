@@ -227,17 +227,58 @@
 }
 
 .lk-session-card header {
-  margin: 2rem 4rem 0 2.5rem;
+  margin: 2rem 4rem 0 1.2rem;
   padding: 0;
   border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
   border-radius: 0;
 }
 
+.sprout .lk-session-card > header.sprout-session-topbar {
+  margin: 1.2rem;
+  padding: 1.2rem;
+  min-height: 40px;
+  border: 1px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 74%, transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-title :is(div, p, span) {
+  margin-block: 0;
+}
+
+.sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .lk-session-card section {
   padding: 0;
-  margin: 0rem 2.5rem;
+  margin: 1.2rem 2.4rem;
   gap: 0rem;
   transition: all 0.2s ease-in-out;
+}
+
+.sprout .lk-session-card section.sprout-session-practice-prompt {
+  margin: 1.2rem auto;
+  width: min(450px, 90%);
+}
+
+.sprout .lk-session-card section .sprout-session-practice-prompt-subtext {
+  margin-top: 0.6rem;
+  color: var(--text-muted);
 }
 
 .lk-session-card footer {
@@ -264,8 +305,8 @@
   position: sticky;
   bottom: 16px;
   z-index: 80;
-  margin: 0 16px 16px;
-  padding: 12px;
+  margin: 1.2rem;
+  padding: 1.2rem;
   border: 1px solid var(--color-base-35);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--background) 74%, transparent);
@@ -342,10 +383,20 @@
   font-weight: 600; /* semibold */
 }
 
+/* Flashcard session front question content */
+.sprout .lk-session-card .bc-q {
+  font-weight: 600;
+}
+
 /* Answer styling: black, slightly larger */
 .lk-session-card .sprout-a {
   color: var(--sprout-easy-bg);
   font-size: var(--sprout-font-sm-plus); /* text-md equivalent */
+}
+
+/* Flashcard session back answer content (basic/reversed) */
+.sprout .lk-session-card .bc-a {
+  font-weight: 600;
 }
 .lk-session-card .sprout-mcq-correct {
   border-color: var(--sprout-good-bg);
@@ -439,11 +490,16 @@
 .sprout-cloze-revealed {
   margin: 0 1px;
     padding: 2px 5px;
-    font-weight: 400;
+    font-weight: 600;
     border: 1px solid var(--theme-base-35);
     border-radius: var(--radius-md);
     background-color: var(--theme-base-15);
     color: var(--theme-base-95);
+}
+
+/* Cloze front prompt text */
+.sprout .lk-session-card .bc-cloze {
+  font-weight: 600;
 }
 
 .sprout .hidden-cloze {
@@ -519,9 +575,52 @@
 
 /* ---- Session popover menu items ---- */
 
+.sprout .sprout-session-more-popover {
+  min-width: 230px;
+  border: 1px solid var(--color-base-35) !important;
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.sprout .sprout-session-more-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  font-size: var(--sprout-font-sm);
+  text-align: left;
+  border-radius: var(--radius-s, var(--radius-md));
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  padding: 6px 8px;
+}
+
+.sprout .sprout-session-more-item:hover:not(:disabled),
+.sprout .sprout-session-more-item:focus-visible,
+.sprout .sprout-session-more-item:active,
+.sprout .sprout-session-more-item[aria-current="true"],
+.sprout .sprout-session-more-item[aria-selected="true"] {
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  color: var(--color-base-100, var(--text-normal)) !important;
+}
+
+.sprout .sprout-session-more-item :is(kbd, .kbd) {
+  margin-left: auto;
+  opacity: 0.85;
+}
+
 .sprout-menu-item--disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.sprout .sprout-session-more-popover .sprout-menu-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ---- Quit button ---- */
@@ -593,7 +692,7 @@
 }
 
 .sprout :is(.bc-session-card, .lk-session-card) section > .sprout-label-row:first-child {
-  margin-top: 1.5rem;
+  margin-top: 0;
 }
 
 .sprout-tts-replay-btn {
@@ -680,6 +779,12 @@
 .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight):is(:hover, :focus, :focus-within, :focus-visible, :active) {
   border-color: var(--sprout-good-bg) !important;
   background-color: var(--sprout-good-bg-light) !important;
+}
+
+/* In session back review, emphasize correct MCQ answers (even if not selected). */
+.sprout .lk-session-card :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight) .sprout-mcq-option-text,
+.sprout .lk-session-card :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight) .sprout-mcq-option-line {
+  font-weight: 600;
 }
 
 .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-wrong-highlight, .sprout-mcq-wrong-highlight) {
@@ -901,6 +1006,11 @@
 
 .theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) .sprout-oq-wrong-highlight {
   background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+/* In session back review, emphasize correct OQ steps. */
+.sprout .lk-session-card .sprout-oq-correct-highlight .sprout-oq-step-text {
+  font-weight: 600;
 }
 
 /* ---- Grading buttons ---- */
@@ -1342,15 +1452,19 @@
 .sprout-question-title {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 26px;
+  justify-content: flex-start;
+  min-height: 0;
   font-size: var(--sprout-font-md-plus);
   font-weight: 700;
   line-height: 1.25;
   white-space: pre-wrap;
   word-break: break-word;
-  text-align: center;
-  padding: 0 44px 0 0;
+  text-align: left;
+  padding: 0;
+}
+
+.sprout .lk-session-card > header.sprout-session-topbar .sprout-question-title :is(p, span) {
+  margin: 0;
 }
 
 /* Session fallback for inline flag tokens rendered as <img>. */

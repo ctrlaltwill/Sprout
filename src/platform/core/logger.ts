@@ -4,7 +4,7 @@
  * "[LearnKit]" for easy DevTools filtering. Supports four severity levels (debug, info,
  * warn, error) plus a "silent" mode, and a `swallow` helper for previously-empty catch
  * blocks that logs at debug level. The log level can be changed at runtime via
- * `window.__sproutLog.setLevel("debug")`.
+ * `window.__learnkitLog.setLevel("debug")`.
  *
  * @exports
  *   - LogLevel — type union of log severity levels
@@ -85,8 +85,10 @@ export const log = {
 };
 
 // Expose on globalThis so devs can toggle from the console:
-//   window.__sproutLog.setLevel("debug")
+//   window.__learnkitLog.setLevel("debug")
 try {
+  globalThis.__learnkitLog = log;
+  // Backward compatibility for older snippets/docs.
   globalThis.__sproutLog = log;
 } catch {
   // non-browser environment — harmless

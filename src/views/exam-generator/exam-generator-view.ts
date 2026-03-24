@@ -1840,7 +1840,7 @@ export class SproutExamGeneratorView extends ItemView {
       selectedExamOptions,
       (selectedValues) => {
         selectedExamOptions.clear();
-        for (const value of selectedValues) selectedExamOptions.add(value as ExamOptionValue);
+        for (const value of selectedValues) selectedExamOptions.add(value);
 
         this._config.timed = selectedExamOptions.has("timed");
         this._config.appliedScenarios = selectedExamOptions.has("appliedScenarios");

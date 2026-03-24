@@ -320,8 +320,8 @@
 
 .sprout .sprout-btn-top-right {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 1.2rem;
+  right: 1.2rem;
   z-index: 7;
 }
 

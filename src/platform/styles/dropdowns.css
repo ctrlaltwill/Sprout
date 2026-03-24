@@ -179,7 +179,7 @@
 
 /* Browser radio dropdown popovers: match analytics filter popover surface + states. */
 .sprout .sprout-dd-popover .sprout-dd-panel {
-  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -285,7 +285,7 @@
 /* Header nav popover panel: transparent glass surface. */
 .sprout .sprout-header-menu-panel,
 .sprout-header-menu-panel {
-  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);

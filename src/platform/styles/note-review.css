@@ -61,8 +61,8 @@
 .sprout .sprout-note-review-panel {
   --sprout-note-review-dock-space: 86px;
   --sprout-note-review-edge-fade: 40px;
-  --sprout-note-review-topbar-inset: 16px;
-  --sprout-note-review-topbar-clearance: 88px;
+  --sprout-note-review-topbar-inset: 1.2rem;
+  --sprout-note-review-topbar-clearance: 120px;
   position: relative;
   min-height: 0;
   display: flex;
@@ -100,7 +100,7 @@ border: 1px solid var(--color-base-30);
   align-items: center;
   gap: 10px;
   margin: 0;
-  padding: 10px 12px;
+  padding: 1.2rem;
   border: 1px solid var(--color-base-35);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--background) 74%, transparent);
@@ -198,7 +198,7 @@ border: 1px solid var(--color-base-30);
   font-size: var(--sprout-font-sm);
   line-height: 1.7;
   width: 100%;
-  padding: 0 24px;
+  padding: 0 2.4rem;
 }
 
 @media (max-width: 720px) {
@@ -250,9 +250,9 @@ border: 1px solid var(--color-base-30);
 
 .sprout .sprout-note-review-dock {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
+  left: 1.2rem;
+  right: 1.2rem;
+  bottom: 1.2rem;
   transform: none;
   z-index: 80;
   display: grid;
@@ -432,7 +432,7 @@ border: 1px solid var(--color-base-30);
   width: max-content;
   min-width: 230px;
   border: 1px solid var(--color-base-35) !important;
-  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   z-index: 5000;
@@ -512,7 +512,7 @@ border: 1px solid var(--color-base-30);
   .sprout .sprout-note-review-panel {
     --sprout-note-review-dock-space: 120px;
     --sprout-note-review-edge-fade: 32px;
-    --sprout-note-review-topbar-inset: 12px;
+    --sprout-note-review-topbar-inset: 1.2rem;
     --sprout-note-review-topbar-clearance: 80px;
   }
 
@@ -534,9 +534,9 @@ border: 1px solid var(--color-base-30);
   }
 
   .sprout .sprout-note-review-dock {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: 1.2rem;
+    right: 1.2rem;
+    bottom: 1.2rem;
     grid-template-columns: 1fr;
     gap: 8px;
   }

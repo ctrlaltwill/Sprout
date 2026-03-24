@@ -134,24 +134,74 @@ interface CardRenderCtx {
   sourcePath: string;
 }
 
-function formatBreadcrumbs(s: string): string {
-  return String(s ?? "")
-    .replace(/\s*\/\s*/g, " / ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function formatNotePathForHeader(raw: string): string {
-  let s = String(raw ?? "").trim();
-  if (!s) return "Note";
-  s = s.replace(/\\/g, "/").replace(/^\.\//, "");
-  s = s.replace(/\.md$/i, "");
-  return formatBreadcrumbs(s);
-}
-
 function applyInlineMarkdownWithFlags(target: HTMLElement, raw: string): void {
   applyInlineMarkdown(target, processCircleFlagsInMarkdown(raw));
   hydrateCircleFlagsInElement(target);
+}
+
+const QUESTION_NUMBER_WORDS: string[] = [
+  "Zero",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
+  "Twenty",
+];
+
+function toQuestionOrdinalWord(n: number): string {
+  const safe = Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+  return QUESTION_NUMBER_WORDS[safe] ?? String(safe);
+}
+
+function pageNameFromSourcePath(sourcePath: string): string {
+  const clean = String(sourcePath || "").trim().replace(/\\/g, "/");
+  if (!clean) return "Page";
+  const leaf = clean
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .pop() || "";
+  const noExt = leaf.replace(/\.md$/i, "").trim();
+  return noExt || "Page";
+}
+
+function questionNumberWithinNote(session: Session, card: CardRecord): number {
+  const currentId = String(card.id || "");
+  const sourcePath = String(card.sourceNotePath || "").trim().toLowerCase();
+  if (!sourcePath) return 1;
+
+  const noteCards = (session?.queue || [])
+    .filter((entry) => String(entry?.sourceNotePath || "").trim().toLowerCase() === sourcePath)
+    .slice()
+    .sort((a, b) => {
+      const lineDelta = (Number(a?.sourceStartLine) || 0) - (Number(b?.sourceStartLine) || 0);
+      if (lineDelta !== 0) return lineDelta;
+      return String(a?.id || "").localeCompare(String(b?.id || ""));
+    });
+
+  const idx = noteCards.findIndex((entry) => String(entry?.id || "") === currentId);
+  return idx >= 0 ? idx + 1 : 1;
+}
+
+function fallbackQuestionTitle(session: Session, card: CardRecord): string {
+  const page = pageNameFromSourcePath(String(card.sourceNotePath || ""));
+  const questionWord = toQuestionOrdinalWord(questionNumberWithinNote(session, card));
+  return `${page} - Question ${questionWord}`;
 }
 
 function extractInfoField(card: CardRecord): string | null {
@@ -410,7 +460,7 @@ function makeHeaderMenu(opts: {
   popover.classList.add("sprout-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-header-menu-panel";
+  panel.className = "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-header-menu-panel sprout-session-more-popover";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
@@ -423,7 +473,7 @@ function makeHeaderMenu(opts: {
   const addItem = (label: string, hotkey: string | null, onClick: () => void, disabled = false) => {
     const item = document.createElement("div");
     item.className =
-      "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+      "bc group sprout-session-more-item flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
     if (disabled) {
@@ -496,10 +546,8 @@ function makeHeaderMenu(opts: {
     if (left < margin) left = margin;
 
     const panelRect = panel.getBoundingClientRect();
-    let top = r.bottom + 6;
-    if (top + panelRect.height > window.innerHeight - margin) {
-      top = Math.max(margin, r.top - panelRect.height - 6);
-    }
+    // Session More menu should open upward like Note Review.
+    const top = Math.max(margin, r.top - panelRect.height - 6);
 
     setCssProps(popover, "--sprout-popover-left", `${left}px`);
     setCssProps(popover, "--sprout-popover-top", `${top}px`);
@@ -1015,11 +1063,11 @@ export function renderSessionMode(args: Args) {
   const coachBackLabel = (args.coachBackLabel || "Back to Coach").trim() || "Back to Coach";
   if (args.coachSessionMode) {
     quitBtn.className =
-      "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-btn-top-right sprout-reviewer-coach-back-btn";
+      "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-reviewer-coach-back-btn";
     quitBtn.setAttribute("aria-label", coachBackLabel);
   } else {
     quitBtn.className =
-      "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-btn-top-right sprout-session-quit-btn";
+      "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-session-quit-btn";
     quitBtn.setAttribute("aria-label", exitToDecksLabel);
   }
   quitBtn.setAttribute("data-tooltip-position", "top");
@@ -1047,34 +1095,26 @@ export function renderSessionMode(args: Args) {
 
   // ===== Empty state rendered like a normal card =====
   if (!card) {
+    section.classList.add("sprout-session-practice-prompt");
     args.clearTimer();
     args.clearCountdown();
 
     // Header
     const header = document.createElement("header");
-    header.className = "bc flex flex-col gap-4 pt-4 p-6";
+    header.className = "bc sprout-session-topbar";
     wrap.appendChild(header);
 
-    const locationRaw = args.session?.scope?.name || tx("ui.reviewer.session.scope.home", "Home");
-    const location = formatNotePathForHeader(locationRaw);
-
-    const locationRow = document.createElement("div");
-    locationRow.className = "bc flex items-center gap-2 min-w-0";
-    header.appendChild(locationRow);
-
-    const locationEl = document.createElement("div");
-    locationEl.className = "bc text-muted-foreground lk-session-location-text";
-    locationEl.textContent = location || tx("ui.reviewer.session.scope.home", "Home");
-    locationRow.appendChild(locationEl);
-
-    wrap.appendChild(quitBtn);
-
     const titleWrap = document.createElement("div");
-    titleWrap.className = "bc sprout-question-title";
+    titleWrap.className = "bc sprout-session-topbar-title sprout-question-title";
     titleWrap.textContent = practiceMode
       ? tx("ui.reviewer.session.practiceComplete", "Practice complete")
       : tx("ui.reviewer.session.noCardsDue", "No cards are due");
     header.appendChild(titleWrap);
+
+    const topbarActions = document.createElement("div");
+    topbarActions.className = "bc sprout-session-topbar-actions";
+    topbarActions.appendChild(quitBtn);
+    header.appendChild(topbarActions);
 
     // Section: Practice session message (centered, no alert wrapper)
     if (practiceMode) {
@@ -1082,7 +1122,7 @@ export function renderSessionMode(args: Args) {
       d1.className = "bc text-base text-center";
       d1.textContent = tx("ui.reviewer.session.practiceSessionComplete", "Practice session complete");
       const d2 = document.createElement("div");
-      d2.className = "bc text-sm text-center";
+      d2.className = "bc text-sm text-center sprout-session-practice-prompt-subtext";
       d2.textContent =
         "This was a practice session. Scheduling was not changed. You cannot bury or suspend cards in this mode.";
       section.appendChild(d1);
@@ -1092,7 +1132,7 @@ export function renderSessionMode(args: Args) {
       d1.className = "bc text-base text-center";
       d1.textContent = tx("ui.reviewer.session.askStartPractice", "Would you like to start a practice session?");
       const d2 = document.createElement("div");
-      d2.className = "bc text-sm text-center";
+      d2.className = "bc text-sm text-center sprout-session-practice-prompt-subtext";
       d2.textContent =
         "Practice session reviews all cards in this deck, including ones that are not due. It does not affect scheduling. You cannot bury or suspend cards while in this mode";
       section.appendChild(d1);
@@ -1100,38 +1140,45 @@ export function renderSessionMode(args: Args) {
     }
     wrap.appendChild(section);
 
-    // Footer: single primary action; no Undo or More
+    // Footer: practice/return actions centered in the study dock layout
     const footer = document.createElement("footer");
-    footer.className = "bc flex flex-row items-center justify-center gap-3 p-10";
+    footer.className = "bc sprout-session-study-dock";
     wrap.appendChild(footer);
+
+    const footerLeft = document.createElement("div");
+    footerLeft.className = "bc flex items-center gap-2 sprout-session-study-dock-left";
+    footer.appendChild(footerLeft);
+
     const footerCenter = document.createElement("div");
-    footerCenter.className = "bc flex flex-wrap gap-2 items-center";
+    footerCenter.className = "bc flex flex-wrap gap-2 items-center justify-center sprout-session-study-dock-center";
     footer.appendChild(footerCenter);
 
-    if (practiceMode) {
-      const backBtn = makeTextButton({
-        label: tx("ui.reviewer.session.returnToDecks", "Return to Decks"),
-        className: "sprout-btn-toolbar",
-        onClick: () => args.backToDecks(),
-        kbd: isPhoneMobile ? undefined : "Q",
-      });
-      footerCenter.appendChild(backBtn);
-    } else if (canStartPractice && hasStartPractice) {
-      const backBtn = makeTextButton({
-        label: "Return to Decks",
-        className: "sprout-btn-toolbar",
-        onClick: () => args.backToDecks(),
-        kbd: isPhoneMobile ? undefined : "Q",
-      });
-      footerCenter.appendChild(backBtn);
+    const footerRight = document.createElement("div");
+    footerRight.className = "bc flex items-center gap-2 sprout-session-study-dock-right";
+    footer.appendChild(footerRight);
 
+    const backBtn = makeTextButton({
+      label: tx("ui.reviewer.session.returnToDecks", "Return to Decks"),
+      className: "sprout-btn-toolbar",
+      onClick: () => args.backToDecks(),
+      kbd: isPhoneMobile ? undefined : "Q",
+    });
+
+    const canShowPracticeStart = hasStartPractice && (canStartPractice || practiceMode);
+    if (canShowPracticeStart) {
       const startBtn = makeTextButton({
-        label: "Start Practice",
+        label: tx("ui.reviewer.session.startPractice", "Start Practice"),
         className: "sprout-btn-toolbar",
         onClick: () => args.startPractice?.(),
         kbd: isPhoneMobile ? undefined : "↵",
       });
-      footerCenter.appendChild(startBtn);
+
+      // For two-action empty-state footers, keep actions split left/right.
+      footerLeft.appendChild(backBtn);
+      footerRight.appendChild(startBtn);
+    } else {
+      // Single-action empty-state footer keeps action centered.
+      footerCenter.appendChild(backBtn);
     }
 
     args.container.appendChild(wrap);
@@ -1153,25 +1200,10 @@ export function renderSessionMode(args: Args) {
 
   // ===== Header =====
   const header = document.createElement("header");
-  header.className = "bc flex flex-col gap-4 pt-4 p-6";
+  header.className = "bc sprout-session-topbar";
   wrap.appendChild(header);
 
-  const locationRaw = card.sourceNotePath || args.session?.scope?.name || "Note";
-  const location = formatNotePathForHeader(locationRaw);
-
-  // Location row
-  const locationRow = document.createElement("div");
-  locationRow.className = "bc flex items-center gap-2 min-w-0";
-  header.appendChild(locationRow);
-
-  const locationEl = document.createElement("div");
-  locationEl.className = "bc text-muted-foreground lk-session-location-text";
-  locationEl.textContent = location || "Note";
-  locationRow.appendChild(locationEl);
-
-  wrap.appendChild(quitBtn);
-
-  // Title below location
+  // Title in topbar
   const ioLike = isIoCard(card);
   let displayTitle = card.title || "";
 
@@ -1188,12 +1220,16 @@ export function renderSessionMode(args: Args) {
   const TYPE_LABELS = new Set(["basic", "basic (reversed)", "cloze", "multiple choice", "image occlusion", "ordered question", "flashcard"]);
   if (TYPE_LABELS.has(displayTitle.toLowerCase())) displayTitle = "";
 
-  const titleText =
-    displayTitle || "";
+  const titleText = displayTitle || fallbackQuestionTitle(args.session, card);
   const titleWrap = document.createElement("div");
-  titleWrap.className = "bc sprout-question-title";
-  if (!titleText) titleWrap.hidden = true;
+  titleWrap.className = "bc sprout-session-topbar-title sprout-question-title";
   header.appendChild(titleWrap);
+
+  const topbarActions = document.createElement("div");
+  topbarActions.className = "bc sprout-session-topbar-actions";
+  topbarActions.appendChild(quitBtn);
+  header.appendChild(topbarActions);
+
   const titleEl = titleWrap;
   // Render title as markdown to support wiki links and LaTeX
   const titleMd = String(titleText ?? "");
@@ -1358,14 +1394,12 @@ export function renderSessionMode(args: Args) {
 
   // ===== Footer (actions) =====
   const footer = document.createElement("footer");
-  footer.className = "bc flex flex-row items-center justify-between gap-4 p-10";
-  if (isFlashcardStudyMode) footer.classList.add("sprout-session-study-dock");
+  footer.className = "bc sprout-session-study-dock";
   wrap.appendChild(footer);
 
   // Left: Edit button
   const footerLeft = document.createElement("div");
-  footerLeft.className = "bc flex items-center gap-2";
-  if (isFlashcardStudyMode) footerLeft.classList.add("sprout-session-study-dock-left");
+  footerLeft.className = "bc flex items-center gap-2 sprout-session-study-dock-left";
 
   const editBtn = isPhoneMobile
     ? makeTextButton({
@@ -1396,8 +1430,7 @@ export function renderSessionMode(args: Args) {
 
   // Center: Reveal/Grade/Next buttons
   const footerCenter = document.createElement("div");
-  footerCenter.className = "bc flex flex-wrap gap-2 items-center justify-center";
-  if (isFlashcardStudyMode) footerCenter.classList.add("sprout-session-study-dock-center");
+  footerCenter.className = "bc flex flex-wrap gap-2 items-center justify-center sprout-session-study-dock-center";
   footer.appendChild(footerCenter);
 
   const canGradeNow =
@@ -1425,8 +1458,7 @@ export function renderSessionMode(args: Args) {
 
   // Grading / next buttons (in center)
   const mainRow = document.createElement("div");
-  mainRow.className = "bc flex flex-wrap items-center justify-center gap-2";
-  if (isFlashcardStudyMode) mainRow.classList.add("sprout-session-study-dock-buttons");
+  mainRow.className = "bc flex flex-wrap items-center justify-center gap-2 sprout-session-study-dock-buttons";
   let hasMainRowContent = false;
 
   if (!graded) {
@@ -1549,7 +1581,7 @@ export function renderSessionMode(args: Args) {
       mainRow.appendChild(
         makeTextButton({
           label: t(args.interfaceLanguage, "ui.reviewer.oq.submitOrder", "Submit order"),
-          className: "btn sprout-oq-submit-btn",
+          className: "sprout-btn-toolbar",
           onClick: () => {
             const oqMap = ensureOqOrderMap(args.session);
             const currentOrder = oqMap[String(card.id)];
@@ -1583,8 +1615,7 @@ export function renderSessionMode(args: Args) {
 
   // Right: More menu
   const footerRight = document.createElement("div");
-  footerRight.className = "bc flex items-center gap-2";
-  if (isFlashcardStudyMode) footerRight.classList.add("sprout-session-study-dock-right");
+  footerRight.className = "bc flex items-center gap-2 sprout-session-study-dock-right";
 
   // Provide open note handler globally for menu
   window.sproutOpenCurrentCardNote = () => {

@@ -380,7 +380,7 @@ export class SproutHeader {
     const hide =
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
     this.widthBtnEl.classList.toggle("sprout-is-hidden", hide);
-    this.widthBtnEl.setAttribute("aria-label", "Expand / Collapse Page");
+    this.widthBtnEl.setAttribute("aria-label", "Expand / collapse page");
     this.widthBtnEl.setAttribute("data-tooltip-position", "bottom");
 
     const text = isWide ? "Collapse" : "Expand";
@@ -1087,8 +1087,12 @@ export class SproutHeader {
       if (!ok) new Notice(`${label} command is not available.`);
     };
 
-    const openAnkiImport = () => runCommand("sprout:import-anki", "Import from Anki");
-    const openAnkiExport = () => runCommand("sprout:export-anki", "Export to Anki");
+    const ankiNoun = "Anki";
+    const importFromAnkiLabel = `Import from ${ankiNoun}`;
+    const exportToAnkiLabel = `Export to ${ankiNoun}`;
+
+    const openAnkiImport = () => runCommand("sprout:import-anki", importFromAnkiLabel);
+    const openAnkiExport = () => runCommand("sprout:export-anki", exportToAnkiLabel);
     const openSupport = () => {
       window.open("https://github.com/ctrlaltwill/Sprout/issues", "_blank", "noopener,noreferrer");
     };
@@ -1097,9 +1101,9 @@ export class SproutHeader {
     };
 
     const menuItems: SproutHeaderMenuItem[] = [
-      { type: "section", label: "Anki" },
-      { label: "Export to Anki", icon: "folder-up", onActivate: openAnkiExport },
-      { label: "Import from Anki", icon: "folder-down", onActivate: openAnkiImport },
+      { type: "section", label: ankiNoun },
+      { label: exportToAnkiLabel, icon: "folder-up", onActivate: openAnkiExport },
+      { label: importFromAnkiLabel, icon: "folder-down", onActivate: openAnkiImport },
       { type: "separator", label: "" },
       { type: "section", label: "Support" },
       { label: "Get Support", icon: "life-buoy", onActivate: openSupport },

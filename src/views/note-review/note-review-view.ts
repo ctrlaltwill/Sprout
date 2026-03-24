@@ -1023,12 +1023,16 @@ export class SproutNoteReviewView extends ItemView {
     const triggerRect = moreWrap.getBoundingClientRect();
 
     // Right-align with moreWrap
-    popover.style.left = "auto";
-    popover.style.right = `${stageRect.right - triggerRect.right}px`;
+    setCssProps(popover, {
+      left: "auto",
+      right: `${stageRect.right - triggerRect.right}px`,
+    });
 
     // Default: open above
-    popover.style.top = "auto";
-    popover.style.bottom = `${stageRect.bottom - triggerRect.top + gapPx}px`;
+    setCssProps(popover, {
+      top: "auto",
+      bottom: `${stageRect.bottom - triggerRect.top + gapPx}px`,
+    });
 
     const popoverRect = popover.getBoundingClientRect();
     const spaceAbove = triggerRect.top - stageRect.top;
@@ -1036,8 +1040,10 @@ export class SproutNoteReviewView extends ItemView {
     const shouldOpenBelow = spaceAbove < popoverRect.height + gapPx && spaceBelow > spaceAbove;
 
     if (shouldOpenBelow) {
-      popover.style.bottom = "auto";
-      popover.style.top = `${triggerRect.bottom - stageRect.top + gapPx}px`;
+      setCssProps(popover, {
+        bottom: "auto",
+        top: `${triggerRect.bottom - stageRect.top + gapPx}px`,
+      });
     }
   }
 

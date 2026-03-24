@@ -71,7 +71,7 @@
     align-items: center;
     column-gap: 6px;
     margin: 0;
-    padding: 10px 12px;
+    padding: 1.0rem 1.2rem;
     display: flex;
     position: relative;
 }

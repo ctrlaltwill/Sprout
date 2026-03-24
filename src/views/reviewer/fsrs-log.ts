@@ -62,6 +62,65 @@ function intOrDash(x: unknown): string {
   return String(Math.floor(n));
 }
 
+function titleCaseWords(s: string): string {
+  return s
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatCardId(id: string): string {
+  const raw = String(id || "").trim();
+  const clozeChild = raw.match(/^(.*?)::cloze::c(\d+)$/i);
+  if (clozeChild) {
+    const base = String(clozeChild[1] || "").trim();
+    const idx = String(clozeChild[2] || "").trim();
+    return base && idx ? `${base}-C${idx}` : raw;
+  }
+  return raw || "Unknown";
+}
+
+function formatCardType(type: string): string {
+  const t = normLower(type);
+  const map: Record<string, string> = {
+    basic: "Basic",
+    reversed: "Reversed",
+    "reversed-child": "Reversed child",
+    cloze: "Cloze",
+    "cloze-child": "Cloze child",
+    mcq: "Multiple choice",
+    oq: "Ordered question",
+    io: "Image occlusion",
+    "io-child": "Image occlusion child",
+  };
+  return map[t] || titleCaseWords(t || "unknown");
+}
+
+function formatRating(rating: string): string {
+  const r = normLower(rating);
+  if (!r) return "Unknown";
+  if (r === "skip") return "Skip";
+  return titleCaseWords(r);
+}
+
+function formatUiContext(args: {
+  uiButtons: number;
+  uiKey: number;
+  uiSource: string;
+  via: string;
+  auto: boolean;
+  isSkip: boolean;
+  done: unknown;
+  total: unknown;
+  skipMode: unknown;
+}): string {
+  if (args.auto) return "Automatic grading";
+  if (args.uiButtons === 4) return "Four button";
+  if (args.uiButtons === 2) return "Two button";
+  return "Not provided";
+}
+
 export function logFsrsIfNeeded(args: {
   id: string;
   cardType: string;
@@ -116,11 +175,6 @@ export function logFsrsIfNeeded(args: {
   const mcqChoice = safePrimitiveString(meta?.mcqChoice);
   const mcqCorrect = safePrimitiveString(meta?.mcqCorrect);
   const mcqPass = safePrimitiveString(meta?.mcqPass);
-  const mcqBits =
-    ct === "mcq"
-      ? ` | mcqChoice=${mcqChoice} | mcqCorrect=${mcqCorrect} | mcqPass=${mcqPass}`
-      : "";
-
   const rNow =
     typeof metrics?.retrievabilityNow === "number" ? metrics.retrievabilityNow : null;
   const rTarget =
@@ -142,41 +196,57 @@ export function logFsrsIfNeeded(args: {
     isSkip || (stateBefore === undefined && stateAfter === undefined)
       ? ""
       : stateBefore === stateAfter || stateBefore === undefined
-        ? `state=${fsrsStateName(stateAfter)}`
-        : `state=${fsrsStateName(stateBefore)}→${fsrsStateName(stateAfter)}`;
+        ? fsrsStateName(stateAfter)
+        : `${fsrsStateName(stateBefore)}→${fsrsStateName(stateAfter)}`;
 
-  const tBits = isSkip || rNow === null ? "" : ` | t=${elapsedDays}d`;
+  const elapsedBit = isSkip || rNow === null ? "—" : `${elapsedDays}d`;
+  const uiContext = formatUiContext({
+    uiButtons,
+    uiKey,
+    uiSource,
+    via,
+    auto,
+    isSkip,
+    done: meta?.done,
+    total: meta?.total,
+    skipMode: meta?.skipMode,
+  });
 
-  const uiBits = (() => {
-    const parts: string[] = [];
-    if (uiButtons === 2 || uiButtons === 4) parts.push(`ui=${uiButtons}btn`);
-    if (uiKey > 0) parts.push(`key=${uiKey}`);
-    if (uiSource) parts.push(`src=${uiSource}`);
-    if (via) parts.push(`via=${via}`);
-    if (auto) parts.push("auto=1");
-    if (isSkip) parts.push("skip=1");
+  const heading = isSkip ? "SKIP Review" : "FSRS Review";
+  const shortHeading = isSkip ? "SKIP" : "FSRS";
+  const stateLabel = stateBits || "Unknown";
+  const friendlyCardId = formatCardId(id);
+  const friendlyCardType = formatCardType(ct || "unknown");
+  const friendlyRating = formatRating(safePrimitiveString(args.rating, ""));
+  const lines = [
+    `- ${heading}`,
+    `Card: ${friendlyCardId}`,
+    `Type: ${friendlyCardType}`,
+    `Rating: ${friendlyRating}`,
+    `State: ${stateLabel}`,
+    `Elapsed: ${elapsedBit}`,
+    `Retrievability: now ${rNowStr}, target ${rTargetStr}`,
+    `Stability: ${sDays.toFixed(2)}d`,
+    `Difficulty: ${dVal.toFixed(2)}`,
+    `Next due: ${dueStr}`,
+    `UI: ${uiContext}`,
+  ];
 
-    if (Number.isFinite(Number(meta?.done)) && Number.isFinite(Number(meta?.total))) {
-      parts.push(`q=${Number(meta.done)}/${Number(meta.total)}`);
-    }
-    if (typeof meta?.skipMode === "string" && meta.skipMode.trim()) {
-      parts.push(`skipMode=${String(meta.skipMode).trim()}`);
-    }
-    return parts.length ? ` | ${parts.join(" ")}` : "";
-  })();
+  if (ct === "mcq") {
+    lines.push(`MCQ: choice=${mcqChoice}, correct=${mcqCorrect}, pass=${mcqPass}`);
+  }
+  if (isSkip) {
+    lines.push("Note: scheduling unchanged");
+  }
 
-  const prefix = isSkip ? "SKIP:" : "FSRS:";
+  const concise =
+    `${shortHeading} | ` +
+    `Card ${friendlyCardId} | ` +
+    `Rating ${friendlyRating} | ` +
+    `Next due ${dueStr}`;
 
-  const ratingStr = safePrimitiveString(args.rating, "");
-  log.info(
-    `${prefix} card ${id} | type=${ct || "unknown"} | rating=${ratingStr}${uiBits} | ` +
-      `${stateBits}${tBits} | ` +
-      `R_now=${rNowStr} | R_target=${rTargetStr} | ` +
-      `S=${sDays.toFixed(2)}d | ` +
-      `D=${dVal.toFixed(2)} | ` +
-      `nextDue=${dueStr}${mcqBits}` +
-      (isSkip ? " | note=scheduling_unchanged" : ""),
-  );
+  log.info(concise);
+  log.debug(lines.join("\n"));
 }
 
 export function logUndoIfNeeded(args: {

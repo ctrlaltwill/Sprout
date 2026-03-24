@@ -465,7 +465,7 @@
 
 /* Analytics popovers: glass surface like header/note bars. */
 .sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover) {
-  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);

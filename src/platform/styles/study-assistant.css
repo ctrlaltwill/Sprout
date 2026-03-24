@@ -591,7 +591,7 @@
 /* Modal Companion only: glass panel treatment (do not affect embedded/sidebar mode). */
 .sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) {
   border: 1px solid color-mix(in srgb, var(--color-base-70) 18%, transparent 82%);
-  background: color-mix(in srgb, var(--color-base-00) 52%, transparent 48%) !important;
+  background: var(--color-base-00) !important;
   -webkit-backdrop-filter: blur(16px) saturate(125%);
   backdrop-filter: blur(16px) saturate(125%);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
@@ -855,7 +855,7 @@
   border: 1px solid var(--color-base-35) !important;
   border-radius: var(--radius-md);
   padding: 4px;
-  background: color-mix(in srgb, var(--color-base-00) 50%, transparent 50%) !important;
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%) !important;
   color: var(--text-normal);
   box-shadow: var(--shadow-s, 0 10px 28px rgba(0, 0, 0, 0.18));
   -webkit-backdrop-filter: blur(14px);
@@ -1341,15 +1341,6 @@
   background: var(--theme-base-05, color-mix(in srgb, var(--interactive-accent, #6a8dff) 8%, var(--background-primary, #fff))) !important;
 }
 
-.sprout-assistant-popup-composer-shell:focus-within :is(
-  .sprout-assistant-popup-attach-btn,
-  .sprout-assistant-popup-send
-) {
-  background: var(--theme-base-85) !important;
-  border-color: var(--theme-base-95) !important;
-  color: #fff !important;
-}
-
 .sprout-assistant-popup-input {
   flex: 1;
   min-height: 36px;
@@ -1597,7 +1588,7 @@
 
 /* Modal Companion: subtle transparent internals (single outer glass panel remains the primary effect). */
 .sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-message-bubble.is-assistant {
-  background: color-mix(in srgb, var(--color-base-00) 24%, transparent 76%);
+  background: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%);
   border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
@@ -1623,8 +1614,6 @@
 .sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
   .sprout-assistant-popup-overflow,
   .sprout-assistant-popup-close,
-  .sprout-assistant-popup-attach-btn,
-  .sprout-assistant-popup-send,
   .sprout-assistant-popup-btn,
   .sprout-assistant-popup-insert-btn
 ) {
@@ -1637,8 +1626,6 @@
 .sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
   .sprout-assistant-popup-overflow,
   .sprout-assistant-popup-close,
-  .sprout-assistant-popup-attach-btn,
-  .sprout-assistant-popup-send,
   .sprout-assistant-popup-btn,
   .sprout-assistant-popup-insert-btn
 ):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) {
@@ -1650,8 +1637,6 @@
 .sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
   .sprout-assistant-popup-overflow,
   .sprout-assistant-popup-close,
-  .sprout-assistant-popup-attach-btn,
-  .sprout-assistant-popup-send,
   .sprout-assistant-popup-btn,
   .sprout-assistant-popup-insert-btn
 ):active {

@@ -161,8 +161,10 @@ declare global {
     readonly __sproutGlobals?: true;
   }
 
-  /** Sprout debug log handle, attached at init. */
-   
+  /** LearnKit debug log handle, attached at init. */
+  var __learnkitLog: unknown;
+
+  /** Legacy Sprout debug log alias, attached at init. */
   var __sproutLog: unknown;
 
   /** structuredClone polyfill awareness — present in modern runtimes. */
