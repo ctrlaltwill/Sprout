@@ -1,20 +1,38 @@
 # Settings Explained
 
-Last modified: 17/03/2026
+Last modified: 24/03/2026
 
 ## Purpose
 
-This page maps outcomes to settings pages.
+This page maps common outcomes to the best pages and tabs in LearnKit.
 
 ## Goal Map
 
-- Card authoring: [Cards](./Cards), [Card Formatting](./Card-Formatting)
-- Review behavior: [Study Sessions](./Study-Sessions), [Scheduling](./Scheduling), [Grading](./Grading)
-- Audio and language: [Text to Speech](./Text-to-Speech), [Language Settings](./Language-Settings)
-- Reading controls: [Reading View](./Reading-View), [Reading View Styles](./Reading-View-Styles)
-- Companion setup: [Companion Configuration](./Companion-Configuration), [Companion Usage](./Companion-Usage)
-- Safety and recovery: [Backups](./Backups), [AI Usage Policy](./AI-Usage-Policy)
-- Operational settings: [Settings](./Settings), [Reminders](./Reminders), [Custom Delimiters](./Custom-Delimiters), [Gatekeeper](./Gatekeeper)
+- Start quickly: [Getting Started](./Getting-Started), [Installation](./Installation), [Syncing](./Syncing)
+- Navigate core study views: [Coach](./Coach), [Flashcards](./Flashcards), [Notes](./Notes), [Tests](./Tests)
+- Improve daily review flow: [Study Sessions](./Study-Sessions), [Grading](./Grading), [Scheduling](./Scheduling), [Widget](./Widget)
+- Build and format cards: [Cards](./Cards), [Creating Cards](./Creating-Cards), [Editing Cards](./Editing-Cards), [Card Formatting](./Card-Formatting)
+- Choose card types: [Basic and Reversed Cards](./Basic-&-Reversed-Cards), [Cloze Cards](./Cloze-Cards), [Image Occlusion](./Image-Occlusion), [Multiple Choice Questions](./Multiple-Choice-Questions), [Ordered Questions](./Ordered-Questions)
+- Use tools: [Card Browser](./Card-Browser), [Analytics](./Analytics), [Charts](./Charts)
+- Configure companion and AI: [Companion Configuration](./Companion-Configuration), [Companion Usage](./Companion-Usage), [Guide for Free Usage](./Guide-for-Free-Usage)
+- Tune reading and audio: [Reading View](./Reading-View), [Reading View Styles](./Reading-View-Styles), [Custom Reading Styles](./Custom-Reading-Styles), [Text to Speech](./Text-to-Speech), [Language Settings](./Language-Settings)
+- Manage operational controls: [Settings](./Settings), [Reminders](./Reminders), [Gatekeeper](./Gatekeeper), [Custom Delimiters](./Custom-Delimiters), [Keyboard Shortcuts](./Keyboard-Shortcuts)
+- Recover and maintain data: [Backups](./Backups), [Localization Debt](./Localization-Debt)
+- Governance and policy: [AI Usage Policy](./AI-Usage-Policy), [About LearnKit](./Support-LearnKit)
+
+## Header Popover Mapping
+
+This docs structure tracks the same top-level actions you see in the app header popover:
+
+- Home (`house`)
+- Coach (`target`)
+- Flashcards (`star`)
+- Notes (`notebook-text`)
+- Tests (`clipboard-check`)
+- Analytics (`chart-spline`)
+- Library (`table-2`)
+- Guide (`compass`)
+- Settings (`settings`)
 
 ## Related
 

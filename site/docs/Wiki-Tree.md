@@ -1,30 +1,42 @@
 # Wiki Tree
 
-Last modified: 17/03/2026
+Last modified: 24/03/2026
+
+This tree mirrors the current app navigation and guide categories.
+
+Lucide icon names are listed next to each top-level section so docs, in-app guide pages, and header popover language stay aligned.
 
 ## Tree
 
 ```text
 LearnKit Docs
-├─ 🏠 Home
+├─ house Home
 │  ├─ Home
 │  └─ Wiki Tree
-├─ 🚀 Getting Started
+├─ rocket Getting Started
 │  ├─ Getting Started
 │  ├─ Installation
 │  ├─ Syncing
 │  └─ Anki Export & Import
-├─ 🧠 Workflows
-│  ├─ Flashcards
-│  ├─ Notes
-│  ├─ Coach
-│  └─ Tests
-├─ 🃏 Cards
+├─ star Study & Review
+│  ├─ Header Navigation
+│  │  ├─ Coach
+│  │  ├─ Flashcards
+│  │  ├─ Notes
+│  │  └─ Tests
+│  ├─ Review Flow
+│  │  ├─ Study Sessions
+│  │  ├─ Grading
+│  │  ├─ Scheduling
+│  │  ├─ Burying Cards
+│  │  └─ Suspending Cards
+│  └─ Scope
+│     └─ Widget
+├─ square-stack Cards
 │  ├─ Cards Overview
 │  ├─ Creating Cards
 │  ├─ Editing Cards
 │  ├─ Card Formatting
-│  ├─ Card Browser
 │  ├─ Card Types
 │  │  ├─ Basic & Reversed Cards
 │  │  ├─ Cloze Cards
@@ -34,45 +46,39 @@ LearnKit Docs
 │  └─ Flags
 │     ├─ Flags
 │     └─ Flag Codes
-├─ 🎓 Study
-│  ├─ Review Flow
-│  │  ├─ Study Sessions
-│  │  ├─ Grading
-│  │  └─ Scheduling
-│  ├─ Card State
-│  │  ├─ Burying Cards
-│  │  └─ Suspending Cards
-│  ├─ Scope
-│  │  └─ Widget
-│  └─ Reading View
-│     ├─ Reading View
-│     ├─ Reading View Styles
-│     └─ Custom Reading Styles
-├─ ✨ Companion
+├─ table-2 Tools
+│  ├─ Library
+│  │  └─ Card Browser
+│  └─ Analytics
+│     ├─ Analytics
+│     └─ Charts
+├─ sparkles Companion
 │  ├─ Companion Features
 │  ├─ Configuration
 │  ├─ Setting Up
 │  ├─ Usage
 │  └─ Guide for Free Usage
-├─ 🔊 Audio
-│  ├─ Text to Speech
-│  └─ Language Settings
-├─ 📊 Analytics
-│  ├─ Analytics
-│  └─ Charts
-├─ ⚙️ Settings
+├─ book-open Reading & Audio
+│  ├─ Reading View
+│  │  ├─ Reading View
+│  │  ├─ Reading View Styles
+│  │  └─ Custom Reading Styles
+│  └─ Audio
+│     ├─ Text to Speech
+│     └─ Language Settings
+├─ settings Settings
 │  ├─ Settings Explained
 │  ├─ Settings
 │  ├─ Reminders
 │  ├─ Keyboard Shortcuts
 │  ├─ Custom Delimiters
 │  └─ Gatekeeper
-├─ 🛠️ Maintenance
+├─ database Maintenance
 │  ├─ Backups
 │  └─ Localization Debt
-├─ 🛡️ Policies
+├─ shield-check Policies
 │  └─ AI Usage Policy
-└─ 📚 Reference
+└─ library Reference
    ├─ About LearnKit
    └─ index.md (site homepage)
 ```
@@ -87,15 +93,20 @@ LearnKit Docs
 | Installation.md | Getting Started |
 | Syncing.md | Getting Started |
 | Anki-Export-&-Import.md | Getting Started |
-| Flashcards.md | Workflows |
-| Notes.md | Workflows |
-| Coach.md | Workflows |
-| Tests.md | Workflows |
+| Coach.md | Study & Review |
+| Flashcards.md | Study & Review |
+| Notes.md | Study & Review |
+| Tests.md | Study & Review |
+| Study-Sessions.md | Study & Review |
+| Grading.md | Study & Review |
+| Scheduling.md | Study & Review |
+| Burying-Cards.md | Study & Review |
+| Suspending-Cards.md | Study & Review |
+| Widget.md | Study & Review |
 | Cards.md | Cards |
 | Creating-Cards.md | Cards |
 | Editing-Cards.md | Cards |
 | Card-Formatting.md | Cards |
-| Card-Browser.md | Cards |
 | Basic-&-Reversed-Cards.md | Cards |
 | Cloze-Cards.md | Cards |
 | Image-Occlusion.md | Cards |
@@ -103,24 +114,19 @@ LearnKit Docs
 | Ordered-Questions.md | Cards |
 | Flags.md | Cards |
 | Flag-Codes.md | Cards |
-| Study-Sessions.md | Study |
-| Grading.md | Study |
-| Scheduling.md | Study |
-| Burying-Cards.md | Study |
-| Suspending-Cards.md | Study |
-| Widget.md | Study |
-| Reading-View.md | Study |
-| Reading-View-Styles.md | Study |
-| Custom-Reading-Styles.md | Study |
+| Card-Browser.md | Tools |
+| Analytics.md | Tools |
+| Charts.md | Tools |
 | Companion-Features.md | Companion |
 | Companion-Configuration.md | Companion |
 | Companion-Setting-Up.md | Companion |
 | Companion-Usage.md | Companion |
 | Guide-for-Free-Usage.md | Companion |
-| Text-to-Speech.md | Audio |
-| Language-Settings.md | Audio |
-| Analytics.md | Analytics |
-| Charts.md | Analytics |
+| Reading-View.md | Reading & Audio |
+| Reading-View-Styles.md | Reading & Audio |
+| Custom-Reading-Styles.md | Reading & Audio |
+| Text-to-Speech.md | Reading & Audio |
+| Language-Settings.md | Reading & Audio |
 | Settings-Explained.md | Settings |
 | Settings.md | Settings |
 | Reminders.md | Settings |

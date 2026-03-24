@@ -107,12 +107,31 @@ export default defineConfig({
         ],
       },
       {
-        text: "Workflows",
+        text: "Study & Review",
         items: [
-          { text: toTitle("Flashcards"), link: toPath("Flashcards") },
-          { text: toTitle("Notes"), link: toPath("Notes") },
-          { text: toTitle("Coach"), link: toPath("Coach") },
-          { text: toTitle("Tests"), link: toPath("Tests") },
+          {
+            text: "Header Navigation",
+            items: [
+              { text: toTitle("Coach"), link: toPath("Coach") },
+              { text: toTitle("Flashcards"), link: toPath("Flashcards") },
+              { text: toTitle("Notes"), link: toPath("Notes") },
+              { text: toTitle("Tests"), link: toPath("Tests") },
+            ],
+          },
+          {
+            text: "Review Flow",
+            items: [
+              { text: toTitle("Study-Sessions"), link: toPath("Study-Sessions") },
+              { text: toTitle("Grading"), link: toPath("Grading") },
+              { text: toTitle("Scheduling"), link: toPath("Scheduling") },
+              { text: toTitle("Burying-Cards"), link: toPath("Burying-Cards") },
+              { text: toTitle("Suspending-Cards"), link: toPath("Suspending-Cards") },
+            ],
+          },
+          {
+            text: "Scope",
+            items: [{ text: toTitle("Widget"), link: toPath("Widget") }],
+          },
         ],
       },
       {
@@ -122,7 +141,6 @@ export default defineConfig({
           { text: toTitle("Creating-Cards"), link: toPath("Creating-Cards") },
           { text: toTitle("Editing-Cards"), link: toPath("Editing-Cards") },
           { text: toTitle("Card-Formatting"), link: toPath("Card-Formatting") },
-          { text: toTitle("Card-Browser"), link: toPath("Card-Browser") },
           {
             text: "Card Types",
             items: [
@@ -143,33 +161,17 @@ export default defineConfig({
         ],
       },
       {
-        text: "Study",
+        text: "Tools",
         items: [
           {
-            text: "Review Flow",
-            items: [
-              { text: toTitle("Study-Sessions"), link: toPath("Study-Sessions") },
-              { text: toTitle("Grading"), link: toPath("Grading") },
-              { text: toTitle("Scheduling"), link: toPath("Scheduling") },
-            ],
+            text: "Library",
+            items: [{ text: toTitle("Card-Browser"), link: toPath("Card-Browser") }],
           },
           {
-            text: "Card State",
+            text: "Analytics",
             items: [
-              { text: toTitle("Burying-Cards"), link: toPath("Burying-Cards") },
-              { text: toTitle("Suspending-Cards"), link: toPath("Suspending-Cards") },
-            ],
-          },
-          {
-            text: "Scope",
-            items: [{ text: toTitle("Widget"), link: toPath("Widget") }],
-          },
-          {
-            text: "Reading View",
-            items: [
-              { text: toTitle("Reading-View"), link: toPath("Reading-View") },
-              { text: toTitle("Reading-View-Styles"), link: toPath("Reading-View-Styles") },
-              { text: toTitle("Custom-Reading-Styles"), link: toPath("Custom-Reading-Styles") },
+              { text: toTitle("Analytics"), link: toPath("Analytics") },
+              { text: toTitle("Charts"), link: toPath("Charts") },
             ],
           },
         ],
@@ -185,17 +187,23 @@ export default defineConfig({
         ],
       },
       {
-        text: "Audio",
+        text: "Reading & Audio",
         items: [
-          { text: toTitle("Text-to-Speech"), link: toPath("Text-to-Speech") },
-          { text: toTitle("Language-Settings"), link: toPath("Language-Settings") },
-        ],
-      },
-      {
-        text: "Analytics",
-        items: [
-          { text: toTitle("Analytics"), link: toPath("Analytics") },
-          { text: toTitle("Charts"), link: toPath("Charts") },
+          {
+            text: "Reading View",
+            items: [
+              { text: toTitle("Reading-View"), link: toPath("Reading-View") },
+              { text: toTitle("Reading-View-Styles"), link: toPath("Reading-View-Styles") },
+              { text: toTitle("Custom-Reading-Styles"), link: toPath("Custom-Reading-Styles") },
+            ],
+          },
+          {
+            text: "Audio",
+            items: [
+              { text: toTitle("Text-to-Speech"), link: toPath("Text-to-Speech") },
+              { text: toTitle("Language-Settings"), link: toPath("Language-Settings") },
+            ],
+          },
         ],
       },
       {
