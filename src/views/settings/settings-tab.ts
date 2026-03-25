@@ -176,7 +176,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     const handle = window.setTimeout(() => {
       this._noticeTimers.delete(key);
-      new Notice(this._tx("ui.settings.notice.prefix", "LearnKit: {line}", { line }));
+      new Notice(this._tx("ui.settings.notice.prefix", "LearnKit – {line}", { line }));
     }, Math.max(0, delayMs));
 
     this._noticeTimers.set(key, handle);
@@ -506,14 +506,14 @@ export class SproutSettingsTab extends PluginSettingTab {
         try {
           const p = await createDataJsonBackupNow(this.plugin, "manual");
           if (!p) {
-            new Notice(this._tx("ui.settings.backups.notice.createUnavailable", "Sprout: could not create backup (no scheduling data or adapter cannot write)."));
+            new Notice(this._tx("ui.settings.backups.notice.createUnavailable", "LearnKit – could not create backup (no scheduling data or adapter cannot write)"));
             return;
           }
-          new Notice(this._tx("ui.settings.backups.notice.createSuccess", "Scheduling data backup created"));
+          new Notice(this._tx("ui.settings.backups.notice.createSuccess", "LearnKit – scheduling data backup created"));
           await scan();
         } catch (e) {
           log.error(e);
-          new Notice(this._tx("ui.settings.backups.notice.createFailed", "Sprout: failed to create scheduling data backup (see console)."));
+          new Notice(this._tx("ui.settings.backups.notice.createFailed", "LearnKit – failed to create scheduling data backup"));
         }
       };
 

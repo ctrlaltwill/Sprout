@@ -28,7 +28,7 @@ describe("formatSyncNotice", () => {
       updatedCount: 0,
     });
 
-    expect(result).toBe("Sync complete: no changes.");
+    expect(result).toBe("Sync complete - no changes");
   });
 
   it("shows singular form for 1 new card", () => {
@@ -37,7 +37,7 @@ describe("formatSyncNotice", () => {
       updatedCount: 0,
     });
 
-    expect(result).toBe("Sync complete: 1 new card");
+    expect(result).toBe("Sync complete - 1 new card");
   });
 
   it("shows plural form for multiple new cards", () => {
@@ -46,7 +46,7 @@ describe("formatSyncNotice", () => {
       updatedCount: 0,
     });
 
-    expect(result).toBe("Sync complete: 5 new cards");
+    expect(result).toBe("Sync complete - 5 new cards");
   });
 
   it("shows singular form for 1 updated card", () => {
@@ -55,7 +55,7 @@ describe("formatSyncNotice", () => {
       updatedCount: 1,
     });
 
-    expect(result).toBe("Sync complete: 1 updated card");
+    expect(result).toBe("Sync complete - 1 updated card");
   });
 
   it("shows plural form for multiple updated cards", () => {
@@ -64,7 +64,7 @@ describe("formatSyncNotice", () => {
       updatedCount: 3,
     });
 
-    expect(result).toBe("Sync complete: 3 updated cards");
+    expect(result).toBe("Sync complete - 3 updated cards");
   });
 
   it("combines new and updated counts", () => {
@@ -73,7 +73,7 @@ describe("formatSyncNotice", () => {
       updatedCount: 4,
     });
 
-    expect(result).toBe("Sync complete: 2 new cards; 4 updated cards");
+    expect(result).toBe("Sync complete - 2 new cards; 4 updated cards");
   });
 
   it("includes deleted count when option is enabled", () => {
@@ -83,7 +83,7 @@ describe("formatSyncNotice", () => {
       { includeDeleted: true },
     );
 
-    expect(result).toBe("Sync complete: 1 new card; 3 cards deleted");
+    expect(result).toBe("Sync complete - 1 new card; 3 cards deleted");
   });
 
   it("shows singular deleted form", () => {
@@ -93,7 +93,7 @@ describe("formatSyncNotice", () => {
       { includeDeleted: true },
     );
 
-    expect(result).toBe("Sync complete: 1 card deleted");
+    expect(result).toBe("Sync complete - 1 card deleted");
   });
 
   it("does not include deleted count when option is false", () => {
@@ -103,7 +103,7 @@ describe("formatSyncNotice", () => {
       { includeDeleted: false },
     );
 
-    expect(result).toBe("Sync complete: 1 new card");
+    expect(result).toBe("Sync complete - 1 new card");
   });
 
   it("includes IDs inserted by default", () => {
@@ -113,7 +113,7 @@ describe("formatSyncNotice", () => {
       idsInserted: 3,
     });
 
-    expect(result).toBe("Sync complete: 3 IDs inserted");
+    expect(result).toBe("Sync complete - 3 IDs inserted");
   });
 
   it("shows singular ID inserted form", () => {
@@ -123,7 +123,7 @@ describe("formatSyncNotice", () => {
       idsInserted: 1,
     });
 
-    expect(result).toBe("Sync complete: 1 ID inserted");
+    expect(result).toBe("Sync complete - 1 ID inserted");
   });
 
   it("hides IDs inserted when option is disabled", () => {
@@ -133,7 +133,7 @@ describe("formatSyncNotice", () => {
       { includeIdsInserted: false },
     );
 
-    expect(result).toBe("Sync complete: no changes.");
+    expect(result).toBe("Sync complete - no changes");
   });
 
   it("combines all parts in a full sync scenario", () => {
@@ -143,7 +143,7 @@ describe("formatSyncNotice", () => {
       { includeDeleted: true, includeIdsInserted: true },
     );
 
-    expect(result).toBe("Full sync: 10 new cards; 3 updated cards; 2 cards deleted; 5 IDs inserted");
+    expect(result).toBe("Full sync - 10 new cards; 3 updated cards; 2 cards deleted; 5 IDs inserted");
   });
 
   it("uses the provided prefix string", () => {
@@ -162,7 +162,7 @@ describe("formatSyncNotice", () => {
       { includeDeleted: true, includeIdsInserted: true },
     );
 
-    expect(result).toBe("Sync: no changes.");
+    expect(result).toBe("Sync - no changes");
   });
 });
 

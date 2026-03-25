@@ -656,7 +656,7 @@ export default class SproutPlugin extends Plugin {
       log.info(`loaded`);
     } catch (e) {
       log.error(`failed to load`, e);
-      new Notice(this._tx("ui.main.notice.loadFailed", "Failed to load. See console for details."));
+      new Notice(this._tx("ui.main.notice.loadFailed", "LearnKit – failed to load"));
     }
   }
 
@@ -1174,14 +1174,14 @@ export default class SproutPlugin extends Plugin {
     if (created > 0) parts.push(`${created} new`);
     if (deleted > 0) parts.push(`${deleted} deleted`);
 
-    if (parts.length === 0) return `Flashcards updated for page: ${pageTitle}: no changes.`;
-    return `Flashcards updated for page: ${pageTitle}: ${parts.join(", ")}.`;
+    if (parts.length === 0) return `Flashcards updated for page - ${pageTitle} - no changes`;
+    return `Flashcards updated for page - ${pageTitle} - ${parts.join(", ")}`;
   }
 
   async _runSyncCurrentNote() {
     const file = this._getActiveMarkdownFile();
     if (!(file instanceof TFile)) {
-      new Notice("No note is open.");
+      new Notice("No note is open");
       return;
     }
 
@@ -1369,7 +1369,7 @@ export default class SproutPlugin extends Plugin {
 
       if (!apiKeyWriteOk && this._hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
         log.error("Api key dedicated file write failed; keys were not persisted this save.");
-        new Notice("Could not save keys securely. Check file permissions.", 8000);
+        new Notice("Could not save keys securely. Check file permissions", 8000);
       }
 
       root.settings = syncSettings;
@@ -1417,7 +1417,7 @@ export default class SproutPlugin extends Plugin {
       }
       if (!apiKeyWriteOk && this._hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
         log.error("Api key dedicated file write failed; keys were not persisted this save.");
-        new Notice("Could not save keys securely. Check file permissions.", 8000);
+        new Notice("Could not save keys securely. Check file permissions", 8000);
       }
 
       root.settings = syncSettings;
@@ -1447,7 +1447,7 @@ export default class SproutPlugin extends Plugin {
     }
     if (!apiKeyWriteOk && this._hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
       log.error("Api key dedicated file write failed; keys were not persisted this save.");
-      new Notice("Could not save keys securely. Check file permissions.", 8000);
+      new Notice("Could not save keys securely. Check file permissions", 8000);
     }
     root.settings = syncSettings;
     root.store = this.store.data;
@@ -1524,48 +1524,21 @@ export default class SproutPlugin extends Plugin {
     return numsOk;
   }
 
-  private _resetCardStateMapInPlace(map: Record<string, unknown>, now: number): number {
-    let count = 0;
-
-    for (const [id, raw] of Object.entries(map)) {
-      if (!this._isCardStateLike(raw)) continue;
-
-      const prev: CardState = { id, ...(raw as Record<string, unknown>) } as CardState;
-      map[id] = resetCardScheduling(prev, now);
-      count++;
-    }
-
-    return count;
-  }
-
-  private _looksLikeCardStateMap(node: unknown): node is Record<string, unknown> {
-    if (!node || typeof node !== "object") return false;
-    if (Array.isArray(node)) return false;
-
-    for (const v of Object.values(node)) {
-      if (this._isCardStateLike(v)) return true;
-    }
-    return false;
-  }
-
   async resetAllCardScheduling(): Promise<void> {
     const now = Date.now();
     let total = 0;
 
-    const visited = new Set<object>();
-    const walk = (node: unknown) => {
-      if (!node || typeof node !== "object") return;
-      if (visited.has(node)) return;
-      visited.add(node);
-
-      if (this._looksLikeCardStateMap(node)) {
-        total += this._resetCardStateMapInPlace(node, now);
+    // Restrict reset scope to scheduling states only.
+    // This avoids touching analytics, review history, or any other store branches.
+    const states = this.store?.data?.states;
+    if (states && typeof states === "object" && !Array.isArray(states)) {
+      for (const [id, raw] of Object.entries(states as Record<string, unknown>)) {
+        if (!this._isCardStateLike(raw)) continue;
+        const prev: CardState = { id, ...(raw as Record<string, unknown>) } as CardState;
+        (states as Record<string, unknown>)[id] = resetCardScheduling(prev, now);
+        total++;
       }
-
-      for (const v of Object.values(node)) walk(v);
-    };
-
-    walk(this.store.data);
+    }
 
     await this.saveAll();
     this._refreshOpenViews();
@@ -1921,7 +1894,7 @@ export default class SproutPlugin extends Plugin {
       await this.openWidget();
     } catch (e) {
       log.error(`failed to open widget`, e);
-      new Notice(this._tx("ui.main.notice.widgetOpenFailed", "Failed to open widget. See console for details."));
+      new Notice(this._tx("ui.main.notice.widgetOpenFailed", "LearnKit – failed to open widget"));
     }
   }
 
@@ -1948,7 +1921,7 @@ export default class SproutPlugin extends Plugin {
       await this.openAssistantWidget();
     } catch (e) {
       log.error("failed to open companion widget", e);
-      new Notice(this._tx("ui.main.notice.assistantWidgetOpenFailed", "Failed to open companion widget. See console for details."));
+      new Notice(this._tx("ui.main.notice.assistantWidgetOpenFailed", "LearnKit – failed to open companion widget"));
     }
   }
 

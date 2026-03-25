@@ -548,7 +548,7 @@ export class SproutAssistantPopup {
     new Notice(
       this._tx(
         "ui.studyAssistant.chat.resetCurrentMode",
-        "Reset {mode} conversation.",
+        "LearnKit – reset {mode} conversation",
         { mode: this._currentModeLabel() },
       ),
     );
@@ -605,17 +605,17 @@ export class SproutAssistantPopup {
         try { await adapter.remove(chatsFolder); } catch (e) { log.swallow("remove chats folder", e); }
       }
       this._captureCurrentLeafSession();
-      new Notice(this._tx("ui.studyAssistant.chat.clearedAll", "All chats have been cleared."));
+      new Notice(this._tx("ui.studyAssistant.chat.clearedAll", "LearnKit – all chats have been cleared"));
       if (remoteAttemptCount > 0) {
         new Notice(this._tx(
           "ui.studyAssistant.chat.remoteDeleteSummary",
-          "Remote delete requested for {attempted} conversation(s); deleted {deleted}.",
+          "LearnKit – remote delete requested for {attempted} conversation(s); deleted {deleted}",
           { attempted: remoteAttemptCount, deleted: remoteDeletedCount },
         ));
       }
     } catch (e) {
       log.swallow("delete all chat files", e);
-      new Notice(this._tx("ui.studyAssistant.chat.clearAllFailed", "Could not clear all chats."));
+      new Notice(this._tx("ui.studyAssistant.chat.clearAllFailed", "LearnKit – could not clear all chats"));
     } finally {
       if (deletedCount > 0) {
         log.info(`[study-assistant] Cleared ${deletedCount} saved chat logs.`);
@@ -1325,7 +1325,7 @@ export class SproutAssistantPopup {
 
   private _openAttachmentPicker(): void {
     if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
-      new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
+      new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "LearnKit – maximum {max} attachments per message", { max: MAX_ATTACHMENTS }));
       return;
     }
     const allFiles = this.plugin.app.vault.getFiles();
@@ -1334,13 +1334,13 @@ export class SproutAssistantPopup {
     const modal = new AttachmentPickerModal(this.plugin.app, candidates, (file) => {
       void (async () => {
         if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
-          new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
+          new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "LearnKit – maximum {max} attachments per message", { max: MAX_ATTACHMENTS }));
           return;
         }
         if (this._attachedFiles.some(af => af.name === file.name)) return;
         const attached = await readVaultFileAsAttachment(this.plugin.app, file);
         if (!attached) {
-          new Notice(this._tx("ui.studyAssistant.chat.attachFailed", "Failed to read file or file too large."));
+          new Notice(this._tx("ui.studyAssistant.chat.attachFailed", "LearnKit – failed to read file or file too large"));
           return;
         }
         this._attachedFiles.push(attached);
@@ -1348,7 +1348,7 @@ export class SproutAssistantPopup {
       })();
     }, (attached) => {
       if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
-        new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "Maximum {max} attachments per message.", { max: MAX_ATTACHMENTS }));
+        new Notice(this._tx("ui.studyAssistant.chat.maxAttachments", "LearnKit – maximum {max} attachments per message", { max: MAX_ATTACHMENTS }));
         return;
       }
       if (this._attachedFiles.some(af => af.name === attached.name)) return;
@@ -2634,7 +2634,7 @@ export class SproutAssistantPopup {
       await this.plugin.openExamGeneratorTest(testId);
     } catch (e) {
       log.warn("open-test", e);
-      new Notice(this._tx("ui.studyAssistant.test.openError", "Could not open the test."));
+      new Notice(this._tx("ui.studyAssistant.test.openError", "LearnKit – could not open the test"));
     }
   }
 
@@ -2907,12 +2907,12 @@ export class SproutAssistantPopup {
     source: "assistant" | "generate",
   ): Promise<void> {
     if (this.isInsertingSuggestion) {
-      new Notice(this._tx("ui.studyAssistant.generator.insertBusy", "Please wait for the current card insertion to finish."));
+      new Notice(this._tx("ui.studyAssistant.generator.insertBusy", "LearnKit – please wait for the current card insertion to finish"));
       return;
     }
     const file = this.getActiveMarkdownFile();
     if (!file) {
-      new Notice(this._tx("ui.studyAssistant.generator.noNote", "Open a markdown note to insert generated cards."));
+      new Notice(this._tx("ui.studyAssistant.generator.noNote", "LearnKit – open a markdown note to insert generated cards"));
       return;
     }
     const key = `${assistantMessageIndex}-${suggestionIndex}-${suggestion.type}`;
@@ -2950,10 +2950,10 @@ export class SproutAssistantPopup {
         }
       }
       this._scheduleSave();
-      new Notice(this._tx("ui.studyAssistant.generator.flashcardAdded", "Flashcard added"));
+      new Notice(this._tx("ui.studyAssistant.generator.flashcardAdded", "LearnKit – flashcard added"));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      new Notice(this._tx("ui.studyAssistant.generator.insertFailed", "Failed to insert card: {msg}", { msg }));
+      new Notice(this._tx("ui.studyAssistant.generator.insertFailed", "LearnKit – failed to insert card: {msg}", { msg }));
     } finally {
       this.insertingSuggestionKey = null;
       this.isInsertingSuggestion = false;
@@ -3598,7 +3598,7 @@ export class SproutAssistantPopup {
     if (view.getMode() === "preview") {
       const ok = this.highlightPreviewSuggestionContext(view, snippetFromMatch);
       if (!ok) {
-        new Notice(this._tx("ui.studyAssistant.generator.sourceNotFound", "Opened note, but could not find a precise source snippet for this card."));
+        new Notice(this._tx("ui.studyAssistant.generator.sourceNotFound", "LearnKit – opened note, but could not find a precise source snippet for this card"));
       }
       return;
     }
@@ -3617,7 +3617,7 @@ export class SproutAssistantPopup {
       editor.setCursor({ line: 0, ch: 0 });
       editor.scrollIntoView({ from: { line: 0, ch: 0 }, to: { line: 0, ch: 0 } }, true);
       editor.focus();
-      new Notice(this._tx("ui.studyAssistant.generator.sourceNotFound", "Opened note, but could not find a precise source snippet for this card."));
+      new Notice(this._tx("ui.studyAssistant.generator.sourceNotFound", "LearnKit – opened note, but could not find a precise source snippet for this card"));
       return;
     }
     const from = this.offsetToPos(noteContent, match.start);
@@ -4717,7 +4717,7 @@ class AttachmentPickerModal extends Modal {
         }
 
         if (rejectedCount > 0) {
-          new Notice(rejectedCount === 1 ? "1 file was unsupported or too large." : `${rejectedCount} files were unsupported or too large.`);
+          new Notice(rejectedCount === 1 ? "LearnKit – 1 file was unsupported or too large" : `LearnKit – ${rejectedCount} files were unsupported or too large`);
         }
         this.close();
       })();

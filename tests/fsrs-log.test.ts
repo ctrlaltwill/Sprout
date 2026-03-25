@@ -12,14 +12,17 @@ import { log } from "../src/platform/core/logger";
 // ── Setup: spy on log.info so we can inspect output ─────────────────────────
 
 let infoSpy: ReturnType<typeof vi.spyOn>;
+let debugSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   infoSpy = vi.spyOn(log, "info").mockImplementation(() => {});
+  debugSpy = vi.spyOn(log, "debug").mockImplementation(() => {});
   log.setLevel("info");
 });
 
 afterEach(() => {
   infoSpy.mockRestore();
+  debugSpy.mockRestore();
 });
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -34,6 +37,12 @@ function lastLogMessage(): string {
 
 function allLogMessages(): string[] {
   return infoSpy.mock.calls.map((c) => String(c[0] ?? ""));
+}
+
+function lastDebugMessage(): string {
+  const calls = debugSpy.mock.calls;
+  if (!calls.length) return "";
+  return String(calls[calls.length - 1]?.[0] ?? "");
 }
 
 // ── logFsrsIfNeeded ─────────────────────────────────────────────────────────
@@ -59,15 +68,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("FSRS:");
-      expect(msg).toContain("card card-001");
-      expect(msg).toContain("type=basic");
-      expect(msg).toContain("rating=good");
-      expect(msg).toContain("state=New→Learning");
-      expect(msg).toContain("R_now=0.8500");
-      expect(msg).toContain("R_target=0.9000");
-      expect(msg).toContain("S=10.50d");
-      expect(msg).toContain("D=5.20");
+      expect(msg).toContain("FSRS | Card card-001 | Rating Good | Next due");
     });
 
     it("logs an Again rating", () => {
@@ -89,9 +90,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("FSRS:");
-      expect(msg).toContain("rating=again");
-      expect(msg).toContain("state=Review→Relearning");
+      expect(msg).toContain("FSRS | Card card-002 | Rating Again | Next due");
     });
 
     it("logs a Hard rating", () => {
@@ -113,7 +112,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("rating=hard");
+      expect(msg).toContain("FSRS | Card card-003 | Rating Hard | Next due");
     });
 
     it("logs an Easy rating", () => {
@@ -135,8 +134,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("rating=easy");
-      expect(msg).toContain("R_now=—");
+      expect(msg).toContain("FSRS | Card card-004 | Rating Easy | Next due");
     });
   });
 
@@ -151,11 +149,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("SKIP:");
-      expect(msg).toContain("rating=skip");
-      expect(msg).toContain("skip=1");
-      expect(msg).toContain("skipMode=too-easy");
-      expect(msg).toContain("note=scheduling_unchanged");
+      expect(msg).toContain("SKIP | Card card-010 | Rating Skip | Next due —");
     });
 
     it("recognises skip via meta.action", () => {
@@ -168,8 +162,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("SKIP:");
-      expect(msg).toContain("note=scheduling_unchanged");
+      expect(msg).toContain("SKIP | Card card-011 | Rating Good | Next due —");
     });
   });
 
@@ -194,10 +187,26 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("type=mcq");
-      expect(msg).toContain("mcqChoice=2");
-      expect(msg).toContain("mcqCorrect=true");
-      expect(msg).toContain("mcqPass=true");
+      expect(msg).toContain("FSRS | Card mcq-001 | Rating Good | Next due");
+
+      log.setLevel("debug");
+      logFsrsIfNeeded({
+        id: "mcq-001",
+        cardType: "mcq",
+        rating: "good",
+        metrics: {
+          stateBefore: 0,
+          stateAfter: 1,
+          retrievabilityNow: null,
+          retrievabilityTarget: 0.9,
+          elapsedDays: 0,
+          stabilityDays: 5,
+          difficulty: 4.0,
+        },
+        nextDue: NOW + 600000,
+        meta: { mcqChoice: 2, mcqCorrect: true, mcqPass: true },
+      });
+      expect(lastDebugMessage()).toContain("MCQ: choice=2, correct=true, pass=true");
     });
   });
 
@@ -221,9 +230,26 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("ui=4btn");
-      expect(msg).toContain("key=3");
-      expect(msg).toContain("src=keyboard");
+      expect(msg).toContain("FSRS | Card card-020 | Rating Good | Next due");
+
+      log.setLevel("debug");
+      logFsrsIfNeeded({
+        id: "card-020",
+        cardType: "basic",
+        rating: "good",
+        metrics: {
+          stateBefore: 1,
+          stateAfter: 2,
+          retrievabilityNow: 0.9,
+          retrievabilityTarget: 0.9,
+          elapsedDays: 1,
+          stabilityDays: 15,
+          difficulty: 5,
+        },
+        nextDue: NOW + 86400000 * 15,
+        meta: { uiButtons: 4, uiKey: 3, uiSource: "keyboard" },
+      });
+      expect(lastDebugMessage()).toContain("UI: Four button");
     });
 
     it("includes 2-button UI info", () => {
@@ -243,7 +269,24 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("ui=2btn");
+      expect(msg).toContain("FSRS | Card card-021 | Rating Good | Next due");
+
+      log.setLevel("debug");
+      logFsrsIfNeeded({
+        id: "card-021",
+        cardType: "basic",
+        rating: "good",
+        metrics: {
+          stateBefore: 0,
+          stateAfter: 1,
+          stabilityDays: 5,
+          difficulty: 5,
+          elapsedDays: 0,
+        },
+        nextDue: NOW + 600000,
+        meta: { uiButtons: 2 },
+      });
+      expect(lastDebugMessage()).toContain("UI: Two button");
     });
 
     it("includes queue progress (done/total)", () => {
@@ -257,7 +300,7 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("q=5/20");
+      expect(msg).toContain("FSRS | Card card-022 | Rating Good | Next due");
     });
   });
 
@@ -281,10 +324,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("R_now=—");
-      expect(msg).toContain("R_target=—");
-      expect(msg).toContain("S=0.00d");
-      expect(msg).toContain("D=0.00");
+      expect(msg).toContain("FSRS | Card card-031 | Rating Good | Next due —");
     });
 
     it("handles missing nextDue gracefully (shows —)", () => {
@@ -297,7 +337,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("nextDue=—");
+      expect(msg).toContain("FSRS | Card card-032 | Rating Good | Next due —");
     });
 
     it("handles undefined cardType gracefully", () => {
@@ -309,7 +349,7 @@ describe("logFsrsIfNeeded", () => {
 
       expect(infoSpy).toHaveBeenCalledOnce();
       const msg = lastLogMessage();
-      expect(msg).toContain("type=unknown");
+      expect(msg).toContain("FSRS | Card card-033 | Rating Again | Next due —");
     });
 
     it("normalises cardType case", () => {
@@ -322,7 +362,7 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("type=basic");
+      expect(msg).toContain("FSRS | Card card-034 | Rating Good | Next due");
     });
 
     it("handles same stateBefore and stateAfter (no arrow)", () => {
@@ -343,7 +383,7 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("state=Review");
+      expect(msg).toContain("FSRS | Card card-035 | Rating Good | Next due");
       expect(msg).not.toContain("→");
     });
 
@@ -358,7 +398,18 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("auto=1");
+      expect(msg).toContain("FSRS | Card card-036 | Rating Good | Next due");
+
+      log.setLevel("debug");
+      logFsrsIfNeeded({
+        id: "card-036",
+        cardType: "basic",
+        rating: "good",
+        metrics: { stabilityDays: 1, difficulty: 5, elapsedDays: 0 },
+        nextDue: NOW + 60000,
+        meta: { auto: true },
+      });
+      expect(lastDebugMessage()).toContain("UI: Automatic grading");
     });
 
     it("includes via when meta.via is provided", () => {
@@ -372,7 +423,7 @@ describe("logFsrsIfNeeded", () => {
       });
 
       const msg = lastLogMessage();
-      expect(msg).toContain("via=hotkey");
+      expect(msg).toContain("FSRS | Card card-037 | Rating Good | Next due");
     });
   });
 });

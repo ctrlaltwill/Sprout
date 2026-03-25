@@ -409,7 +409,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
   if (["io", "io-child"].includes(cardType)) {
     const parentId = cardType === "io" ? String(card.id || "") : String(card.parentId || "");
     if (!parentId) {
-      new Notice(tx(view, "ui.widget.notice.editMissingParent", "Cannot edit {cardType}: missing parent card.", { cardType }));
+      new Notice(tx(view, "ui.widget.notice.editMissingParent", "Cannot edit {cardType} - missing parent card", { cardType }));
       return;
     }
 
@@ -426,13 +426,13 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
   if (cardType === "cloze-child" || cardType === "reversed-child") {
     const parentId = String((card).parentId || "");
     if (!parentId) {
-      new Notice(tx(view, "ui.widget.notice.editMissingParent", "Cannot edit {cardType}: missing parent card.", { cardType }));
+      new Notice(tx(view, "ui.widget.notice.editMissingParent", "Cannot edit {cardType} - missing parent card", { cardType }));
       return;
     }
 
     const parentCard = (view.plugin.store.data.cards || {})[parentId];
     if (!parentCard) {
-      new Notice(tx(view, "ui.widget.notice.editParentNotFound", "Cannot edit {cardType}: parent card not found.", { cardType }));
+      new Notice(tx(view, "ui.widget.notice.editParentNotFound", "Cannot edit {cardType} - parent card not found", { cardType }));
       return;
     }
 
@@ -477,7 +477,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
       view.render();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      new Notice(tx(view, "ui.widget.notice.saveFailed", "Error saving card: {error}", { error: msg }));
+      new Notice(tx(view, "ui.widget.notice.saveFailed", "Error saving card - {error}", { error: msg }));
     }
   });
 }

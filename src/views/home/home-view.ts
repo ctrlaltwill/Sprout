@@ -545,7 +545,7 @@ export class SproutHomeView extends ItemView {
       try {
         await this.plugin.openSettingsTab(false, tab);
       } catch {
-        new Notice("Unable to open settings right now.");
+        new Notice("Unable to open settings right now");
       }
     };
 
@@ -554,7 +554,7 @@ export class SproutHomeView extends ItemView {
         await this.leaf.setViewState({ type: VIEW_TYPE_BROWSER, active: true });
         void this.app.workspace.revealLeaf(this.leaf);
       } catch {
-        new Notice("Unable to open library right now.");
+        new Notice("Unable to open library right now");
       }
     };
 

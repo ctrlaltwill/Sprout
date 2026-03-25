@@ -6,16 +6,16 @@ export function createSettingsNoticeLines(tx: Tx) {
   return {
     backupCreateUnavailable: tx(
       "ui.settings.backups.notice.createUnavailable",
-      "LearnKit: could not create backup (no scheduling data or adapter cannot write).",
+      "LearnKit – could not create backup (no scheduling data or adapter cannot write)",
     ),
-    backupCreateSuccess: tx("ui.settings.backups.notice.createSuccess", "Scheduling data backup created"),
-    backupCreateFailed: tx("ui.settings.backups.notice.createFailed", "LearnKit: failed to create scheduling data backup (see console)."),
-    ttsNotSupported: tx("ui.settings.audio.notice.notSupported", "Text-to-speech is not supported in this environment."),
-    settingsResetFailed: tx("ui.settings.reset.notice.failed", "LearnKit: could not reset settings (see console)."),
+    backupCreateSuccess: tx("ui.settings.backups.notice.createSuccess", "LearnKit – scheduling data backup created"),
+    backupCreateFailed: tx("ui.settings.backups.notice.createFailed", "LearnKit – failed to create scheduling data backup"),
+    ttsNotSupported: tx("ui.settings.audio.notice.notSupported", "LearnKit – text-to-speech is not supported in this environment"),
+    settingsResetFailed: tx("ui.settings.reset.notice.failed", "LearnKit – could not reset settings"),
     deleteAllSummary: (cardsRemoved: number, anchorsRemoved: number, filesTouched: number, seconds: number) =>
       tx(
         "ui.settings.notice.deleteAllSummary",
-        "LearnKit: Deleted {cards} cards and {anchors} anchors in {files} files ({seconds}s)",
+        "LearnKit – deleted {cards} cards and {anchors} anchors in {files} files ({seconds}s)",
         { cards: cardsRemoved, anchors: anchorsRemoved, files: filesTouched, seconds },
       ),
 

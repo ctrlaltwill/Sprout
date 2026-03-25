@@ -10,9 +10,9 @@ function formatReminderMessage(dueCount: number, customMessage: string): string 
   const trimmed = customMessage.trim();
   if (trimmed) return trimmed.split("{due}").join(String(dueCount));
 
-  if (dueCount === 0) return "Sprout reminder: no cards due right now.";
-  if (dueCount === 1) return "Sprout reminder: 1 card is due. Click to open study.";
-  return `Sprout reminder: ${dueCount} cards are due. Click to open study.`;
+  if (dueCount === 0) return "LearnKit – no cards due right now";
+  if (dueCount === 1) return "LearnKit – 1 card is due. Click to open study.";
+  return `LearnKit – ${dueCount} cards are due. Click to open study.`;
 }
 
 export function showReminderNotice(args: ReminderNoticeArgs): void {

@@ -164,12 +164,18 @@
 
 /* Recharts tooltip: fade in only — no slide-in translation effect */
 .sprout .recharts-tooltip-wrapper {
-  transition: opacity 120ms ease;
-  animation: none;
+  transition-property: opacity !important;
+  transition-duration: 120ms !important;
+  transition-timing-function: ease !important;
+  transition-delay: 0s !important;
+  animation: none !important;
 }
 .sprout .recharts-tooltip-wrapper[style*="translate"] {
   /* Let Recharts set the translate for positioning but block the animated transition on it */
-  transition: opacity 120ms ease;
+  transition-property: opacity !important;
+  transition-duration: 120ms !important;
+  transition-timing-function: ease !important;
+  transition-delay: 0s !important;
 }
 
 .sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info):is(:hover, :focus-visible) {

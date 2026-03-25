@@ -576,7 +576,7 @@ export class SproutReviewerView extends ItemView {
       this.render();
     } catch (e) {
       log.error(`UNDO: failed`, e);
-      new Notice(this.tx("ui.reviewer.notice.undoFailedConsole", "Undo failed. See console."));
+      new Notice(this.tx("ui.reviewer.notice.undoFailedConsole", "LearnKit – undo failed"));
       this.render();
     }
   }
@@ -967,7 +967,7 @@ export class SproutReviewerView extends ItemView {
     if (["io", "io-child"].includes(cardType)) {
       const parentId = cardType === "io" ? card.id : String(card.parentId || "");
       if (!parentId) {
-        new Notice(this.tx("ui.reviewer.notice.editIoMissingParent", "Cannot edit image occlusion card: missing parent card."));
+        new Notice(this.tx("ui.reviewer.notice.editIoMissingParent", "Cannot edit image occlusion card - missing parent card"));
         return;
       }
       ImageOcclusionCreatorModal.openForParent(this.plugin, String(parentId), {
@@ -987,13 +987,13 @@ export class SproutReviewerView extends ItemView {
     if (cardType === "cloze-child" || cardType === "reversed-child") {
       const parentId = String(card.parentId || "");
       if (!parentId) {
-        new Notice(this.tx("ui.reviewer.notice.editMissingParent", "Cannot edit {cardType}: missing parent card.", { cardType }));
+        new Notice(this.tx("ui.reviewer.notice.editMissingParent", "Cannot edit {cardType} - missing parent card", { cardType }));
         return;
       }
 
       const parentCard = (this.plugin.store.data.cards || {})[parentId];
       if (!parentCard) {
-        new Notice(this.tx("ui.reviewer.notice.editParentNotFound", "Cannot edit {cardType}: parent card not found.", { cardType }));
+        new Notice(this.tx("ui.reviewer.notice.editParentNotFound", "Cannot edit {cardType} - parent card not found", { cardType }));
         return;
       }
 

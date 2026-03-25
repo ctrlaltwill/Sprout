@@ -123,7 +123,7 @@ async function withVaultSyncLock<T>(fn: () => Promise<T>): Promise<T> {
 /**
  * Builds a human-readable sync summary string.
  *
- * Example output: "Sync complete: 3 new cards; 1 updated card; 2 cards deleted"
+ * Example output: "Sync complete - 3 new cards; 1 updated card; 2 cards deleted"
  */
 export function formatSyncNotice(prefix: string, res: SyncNoticeCounts, options: SyncNoticeOptions = {}): string {
   const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
@@ -136,8 +136,8 @@ export function formatSyncNotice(prefix: string, res: SyncNoticeCounts, options:
   if (options.includeDeleted && deletedCount > 0) parts.push(`${deletedCount} ${plural(deletedCount, "card deleted", "cards deleted")}`);
   if ((options.includeIdsInserted ?? true) && idsInserted > 0) parts.push(`${idsInserted} ${plural(idsInserted, "ID inserted", "IDs inserted")}`);
 
-  if (!parts.length) return `${prefix}: no changes.`;
-  return `${prefix}: ${parts.join("; ")}`;
+  if (!parts.length) return `${prefix} - no changes`;
+  return `${prefix} - ${parts.join("; ")}`;
 }
 
 // ────────────────────────────────────────────

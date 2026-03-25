@@ -213,8 +213,9 @@ function TestsTooltipContent(props: {
 
   return (
     <div className="sprout-data-tooltip-surface">
-      <div className="text-sm font-medium text-background">{dailyDatum.date}</div>
-      <div className="text-background">Average test result: {dailyDatum.averageScore.toFixed(1)}%</div>
+      <div className="text-background">Date: {dailyDatum.date}</div>
+      <div className="text-background">Tests completed: {dailyDatum.attempts}</div>
+      <div className="text-background">Average result: {dailyDatum.averageScore.toFixed(1)}%</div>
     </div>
   );
 }
@@ -464,6 +465,9 @@ export function TestsAnalyticsCard(props: {
                       averagesByDay={averagesByDay}
                     />
                   )}
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  wrapperStyle={{ transition: "none" }}
                   cursor={{ stroke: "var(--border)", strokeDasharray: "3 3", strokeWidth: 1 }}
                 />
                 <Scatter

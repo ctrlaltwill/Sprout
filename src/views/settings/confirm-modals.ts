@@ -83,10 +83,10 @@ export class ConfirmResetSchedulingModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllCardScheduling();
-        new Notice(tx(locale, "ui.settings.modals.resetScheduling.success", "Scheduling reset for all cards"));
+        new Notice(tx(locale, "ui.settings.modals.resetScheduling.success", "LearnKit – scheduling reset for all cards"));
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.resetScheduling.error", "LearnKit: failed to reset scheduling (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.resetScheduling.error", "LearnKit – failed to reset scheduling"));
       }
     };
   }
@@ -131,10 +131,10 @@ export class ConfirmResetNoteSchedulingModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllNoteScheduling();
-        new Notice(tx(locale, "ui.settings.modals.resetNoteScheduling.success", "Scheduling reset for all notes"));
+        new Notice(tx(locale, "ui.settings.modals.resetNoteScheduling.success", "LearnKit – scheduling reset for all notes"));
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.resetNoteScheduling.error", "LearnKit: failed to reset note scheduling (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.resetNoteScheduling.error", "LearnKit – failed to reset note scheduling"));
       }
     };
   }
@@ -183,10 +183,10 @@ export class ConfirmResetAnalyticsModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllAnalyticsData();
-        new Notice(tx(locale, "ui.settings.modals.resetAnalytics.success", "Analytics data cleared"));
+        new Notice(tx(locale, "ui.settings.modals.resetAnalytics.success", "LearnKit – analytics data cleared"));
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.resetAnalytics.error", "LearnKit: failed to reset analytics (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.resetAnalytics.error", "LearnKit – failed to reset analytics"));
       }
     };
   }
@@ -241,7 +241,7 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
         await this.onConfirm();
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.deleteAllFlashcards.error", "LearnKit: failed to delete flashcards (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.deleteAllFlashcards.error", "LearnKit – failed to delete flashcards"));
       }
     };
   }
@@ -294,7 +294,7 @@ export class ConfirmResetDefaultsModal extends Modal {
         await this.onConfirm();
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.resetSettings.error", "LearnKit: failed to reset settings (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.resetSettings.error", "LearnKit – failed to reset settings"));
       }
     };
   }
@@ -528,16 +528,16 @@ export class ConfirmRestoreBackupModal extends Modal {
       try {
         const res = await restoreFromDataJsonBackup(this.plugin, this.backup.path, { makeSafetyBackup });
         if (!res.ok) {
-          new Notice(tx(locale, "ui.settings.modals.restoreBackup.errorMessage", "LearnKit: {message}", { message: res.message }));
+          new Notice(tx(locale, "ui.settings.modals.restoreBackup.errorMessage", "LearnKit – {message}", { message: res.message }));
           restoreBtn.removeAttribute("disabled");
           return;
         }
-        new Notice(tx(locale, "ui.settings.modals.restoreBackup.success", "Scheduling data restored from backup"));
+        new Notice(tx(locale, "ui.settings.modals.restoreBackup.success", "LearnKit – scheduling data restored from backup"));
         this.close();
         this.onRestored();
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.restoreBackup.error", "LearnKit: restore failed (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.restoreBackup.error", "LearnKit – restore failed"));
         restoreBtn.removeAttribute("disabled");
       }
     };
@@ -591,14 +591,14 @@ export class ConfirmDeleteBackupModal extends Modal {
       try {
         const ok = await deleteDataJsonBackup(this.plugin, this.backup.path);
         if (!ok) {
-          new Notice(tx(locale, "ui.settings.modals.deleteBackup.unavailable", "LearnKit: cannot delete backup (no adapter or missing file)."));
+          new Notice(tx(locale, "ui.settings.modals.deleteBackup.unavailable", "LearnKit – cannot delete backup"));
           return;
         }
-        new Notice(tx(locale, "ui.settings.modals.deleteBackup.success", "Scheduling data backup deleted"));
+        new Notice(tx(locale, "ui.settings.modals.deleteBackup.success", "LearnKit – scheduling data backup deleted"));
         this.onDone?.();
       } catch (e) {
         log.error(e);
-        new Notice(tx(locale, "ui.settings.modals.deleteBackup.error", "LearnKit: failed to delete backup (see console)."));
+        new Notice(tx(locale, "ui.settings.modals.deleteBackup.error", "LearnKit – failed to delete backup"));
       }
     };
   }

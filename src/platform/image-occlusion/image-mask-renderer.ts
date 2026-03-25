@@ -118,7 +118,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.containerEl.addClass("sprout-io-editor-modal");
 
     if (Platform.isMobileApp) {
-      new Notice("Sprout: image occlusion editor is desktop-only.");
+      new Notice("Image occlusion editor is desktop-only");
       this.close();
       return;
     }
