@@ -65,8 +65,8 @@ body {
 
 @media (max-width: 767px) {
   body.is-mobile {
-    /* Keep content shells near 0.6rem side margins on phones. */
-    --lk-shell-gutter-desktop: 1.2rem;
+    /* 16px gutter each side on phones. */
+    --lk-shell-gutter-desktop: 32px;
     --lk-shell-padding-mobile: 8px;
   }
 }

@@ -101,13 +101,16 @@
   body.is-mobile .sprout .sprout-view-content {
     /* 40px base + 60px for Obsidian's mobile bottom toolbar (env() is 0 in webview) */
     padding-bottom: 100px;
+    /* Let the shell gutter be the only horizontal spacing from the viewport. */
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
   body.is-mobile {
     --lk-shell-padding-mobile: 8px;
   }
 
-  /* Mobile shells: border radius tweak */
+  /* Mobile shells: no padding, no background/border — maximise usable space. */
   body.is-mobile .sprout :is(
     .sprout-view-content-shell,
     .lk-home-content-shell,
@@ -118,7 +121,11 @@
     .sprout-settings-content-shell,
     .sprout-note-review-content-shell
   ) {
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
     border-radius: var(--radius-m) !important;
+    max-width: calc(100% - var(--lk-shell-gutter-desktop)) !important;
   }
 
   /* Mobile card spacing inside shells: keep consistent 8px rhythm. */

@@ -7,6 +7,47 @@ import { log } from "./logger";
 const SCHEDULING_DIR = "scheduling";
 const FLASHCARDS_DB = "flashcards.db";
 
+/** All known scheduling .db file names. */
+const ALL_DB_FILES = ["flashcards.db", "notes.db", "coach.db", "tests.db"] as const;
+
+/**
+ * Copy every existing .db file from the scheduling directory to the vault
+ * sync folder.  Call this when vault sync is first enabled or the folder
+ * path changes so that databases which haven't been individually persisted
+ * yet still appear in the sync folder.
+ */
+export async function copyAllDbsToVaultSyncFolder(
+  plugin: SproutPlugin,
+): Promise<void> {
+  const vs = plugin.settings?.storage?.vaultSync;
+  if (!vs?.enabled || !vs.folderPath) return;
+
+  const adapter = plugin.app?.vault?.adapter as {
+    exists?: (path: string) => Promise<boolean>;
+    readBinary?: (path: string) => Promise<ArrayBuffer>;
+    writeBinary?: (path: string, data: ArrayBuffer) => Promise<void>;
+    write?: (path: string, data: string) => Promise<void>;
+    mkdir?: (path: string) => Promise<void>;
+  } | null;
+  if (!adapter) return;
+
+  const schedDir = getSchedulingDirPath(plugin);
+
+  for (const dbFile of ALL_DB_FILES) {
+    try {
+      const srcPath = joinPath(schedDir, dbFile);
+      const exists = adapter.exists ? await adapter.exists(srcPath) : false;
+      if (!exists) continue;
+      const bytes = await readBinary(adapter, srcPath);
+      if (bytes && bytes.byteLength > 0) {
+        await copyDbToVaultSyncFolder(plugin, dbFile, bytes);
+      }
+    } catch {
+      // Best-effort per file
+    }
+  }
+}
+
 /**
  * Best-effort copy of a .db file to the vault-visible sync folder
  * when the user has enabled vault sync storage.

@@ -81,6 +81,7 @@ import {
   extractFilePropertyPairs,
   extractFileTags,
 } from "../shared/scope-metadata";
+import { copyAllDbsToVaultSyncFolder } from "../../platform/core/sqlite-store";
 
 // ────────────────────────────────────────────
 // SproutSettingsTab
@@ -4353,6 +4354,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         t.setValue(vaultSync.enabled).onChange(async (v) => {
           vaultSync.enabled = v;
           await this.plugin.saveAll();
+          if (v) await copyAllDbsToVaultSyncFolder(this.plugin);
           // Show/hide the folder picker
           vaultSyncFolderSetting.settingEl.toggle(v);
         });
@@ -4411,6 +4413,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
           vaultSync.folderPath = next;
           await this.plugin.saveAll();
+          if (vaultSync.enabled) await copyAllDbsToVaultSyncFolder(this.plugin);
 
           lastCommitted = next;
           hideList();

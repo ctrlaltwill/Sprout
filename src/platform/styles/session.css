@@ -1634,15 +1634,15 @@
   text-decoration: line-through;
 }
 
-/* Mobile session card chrome spacing: keep 8px side gutters from card edge,
-   with header pinned to top and footer pinned to bottom. Kept outside the
-   width media query so it also applies on wider mobile breakpoints/tablets. */
+/* Mobile session card chrome spacing: 8px margin from card edge,
+   8px internal padding. Kept outside the width media query
+   so it also applies on wider mobile breakpoints/tablets. */
 body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header.sprout-session-topbar {
-  margin: 8px 8px 0 !important;
+  margin: 8px !important;
 }
 
 body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
-  margin: 0 8px 8px !important;
+  margin: 8px !important;
 }
 
 @media (max-width: 700px) {
@@ -1656,7 +1656,9 @@ body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-sessio
     flex-direction: column;
     overflow: hidden !important;
     margin-top: 16px;
-    padding-bottom: 100px;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 100px !important;
   }
 
   body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
@@ -1669,9 +1671,9 @@ body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-sessio
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible !important;
     margin-top: 40px;
-    padding: 8px !important;
+    padding: 0 !important;
   }
 
   body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
@@ -1689,13 +1691,14 @@ body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-sessio
     height: auto;
     max-height: none;
     align-self: stretch;
+    overflow: hidden !important;
+    padding: 0 !important;
   }
 
-  /* Whole-card scroll: header pinned, section + footer scroll together */
+  /* Header & footer keep their own bg/border/blur.
+     Section scrolls; card clips with overflow:hidden. */
   body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header {
     flex: 0 0 auto;
-    position: sticky;
-    top: 0;
     z-index: 5;
     background: color-mix(in oklab, var(--background) 80%, transparent 20%);
     -webkit-backdrop-filter: blur(10px);
@@ -1703,23 +1706,17 @@ body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-sessio
   }
 
   body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section {
-    flex: 1 0 auto;
+    flex: 1 1 0%;
     min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
     flex: 0 0 auto;
-    position: sticky;
-    bottom: 0;
     z-index: 5;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
-  }
-
-  /* The card itself becomes the scroll container (header & footer sticky within) */
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-session-card, .lk-session-card.card) {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   /* Session column spacer no longer needed with flexed layout */
@@ -1778,7 +1775,7 @@ body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-sessio
     flex-wrap: wrap;
     gap: 8px;
     padding: 8px !important;
-    margin: 0 8px 8px !important;
+    margin: 8px !important;
     align-items: stretch;
   }
 
