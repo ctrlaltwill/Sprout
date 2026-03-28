@@ -13,15 +13,15 @@
 
 LearnKit helps you remember what you write. It brings flashcards, note review, tests, and AI-assisted study tools into Obsidian, so your vault becomes a place to learn, not just store information.
 
-Flashcards are where LearnKit started, but the goal is broader: to turn your vault into a memory layer that connects notes, review, and long-term retention.
+Flashcards are where LearnKit started, but the goal was always bigger: to turn your vault into a memory layer that connects notes, review, and long-term retention.
 
 ## Why LearnKit
 
-Most note apps help you capture information. LearnKit helps you keep it. It keeps flashcards, note review, tests, and study tools in the same vault you already use, making it a strong fit for exam preparation, technical subjects, language learning, and any workflow where long-term retention matters.
+Most note apps help you capture information. LearnKit helps you study it. Instead of splitting your workflow across notes, flashcards, and external tools, LearnKit keeps review in the same vault you already use.
 
 ## Start learning from your vault
 
-LearnKit is easiest to understand once you use it. Install it, study one note or generate a test, and see how the workflow fits your vault.
+LearnKit is easiest to understand once you use it. Install it, create a flashcard, run a review, or generate a test to see how it fits your workflow.
 
 - [Install with BRAT](https://github.com/TfTHacker/obsidian42-brat)
 - [Explore documentation](https://ctrlaltwill.github.io/LearnKit/)
@@ -52,16 +52,14 @@ LearnKit is easiest to understand once you use it. Install it, study one note or
 ## Key features
 
 - **FSRS scheduling** — adaptive spaced repetition so every review counts.
-- **Rich card types** — cloze, basic, reversed, multiple choice, image occlusion, and more.
+- **Rich flashcard types** — cloze, basic, reversed, multiple choice, image occlusion, and more.
 - **Text-to-speech & audio** — built-in playback for language learning and listening practice.
-- **Anki import/export** — bring your decks, scheduling data, and media in or out.
 - **Study analytics** — charts, heatmaps, and retention trends at a glance.
-- **Card browser & bulk edits** — inline editor and fast search across large collections.
-- **Markdown-first** — cards live inside your notes, linked to the knowledge they came from.
+- **Markdown-first** — flashcards live inside your notes, linked to the knowledge they came from.
 - **Reading view customisation** — keep notes clean and distraction-free while studying.
-- **Note review mode** — spaced repetition for your notes, not just cards.
-- **Study Coach** — personalised study plans and coaching for your exams.
-- **Test mode** — auto-generated quizzes straight from your notes.
+- **Note review mode** — spaced repetition for your notes, not just flashcards.
+- **Study coach** — personalised study plans and coaching for your exams.
+- **Test mode** — AI-generated quizzes straight from your notes.
 
 ### Companion — AI learning assistant
 
@@ -75,7 +73,7 @@ Turn notes into study-ready material without leaving Obsidian.
 
 ## Feature highlights
 
-![LearnKit Banner Two - Rich Card Types](site/branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
+![LearnKit Banner Two - Rich Flashcard Types](site/branding/Banner%20Two%20-%20Rich%20Card%20Types.png)
 ![LearnKit Banner Three - FSRS Algorithm](site/branding/Banner%20Three%20-%20FSRS%20Algorithm.png)
 ![LearnKit Banner Four - Meet Companion](site/branding/Banner%20Four%20-%20Meet%20Companion.png)
 ![LearnKit Banner Six - Reminders & Gatekeeper](site/branding/Banner%20Six%20-%20Reminders%20%26%20Gatekeeper.png)
@@ -91,9 +89,10 @@ If you are deciding whether LearnKit fits your workflow, start here.
 - **Do I need AI to use LearnKit?** No. AI is an optional layer in LearnKit, not a requirement. You can use the main study workflow without connecting any model provider.
 - **Is LearnKit free?** Yes. LearnKit itself is free and open source. Companion does not add a subscription layer, but external model providers may charge depending on the API you use.
 - **How does Companion work?** Companion uses your own API key, so there are no subscriptions or markups from LearnKit. It works with providers including Google, OpenRouter, Anthropic, OpenAI, and Perplexity.
+- **Can Companion access my whole vault by default?** No. Companion only receives the note content you send in a given workflow, such as asking about a note, generating flashcards, or generating a test. Depending on the feature and your settings, that can also include extra context such as note attachments or linked notes for context.
 - **Do all AI models support every Companion feature?** No. Free models are a good way to get started, but capability varies by model. Premium models generally perform better for more demanding tasks such as working with attachments.
-- **Can I use LearnKit with my existing notes?** Yes. LearnKit is designed to work with the notes you already have in Obsidian, so you can turn existing material into cards, reviews, and tests instead of starting from scratch.
-- **Does it work with Anki?** Yes. LearnKit supports Anki import and export for decks, media, and scheduling-related data where supported. Image Occlusion cards are currently skipped on import and are not exported.
+- **Can I use LearnKit with my existing notes?** Yes. LearnKit is designed to work with the notes you already have in Obsidian, so you can turn existing material into flashcards, reviews, and tests instead of starting from scratch.
+- **Does it work with Anki?** Yes. LearnKit supports Anki import and export for decks, media, and scheduling-related data where supported. Image Occlusion flashcards are currently skipped on import and are not exported.
 - **Does it work on mobile?** Yes. LearnKit is not desktop-only, though some workflows may feel better on larger screens. Check the docs for current platform notes and limitations.
 - **What is planned for Companion?** Custom skills and note editing are planned for future updates.
 

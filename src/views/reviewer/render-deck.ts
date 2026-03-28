@@ -201,7 +201,6 @@ export function renderDeckMode(args: Args) {
   setIcon(comboIcon, "arrow-right");
 
   const comboLabel = document.createElement("span");
-  comboLabel.className = "truncate";
   comboLabel.textContent = tx("ui.reviewer.deck.studyGroup", "Study by group");
   comboTrigger.appendChild(comboLabel);
   comboTrigger.appendChild(comboIcon);
