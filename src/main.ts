@@ -58,7 +58,7 @@ import { initMobileKeyboardHandler, cleanupMobileKeyboardHandler } from "./platf
 import { JsonStore } from "./platform/core/store";
 import type { IStore } from "./platform/core/store-interface";
 import { NoteReviewSqlite } from "./platform/core/note-review-sqlite";
-import { SqliteStore, isSqliteDatabasePresent } from "./platform/core/sqlite-store";
+import { SqliteStore, isSqliteDatabasePresent, reconcileAllDbsFromVaultSync } from "./platform/core/sqlite-store";
 import { migrateJsonToSqlite } from "./platform/core/migration";
 import { queryFirst } from "./platform/core/ui";
 import { SproutReviewerView } from "./views/reviewer/review-view";
@@ -497,6 +497,9 @@ export default class SproutPlugin extends Plugin {
       // Initialize mobile keyboard handler for adaptive bottom padding
       initMobileKeyboardHandler();
 
+      // Add phone-specific body class for CSS targeting (survives orientation changes)
+      if (Platform.isPhone) document.body.classList.add("is-phone");
+
       this._bc = {
         VIEW_TYPE_REVIEWER,
         VIEW_TYPE_WIDGET,
@@ -535,6 +538,12 @@ export default class SproutPlugin extends Plugin {
 
       // Activate the user's chosen delimiter before any parsing occurs
       setDelimiter(this.settings.indexing.delimiter ?? "|");
+
+      // When vault sync is enabled, reconcile all .db files from the vault
+      // folder before any stores are opened.  This ensures databases that
+      // are opened lazily (notes.db, tests.db) still pick up copies that
+      // Obsidian Sync delivered while the plugin was not running.
+      await reconcileAllDbsFromVaultSync(this);
 
       const hasSqlite = await isSqliteDatabasePresent(this);
       const hasLegacyStore = isPlainObject(rootObj.store);
@@ -680,6 +689,7 @@ export default class SproutPlugin extends Plugin {
     this._bc = null;
     this._destroyRibbonIcons();
     document.body.classList.remove("sprout-hide-status-bar");
+    document.body.classList.remove("is-phone");
     document.body.style.removeProperty("--sprout-theme-accent-override");
     document.body.style.removeProperty("--sprout-leaf-zoom");
     if (this._sproutZoomSaveTimer != null) {

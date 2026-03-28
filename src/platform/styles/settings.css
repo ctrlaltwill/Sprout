@@ -2760,223 +2760,222 @@ color: var(--color-base-100);
   }
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .sprout-settings-view-root {
-    max-width: 100vw;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-top: 0;
-  }
+body.is-phone .sprout .sprout-settings-view-root {
+  max-width: 100vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 0;
+}
 
-  body.is-mobile .sprout .sprout-settings-tab-content-wrapper,
-  body.is-mobile .sprout .sprout-settings-tab-content,
-  body.is-mobile .sprout .sprout-settings-wrapper,
-  body.is-mobile .sprout .sprout-settings-layout,
-  body.is-mobile .sprout .sprout-guide-layout,
-  body.is-mobile .sprout .sprout-guide-content,
-  body.is-mobile .sprout .sprout-guide-content-inner {
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
+body.is-phone .sprout .sprout-settings-tab-content-wrapper,
+body.is-phone .sprout .sprout-settings-tab-content,
+body.is-phone .sprout .sprout-settings-wrapper,
+body.is-phone .sprout .sprout-settings-layout,
+body.is-phone .sprout .sprout-guide-layout,
+body.is-phone .sprout .sprout-guide-content,
+body.is-phone .sprout .sprout-guide-content-inner {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
 
-  body.is-mobile .sprout .sprout-guide-content-inner {
-    padding: 36px 14px 24px;
-  }
+body.is-phone .sprout .sprout-guide-content-inner {
+  padding: 36px 14px 24px;
+}
 
-  body.is-mobile .sprout .sprout-guide-content-inner.sprout-guide-content-inner--snap {
-    padding-top: calc(36px + 2rem);
-  }
+body.is-phone .sprout .sprout-guide-content-inner.sprout-guide-content-inner--snap {
+  padding-top: calc(36px + 2rem);
+}
 
-  body.is-mobile .sprout .sprout-guide-layout {
-    --sprout-guide-topbar-clearance: 104px;
-  }
+body.is-phone .sprout .sprout-guide-layout {
+  --sprout-guide-topbar-clearance: 104px;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
+body.is-phone .sprout .sprout-settings-title-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip > .sprout-inline-sentence {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
+body.is-phone .sprout .sprout-settings-title-strip > .sprout-inline-sentence {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip > .sprout-inline-sentence > :first-child {
-    width: 100%;
-    flex: 0 0 auto;
-    align-items: center;
-    text-align: center;
-  }
+body.is-phone .sprout .sprout-settings-title-strip > .sprout-inline-sentence > :first-child {
+  width: 100%;
+  flex: 0 0 auto;
+  align-items: center;
+  text-align: center;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip .sprout-view-title-strip-label {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-  }
+body.is-phone .sprout .sprout-settings-title-strip .sprout-view-title-strip-label {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip > .sprout-inline-sentence > :last-child {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    justify-content: stretch;
-    align-items: stretch;
-  }
+body.is-phone .sprout .sprout-settings-title-strip > .sprout-inline-sentence > :last-child {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  justify-content: stretch;
+  align-items: stretch;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip .sprout-settings-title-tab-btn {
-    width: 100%;
-    min-width: 0;
-    justify-content: center;
-  }
+body.is-phone .sprout .sprout-settings-title-strip .sprout-settings-title-tab-btn {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip .sprout-settings-title-tab-btn .sprout-settings-title-tab-btn-icon {
-    display: none;
-  }
+body.is-phone .sprout .sprout-settings-title-strip .sprout-settings-title-tab-btn .sprout-settings-title-tab-btn-icon {
+  display: none;
+}
 
-  body.is-mobile .sprout .sprout-settings-title-strip :is(
-    .sprout-settings-view-tab-row,
-    .sprout-settings-tab-nav,
-    .sprout-settings-tab-nav-main
-  ) {
-    width: 100%;
-    flex-wrap: wrap;
-  }
+body.is-phone .sprout .sprout-settings-title-strip :is(
+  .sprout-settings-view-tab-row,
+  .sprout-settings-tab-nav,
+  .sprout-settings-tab-nav-main
+) {
+  width: 100%;
+  flex-wrap: wrap;
+}
 
-  body.is-mobile .sprout .sprout-settings-view-tab-row {
-    gap: 8px;
-  }
+body.is-phone .sprout .sprout-settings-view-tab-row {
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav {
-    width: 100%;
-    flex-wrap: nowrap;
-  }
+body.is-phone .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav {
+  width: 100%;
+  flex-wrap: nowrap;
+}
 
-  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn {
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: center;
-    gap: 4px;
-    padding: 5px 8px;
-    font-size: var(--sprout-font-2xs);
-    line-height: 1.2;
-    white-space: nowrap;
-  }
+body.is-phone .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  font-size: var(--sprout-font-2xs);
+  line-height: 1.2;
+  white-space: nowrap;
+}
 
-  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn .sprout-settings-tab-btn-label.is-hidden-mobile {
-    display: none;
-  }
+body.is-phone .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn .sprout-settings-tab-btn-label.is-hidden-mobile {
+  display: none;
+}
 
-  body.is-mobile .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn-icon .svg-icon {
-    width: 12px;
-    height: 12px;
-  }
+body.is-phone .sprout .sprout-settings-view-tab-row .sprout-settings-tab-nav .sprout-settings-tab-btn-icon .svg-icon {
+  width: 12px;
+  height: 12px;
+}
 
-  body.is-mobile .sprout .sprout-guide-nav {
-    gap: 4px;
-    padding: 10px 12px;
-  }
+body.is-phone .sprout .sprout-guide-nav {
+  gap: 4px;
+  padding: 10px 12px;
+}
 
-  body.is-mobile .sprout .sprout-release-nav-frame {
-    padding: 10px 12px;
-  }
+body.is-phone .sprout .sprout-release-nav-frame {
+  padding: 10px 12px;
+}
 
-  body.is-mobile .sprout .sprout-release-nav {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+body.is-phone .sprout .sprout-release-nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
-  body.is-mobile .sprout .sprout-release-nav-frame::before,
-  body.is-mobile .sprout .sprout-release-nav-frame::after {
-    display: none;
-  }
+body.is-phone .sprout .sprout-release-nav-frame::before,
+body.is-phone .sprout .sprout-release-nav-frame::after {
+  display: none;
+}
 
-  body.is-mobile .sprout .sprout-guide-nav-btn {
-    gap: 4px;
-    height: 26px;
-    padding: 0 10px;
-    font-size: var(--sprout-font-2xs);
-    line-height: 1.2;
-    border-radius: var(--radius-md);
-  }
+body.is-phone .sprout .sprout-guide-nav-btn {
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  font-size: var(--sprout-font-2xs);
+  line-height: 1.2;
+  border-radius: var(--radius-md);
+}
 
-  body.is-mobile .sprout .sprout-settings-action-btn,
-  body.is-mobile .sprout .sprout-ss-trigger {
-    height: 28px;
-    padding: 0 8px;
-    font-size: var(--sprout-font-2xs);
-    gap: 4px;
-  }
+body.is-phone .sprout .sprout-settings-action-btn,
+body.is-phone .sprout .sprout-ss-trigger {
+  height: 28px;
+  padding: 0 8px;
+  font-size: var(--sprout-font-2xs);
+  gap: 4px;
+}
 
-  body.is-mobile .sprout .sprout-guide-dropdown,
-  body.is-mobile .sprout .sprout-guide-dropdown-menu {
-    min-width: 0;
-    width: max-content;
-    max-width: min(78vw, 320px);
-  }
+body.is-phone .sprout .sprout-guide-dropdown,
+body.is-phone .sprout .sprout-guide-dropdown-menu {
+  min-width: 0;
+  width: max-content;
+  max-width: min(78vw, 320px);
+}
 
-  body.is-mobile .sprout .sprout-settings-tab-content :is(
-    .setting-item,
-    .setting-item-info,
-    .setting-item-control,
-    .sprout-rv-live-preview,
-    .sprout-rv-preset-grid,
-    .sprout-rv-preset-card,
-    .sprout-rv-demo-card,
-    .sprout-pretty-card
-  ) {
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
+body.is-phone .sprout .sprout-settings-tab-content :is(
+  .setting-item,
+  .setting-item-info,
+  .setting-item-control,
+  .sprout-rv-live-preview,
+  .sprout-rv-preset-grid,
+  .sprout-rv-preset-card,
+  .sprout-rv-demo-card,
+  .sprout-pretty-card
+) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
 
-  /* Mobile: let settings/guide/release panes expand to content height
-     so the outer view scrolls, instead of constraining to viewport-like
-     nested scroll areas. */
-  body.is-mobile .sprout .sprout-settings-tab-content-wrapper,
-  body.is-mobile .sprout .sprout-settings-tab-content,
-  body.is-mobile .sprout .sprout-settings-layout,
-  body.is-mobile .sprout .sprout-settings-layout-content,
-  body.is-mobile .sprout .sprout-settings-layout-content-frame,
-  body.is-mobile .sprout .sprout-guide-layout,
-  body.is-mobile .sprout .sprout-guide-content,
-  body.is-mobile .sprout .sprout-guide-content-inner {
-    flex: 0 0 auto;
-    min-height: auto;
-    height: auto;
-  }
-  body.is-mobile .sprout .sprout-settings-layout,
-  body.is-mobile .sprout .sprout-guide-layout,
-  body.is-mobile .sprout .sprout-guide-content,
-  body.is-mobile .sprout .sprout-guide-content-inner {
-    overflow-y: visible;
-  }
+/* Mobile: let settings/guide/release panes expand to content height
+   so the outer view scrolls, instead of constraining to viewport-like
+   nested scroll areas. */
+body.is-phone .sprout .sprout-settings-tab-content-wrapper,
+body.is-phone .sprout .sprout-settings-tab-content,
+body.is-phone .sprout .sprout-settings-layout,
+body.is-phone .sprout .sprout-settings-layout-content,
+body.is-phone .sprout .sprout-settings-layout-content-frame,
+body.is-phone .sprout .sprout-guide-layout,
+body.is-phone .sprout .sprout-guide-content,
+body.is-phone .sprout .sprout-guide-content-inner {
+  flex: 0 0 auto;
+  min-height: auto;
+  height: auto;
+}
 
-  /* Button groups: transparent backgrounds on mobile */
-  body.is-mobile .sprout .sprout-about-buttons {
-    background-color: transparent;
-  }
+body.is-phone .sprout .sprout-settings-layout,
+body.is-phone .sprout .sprout-guide-layout,
+body.is-phone .sprout .sprout-guide-content,
+body.is-phone .sprout .sprout-guide-content-inner {
+  overflow-y: visible;
+}
 
-  body.is-mobile .sprout .sprout-about-buttons .sprout-about-btn {
-    background-color: transparent;
-  }
+/* Button groups: transparent backgrounds on mobile */
+body.is-phone .sprout .sprout-about-buttons {
+  background-color: transparent;
+}
 
-  body.is-mobile .sprout .sprout-about-actions {
-    background-color: transparent;
-  }
+body.is-phone .sprout .sprout-about-buttons .sprout-about-btn {
+  background-color: transparent;
+}
 
-  body.is-mobile .sprout .sprout-about-links-bar {
-    background-color: transparent;
-  }
+body.is-phone .sprout .sprout-about-actions {
+  background-color: transparent;
+}
 
-  body.is-mobile .sprout .sprout-about-links-row {
-    background-color: transparent;
-  }
+body.is-phone .sprout .sprout-about-links-bar {
+  background-color: transparent;
+}
+
+body.is-phone .sprout .sprout-about-links-row {
+  background-color: transparent;
 }
 
 /* Ensure settings view tab content wrapper fills available space */

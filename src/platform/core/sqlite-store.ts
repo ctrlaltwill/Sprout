@@ -11,6 +11,29 @@ const FLASHCARDS_DB = "flashcards.db";
 const ALL_DB_FILES = ["flashcards.db", "notes.db", "coach.db", "tests.db"] as const;
 
 /**
+ * Reconcile ALL known .db files from the vault sync folder back to the
+ * plugin scheduling directory.  Call this once at plugin startup so that
+ * databases opened lazily (notes.db, tests.db) still pick up copies that
+ * Obsidian Sync delivered while the plugin was not running.
+ */
+export async function reconcileAllDbsFromVaultSync(
+  plugin: SproutPlugin,
+): Promise<void> {
+  const vs = plugin.settings?.storage?.vaultSync;
+  if (!vs?.enabled || !vs.folderPath) return;
+
+  const schedDir = getSchedulingDirPath(plugin);
+  for (const dbFile of ALL_DB_FILES) {
+    try {
+      const pluginPath = joinPath(schedDir, dbFile);
+      await reconcileFromVaultSync(plugin, dbFile, pluginPath);
+    } catch {
+      // Best-effort per file
+    }
+  }
+}
+
+/**
  * Copy every existing .db file from the scheduling directory to the vault
  * sync folder.  Call this when vault sync is first enabled or the folder
  * path changes so that databases which haven't been individually persisted
@@ -127,8 +150,8 @@ export async function reconcileFromVaultSync(
     ]);
     if (!vaultStat || !pluginStat) return;
 
-    // Only overwrite if the vault copy is strictly newer
-    if (vaultStat.mtime > pluginStat.mtime) {
+    // Overwrite if the vault copy is newer or same age (vault takes precedence)
+    if (vaultStat.mtime >= pluginStat.mtime) {
       const bytes = await readBinary(adapter, vaultPath);
       if (bytes && bytes.byteLength > 0) {
         await writeBinary(adapter, pluginDbPath, bytes);

@@ -119,6 +119,9 @@ type Args = {
   ttsReplayFront?: () => void;
   ttsReplayBack?: () => void;
 
+  /** Hide the card-title topbar inside the session card. */
+  hideSessionTopbar?: boolean;
+
   rerender: () => void;
 };
 
@@ -999,10 +1002,7 @@ export function renderSessionMode(args: Args) {
   const skipEnabled = !!(args.enableSkipButton ?? args.skipEnabled);
   const practiceMode = !!args.practiceMode;
   const four = !!args.fourButtonMode;
-  const isPhoneMobile =
-    document.body.classList.contains("is-mobile") &&
-    !!window.matchMedia &&
-    window.matchMedia("(max-width: 700px)").matches;
+  const isPhoneMobile = document.body.classList.contains("is-phone");
   const applyAOS = !!args.applyAOS;
   const delayMs = Number.isFinite(args.aosDelayMs) ? Number(args.aosDelayMs) : applyAOS ? 100 : 0;
   
@@ -1164,6 +1164,7 @@ export function renderSessionMode(args: Args) {
   // ===== Header =====
   const header = document.createElement("header");
   header.className = "bc sprout-session-topbar";
+  if (args.hideSessionTopbar) header.classList.add("sprout-session-topbar-hidden");
   wrap.appendChild(header);
 
   // Title in topbar

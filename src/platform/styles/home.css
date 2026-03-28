@@ -130,28 +130,26 @@
   transform: translateY(0);
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .lk-home-title-strip > .lk-home-title-row {
-    flex-direction: column;
-    align-items: center !important;
-    justify-content: center !important;
-    row-gap: 8px;
-  }
+body.is-phone .sprout .lk-home-title-strip > .lk-home-title-row {
+  flex-direction: column;
+  align-items: center !important;
+  justify-content: center !important;
+  row-gap: 8px;
+}
 
-  body.is-mobile .sprout .lk-home-title-strip > .lk-home-title-row > .lk-home-title-copy {
-    width: 100%;
-    align-items: center;
-    text-align: center;
-  }
+body.is-phone .sprout .lk-home-title-strip > .lk-home-title-row > .lk-home-title-copy {
+  width: 100%;
+  align-items: center;
+  text-align: center;
+}
 
-  body.is-mobile .sprout .lk-home-title-strip > .lk-home-title-row > .lk-home-title-actions {
-    width: 100%;
-    justify-content: center;
-  }
+body.is-phone .sprout .lk-home-title-strip > .lk-home-title-row > .lk-home-title-actions {
+  width: 100%;
+  justify-content: center;
+}
 
-  body.is-mobile .sprout .lk-home-title-strip .lk-home-quick-study-btn {
-    margin-left: 0;
-  }
+body.is-phone .sprout .lk-home-title-strip .lk-home-quick-study-btn {
+  margin-left: 0;
 }
 
 
@@ -507,17 +505,75 @@
 
 /* ---- Responsive ---- */
 
+body.is-phone .sprout .lk-home-root {
+  gap: 8px !important;
+}
+
+/* Home body wrapper is created with `gap-4`; force 8px rhythm on phone. */
+body.is-phone .sprout .lk-home-content-shell > .w-full.flex.flex-col {
+  gap: 8px !important;
+}
+
+body.is-phone .sprout .lk-home-content-shell > * + * {
+  margin-top: 8px !important;
+}
+
+/* Keep dashboard cards (overdue/heatmap/recent decks) at 8px rhythm on phone. */
+body.is-phone .sprout .lk-home-stats-grid,
+body.is-phone .sprout .lk-home-decks-row,
+body.is-phone .sprout .lk-home-content-shell :is(.grid, .sprout-ana-grid) {
+  gap: 8px !important;
+}
+
+body.is-phone .sprout .lk-home-title-strip {
+  padding-left: var(--lk-shell-padding-mobile);
+  padding-right: var(--lk-shell-padding-mobile);
+}
+
+body.is-phone .sprout .lk-home-quick-study-btn {
+  margin-left: 0;
+  margin-top: 0;
+}
+
+body.is-phone .sprout .lk-home-title-row {
+  align-items: flex-start;
+}
+
+body.is-phone .sprout .lk-home-name-input,
+body.is-phone .sprout .sprout-greeting-suffix {
+  display: none;
+}
+
+/* Keep each deck section as its own standalone card on phone */
+body.is-phone .sprout .lk-home-deck-section {
+  background-color: var(--background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-base-35) !important;
+  border-color: var(--color-base-35) !important;
+  box-shadow: none;
+  padding: var(--lk-shell-padding-mobile);
+}
+
+body.is-phone .sprout .lk-home-stats-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.is-phone .sprout .lk-home-stats-grid > .sprout-stat-card {
+  width: 100%;
+  min-width: 0;
+}
+
+body.is-phone .sprout .lk-home-stats-grid > .sprout-stat-card > .flex.items-center.justify-between.text-sm.text-muted-foreground {
+  flex-wrap: wrap;
+  row-gap: 0.35rem;
+}
+
+body.is-phone .sprout .lk-home-stats-grid > .sprout-stat-card .lk-home-stat-trend-label {
+  white-space: nowrap;
+}
+
 @media (max-width: 767px) {
-  body.is-mobile .sprout .lk-home-root {
-    gap: 8px !important;
-  }
-
   .sprout .lk-home-root {
-    gap: 8px !important;
-  }
-
-  /* Home body wrapper is created with `gap-4`; force 8px rhythm on mobile. */
-  body.is-mobile .sprout .lk-home-content-shell > .w-full.flex.flex-col {
     gap: 8px !important;
   }
 
@@ -525,67 +581,9 @@
     gap: 8px !important;
   }
 
-  body.is-mobile .sprout .lk-home-content-shell > * + * {
-    margin-top: 8px !important;
-  }
-
-  /* Keep dashboard cards (overdue/heatmap/recent decks) at 8px rhythm on mobile. */
-  body.is-mobile .sprout .lk-home-stats-grid,
-  body.is-mobile .sprout .lk-home-decks-row,
-  body.is-mobile .sprout .lk-home-content-shell :is(.grid, .sprout-ana-grid) {
-    gap: 8px !important;
-  }
-
   .sprout .lk-home-stats-grid,
   .sprout .lk-home-decks-row,
   .sprout .lk-home-content-shell :is(.grid, .sprout-ana-grid) {
     gap: 8px !important;
-  }
-
-  body.is-mobile .sprout .lk-home-title-strip {
-    padding-left: var(--lk-shell-padding-mobile);
-    padding-right: var(--lk-shell-padding-mobile);
-  }
-
-  body.is-mobile .sprout .lk-home-quick-study-btn {
-    margin-left: 0;
-    margin-top: 0;
-  }
-
-  body.is-mobile .sprout .lk-home-title-row {
-    align-items: flex-start;
-  }
-
-  body.is-mobile .sprout .lk-home-name-input,
-  body.is-mobile .sprout .sprout-greeting-suffix {
-    display: none;
-  }
-
-  /* Keep each deck section as its own standalone card on mobile */
-  body.is-mobile .sprout .lk-home-deck-section {
-    background-color: var(--background);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-base-35) !important;
-    border-color: var(--color-base-35) !important;
-    box-shadow: none;
-    padding: var(--lk-shell-padding-mobile);
-  }
-
-  body.is-mobile .sprout .lk-home-stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  body.is-mobile .sprout .lk-home-stats-grid > .sprout-stat-card {
-    width: 100%;
-    min-width: 0;
-  }
-
-  body.is-mobile .sprout .lk-home-stats-grid > .sprout-stat-card > .flex.items-center.justify-between.text-sm.text-muted-foreground {
-    flex-wrap: wrap;
-    row-gap: 0.35rem;
-  }
-
-  body.is-mobile .sprout .lk-home-stats-grid > .sprout-stat-card .lk-home-stat-trend-label {
-    white-space: nowrap;
   }
 }

@@ -615,7 +615,7 @@ export class SproutNoteReviewView extends ItemView {
         suspended_due: current.suspended_due,
       };
     } else {
-      nextRow = gradeNoteFsrsPass(current, now, { scheduling: this.plugin.settings.scheduling });
+      nextRow = gradeNoteFsrsPass(current, now, { scheduling: this._noteReviewFsrsConfig() });
     }
 
     this._notesDb.upsertNoteState(nextRow);
@@ -627,6 +627,17 @@ export class SproutNoteReviewView extends ItemView {
     await this._refreshQueue();
     this._dockMoreOpen = false;
     this.render();
+  }
+
+  private _noteReviewFsrsConfig() {
+    const nr = this.plugin.settings.noteReview;
+    const fallback = this.plugin.settings.scheduling;
+    return {
+      learningStepsMinutes: nr.fsrsLearningStepsMinutes ?? fallback.learningStepsMinutes,
+      relearningStepsMinutes: nr.fsrsRelearningStepsMinutes ?? fallback.relearningStepsMinutes,
+      requestRetention: nr.fsrsRetention ?? fallback.requestRetention,
+      enableFuzz: nr.fsrsEnableFuzz ?? fallback.enableFuzz,
+    };
   }
 
   private async _gradeCurrentFsrs(outcome: "pass" | "fail"): Promise<void> {
@@ -643,7 +654,7 @@ export class SproutNoteReviewView extends ItemView {
 
     const now = this._getNow();
     const current = this._notesDb.getNoteState(file.path) ?? defaultFsrsNoteRow(file.path, now);
-    const nextRow = gradeNoteFsrs(current, now, { scheduling: this.plugin.settings.scheduling }, outcome);
+    const nextRow = gradeNoteFsrs(current, now, { scheduling: this._noteReviewFsrsConfig() }, outcome);
 
     this._notesDb.upsertNoteState(nextRow);
     await this._trackNoteReviewAction(file, outcome);

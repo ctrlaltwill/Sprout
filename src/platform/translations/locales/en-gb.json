@@ -44,7 +44,7 @@
   "ui.settings.sections.gatekeeperPopups": "Gatekeeper popups",
   "ui.settings.sections.gatekeeperBehaviour": "Gatekeeper behaviour",
   "ui.settings.sections.gatekeeperBypass": "Gatekeeper bypass",
-  "ui.settings.sections.scheduling": "Scheduling",
+  "ui.settings.sections.scheduling": "Flashcard scheduling",
   "ui.settings.sections.attachmentStorage": "Attachment storage",
   "ui.settings.sections.syncing": "Syncing",
   "ui.settings.sections.reset": "Reset",

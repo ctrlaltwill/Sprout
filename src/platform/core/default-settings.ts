@@ -64,6 +64,7 @@ export const DEFAULT_SETTINGS: SproutSettings = {
       yellowMax: 79,
     },
     analyticsFocusTopicCount: 7,
+    hideSessionTopbar: false,
   },
 
   studyAssistant: {
@@ -158,6 +159,10 @@ export const DEFAULT_SETTINGS: SproutSettings = {
     reviewsPerDay: 10,
     reviewStepsDays: [1, 7, 30, 365],
     fillFromFutureWhenUnderLimit: true,
+    fsrsRetention: 0.9,
+    fsrsLearningStepsMinutes: [10, 1440],
+    fsrsRelearningStepsMinutes: [10],
+    fsrsEnableFuzz: true,
   },
 
   cards: {

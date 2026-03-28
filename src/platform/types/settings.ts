@@ -91,6 +91,9 @@ export type SproutSettings = {
 
     /** Number of weak topics shown in analytics focus recommendations. */
     analyticsFocusTopicCount: number;
+
+    /** Hide the card-title topbar inside the study session card. */
+    hideSessionTopbar: boolean;
   };
 
   // Study Assistant — AI providers, prompts, and generation preferences
@@ -227,6 +230,16 @@ export type SproutSettings = {
 
     /** Include notes slightly in the future to fill daily quota. */
     fillFromFutureWhenUnderLimit: boolean;
+
+    // ── FSRS-specific overrides for note review ──
+    /** Target recall probability for note review FSRS (0.80 – 0.97). */
+    fsrsRetention: number;
+    /** Learning step intervals in minutes for note review FSRS. */
+    fsrsLearningStepsMinutes: number[];
+    /** Relearning step intervals in minutes for note review FSRS. */
+    fsrsRelearningStepsMinutes: number[];
+    /** Add slight randomness to note review intervals. */
+    fsrsEnableFuzz: boolean;
   };
 
   // Indexing — card detection & anchor placement

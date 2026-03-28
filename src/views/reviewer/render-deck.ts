@@ -435,11 +435,10 @@ export function renderDeckMode(args: Args) {
     c.className = "w-20";
     return c;
   };
-  colgroup.appendChild(makeNumCol()); // Total
+  colgroup.appendChild(makeNumCol()); // Due
   colgroup.appendChild(makeNumCol()); // New
-  colgroup.appendChild(makeNumCol()); // Relearning
-  colgroup.appendChild(makeNumCol()); // Learning
-  colgroup.appendChild(makeNumCol()); // Review
+  colgroup.appendChild(makeNumCol()); // Learn
+  colgroup.appendChild(makeNumCol()); // Total
 
   table.appendChild(colgroup);
 
@@ -449,13 +448,12 @@ export function renderDeckMode(args: Args) {
   const headRow = document.createElement("tr");
   headRow.className = "";
 
-  const headers: Array<{ label: string; align?: "left" | "center" }> = [
-    { label: "Deck", align: "left" },
-    { label: "Total", align: "center" },
-    { label: "New", align: "center" },
-    { label: "Relearning", align: "center" },
-    { label: "Learning", align: "center" },
-    { label: "Review", align: "center" },
+  const headers: Array<{ label: string; align?: "left" | "center"; tooltip?: string }> = [
+    { label: "Deck", align: "left", tooltip: tx("ui.reviewer.deck.header.deck.tooltip", "Folder or note containing cards") },
+    { label: "Due", align: "center", tooltip: tx("ui.reviewer.deck.header.due.tooltip", "Review cards ready to study now") },
+    { label: "New", align: "center", tooltip: tx("ui.reviewer.deck.header.new.tooltip", "Cards you haven't studied yet") },
+    { label: "Learn", align: "center", tooltip: tx("ui.reviewer.deck.header.learn.tooltip", "Learning and relearning cards ready now") },
+    { label: "Total", align: "center", tooltip: tx("ui.reviewer.deck.header.total.tooltip", "All cards in this deck") },
   ];
 
   for (const h of headers) {
@@ -473,12 +471,23 @@ export function renderDeckMode(args: Args) {
 
       const label = document.createElement("span");
       label.textContent = h.label;
-      label.className = "truncate";
+      label.className = "truncate sprout-deck-header-label";
+      if (h.tooltip) {
+        label.setAttribute("aria-label", h.tooltip);
+        label.setAttribute("data-tooltip-position", "top");
+      }
       flex.appendChild(label);
 
       th.appendChild(flex);
     } else {
-      th.textContent = h.label;
+      const label = document.createElement("span");
+      label.textContent = h.label;
+      label.className = "sprout-deck-header-label";
+      if (h.tooltip) {
+        label.setAttribute("aria-label", h.tooltip);
+        label.setAttribute("data-tooltip-position", "top");
+      }
+      th.appendChild(label);
     }
 
     headRow.appendChild(th);
@@ -552,11 +561,10 @@ export function renderDeckMode(args: Args) {
           return td;
         };
 
-        tr.appendChild(makeNumCell(child.counts.total));
+        tr.appendChild(makeNumCell(child.counts.due));
         tr.appendChild(makeNumCell(child.counts.new));
-        tr.appendChild(makeNumCell(child.counts.relearning));
-        tr.appendChild(makeNumCell(child.counts.learning));
-        tr.appendChild(makeNumCell(child.counts.review));
+        tr.appendChild(makeNumCell(child.counts.learn));
+        tr.appendChild(makeNumCell(child.counts.total));
 
         // Make row clickable except for the disclosure chevron
         tr.addEventListener("click", (ev) => {

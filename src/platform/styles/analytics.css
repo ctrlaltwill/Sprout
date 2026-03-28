@@ -72,37 +72,48 @@
   max-width: calc(100% - var(--lk-shell-gutter-desktop));
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .sprout-analytics-root {
-    gap: 8px !important;
-  }
+body.is-phone .sprout .sprout-analytics-root {
+  gap: 8px !important;
+}
 
+/* Use a single column gap rhythm for analytics sections on phones. */
+body.is-phone .sprout .sprout-analytics-content-shell > .w-full.space-y-4 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px !important;
+}
+
+/* Analytics body wrapper uses `space-y-4`; enforce 8px spacing on phone. */
+body.is-phone .sprout .sprout-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+/* Analytics rows commonly use `gap-4`; normalize to 8px on phone. */
+body.is-phone .sprout .sprout-analytics-content-shell :is(.sprout-ana-grid, .grid) {
+  gap: 8px !important;
+}
+
+body.is-phone .sprout .sprout-analytics-content-shell > * + * {
+  margin-top: 8px !important;
+}
+
+@media (max-width: 767px) {
   .sprout .sprout-analytics-root {
     gap: 8px !important;
   }
 
-  /* Use a single column gap rhythm for analytics sections on narrow screens. */
-  body.is-mobile .sprout .sprout-analytics-content-shell > .w-full.space-y-4,
   .sprout .sprout-analytics-content-shell > .w-full.space-y-4 {
     display: flex;
     flex-direction: column;
     gap: 8px !important;
   }
 
-  /* Analytics body wrapper uses `space-y-4`; enforce 8px spacing on mobile. */
-  body.is-mobile .sprout .sprout-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]),
   .sprout .sprout-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]) {
     margin-top: 0 !important;
   }
 
-  /* Analytics rows commonly use `gap-4`; normalize to 8px on mobile. */
-  body.is-mobile .sprout .sprout-analytics-content-shell :is(.sprout-ana-grid, .grid),
   .sprout .sprout-analytics-content-shell :is(.sprout-ana-grid, .grid) {
     gap: 8px !important;
-  }
-
-  body.is-mobile .sprout .sprout-analytics-content-shell > * + * {
-    margin-top: 8px !important;
   }
 
   .sprout .sprout-analytics-title-strip {
@@ -757,6 +768,24 @@ body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
   cursor: not-allowed;
 }
 
+/* Phone: fully disable AOS on analytics elements.
+   iPad / tablet / desktop retain normal AOS behaviour. */
+body.is-phone .sprout .sprout-analytics-root [data-aos],
+body.is-phone .sprout .sprout-analytics-root [data-aos].aos-init,
+body.is-phone .sprout .sprout-analytics-root [data-aos].aos-animate,
+body.is-phone .sprout .sprout-analytics-chart[data-aos],
+body.is-phone .sprout .sprout-ana-card[data-aos],
+body.is-phone .sprout-analytics-root > div[data-aos] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
+}
+
+body.is-phone .sprout .sprout-analytics-badge {
+  opacity: 1;
+}
+
 @media (max-width: 768px) {
   .sprout .sprout-analytics-root .sprout-ana-card {
     min-width: 0;
@@ -780,21 +809,4 @@ body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
   .sprout .sprout-ana-popover-md {
     min-width: min(280px, calc(100vw - 24px));
   }
-
-  /* Phone-sized mobile: fully disable AOS on analytics elements.
-     iPad / tablet / desktop retain normal AOS behaviour. */
-  body.is-mobile .sprout .sprout-analytics-root [data-aos],
-  body.is-mobile .sprout .sprout-analytics-root [data-aos].aos-init,
-  body.is-mobile .sprout .sprout-analytics-root [data-aos].aos-animate,
-  body.is-mobile .sprout .sprout-analytics-chart[data-aos],
-  body.is-mobile .sprout .sprout-ana-card[data-aos],
-  body.is-mobile .sprout-analytics-root > div[data-aos] {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition: none;
-  }
-
-  body.is-mobile .sprout .sprout-analytics-badge {
-    opacity: 1;
-  }}
+}

@@ -1276,42 +1276,40 @@ body.is-mobile .sprout .lk-browser-density-btn {
 }
 
 /* Mobile title strip: Deck Browser title on top, two 50% action buttons below. */
-@media (max-width: 767px) {
-  body.is-mobile .sprout .lk-browser-title-strip > .sprout-inline-sentence {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
+body.is-phone .sprout .lk-browser-title-strip > .sprout-inline-sentence {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .lk-browser-title-strip > .sprout-inline-sentence > :first-child {
-    width: 100%;
-    flex: 0 0 auto;
-    align-items: center;
-    text-align: center;
-  }
+body.is-phone .sprout .lk-browser-title-strip > .sprout-inline-sentence > :first-child {
+  width: 100%;
+  flex: 0 0 auto;
+  align-items: center;
+  text-align: center;
+}
 
-  body.is-mobile .sprout .lk-browser-title-strip .lk-browser-title-strip-label {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-  }
+body.is-phone .sprout .lk-browser-title-strip .lk-browser-title-strip-label {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
 
-  body.is-mobile .sprout .lk-browser-title-strip > .sprout-inline-sentence > .lk-browser-density-toggle {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    justify-content: stretch;
-    align-self: stretch;
-  }
+body.is-phone .sprout .lk-browser-title-strip > .sprout-inline-sentence > .lk-browser-density-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  justify-content: stretch;
+  align-self: stretch;
+}
 
-  body.is-mobile .sprout .lk-browser-title-strip > .sprout-inline-sentence > .lk-browser-density-toggle .lk-browser-density-btn {
-    width: 100%;
-    min-width: 0;
-    flex: 0 0 auto;
-    justify-content: center;
-  }
+body.is-phone .sprout .lk-browser-title-strip > .sprout-inline-sentence > .lk-browser-density-toggle .lk-browser-density-btn {
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+  justify-content: center;
 }
 
 /* ---- Browser toolbar action buttons ---- */
@@ -1510,49 +1508,47 @@ body.is-mobile .sprout .lk-browser-view .lk-browser-th-label {
   color: var(--text-normal) !important;
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .lk-browser-bottom-bar {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
+body.is-phone .sprout .lk-browser-bottom-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .lk-browser-summary-wrap {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
+body.is-phone .sprout .lk-browser-summary-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
-  body.is-mobile .sprout .lk-browser-selection-row,
-  body.is-mobile .sprout .lk-browser-rows-control,
-  body.is-mobile .sprout .lk-browser-page-indicator {
-    display: none !important;
-  }
+body.is-phone .sprout .lk-browser-selection-row,
+body.is-phone .sprout .lk-browser-rows-control,
+body.is-phone .sprout .lk-browser-page-indicator {
+  display: none !important;
+}
 
-  body.is-mobile .sprout .lk-browser-bottom-right {
-    display: flex !important;
-    flex: 0 0 auto;
-    margin-left: auto;
-  }
+body.is-phone .sprout .lk-browser-bottom-right {
+  display: flex !important;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 
-  body.is-mobile .sprout .lk-browser-pager-host {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
+body.is-phone .sprout .lk-browser-pager-host {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
 
-  body.is-mobile .sprout .lk-browser-pagination {
-    gap: 6px;
-  }
+body.is-phone .sprout .lk-browser-pagination {
+  gap: 6px;
+}
 
-  body.is-mobile .sprout .lk-browser-pagination button[aria-label^="Page "] {
-    display: none !important;
-  }
+body.is-phone .sprout .lk-browser-pagination button[aria-label^="Page "] {
+  display: none !important;
+}
 
-  body.is-mobile .sprout .lk-browser-pagination .sprout-btn-toolbar:disabled {
-    display: none !important;
-  }
+body.is-phone .sprout .lk-browser-pagination .sprout-btn-toolbar:disabled {
+  display: none !important;
 }
 
 body.is-mobile .sprout .lk-browser-controls-row :is(
@@ -1573,92 +1569,90 @@ body.is-mobile .sprout .lk-browser-controls-row :is(
 }
 
 /* Keep browser layout stable when mobile keyboard opens */
-@media (max-width: 767px) {
-body.is-mobile .sprout [data-lk-browser-root="1"] {
-  --lk-browser-kb-inset: 0px;
-  min-height: 100svh;
-  padding-bottom: calc(40px + 50px + env(safe-area-inset-bottom) + var(--lk-browser-kb-inset, 0px));
-  scroll-padding-bottom: calc(24px + env(safe-area-inset-bottom) + var(--lk-browser-kb-inset, 0px));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+body.is-phone .sprout [data-lk-browser-root="1"] {
+--lk-browser-kb-inset: 0px;
+min-height: 100svh;
+padding-bottom: calc(40px + 50px + env(safe-area-inset-bottom) + var(--lk-browser-kb-inset, 0px));
+scroll-padding-bottom: calc(24px + env(safe-area-inset-bottom) + var(--lk-browser-kb-inset, 0px));
+overflow-y: auto;
+-webkit-overflow-scrolling: touch;
 }
 
-body.is-mobile .sprout [data-lk-browser-root="1"] .lk-browser-table-wrap {
-  flex: 0 0 auto;
-  min-height: auto;
-  max-height: none;
-  overflow-x: auto;
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
+body.is-phone .sprout [data-lk-browser-root="1"] .lk-browser-table-wrap {
+flex: 0 0 auto;
+min-height: auto;
+max-height: none;
+overflow-x: auto;
+overflow-y: visible;
+-webkit-overflow-scrolling: touch;
 }
 
-body.is-mobile .sprout [data-lk-browser-root="1"] .lk-browser-tbody {
-  overflow-y: visible;
+body.is-phone .sprout [data-lk-browser-root="1"] .lk-browser-tbody {
+overflow-y: visible;
 }
 
-body.is-mobile .sprout .lk-browser-bottom-bar {
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 10px;
+body.is-phone .sprout .lk-browser-bottom-bar {
+align-items: flex-start;
+justify-content: flex-start;
+gap: 10px;
 }
 
-body.is-mobile .sprout .lk-browser-summary-wrap,
-body.is-mobile .sprout .lk-browser-bottom-right {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-  margin-left: 0;
+body.is-phone .sprout .lk-browser-summary-wrap,
+body.is-phone .sprout .lk-browser-bottom-right {
+display: flex;
+flex-direction: row;
+align-items: center;
+justify-content: space-between;
+gap: 8px;
+min-width: 0;
+margin-left: 0;
 }
 
-body.is-mobile .sprout .lk-browser-summary-wrap {
-  gap: 0;
-  flex-wrap: nowrap;
+body.is-phone .sprout .lk-browser-summary-wrap {
+gap: 0;
+flex-wrap: nowrap;
 
-body.is-mobile .sprout .lk-browser-selection-row {
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  justify-content: flex-end;
-  flex-wrap: nowrap;
+body.is-phone .sprout .lk-browser-selection-row {
+align-items: center;
+justify-content: flex-start;
+gap: 8px;
+justify-content: flex-end;
+flex-wrap: nowrap;
 
-body.is-mobile .sprout .lk-browser-bottom-right {
-  display: flex;
-  align-items: center;
-  display: none;
-  flex-wrap: wrap;
-  gap: 8px;
+body.is-phone .sprout .lk-browser-bottom-right {
+display: flex;
+align-items: center;
+display: none;
+flex-wrap: wrap;
+gap: 8px;
 }
-  width: auto;
-  justify-content: flex-end;
-  margin-left: auto;
-  flex: 0 0 auto;
-}
-
-  width: auto;
-  width: 100%;
-  justify-content: flex-start;
+width: auto;
+justify-content: flex-end;
+margin-left: auto;
+flex: 0 0 auto;
 }
 
-body.is-mobile .sprout .lk-browser-pagination {
-
-body.is-mobile .sprout .lk-browser-pagination button[aria-label^="Page "] {
-  display: none;
+width: auto;
+width: 100%;
+justify-content: flex-start;
 }
 
-body.is-mobile .sprout .lk-browser-selection-row .lk-browser-clear-selection {
-  display: none;
-}
-  width: 100%;
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+body.is-phone .sprout .lk-browser-pagination {
+
+body.is-phone .sprout .lk-browser-pagination button[aria-label^="Page "] {
+display: none;
 }
 
-body.is-mobile .sprout .lk-browser-pagination::-webkit-scrollbar {
-  display: none;
+body.is-phone .sprout .lk-browser-selection-row .lk-browser-clear-selection {
+display: none;
 }
+width: 100%;
+overflow-x: auto;
+white-space: nowrap;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+}
+
+body.is-phone .sprout .lk-browser-pagination::-webkit-scrollbar {
+display: none;
 }

@@ -97,79 +97,77 @@
   overflow: hidden auto;
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .sprout-view-content {
-    /* 40px base + 60px for Obsidian's mobile bottom toolbar (env() is 0 in webview) */
-    padding-bottom: 100px;
-    /* Let the shell gutter be the only horizontal spacing from the viewport. */
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
+body.is-phone .sprout .sprout-view-content {
+  /* 40px base + 60px for Obsidian's mobile bottom toolbar (env() is 0 in webview) */
+  padding-bottom: 100px;
+  /* Let the shell gutter be the only horizontal spacing from the viewport. */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
 
-  body.is-mobile {
-    --lk-shell-padding-mobile: 8px;
-  }
+body.is-phone {
+  --lk-shell-padding-mobile: 8px;
+}
 
-  /* Mobile shells: no padding, no background/border — maximise usable space. */
-  body.is-mobile .sprout :is(
-    .sprout-view-content-shell,
-    .lk-home-content-shell,
-    .lk-review-content-shell,
-    .lk-browser-content-shell,
-    .sprout-analytics-content-shell,
-    .sprout-exam-generator-content-shell,
-    .sprout-settings-content-shell,
-    .sprout-note-review-content-shell
-  ) {
-    padding: 0 !important;
-    background: none !important;
-    border: none !important;
-    border-radius: var(--radius-m) !important;
-    max-width: calc(100% - var(--lk-shell-gutter-desktop)) !important;
-  }
+/* Mobile shells: no padding, no background/border — maximise usable space. */
+body.is-phone .sprout :is(
+  .sprout-view-content-shell,
+  .lk-home-content-shell,
+  .lk-review-content-shell,
+  .lk-browser-content-shell,
+  .sprout-analytics-content-shell,
+  .sprout-exam-generator-content-shell,
+  .sprout-settings-content-shell,
+  .sprout-note-review-content-shell
+) {
+  padding: 0 !important;
+  background: none !important;
+  border: none !important;
+  border-radius: var(--radius-m) !important;
+  max-width: calc(100% - var(--lk-shell-gutter-desktop)) !important;
+}
 
-  /* Mobile card spacing inside shells: keep consistent 8px rhythm. */
-  body.is-mobile .sprout :is(
-    .sprout-view-content,
-    .sprout-view-content-shell,
-    .lk-home-content-shell,
-    .lk-review-content-shell,
-    .lk-browser-content-shell,
-    .sprout-analytics-content-shell,
-    .sprout-exam-generator-content-shell,
-    .sprout-settings-content-shell,
-    .sprout-note-review-content-shell,
-    .lk-home-root,
-    .lk-review-root,
-    .lk-browser-view,
-    .sprout-analytics-root,
-    .sprout-exam-generator-root,
-    .sprout-settings-view-root,
-    .sprout-note-review-root
-  ) {
-    gap: 8px !important;
-  }
+/* Mobile card spacing inside shells: keep consistent 8px rhythm. */
+body.is-phone .sprout :is(
+  .sprout-view-content,
+  .sprout-view-content-shell,
+  .lk-home-content-shell,
+  .lk-review-content-shell,
+  .lk-browser-content-shell,
+  .sprout-analytics-content-shell,
+  .sprout-exam-generator-content-shell,
+  .sprout-settings-content-shell,
+  .sprout-note-review-content-shell,
+  .lk-home-root,
+  .lk-review-root,
+  .lk-browser-view,
+  .sprout-analytics-root,
+  .sprout-exam-generator-root,
+  .sprout-settings-view-root,
+  .sprout-note-review-root
+) {
+  gap: 8px !important;
+}
 
-  body.is-mobile .sprout .sprout-view-content > * + * {
-    margin-top: 8px;
-  }
+body.is-phone .sprout .sprout-view-content > * + * {
+  margin-top: 8px;
+}
 
-  body.is-mobile .sprout .sprout-view-content {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
-  }
+body.is-phone .sprout .sprout-view-content {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
 
-  /* Prevent horizontal scrolling on mobile across all Sprout views */
-  body.is-mobile .sprout,
-  body.is-mobile .sprout .sprout-view-content,
-  body.is-mobile .sprout .lk-home-root,
-  body.is-mobile .sprout .sprout-analytics-root,
-  body.is-mobile .sprout .lk-browser-view,
-  body.is-mobile .workspace-leaf-content:has(.sprout) {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
+/* Prevent horizontal scrolling on mobile across all Sprout views */
+body.is-phone .sprout,
+body.is-phone .sprout .sprout-view-content,
+body.is-phone .sprout .lk-home-root,
+body.is-phone .sprout .sprout-analytics-root,
+body.is-phone .sprout .lk-browser-view,
+body.is-phone .workspace-leaf-content:has(.sprout) {
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Keep scrollbar at the edge while preserving content padding.
@@ -255,141 +253,139 @@ sprout .sprout-view-content>* {
   max-width: calc(100% - var(--lk-shell-gutter-desktop));
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .sprout-view-title-strip {
-    max-width: 100%;
-    padding-left: var(--lk-shell-padding-mobile);
-    padding-right: var(--lk-shell-padding-mobile);
-  }
+body.is-phone .sprout .sprout-view-title-strip {
+  max-width: 100%;
+  padding-left: var(--lk-shell-padding-mobile);
+  padding-right: var(--lk-shell-padding-mobile);
+}
 
-  body.is-mobile .sprout .sprout-view-content > * {
-    padding: var(--lk-shell-padding-mobile);
-  }
+body.is-phone .sprout .sprout-view-content > * {
+  padding: var(--lk-shell-padding-mobile);
+}
 
-  /* Force title strips into a two-row mobile layout: row 1 text, row 2 controls. */
-  body.is-mobile .sprout :is(
-    .sprout-view-title-strip,
-    .lk-home-title-strip,
-    .sprout-analytics-title-strip,
-    .sprout-exam-generator-title-strip,
-    .sprout-coach-title-strip,
-    .lk-browser-title-strip,
-    .lk-review-title-strip,
-    .lk-review-title-strip-deck,
-    .sprout-review-title-strip-deck,
-    .sprout-note-review-title-strip,
-    .sprout-settings-title-strip
-  ) {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    margin-top: 50px;
-    gap: 8px;
-  }
+/* Force title strips into a two-row mobile layout: row 1 text, row 2 controls. */
+body.is-phone .sprout :is(
+  .sprout-view-title-strip,
+  .lk-home-title-strip,
+  .sprout-analytics-title-strip,
+  .sprout-exam-generator-title-strip,
+  .sprout-coach-title-strip,
+  .lk-browser-title-strip,
+  .lk-review-title-strip,
+  .lk-review-title-strip-deck,
+  .sprout-review-title-strip-deck,
+  .sprout-note-review-title-strip,
+  .sprout-settings-title-strip
+) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  margin-top: 50px;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout :is(
-    .lk-home-title-row,
-    .lk-browser-header-row,
-    .lk-review-title-row,
-    .sprout-review-title-row,
-    .sprout-note-review-title-row,
-    .sprout-exam-generator-topline,
-    .sprout-exam-generator-setup-topline,
-    .sprout-coach-wizard-topline
-  ) {
-    display: flex;
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: center !important;
-    row-gap: 8px;
-    align-items: center !important;
-  }
+body.is-phone .sprout :is(
+  .lk-home-title-row,
+  .lk-browser-header-row,
+  .lk-review-title-row,
+  .sprout-review-title-row,
+  .sprout-note-review-title-row,
+  .sprout-exam-generator-topline,
+  .sprout-exam-generator-setup-topline,
+  .sprout-coach-wizard-topline
+) {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center !important;
+  row-gap: 8px;
+  align-items: center !important;
+}
 
-  body.is-mobile .sprout :is(
-    .sprout-exam-generator-topline-right,
-    .sprout-exam-generator-setup-topline-right,
-    .sprout-coach-wizard-topline-right,
-    .lk-review-title-timer-host,
-    .sprout-review-title-timer-host
-  ) {
-    width: 100%;
-    justify-content: center !important;
-    align-items: center;
-    flex-wrap: wrap;
-    row-gap: 8px;
-  }
+body.is-phone .sprout :is(
+  .sprout-exam-generator-topline-right,
+  .sprout-exam-generator-setup-topline-right,
+  .sprout-coach-wizard-topline-right,
+  .lk-review-title-timer-host,
+  .sprout-review-title-timer-host
+) {
+  width: 100%;
+  justify-content: center !important;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
 
-  body.is-mobile .sprout :is(
-    .sprout-view-title-strip,
-    .lk-home-title-strip,
-    .sprout-analytics-title-strip,
-    .sprout-exam-generator-title-strip,
-    .sprout-coach-title-strip,
-    .lk-browser-title-strip,
-    .lk-review-title-strip,
-    .lk-review-title-strip-deck,
-    .sprout-review-title-strip-deck,
-    .sprout-note-review-title-strip,
-    .sprout-settings-title-strip
-  ) :is(
-    .sprout-inline-sentence,
-    .lk-home-title-row,
-    .lk-browser-header-row,
-    .lk-review-title-row,
-    .sprout-review-title-row,
-    .sprout-note-review-title-row,
-    .sprout-exam-generator-topline,
-    .sprout-exam-generator-setup-topline,
-    .sprout-coach-wizard-topline
-  ) > :first-child > .text-muted-foreground {
-    display: none !important;
-  }
+body.is-phone .sprout :is(
+  .sprout-view-title-strip,
+  .lk-home-title-strip,
+  .sprout-analytics-title-strip,
+  .sprout-exam-generator-title-strip,
+  .sprout-coach-title-strip,
+  .lk-browser-title-strip,
+  .lk-review-title-strip,
+  .lk-review-title-strip-deck,
+  .sprout-review-title-strip-deck,
+  .sprout-note-review-title-strip,
+  .sprout-settings-title-strip
+) :is(
+  .sprout-inline-sentence,
+  .lk-home-title-row,
+  .lk-browser-header-row,
+  .lk-review-title-row,
+  .sprout-review-title-row,
+  .sprout-note-review-title-row,
+  .sprout-exam-generator-topline,
+  .sprout-exam-generator-setup-topline,
+  .sprout-coach-wizard-topline
+) > :first-child > .text-muted-foreground {
+  display: none !important;
+}
 
-  body.is-mobile .sprout :is(
-    .sprout-view-title-strip-label,
-    .lk-home-title-label,
-    .lk-browser-header-title,
-    .lk-review-title-label,
-    .sprout-review-title-label,
-    .sprout-note-review-title-label,
-    .sprout-analytics-title-label,
-    .sprout-exam-generator-title-label,
-    .sprout-coach-wizard-title
-  ) {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-    margin-left: auto;
-    margin-right: auto;
-  }
+body.is-phone .sprout :is(
+  .sprout-view-title-strip-label,
+  .lk-home-title-label,
+  .lk-browser-header-title,
+  .lk-review-title-label,
+  .sprout-review-title-label,
+  .sprout-note-review-title-label,
+  .sprout-analytics-title-label,
+  .sprout-exam-generator-title-label,
+  .sprout-coach-wizard-title
+) {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+}
 
-  body.is-mobile .sprout :is(
-    .sprout-view-title-strip-description,
-    .lk-home-title-description,
-    .lk-home-title-subtitle,
-    .lk-browser-header-description,
-    .lk-review-title-subtitle,
-    .sprout-note-review-title-subtitle,
-    [class*="title-strip-description"],
-    [class*="title-subtitle"],
-    [class*="title-description"]
-  ) {
-    display: none !important;
-  }
+body.is-phone .sprout :is(
+  .sprout-view-title-strip-description,
+  .lk-home-title-description,
+  .lk-home-title-subtitle,
+  .lk-browser-header-description,
+  .lk-review-title-subtitle,
+  .sprout-note-review-title-subtitle,
+  [class*="title-strip-description"],
+  [class*="title-subtitle"],
+  [class*="title-description"]
+) {
+  display: none !important;
+}
 
-  body.is-mobile .sprout .sprout-settings-view-tab-row {
-    justify-content: center;
-  }
+body.is-phone .sprout .sprout-settings-view-tab-row {
+  justify-content: center;
+}
 
-  /* Enforce consistent mobile input corner radius across themes. */
-  body.is-mobile .sprout :is(
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
-    select,
-    textarea
-  ) {
-    border-radius: var(--radius-md) !important;
-  }
+/* Enforce consistent mobile input corner radius across themes. */
+body.is-phone .sprout :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea
+) {
+  border-radius: var(--radius-md) !important;
 }
 
 
@@ -456,18 +452,16 @@ body.sprout.sprout-hide-status-bar .status-bar {
    AOS remains active on iPad / tablet (≥768px) and desktop.
    ========================================================================== */
 
-@media (max-width: 767px) {
-  /*
-   * On phone-sized mobile devices, completely disable AOS animations and
-   * force all AOS-targeted elements to be fully visible immediately.
-   */
+/*
+ * On phone-sized mobile devices, completely disable AOS animations and
+ * force all AOS-targeted elements to be fully visible immediately.
+ */
 
-  body.is-mobile .sprout [data-aos],
-  body.is-mobile .sprout [data-aos].aos-init,
-  body.is-mobile .sprout [data-aos].aos-animate {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition: none;
-  }
+body.is-phone .sprout [data-aos],
+body.is-phone .sprout [data-aos].aos-init,
+body.is-phone .sprout [data-aos].aos-animate {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
 }

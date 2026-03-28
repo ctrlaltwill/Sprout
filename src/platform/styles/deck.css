@@ -382,10 +382,8 @@ body.is-mobile .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
   border-radius: var(--radius-l) !important;
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .sprout-deck-table-wrap {
-    padding: 0.8rem !important;
-  }
+body.is-phone .sprout .sprout-deck-table-wrap {
+  padding: 0.8rem !important;
 }
 
 .sprout .sprout-deck-table-wrap:hover {
@@ -394,6 +392,16 @@ body.is-mobile .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
 
 .sprout .sprout-review-root[data-sprout-review-mode="deck"] .sprout-review-content-shell {
   padding: 20px !important;
+}
+
+/* Subtle hover on deck table header labels to hint at tooltips */
+.sprout .sprout-deck-header-label {
+  transition: color 0.15s ease;
+  cursor: default;
+}
+
+.sprout .sprout-deck-header-label:hover {
+  color: var(--color-base-100) !important;
 }
 
 /* Deck rows: keep a hidden baseline border so hover border-color can render. */

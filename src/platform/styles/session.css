@@ -68,50 +68,52 @@
   margin-left: auto;
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-    align-items: center;
-    gap: 8px;
-  }
+body.is-phone .sprout .lk-session-card > header.sprout-session-topbar .sprout-question-title {
+  font-size: 1rem;
+}
 
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-row > :first-child {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-items: center;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-row > :last-child,
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-timer-host {
-    width: 100%;
-  }
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row > :first-child {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-timer-host {
-    margin-left: 0;
-    justify-content: stretch;
-  }
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row > :last-child,
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host {
+  width: 100%;
+}
 
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group {
-    width: 100%;
-    margin-left: 0;
-    justify-content: stretch;
-  }
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host {
+  margin-left: 0;
+  justify-content: stretch;
+}
 
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group > button {
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: center;
-  }
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group {
+  width: 100%;
+  margin-left: 0;
+  justify-content: stretch;
+}
 
-  body.is-mobile .sprout .lk-review-title-strip-session .lk-review-title-timer-host .sprout-btn-timer-display {
-    width: auto;
-    min-width: 0;
-    max-width: none;
-  }
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group > button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
+body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host .sprout-btn-timer-display {
+  width: auto;
+  min-width: 0;
+  max-width: none;
 }
 
 .sprout .lk-review-root[data-lk-review-mode="session"] [data-study-session-header].lk-review-session-header-hidden {
@@ -282,7 +284,7 @@
 }
 
 .sprout .lk-session-card > header.sprout-session-topbar {
-  margin: 1.2rem;
+  margin: 1.2rem 1.2rem 0rem 1.2rem;
   padding: 1.2rem;
   min-height: 40px;
   border: 1px solid var(--color-base-35);
@@ -292,6 +294,10 @@
   justify-content: center;
   align-items: center;
   gap: 10px;
+}
+
+.sprout .lk-session-card > header.sprout-session-topbar.sprout-session-topbar-hidden {
+  display: none;
 }
 
 .sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-title {
@@ -319,7 +325,7 @@
 
 .lk-session-card section {
   padding: 0;
-  margin: 1.2rem 2.4rem;
+  margin: 1.8rem 1.8rem 0.8rem;
   gap: 0rem;
   transition: all 0.2s ease-in-out;
 }
@@ -356,7 +362,7 @@
 
 .sprout .lk-session-card > footer.sprout-session-study-dock {
   position: static;
-  margin: 1.2rem;
+  margin: 0.6rem 1.2rem 1.2rem;
   padding: 1.2rem;
   border: 1px solid var(--color-base-35);
   border-radius: var(--radius-md);
@@ -1645,271 +1651,277 @@ body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-sessio
   margin: 8px !important;
 }
 
-@media (max-width: 700px) {
-  /* ---- Flexed session layout: mobile only ---- */
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
-    display: none !important;
-  }
+/* ---- Flexed session layout: phone only ---- */
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
+  display: none !important;
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden !important;
-    margin-top: 16px;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-bottom: 100px !important;
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  margin-top: 16px;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 100px !important;
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
-    flex: 0 0 auto;
-    z-index: 10;
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
+  flex: 0 0 auto;
+  z-index: 10;
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-content-shell {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: visible !important;
-    margin-top: 40px;
-    padding: 0 !important;
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-content-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible !important;
+  margin-top: 40px;
+  padding: 0 !important;
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-session-card, .lk-session-card.card) {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    max-height: none;
-    align-self: stretch;
-    overflow: hidden !important;
-    padding: 0 !important;
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-session-card, .lk-session-card.card) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: none;
+  align-self: stretch;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
 
-  /* Header & footer keep their own bg/border/blur.
-     Section scrolls; card clips with overflow:hidden. */
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header {
-    flex: 0 0 auto;
-    z-index: 5;
-    background: color-mix(in oklab, var(--background) 80%, transparent 20%);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
+/* Header & footer keep their own bg/border/blur.
+   Section scrolls; card clips with overflow:hidden. */
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header {
+  flex: 0 0 auto;
+  z-index: 5;
+  background: color-mix(in oklab, var(--background) 80%, transparent 20%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section {
-    flex: 1 1 0%;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
-    flex: 0 0 auto;
-    z-index: 5;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
+  flex: 0 0 auto;
+  z-index: 5;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
 
-  /* Session column spacer no longer needed with flexed layout */
-  body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column::after {
-    display: none;
-  }
+/* Session column spacer no longer needed with flexed layout */
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column::after {
+  display: none;
+}
 
-  body.is-mobile .sprout .lk-session-column::after {
-    content: "";
-    display: block;
-    height: 104px;
-    min-height: 104px;
-    flex-shrink: 0;
-    pointer-events: none;
-  }
+body.is-phone .sprout .lk-session-column::after {
+  content: "";
+  display: block;
+  height: 104px;
+  min-height: 104px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
 
-  body.is-mobile .sprout .lk-session-card.sprout-session-has-dock {
-    --sprout-session-dock-space: 0px;
-  }
+body.is-phone .sprout .lk-session-card.sprout-session-has-dock {
+  --sprout-session-dock-space: 0px;
+}
 
-  body.is-mobile .sprout .lk-session-card > footer.sprout-session-study-dock {
-    margin: 8px !important;
-    padding: 8px !important;
-  }
+body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock {
+  margin: 8px !important;
+  padding: 8px !important;
+}
 
-  body.is-mobile .sprout .lk-session-card > header.sprout-session-topbar {
-    margin: 8px !important;
-    padding: 8px !important;
-  }
+body.is-phone .sprout .lk-session-card > header.sprout-session-topbar {
+  margin: 8px !important;
+  padding: 8px !important;
+}
 
-  body.is-mobile .sprout .lk-session-card > section {
-    margin: 12px 8px;
-  }
+body.is-phone .sprout .lk-session-card > section {
+  margin: 12px 8px;
+}
 
-  body.is-mobile .sprout .lk-session-card .lk-review-edit-icon-btn,
-  body.is-mobile .sprout .lk-session-card .lk-review-more-icon-btn {
-    width: 36px;
-    min-width: 36px;
-    padding-left: 0;
-    padding-right: 0;
-    justify-content: center;
-    border-radius: var(--radius-md, var(--radius-md));
-  }
+/* Bump session card content text to match note-review body size on mobile */
+body.is-phone .sprout .lk-session-card .sprout-md-block,
+body.is-phone .sprout .lk-session-card .sprout-oq-step-text,
+body.is-phone .sprout .lk-session-card .sprout-label-row {
+  font-size: var(--sprout-font-sm);
+}
 
-  /* Ensure all session footer buttons have consistent radius on mobile */
-  body.is-mobile .sprout .lk-session-card footer button,
-  body.is-mobile .sprout .lk-session-card footer .btn,
-  body.is-mobile .sprout .lk-session-card footer .sprout-btn-toolbar,
-  body.is-mobile .sprout .lk-session-card footer .btn-destructive {
-    border-radius: var(--radius-md, var(--radius-md));
-  }
+body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn,
+body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn {
+  width: 36px;
+  min-width: 36px;
+  padding-left: 0;
+  padding-right: 0;
+  justify-content: center;
+  border-radius: var(--radius-md, var(--radius-md));
+}
 
-  /* ---- Mobile flashcard footer: grade buttons top row, edit/menu bottom row ---- */
-  body.is-mobile .sprout .lk-session-card > footer.sprout-session-study-dock {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px !important;
-    margin: 8px !important;
-    align-items: stretch;
-  }
+/* Ensure all session footer buttons have consistent radius on mobile */
+body.is-phone .sprout .lk-session-card footer button,
+body.is-phone .sprout .lk-session-card footer .btn,
+body.is-phone .sprout .lk-session-card footer .sprout-btn-toolbar,
+body.is-phone .sprout .lk-session-card footer .btn-destructive {
+  border-radius: var(--radius-md, var(--radius-md));
+}
 
-  /* Keep footer internals flush; avoid extra top inset from inherited spacing. */
-  body.is-mobile .sprout .lk-session-card > footer.sprout-session-study-dock > * {
-    margin-top: 0 !important;
-  }
+/* ---- Mobile flashcard footer: grade buttons top row, edit/menu bottom row ---- */
+body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px !important;
+  margin: 8px !important;
+  align-items: stretch;
+}
 
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-left,
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-center,
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-right {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
+/* Keep footer internals flush; avoid extra top inset from inherited spacing. */
+body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock > * {
+  margin-top: 0 !important;
+}
 
-  /* Grade buttons row: full width on top */
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-center {
-    order: -1;
-    width: 100%;
-    flex: 0 0 100%;
-  }
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left,
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center,
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right {
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
-  /* If there are no grade buttons (e.g., no-cards/practice prompt),
-     remove the empty top row so the footer does not look top-heavy. */
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-center:empty {
-    display: none;
-    width: auto;
-    flex: 0 0 auto;
-  }
+/* Grade buttons row: full width on top */
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center {
+  order: -1;
+  width: 100%;
+  flex: 0 0 100%;
+}
 
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-buttons {
-    display: flex;
-    flex-wrap: nowrap;
-    width: 100%;
-    gap: 8px;
-  }
+/* If there are no grade buttons (e.g., no-cards/practice prompt),
+   remove the empty top row so the footer does not look top-heavy. */
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center:empty {
+  display: none;
+  width: auto;
+  flex: 0 0 auto;
+}
 
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-buttons .text-muted-foreground {
-    width: 100%;
-    text-align: center;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 36px;
-    border-radius: var(--radius-md, var(--radius-md));
-    border: 1px solid var(--color-base-35);
-    background: var(--color-base-20);
-    color: var(--text-normal);
-    padding: 0 12px;
-  }
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-buttons > * {
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: center;
-  }
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons .text-muted-foreground {
+  width: 100%;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border-radius: var(--radius-md, var(--radius-md));
+  border: 1px solid var(--color-base-35);
+  background: var(--color-base-20);
+  color: var(--text-normal);
+  padding: 0 12px;
+}
 
-  /* Edit/menu row: underneath, side by side, both with text, flexed */
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-left {
-    order: 1;
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: stretch;
-    display: flex;
-  }
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons > * {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
 
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-right {
-    order: 1;
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: stretch;
-    display: flex;
-  }
+/* Edit/menu row: underneath, side by side, both with text, flexed */
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left {
+  order: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: stretch;
+  display: flex;
+}
 
-  /* Make buttons inside left/right fill their container */
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-left > *,
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-right > * {
-    width: 100%;
-    justify-content: center;
-  }
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right {
+  order: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: stretch;
+  display: flex;
+}
 
-  /* Show edit icon button as full width with text on mobile */
-  body.is-mobile .sprout .lk-session-card .lk-review-edit-icon-btn {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
+/* Make buttons inside left/right fill their container */
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left > *,
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right > * {
+  width: 100%;
+  justify-content: center;
+}
 
-  /* Ensure the More trigger fills the right 50% dock column like Edit. */
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-right > * {
-    display: flex;
-    width: 100%;
-  }
+/* Show edit icon button as full width with text on mobile */
+body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+}
 
-  body.is-mobile .sprout .lk-session-card .sprout-session-study-dock-right .lk-review-more-icon-btn {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
+/* Ensure the More trigger fills the right 50% dock column like Edit. */
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right > * {
+  display: flex;
+  width: 100%;
+}
 
-  body.is-mobile .sprout .lk-session-card .lk-review-edit-icon-btn,
-  body.is-mobile .sprout .lk-session-card .lk-review-more-icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 36px;
-    padding: 0 12px;
-  }
+body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right .lk-review-more-icon-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+}
 
-  body.is-mobile .sprout .lk-session-card .lk-review-edit-icon-btn [data-sprout-mobile-label],
-  body.is-mobile .sprout .lk-session-card .lk-review-more-icon-btn [data-sprout-mobile-label] {
-    display: inline;
-    font-weight: 500;
-  }
+body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn,
+body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+}
 
-  /* Hide kbd hints on mobile footer */
-  body.is-mobile .sprout .lk-session-card footer :is(kbd, .kbd) {
-    display: none;
-  }
+body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn [data-sprout-mobile-label],
+body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn [data-sprout-mobile-label] {
+  display: inline;
+  font-weight: 500;
+}
 
-  /* Hide tooltips on session footer buttons on mobile — tapping triggers :hover
-     which shows the ::after tooltip, making grading buttons look duplicated. */
-  body.is-mobile .sprout .lk-session-card footer [data-tooltip]::after {
-    display: none;
-  }
+/* Hide kbd hints on mobile footer */
+body.is-phone .sprout .lk-session-card footer :is(kbd, .kbd) {
+  display: none;
+}
 
-  /* Phone-sized mobile: fully disable AOS on session elements.
-     iPad / tablet / desktop retain normal AOS behaviour. */
-  body.is-mobile .sprout [data-aos],
-  body.is-mobile .sprout [data-aos].aos-init,
-  body.is-mobile .sprout [data-aos].aos-animate,
-  body.is-mobile .lk-session-card[data-aos],
-  body.is-mobile .sprout .card[data-aos] {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition: none;
-  }}
+/* Hide tooltips on session footer buttons on mobile — tapping triggers :hover
+   which shows the ::after tooltip, making grading buttons look duplicated. */
+body.is-phone .sprout .lk-session-card footer [data-tooltip]::after {
+  display: none;
+}
+
+/* Phone-sized mobile: fully disable AOS on session elements.
+   iPad / tablet / desktop retain normal AOS behaviour. */
+body.is-phone .sprout [data-aos],
+body.is-phone .sprout [data-aos].aos-init,
+body.is-phone .sprout [data-aos].aos-animate,
+body.is-phone .lk-session-card[data-aos],
+body.is-phone .sprout .card[data-aos] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
+}

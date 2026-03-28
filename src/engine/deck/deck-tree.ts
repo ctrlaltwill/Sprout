@@ -18,6 +18,10 @@ export type DeckCounts = {
   learning: number;
   review: number;
   relearning: number;
+  /** Review cards due right now (due <= now, excludes learning/relearning). */
+  due: number;
+  /** Learning + relearning cards due right now (due <= now). */
+  learn: number;
 };
 
 export type DeckNode = {
@@ -29,7 +33,7 @@ export type DeckNode = {
 };
 
 function emptyCounts(): DeckCounts {
-  return { total: 0, new: 0, learning: 0, review: 0, relearning: 0 };
+  return { total: 0, new: 0, learning: 0, review: 0, relearning: 0, due: 0, learn: 0 };
 }
 
 function filenameNoExt(path: string): string {
@@ -61,13 +65,21 @@ function inferFsrsState(st: CardState | undefined | null): State {
   return (st.lapses ?? 0) > 0 ? State.Relearning : State.Learning;
 }
 
-function addOne(counts: DeckCounts, fs: State) {
+function addOne(counts: DeckCounts, fs: State, isDue: boolean) {
   counts.total += 1;
 
-  if (fs === State.New) counts.new += 1;
-  else if (fs === State.Review) counts.review += 1;
-  else if (fs === State.Relearning) counts.relearning += 1;
-  else counts.learning += 1; // Learning or any other/unknown -> learning bucket
+  if (fs === State.New) {
+    counts.new += 1;
+  } else if (fs === State.Review) {
+    counts.review += 1;
+    if (isDue) counts.due += 1;
+  } else if (fs === State.Relearning) {
+    counts.relearning += 1;
+    if (isDue) counts.learn += 1;
+  } else {
+    counts.learning += 1; // Learning or any other/unknown -> learning bucket
+    if (isDue) counts.learn += 1;
+  }
 }
 
 function ensureChildFolder(parent: DeckNode, folderKey: string): DeckNode {
@@ -132,6 +144,21 @@ export function buildDeckTree(
     const st = states[String(c.id)] || null;
     const fs = inferFsrsState(st);
 
+    // Determine whether this card is "due right now":
+    // - New cards are NOT counted as due (they are shown separately)
+    // - Suspended / buried cards are excluded
+    // - Learning/relearning/review cards due at or before now are due
+    let isDue = false;
+    if (st && st.stage !== "suspended" && st.stage !== "new") {
+      if (typeof st.buriedUntil === "number" && Number.isFinite(st.buriedUntil) && st.buriedUntil > _nowMs) {
+        isDue = false;
+      } else if (typeof st.due !== "number" || !Number.isFinite(st.due)) {
+        isDue = true; // missing due → treat as available
+      } else {
+        isDue = st.due <= _nowMs;
+      }
+    }
+
     // Walk folders
     const parts = notePath.split("/").filter(Boolean);
     const folderParts = parts.slice(0, Math.max(0, parts.length - 1));
@@ -140,19 +167,19 @@ export function buildDeckTree(
     let runningKey = "";
 
     // root counts
-    addOne(cur.counts, fs);
+    addOne(cur.counts, fs, isDue);
 
     for (const fp of folderParts) {
       runningKey = runningKey ? `${runningKey}/${fp}` : fp;
       cur = ensureChildFolder(cur, runningKey);
 
       // aggregate into folder
-      addOne(cur.counts, fs);
+      addOne(cur.counts, fs, isDue);
     }
 
     // Note node
     const noteNode = ensureChildNote(cur, notePath);
-    addOne(noteNode.counts, fs);
+    addOne(noteNode.counts, fs, isDue);
   }
 
   return root;

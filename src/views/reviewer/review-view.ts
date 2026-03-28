@@ -2177,6 +2177,8 @@ export class SproutReviewerView extends ItemView {
       ttsReplayFront: () => this._replayFront(),
       ttsReplayBack: () => this._replayBack(),
 
+      hideSessionTopbar: !!this.plugin.settings.study?.hideSessionTopbar,
+
       rerender: () => this.render(),
     });
 

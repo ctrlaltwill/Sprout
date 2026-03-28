@@ -294,8 +294,7 @@ export class SproutCardBrowserView extends ItemView {
   }
 
   private _isPhoneMobile(): boolean {
-    if (!document.body.classList.contains("is-mobile")) return false;
-    return typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 767px)").matches : true;
+    return document.body.classList.contains("is-phone");
   }
 
   private _effectivePageSize(): number {

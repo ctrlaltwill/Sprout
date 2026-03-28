@@ -137,7 +137,7 @@ border: 1px solid var(--color-base-30);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--sprout-font-md);
+  font-size: var(--sprout-font-md-plus);
   font-weight: 700;
   color: var(--text-normal);
 }
@@ -552,106 +552,105 @@ border: 1px solid var(--color-base-30);
   transform: translateX(0);
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .sprout-note-review-topbar-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: center;
-  }
+body.is-phone .sprout .sprout-note-review-topbar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  text-align: center;
+}
 
-  body.is-mobile .sprout .sprout-note-review-topbar-actions {
-    display: none !important;
-  }
+body.is-phone .sprout .sprout-note-review-topbar-actions {
+  display: none !important;
+}
 
-  body.is-mobile .sprout .sprout-note-review-root > .sprout-note-review-title-strip {
-    display: none !important;
-  }
+body.is-phone .sprout .sprout-note-review-root > .sprout-note-review-title-strip {
+  display: none !important;
+}
 
-  /* Flexed note-review root: reduced bottom padding for Obsidian mobile toolbar */
-  body.is-mobile .sprout .sprout-note-review-root {
-    margin-top: 16px;
-    padding-bottom: 100px;
-    overflow: hidden !important;
-  }
+/* Flexed note-review root: reduced bottom padding for Obsidian mobile toolbar */
+body.is-phone .sprout .sprout-note-review-root {
+  margin-top: 16px;
+  padding-bottom: 100px;
+  overflow: hidden !important;
+}
 
-  body.is-mobile .sprout .sprout-note-review-content-shell {
-    margin-top: 40px;
-    /* Reduced from 100px: flexed root padding-bottom handles Obsidian toolbar offset */
-    padding-bottom: 8px !important;
-  }
+body.is-phone .sprout .sprout-note-review-content-shell {
+  margin-top: 40px;
+  /* Reduced from 100px: flexed root padding-bottom handles Obsidian toolbar offset */
+  padding-bottom: 8px !important;
+}
 
-  /* Neutralize inherited home-shell sibling spacing (lk-home-content-shell > * + *).
-     In note review this adds extra top gap above the panel. */
-  body.is-mobile .sprout .sprout-note-review-content-shell > * + * {
-    margin-top: 0 !important;
-  }
+/* Neutralize inherited home-shell sibling spacing (lk-home-content-shell > * + *).
+   In note review this adds extra top gap above the panel. */
+body.is-phone .sprout .sprout-note-review-content-shell > * + * {
+  margin-top: 0 !important;
+}
 
-  .sprout .sprout-note-review-panel {
-    --sprout-note-review-dock-space: 96px;
-    --sprout-note-review-edge-fade: 32px;
-    --sprout-note-review-topbar-inset: 8px;
-    --sprout-note-review-topbar-clearance: 118px;
-  }
+body.is-phone .sprout .sprout-note-review-panel {
+  --sprout-note-review-dock-space: 96px;
+  --sprout-note-review-edge-fade: 32px;
+  --sprout-note-review-topbar-inset: 8px;
+  --sprout-note-review-topbar-clearance: 118px;
+}
 
-  .sprout .sprout-note-review-content {
-    padding: 0 0 var(--sprout-note-review-dock-space);
-    background: var(--color-base-00) !important;
-  }
+body.is-phone .sprout .sprout-note-review-content {
+  padding: 0 0 var(--sprout-note-review-dock-space);
+  background: var(--color-base-00) !important;
+}
 
-  body.is-mobile .sprout .sprout-note-review-topbar {
-    grid-template-columns: 1fr;
-    padding: 8px;
-  }
+body.is-phone .sprout .sprout-note-review-topbar {
+  grid-template-columns: 1fr;
+  padding: 8px;
+}
 
-   body.is-mobile .sprout .sprout-note-review-article {
-    min-height: auto;
-    padding: calc(var(--sprout-note-review-topbar-clearance) - 90px) 0 calc(var(--sprout-note-review-dock-space) + 70px);
-  }
+body.is-phone .sprout .sprout-note-review-article {
+  min-height: auto;
+  padding: calc(var(--sprout-note-review-topbar-clearance) - 90px) 0 calc(var(--sprout-note-review-dock-space) + 70px);
+}
 
-  .sprout .sprout-note-review-note-body {
-    padding: 0 8px !important;
-  }
+body.is-phone .sprout .sprout-note-review-note-body {
+  padding: 0 8px !important;
+}
 
-  .sprout .sprout-note-review-panel {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    margin-left: 0;
-    margin-right: 0;
-  }
+body.is-phone .sprout .sprout-note-review-panel {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  margin-left: 0;
+  margin-right: 0;
+}
 
-  /* Note review dock on mobile: only Deferred + Completed buttons, 50% each */
-  body.is-mobile .sprout .sprout-note-review-dock {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 8px;
-    gap: 0;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-  }
+/* Note review dock on phone: only Deferred + Completed buttons, 50% each */
+body.is-phone .sprout .sprout-note-review-dock {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 8px;
+  gap: 0;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+}
 
-  /* Hide queue count and more menu on mobile */
-  body.is-mobile .sprout .sprout-note-review-dock-left,
-  body.is-mobile .sprout .sprout-note-review-dock-right {
-    display: none;
-  }
+/* Hide queue count and more menu on phone */
+body.is-phone .sprout .sprout-note-review-dock-left,
+body.is-phone .sprout .sprout-note-review-dock-right {
+  display: none;
+}
 
-  body.is-mobile .sprout .sprout-note-review-dock-buttons {
-    display: flex;
-    flex-wrap: nowrap;
-    width: 100%;
-    gap: 8px;
-  }
+body.is-phone .sprout .sprout-note-review-dock-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  gap: 8px;
+}
 
-  body.is-mobile .sprout .sprout-note-review-dock-buttons > button {
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: center;
-  }
+body.is-phone .sprout .sprout-note-review-dock-buttons > button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
 
-  /* Hide kbd hints on mobile dock buttons */
-  body.is-mobile .sprout .sprout-note-review-dock-buttons > button :is(kbd, .kbd) {
-    display: none;
-  }
+/* Hide kbd hints on phone dock buttons */
+body.is-phone .sprout .sprout-note-review-dock-buttons > button :is(kbd, .kbd) {
+  display: none;
 }

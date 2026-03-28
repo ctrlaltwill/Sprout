@@ -772,7 +772,7 @@ export class SproutHomeView extends ItemView {
     
     const savePinnedDecks = async (decks: string[]) => {
       this.plugin.settings.general.pinnedDecks = decks.slice(0, MAX_PINNED);
-      await this.plugin.saveData(this.plugin.settings);
+      await this.plugin.saveAll();
     };
     
     const renderPinnedDecks = () => {

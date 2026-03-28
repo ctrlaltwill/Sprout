@@ -17,12 +17,10 @@
   padding: 1.2rem;
 }
 
-@media (max-width: 767px) {
-  body.is-mobile .sprout .card,
-  body.is-mobile .sprout .small-card,
-  body.is-mobile .small-card {
-    padding: 0.8rem;
-  }
+body.is-phone .sprout .card,
+body.is-phone .sprout .small-card,
+body.is-phone .small-card {
+  padding: 0.8rem;
 }
 
 /* Dark mode card polish (Basecoat-aligned) */

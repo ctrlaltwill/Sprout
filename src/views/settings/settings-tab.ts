@@ -1921,6 +1921,18 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
     new Setting(wrapper)
+      .setName(this._tx("ui.settings.study.hideSessionTopbar.name", "Hide card title bar"))
+      .setDesc(this._tx("ui.settings.study.hideSessionTopbar.desc", "Hide the card-title header shown at the top of each flashcard during study sessions."))
+      .addToggle((t) => {
+        t.setValue(!!this.plugin.settings.study.hideSessionTopbar);
+        t.onChange(async (v) => {
+          this.plugin.settings.study.hideSessionTopbar = v;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+        });
+      });
+
+    new Setting(wrapper)
       .setName(this._tx("ui.settings.study.siblingManagement.name", "Sibling card management"))
       .setDesc(this._tx("ui.settings.study.siblingManagement.desc", "Control how sibling cards are queued during a session."))
       .then((s) => {
@@ -2799,12 +2811,12 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
     new Setting(wrapper)
-      .setName(this._tx("ui.settings.noteReview.scheduling.heading", "Scheduling"))
+      .setName(this._tx("ui.settings.noteReview.scheduling.heading", "Note scheduling"))
       .setHeading();
 
     new Setting(wrapper).setDesc(this._tx(
       "ui.settings.noteReview.schedulerInfo.desc",
-      "FSRS adapts to recall using card-scheduling targets. LKRS uses fixed day steps and a daily review target.",
+      "FSRS adapts review intervals to your recall. LKRS uses fixed day steps and a daily review target.",
     ));
 
     const algoSetting = new Setting(wrapper)
@@ -2837,19 +2849,17 @@ export class SproutSettingsTab extends PluginSettingTab {
 
       if (noteCfg.algorithm === "fsrs") {
         new Setting(dynamicHost)
-          .setName(this._tx("ui.settings.noteReview.fsrs.mode.name", "FSRS mode"))
-          .setDesc(this._tx("ui.settings.noteReview.fsrs.mode.desc", "Uses the same scheduling controls as card study. Adjust retention and steps below."));
-
-        new Setting(dynamicHost)
           .setName(this._tx("ui.settings.noteReview.fsrs.retention.name", "Retention target"))
           .setDesc(this._tx("ui.settings.noteReview.fsrs.retention.desc", "Target recall probability between 0.80 and 0.97."))
-          .addText((t) =>
-            t.setValue(String(this.plugin.settings.scheduling.requestRetention ?? 0.9)).onChange(async (v) => {
-              const parsed = Number(v);
-              if (!Number.isFinite(parsed)) return;
-              this.plugin.settings.scheduling.requestRetention = clamp(parsed, 0.8, 0.97);
-              await this.plugin.saveAll();
-            }),
+          .addSlider((s) =>
+            s
+              .setLimits(0.8, 0.97, 0.01)
+              .setValue(clamp(Number(noteCfg.fsrsRetention) || 0.9, 0.8, 0.97))
+              .setDynamicTooltip()
+              .onChange(async (v) => {
+                noteCfg.fsrsRetention = Number(Number(v).toFixed(2));
+                await this.plugin.saveAll();
+              }),
           );
 
         new Setting(dynamicHost)
@@ -2857,10 +2867,10 @@ export class SproutSettingsTab extends PluginSettingTab {
           .setDesc(this._tx("ui.settings.noteReview.fsrs.learningSteps.desc", "Comma-separated intervals in minutes. Example: 10,1440"))
           .addText((t) =>
             t
-              .setValue((this.plugin.settings.scheduling.learningStepsMinutes ?? [10, 1440]).join(","))
+              .setValue((noteCfg.fsrsLearningStepsMinutes ?? [10, 1440]).join(","))
               .onChange(async (v) => {
                 const vals = parsePositiveNumberListCsv(v);
-                this.plugin.settings.scheduling.learningStepsMinutes = vals.length ? vals : [10, 1440];
+                noteCfg.fsrsLearningStepsMinutes = vals.length ? vals : [10, 1440];
                 await this.plugin.saveAll();
               }),
           );
@@ -2870,12 +2880,22 @@ export class SproutSettingsTab extends PluginSettingTab {
           .setDesc(this._tx("ui.settings.noteReview.fsrs.relearningSteps.desc", "Comma-separated intervals in minutes after a lapse. Example: 10"))
           .addText((t) =>
             t
-              .setValue((this.plugin.settings.scheduling.relearningStepsMinutes ?? [10]).join(","))
+              .setValue((noteCfg.fsrsRelearningStepsMinutes ?? [10]).join(","))
               .onChange(async (v) => {
-                  const vals = parsePositiveNumberListCsv(v);
-                this.plugin.settings.scheduling.relearningStepsMinutes = vals.length ? vals : [10];
+                const vals = parsePositiveNumberListCsv(v);
+                noteCfg.fsrsRelearningStepsMinutes = vals.length ? vals : [10];
                 await this.plugin.saveAll();
               }),
+          );
+
+        new Setting(dynamicHost)
+          .setName(this._tx("ui.settings.noteReview.fsrs.enableFuzz.name", "Fuzz intervals"))
+          .setDesc(this._tx("ui.settings.noteReview.fsrs.enableFuzz.desc", "Add slight randomness to note review intervals so notes due on the same day spread out."))
+          .addToggle((t) =>
+            t.setValue(noteCfg.fsrsEnableFuzz ?? true).onChange(async (v) => {
+              noteCfg.fsrsEnableFuzz = v;
+              await this.plugin.saveAll();
+            }),
           );
         return;
       }
@@ -3756,7 +3776,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ----------------------------
     // Scheduling
     // ----------------------------
-    new Setting(wrapper).setName(this._tx("ui.settings.sections.scheduling", "Scheduling")).setHeading();
+    new Setting(wrapper).setName(this._tx("ui.settings.sections.scheduling", "Flashcard scheduling")).setHeading();
 
     const sched = this.plugin.settings.scheduling;
 
