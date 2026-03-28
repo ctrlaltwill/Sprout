@@ -461,15 +461,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Q / A / MCQ styling ---- */
 
-/* Question styling: semibold */
-.lk-session-card .sprout-q {
-  font-weight: 600; /* semibold */
-}
 
-/* Flashcard session front question content */
-.sprout .lk-session-card .bc-q {
-  font-weight: 600;
-}
 
 /* Any back/revealed state: question content should not remain bold. */
 .sprout .lk-session-card.sprout-session-answer-revealed :is(.bc-q, .bc-cloze) {
@@ -482,10 +474,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   font-size: var(--sprout-font-sm-plus); /* text-md equivalent */
 }
 
-/* Flashcard session back answer content (basic/reversed) */
-.sprout .lk-session-card .bc-a {
-  font-weight: 600;
-}
+
 .lk-session-card .sprout-mcq-correct {
   border-color: var(--sprout-good-bg);
   border-width: 2px;
@@ -578,17 +567,13 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 .sprout-cloze-revealed {
   margin: 0 1px;
     padding: 2px 5px;
-    font-weight: 600;
     border: 1px solid var(--theme-base-35);
     border-radius: var(--radius-md);
     background-color: var(--theme-base-15);
     color: var(--theme-base-95);
 }
 
-/* Cloze front prompt text */
-.sprout .lk-session-card .bc-cloze {
-  font-weight: 600;
-}
+
 
 .sprout .hidden-cloze {
   border-bottom: 1px solid var(--foreground);
@@ -869,11 +854,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   background-color: var(--sprout-good-bg-light) !important;
 }
 
-/* In session back review, emphasize correct MCQ answers (even if not selected). */
-.sprout .lk-session-card :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight) .sprout-mcq-option-text,
-.sprout .lk-session-card :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight) .sprout-mcq-option-line {
-  font-weight: 600;
-}
+
 
 .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-wrong-highlight, .sprout-mcq-wrong-highlight) {
   border-color: var(--sprout-again-bg) !important;
@@ -1096,10 +1077,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   background-color: rgba(239, 68, 68, 0.15) !important;
 }
 
-/* In session back review, emphasize correct OQ steps. */
-.sprout .lk-session-card .sprout-oq-correct-highlight .sprout-oq-step-text {
-  font-weight: 600;
-}
+
 
 /* ---- Grading buttons ---- */
 
