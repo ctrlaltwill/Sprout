@@ -123,7 +123,7 @@ body.is-phone .sprout :is(
   padding: 0 !important;
   background: none !important;
   border: none !important;
-  border-radius: var(--radius-m) !important;
+  border-radius: 0px !important;
   max-width: calc(100% - var(--lk-shell-gutter-desktop)) !important;
 }
 

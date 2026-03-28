@@ -83,7 +83,7 @@
   --sprout-note-review-dock-space: 86px;
   --sprout-note-review-edge-fade: 40px;
   --sprout-note-review-topbar-inset: 1.2rem;
-  --sprout-note-review-topbar-clearance: 5rem;
+  --sprout-note-review-topbar-clearance: 7rem;
   position: relative;
   min-height: 0;
   display: flex;
@@ -154,6 +154,7 @@ border: 1px solid var(--color-base-30);
 }
 
 .sprout .sprout-note-review-content {
+  position: relative;
   min-height: 0;
   overflow: auto;
   padding: 0;
@@ -163,7 +164,21 @@ border: 1px solid var(--color-base-30);
 }
 
 .sprout .sprout-note-review-content:has(.sprout-note-review-empty) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-bottom: 0;
+}
+
+.sprout .sprout-note-review-content > .sprout-note-review-empty {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  align-self: stretch !important;
 }
 
 .sprout .sprout-note-review-root.sprout-note-review-overflow .sprout-note-review-panel {
@@ -222,7 +237,7 @@ border: 1px solid var(--color-base-30);
   font-size: var(--sprout-font-sm);
   line-height: 1.7;
   width: 100%;
-  padding: 0 2.4rem;
+  padding: 0 1.8rem;
 }
 
 .sprout .sprout-note-review-note-body > .sprout-note-review-session-header {
@@ -260,7 +275,44 @@ border: 1px solid var(--color-base-30);
 
 .sprout .sprout-note-review-empty {
   margin: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 
+.sprout .sprout-note-review-empty > .sprout-note-review-topbar {
+  position: sticky;
+  top: var(--sprout-note-review-topbar-inset);
+  z-index: 5;
+  flex-shrink: 0;
+  margin: var(--sprout-note-review-topbar-inset) var(--sprout-note-review-topbar-inset) 0;
+}
+
+.sprout .sprout-note-review-empty > .sprout-session-practice-prompt {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0 2rem;
+}
+
+.sprout .sprout-note-review-empty > .sprout-session-study-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 80;
+  flex-shrink: 0;
+  margin: 0 1.2rem 1.2rem;
+  padding: 1.2rem;
+  border: 1px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 74%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .sprout .sprout-note-review-empty-title {
@@ -618,6 +670,10 @@ body.is-phone .sprout .sprout-note-review-panel {
   padding-top: 0 !important;
   margin-left: 0;
   margin-right: 0;
+}
+
+body.is-phone .sprout .sprout-note-review-stage {
+  border-radius: 0 !important;
 }
 
 /* Note review dock on phone: only Deferred + Completed buttons, 50% each */

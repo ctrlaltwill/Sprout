@@ -973,7 +973,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   border: 1px solid var(--color-base-35) !important;
   background-color: var(--color-base-20) !important;
   color: var(--color-base-100) !important;
-  padding: 8px 12px;
+  padding: 4px 12px;
   min-height: 36px;
   cursor: grab;
   user-select: none;
@@ -1667,6 +1667,9 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session
 }
 
 body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-session-card, .lk-session-card.card) {
+  --sprout-session-topbar-clearance: 60px;
+  --sprout-session-dock-clearance: 120px;
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -1678,10 +1681,13 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-ses
   padding: 0 !important;
 }
 
-/* Header & footer keep their own bg/border/blur.
-   Section scrolls; card clips with overflow:hidden. */
+/* Note-review-style overlay layout: header & footer float absolute over
+   the section, which scrolls behind them with padding clearance. */
 body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 5;
   background: color-mix(in oklab, var(--background) 80%, transparent 20%);
   -webkit-backdrop-filter: blur(10px);
@@ -1689,14 +1695,32 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session
 }
 
 body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section {
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding-top: var(--sprout-session-topbar-clearance);
+  padding-bottom: var(--sprout-session-dock-clearance);
+}
+
+/* Keep scrolling at the section level on phone; avoid nested vertical scrollboxes in content blocks.
+   Both axes must be reset because CSS computes overflow-y:visible → auto when overflow-x is non-visible
+   (tables.css sets overflow-x:auto on .sprout-md-block for table horizontal scroll). */
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section :is(.bc-q, .bc-a, .bc-info, .sprout-md-block, .sprout-mcq-options, .sprout-oq-answer-list) {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section :is(.bc-q, .bc-a, .bc-info, .sprout-md-block) > p {
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
-  flex: 0 0 auto;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 5;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -1731,7 +1755,7 @@ body.is-phone .sprout .lk-session-card > header.sprout-session-topbar {
 }
 
 body.is-phone .sprout .lk-session-card > section {
-  margin: 12px 8px;
+  margin: 0 8px;
 }
 
 /* Bump session card content text to match note-review body size on mobile */

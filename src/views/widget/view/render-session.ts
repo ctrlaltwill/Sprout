@@ -415,7 +415,7 @@ function renderMcqCard(
 
   opts.forEach((opt: string, displayIdx: number) => {
     const text = typeof opt === "string" ? opt : "";
-    const d = el("div", "bc px-3 py-2 rounded border border-border cursor-pointer hover:bg-secondary sprout-widget-text sprout-widget-mcq-option");
+    const d = el("div", "bc px-3 py-1 rounded border border-border cursor-pointer hover:bg-secondary sprout-widget-text sprout-widget-mcq-option");
     const origIdx = order[displayIdx];
 
     const left = el("span", "bc inline-flex items-center gap-2 min-w-0");
@@ -653,7 +653,7 @@ function renderOqCard(
       currentOrder.forEach((origIdx, displayIdx) => {
         const stepText = steps[origIdx] || "";
         const row = document.createElement("div");
-        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
+        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 sprout-oq-step-row";
         row.draggable = true;
         row.dataset.oqIdx = String(displayIdx);
 
@@ -763,7 +763,7 @@ function renderOqCard(
       const stepText = steps[origIdx] || "";
       const wasCorrect = origIdx === displayIdx;
       const row = document.createElement("div");
-      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
+      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-1 sprout-oq-answer-row";
       if (wasCorrect) {
         row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
       } else {

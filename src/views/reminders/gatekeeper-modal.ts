@@ -698,7 +698,7 @@ export class GatekeeperModal extends Modal {
 
     options.forEach((opt: string, idx: number) => {
       const d = body.ownerDocument.createElement("div");
-      d.className = "bc px-3 py-2 rounded border border-border hover:bg-secondary sprout-widget-text sprout-widget-mcq-option";
+      d.className = "bc px-3 py-1 rounded border border-border hover:bg-secondary sprout-widget-text sprout-widget-mcq-option";
       if (!this.reveal) d.classList.add("cursor-pointer");
 
       const left = body.ownerDocument.createElement("span");
@@ -818,7 +818,7 @@ export class GatekeeperModal extends Modal {
         currentOrder.forEach((origIdx, displayIdx) => {
           const stepText = steps[origIdx] || "";
           const row = body.ownerDocument.createElement("div");
-          row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
+          row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 sprout-oq-step-row";
           row.draggable = true;
 
           const grip = body.ownerDocument.createElement("span");
@@ -900,7 +900,7 @@ export class GatekeeperModal extends Modal {
       const stepText = steps[origIdx] || "";
       const wasInCorrectPosition = origIdx === displayIdx;
       const row = body.ownerDocument.createElement("div");
-      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
+      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-1 sprout-oq-answer-row";
       if (wasInCorrectPosition) {
         row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
       } else {

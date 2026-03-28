@@ -30,6 +30,7 @@ export class SproutNoteReviewView extends ItemView {
   private _dockMoreOpen = false;
   private _queueSessionTotal = 0;
   private _queueSessionDone = 0;
+  private _queueDueCount = 0;
   private _hasInitAos = false;
   private _didEntranceAos = false;
   private _practiceMode = false;
@@ -406,6 +407,7 @@ export class SproutNoteReviewView extends ItemView {
     const dueIds = this._notesDb.listDueNoteIds(now, dueLimit);
     const byPath = new Map(filtered.map((f) => [f.path, f]));
     let queue = dueIds.map((id) => byPath.get(id)).filter((f): f is TFile => !!f);
+    const actualDueCount = queue.length;
 
     if (this._coachScope && this._coachTargetCount != null) {
       const targetCount = this._coachTargetCount;
@@ -445,6 +447,7 @@ export class SproutNoteReviewView extends ItemView {
     if (resetProgress) {
       this._queueSessionTotal = this._queue.length;
       this._queueSessionDone = 0;
+      this._queueDueCount = actualDueCount;
       this._practiceQueueCompleted = false;
     }
   }
@@ -495,72 +498,141 @@ export class SproutNoteReviewView extends ItemView {
   private _renderEmptySessionState(host: HTMLElement): void {
     const lang = this.plugin.settings?.general?.interfaceLanguage;
     const isPracticeComplete = this._practiceMode && this._practiceQueueCompleted;
-
-    const card = host.createDiv({ cls: "sprout-note-review-empty card" });
-    this._renderNoteReviewSessionHeader(card, null);
-
     const isCoachSession = !!this._coachScope;
+    const isPhoneMobile = document.body.classList.contains("is-phone");
+    const coachLabel = "Coach";
+    const backToCoachLabel = `${t(lang, "ui.reviewer.session.backTo", "Back to")} ${coachLabel}`;
+    const exitToHomeLabel = `${t(lang, "ui.reviewer.session.exitTo", "Exit to")} ${t(lang, "ui.reviewer.session.scope.home", "Home")}`;
 
-    card.createDiv({
-      cls: "sprout-note-review-empty-title",
-      text: isCoachSession
-        ? t(lang, "ui.noteReview.session.coachDoneTitle", "All due notes for your study plan have been reviewed for today.")
-        : isPracticeComplete
-        ? t(lang, "ui.reviewer.session.practiceComplete", "Practice complete")
-        : t(lang, "ui.view.noteReview.empty.noNotesDue", "No notes are due"),
+    const card = host.createDiv({ cls: "bc card w-full bc-session-card lk-session-card m-0 sprout-note-review-empty" });
+
+    const topBar = card.createDiv({ cls: "sprout-note-review-topbar" });
+    topBar.createDiv({
+      cls: "bc sprout-note-review-topbar-title",
+      text: t(lang, "ui.view.noteReview.title", "Notes"),
+    });
+    const topBarActions = topBar.createDiv({ cls: "sprout-note-review-topbar-actions" });
+
+    const quitBtn = topBarActions.createEl("button");
+    if (isCoachSession) {
+      quitBtn.classList.add(
+        "bc",
+        "sprout-btn-toolbar",
+        "sprout-btn-filter",
+        "h-7",
+        "px-3",
+        "text-sm",
+        "inline-flex",
+        "items-center",
+        "gap-2",
+        "sprout-scope-clear-btn",
+        "sprout-note-review-quit-coach-btn",
+      );
+    } else {
+      quitBtn.classList.add(
+        "bc",
+        "sprout-btn-toolbar",
+        "sprout-btn-filter",
+        "h-7",
+        "px-3",
+        "text-sm",
+        "inline-flex",
+        "items-center",
+        "gap-2",
+        "sprout-scope-clear-btn",
+        "sprout-note-review-quit-btn",
+      );
+    }
+    quitBtn.setAttr("type", "button");
+    quitBtn.setAttr("aria-label", isCoachSession ? backToCoachLabel : exitToHomeLabel);
+    quitBtn.setAttr("data-tooltip-position", "top");
+    const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    setIcon(quitIconWrap, "x");
+    quitBtn.createSpan({
+      cls: "bc",
+      attr: { "data-sprout-label": "true" },
+      text: isCoachSession ? backToCoachLabel : exitToHomeLabel,
+    });
+    quitBtn.addEventListener("click", () => {
+      void this._quitToHome();
     });
 
-    card.createEl("p", {
-      cls: "sprout-note-review-empty-body",
-      text: isCoachSession
-        ? t(lang, "ui.noteReview.session.coachDoneBody", "All due notes for your study plan have been reviewed for today.")
-        : isPracticeComplete
-        ? t(lang, "ui.reviewer.session.practiceSessionComplete", "Practice session complete")
-        : t(lang, "ui.view.noteReview.empty.askStartPractice", "Would you like to start a practice session?"),
-    });
-
-    if (!isCoachSession) {
-      card.createEl("p", {
-        cls: "sprout-note-review-empty-body sprout-settings-text-muted",
-        text: isPracticeComplete
-          ? t(
-              lang,
-              "ui.view.noteReview.empty.practiceCompleteDetail",
-              "This was a practice session. Scheduling was not changed.",
-            )
-          : t(
-              lang,
-              "ui.view.noteReview.empty.practicePrompt",
-              "Practice sessions review randomized notes from the active filter and do not affect scheduling.",
-            ),
+    const section = card.createEl("section", { cls: "bc flex flex-col gap-3 sprout-session-practice-prompt" });
+    if (isCoachSession) {
+      section.createDiv({
+        cls: "bc text-base text-center",
+        text: t(lang, "ui.noteReview.session.coachDoneBody", "All due notes for your study plan have been reviewed for today."),
+      });
+    } else if (isPracticeComplete) {
+      section.createDiv({
+        cls: "bc text-base text-center",
+        text: t(lang, "ui.reviewer.session.practiceSessionComplete", "Practice session complete"),
+      });
+      section.createDiv({
+        cls: "bc text-sm text-center sprout-session-practice-prompt-subtext",
+        text: t(
+          lang,
+          "ui.view.noteReview.empty.practiceCompleteDetail",
+          "This was a practice session. Scheduling was not changed. You cannot bury or suspend notes in this mode.",
+        ),
+      });
+    } else {
+      section.createDiv({
+        cls: "bc text-base text-center",
+        text: t(lang, "ui.view.noteReview.empty.askStartPractice", "Would you like to start a practice session?"),
+      });
+      section.createDiv({
+        cls: "bc text-sm text-center sprout-session-practice-prompt-subtext",
+        text: t(
+          lang,
+          "ui.view.noteReview.empty.practicePrompt",
+          "Practice session reviews all notes in this deck, including ones that are not due. It does not affect scheduling. You cannot bury or suspend notes while in this mode",
+        ),
       });
     }
 
-    const actions = card.createDiv({ cls: "sprout-note-review-empty-actions" });
-    const homeBtn = actions.createEl("button", {
-      cls: "h-9 flex items-center gap-2 equal-height-btn sprout-btn-control",
-      text: isCoachSession
-        ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach")
-        : t(lang, "ui.reviewer.session.returnToDecks", "Return to Home"),
-    });
+    // Footer
+    const footer = card.createEl("footer", { cls: "bc sprout-session-study-dock" });
+    const footerLeft = footer.createDiv({ cls: "bc flex items-center gap-2 sprout-session-study-dock-left" });
+    const footerCenter = footer.createDiv({ cls: "bc flex flex-wrap gap-2 items-center justify-center sprout-session-study-dock-center" });
+    const footerRight = footer.createDiv({ cls: "bc flex items-center gap-2 sprout-session-study-dock-right" });
+
+    const homeBtn = document.createElement("button");
+    homeBtn.className = "bc sprout-btn-toolbar sprout-btn-filter";
     homeBtn.setAttr("type", "button");
-    homeBtn.setAttr("aria-label", t(lang, "ui.reviewer.session.returnToDecks", "Return to Decks"));
+    homeBtn.setAttr("aria-label", isCoachSession
+      ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach")
+      : t(lang, "ui.reviewer.session.returnToHome", "Return to Home"));
     homeBtn.setAttr("data-tooltip-position", "top");
+    homeBtn.textContent = isCoachSession
+      ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach")
+      : t(lang, "ui.reviewer.session.returnToHome", "Return to Home");
+    if (!isPhoneMobile) {
+      const kbd = homeBtn.createEl("kbd", { text: "Q", cls: "bc kbd ml-2" });
+    }
     homeBtn.addEventListener("click", () => {
       void this._quitToHome();
     });
 
-    if (!isCoachSession && !this._practiceMode && this._filteredNotes.length > 0) {
-      const practiceBtn = actions.createEl("button", {
-        cls: "bc btn-outline sprout-btn-toolbar sprout-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn",
-        text: t(lang, "ui.reviewer.session.startPractice", "Start Practice"),
-      });
+    const canShowPractice = !isCoachSession && !this._practiceMode && this._filteredNotes.length > 0;
+    if (canShowPractice) {
+      const practiceBtn = document.createElement("button");
+      practiceBtn.className = "bc sprout-btn-toolbar sprout-btn-filter";
       practiceBtn.setAttr("type", "button");
       practiceBtn.setAttr("aria-label", t(lang, "ui.reviewer.session.startPractice", "Start Practice"));
       practiceBtn.setAttr("data-tooltip-position", "top");
+      practiceBtn.textContent = t(lang, "ui.reviewer.session.startPractice", "Start Practice");
+      if (!isPhoneMobile) {
+        const kbd = practiceBtn.createEl("kbd", { text: "↵", cls: "bc kbd ml-2" });
+      }
       practiceBtn.addEventListener("click", () => {
         this._startPracticeSession();
       });
+
+      footerLeft.appendChild(homeBtn);
+      footerRight.appendChild(practiceBtn);
+    } else {
+      footerCenter.appendChild(homeBtn);
     }
   }
 
@@ -1244,6 +1316,11 @@ export class SproutNoteReviewView extends ItemView {
     }
 
     const current = this._currentNote();
+    const dueSessionComplete = !this._practiceMode && !coachShellMode && (
+      (remainingCount <= 0 && this._queueSessionTotal > 0) ||
+      (this._queueDueCount === 0 && this._queueSessionDone === 0 && this._queue.length > 0)
+    );
+    const effectiveCurrent = dueSessionComplete ? null : current;
     renderStudySessionHeader(contentShell, this.plugin.settings?.general?.interfaceLanguage, false, {
       titleToken: "ui.noteReview.session.header.title",
       titleFallback: "Notes",
@@ -1298,58 +1375,58 @@ export class SproutNoteReviewView extends ItemView {
     const backToCoachLabel = `Back to ${coachLabel}`;
     const exitToHomeLabel = `${t(lang, "ui.reviewer.session.exitTo", "Exit to")} ${t(lang, "ui.reviewer.session.scope.home", "Home")}`;
 
-    const topBar = panel.createDiv({ cls: "sprout-note-review-topbar" });
-    topBar.createDiv({
-      cls: "bc sprout-note-review-topbar-title",
-      text: current
-        ? (isMobile ? current.basename : `Note: ${current.basename}`)
-        : t(this.plugin.settings?.general?.interfaceLanguage, "ui.view.noteReview.title", "Notes"),
-    });
-    const topBarActions = topBar.createDiv({ cls: "sprout-note-review-topbar-actions" });
+    if (effectiveCurrent) {
+      const topBar = panel.createDiv({ cls: "sprout-note-review-topbar" });
+      topBar.createDiv({
+        cls: "bc sprout-note-review-topbar-title",
+        text: isMobile ? effectiveCurrent.basename : `Note: ${effectiveCurrent.basename}`,
+      });
+      const topBarActions = topBar.createDiv({ cls: "sprout-note-review-topbar-actions" });
 
-    const quitBtn = topBarActions.createEl("button");
-    if (coachShellMode) {
-      quitBtn.classList.add(
-        "bc",
-        "sprout-btn-toolbar",
-        "sprout-btn-filter",
-        "h-7",
-        "px-3",
-        "text-sm",
-        "inline-flex",
-        "items-center",
-        "gap-2",
-        "sprout-scope-clear-btn",
-        "sprout-note-review-quit-coach-btn",
-      );
-    } else {
-      quitBtn.classList.add(
-        "bc",
-        "sprout-btn-toolbar",
-        "sprout-btn-filter",
-        "h-7",
-        "px-3",
-        "text-sm",
-        "inline-flex",
-        "items-center",
-        "gap-2",
-        "sprout-scope-clear-btn",
-        "sprout-note-review-quit-btn",
-      );
+      const quitBtn = topBarActions.createEl("button");
+      if (coachShellMode) {
+        quitBtn.classList.add(
+          "bc",
+          "sprout-btn-toolbar",
+          "sprout-btn-filter",
+          "h-7",
+          "px-3",
+          "text-sm",
+          "inline-flex",
+          "items-center",
+          "gap-2",
+          "sprout-scope-clear-btn",
+          "sprout-note-review-quit-coach-btn",
+        );
+      } else {
+        quitBtn.classList.add(
+          "bc",
+          "sprout-btn-toolbar",
+          "sprout-btn-filter",
+          "h-7",
+          "px-3",
+          "text-sm",
+          "inline-flex",
+          "items-center",
+          "gap-2",
+          "sprout-scope-clear-btn",
+          "sprout-note-review-quit-btn",
+        );
+      }
+      quitBtn.setAttr("type", "button");
+      quitBtn.setAttr("aria-label", coachShellMode ? backToCoachLabel : exitToHomeLabel);
+      quitBtn.setAttr("data-tooltip-position", "top");
+      const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      setIcon(quitIconWrap, "x");
+      if (coachShellMode) {
+        quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: backToCoachLabel });
+      } else {
+        quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: exitToHomeLabel });
+      }
+      quitBtn.addEventListener("click", () => {
+        void this._quitToHome();
+      });
     }
-    quitBtn.setAttr("type", "button");
-    quitBtn.setAttr("aria-label", coachShellMode ? backToCoachLabel : exitToHomeLabel);
-    quitBtn.setAttr("data-tooltip-position", "top");
-    const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
-    setIcon(quitIconWrap, "x");
-    if (coachShellMode) {
-      quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: backToCoachLabel });
-    } else {
-      quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: exitToHomeLabel });
-    }
-    quitBtn.addEventListener("click", () => {
-      void this._quitToHome();
-    });
 
     const stage = panel.createDiv({ cls: "sprout-note-review-stage" });
 
@@ -1358,13 +1435,13 @@ export class SproutNoteReviewView extends ItemView {
     this._renderToken += 1;
     const renderToken = this._renderToken;
 
-    if (current) {
+    if (effectiveCurrent) {
       const loadingArticle = viewport.createDiv({ cls: "sprout-note-review-article card sprout-note-review-article-loading" });
       loadingArticle.createDiv({
         cls: "sprout-note-review-note-body markdown-rendered sprout-note-review-loading-copy",
         text: "Loading note...",
       });
-      void this._renderCurrentNoteContent(viewport, current, renderToken).then(() => {
+      void this._renderCurrentNoteContent(viewport, effectiveCurrent, renderToken).then(() => {
         this._syncOverflowLayout(panel);
       });
     } else {
@@ -1372,7 +1449,7 @@ export class SproutNoteReviewView extends ItemView {
       this._syncOverflowLayout(panel);
     }
 
-    if (!current) {
+    if (!effectiveCurrent) {
       return;
     }
 
@@ -1412,7 +1489,7 @@ export class SproutNoteReviewView extends ItemView {
       });
     } else {
       const skipBtn = buttonGroup.createEl("button");
-      skipBtn.classList.add("sprout-btn-toolbar");
+      skipBtn.classList.add("btn-destructive", "sprout-btn-again");
       skipBtn.createSpan({ text: "Deferred" });
       const skipKey = skipBtn.createEl("kbd", { text: "1" });
       skipKey.classList.add("bc", "kbd", "ml-2");

@@ -671,7 +671,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "bc sprout-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2";
+    btn.className = "bc sprout-btn-toolbar w-full justify-start text-left h-auto py-1 mb-2";
 
     // Multi-answer selection state (before submit)
     if (multiAnswer && !reveal && multiSelected.has(origIdx)) {
@@ -878,7 +878,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
       currentOrder.forEach((origIdx, displayIdx) => {
         const stepText = steps[origIdx] || "";
         const row = document.createElement("div");
-        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 sprout-oq-step-row";
+        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 sprout-oq-step-row";
         row.draggable = true;
         row.dataset.oqIdx = String(displayIdx);
 
@@ -970,7 +970,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
       const wasInCorrectPosition = origIdx === displayIdx;
 
       const row = document.createElement("div");
-      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-2 sprout-oq-answer-row";
+      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-1 sprout-oq-answer-row";
       if (wasInCorrectPosition) {
         row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
       } else {
