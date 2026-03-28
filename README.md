@@ -8,14 +8,14 @@
 
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
-> [!NOTE]
-> **1.2.3 update:** We have updated the plugin ID in this latest build – please review the release notes for a guide on migration before updating.
+> [!IMPORTANT]
+> **1.2.5 is the current release.** If you are updating from a version before 1.2.3, review the [1.2.3 migration notes](release/1.2.3/RELEASE_NOTES.md#important-plugin-id-migration) first because the plugin ID changed in that release.
 
-LearnKit brings flashcards, spaced repetition, and AI-powered study tools directly into Obsidian, so you can learn faster from the notes you already write.
+LearnKit brings flashcards, spaced repetition, note review, tests, and AI-powered study tools directly into Obsidian, so you can turn the notes you already write into a system for long-term retention.
 
 Flashcards are where LearnKit started, but the goal has always been bigger: to become the memory layer for your vault, connecting note-taking, review, and long-term retention in one system.
 
-Build your own study setup with the features that suit you: create and review flashcards, run note review sessions, generate tests from your notes, get AI-powered study guidance, and plan exams with built-in coaching.
+Build the study workflow that suits you: create and review flashcards, run note review sessions, generate tests from your notes, get AI study help on demand, and plan exams with built-in coaching.
 
 ## Getting started
 
@@ -54,22 +54,24 @@ Build your own study setup with the features that suit you: create and review fl
 - **Markdown-first** — cards live inside your notes, linked to the knowledge they came from.
 - **Reading view customisation** — keep notes clean and distraction-free while studying.
 - **Note review mode** — spaced repetition for your notes, not just cards.
-- **Study Coach** _(beta)_ — personalised study plans and coaching for your exams.
+- **Study Coach** — personalised study plans and coaching for your exams.
 - **Test mode** — auto-generated quizzes straight from your notes.
 
 ### Companion — AI learning assistant
 
-Companion is your AI study partner, built right into LearnKit:
+Companion is LearnKit's built-in AI study assistant, designed to help you work directly with the notes you already have.
 
-- **Ask** — get answers about the note you’re reading.
-- **Review** — receive clear, actionable feedback on your notes.
-- **Generate** — turn note content into flashcards in seconds.
+- **Answer questions** about the note you are reading or the topic you are studying.
+- **Generate flashcards** from note content in seconds.
+- **Review note content** and surface clear, actionable feedback.
 
-Understand faster, write better, and create study-ready cards without leaving Obsidian.
+Understand faster, tighten your notes, and create study-ready material without leaving Obsidian.
 
-🎥 **[Watch Companion in action →](https://youtu.be/fe1htR7hjvY)**
+Custom skills and note editing are planned for future Companion updates.
 
-You **bring your own API key** — zero subscriptions, zero markupsWorks with free-tier providers (Google, OpenRouter) and premium platforms (Anthropic, OpenAI, Perplexity). To start for free, try Free Model Router or Auto Router via OpenRouter.
+You **bring your own API key** — zero subscriptions, zero markups. Companion works with free-tier providers such as Google and OpenRouter, as well as premium platforms including Anthropic, OpenAI, and Perplexity.
+
+Free models are a good way to get started, but not every model supports every Companion workflow, and premium models generally perform better for more demanding tasks such as working with attachments. To start for free, we recommend Free Model Router or Auto Router via OpenRouter.
 
 ## Feature highlights
 
