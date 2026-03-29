@@ -206,6 +206,10 @@ export class SproutNoteReviewView extends ItemView {
     includeText: string[];
     excludeText: string[];
   } {
+    const safeDecodeURI = (v: string): string => {
+      try { return decodeURIComponent(v); } catch { return v; }
+    };
+
     const parts = String(query || "")
       .split(/\s+/)
       .map((x) => x.trim())
@@ -231,21 +235,21 @@ export class SproutNoteReviewView extends ItemView {
       } else if (lowered === "-scope:vault" || lowered === "-vault") {
         excludeVault = true;
       } else if (lowered.startsWith("path:")) {
-        includePath.push(lowered.slice(5));
+        includePath.push(safeDecodeURI(lowered.slice(5)));
       } else if (lowered.startsWith("-path:")) {
-        excludePath.push(lowered.slice(6));
+        excludePath.push(safeDecodeURI(lowered.slice(6)));
       } else if (lowered.startsWith("note:")) {
-        includeNote.push(String(part.slice(5)).trim());
+        includeNote.push(safeDecodeURI(String(part.slice(5)).trim()));
       } else if (lowered.startsWith("-note:")) {
-        excludeNote.push(String(part.slice(6)).trim());
+        excludeNote.push(safeDecodeURI(String(part.slice(6)).trim()));
       } else if (lowered.startsWith("tag:")) {
-        includeTag.push(String(lowered.slice(4)).trim().replace(/^#+/, ""));
+        includeTag.push(safeDecodeURI(String(lowered.slice(4)).trim()).replace(/^#+/, ""));
       } else if (lowered.startsWith("-tag:")) {
-        excludeTag.push(String(lowered.slice(5)).trim().replace(/^#+/, ""));
+        excludeTag.push(safeDecodeURI(String(lowered.slice(5)).trim()).replace(/^#+/, ""));
       } else if (lowered.startsWith("prop:")) {
-        includeProp.push(String(part.slice(5)).trim().toLowerCase());
+        includeProp.push(safeDecodeURI(String(part.slice(5)).trim()).toLowerCase());
       } else if (lowered.startsWith("-prop:")) {
-        excludeProp.push(String(part.slice(6)).trim().toLowerCase());
+        excludeProp.push(safeDecodeURI(String(part.slice(6)).trim()).toLowerCase());
       } else if (lowered.startsWith("-")) {
         excludeText.push(lowered.slice(1));
       } else {

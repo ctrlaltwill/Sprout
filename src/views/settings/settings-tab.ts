@@ -2478,6 +2478,10 @@ export class SproutSettingsTab extends PluginSettingTab {
           })),
         ];
 
+        const safeDecodeURI = (v: string): string => {
+          try { return decodeURIComponent(v); } catch { return v; }
+        };
+
         const parseStoredQuery = (query: string): { include: Set<string>; exclude: Set<string>; passthrough: string[] } => {
           const include = new Set<string>();
           const exclude = new Set<string>();
@@ -2498,49 +2502,49 @@ export class SproutSettingsTab extends PluginSettingTab {
               continue;
             }
             if (lowered.startsWith("path:")) {
-              const path = String(part.slice(5)).trim();
+              const path = safeDecodeURI(String(part.slice(5)).trim());
               if (!path) continue;
               include.add(notePathSet.has(path) ? `note::${path}` : `folder::${path}`);
               continue;
             }
             if (lowered.startsWith("-path:")) {
-              const path = String(part.slice(6)).trim();
+              const path = safeDecodeURI(String(part.slice(6)).trim());
               if (!path) continue;
               exclude.add(notePathSet.has(path) ? `note::${path}` : `folder::${path}`);
               continue;
             }
             if (lowered.startsWith("note:")) {
-              const path = String(part.slice(5)).trim();
+              const path = safeDecodeURI(String(part.slice(5)).trim());
               if (!path) continue;
               include.add(`note::${path}`);
               continue;
             }
             if (lowered.startsWith("-note:")) {
-              const path = String(part.slice(6)).trim();
+              const path = safeDecodeURI(String(part.slice(6)).trim());
               if (!path) continue;
               exclude.add(`note::${path}`);
               continue;
             }
             if (lowered.startsWith("tag:")) {
-              const token = String(part.slice(4)).trim().toLowerCase().replace(/^#+/, "");
+              const token = safeDecodeURI(String(part.slice(4)).trim()).toLowerCase().replace(/^#+/, "");
               if (!token) continue;
               include.add(`tag::${token}`);
               continue;
             }
             if (lowered.startsWith("-tag:")) {
-              const token = String(part.slice(5)).trim().toLowerCase().replace(/^#+/, "");
+              const token = safeDecodeURI(String(part.slice(5)).trim()).toLowerCase().replace(/^#+/, "");
               if (!token) continue;
               exclude.add(`tag::${token}`);
               continue;
             }
             if (lowered.startsWith("prop:")) {
-              const token = String(part.slice(5)).trim().toLowerCase();
+              const token = safeDecodeURI(String(part.slice(5)).trim()).toLowerCase();
               if (!token) continue;
               include.add(`prop::${token}`);
               continue;
             }
             if (lowered.startsWith("-prop:")) {
-              const token = String(part.slice(6)).trim().toLowerCase();
+              const token = safeDecodeURI(String(part.slice(6)).trim()).toLowerCase();
               if (!token) continue;
               exclude.add(`prop::${token}`);
               continue;
@@ -2551,17 +2555,21 @@ export class SproutSettingsTab extends PluginSettingTab {
           return { include, exclude, passthrough };
         };
 
+        const encodeTokenValue = (v: string): string => {
+          try { return encodeURIComponent(v); } catch { return v; }
+        };
+
         const toToken = (id: string, negate: boolean): string | null => {
           const prefix = negate ? "-" : "";
           if (id === "vault::") return `${prefix}scope:vault`;
-          if (id.startsWith("folder::")) return `${prefix}path:${id.slice("folder::".length)}`;
-          if (id.startsWith("note::")) return `${prefix}note:${id.slice("note::".length)}`;
-          if (id.startsWith("tag::")) return `${prefix}tag:${id.slice("tag::".length)}`;
+          if (id.startsWith("folder::")) return `${prefix}path:${encodeTokenValue(id.slice("folder::".length))}`;
+          if (id.startsWith("note::")) return `${prefix}note:${encodeTokenValue(id.slice("note::".length))}`;
+          if (id.startsWith("tag::")) return `${prefix}tag:${encodeTokenValue(id.slice("tag::".length))}`;
           if (id.startsWith("prop::")) {
             const raw = id.slice("prop::".length);
             const pair = decodePropertyPair(raw);
             if (!pair) return null;
-            return `${prefix}prop:${pair.key}=${pair.value}`;
+            return `${prefix}prop:${encodeURIComponent(pair.key)}=${encodeURIComponent(pair.value)}`;
           }
           return null;
         };
