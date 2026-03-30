@@ -1536,7 +1536,7 @@ export default class SproutPlugin extends Plugin {
 
   async resetAllCardScheduling(): Promise<void> {
     const now = Date.now();
-    let total = 0;
+    let cardTotal = 0;
 
     // Restrict reset scope to scheduling states only.
     // This avoids touching analytics, review history, or any other store branches.
@@ -1546,17 +1546,23 @@ export default class SproutPlugin extends Plugin {
         if (!this._isCardStateLike(raw)) continue;
         const prev: CardState = { id, ...(raw as Record<string, unknown>) } as CardState;
         (states as Record<string, unknown>)[id] = resetCardScheduling(prev, now);
-        total++;
+        cardTotal++;
       }
     }
 
     await this.saveAll();
+    const noteTotal = await this._clearAllNoteSchedulingState();
     this._refreshOpenViews();
 
-    new Notice(this._tx("ui.main.notice.resetScheduling", "Reset scheduling for {count} cards.", { count: total }));
+    new Notice(
+      this._tx("ui.main.notice.resetScheduling", "Reset scheduling for {cardCount} cards and {noteCount} notes.", {
+        cardCount: cardTotal,
+        noteCount: noteTotal,
+      }),
+    );
   }
 
-  async resetAllNoteScheduling(): Promise<void> {
+  private async _clearAllNoteSchedulingState(): Promise<number> {
     const db = new NoteReviewSqlite(this);
     let total = 0;
 
@@ -1567,6 +1573,12 @@ export default class SproutPlugin extends Plugin {
     } finally {
       await db.close().catch((e) => log.swallow("close note review sqlite after reset", e));
     }
+
+    return total;
+  }
+
+  async resetAllNoteScheduling(): Promise<void> {
+    const total = await this._clearAllNoteSchedulingState();
 
     this._refreshOpenViews();
     new Notice(this._tx("ui.main.notice.resetNoteScheduling", "Reset scheduling for {count} notes.", { count: total }));

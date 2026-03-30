@@ -4766,7 +4766,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     new Setting(wrapper)
       .setName(this._tx("ui.settings.reset.scheduling.name", "Reset scheduling"))
-      .setDesc(this._tx("ui.settings.reset.scheduling.desc", "Reset all cards to new and clear scheduling data."))
+      .setDesc(this._tx("ui.settings.reset.scheduling.desc", "Reset all cards to new and clear card and note scheduling data."))
       .then((s) => {
         this._appendSettingWarning(
           s,

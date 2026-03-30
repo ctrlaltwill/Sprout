@@ -51,7 +51,8 @@ function initConfirmModal(modal: Modal, title: string): HTMLElement {
 /**
  * Prompts the user to confirm resetting all card scheduling data.
  * On confirm, calls `plugin.resetAllCardScheduling()` which sets every
- * card back to "New" and clears FSRS scheduling fields.
+ * card back to "New", clears FSRS scheduling fields, and clears note-review
+ * scheduling state.
  */
 export class ConfirmResetSchedulingModal extends Modal {
   plugin: SproutPlugin;
@@ -67,7 +68,7 @@ export class ConfirmResetSchedulingModal extends Modal {
     const contentEl = initConfirmModal(this, tx(locale, "ui.settings.modals.confirmResetScheduling", "Reset scheduling?"));
     contentEl.createEl("p", {
       cls: "sprout-confirm-modal-copy",
-      text: tx(locale, "ui.settings.modals.resetScheduling.body", "All cards will be reset to new. This can be restored from a backup."),
+      text: tx(locale, "ui.settings.modals.resetScheduling.body", "All card and note scheduling states will be reset. This can be restored from a backup."),
     });
 
     const row = contentEl.createDiv();
@@ -83,7 +84,7 @@ export class ConfirmResetSchedulingModal extends Modal {
       this.close();
       try {
         await this.plugin.resetAllCardScheduling();
-        new Notice(tx(locale, "ui.settings.modals.resetScheduling.success", "LearnKit – scheduling reset for all cards"));
+        new Notice(tx(locale, "ui.settings.modals.resetScheduling.success", "LearnKit – scheduling reset for all cards and notes"));
       } catch (e) {
         log.error(e);
         new Notice(tx(locale, "ui.settings.modals.resetScheduling.error", "LearnKit – failed to reset scheduling"));
