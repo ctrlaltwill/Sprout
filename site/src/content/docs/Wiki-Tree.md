@@ -20,7 +20,7 @@ LearnKit Docs
 │  ├─ Installation
 │  ├─ Syncing
 │  └─ Import From Anki
-├─ star Study & Review
+├─ star Studying
 │  ├─ Header Navigation
 │  │  ├─ Coach
 │  │  ├─ Flashcards
@@ -52,8 +52,6 @@ LearnKit Docs
 │  ├─ Library
 │  │  └─ Flashcard Library
 │  └─ Analytics
-│     ├─ Analytics
-│     └─ Charts
 ├─ sparkles Companion
 │  ├─ Companion Features
 │  ├─ Configuration
@@ -63,8 +61,7 @@ LearnKit Docs
 ├─ book-open Reading & Audio
 │  ├─ Reading View
 │  │  ├─ Reading View
-│  │  ├─ Reading View Styles
-│  │  └─ Custom Reading Styles
+│  │  └─ Reading View Styles
 │  └─ Audio
 │     ├─ Text to Speech
 │     └─ Language Settings
@@ -95,16 +92,16 @@ LearnKit Docs
 | Installation.md | Getting Started |
 | Syncing.md | Getting Started |
 | Import-From-Anki.md | Getting Started |
-| Coach.md | Study & Review |
-| Flashcards.md | Study & Review |
-| Notes.md | Study & Review |
-| Tests.md | Study & Review |
-| Study-Sessions.md | Study & Review |
-| Grading.md | Study & Review |
-| Scheduling.md | Study & Review |
-| Burying-Flashcards.md | Study & Review |
-| Suspending-Flashcards.md | Study & Review |
-| Widget.md | Study & Review |
+| Coach.md | Studying |
+| Flashcards.md | Studying |
+| Notes.md | Studying |
+| Tests.md | Studying |
+| Study-Sessions.md | Studying |
+| Grading.md | Studying |
+| Scheduling.md | Studying |
+| Burying-Flashcards.md | Studying |
+| Suspending-Flashcards.md | Studying |
+| Widget.md | Studying |
 | Creating-Flashcards.md | Flashcards |
 | Editing-Flashcards.md | Flashcards |
 | Flashcard-Formatting.md | Flashcards |
@@ -117,7 +114,6 @@ LearnKit Docs
 | Flag-Codes.md | Flashcards |
 | Flashcard-Library.md | Tools |
 | Analytics.md | Tools |
-| Charts.md | Tools |
 | Companion-Features.md | Companion |
 | Companion-Configuration.md | Companion |
 | Companion-Setting-Up.md | Companion |
@@ -125,7 +121,6 @@ LearnKit Docs
 | Guide-for-Free-Usage.md | Companion |
 | Reading-View.md | Reading & Audio |
 | Reading-View-Styles.md | Reading & Audio |
-| Custom-Reading-Styles.md | Reading & Audio |
 | Text-to-Speech.md | Reading & Audio |
 | Language-Settings.md | Reading & Audio |
 | Settings-Explained.md | Settings |

@@ -46,22 +46,7 @@ export const docsSidebarTree: DocsGroup[] = [
     ],
   },
   {
-    text: "Study & Review",
-    items: [
-      { page: "Coach" },
-      { page: "Flashcards" },
-      { page: "Notes" },
-      { page: "Tests" },
-      { page: "Study-Sessions" },
-      { page: "Grading" },
-      { page: "Scheduling" },
-      { page: "Burying-Flashcards" },
-      { page: "Suspending-Flashcards" },
-      { page: "Widget", text: "Overview" },
-    ],
-  },
-  {
-    text: "Flashcard Authoring",
+    text: "Flashcards",
     items: [
       { page: "Flashcards", text: "Overview" },
       { page: "Creating-Flashcards" },
@@ -77,11 +62,25 @@ export const docsSidebarTree: DocsGroup[] = [
     ],
   },
   {
-    text: "Analytics & Library",
+    text: "Studying",
     items: [
-      { page: "Flashcard-Library" },
+      { page: "Coach" },
+      { page: "Flashcards" },
+      { page: "Notes" },
+      { page: "Tests" },
+      { page: "Study-Sessions" },
+      { page: "Grading" },
+      { page: "Scheduling" },
+      { page: "Burying-Flashcards" },
+      { page: "Suspending-Flashcards" },
+      { page: "Widget", text: "Overview" },
+    ],
+  },
+  {
+    text: "Tools",
+    items: [
+      { page: "Flashcard-Library", text: "Library" },
       { page: "Analytics" },
-      { page: "Charts" },
     ],
   },
   {
@@ -99,7 +98,6 @@ export const docsSidebarTree: DocsGroup[] = [
     items: [
       { page: "Reading-View" },
       { page: "Reading-View-Styles" },
-      { page: "Custom-Reading-Styles" },
     ],
   },
   {

@@ -51,7 +51,7 @@ General combines appearance, profile, language, and Reading view settings.
 - **Show audio button**: only shown for the Flashcards style
 - **Show title / question / options / answer / info / groups / field labels**: only shown for the Clean markdown style
 
-See [Reading View](../Reading-View), [Reading View Styles](../Reading-View-Styles), and [Custom Reading Styles](../Custom-Reading-Styles).
+See [Reading View](../Reading-View) and [Reading View Styles](../Reading-View-Styles).
 
 ## Audio
 

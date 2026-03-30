@@ -9,11 +9,13 @@
     "check": "astro check"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.8",
     "@astrojs/starlight": "^0.38.2",
     "@lucide/astro": "^1.7.0",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.1.1",
     "starlight-theme-bejamas": "^0.1.18",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
   }
 }

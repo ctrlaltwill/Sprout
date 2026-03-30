@@ -5,7 +5,7 @@ const topFeatures = [
   {
     title: "Built for Every Recall Style",
     description:
-      "Choose the right format for each concept, from quick fact recall to learning sequences and image occlusion.",
+      "Choose the right flashcard type for each concept, from quick fact recall or clozes to learning sequences and image occlusion.",
     Icon: Layers3,
   },
   {
@@ -33,14 +33,14 @@ const bottomFeatures = [
 
 const orderedQuestionCard = {
   kicker: "Markdown first",
-  title: "Ordered Questions for sequence memory.",
+  title: "From markdown to memory, in one flow.",
   description:
-    "Train process memory with drag-to-order review that mirrors the exact sequence you authored in your markdown.",
+    "Capture knowledge once, then practice it with multiple card formats without breaking your note workflow.",
   primaryLabel: "See the ordered-question format",
   primaryHref: "./Ordered-Questions",
   secondaryLabel: "See other flashcard types",
   secondaryHref: "./Flashcards",
-  codeLabel: "In your note",
+  codeLabel: "Ordered question example",
   code: [
     "T | Water cycle |",
     "OQ | Arrange the stages of the water cycle in order |",
@@ -82,8 +82,12 @@ const orderedQuestionCard = {
       <h2 class="workflow-title">{orderedQuestionCard.title}</h2>
       <p class="workflow-body">{orderedQuestionCard.description}</p>
       <div class="workflow-links">
-        <a href={orderedQuestionCard.primaryHref}>{orderedQuestionCard.primaryLabel}</a>
-        <a href={orderedQuestionCard.secondaryHref}>{orderedQuestionCard.secondaryLabel}</a>
+        <a class="workflow-link-button workflow-link-button-primary" href={orderedQuestionCard.primaryHref}
+          >{orderedQuestionCard.primaryLabel}</a
+        >
+        <a class="workflow-link-button workflow-link-button-secondary" href={orderedQuestionCard.secondaryHref}
+          >{orderedQuestionCard.secondaryLabel}</a
+        >
       </div>
     </div>
 
@@ -187,15 +191,49 @@ const orderedQuestionCard = {
     margin-top: 1.15rem;
   }
 
-  .workflow-links a {
-    color: var(--foreground);
-    font-weight: 650;
+  .workflow-link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.2rem;
+    padding: 0.42rem 0.8rem;
+    border-radius: 0.65rem;
+    border: 1px solid transparent;
+    font-size: 0.86rem;
+    font-weight: 640;
+    line-height: 1.2;
     text-decoration: none;
-    border-bottom: 1px solid color-mix(in oklab, var(--foreground) 22%, transparent);
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }
 
-  .workflow-links a:hover {
-    border-bottom-color: var(--foreground);
+  .workflow-link-button-primary {
+    background: var(--primary);
+    color: var(--sl-color-white);
+    border-color: color-mix(in oklab, var(--primary) 75%, black);
+  }
+
+  .workflow-link-button-primary:hover {
+    background: color-mix(in oklab, var(--primary) 86%, black);
+  }
+
+  .workflow-link-button-secondary {
+    background: color-mix(in oklab, var(--card) 92%, var(--muted));
+    color: var(--foreground);
+    border-color: color-mix(in oklab, var(--foreground) 16%, transparent);
+  }
+
+  .workflow-link-button-secondary:hover {
+    background: color-mix(in oklab, var(--card) 84%, var(--muted));
+    border-color: color-mix(in oklab, var(--foreground) 28%, transparent);
+  }
+
+  :global([data-theme="dark"]) .workflow-link-button-primary {
+    border-color: color-mix(in oklab, var(--primary) 50%, white);
+  }
+
+  :global([data-theme="dark"]) .workflow-link-button-secondary {
+    background: color-mix(in oklab, var(--card) 90%, var(--muted));
+    border-color: color-mix(in oklab, var(--foreground) 24%, transparent);
   }
 
   .workflow-code {
