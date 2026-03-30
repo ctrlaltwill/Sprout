@@ -1,0 +1,27 @@
+:root {
+  --sl-color-accent-low: #d7ead8;
+  --sl-color-accent: #2f7d57;
+  --sl-color-accent-high: #1e4d37;
+  --sl-color-white: #f8faf8;
+  --sl-color-gray-1: #eef3ef;
+  --sl-color-gray-2: #dce6df;
+  --sl-color-gray-3: #b6c8bb;
+  --sl-color-gray-4: #7c9786;
+  --sl-color-gray-5: #506657;
+  --sl-color-gray-6: #33453a;
+  --sl-color-black: #17211b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at top right, rgba(47, 125, 87, 0.16), transparent 26%),
+    linear-gradient(180deg, rgba(215, 234, 216, 0.35), rgba(215, 234, 216, 0));
+}
+
+.content-panel {
+  border-radius: 18px;
+}

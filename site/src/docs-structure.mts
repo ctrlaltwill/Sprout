@@ -1,0 +1,182 @@
+type DocsPage = {
+  page: string;
+  text?: string;
+};
+
+type DocsGroup = {
+  text: string;
+  items: DocsNode[];
+  collapsed?: boolean;
+};
+
+export type DocsNode = DocsPage | DocsGroup;
+
+export const pageTitleOverrides = new Map<string, string>([
+  ["What-LearnKit-Is", "What LearnKit Is"],
+  ["Support-LearnKit", "Support LearnKit"],
+  ["Settings-Explained", "Settings Explained"],
+  ["Companion-Features", "Companion Features"],
+  ["Companion-Configuration", "Configuration"],
+  ["Guide-for-Free-Usage", "Guide for Free Usage"],
+  ["Companion-Setting-Up", "Setting Up"],
+  ["Companion-Usage", "Usage"],
+  ["Import-From-Anki", "Import From Anki"],
+  ["Language-Settings", "Language Options"],
+  ["Flag-Codes", "Flag Codes"],
+]);
+
+export function toTitle(page: string): string {
+  return pageTitleOverrides.get(page) ?? page.replace(/-/g, " ");
+}
+
+export const docsSidebarTree: DocsGroup[] = [
+  {
+    text: "Home",
+    items: [{ page: "What-LearnKit-Is" }],
+  },
+  {
+    text: "Getting Started",
+    items: [
+      { page: "Getting-Started" },
+      { page: "First-Review-in-5-Minutes", text: "First Review in 5 Minutes" },
+      { page: "Installation" },
+      { page: "Syncing" },
+      { page: "Import-From-Anki" },
+    ],
+  },
+  {
+    text: "Study & Review",
+    items: [
+      {
+        text: "Header Navigation",
+        items: [
+          { page: "Coach" },
+          { page: "Flashcards" },
+          { page: "Notes" },
+          { page: "Tests" },
+        ],
+      },
+      {
+        text: "Review Flow",
+        items: [
+          { page: "Study-Sessions" },
+          { page: "Grading" },
+          { page: "Scheduling" },
+          { page: "Burying-Flashcards" },
+          { page: "Suspending-Flashcards" },
+        ],
+      },
+      {
+        text: "Scope",
+        items: [{ page: "Widget" }],
+      },
+    ],
+  },
+  {
+    text: "Flashcards",
+    items: [
+      { page: "Flashcards", text: "Overview" },
+      { page: "Creating-Flashcards" },
+      { page: "Editing-Flashcards" },
+      { page: "Flashcard-Formatting" },
+      {
+        text: "Flashcard Types",
+        items: [
+          { page: "Basic-&-Reversed-Flashcards" },
+          { page: "Cloze-Flashcards" },
+          { page: "Image-Occlusion" },
+          { page: "Multiple-Choice-Questions" },
+          { page: "Ordered-Questions" },
+        ],
+      },
+      {
+        text: "Flags",
+        items: [{ page: "Flags" }, { page: "Flag-Codes" }],
+      },
+    ],
+  },
+  {
+    text: "Tools",
+    items: [
+      {
+        text: "Library",
+        items: [{ page: "Flashcard-Library" }],
+      },
+      {
+        text: "Analytics",
+        items: [{ page: "Analytics" }, { page: "Charts" }],
+      },
+    ],
+  },
+  {
+    text: "Companion",
+    items: [
+      { page: "Companion-Features" },
+      { page: "Companion-Configuration" },
+      { page: "Companion-Setting-Up" },
+      { page: "Companion-Usage" },
+      { page: "Guide-for-Free-Usage" },
+    ],
+  },
+  {
+    text: "Reading & Audio",
+    items: [
+      {
+        text: "Reading View",
+        items: [
+          { page: "Reading-View" },
+          { page: "Reading-View-Styles" },
+          { page: "Custom-Reading-Styles" },
+        ],
+      },
+      {
+        text: "Audio",
+        items: [{ page: "Text-to-Speech" }, { page: "Language-Settings" }],
+      },
+    ],
+  },
+  {
+    text: "Settings",
+    items: [
+      { page: "Settings-Explained" },
+      { page: "Settings" },
+      { page: "Reminders" },
+      { page: "Keyboard-Shortcuts" },
+      { page: "Custom-Delimiters" },
+      { page: "Gatekeeper" },
+    ],
+  },
+  {
+    text: "Maintenance",
+    items: [{ page: "Backups" }, { page: "Localization-Debt" }],
+  },
+  {
+    text: "Policies",
+    items: [{ page: "AI-Usage-Policy" }],
+  },
+  {
+    text: "Reference",
+    items: [{ page: "Support-LearnKit" }],
+  },
+];
+
+function isDocsPage(node: DocsNode): node is DocsPage {
+  return "page" in node;
+}
+
+export function toStarlightSidebar(nodes: DocsNode[]): Array<{ label: string; slug?: string; items?: Array<{ label: string; slug?: string; items?: unknown[]; collapsed?: boolean }>; collapsed?: boolean }> {
+  return nodes.map((node) => {
+    if (isDocsPage(node)) {
+      return {
+        label: node.text ?? toTitle(node.page),
+        slug: node.page,
+      };
+    }
+
+    return {
+      label: node.text,
+      collapsed: node.collapsed,
+      items: toStarlightSidebar(node.items),
+    };
+  });
+}

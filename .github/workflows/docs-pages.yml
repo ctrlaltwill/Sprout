@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "site/docs/**"
+      - "site/**"
       - ".github/workflows/docs-pages.yml"
   workflow_dispatch:
 
@@ -24,28 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Install, build, and upload site
+        uses: withastro/action@v5
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: site/docs/package-lock.json
-
-      - name: Install docs dependencies
-        run: npm ci
-        working-directory: site/docs
-
-      - name: Build VitePress
-        run: npm run docs:build
-        working-directory: site/docs
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/docs/.vitepress/dist
+          path: site
 
   deploy:
     needs: build

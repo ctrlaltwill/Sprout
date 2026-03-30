@@ -1,0 +1,15 @@
+{
+  "name": "learnkit-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.38.2",
+    "astro": "^6.1.1"
+  }
+}

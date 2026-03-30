@@ -29,8 +29,8 @@ Scope: direct dependencies used by the plugin runtime and documentation site, pl
 
 | Package | Repository | Version (lockfile) | License | Purpose |
 | --- | --- | --- | --- | --- |
-| vitepress | [vuejs/vitepress](https://github.com/vuejs/vitepress) | 1.6.4 | MIT | Static site generation for project documentation |
-| vue | [vuejs/core](https://github.com/vuejs/core) | 3.5.29 | MIT | Client runtime used by VitePress docs pages |
+| astro | [withastro/astro](https://github.com/withastro/astro) | 6.1.1 | MIT | Static site generator for LearnKit documentation |
+| @astrojs/starlight | [withastro/starlight](https://github.com/withastro/starlight) | 0.38.2 | MIT | Documentation theme and navigation framework |
 
 ## 3. Third-Party Assets
 
