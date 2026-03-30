@@ -1,5 +1,6 @@
 ---
 import { Code, Cpu, Layers3, Sparkles, Target } from "@lucide/astro";
+import Button from "./bejamas/Button.astro";
 
 const topFeatures = [
   {
@@ -32,10 +33,9 @@ const bottomFeatures = [
 ];
 
 const orderedQuestionCard = {
-  kicker: "Markdown first",
-  title: "From markdown to memory, in one flow.",
+  kicker: "From markdown to memory, in one flow.",
   description:
-    "Capture knowledge once, then practice it with multiple card formats without breaking your note workflow.",
+    "Capture knowledge once, then practice with multiple card formats, including AI-assisted flashcard generation from your notes.",
   primaryLabel: "See the ordered-question format",
   primaryHref: "./Ordered-Questions",
   secondaryLabel: "See other flashcard types",
@@ -79,15 +79,14 @@ const orderedQuestionCard = {
         </span>
         <span>{orderedQuestionCard.kicker}</span>
       </p>
-      <h2 class="workflow-title">{orderedQuestionCard.title}</h2>
       <p class="workflow-body">{orderedQuestionCard.description}</p>
       <div class="workflow-links">
-        <a class="workflow-link-button workflow-link-button-primary" href={orderedQuestionCard.primaryHref}
-          >{orderedQuestionCard.primaryLabel}</a
-        >
-        <a class="workflow-link-button workflow-link-button-secondary" href={orderedQuestionCard.secondaryHref}
-          >{orderedQuestionCard.secondaryLabel}</a
-        >
+        <Button as="a" href={orderedQuestionCard.primaryHref} variant="default" size="sm">
+          {orderedQuestionCard.primaryLabel}
+        </Button>
+        <Button as="a" href={orderedQuestionCard.secondaryHref} variant="secondary" size="sm">
+          {orderedQuestionCard.secondaryLabel}
+        </Button>
       </div>
     </div>
 
@@ -169,17 +168,14 @@ const orderedQuestionCard = {
 
   .workflow-kicker {
     margin: 0 0 0.9rem;
-  }
-
-  .workflow-title {
-    margin: 5px 0 0;
-    font-size: clamp(1.5rem, 2vw, 2rem);
-    line-height: 1.15;
-    color: var(--foreground);
+    font-size: clamp(1.25rem, 1.6vw, 1.6rem);
+    line-height: 1.25;
+    font-weight: 680;
   }
 
   .workflow-body {
-    margin: 0.9rem 0 0;
+    margin: 0.25rem 0 0;
+    font-size: clamp(1rem, 1.15vw, 1.08rem);
     color: var(--muted-foreground);
     line-height: 1.7;
   }
@@ -191,49 +187,10 @@ const orderedQuestionCard = {
     margin-top: 1.15rem;
   }
 
-  .workflow-link-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 2.2rem;
-    padding: 0.42rem 0.8rem;
-    border-radius: 0.65rem;
-    border: 1px solid transparent;
+  .workflow-links :global(.lk-button) {
+    min-height: 2.25rem;
+    padding: 0.5rem 0.8rem;
     font-size: 0.86rem;
-    font-weight: 640;
-    line-height: 1.2;
-    text-decoration: none;
-    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-  }
-
-  .workflow-link-button-primary {
-    background: var(--primary);
-    color: var(--sl-color-white);
-    border-color: color-mix(in oklab, var(--primary) 75%, black);
-  }
-
-  .workflow-link-button-primary:hover {
-    background: color-mix(in oklab, var(--primary) 86%, black);
-  }
-
-  .workflow-link-button-secondary {
-    background: color-mix(in oklab, var(--card) 92%, var(--muted));
-    color: var(--foreground);
-    border-color: color-mix(in oklab, var(--foreground) 16%, transparent);
-  }
-
-  .workflow-link-button-secondary:hover {
-    background: color-mix(in oklab, var(--card) 84%, var(--muted));
-    border-color: color-mix(in oklab, var(--foreground) 28%, transparent);
-  }
-
-  :global([data-theme="dark"]) .workflow-link-button-primary {
-    border-color: color-mix(in oklab, var(--primary) 50%, white);
-  }
-
-  :global([data-theme="dark"]) .workflow-link-button-secondary {
-    background: color-mix(in oklab, var(--card) 90%, var(--muted));
-    border-color: color-mix(in oklab, var(--foreground) 24%, transparent);
   }
 
   .workflow-code {
