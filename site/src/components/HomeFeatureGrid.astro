@@ -1,5 +1,5 @@
 ---
-import { BrainCircuit, Clock3, Code, Layers3, Sparkles } from "@lucide/astro";
+import { Code, Cpu, Layers3, Sparkles, Target } from "@lucide/astro";
 
 const topFeatures = [
   {
@@ -21,13 +21,13 @@ const bottomFeatures = [
     title: "Coach",
     description:
       "Use adaptive guidance for weak areas, get focused follow-up prompts, and keep every session tied to your real notes.",
-    Icon: BrainCircuit,
+    Icon: Target,
   },
   {
     title: "FSRS",
     description:
       "Retention-based spacing decides when cards return, balancing workload and long-term memory so reviews stay consistent and sustainable.",
-    Icon: Clock3,
+    Icon: Cpu,
   },
 ];
 
@@ -70,11 +70,12 @@ const orderedQuestionExample = [
       </p>
       <h2 class="workflow-title">Your note becomes the answer key.</h2>
       <p class="workflow-body">
-        LearnKit is markdown-first by design. Write the structure once in your note, sync it, and
-        review it as an interactive ordered-question card.
+        LearnKit is markdown-first by design. Write a flashcard using a simple syntax in your
+        note, sync it, and then review it as an interactive flashcard.
       </p>
       <div class="workflow-links">
         <a href="./Ordered-Questions">See the ordered-question format</a>
+        <a href="./Flashcards">See other flashcard types</a>
       </div>
     </div>
 
@@ -147,7 +148,7 @@ const orderedQuestionExample = [
   }
 
   .workflow-title {
-    margin: 0;
+    margin: 5px 0 0;
     font-size: clamp(1.5rem, 2vw, 2rem);
     line-height: 1.15;
     color: var(--foreground);
@@ -200,6 +201,7 @@ const orderedQuestionExample = [
     font-size: 0.93rem;
     line-height: 1.7;
     color: var(--foreground);
+    border: none;
   }
 
   .workflow-code code {
