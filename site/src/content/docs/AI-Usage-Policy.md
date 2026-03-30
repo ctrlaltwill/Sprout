@@ -91,6 +91,6 @@ Companion depends on third-party providers. Output quality and availability can 
 
 LearnKit does not guarantee uninterrupted AI access or consistently accurate output.
 
-See [Companion Configuration](./Companion-Configuration) and [Guide for Free Usage](./Guide-for-Free-Usage) for practical setup guidance.
+See [Companion Configuration](../Companion-Configuration) and [Guide for Free Usage](../Guide-for-Free-Usage) for practical setup guidance.
 
 Last modified: 30/03/2026

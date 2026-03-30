@@ -45,7 +45,7 @@ After revealing the answer, grade your recall:
 - two-button mode: Again / Good
 - four-button mode: Again / Hard / Good / Easy
 
-See [Grading](./Grading).
+See [Grading](../Grading).
 
 ## Tips
 
@@ -56,5 +56,5 @@ See [Grading](./Grading).
 
 ## Related
 
-- [Creating Flashcards](./Creating-Flashcards)
-- [Flashcards](./Flashcards)
+- [Creating Flashcards](../Creating-Flashcards)
+- [Flashcards](../Flashcards)

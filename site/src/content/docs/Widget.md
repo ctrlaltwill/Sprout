@@ -13,7 +13,7 @@ Open it from the LearnKit sidebar icon or the command that opens the study widge
 
 ## How Scope Works
 
-The widget is not the same as the [Flashcard Library](./Flashcard-Library).
+The widget is not the same as the [Flashcard Library](../Flashcard-Library).
 
 It usually works from the **current note**.
 
@@ -67,13 +67,13 @@ Use the widget when you want:
 - a sidebar study tool that stays close to your writing workflow
 - a fast practice run without opening a larger study surface
 
-Use the [Flashcard Library](./Flashcard-Library) when you need bulk management, browsing, or bigger vault-wide review control.
+Use the [Flashcard Library](../Flashcard-Library) when you need bulk management, browsing, or bigger vault-wide review control.
 
 ## Related
 
-- [Study Sessions](./Study-Sessions)
-- [Flashcard Library](./Flashcard-Library)
-- [Settings](./Settings)
+- [Study Sessions](../Study-Sessions)
+- [Flashcard Library](../Flashcard-Library)
+- [Settings](../Settings)
 
 ---
 

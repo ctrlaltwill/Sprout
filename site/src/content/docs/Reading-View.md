@@ -64,6 +64,6 @@ It uses a vertical layout and does not show the inline edit button.
 - scan a note without opening the editor for every card
 - catch bad cloze wording, broken options, or misplaced extra info early
 
-For the style-by-style breakdown, see [Reading-View-Styles](./Reading-View-Styles).
+For the style-by-style breakdown, see [Reading-View-Styles](../Reading-View-Styles).
 
 Last modified: 30/03/2026

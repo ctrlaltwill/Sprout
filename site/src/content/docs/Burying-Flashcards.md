@@ -25,10 +25,10 @@ Buried flashcards are automatically unburied at local midnight.
 
 ## Find Buried
 
-Open [Flashcard Library](./Flashcard-Library) and filter Stage = Buried.
+Open [Flashcard Library](../Flashcard-Library) and filter Stage = Buried.
 
 ## Limits
 
 - Burying is temporary (today only).
 - Burying does not delete flashcards.
-- For long-term removal from review, use [Suspending Flashcards](./Suspending-Flashcards).
+- For long-term removal from review, use [Suspending Flashcards](../Suspending-Flashcards).

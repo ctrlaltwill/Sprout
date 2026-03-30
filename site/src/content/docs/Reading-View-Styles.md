@@ -39,6 +39,6 @@ The reading engine still contains older preset concepts such as `Classic`, `Guid
 - Choose Flashcards when recall speed matters more than full context.
 - Choose Clean markdown when you want to inspect field structure or read cards in note order.
 
-For the future-facing custom hooks, see [Custom-Reading-Styles](./Custom-Reading-Styles).
+For the future-facing custom hooks, see [Custom-Reading-Styles](../Custom-Reading-Styles).
 
 Last modified: 30/03/2026

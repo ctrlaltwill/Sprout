@@ -81,6 +81,6 @@ When flag-aware routing is on:
 - multiple flags in one field can switch voices inline
 - `Announce language name` can speak the language before each switched segment
 
-For the full code reference, see [Flag-Codes](./Flag-Codes). For audio behaviour, see [Text-to-Speech](./Text-to-Speech).
+For the full code reference, see [Flag-Codes](../Flag-Codes). For audio behaviour, see [Text-to-Speech](../Text-to-Speech).
 
 Last modified: 30/03/2026

@@ -3,7 +3,7 @@ title: "Charts"
 ---
 
 
-This page explains the charts shown inside [Analytics](./Analytics).
+This page explains the charts shown inside [Analytics](../Analytics).
 
 ## Flashcard charts
 
@@ -47,7 +47,7 @@ Lower stability usually means shorter intervals and more fragile recall.
 
 Compares observed retention with the expected FSRS curve.
 
-If your observed retention is consistently below expectation, review your material quality and [Scheduling](./Scheduling).
+If your observed retention is consistently below expectation, review your material quality and [Scheduling](../Scheduling).
 
 ## Notes chart
 

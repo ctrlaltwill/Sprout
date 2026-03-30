@@ -49,7 +49,7 @@ The `Flag-aware routing` section lets inline flags control language and accent d
 - `Use flags for language and accent` lets tokens like `{{es}}` or `{{es-mx}}` change voice selection.
 - `Announce language name` speaks the language name before each flag-switched segment.
 
-See [Flags](./Flags) and [Flag-Codes](./Flag-Codes) for the token system.
+See [Flags](../Flags) and [Flag-Codes](../Flag-Codes) for the token system.
 
 ## Voice availability
 

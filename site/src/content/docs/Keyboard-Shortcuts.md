@@ -27,12 +27,12 @@ Keyboard shortcuts are the fastest way to create clozes and move through reviews
 | `Space` / `Enter` | Reveal the answer |
 | `1` - `2` in two-button mode | Again / Good |
 | `1` - `4` in four-button mode | Again / Hard / Good / Easy |
-| `E` | Edit the current flashcard. See [Editing Flashcards](./Editing-Flashcards). |
+| `E` | Edit the current flashcard. See [Editing Flashcards](../Editing-Flashcards). |
 | `O` | Open the flashcard in its source note |
 | `M` | Open the More menu |
 | `Q` / `Escape` | Exit the session or go back to deck selection |
-| `B` | Bury the current flashcard. See [Burying Flashcards](./Burying-Flashcards). |
-| `S` | Suspend the current flashcard. See [Suspending Flashcards](./Suspending-Flashcards). |
+| `B` | Bury the current flashcard. See [Burying Flashcards](../Burying-Flashcards). |
+| `S` | Suspend the current flashcard. See [Suspending Flashcards](../Suspending-Flashcards). |
 | `U` | Undo the last grade |
 | `ArrowLeft` | Go to the previous flashcard or hide the answer |
 
@@ -56,10 +56,10 @@ Open **Settings -> Hotkeys** and search for `LearnKit` to change them.
 
 ## Related
 
-- [Editing Flashcards](./Editing-Flashcards)
-- [Study Sessions](./Study-Sessions)
-- [Burying Flashcards](./Burying-Flashcards)
-- [Suspending Flashcards](./Suspending-Flashcards)
+- [Editing Flashcards](../Editing-Flashcards)
+- [Study Sessions](../Study-Sessions)
+- [Burying Flashcards](../Burying-Flashcards)
+- [Suspending Flashcards](../Suspending-Flashcards)
 
 ---
 

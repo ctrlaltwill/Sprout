@@ -22,7 +22,7 @@ Unlike burying, suspension does not reset automatically.
 
 ### From the Flashcard Library
 
-1. Open the [Flashcard Library](./Flashcard-Library).
+1. Open the [Flashcard Library](../Flashcard-Library).
 2. Select one or more flashcards.
 3. Click the **Suspend** button in the bulk actions bar.
 
@@ -30,7 +30,7 @@ To unsuspend, select suspended flashcards and click **Unsuspend**.
 
 ## Find Suspended
 
-In [Flashcard Library](./Flashcard-Library), filter by Stage -> Suspended.
+In [Flashcard Library](../Flashcard-Library), filter by Stage -> Suspended.
 
 ## Use Cases
 
@@ -54,5 +54,5 @@ Suspending is useful when:
 
 ## Related
 
-- [Burying Flashcards](./Burying-Flashcards)
-- [Flashcard Library](./Flashcard-Library)
+- [Burying Flashcards](../Burying-Flashcards)
+- [Flashcard Library](../Flashcard-Library)

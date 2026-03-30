@@ -7,7 +7,7 @@ Gatekeeper is LearnKit's stricter reminder mode.
 
 It opens a due-review popup when you want study to interrupt normal work instead of just nudging you.
 
-For lighter prompts, use [Reminders](./Reminders).
+For lighter prompts, use [Reminders](../Reminders).
 
 ## When To Use Gatekeeper
 
@@ -44,15 +44,15 @@ Use Gatekeeper when you want:
 
 ## Good Rule Of Thumb
 
-- Use [Reminders](./Reminders) when you want a prompt.
+- Use [Reminders](../Reminders) when you want a prompt.
 - Use Gatekeeper when you want an interruption.
 
 ## Related
 
-- [Reminders](./Reminders)
-- [Study Sessions](./Study-Sessions)
-- [Grading](./Grading)
-- [Settings](./Settings)
+- [Reminders](../Reminders)
+- [Study Sessions](../Study-Sessions)
+- [Grading](../Grading)
+- [Settings](../Settings)
 
 ---
 

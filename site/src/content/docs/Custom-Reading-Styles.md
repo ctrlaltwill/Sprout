@@ -69,6 +69,6 @@ When Custom becomes available, a scoped starter style like this will fit the cur
 
 ## For now
 
-If you want a supported Reading View setup today, use [Reading-View-Styles](./Reading-View-Styles) and choose between Flashcards and Clean markdown.
+If you want a supported Reading View setup today, use [Reading-View-Styles](../Reading-View-Styles) and choose between Flashcards and Clean markdown.
 
 Last modified: 30/03/2026

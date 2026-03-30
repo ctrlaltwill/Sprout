@@ -61,14 +61,14 @@ That means you should only change the delimiter when:
 
 Before changing the delimiter globally, try these first:
 
-- use the multiline patterns from [Flashcard Formatting](./Flashcard-Formatting)
+- use the multiline patterns from [Flashcard Formatting](../Flashcard-Formatting)
 - keep `|` as the global default and only restructure the notes that need it
 
 ## Related
 
-- [Flashcard Formatting](./Flashcard-Formatting)
-- [Syncing](./Syncing)
-- [Settings](./Settings)
+- [Flashcard Formatting](../Flashcard-Formatting)
+- [Syncing](../Syncing)
+- [Settings](../Settings)
 
 ---
 

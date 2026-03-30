@@ -50,7 +50,7 @@ In general:
 - **Good** is the normal successful review
 - **Easy** pushes the card further out than Good
 
-See [Scheduling](./Scheduling) for the deeper scheduler model.
+See [Scheduling](../Scheduling) for the deeper scheduler model.
 
 ## Auto-Graded Cards
 
@@ -78,9 +78,9 @@ If you do use four buttons, make **Good** your normal successful answer and rese
 
 ## Related
 
-- [Scheduling](./Scheduling)
-- [Study Sessions](./Study-Sessions)
-- [Keyboard Shortcuts](./Keyboard-Shortcuts)
+- [Scheduling](../Scheduling)
+- [Study Sessions](../Study-Sessions)
+- [Keyboard Shortcuts](../Keyboard-Shortcuts)
 
 ---
 

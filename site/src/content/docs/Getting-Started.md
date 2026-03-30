@@ -7,11 +7,11 @@ This page is the fastest route from installation to your first successful review
 
 ## The Short Path
 
-1. Install LearnKit with [Installation](./Installation).
+1. Install LearnKit with [Installation](../Installation).
 2. Create or identify one note you want to study from.
-3. Add a few flashcards using [Creating Flashcards](./Creating-Flashcards) or [Flashcards](./Flashcards).
-4. [Sync](./Syncing) your database.
-5. Start a [Study Sessions](./Study-Sessions) round.
+3. Add a few flashcards using [Creating Flashcards](../Creating-Flashcards) or [Flashcards](../Flashcards).
+4. [Sync](../Syncing) your database.
+5. Start a [Study Sessions](../Study-Sessions) round.
 
 ## The Core Model
 
@@ -37,22 +37,22 @@ That is enough to verify your setup and understand the basic loop.
 
 After your first session, these pages matter most:
 
-- [Grading](./Grading)
-- [Scheduling](./Scheduling)
-- [Flashcard Library](./Flashcard-Library)
-- [Notes](./Notes)
-- [Settings Explained](./Settings-Explained)
+- [Grading](../Grading)
+- [Scheduling](../Scheduling)
+- [Flashcard Library](../Flashcard-Library)
+- [Notes](../Notes)
+- [Settings Explained](../Settings-Explained)
 
 ## Common First-Week Mistakes
 
-- Writing flashcards but forgetting to [Sync](./Syncing) your database
+- Writing flashcards but forgetting to [Sync](../Syncing) your database
 - Creating too many flashcards before testing one study session
 - Treating LearnKit like a separate app instead of a note-based workflow
-- Ignoring [Backups](./Backups) before large imports or experiments
+- Ignoring [Backups](../Backups) before large imports or experiments
 
 ## If You Are Coming From Anki
 
-See [Import From Anki](./Import-From-Anki) before doing a large migration.
+See [Import From Anki](../Import-From-Anki) before doing a large migration.
 
 ---
 

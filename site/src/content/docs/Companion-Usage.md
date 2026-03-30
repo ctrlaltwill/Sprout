@@ -58,6 +58,6 @@ Generate can produce Basic, Reversed, Cloze, Multiple choice, Ordered question, 
 - Image occlusion output can still need manual mask cleanup.
 - Saved chat history is per note, not one global thread for the whole vault.
 
-For setup details, see [Companion Configuration](./Companion-Configuration). For policy and privacy expectations, see [AI Usage Policy](./AI-Usage-Policy).
+For setup details, see [Companion Configuration](../Companion-Configuration). For policy and privacy expectations, see [AI Usage Policy](../AI-Usage-Policy).
 
 Last modified: 30/03/2026

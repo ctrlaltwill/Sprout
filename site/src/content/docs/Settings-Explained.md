@@ -60,12 +60,12 @@ Use it when you know what you want to change, but not where LearnKit put that co
 
 ## Use These Pages Too
 
-- [Settings](./Settings) for the full tab-by-tab reference
-- [Scheduling](./Scheduling) for the flashcard scheduler model
-- [Reminders](./Reminders) for reminder behaviour
-- [Gatekeeper](./Gatekeeper) for enforced popups
-- [Backups](./Backups) for restore workflow
-- [Companion Configuration](./Companion-Configuration) and [Companion Usage](./Companion-Usage) for AI setup and day-to-day use
+- [Settings](../Settings) for the full tab-by-tab reference
+- [Scheduling](../Scheduling) for the flashcard scheduler model
+- [Reminders](../Reminders) for reminder behaviour
+- [Gatekeeper](../Gatekeeper) for enforced popups
+- [Backups](../Backups) for restore workflow
+- [Companion Configuration](../Companion-Configuration) and [Companion Usage](../Companion-Usage) for AI setup and day-to-day use
 
 ---
 

@@ -23,7 +23,7 @@ You can start from:
 - the home dashboard
 - the deck widget or context-aware study entry points
 
-If you mostly review from the note you are currently writing in, use the [Study Widget](./Widget) for a smaller sidebar workflow.
+If you mostly review from the note you are currently writing in, use the [Study Widget](../Widget) for a smaller sidebar workflow.
 
 ## Study Scope
 
@@ -55,7 +55,7 @@ That means the number of cards you see depends not just on what exists, but also
 
 After revealing the answer, grade honestly.
 
-If you are unsure how to judge your answer, read [Grading](./Grading).
+If you are unsure how to judge your answer, read [Grading](../Grading).
 
 ## Practice Mode
 
@@ -65,7 +65,7 @@ This is useful for extra drilling, but it does not change scheduling the same wa
 
 ## Study Widget
 
-The [Study Widget](./Widget) is the lightweight way to start a session from the note you are already in.
+The [Study Widget](../Widget) is the lightweight way to start a session from the note you are already in.
 
 Use it when you want a quick local review burst or a practice run without opening a larger study surface.
 
@@ -84,10 +84,10 @@ These controls are useful, but the main thing to understand first is the normal 
 
 ## Related
 
-- [Grading](./Grading)
-- [Scheduling](./Scheduling)
-- [Reminders](./Reminders)
-- [Gatekeeper](./Gatekeeper)
+- [Grading](../Grading)
+- [Scheduling](../Scheduling)
+- [Reminders](../Reminders)
+- [Gatekeeper](../Gatekeeper)
 
 ---
 

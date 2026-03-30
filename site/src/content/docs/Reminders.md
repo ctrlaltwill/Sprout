@@ -7,7 +7,7 @@ Reminders help you come back to study while Obsidian stays open.
 
 Use them when you want a prompt, not a hard interruption.
 
-For enforced review rounds, use [Gatekeeper](./Gatekeeper).
+For enforced review rounds, use [Gatekeeper](../Gatekeeper).
 
 ## Launch Reminders
 
@@ -36,13 +36,13 @@ Routine reminders repeat while Obsidian remains open.
 ## Good Rule Of Thumb
 
 - Use Reminders for gentle prompts.
-- Use [Gatekeeper](./Gatekeeper) for stronger enforcement.
+- Use [Gatekeeper](../Gatekeeper) for stronger enforcement.
 
 ## Related
 
-- [Gatekeeper](./Gatekeeper)
-- [Study Sessions](./Study-Sessions)
-- [Settings](./Settings)
+- [Gatekeeper](../Gatekeeper)
+- [Study Sessions](../Study-Sessions)
+- [Settings](../Settings)
 
 ---
 

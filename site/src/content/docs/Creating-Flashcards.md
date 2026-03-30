@@ -16,15 +16,15 @@ Use the guided method when you want speed. Use the Markdown method when you want
 
 This is usually the easiest path for:
 
-- [Image Occlusion](./Image-Occlusion)
-- [Multiple Choice Questions](./Multiple-Choice-Questions)
+- [Image Occlusion](../Image-Occlusion)
+- [Multiple Choice Questions](../Multiple-Choice-Questions)
 - other flashcard types where structure is easier to manage through a form
 
 ## Method 2: Write Flashcards In Markdown
 
 You can also write flashcard blocks directly in the note.
 
-By default, fields use the `|` delimiter unless you changed it in [Custom Delimiters](./Custom-Delimiters).
+By default, fields use the `|` delimiter unless you changed it in [Custom Delimiters](../Custom-Delimiters).
 
 ## Common Fields
 
@@ -64,7 +64,7 @@ O | Berlin |
 
 ## After You Create Flashcards
 
-After writing or inserting new flashcards, [Sync](./Syncing) your database so LearnKit can detect them.
+After writing or inserting new flashcards, [Sync](../Syncing) your database so LearnKit can detect them.
 
 ## Important Note About Anchors
 
@@ -78,9 +78,9 @@ Do not delete or edit that anchor. It links the source note block to the flashca
 
 ## Related
 
-- [Flashcards](./Flashcards)
-- [Editing Flashcards](./Editing-Flashcards)
-- [Flashcard Formatting](./Flashcard-Formatting)
+- [Flashcards](../Flashcards)
+- [Editing Flashcards](../Editing-Flashcards)
+- [Flashcard Formatting](../Flashcard-Formatting)
 
 ---
 

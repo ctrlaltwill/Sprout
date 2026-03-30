@@ -5,7 +5,7 @@ title: "Flashcard Formatting"
 
 LearnKit flashcard content supports standard Markdown formatting, code, links, images, and math.
 
-This page is about presentation inside flashcards. For field structure and raw syntax, start with [Creating Flashcards](./Creating-Flashcards).
+This page is about presentation inside flashcards. For field structure and raw syntax, start with [Creating Flashcards](../Creating-Flashcards).
 
 ## Supported Formatting
 
@@ -26,10 +26,10 @@ You can use:
 
 ## Where To See Practical Examples
 
-- [Creating Flashcards](./Creating-Flashcards)
-- [Basic & Reversed Flashcards](./Basic-&-Reversed-Flashcards)
-- [Cloze Flashcards](./Cloze-Flashcards)
-- [Reading View](./Reading-View)
+- [Creating Flashcards](../Creating-Flashcards)
+- [Basic & Reversed Flashcards](../Basic-&-Reversed-Flashcards)
+- [Cloze Flashcards](../Cloze-Flashcards)
+- [Reading View](../Reading-View)
 
 ---
 

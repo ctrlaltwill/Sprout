@@ -91,6 +91,6 @@ The default folder is `Attachments/Image Occlusion/`.
 - flowcharts with named parts
 - processes where a visual landmark matters
 
-If the content is mostly text and order matters more than location, [Ordered Questions](./Ordered-Questions) or [Multiple Choice Questions](./Multiple-Choice-Questions) are usually a better fit.
+If the content is mostly text and order matters more than location, [Ordered Questions](../Ordered-Questions) or [Multiple Choice Questions](../Multiple-Choice-Questions) are usually a better fit.
 
 Last modified: 30/03/2026

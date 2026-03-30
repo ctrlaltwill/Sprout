@@ -82,6 +82,6 @@ Invalid backups cannot be restored.
 - keep rolling daily backup enabled unless you have another recovery workflow
 - use the most recent verified backup when recovering
 
-See [Import From Anki](./Import-From-Anki) if you want a backup before a big import.
+See [Import From Anki](../Import-From-Anki) if you want a backup before a big import.
 
 Last modified: 30/03/2026

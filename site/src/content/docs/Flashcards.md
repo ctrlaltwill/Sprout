@@ -21,36 +21,36 @@ Flashcards in LearnKit includes:
 
 1. write or refine a note
 2. create flashcards from that note
-3. [Sync](./Syncing) your database
-4. review the flashcards in [Study Sessions](./Study-Sessions)
+3. [Sync](../Syncing) your database
+4. review the flashcards in [Study Sessions](../Study-Sessions)
 5. improve the source note or flashcard wording over time
 
 ## Key Pages
 
-- [Creating Flashcards](./Creating-Flashcards)
-- [Editing Flashcards](./Editing-Flashcards)
-- [Flashcard Formatting](./Flashcard-Formatting)
-- [Flashcard Library](./Flashcard-Library)
+- [Creating Flashcards](../Creating-Flashcards)
+- [Editing Flashcards](../Editing-Flashcards)
+- [Flashcard Formatting](../Flashcard-Formatting)
+- [Flashcard Library](../Flashcard-Library)
 
 ## Flashcard Types
 
-- [Basic & Reversed Flashcards](./Basic-&-Reversed-Flashcards)
-- [Cloze Flashcards](./Cloze-Flashcards)
-- [Image Occlusion](./Image-Occlusion)
-- [Multiple Choice Questions](./Multiple-Choice-Questions)
-- [Ordered Questions](./Ordered-Questions)
+- [Basic & Reversed Flashcards](../Basic-&-Reversed-Flashcards)
+- [Cloze Flashcards](../Cloze-Flashcards)
+- [Image Occlusion](../Image-Occlusion)
+- [Multiple Choice Questions](../Multiple-Choice-Questions)
+- [Ordered Questions](../Ordered-Questions)
 
 ## Important Note
 
 Flashcard scheduling data is stored separately from the note text.
 
-That is why [Syncing](./Syncing) and anchors matter after you create or restructure flashcards.
+That is why [Syncing](../Syncing) and anchors matter after you create or restructure flashcards.
 
 ## Related
 
-- [Notes](./Notes)
-- [Reading View](./Reading-View)
-- [Study Sessions](./Study-Sessions)
+- [Notes](../Notes)
+- [Reading View](../Reading-View)
+- [Study Sessions](../Study-Sessions)
 
 ---
 

@@ -13,7 +13,7 @@ The basic flow is:
 
 1. write or refine a note
 2. add flashcard content where needed
-3. [Sync](./Syncing) your database
+3. [Sync](../Syncing) your database
 4. review the resulting flashcards
 5. come back and improve the source note over time
 
@@ -34,17 +34,17 @@ They are the source of truth for your material. That means a good note structure
 
 Check:
 
-- [Flashcard Formatting](./Flashcard-Formatting)
-- [Custom Delimiters](./Custom-Delimiters)
-- [Settings](./Settings)
+- [Flashcard Formatting](../Flashcard-Formatting)
+- [Custom Delimiters](../Custom-Delimiters)
+- [Settings](../Settings)
 
-Then [Sync](./Syncing) your database again.
+Then [Sync](../Syncing) your database again.
 
 ## Related
 
-- [Flashcards](./Flashcards)
-- [Flashcard Library](./Flashcard-Library)
-- [Coach](./Coach)
+- [Flashcards](../Flashcards)
+- [Flashcard Library](../Flashcard-Library)
+- [Coach](../Coach)
 
 ---
 

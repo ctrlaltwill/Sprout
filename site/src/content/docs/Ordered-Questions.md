@@ -63,6 +63,6 @@ If you turn it off, the card will keep the authored order when it appears.
 - avoid near-duplicate wording between steps
 - use the `I` field if learners need a short explanation after submission
 
-If selection matters more than sequence, use [Multiple Choice Questions](./Multiple-Choice-Questions) instead.
+If selection matters more than sequence, use [Multiple Choice Questions](../Multiple-Choice-Questions) instead.
 
 Last modified: 30/03/2026

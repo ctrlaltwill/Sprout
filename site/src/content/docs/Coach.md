@@ -61,10 +61,10 @@ You will usually see separate health measures for flashcards, notes, and overall
 
 ## Related
 
-- [Study Sessions](./Study-Sessions)
-- [Tests](./Tests)
-- [Scheduling](./Scheduling)
-- [Notes](./Notes)
+- [Study Sessions](../Study-Sessions)
+- [Tests](../Tests)
+- [Scheduling](../Scheduling)
+- [Notes](../Notes)
 
 ---
 

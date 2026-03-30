@@ -39,7 +39,7 @@ Your **Default voice** still handles normal Latin-script text.
 
 ## Flag-Based Routing
 
-If you use [Flags](./Flags) inside flashcard text, LearnKit can switch language or accent during playback.
+If you use [Flags](../Flags) inside flashcard text, LearnKit can switch language or accent during playback.
 
 This is useful when:
 
@@ -49,7 +49,7 @@ This is useful when:
 
 If you do not use flags in your flashcards, you can leave that feature off and just use a single default voice.
 
-See [Flags](./Flags) and [Flag Codes](./Flag-Codes).
+See [Flags](../Flags) and [Flag Codes](../Flag-Codes).
 
 ## Adding Voices
 
@@ -78,10 +78,10 @@ Voice availability depends on your device and operating system settings.
 
 ## Related
 
-- [Text to Speech](./Text-to-Speech)
-- [Flags](./Flags)
-- [Flag Codes](./Flag-Codes)
-- [Settings](./Settings)
+- [Text to Speech](../Text-to-Speech)
+- [Flags](../Flags)
+- [Flag Codes](../Flag-Codes)
+- [Settings](../Settings)
 
 ---
 

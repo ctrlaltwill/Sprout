@@ -68,6 +68,6 @@ If you want more room for charts, use the view's expand control to switch into a
 - checking whether note review is being ignored
 - spotting whether test performance is improving over time
 
-For a chart-by-chart breakdown, see [Charts](./Charts).
+For a chart-by-chart breakdown, see [Charts](../Charts).
 
 Last modified: 30/03/2026

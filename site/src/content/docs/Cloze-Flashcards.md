@@ -47,7 +47,7 @@ CQ | The {{c1::heart}} pumps {{c1::blood}} through the body |
 ## Grading
 
 Cloze flashcards use the same manual grading flow as other flashcards.
-See [Grading](./Grading).
+See [Grading](../Grading).
 
 ## Limits
 
@@ -57,5 +57,5 @@ See [Grading](./Grading).
 
 ## Related
 
-- [Creating Flashcards](./Creating-Flashcards)
-- [Reading View](./Reading-View)
+- [Creating Flashcards](../Creating-Flashcards)
+- [Reading View](../Reading-View)

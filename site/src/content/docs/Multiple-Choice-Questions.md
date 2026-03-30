@@ -81,6 +81,6 @@ When enabled, LearnKit keeps one shuffled order for that card during the current
 - test discrimination, not trivia noise
 - use the `I` field if the explanation matters after grading
 
-If order matters more than selection, use [Ordered Questions](./Ordered-Questions) instead.
+If order matters more than selection, use [Ordered Questions](../Ordered-Questions) instead.
 
 Last modified: 30/03/2026

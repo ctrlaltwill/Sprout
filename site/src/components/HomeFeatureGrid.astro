@@ -1,73 +1,267 @@
 ---
-import { Bot, Cpu, Layers3, Star } from "@lucide/astro";
+import { Bot, BrainCircuit, Layers3, NotebookPen, Sparkles } from "@lucide/astro";
 
-const features = [
+const topFeatures = [
   {
-    title: "Markdown-First Flashcards",
+    title: "Markdown-Native Authoring",
     description:
-      "Write flashcards directly in your notes so study material stays close to the source and easy to maintain.",
-    Icon: Star,
+      "Write flashcards where you already take notes so the source material and the study material stay in one place.",
+    Icon: NotebookPen,
   },
   {
     title: "Rich Card Types",
     description:
-      "Use basic, reversed, cloze, image occlusion, multiple choice, and ordered questions in one workflow.",
+      "Use cloze, image occlusion, multiple choice, and ordered questions without leaving the same workflow.",
     Icon: Layers3,
   },
+];
+
+const bottomFeatures = [
   {
-    title: "Companion",
+    title: "Study Modes That Match The Job",
     description:
-      "Ask questions about your notes, generate practice material, and draft flashcards from the same context.",
+      "Move between Notes, Flashcards, Tests, Coach, and the Study Widget depending on whether you are learning, checking, or planning.",
+    Icon: BrainCircuit,
+  },
+  {
+    title: "Companion And FSRS",
+    description:
+      "Use Companion for generation and explanation, then let FSRS keep the review load realistic over time.",
     Icon: Bot,
   },
-  {
-    title: "FSRS Scheduling",
-    description:
-      "LearnKit uses FSRS to time reviews around retention instead of fixed intervals.",
-    Icon: Cpu,
-  },
 ];
+
+const orderedQuestionExample = [
+  "T | Cardiac cycle |",
+  "OQ | Arrange the phases of the cardiac cycle in order |",
+  "1 | Atrial systole |",
+  "2 | Isovolumetric contraction |",
+  "3 | Ventricular ejection |",
+  "4 | Isovolumetric relaxation |",
+  "5 | Ventricular filling |",
+  "I | The cycle repeats with each heartbeat |",
+  "G | Cardiology |",
+].join("\n");
 ---
 
-<div class="feature-grid" role="list" aria-label="LearnKit core features">
-  {
-    features.map(({ title, description, Icon }) => (
-      <article class="feature-card" role="listitem">
-        <p class="feature-title">
-          <span class="feature-icon" aria-hidden="true">
-            <Icon size={18} stroke-width={2.25} />
-          </span>
-          <span>{title}</span>
-        </p>
-        <p class="feature-body">{description}</p>
-      </article>
-    ))
-  }
+<div class="home-panels">
+  <div class="feature-grid" role="list" aria-label="LearnKit homepage highlights">
+    {
+      topFeatures.map(({ title, description, Icon }) => (
+        <article class="feature-card" role="listitem">
+          <p class="feature-title">
+            <span class="feature-icon" aria-hidden="true">
+              <Icon size={18} stroke-width={2.25} />
+            </span>
+            <span>{title}</span>
+          </p>
+          <p class="feature-body">{description}</p>
+        </article>
+      ))
+    }
+  </div>
+
+  <article class="workflow-card">
+    <div class="workflow-copy">
+      <p class="workflow-kicker">
+        <span class="workflow-kicker-icon" aria-hidden="true">
+          <Sparkles size={16} stroke-width={2.25} />
+        </span>
+        From note to review in one loop
+      </p>
+      <h2 class="workflow-title">Author cards inside the note, then study what you actually wrote.</h2>
+      <p class="workflow-body">
+        LearnKit reads structured markdown inside your vault, turns it into flashcards and practice material,
+        and keeps the note itself as the source of truth.
+      </p>
+      <div class="workflow-steps" aria-label="LearnKit study loop">
+        <p><strong>1.</strong> Write or refine the note.</p>
+        <p><strong>2.</strong> Add the flashcard block directly in context.</p>
+        <p><strong>3.</strong> Sync once and start reviewing.</p>
+      </div>
+      <div class="workflow-links">
+        <a href="./First-Review-in-5-Minutes">Start in 5 minutes</a>
+        <a href="./Ordered-Questions">See ordered questions</a>
+      </div>
+    </div>
+
+    <div class="workflow-code">
+      <p class="code-label">Ordered question in a note</p>
+      <pre><code>{orderedQuestionExample}</code></pre>
+    </div>
+  </article>
+
+  <div class="feature-grid" role="list" aria-label="LearnKit advanced highlights">
+    {
+      bottomFeatures.map(({ title, description, Icon }) => (
+        <article class="feature-card" role="listitem">
+          <p class="feature-title">
+            <span class="feature-icon" aria-hidden="true">
+              <Icon size={18} stroke-width={2.25} />
+            </span>
+            <span>{title}</span>
+          </p>
+          <p class="feature-body">{description}</p>
+        </article>
+      ))
+    }
+  </div>
 </div>
 
 <style>
-  .feature-grid {
+  .home-panels {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
     margin-top: 2.5rem;
   }
 
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
   .feature-card {
-    padding: 1.2rem;
+    padding: 1.3rem;
     border: 1px solid var(--sl-color-gray-5);
-    border-radius: 1rem;
+    border-radius: 1.25rem;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.2)),
+      radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 38%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.18)),
       var(--sl-color-black);
-    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
   }
 
   :global([data-theme="dark"]) .feature-card {
     background:
+      radial-gradient(circle at top right, rgba(245, 158, 11, 0.12), transparent 38%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
       rgba(255, 255, 255, 0.02);
     box-shadow: none;
+  }
+
+  .workflow-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.95fr);
+    gap: 1.25rem;
+    padding: 1.35rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 1.4rem;
+    background:
+      linear-gradient(135deg, rgba(20, 27, 42, 0.96), rgba(39, 59, 91, 0.94)),
+      var(--sl-color-black);
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .workflow-card::after {
+    content: "";
+    position: absolute;
+    inset: auto -6rem -7rem auto;
+    width: 14rem;
+    height: 14rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.28), transparent 70%);
+    pointer-events: none;
+  }
+
+  .workflow-copy,
+  .workflow-code {
+    position: relative;
+    z-index: 1;
+  }
+
+  .workflow-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 0.9rem;
+    font-size: 0.88rem;
+    font-weight: 650;
+    color: rgba(255, 244, 214, 0.96);
+  }
+
+  .workflow-kicker-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .workflow-title {
+    margin: 0;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    line-height: 1.15;
+    color: white;
+  }
+
+  .workflow-body {
+    margin: 0.9rem 0 0;
+    color: rgba(234, 241, 255, 0.9);
+    line-height: 1.7;
+  }
+
+  .workflow-steps {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 1.15rem;
+  }
+
+  .workflow-steps p {
+    margin: 0;
+    color: rgba(255, 244, 214, 0.96);
+  }
+
+  .workflow-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1.15rem;
+  }
+
+  .workflow-links a {
+    color: white;
+    font-weight: 650;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .workflow-links a:hover {
+    border-bottom-color: rgba(255, 255, 255, 0.9);
+  }
+
+  .workflow-code {
+    align-self: stretch;
+    padding: 1rem;
+    border-radius: 1.1rem;
+    background: rgba(7, 12, 22, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+  }
+
+  .code-label {
+    margin: 0 0 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: rgba(255, 244, 214, 0.82);
+  }
+
+  .workflow-code pre {
+    margin: 0;
+    overflow-x: auto;
+    font-size: 0.93rem;
+    line-height: 1.7;
+    color: rgba(248, 250, 252, 0.95);
+  }
+
+  .workflow-code code {
+    font-family: var(--sl-font-mono, monospace);
   }
 
   .feature-title {
@@ -99,9 +293,20 @@ const features = [
     line-height: 1.6;
   }
 
+  @media (max-width: 60rem) {
+    .workflow-card {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @media (max-width: 50rem) {
     .feature-grid {
       grid-template-columns: 1fr;
+    }
+
+    .workflow-card,
+    .feature-card {
+      padding: 1.1rem;
     }
   }
 </style>

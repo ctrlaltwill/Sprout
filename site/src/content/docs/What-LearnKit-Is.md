@@ -32,30 +32,30 @@ The core model is simple:
 
 1. Write or edit notes.
 2. Add card content where needed.
-3. [Sync](./Syncing) your database.
-4. Review cards in [Study Sessions](./Study-Sessions).
+3. [Sync](../Syncing) your database.
+4. Review cards in [Study Sessions](../Study-Sessions).
 5. Improve your material over time using feedback from review.
 
 ## Start Here
 
-1. [Getting Started](./Getting-Started)
-2. [Installation](./Installation)
-3. [Syncing](./Syncing)
-4. [Import From Anki](./Import-From-Anki)
+1. [Getting Started](../Getting-Started)
+2. [Installation](../Installation)
+3. [Syncing](../Syncing)
+4. [Import From Anki](../Import-From-Anki)
 
 ## Key Areas
 
-- [Flashcards](./Flashcards): the main card workflow and card types
-- [Study Sessions](./Study-Sessions): day-to-day review flow
-- [Coach](./Coach): planning toward an exam or deadline
-- [Tests](./Tests): generate practice questions from your material
-- [Settings Explained](./Settings-Explained): find the right settings pages faster
+- [Flashcards](../Flashcards): the main card workflow and card types
+- [Study Sessions](../Study-Sessions): day-to-day review flow
+- [Coach](../Coach): planning toward an exam or deadline
+- [Tests](../Tests): generate practice questions from your material
+- [Settings Explained](../Settings-Explained): find the right settings pages faster
 
 ## Important Supporting Pages
 
-- [Backups](./Backups)
-- [AI Usage Policy](./AI-Usage-Policy)
-- [Support LearnKit](./Support-LearnKit)
+- [Backups](../Backups)
+- [AI Usage Policy](../AI-Usage-Policy)
+- [Support LearnKit](../Support-LearnKit)
 
 ---
 

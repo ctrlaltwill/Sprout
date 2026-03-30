@@ -37,6 +37,6 @@ LearnKit does not use a locked subscription model for core studying.
 
 Companion uses your own provider key instead of adding a LearnKit markup layer. That keeps provider choice in your hands and lets free-tier workflows stay possible when providers allow them.
 
-See [Guide for Free Usage](./Guide-for-Free-Usage) and [AI Usage Policy](./AI-Usage-Policy) for more on that side of the app.
+See [Guide for Free Usage](../Guide-for-Free-Usage) and [AI Usage Policy](../AI-Usage-Policy) for more on that side of the app.
 
 Last modified: 30/03/2026

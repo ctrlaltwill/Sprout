@@ -61,7 +61,7 @@ You should be able to:
 - open LearnKit settings
 - see LearnKit commands in the command palette
 
-If installation succeeds but no cards appear later, the next page you want is [Syncing](./Syncing), not a reinstall.
+If installation succeeds but no cards appear later, the next page you want is [Syncing](../Syncing), not a reinstall.
 
 ## Development Scripts
 
@@ -72,8 +72,8 @@ If installation succeeds but no cards appear later, the next page you want is [S
 
 ## Next Step
 
-- [Getting Started](./Getting-Started)
-- [Syncing](./Syncing)
+- [Getting Started](../Getting-Started)
+- [Syncing](../Syncing)
 
 ---
 

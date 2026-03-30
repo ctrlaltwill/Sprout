@@ -11,7 +11,7 @@ In one short cycle, you will:
 
 1. choose one note
 2. add a few flashcards
-3. [Sync](./Syncing) your database
+3. [Sync](../Syncing) your database
 4. start a study session
 5. grade a few flashcards
 
@@ -25,21 +25,21 @@ Do not start by migrating your whole vault.
 
 Use either:
 
-- [Creating Flashcards](./Creating-Flashcards)
-- [Flashcards](./Flashcards)
-- [Flashcard Formatting](./Flashcard-Formatting)
+- [Creating Flashcards](../Creating-Flashcards)
+- [Flashcards](../Flashcards)
+- [Flashcard Formatting](../Flashcard-Formatting)
 
 Keep the first batch small. You are checking that the system works end to end, and seeing how it works for you.
 
 ## Step 3: Sync Your Database
 
-Run [Syncing](./Syncing) so LearnKit reads the note and creates the flashcards.
+Run [Syncing](../Syncing) so LearnKit reads the note and creates the flashcards.
 
 If nothing appears later, this is the first thing to check.
 
 ## Step 4: Start A Study Session
 
-Open [Study Sessions](./Study-Sessions) and start a session from the relevant scope.
+Open [Study Sessions](../Study-Sessions) and start a session from the relevant scope.
 
 If you only made flashcards in one note, keep the scope narrow so you can verify the result easily.
 
@@ -47,7 +47,7 @@ If you only made flashcards in one note, keep the scope narrow so you can verify
 
 Reveal the answer, then grade honestly.
 
-If you are unsure how to grade, read [Grading](./Grading) after this first session, not before it.
+If you are unsure how to grade, read [Grading](../Grading) after this first session, not before it.
 
 ## What Success Looks Like
 
@@ -61,10 +61,10 @@ That is enough to prove your setup works.
 
 ## What To Read Next
 
-- [Getting Started](./Getting-Started)
-- [Grading](./Grading)
-- [Scheduling](./Scheduling)
-- [Flashcard Library](./Flashcard-Library)
+- [Getting Started](../Getting-Started)
+- [Grading](../Grading)
+- [Scheduling](../Scheduling)
+- [Flashcard Library](../Flashcard-Library)
 
 ---
 

@@ -27,13 +27,13 @@ Tests works well for:
 
 - keep tests topic-specific when possible
 - use Coach if you want tests tied to a study plan
-- pair tests with [Analytics](./Analytics) if you want to track trends over time
+- pair tests with [Analytics](../Analytics) if you want to track trends over time
 
 ## Related
 
-- [Coach](./Coach)
-- [Study Sessions](./Study-Sessions)
-- [Scheduling](./Scheduling)
+- [Coach](../Coach)
+- [Study Sessions](../Study-Sessions)
+- [Scheduling](../Scheduling)
 
 ---
 

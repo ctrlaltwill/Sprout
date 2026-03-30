@@ -73,6 +73,6 @@ The Companion tab also includes `Test sources` and test-specific `Custom instruc
 - Keep generation targets small so you can review output quality before inserting it.
 - Enable only the flashcard types you actually want to study.
 
-See [Companion Setting Up](./Companion-Setting-Up), [Companion Usage](./Companion-Usage), and [AI Usage Policy](./AI-Usage-Policy).
+See [Companion Setting Up](../Companion-Setting-Up), [Companion Usage](../Companion-Usage), and [AI Usage Policy](../AI-Usage-Policy).
 
 Last modified: 30/03/2026

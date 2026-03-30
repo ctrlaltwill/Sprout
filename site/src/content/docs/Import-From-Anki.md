@@ -30,7 +30,7 @@ After importing, verify that:
 - flashcards landed in the expected location
 - deck or tag mappings look correct
 - duplicate handling behaved as expected
-- the imported content appears correctly in [Flashcard Library](./Flashcard-Library)
+- the imported content appears correctly in [Flashcard Library](../Flashcard-Library)
 
 ## Important Import Limits
 
@@ -65,13 +65,13 @@ After importing into Anki:
 
 ## Before Large Imports Or Exports
 
-Create a backup first in [Backups](./Backups) so you can roll back if needed.
+Create a backup first in [Backups](../Backups) so you can roll back if needed.
 
 ## Related
 
-- [Backups](./Backups)
-- [Syncing](./Syncing)
-- [Flashcard Library](./Flashcard-Library)
+- [Backups](../Backups)
+- [Syncing](../Syncing)
+- [Flashcard Library](../Flashcard-Library)
 
 ---
 

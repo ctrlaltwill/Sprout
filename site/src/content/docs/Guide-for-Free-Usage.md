@@ -56,6 +56,6 @@ API keys stay in your local LearnKit plugin data.
 
 Do not commit your key file to a public repository.
 
-For privacy and safety guidance, see [AI Usage Policy](./AI-Usage-Policy).
+For privacy and safety guidance, see [AI Usage Policy](../AI-Usage-Policy).
 
 Last modified: 30/03/2026

@@ -70,14 +70,14 @@ The normal workflow is:
 
 1. write or edit notes
 2. run sync
-3. verify flashcards in [Flashcard Library](./Flashcard-Library) if needed
-4. start [Study Sessions](./Study-Sessions)
+3. verify flashcards in [Flashcard Library](../Flashcard-Library) if needed
+4. start [Study Sessions](../Study-Sessions)
 
 ## Related
 
-- [Creating Flashcards](./Creating-Flashcards)
-- [Flashcard Library](./Flashcard-Library)
-- [Backups](./Backups)
+- [Creating Flashcards](../Creating-Flashcards)
+- [Flashcard Library](../Flashcard-Library)
+- [Backups](../Backups)
 
 ---
 

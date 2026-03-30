@@ -91,10 +91,10 @@ It clears scheduling progress and returns cards to a fresh state. If you might w
 
 ## Related
 
-- [Grading](./Grading)
-- [Study Sessions](./Study-Sessions)
-- [Flashcard Library](./Flashcard-Library)
-- [Backups](./Backups)
+- [Grading](../Grading)
+- [Study Sessions](../Study-Sessions)
+- [Flashcard Library](../Flashcard-Library)
+- [Backups](../Backups)
 
 ---
 

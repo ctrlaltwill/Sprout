@@ -26,7 +26,7 @@ Use it to find, filter, edit, and manage flashcards in bulk.
 - Use actions to edit, suspend or unsuspend, or clear selection.
 - Changes from edit actions appear in the table immediately.
 
-See [Suspending Flashcards](./Suspending-Flashcards) for suspend behavior.
+See [Suspending Flashcards](../Suspending-Flashcards) for suspend behavior.
 
 ## Table Controls
 
@@ -42,5 +42,5 @@ See [Suspending Flashcards](./Suspending-Flashcards) for suspend behavior.
 
 ## Related
 
-- [Editing Flashcards](./Editing-Flashcards)
-- [Suspending Flashcards](./Suspending-Flashcards)
+- [Editing Flashcards](../Editing-Flashcards)
+- [Suspending Flashcards](../Suspending-Flashcards)
