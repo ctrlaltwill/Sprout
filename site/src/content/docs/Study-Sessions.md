@@ -23,6 +23,8 @@ You can start from:
 - the home dashboard
 - the deck widget or context-aware study entry points
 
+If you mostly review from the note you are currently writing in, use the [Study Widget](./Widget) for a smaller sidebar workflow.
+
 ## Study Scope
 
 The session scope controls which cards are eligible.
@@ -60,6 +62,12 @@ If you are unsure how to judge your answer, read [Grading](./Grading).
 Practice mode lets you see cards that are not yet due.
 
 This is useful for extra drilling, but it does not change scheduling the same way normal due review does.
+
+## Study Widget
+
+The [Study Widget](./Widget) is the lightweight way to start a session from the note you are already in.
+
+Use it when you want a quick local review burst or a practice run without opening a larger study surface.
 
 ## Extra Session Controls
 

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.38.2",
+    "@lucide/astro": "^1.7.0",
     "astro": "^6.1.1",
     "starlight-theme-next": "^0.4.0"
   }

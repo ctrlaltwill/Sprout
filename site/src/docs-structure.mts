@@ -23,6 +23,7 @@ export const pageTitleOverrides = new Map<string, string>([
   ["Import-From-Anki", "Import From Anki"],
   ["Language-Settings", "Language Options"],
   ["Flag-Codes", "Flag Codes"],
+  ["Study-Sessions", "Study Sessions"],
 ]);
 
 export function toTitle(page: string): string {
@@ -48,7 +49,7 @@ export const docsSidebarTree: DocsGroup[] = [
     text: "Study & Review",
     items: [
       {
-        text: "Header Navigation",
+        text: "Study Modes",
         items: [
           { page: "Coach" },
           { page: "Flashcards" },
@@ -67,13 +68,13 @@ export const docsSidebarTree: DocsGroup[] = [
         ],
       },
       {
-        text: "Scope",
-        items: [{ page: "Widget" }],
+        text: "Study Widget",
+        items: [{ page: "Widget", text: "Overview" }],
       },
     ],
   },
   {
-    text: "Flashcards",
+    text: "Flashcard Authoring",
     items: [
       { page: "Flashcards", text: "Overview" },
       { page: "Creating-Flashcards" },
@@ -96,16 +97,11 @@ export const docsSidebarTree: DocsGroup[] = [
     ],
   },
   {
-    text: "Tools",
+    text: "Analytics & Library",
     items: [
-      {
-        text: "Library",
-        items: [{ page: "Flashcard-Library" }],
-      },
-      {
-        text: "Analytics",
-        items: [{ page: "Analytics" }, { page: "Charts" }],
-      },
+      { page: "Flashcard-Library" },
+      { page: "Analytics" },
+      { page: "Charts" },
     ],
   },
   {
@@ -119,24 +115,22 @@ export const docsSidebarTree: DocsGroup[] = [
     ],
   },
   {
-    text: "Reading & Audio",
+    text: "Reading",
     items: [
-      {
-        text: "Reading View",
-        items: [
-          { page: "Reading-View" },
-          { page: "Reading-View-Styles" },
-          { page: "Custom-Reading-Styles" },
-        ],
-      },
-      {
-        text: "Audio",
-        items: [{ page: "Text-to-Speech" }, { page: "Language-Settings" }],
-      },
+      { page: "Reading-View" },
+      { page: "Reading-View-Styles" },
+      { page: "Custom-Reading-Styles" },
     ],
   },
   {
-    text: "Settings",
+    text: "Audio",
+    items: [
+      { page: "Text-to-Speech" },
+      { page: "Language-Settings" },
+    ],
+  },
+  {
+    text: "Settings & Customisation",
     items: [
       { page: "Settings-Explained" },
       { page: "Settings" },
@@ -155,7 +149,7 @@ export const docsSidebarTree: DocsGroup[] = [
     items: [{ page: "AI-Usage-Policy" }],
   },
   {
-    text: "Reference",
+    text: "Support",
     items: [{ page: "Support-LearnKit" }],
   },
 ];

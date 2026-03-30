@@ -1,5 +1,5 @@
 ---
-title: "Widget"
+title: "Study Widget"
 ---
 
 

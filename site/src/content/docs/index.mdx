@@ -1,65 +1,26 @@
 ---
 title: LearnKit Docs
-description: LearnKit documentation for flashcards, studying, settings, Companion, and maintenance workflows.
+description: LearnKit turns your Obsidian vault into an active learning system with markdown-first flashcards, rich review modes, Companion workflows, and FSRS scheduling.
 template: splash
 hero:
-  title: LearnKit
-  tagline: Markdown-first learning in Obsidian, powered by FSRS.
+  title: Study What You Write. Remember It For The Long Run.
+  tagline: LearnKit turns your Obsidian vault into an active learning system with markdown-first flashcards, rich review modes, Companion workflows, and FSRS scheduling.
   image:
-    html: "🎓"
+    alt: Preview of LearnKit flashcards and review cards
+    file: ../../../branding/Hero.png
   actions:
-    - text: Get started
+    - text: Download LearnKit
+      link: https://github.com/ctrlaltwill/LearnKit/releases
+      icon: download
+      attrs:
+        target: _blank
+        rel: noreferrer
+    - text: Open Docs
       link: ./Getting-Started
-      icon: right-arrow
-    - text: Explore Companion
-      link: ./Companion-Features
-      variant: minimal
-      icon: right-arrow
+      variant: secondary
+      icon: open-book
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import HomeFeatureGrid from "../../components/HomeFeatureGrid.astro";
 
-## Why LearnKit
-
-LearnKit helps you study what you write, without leaving your vault.
-
-<CardGrid stagger>
-  <Card title="Companion Workflow" icon="seti:chat">
-    Ask questions about notes, review notes with feedback, generate tests, and create flashcards from the same context.
-  </Card>
-  <Card title="Markdown-First Flashcards" icon="seti:markdown">
-    Author cards directly in your notes so your study material stays close to the source and easy to maintain.
-  </Card>
-  <Card title="Rich Card Types" icon="seti:library">
-    Use basic and reversed cards, cloze deletions, image occlusion, multiple choice, and ordered sequences.
-  </Card>
-  <Card title="FSRS Scheduling" icon="seti:calendar">
-    FSRS spaces cards intelligently so you see material when it matters instead of reviewing on fixed intervals.
-  </Card>
-</CardGrid>
-
-## Core Paths
-
-<CardGrid>
-  <Card title="Start Learning" href="./Getting-Started" icon="seti:rocket">
-    Set up LearnKit and run your first review flow.
-  </Card>
-  <Card title="Build Flashcards" href="./Flashcards" icon="seti:book">
-    Create and manage high-quality flashcards from your markdown notes.
-  </Card>
-  <Card title="Use Companion" href="./Companion-Features" icon="seti:light-bulb">
-    Turn notes into study prompts, practice tests, and draft cards.
-  </Card>
-  <Card title="Tune Scheduling" href="./Scheduling" icon="seti:graph-line">
-    Understand intervals, retention behavior, and long-term pacing.
-  </Card>
-</CardGrid>
-
-## Popular Docs
-
-- [First Review in 5 Minutes](./First-Review-in-5-Minutes)
-- [Flashcard Library](./Flashcard-Library)
-- [Coach](./Coach)
-- [Tests](./Tests)
-- [Settings Explained](./Settings-Explained)
-- [Backups](./Backups)
+<HomeFeatureGrid />
