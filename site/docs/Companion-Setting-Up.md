@@ -1,7 +1,4 @@
----
-title: "Companion Setting Up"
----
-
+# Companion Setting Up
 
 Use this page for the shortest safe path from `disabled` to `usable`.
 
@@ -58,6 +55,6 @@ You can launch it in two ways:
 
 Companion can still hallucinate, over-compress, or miss important context. Treat every answer, critique, and generated flashcard as a draft.
 
-Review the policy here: [AI Usage Policy](../AI-Usage-Policy)
+Review the policy here: [AI Usage Policy](./AI-Usage-Policy)
 
 Last modified: 30/03/2026

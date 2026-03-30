@@ -50,9 +50,7 @@ The exact data sent depends on the settings you enabled and the action you are r
 
 Provider API keys are stored locally in:
 
-`.obsidian/plugins/sprout/configuration/api-keys.json`
-
-The folder name remains `sprout` for compatibility.
+`.obsidian/plugins/learnkit/configuration/api-keys.json`
 
 If your vault is tracked in Git, do not commit that file.
 

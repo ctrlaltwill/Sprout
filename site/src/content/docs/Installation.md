@@ -14,13 +14,11 @@ For now, install it manually from Releases or use BRAT.
 3. Copy them into:
 
    ```
-   <Your Vault>/.obsidian/plugins/sprout/
+   <Your Vault>/.obsidian/plugins/learnkit/
    ```
 
 4. Restart Obsidian.
 5. Open Settings, then Community Plugins, then enable LearnKit.
-
-The plugin directory currently uses `sprout` for compatibility.
 
 ## Alternative Method: BRAT
 
@@ -48,7 +46,7 @@ npm run build
 Then link or copy the built output into your vault:
 
 ```bash
-ln -s "$(pwd)/dist" "<Your Vault>/.obsidian/plugins/sprout"
+ln -s "$(pwd)/dist" "<Your Vault>/.obsidian/plugins/learnkit"
 ```
 
 Restart Obsidian and enable LearnKit.
