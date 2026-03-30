@@ -48,29 +48,16 @@ export const docsSidebarTree: DocsGroup[] = [
   {
     text: "Study & Review",
     items: [
-      {
-        text: "Study Modes",
-        items: [
-          { page: "Coach" },
-          { page: "Flashcards" },
-          { page: "Notes" },
-          { page: "Tests" },
-        ],
-      },
-      {
-        text: "Review Flow",
-        items: [
-          { page: "Study-Sessions" },
-          { page: "Grading" },
-          { page: "Scheduling" },
-          { page: "Burying-Flashcards" },
-          { page: "Suspending-Flashcards" },
-        ],
-      },
-      {
-        text: "Study Widget",
-        items: [{ page: "Widget", text: "Overview" }],
-      },
+      { page: "Coach" },
+      { page: "Flashcards" },
+      { page: "Notes" },
+      { page: "Tests" },
+      { page: "Study-Sessions" },
+      { page: "Grading" },
+      { page: "Scheduling" },
+      { page: "Burying-Flashcards" },
+      { page: "Suspending-Flashcards" },
+      { page: "Widget", text: "Overview" },
     ],
   },
   {
@@ -80,20 +67,13 @@ export const docsSidebarTree: DocsGroup[] = [
       { page: "Creating-Flashcards" },
       { page: "Editing-Flashcards" },
       { page: "Flashcard-Formatting" },
-      {
-        text: "Flashcard Types",
-        items: [
-          { page: "Basic-&-Reversed-Flashcards" },
-          { page: "Cloze-Flashcards" },
-          { page: "Image-Occlusion" },
-          { page: "Multiple-Choice-Questions" },
-          { page: "Ordered-Questions" },
-        ],
-      },
-      {
-        text: "Flags",
-        items: [{ page: "Flags" }, { page: "Flag-Codes" }],
-      },
+      { page: "Basic-&-Reversed-Flashcards" },
+      { page: "Cloze-Flashcards" },
+      { page: "Image-Occlusion" },
+      { page: "Multiple-Choice-Questions" },
+      { page: "Ordered-Questions" },
+      { page: "Flags" },
+      { page: "Flag-Codes" },
     ],
   },
   {

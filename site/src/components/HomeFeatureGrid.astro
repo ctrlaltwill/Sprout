@@ -1,32 +1,32 @@
 ---
-import { BrainCircuit, Clock3, Layers3, NotebookPen } from "@lucide/astro";
+import { BrainCircuit, Clock3, Layers3, Sparkles } from "@lucide/astro";
 
 const topFeatures = [
   {
-    title: "Markdown-first",
+    title: "Rich Card Types",
     description:
-      "Keep the note and the review material in the same place.",
-    Icon: NotebookPen,
+      "Create basic, cloze, image occlusion, multiple choice, and ordered questions in one flow without splitting your study process.",
+    Icon: Layers3,
   },
   {
-    title: "More than basic cards",
+    title: "AI Learning Tools",
     description:
-      "Use cloze, image occlusion, multiple choice, and ordered questions in one workflow.",
-    Icon: Layers3,
+      "Generate practice material from your notes, refine prompts with context, and keep output review-ready without leaving your vault.",
+    Icon: Sparkles,
   },
 ];
 
 const bottomFeatures = [
   {
-    title: "Review from the right view",
+    title: "Coach",
     description:
-      "Study from Notes, Flashcards, Tests, Coach, or the Widget depending on the job.",
+      "Use adaptive guidance for weak areas, get focused follow-up prompts, and keep every session tied to your real notes.",
     Icon: BrainCircuit,
   },
   {
-    title: "FSRS scheduling",
+    title: "FSRS",
     description:
-      "Let retention-based spacing decide when cards come back.",
+      "Retention-based spacing decides when cards return, balancing workload and long-term memory so reviews stay consistent and sustainable.",
     Icon: Clock3,
   },
 ];
@@ -63,11 +63,11 @@ const orderedQuestionExample = [
 
   <article class="workflow-card">
     <div class="workflow-copy">
-      <p class="workflow-kicker">Ordered questions in markdown</p>
-      <h2 class="workflow-title">One note becomes the answer key.</h2>
+      <p class="workflow-kicker">Markdown first with example</p>
+      <h2 class="workflow-title">Write once in markdown, review anywhere.</h2>
       <p class="workflow-body">
-        The sequence you write in the note becomes the review answer. Add the block once, sync, and
-        LearnKit turns it into a drag-to-order prompt.
+        The sequence you write in your note becomes the answer key. Add the block once, sync, and
+        LearnKit turns it into an ordered-question review card.
       </p>
       <div class="workflow-links">
         <a href="./Ordered-Questions">See the ordered-question format</a>
@@ -114,12 +114,12 @@ const orderedQuestionExample = [
     padding: 1.3rem;
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 1.25rem;
-    background: var(--background);
+    background: var(--card);
     box-shadow: 0 6px 18px color-mix(in oklab, var(--foreground) 4%, transparent);
   }
 
   :global([data-theme="dark"]) .feature-card {
-    background: color-mix(in oklab, var(--background) 88%, var(--muted));
+    background: color-mix(in oklab, var(--card) 96%, var(--muted));
     box-shadow: none;
   }
 
@@ -130,7 +130,7 @@ const orderedQuestionExample = [
     padding: 1.35rem;
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 1.4rem;
-    background: color-mix(in oklab, var(--background) 72%, var(--muted));
+    background: color-mix(in oklab, var(--card) 86%, var(--muted));
   }
 
   .workflow-copy,
@@ -215,7 +215,7 @@ const orderedQuestionExample = [
     font-size: 1rem;
     font-weight: 650;
     line-height: 1.3;
-    color: var(--sl-color-white);
+    color: var(--foreground);
   }
 
   .feature-icon {
@@ -232,7 +232,7 @@ const orderedQuestionExample = [
 
   .feature-body {
     margin: 0;
-    color: var(--sl-color-gray-2);
+    color: var(--muted-foreground);
     line-height: 1.6;
   }
 
