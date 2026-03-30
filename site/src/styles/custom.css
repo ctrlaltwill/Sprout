@@ -124,6 +124,15 @@ html {
   text-underline-offset: 0.18em;
 }
 
+.expressive-code .frame.is-terminal .header {
+  background: transparent !important;
+  border: none !important;
+}
+
+.expressive-code .frame.is-terminal .header::after {
+  border-bottom: none !important;
+}
+
 @media (max-width: 50rem) {
   .learnkit-hero-logo {
     width: min(72vw, 18rem);
