@@ -149,7 +149,13 @@ const orderedQuestionCard = {
     padding: 1.35rem;
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 1.4rem;
-    background: color-mix(in oklab, var(--card) 86%, var(--muted));
+    background: var(--card);
+    box-shadow: 0 6px 18px color-mix(in oklab, var(--foreground) 4%, transparent);
+  }
+
+  :global([data-theme="dark"]) .workflow-card {
+    background: color-mix(in oklab, var(--card) 96%, var(--muted));
+    box-shadow: none;
   }
 
   .workflow-copy,
