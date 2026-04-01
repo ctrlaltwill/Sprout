@@ -1,21 +1,22 @@
 /**
  * @file src/core/default-settings.ts
- * @summary Provides the factory-default values for every Sprout plugin setting. Re-exports
- * the SproutSettings type from src/types/settings.ts so downstream code can import both
+ * @summary Provides the factory-default values for every LearnKit plugin setting. Re-exports
+ * the LearnKitSettings type from src/types/settings.ts so downstream code can import both
  * the type and the defaults from one location. Used to seed fresh installations and to
  * reset settings to factory defaults.
  *
  * @exports
- *   - SproutSettings (re-exported type) — full plugin settings shape
+ *   - LearnKitSettings (re-exported type) — full plugin settings shape
+ *   - SproutSettings (re-exported alias) — compatibility type alias
  *   - DEFAULT_SETTINGS — constant object with factory-default values for all settings
  */
 
-// Re-export the type so existing `import { SproutSettings } from "./default-settings"` still works
-export type { SproutSettings } from "../types/settings";
-import type { SproutSettings } from "../types/settings";
+// Re-export both names so existing Sprout imports keep working during Phase 1.
+export type { LearnKitSettings, SproutSettings } from "../types/settings";
+import type { LearnKitSettings } from "../types/settings";
 
 /** Factory-default values for every plugin setting. */
-export const DEFAULT_SETTINGS: SproutSettings = {
+export const DEFAULT_SETTINGS: LearnKitSettings = {
 
   general: {
     interfaceLanguage: "en-gb",

@@ -6,14 +6,15 @@
  * src/core/default-settings.ts.
  *
  * @exports
- *   - SproutSettings — type describing the complete plugin settings structure
+ *   - LearnKitSettings — primary type describing the complete plugin settings structure
+ *   - SproutSettings — compatibility alias for LearnKitSettings
  */
 
 /**
- * Full settings structure for the Sprout plugin.
+ * Full settings structure for the LearnKit plugin.
  * Each top-level key groups settings by feature area.
  */
-export type SproutSettings = {
+export type LearnKitSettings = {
   // General — user identity, greeting, appearance
   general: {
     /** Interface language code used by the app UI (e.g. "en"). */
@@ -612,3 +613,6 @@ export type SproutSettings = {
     preferredVoiceURI: string;
   };
 };
+
+// Backwards-compatible alias retained for Phase 1 rename safety.
+export type SproutSettings = LearnKitSettings;

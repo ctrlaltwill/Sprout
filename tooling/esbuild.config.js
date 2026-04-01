@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 const esbuild = require("esbuild");
 const path = require("path");
 
@@ -8,6 +7,15 @@ const isProd = process.argv.includes("--prod");
 const rootDir = path.resolve(__dirname, "..");
 const outdir = path.join(rootDir, "dist");
 const entry = path.join(rootDir, "src", "main.ts");
+
+function writeInfo(message) {
+  process.stdout.write(`${String(message)}\n`);
+}
+
+function writeError(error) {
+  const text = error instanceof Error ? (error.stack || error.message) : String(error);
+  process.stderr.write(`${text}\n`);
+}
 
 // Obsidian provides the "obsidian" module at runtime.
 // Mark it external so esbuild doesn't try to bundle it.
@@ -48,15 +56,15 @@ async function build() {
 
   if (isWatch) {
     await ctx.watch();
-    console.log("Watching... (dist/main.js)");
+    writeInfo("Watching... (dist/main.js)");
   } else {
     await ctx.rebuild();
     await ctx.dispose();
-    console.log("Built: dist/main.js");
+    writeInfo("Built: dist/main.js");
   }
 }
 
 build().catch((err) => {
-  console.error(err);
+  writeError(err);
   process.exit(1);
 });

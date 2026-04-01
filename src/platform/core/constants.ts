@@ -1,8 +1,8 @@
 /**
  * @file src/core/constants.ts
- * @summary Central constants and shared utilities for the Sprout plugin. Defines view-type
+ * @summary Central constants and shared utilities for the LearnKit plugin. Defines view-type
  * identifiers, branding, layout dimensions, z-index tokens, timing values, and animation
- * defaults. Also re-exports the SproutSettings type and DEFAULT_SETTINGS from
+ * defaults. Also re-exports the LearnKitSettings type and DEFAULT_SETTINGS from
  * default-settings.ts and provides a generic deepMerge utility used for settings hydration.
  *
  * @exports
@@ -17,7 +17,8 @@
  *   - MS_DAY — milliseconds in one day
  *   - AOS_DURATION — default AOS animation duration in ms
  *   - AOS_CASCADE_STEP — cascade step between staggered AOS items in ms
- *   - SproutSettings (re-exported type) — full plugin settings shape
+ *   - LearnKitSettings (re-exported type) — full plugin settings shape
+ *   - SproutSettings (re-exported alias) — compatibility type alias
  *   - DEFAULT_SETTINGS (re-exported) — factory-default settings object
  *   - deepMerge — recursively merge a partial object into a target
  */
@@ -55,7 +56,7 @@ export const AOS_DURATION = 600;
 export const AOS_CASCADE_STEP = 120;
 
 // Single source of truth for settings + defaults:
-export type { SproutSettings } from "./default-settings";
+export type { LearnKitSettings, SproutSettings } from "./default-settings";
 export { DEFAULT_SETTINGS } from "./default-settings";
 
 export function deepMerge<T>(target: T, src: Partial<T>): T {
