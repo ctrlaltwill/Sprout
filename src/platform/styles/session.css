@@ -5,7 +5,7 @@
 
 /* ---- Session card shell ---- */
 
-.sprout .lk-review-root[data-lk-review-mode="session"] {
+.learnkit .lk-review-root[data-lk-review-mode="session"] {
   width: 100%;
   margin-top: 0;
   margin-left: auto;
@@ -17,19 +17,19 @@
   border-radius: 0;
 }
 
-.sprout .lk-review-root[data-lk-review-mode="session"] .lk-review-content-shell {
+.learnkit .lk-review-root[data-lk-review-mode="session"] .lk-review-content-shell {
   padding: 16px;
 }
 
 /* ---- Flexed session layout (desktop): not applied — desktop uses natural flow ---- */
 /* ---- Flexed session layout (mobile): see @media block below ---- */
 
-.sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
+.learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
   background: transparent;
   border: none;
 }
 
-.sprout .lk-review-root[data-lk-review-mode="session"] :is(.bc-session-card, .lk-session-card, .lk-session-card.card) {
+.learnkit .lk-review-root[data-lk-review-mode="session"] :is(.learnkit-session-card, .lk-session-card, .lk-session-card.card) {
   background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
   border: var(--color-base-30) 1px solid;
   border-radius: var(--radius-lg);
@@ -37,42 +37,42 @@
   transition: background-color 0.2s ease;
 }
 
-.sprout .lk-review-root[data-lk-review-mode="session"] :is(.bc-session-card, .lk-session-card, .lk-session-card.card):hover {
+.learnkit .lk-review-root[data-lk-review-mode="session"] :is(.learnkit-session-card, .lk-session-card, .lk-session-card.card):hover {
   background-color: var(--background);
 }
 
-.sprout .lk-session-column {
+.learnkit .lk-session-column {
   gap: 16px;
   border: none;
 }
 
-.sprout .lk-review-title-row {
+.learnkit .lk-review-title-row {
   width: 100%;
 }
 
-.sprout .lk-review-title-subtitle {
+.learnkit .lk-review-title-subtitle {
   color: var(--text-muted);
   font-weight: 400;
   font-size: 0.95rem;
   margin-top: 6px;
 }
 
-.sprout .lk-review-title-timer-host {
+.learnkit .lk-review-title-timer-host {
   margin-left: auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
 }
 
-.sprout .lk-review-title-timer-host .lk-session-timer-group {
+.learnkit .lk-review-title-timer-host .lk-session-timer-group {
   margin-left: auto;
 }
 
-body.is-phone .sprout .lk-session-card > header.sprout-session-topbar .sprout-question-title {
+body.is-phone .learnkit .lk-session-card > header.learnkit-session-topbar .learnkit-question-title {
   font-size: 1rem;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
@@ -80,7 +80,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row {
   gap: 8px;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row > :first-child {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-row > :first-child {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -88,39 +88,39 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row > :fir
   text-align: center;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-row > :last-child,
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-row > :last-child,
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-host {
   width: 100%;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-host {
   margin-left: 0;
   justify-content: stretch;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group {
   width: 100%;
   margin-left: 0;
   justify-content: stretch;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group > button {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-host .lk-session-timer-group > button {
   flex: 1 1 0;
   min-width: 0;
   justify-content: center;
 }
 
-body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host .sprout-btn-timer-display {
+body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-host .learnkit-btn-timer-display {
   width: auto;
   min-width: 0;
   max-width: none;
 }
 
-.sprout .lk-review-root[data-lk-review-mode="session"] [data-study-session-header].lk-review-session-header-hidden {
+.learnkit .lk-review-root[data-lk-review-mode="session"] [data-study-session-header].lk-review-session-header-hidden {
   display: none;
 }
 
-.sprout .lk-session-header-left {
+.learnkit .lk-session-header-left {
   gap: 20px;
 }
 
@@ -146,7 +146,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 }
 
-.sprout .lk-session-card :is(.sprout-reviewer-coach-back-btn, .sprout-session-quit-btn) {
+.learnkit .lk-session-card :is(.learnkit-reviewer-coach-back-btn, .learnkit-session-quit-btn) {
   min-width: 36px;
   padding-left: 8px;
   padding-right: 8px;
@@ -154,7 +154,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   overflow: hidden;
 }
 
-.sprout .lk-session-card :is(.sprout-reviewer-coach-back-btn, .sprout-session-quit-btn) [data-sprout-label="true"] {
+.learnkit .lk-session-card :is(.learnkit-reviewer-coach-back-btn, .learnkit-session-quit-btn) [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -165,7 +165,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .lk-session-card :is(.sprout-reviewer-coach-back-btn, .sprout-session-quit-btn):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+.learnkit .lk-session-card :is(.learnkit-reviewer-coach-back-btn, .learnkit-session-quit-btn):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
   max-width: 9rem;
   opacity: 1;
   margin-left: 6px;
@@ -174,7 +174,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Reviewer skip modal ---- */
 
-.sprout .sprout-skip-modal-head {
+.learnkit .learnkit-skip-modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -182,24 +182,24 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   margin-bottom: 10px;
 }
 
-.sprout .sprout-skip-modal-actions {
+.learnkit .learnkit-skip-modal-actions {
   display: flex;
   gap: 8px;
   margin-top: 12px;
 }
 
-.sprout .sprout-skip-bury-btn {
+.learnkit .learnkit-skip-bury-btn {
   background: var(--background-modifier-error);
   color: var(--text-on-accent);
 }
 
 /* ---- Study session header ---- */
 
-.sprout .lk-session-timer-group {
+.learnkit .lk-session-timer-group {
   overflow: visible;
 }
 
-.sprout .sprout-btn-timer-display {
+.learnkit .learnkit-btn-timer-display {
   pointer-events: none;
   margin-left: 0;
   width: 90px;
@@ -208,26 +208,26 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   justify-content: center;
 }
 
-.sprout .sprout-btn-timer-display:disabled,
-.sprout .sprout-btn-timer-display[disabled] {
+.learnkit .learnkit-btn-timer-display:disabled,
+.learnkit .learnkit-btn-timer-display[disabled] {
   opacity: 1;
   cursor: default;
 }
 
-.sprout .lk-session-timer-group .sprout-btn-outline-muted:disabled,
-.sprout .lk-session-timer-group .sprout-btn-outline-muted[disabled],
-.sprout .lk-session-timer-group .sprout-btn-outline-muted:disabled:hover,
-.sprout .lk-session-timer-group .sprout-btn-outline-muted[disabled]:hover {
+.learnkit .lk-session-timer-group .learnkit-btn-outline-muted:disabled,
+.learnkit .lk-session-timer-group .learnkit-btn-outline-muted[disabled],
+.learnkit .lk-session-timer-group .learnkit-btn-outline-muted:disabled:hover,
+.learnkit .lk-session-timer-group .learnkit-btn-outline-muted[disabled]:hover {
   cursor: default !important;
   transform: none !important;
 }
 
-.sprout .lk-session-location-text {
+.learnkit .lk-session-location-text {
   font-size: 0.8rem;
   line-height: 1.5;
 }
 
-.sprout .sprout-aos-reset {
+.learnkit .learnkit-aos-reset {
   opacity: 1;
   transform: none;
   transition: none;
@@ -235,7 +235,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Reviewer image zoom ---- */
 
-.sprout .sprout-img-zoom-wrap {
+.learnkit .learnkit-img-zoom-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,7 +243,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   height: 100%;
 }
 
-.sprout .sprout-img-zoom-full {
+.learnkit .learnkit-img-zoom-full {
   max-width: 92vw;
   max-height: 86vh;
   width: auto;
@@ -253,37 +253,37 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Markdown-rendered images ---- */
 
-.sprout .sprout-zoomable {
+.learnkit .learnkit-zoomable {
   display: block;
   margin: 8px 0;
   max-width: 100%;
   width: auto;
   height: auto;
-  max-height: var(--sprout-md-image-max-h, 200px);
+  max-height: var(--learnkit-md-image-max-h, 200px);
   object-fit: contain;
   cursor: zoom-in;
 }
 
 /* ---- Cloze sizing helpers ---- */
 
-.sprout .sprout-cloze-probe {
+.learnkit .learnkit-cloze-probe {
   position: absolute;
   visibility: hidden;
   white-space: pre;
 }
 
-.sprout .sprout-cloze-blank {
-  width: var(--sprout-cloze-width, auto);
+.learnkit .learnkit-cloze-blank {
+  width: var(--learnkit-cloze-width, auto);
 }
 
 .lk-session-card header {
   margin: 2rem 4rem 0 1.2rem;
   padding: 0;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: 0;
 }
 
-.sprout .lk-session-card > header.sprout-session-topbar {
+.learnkit .lk-session-card > header.learnkit-session-topbar {
   margin: 1.2rem 1.2rem 0rem 1.2rem;
   padding: 1.2rem;
   min-height: 40px;
@@ -296,11 +296,11 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   gap: 10px;
 }
 
-.sprout .lk-session-card > header.sprout-session-topbar.sprout-session-topbar-hidden {
+.learnkit .lk-session-card > header.learnkit-session-topbar.learnkit-session-topbar-hidden {
   display: none;
 }
 
-.sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-title {
+.learnkit .lk-session-card > header.learnkit-session-topbar .learnkit-session-topbar-title {
   flex: 1 1 100%;
   min-width: 0;
   overflow-x: auto;
@@ -311,13 +311,13 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   -webkit-overflow-scrolling: touch;
 }
 
-.sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-title :is(div, p, span) {
+.learnkit .lk-session-card > header.learnkit-session-topbar .learnkit-session-topbar-title :is(div, p, span) {
   margin-block: 0;
   display: inline;
   white-space: inherit;
 }
 
-.sprout .lk-session-card > header.sprout-session-topbar .sprout-session-topbar-actions {
+.learnkit .lk-session-card > header.learnkit-session-topbar .learnkit-session-topbar-actions {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
@@ -330,18 +330,18 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   transition: all 0.2s ease-in-out;
 }
 
-.sprout .lk-session-card section.sprout-session-practice-prompt {
+.learnkit .lk-session-card section.learnkit-session-practice-prompt {
   margin: 1.2rem auto;
   width: min(450px, 90%);
 }
 
-.sprout .lk-session-card section .sprout-session-practice-prompt-subtext {
+.learnkit .lk-session-card section .learnkit-session-practice-prompt-subtext {
   margin-top: 0.6rem;
   color: var(--text-muted);
 }
 
 .lk-session-card footer {
-  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -352,15 +352,15 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Flashcard study mode: keep actions in normal flow after session content */
-.sprout .lk-session-card.sprout-session-has-dock {
-  --sprout-session-dock-space: 0px;
+.learnkit .lk-session-card.learnkit-session-has-dock {
+  --learnkit-session-dock-space: 0px;
 }
 
-.sprout .lk-session-card.sprout-session-has-dock > section {
+.learnkit .lk-session-card.learnkit-session-has-dock > section {
   padding-bottom: 0;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock {
   position: static;
   margin: 0.6rem 1.2rem 1.2rem;
   padding: 1.2rem;
@@ -372,23 +372,23 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   backdrop-filter: blur(10px);
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock :is(button, [id^="bc-menu-"]) {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock :is(button, [id^="learnkit-menu-"]) {
   position: relative;
   z-index: 81;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-left,
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-right {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-left,
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-right {
   display: flex;
   align-items: center;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-right {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-right {
   justify-content: flex-end;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-center,
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-buttons {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-center,
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -397,17 +397,17 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Top-row reviewer actions should stretch across the dock width. */
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-buttons {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-buttons {
   width: 100%;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-buttons > :is(button, .btn, .sprout-btn-toolbar) {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-buttons > :is(button, .btn, .learnkit-btn-toolbar) {
   flex: 1 1 0;
   min-width: 0;
   justify-content: center;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-grade-group {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-grade-group {
   display: flex;
   flex: 1 1 100%;
   width: 100%;
@@ -417,21 +417,21 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   gap: 8px;
 }
 
-.sprout .lk-session-card > footer.sprout-session-study-dock .sprout-session-study-dock-grade-group > :is(button, .btn) {
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-grade-group > :is(button, .btn) {
   flex: 1 1 0;
   min-width: 0;
 }
 
 /* Allow text selection in header + Q/A, but keep footer controls non-selectable */
-.sprout .bc-session-card > header,
-.sprout .bc-session-card > section,
+.learnkit .learnkit-session-card > header,
+.learnkit .learnkit-session-card > section,
 .lk-session-card > header,
 .lk-session-card > section {
   user-select: text;
   -webkit-user-select: text;
 }
 
-.sprout .bc-session-card > footer,
+.learnkit .learnkit-session-card > footer,
 .lk-session-card > footer {
   user-select: none;
   -webkit-user-select: none;
@@ -451,7 +451,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Mark element (cloze answer reveals) ---- */
 
-.sprout mark {
+.learnkit mark {
   border-radius: var(--radius-s);
   background-color: rgb(0, 0, 0);
   color: white;
@@ -464,38 +464,38 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 
 /* Any back/revealed state: question content should not remain bold. */
-.sprout .lk-session-card.sprout-session-answer-revealed :is(.bc-q, .bc-cloze) {
+.learnkit .lk-session-card.learnkit-session-answer-revealed :is(.learnkit-q, .learnkit-cloze) {
   font-weight: 400;
 }
 
 /* Answer styling: black, slightly larger */
-.lk-session-card .sprout-a {
-  color: var(--sprout-easy-bg);
-  font-size: var(--sprout-font-sm-plus); /* text-md equivalent */
+.lk-session-card .learnkit-a {
+  color: var(--learnkit-easy-bg);
+  font-size: var(--learnkit-font-sm-plus); /* text-md equivalent */
 }
 
 
-.lk-session-card .sprout-mcq-correct {
-  border-color: var(--sprout-good-bg);
+.lk-session-card .learnkit-mcq-correct {
+  border-color: var(--learnkit-good-bg);
   border-width: 2px;
   border-style: solid;
 }
 
-.lk-session-card .sprout-mcq-wrong {
-  border-color: var(--sprout-again-bg);
+.lk-session-card .learnkit-mcq-wrong {
+  border-color: var(--learnkit-again-bg);
   border-width: 2px;
   border-style: solid;
 }
 
 /* MCQ review buttons: ensure readable text on colored backgrounds */
-.sprout .bc-mcq-correct,
-.sprout .bc-mcq-wrong {
+.learnkit .learnkit-mcq-correct,
+.learnkit .learnkit-mcq-wrong {
   color: oklch(0.2 0 0);
 }
 
 /* Extra information: match answer font size */
-.lk-session-card .sprout-info {
-  font-size: var(--sprout-font-sm-plus); /* align with .sprout-a */
+.lk-session-card .learnkit-info {
+  font-size: var(--learnkit-font-sm-plus); /* align with .learnkit-a */
 }
 
 /* ---- Lists inside reviewer session cards ---- */
@@ -530,12 +530,12 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   margin-bottom: 0.3rem;
 }
 
-/* Override .sprout-md-block line-height for list content specifically. */
-.lk-session-card .sprout-md-block :is(ul, ol, li) {
+/* Override .learnkit-md-block line-height for list content specifically. */
+.lk-session-card .learnkit-md-block :is(ul, ol, li) {
   line-height: 1.15;
 }
 
-.lk-session-card .sprout-md-block :is(ul, ol) {
+.lk-session-card .learnkit-md-block :is(ul, ol) {
   margin-block: 0.3rem;
 }
 
@@ -551,7 +551,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Match paragraph rhythm with heading spacing inside study-session markdown blocks. */
-.lk-session-card .sprout-md-block > p {
+.lk-session-card .learnkit-md-block > p {
   margin: 0.3rem 0;
 }
 
@@ -564,7 +564,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Cloze reveals ---- */
 
-.sprout-cloze-revealed {
+.learnkit-cloze-revealed {
   margin: 0 1px;
     padding: 2px 5px;
     border: 1px solid var(--theme-base-35);
@@ -575,7 +575,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 
 
-.sprout .hidden-cloze {
+.learnkit .hidden-cloze {
   border-bottom: 1px solid var(--foreground);
   display: inline-block;
   min-height: 1em;
@@ -586,7 +586,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Ensure session cards stay content-sized ---- */
 
-.sprout .lk-session-card.card {
+.learnkit .lk-session-card.card {
   flex: 0 0 auto;
   gap: 0rem;
 }
@@ -594,7 +594,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 /* ---- Session card header / quit button positioning ---- */
 
 /* Ensure session card is relative for quit button positioning */
-.bc-session-card,
+.learnkit-session-card,
 .lk-session-card {
   position: relative;
   border: var(--color-base-30) 1px solid;
@@ -606,18 +606,18 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   align-items: flex-start;
   position: relative;
 }
-.lk-session-card .lk-session-header-row .sprout-quit-btn {
+.lk-session-card .lk-session-header-row .learnkit-quit-btn {
   margin-left: auto;
   margin-top: 10px;
 }
 
 /* ---- Inline sentence input ---- */
 
-.sprout .sprout-inline-sentence {
+.learnkit .learnkit-inline-sentence {
   position: relative;
 }
 
-.sprout .sprout-inline-sentence input {
+.learnkit .learnkit-inline-sentence input {
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
@@ -642,13 +642,13 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   caret-color: currentColor;
 }
 
-.sprout .sprout-inline-sentence input:focus-visible {
+.learnkit .learnkit-inline-sentence input:focus-visible {
   box-shadow: none;
 }
 
 /* ---- Session popover menu items ---- */
 
-.sprout .sprout-session-more-popover {
+.learnkit .learnkit-session-more-popover {
   min-width: 230px;
   border: 1px solid var(--color-base-35) !important;
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
@@ -656,13 +656,13 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   backdrop-filter: blur(14px);
 }
 
-.sprout .sprout-session-more-item {
+.learnkit .learnkit-session-more-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  font-size: var(--sprout-font-sm);
+  font-size: var(--learnkit-font-sm);
   text-align: left;
   border-radius: var(--radius-s, var(--radius-md));
   border: 1px solid transparent !important;
@@ -670,27 +670,27 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   padding: 6px 8px;
 }
 
-.sprout .sprout-session-more-item:hover:not(:disabled),
-.sprout .sprout-session-more-item:focus-visible,
-.sprout .sprout-session-more-item:active,
-.sprout .sprout-session-more-item[aria-current="true"],
-.sprout .sprout-session-more-item[aria-selected="true"] {
+.learnkit .learnkit-session-more-item:hover:not(:disabled),
+.learnkit .learnkit-session-more-item:focus-visible,
+.learnkit .learnkit-session-more-item:active,
+.learnkit .learnkit-session-more-item[aria-current="true"],
+.learnkit .learnkit-session-more-item[aria-selected="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   color: var(--color-base-100, var(--text-normal)) !important;
 }
 
-.sprout .sprout-session-more-item :is(kbd, .kbd) {
+.learnkit .learnkit-session-more-item :is(kbd, .kbd) {
   margin-left: auto;
   opacity: 0.85;
 }
 
-.sprout-menu-item--disabled {
+.learnkit-menu-item--disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.sprout .sprout-session-more-popover .sprout-menu-item--disabled {
+.learnkit .learnkit-session-more-popover .learnkit-menu-item--disabled {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
@@ -698,7 +698,7 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Quit button ---- */
 
-.sprout-quit-btn {
+.learnkit-quit-btn {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -725,50 +725,50 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
     box-shadow 0.16s ease;
 }
 
-.sprout-quit-btn .svg-icon,
-.sprout-quit-btn svg {
+.learnkit-quit-btn .svg-icon,
+.learnkit-quit-btn svg {
   width: 14px;
   height: 14px;
 }
 
-.sprout-quit-btn:hover,
-.sprout-quit-btn:focus-visible {
+.learnkit-quit-btn:hover,
+.learnkit-quit-btn:focus-visible {
   background: var(--color-base-25);
   transform: none;
 }
 
-.sprout-quit-btn:active {
+.learnkit-quit-btn:active {
   transform: none;
 }
 
-.theme-dark .sprout-quit-btn {
+.theme-dark .learnkit-quit-btn {
   background: var(--color-base-20);
   color: var(--text-normal);
   border: 0;
 }
 
-.theme-dark .sprout-quit-btn:hover,
-.theme-dark .sprout-quit-btn:focus-visible {
+.theme-dark .learnkit-quit-btn:hover,
+.theme-dark .learnkit-quit-btn:focus-visible {
   background: var(--color-base-25);
   transform: none;
 }
 
-.theme-dark .sprout-quit-btn:active {
+.theme-dark .learnkit-quit-btn:active {
   transform: none;
 }
 
 /* ---- TTS replay button ---- */
 
-.sprout-label-row {
+.learnkit-label-row {
   gap: 4px;
   margin-top: 1rem;
 }
 
-.sprout :is(.bc-session-card, .lk-session-card) section > .sprout-label-row:first-child {
+.learnkit :is(.learnkit-session-card, .lk-session-card) section > .learnkit-label-row:first-child {
   margin-top: 0;
 }
 
-.sprout-tts-replay-btn {
+.learnkit-tts-replay-btn {
   cursor: pointer;
   background: transparent;
   color: var(--text-muted);
@@ -785,14 +785,14 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   opacity: 0.6;
 }
 
-.sprout-tts-replay-btn:hover,
-.sprout-tts-replay-btn:focus-visible {
+.learnkit-tts-replay-btn:hover,
+.learnkit-tts-replay-btn:focus-visible {
   color: var(--text-normal);
   background: var(--background-modifier-hover);
   opacity: 1;
 }
 
-.sprout-tts-replay-btn:active {
+.learnkit-tts-replay-btn:active {
   color: var(--text-normal);
   background: var(--background-modifier-active-hover);
   opacity: 1;
@@ -800,19 +800,19 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Markdown block text (Q/A/cloze/info) ---- */
 
-.sprout-md-block {
-  font-size: var(--sprout-font-xs);
+.learnkit-md-block {
+  font-size: var(--learnkit-font-xs);
   line-height: 1.75;
 }
 
 /* ---- MCQ options ---- */
 
-.sprout-mcq-options {
+.learnkit-mcq-options {
   margin-top: 10px;
   gap: 0.1rem;
 }
 
-.sprout .sprout-mcq-options .sprout-btn-toolbar {
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar {
   display: flex;
   justify-content: flex-start;
   text-align: left;
@@ -821,15 +821,15 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
     border-color: var(--color-base-35) !important;
 }
 
-.sprout .sprout-mcq-options .sprout-btn-toolbar:hover,
-.sprout .sprout-mcq-options .sprout-btn-toolbar:active,
-.sprout .sprout-mcq-options .sprout-btn-toolbar:focus,
-.sprout .sprout-mcq-options .sprout-btn-toolbar:focus-within {
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:hover,
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:active,
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:focus,
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:focus-within {
     background-color: var(--color-base-30) !important;
       color: var(--color-base-100) !important;
     border-color: var(--color-base-40) !important;}
 
-.sprout .sprout-mcq-options .sprout-btn-toolbar > .inline-flex {
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar > .inline-flex {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -837,61 +837,61 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   width: 100%;
 }
 
-.sprout .sprout-mcq-options .sprout-mcq-option-text {
+.learnkit .learnkit-mcq-options .learnkit-mcq-option-text {
   text-align: left;
 }
 
 /* Keep reveal highlight colors above base toolbar/widget hover styles. */
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight) {
-  border-color: var(--sprout-good-bg) !important;
-  background-color: var(--sprout-good-bg-light) !important;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-correct-highlight, .learnkit-mcq-correct-highlight) {
+  border-color: var(--learnkit-good-bg) !important;
+  background-color: var(--learnkit-good-bg-light) !important;
   border-width: 2px;
   border-style: solid;
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight):is(:hover, :focus, :focus-within, :focus-visible, :active) {
-  border-color: var(--sprout-good-bg) !important;
-  background-color: var(--sprout-good-bg-light) !important;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-correct-highlight, .learnkit-mcq-correct-highlight):is(:hover, :focus, :focus-within, :focus-visible, :active) {
+  border-color: var(--learnkit-good-bg) !important;
+  background-color: var(--learnkit-good-bg-light) !important;
 }
 
 
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-wrong-highlight, .sprout-mcq-wrong-highlight) {
-  border-color: var(--sprout-again-bg) !important;
-  background-color: var(--sprout-again-bg-light) !important;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-wrong-highlight, .learnkit-mcq-wrong-highlight) {
+  border-color: var(--learnkit-again-bg) !important;
+  background-color: var(--learnkit-again-bg-light) !important;
   border-width: 2px;
   border-style: solid;
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-wrong-highlight, .sprout-mcq-wrong-highlight):is(:hover, :focus, :focus-within, :focus-visible, :active) {
-  border-color: var(--sprout-again-bg) !important;
-  background-color: var(--sprout-again-bg-light) !important;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-wrong-highlight, .learnkit-mcq-wrong-highlight):is(:hover, :focus, :focus-within, :focus-visible, :active) {
+  border-color: var(--learnkit-again-bg) !important;
+  background-color: var(--learnkit-again-bg-light) !important;
 }
 
 /* Dark mode: softer MCQ highlight backgrounds */
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-correct-highlight, .sprout-mcq-correct-highlight) {
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-correct-highlight, .learnkit-mcq-correct-highlight) {
   background-color: rgba(34, 197, 94, 0.15) !important;
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) :is(.sprout-btn-toolbar.sprout-mcq-wrong-highlight, .sprout-mcq-wrong-highlight) {
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-wrong-highlight, .learnkit-mcq-wrong-highlight) {
   background-color: rgba(239, 68, 68, 0.15) !important;
 }
 
-.sprout-mcq-option-text {
+.learnkit-mcq-option-text {
   line-height: 1.75;
   display: block;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
 }
 
-.sprout-mcq-option-line {
+.learnkit-mcq-option-line {
   line-height: 1.75;
   margin-bottom: 2px;
 }
 
 /* Multi-answer MCQ: selected (toggle) state */
-/* Use .sprout .sprout-btn-toolbar.sprout-mcq-selected to beat .sprout .sprout-btn-toolbar specificity (0-3-0 > 0-2-0) */
-.sprout .sprout-btn-toolbar.sprout-mcq-selected,
-.sprout-mcq-selected {
+/* Use .learnkit .learnkit-btn-toolbar.learnkit-mcq-selected to beat .learnkit .learnkit-btn-toolbar specificity (0-3-0 > 0-2-0) */
+.learnkit .learnkit-btn-toolbar.learnkit-mcq-selected,
+.learnkit-mcq-selected {
   border-color: var(--interactive-accent);
   border-width: 2px;
   border-style: solid;
@@ -899,19 +899,19 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Multi-answer MCQ: missed correct answer on reveal */
-.sprout-mcq-missed-correct {
-  border-color: var(--sprout-good-bg);
+.learnkit-mcq-missed-correct {
+  border-color: var(--learnkit-good-bg);
   border-width: 2px;
   border-style: dashed;
   opacity: 0.75;
 }
 
-.theme-dark .sprout-mcq-missed-correct {
+.theme-dark .learnkit-mcq-missed-correct {
   border-color: rgba(34, 197, 94, 0.6);
 }
 
 /* Multi-answer MCQ submit button */
-.sprout-mcq-submit-btn {
+.learnkit-mcq-submit-btn {
   cursor: pointer;
   font-weight: 500;
   padding: 6px 16px;
@@ -923,12 +923,12 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   transition: opacity 0.15s;
 }
 
-.sprout-mcq-submit-btn:hover {
+.learnkit-mcq-submit-btn:hover {
   opacity: 0.9;
 }
 
 /* OQ submit button — remove box shadow */
-.sprout-oq-submit-btn {
+.learnkit-oq-submit-btn {
   box-shadow: none;
 }
 
@@ -943,27 +943,27 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   90% { transform: translateX(1px); }
 }
 
-.sprout-mcq-submit-shake {
+.learnkit-mcq-submit-shake {
   animation: sprout-shake 0.5s ease-in-out;
 }
 
 /* Force-show tooltip when class is applied programmatically */
-.sprout-mcq-submit-tooltip-visible::after {
+.learnkit-mcq-submit-tooltip-visible::after {
   opacity: 1;
   transition-delay: 0s;
 }
 
 /* ---- OQ (Ordering Question) drag-to-reorder ---- */
 
-.sprout-oq-step-list {
+.learnkit-oq-step-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 10px;
-  --sprout-oq-slot-gap: 10px;
+  --learnkit-oq-slot-gap: 10px;
 }
 
-.sprout-oq-step-row {
+.learnkit-oq-step-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -978,32 +978,32 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
-  transform: translateY(var(--sprout-oq-translate, 0px));
+  transform: translateY(var(--learnkit-oq-translate, 0px));
   margin-top: 0;
   margin-bottom: 0;
   transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, margin 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.sprout-oq-step-row:hover,
-.sprout-oq-step-row:focus,
-.sprout-oq-step-row:focus-within,
-.sprout-oq-step-row:active {
+.learnkit-oq-step-row:hover,
+.learnkit-oq-step-row:focus,
+.learnkit-oq-step-row:focus-within,
+.learnkit-oq-step-row:active {
   background-color: var(--color-base-30) !important;
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout-oq-step-row:active {
+.learnkit-oq-step-row:active {
   cursor: grabbing;
 }
 
-.sprout-oq-step-list.sprout-oq-drag-active,
-.sprout-oq-step-list.sprout-oq-drag-active * {
+.learnkit-oq-step-list.learnkit-oq-drag-active,
+.learnkit-oq-step-list.learnkit-oq-drag-active * {
   user-select: none;
   -webkit-user-select: none;
 }
 
-.sprout-oq-grip {
+.learnkit-oq-grip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1012,68 +1012,68 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   flex-shrink: 0;
 }
 
-.sprout-oq-grip:active {
+.learnkit-oq-grip:active {
   cursor: grabbing;
 }
 
-.sprout-oq-step-text {
+.learnkit-oq-step-text {
   min-width: 0;
   white-space: pre-wrap;
   overflow-wrap: break-word;
   flex: 1;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   line-height: 1.75;
 }
 
-.sprout-oq-row-dragging {
+.learnkit-oq-row-dragging {
   opacity: 0.55;
   box-shadow: var(--shadow-s);
 }
 
-.sprout-oq-row-dragging.sprout-oq-row-dragging-native {
+.learnkit-oq-row-dragging.learnkit-oq-row-dragging-native {
   opacity: 0.04;
   box-shadow: none;
 }
 
-.sprout-oq-row-anim {
+.learnkit-oq-row-anim {
   transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
-.sprout-oq-step-row.sprout-oq-slot-before {
-  margin-top: var(--sprout-oq-slot-gap);
+.learnkit-oq-step-row.learnkit-oq-slot-before {
+  margin-top: var(--learnkit-oq-slot-gap);
 }
 
-.sprout-oq-step-row.sprout-oq-slot-after {
-  margin-bottom: var(--sprout-oq-slot-gap);
+.learnkit-oq-step-row.learnkit-oq-slot-after {
+  margin-bottom: var(--learnkit-oq-slot-gap);
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) .sprout-oq-answer-row {
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-answer-row {
   margin-bottom: 0;
 }
 
 /* Correct placement – green border */
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) .sprout-oq-correct-highlight {
-  border-color: var(--sprout-good-bg) !important;
-  background-color: var(--sprout-good-bg-light) !important;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-correct-highlight {
+  border-color: var(--learnkit-good-bg) !important;
+  background-color: var(--learnkit-good-bg-light) !important;
   border-width: 2px;
   border-style: solid;
 }
 
 /* Wrong placement – red border */
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) .sprout-oq-wrong-highlight {
-  border-color: var(--sprout-again-bg) !important;
-  background-color: var(--sprout-again-bg-light) !important;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-wrong-highlight {
+  border-color: var(--learnkit-again-bg) !important;
+  background-color: var(--learnkit-again-bg-light) !important;
   border-width: 2px;
   border-style: solid;
 }
 
 /* Dark mode overrides */
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) .sprout-oq-correct-highlight {
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-correct-highlight {
   background-color: rgba(34, 197, 94, 0.15) !important;
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal, .sprout-widget, .sprout-widget-card-body) .sprout-oq-wrong-highlight {
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-wrong-highlight {
   background-color: rgba(239, 68, 68, 0.15) !important;
 }
 
@@ -1081,14 +1081,14 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Grading buttons ---- */
 
-.sprout .sprout-grade-btn-with-interval {
+.learnkit .learnkit-grade-btn-with-interval {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-align: center;
 }
 
-.sprout .sprout-grade-btn-label-wrap {
+.learnkit .learnkit-grade-btn-label-wrap {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -1097,41 +1097,41 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   line-height: 1.05;
 }
 
-.sprout .sprout-grade-btn-subtitle {
+.learnkit .learnkit-grade-btn-subtitle {
   font-size: 0.78em;
   opacity: 0.9;
   font-weight: 500;
 }
 
 /* Gatekeeper uses the same visual language as reviewer, but with tighter vertical rhythm. */
-.sprout .sprout-gatekeeper-footer .sprout-grade-btn-with-interval {
+.learnkit .learnkit-gatekeeper-footer .learnkit-grade-btn-with-interval {
   min-height: 34px;
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-.sprout .sprout-gatekeeper-footer .sprout-grade-btn-label-wrap {
+.learnkit .learnkit-gatekeeper-footer .learnkit-grade-btn-label-wrap {
   gap: 1px;
   line-height: 1;
 }
 
-.sprout .sprout-gatekeeper-footer .sprout-grade-btn-subtitle {
+.learnkit .learnkit-gatekeeper-footer .learnkit-grade-btn-subtitle {
   font-size: 0.72em;
 }
 
 /* Keep grade label + keycap tight in study and gatekeeper grading buttons. */
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
   column-gap: 0;
 }
 
 /* Remove box shadow from session/gatekeeper grading buttons to match outline buttons */
-.sprout :is(.lk-session-card footer, .sprout-gatekeeper-footer) .btn {
+.learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .btn {
   box-shadow: none;
   border-radius: var(--radius-md, var(--radius-md));
 }
 
 /* Session/gatekeeper toolbar controls: neutral token ramp */
-.sprout :is(.lk-session-card footer, .sprout-gatekeeper-footer) .sprout-btn-toolbar:not(.sprout-btn-again):not(.sprout-btn-hard):not(.sprout-btn-good):not(.sprout-btn-easy) {
+.learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .learnkit-btn-toolbar:not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1145,293 +1145,293 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   box-shadow: none;
 }
 
-.sprout :is(.lk-session-card footer, .sprout-gatekeeper-footer) .sprout-btn-toolbar:not(.sprout-btn-again):not(.sprout-btn-hard):not(.sprout-btn-good):not(.sprout-btn-easy):is(:hover, :focus-visible, :active) {
+.learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .learnkit-btn-toolbar:not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy):is(:hover, :focus-visible, :active) {
   background-color: var(--color-base-30);
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout :is(.lk-session-card footer, .sprout-gatekeeper-footer) .sprout-btn-toolbar:not(.sprout-btn-again):not(.sprout-btn-hard):not(.sprout-btn-good):not(.sprout-btn-easy) :is(kbd, .kbd) {
+.learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .learnkit-btn-toolbar:not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy) :is(kbd, .kbd) {
   background-color: var(--color-base-25);
   box-shadow: none;
 }
 
-.sprout :is(.lk-session-card footer, .sprout-gatekeeper-footer) .sprout-btn-toolbar:not(.sprout-btn-again):not(.sprout-btn-hard):not(.sprout-btn-good):not(.sprout-btn-easy):is(:hover, :focus-visible, :active) :is(kbd, .kbd) {
+.learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .learnkit-btn-toolbar:not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy):is(:hover, :focus-visible, :active) :is(kbd, .kbd) {
   background-color: var(--color-base-30);
 }
 
-.sprout-btn-again {
-  background-color: var(--sprout-again-bg);
-  color: var(--sprout-again-fg);
+.learnkit-btn-again {
+  background-color: var(--learnkit-again-bg);
+  color: var(--learnkit-again-fg);
   box-shadow: none;
   border-radius: var(--radius-md, var(--radius-md));
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-again {
-  border: var(--sprout-border-width) solid color-mix(in srgb, var(--destructive) 45%, transparent);
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-again {
+  border: var(--learnkit-border-width) solid color-mix(in srgb, var(--destructive) 45%, transparent);
   background: color-mix(in srgb, var(--destructive) 16%, var(--background));
   color: color-mix(in srgb, var(--destructive) 72%, var(--foreground));
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-again:hover,
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-again:focus-visible {
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-again:hover,
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-again:focus-visible {
   background: color-mix(in srgb, var(--destructive) 24%, var(--background));
   border-color: color-mix(in srgb, var(--destructive) 60%, transparent);
 }
 
-.sprout-btn-hard {
-  background-color: var(--sprout-hard-bg);
-  color: var(--sprout-hard-fg);
+.learnkit-btn-hard {
+  background-color: var(--learnkit-hard-bg);
+  color: var(--learnkit-hard-fg);
   box-shadow: none;
   border-radius: var(--radius-md, var(--radius-md));
 }
 
-.sprout-btn-good {
-  background-color: var(--sprout-good-bg);
-  color: var(--sprout-good-fg);
+.learnkit-btn-good {
+  background-color: var(--learnkit-good-bg);
+  color: var(--learnkit-good-fg);
   box-shadow: none;
   border-radius: var(--radius-md, var(--radius-md));
 }
 
-.sprout-btn-easy {
-  background-color: var(--sprout-easy-bg);
-  color: var(--sprout-easy-fg);
+.learnkit-btn-easy {
+  background-color: var(--learnkit-easy-bg);
+  color: var(--learnkit-easy-fg);
   box-shadow: none;
   border-radius: var(--radius-md, var(--radius-md));
 }
 
-.sprout .lk-session-card :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd),
-.sprout .sprout-gatekeeper-modal :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+.learnkit .lk-session-card :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd),
+.learnkit .learnkit-gatekeeper-modal :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
   border-width: 1px;
   border-style: solid;
   box-shadow: none;
 }
 
-.sprout .sprout-btn-again :is(kbd, .kbd) {
+.learnkit .learnkit-btn-again :is(kbd, .kbd) {
   background: color-mix(in srgb,var(--destructive)50%,transparent);
   border-color: color-mix(in srgb, var(--destructive) 48%, transparent);
   color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--destructive) 12%);
 }
 
-.sprout .sprout-btn-hard :is(kbd, .kbd) {
-  background: var(--sprout-hard-bg-light);
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 35%, transparent);
-  color: color-mix(in srgb, var(--sprout-hard-bg) 72%, rgb(0, 0, 0));
+.learnkit .learnkit-btn-hard :is(kbd, .kbd) {
+  background: var(--learnkit-hard-bg-light);
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 35%, transparent);
+  color: color-mix(in srgb, var(--learnkit-hard-bg) 72%, rgb(0, 0, 0));
 }
 
-.sprout .sprout-btn-good :is(kbd, .kbd) {
-  background: var(--sprout-good-bg-light);
-  border-color: color-mix(in srgb, var(--sprout-good-bg) 35%, transparent);
-  color: color-mix(in srgb, var(--sprout-good-bg) 72%, rgb(0, 0, 0));
+.learnkit .learnkit-btn-good :is(kbd, .kbd) {
+  background: var(--learnkit-good-bg-light);
+  border-color: color-mix(in srgb, var(--learnkit-good-bg) 35%, transparent);
+  color: color-mix(in srgb, var(--learnkit-good-bg) 72%, rgb(0, 0, 0));
 }
 
-.sprout .sprout-btn-easy :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-easy-bg) 14%, rgb(255, 255, 255));
-  border-color: color-mix(in srgb, var(--sprout-easy-bg) 38%, transparent);
-  color: color-mix(in srgb, var(--sprout-easy-bg) 82%, rgb(255, 255, 255));
+.learnkit .learnkit-btn-easy :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-easy-bg) 14%, rgb(255, 255, 255));
+  border-color: color-mix(in srgb, var(--learnkit-easy-bg) 38%, transparent);
+  color: color-mix(in srgb, var(--learnkit-easy-bg) 82%, rgb(255, 255, 255));
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) .sprout-btn-easy :is(kbd, .kbd) {
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) .learnkit-btn-easy :is(kbd, .kbd) {
   background: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 18%, rgb(255, 255, 255));
   border-color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 36%, transparent);
   color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 80%, rgb(0, 0, 0));
 }
 
 /* Light theme grading palette (gatekeeper + study session) */
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) .sprout-btn-again {
-  --sprout-btn-tint: var(--destructive);
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) .learnkit-btn-again {
+  --learnkit-btn-tint: var(--destructive);
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) .sprout-btn-hard {
-  --sprout-btn-tint: var(--sprout-hard-bg);
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) .learnkit-btn-hard {
+  --learnkit-btn-tint: var(--learnkit-hard-bg);
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) .sprout-btn-good {
-  --sprout-btn-tint: var(--sprout-good-bg);
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) .learnkit-btn-good {
+  --learnkit-btn-tint: var(--learnkit-good-bg);
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) .sprout-btn-easy {
-  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) .learnkit-btn-easy {
+  --learnkit-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  --sprout-btn-bg-mix: 16%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 45%;
-  --sprout-btn-bg-hover-mix: 24%;
-  --sprout-btn-border-hover-mix: 60%;
-  --sprout-kbd-tint: var(--sprout-btn-tint);
-  --sprout-kbd-bg-mix: 50%;
-  --sprout-kbd-border-mix: 48%;
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  --learnkit-btn-bg-mix: 16%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 45%;
+  --learnkit-btn-bg-hover-mix: 24%;
+  --learnkit-btn-border-hover-mix: 60%;
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
+  --learnkit-kbd-bg-mix: 50%;
+  --learnkit-kbd-border-mix: 48%;
 
-  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background));
-  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground));
-  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), transparent);
+  background: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix), var(--background));
+  color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix), var(--foreground));
+  border: var(--learnkit-border-width) solid color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-mix), transparent);
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background));
-  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), transparent);
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-hover-mix), var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-hover-mix), transparent);
 }
 
-.sprout :is(.sprout-gatekeeper-modal, .lk-session-card) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-bg-mix), transparent);
-  border-color: color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-border-mix), transparent);
-  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--sprout-kbd-tint) 12%);
+.learnkit :is(.learnkit-gatekeeper-modal, .lk-session-card) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-bg-mix), transparent);
+  border-color: color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-border-mix), transparent);
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--learnkit-kbd-tint) 12%);
 }
 
 /* Dark theme grading palette (widget + gatekeeper + study session) */
-.theme-dark .sprout .sprout-btn-again {
-  --sprout-btn-tint: var(--destructive);
-  --sprout-btn-bg-mix: 26%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit .learnkit-btn-again {
+  --learnkit-btn-tint: var(--destructive);
+  --learnkit-btn-bg-mix: 26%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout .sprout-btn-hard {
-  --sprout-btn-tint: var(--sprout-hard-bg);
-  --sprout-btn-bg-mix: 54%;
-  --sprout-btn-fg-mix: 64%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit .learnkit-btn-hard {
+  --learnkit-btn-tint: var(--learnkit-hard-bg);
+  --learnkit-btn-bg-mix: 54%;
+  --learnkit-btn-fg-mix: 64%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout .sprout-btn-good {
-  --sprout-btn-tint: var(--sprout-good-bg);
-  --sprout-btn-bg-mix: 48%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit .learnkit-btn-good {
+  --learnkit-btn-tint: var(--learnkit-good-bg);
+  --learnkit-btn-bg-mix: 48%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout .sprout-btn-easy {
-  --sprout-btn-tint: var(--sprout-easy-bg);
-  --sprout-btn-bg-mix: 42%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit .learnkit-btn-easy {
+  --learnkit-btn-tint: var(--learnkit-easy-bg);
+  --learnkit-btn-bg-mix: 42%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout .sprout-gatekeeper-modal .sprout-btn-easy,
-.theme-dark .sprout .lk-session-card .sprout-btn-easy {
-  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.theme-dark .learnkit .learnkit-gatekeeper-modal .learnkit-btn-easy,
+.theme-dark .learnkit .lk-session-card .learnkit-btn-easy {
+  --learnkit-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix, 42%), var(--background));
-  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix, 82%), var(--foreground));
-  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix, 58%), transparent);
+.theme-dark .learnkit :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  background: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix, 42%), var(--background));
+  color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix, 82%), var(--foreground));
+  border: var(--learnkit-border-width) solid color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-mix, 58%), transparent);
 }
 
-.theme-dark .sprout .sprout-btn-again {
-  --sprout-kbd-tint: var(--sprout-btn-tint);
+.theme-dark .learnkit .learnkit-btn-again {
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
 }
 
-.theme-dark .sprout .sprout-btn-hard {
-  --sprout-kbd-tint: var(--sprout-btn-tint);
+.theme-dark .learnkit .learnkit-btn-hard {
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
 }
 
-.theme-dark .sprout .sprout-btn-good {
-  --sprout-kbd-tint: var(--sprout-btn-tint);
+.theme-dark .learnkit .learnkit-btn-good {
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
 }
 
-.theme-dark .sprout .sprout-btn-easy {
-  --sprout-kbd-tint: var(--sprout-btn-tint);
+.theme-dark .learnkit .learnkit-btn-easy {
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
 }
 
-.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-kbd-tint) 38%, transparent);
-  border-color: color-mix(in srgb, var(--sprout-kbd-tint) 58%, transparent);
+.theme-dark .learnkit :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-kbd-tint) 38%, transparent);
+  border-color: color-mix(in srgb, var(--learnkit-kbd-tint) 58%, transparent);
   color: rgb(255, 255, 255);
 }
 
-.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.theme-dark .sprout :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+.theme-dark .learnkit :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.theme-dark .learnkit :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
   filter: brightness(1.08);
 }
 
 /* Canonical solid grading surfaces (study + gatekeeper) */
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-again {
-  --sprout-btn-tint: var(--destructive);
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-again {
+  --learnkit-btn-tint: var(--destructive);
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-hard {
-  --sprout-btn-tint: var(--sprout-hard-bg);
-  --sprout-btn-bg-mix: 24%;
-  --sprout-btn-border-mix: 60%;
-  --sprout-btn-bg-hover-mix: 32%;
-  --sprout-btn-border-hover-mix: 68%;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-hard {
+  --learnkit-btn-tint: var(--learnkit-hard-bg);
+  --learnkit-btn-bg-mix: 24%;
+  --learnkit-btn-border-mix: 60%;
+  --learnkit-btn-bg-hover-mix: 32%;
+  --learnkit-btn-border-hover-mix: 68%;
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-good {
-  --sprout-btn-tint: var(--sprout-good-bg);
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-good {
+  --learnkit-btn-tint: var(--learnkit-good-bg);
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-easy {
-  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-easy {
+  --learnkit-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  --sprout-btn-bg-mix: 16%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 45%;
-  --sprout-btn-bg-hover-mix: 24%;
-  --sprout-btn-border-hover-mix: 60%;
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  --learnkit-btn-bg-mix: 16%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 45%;
+  --learnkit-btn-bg-hover-mix: 24%;
+  --learnkit-btn-border-hover-mix: 60%;
 
-  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background-primary));
-  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground));
-  border: 1px solid color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-border-mix), transparent);
+  background-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix), var(--background-primary));
+  color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix), var(--foreground));
+  border: 1px solid color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-border-mix), transparent);
 }
 
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background-primary));
-  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), var(--background-primary));
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-hover-mix), var(--background-primary));
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-hover-mix), var(--background-primary));
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-again {
-  --sprout-btn-bg-mix: 26%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 50%;
-  --sprout-btn-bg-hover-mix: 34%;
-  --sprout-btn-border-hover-mix: 58%;
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-again {
+  --learnkit-btn-bg-mix: 26%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 50%;
+  --learnkit-btn-bg-hover-mix: 34%;
+  --learnkit-btn-border-hover-mix: 58%;
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-hard {
-  --sprout-btn-bg-mix: 54%;
-  --sprout-btn-fg-mix: 64%;
-  --sprout-btn-border-mix: 58%;
-  --sprout-btn-bg-hover-mix: 62%;
-  --sprout-btn-border-hover-mix: 66%;
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-hard {
+  --learnkit-btn-bg-mix: 54%;
+  --learnkit-btn-fg-mix: 64%;
+  --learnkit-btn-border-mix: 58%;
+  --learnkit-btn-bg-hover-mix: 62%;
+  --learnkit-btn-border-hover-mix: 66%;
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-good {
-  --sprout-btn-bg-mix: 48%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 58%;
-  --sprout-btn-bg-hover-mix: 56%;
-  --sprout-btn-border-hover-mix: 66%;
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-good {
+  --learnkit-btn-bg-mix: 48%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 58%;
+  --learnkit-btn-bg-hover-mix: 56%;
+  --learnkit-btn-border-hover-mix: 66%;
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal) .sprout-btn-easy {
-  --sprout-btn-bg-mix: 42%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 58%;
-  --sprout-btn-bg-hover-mix: 50%;
-  --sprout-btn-border-hover-mix: 66%;
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) .learnkit-btn-easy {
+  --learnkit-btn-bg-mix: 42%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 58%;
+  --learnkit-btn-bg-hover-mix: 50%;
+  --learnkit-btn-border-hover-mix: 66%;
 }
 
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.theme-dark .sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.theme-dark .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
   filter: none;
 }
 
 /* Keep grading kbd text white on coloured grading buttons in both themes */
-.sprout :is(.lk-session-card, .sprout-gatekeeper-modal) :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
   color: rgb(255, 255, 255);
 }
 
 /* ---- AOS animation fallback ---- */
 
-.sprout-aos-fallback {
+.learnkit-aos-fallback {
   opacity: 1;
   transform: none;
   transition: none;
@@ -1439,20 +1439,20 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 
 /* ---- Typed cloze input (front) ---- */
 
-.sprout-cloze-typed-wrap {
+.learnkit-cloze-typed-wrap {
   display: inline-block;
   vertical-align: baseline;
   margin: 0;
 }
 
-.sprout-cloze-typed-input {
+.learnkit-cloze-typed-input {
   font-family: inherit;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   font-weight: 500;
   line-height: 1.5;
   padding: 2px 8px;
   margin: 0 2px 0 0;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-s);
   background: var(--background-primary);
   color: var(--text-normal);
@@ -1464,63 +1464,63 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Compact padding in widget sidebar */
-.sprout-widget .sprout-cloze-typed-input {
+.learnkit-widget .learnkit-cloze-typed-input {
   padding: 2px 4px;
 }
 
-.sprout-cloze-typed-input:hover {
+.learnkit-cloze-typed-input:hover {
   background: var(--background-primary);
 }
 
 /* No state, focused → theme accent border */
-.sprout-cloze-typed-input:focus {
+.learnkit-cloze-typed-input:focus {
   border-width: 1px;
   border-color: var(--interactive-accent, #7c9dff);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent, #7c9dff) 20%, transparent);
 }
 
 /* --- Unfocused state borders (muted) --- */
-.sprout-cloze-typed-input.sprout-cloze-typed--partial {
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 55%, var(--sprout-border-color));
+.learnkit-cloze-typed-input.learnkit-cloze-typed--partial {
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 55%, var(--learnkit-border-color));
 }
 
-.sprout-cloze-typed-input.sprout-cloze-typed--correct {
-  border-color: color-mix(in srgb, var(--sprout-good-bg) 55%, var(--sprout-border-color));
+.learnkit-cloze-typed-input.learnkit-cloze-typed--correct {
+  border-color: color-mix(in srgb, var(--learnkit-good-bg) 55%, var(--learnkit-border-color));
 }
 
-.sprout-cloze-typed-input.sprout-cloze-typed--wrong {
-  border-color: color-mix(in srgb, var(--sprout-again-bg) 55%, var(--sprout-border-color));
+.learnkit-cloze-typed-input.learnkit-cloze-typed--wrong {
+  border-color: color-mix(in srgb, var(--learnkit-again-bg) 55%, var(--learnkit-border-color));
 }
 
 /* --- Focused state borders (full colour + glow) --- */
-.sprout-cloze-typed-input.sprout-cloze-typed--partial:focus {
+.learnkit-cloze-typed-input.learnkit-cloze-typed--partial:focus {
   border-width: 1px;
-  border-color: var(--sprout-hard-bg);
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 10%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-hard-bg) 20%, transparent);
+  border-color: var(--learnkit-hard-bg);
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--learnkit-hard-bg) 20%, transparent);
 }
 
-.sprout-cloze-typed-input.sprout-cloze-typed--correct:focus {
+.learnkit-cloze-typed-input.learnkit-cloze-typed--correct:focus {
   border-width: 1px;
-  border-color: var(--sprout-good-bg);
-  background-color: color-mix(in srgb, var(--sprout-good-bg) 10%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-good-bg) 20%, transparent);
+  border-color: var(--learnkit-good-bg);
+  background-color: color-mix(in srgb, var(--learnkit-good-bg) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--learnkit-good-bg) 20%, transparent);
 }
 
-.sprout-cloze-typed-input.sprout-cloze-typed--wrong:focus {
+.learnkit-cloze-typed-input.learnkit-cloze-typed--wrong:focus {
   border-width: 1px;
-  border-color: var(--sprout-again-bg);
-  background-color: color-mix(in srgb, var(--sprout-again-bg) 10%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-again-bg) 20%, transparent);
+  border-color: var(--learnkit-again-bg);
+  background-color: color-mix(in srgb, var(--learnkit-again-bg) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--learnkit-again-bg) 20%, transparent);
 }
 
 /* Question title (replaces Setting heading) */
-.sprout-question-title {
+.learnkit-question-title {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 0;
-  font-size: var(--sprout-font-md-plus);
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 700;
   line-height: 1.25;
   white-space: nowrap;
@@ -1529,14 +1529,14 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
   padding: 0;
 }
 
-.sprout .lk-session-card > header.sprout-session-topbar .sprout-question-title :is(p, span) {
+.learnkit .lk-session-card > header.learnkit-session-topbar .learnkit-question-title :is(p, span) {
   margin: 0;
 }
 
 /* Session fallback for inline flag tokens rendered as <img>. */
-.sprout .sprout-question-title .sprout-inline-flag,
-.sprout .sprout-md-block .sprout-inline-flag,
-.sprout .bc-cloze .sprout-inline-flag {
+.learnkit .learnkit-question-title .learnkit-inline-flag,
+.learnkit .learnkit-md-block .learnkit-inline-flag,
+.learnkit .learnkit-cloze .learnkit-inline-flag {
   box-sizing: content-box;
   width: 1em;
   height: 1em;
@@ -1558,32 +1558,32 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Typed input states */
-.sprout-cloze-typed-input.sprout-cloze-typed--partial {
-  border-color: var(--sprout-hard-bg);
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 10%, transparent);
-  color: var(--sprout-hard-bg);
+.learnkit-cloze-typed-input.learnkit-cloze-typed--partial {
+  border-color: var(--learnkit-hard-bg);
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 10%, transparent);
+  color: var(--learnkit-hard-bg);
 }
 
-.sprout-cloze-typed-input.sprout-cloze-typed--correct {
-  border-color: var(--sprout-good-bg);
-  background-color: color-mix(in srgb, var(--sprout-good-bg) 10%, transparent);
-  color: var(--sprout-good-bg);
+.learnkit-cloze-typed-input.learnkit-cloze-typed--correct {
+  border-color: var(--learnkit-good-bg);
+  background-color: color-mix(in srgb, var(--learnkit-good-bg) 10%, transparent);
+  color: var(--learnkit-good-bg);
 }
 
-.sprout-cloze-typed-input.sprout-cloze-typed--wrong {
-  border-color: var(--sprout-again-bg);
-  background-color: color-mix(in srgb, var(--sprout-again-bg) 10%, transparent);
-  color: var(--sprout-again-bg);
+.learnkit-cloze-typed-input.learnkit-cloze-typed--wrong {
+  border-color: var(--learnkit-again-bg);
+  background-color: color-mix(in srgb, var(--learnkit-again-bg) 10%, transparent);
+  color: var(--learnkit-again-bg);
 }
 
 /* ---- Typed cloze result pills (back) ---- */
-/* Override .sprout-cloze-revealed base so back pills fully match front input styling */
+/* Override .learnkit-cloze-revealed base so back pills fully match front input styling */
 
-.sprout-cloze-typed-correct,
-.sprout-cloze-typed-wrong {
+.learnkit-cloze-typed-correct,
+.learnkit-cloze-typed-wrong {
   display: inline-block;
   font-family: inherit;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   font-weight: 500;
   line-height: 1.5;
   padding: 2px 8px 2px 8px;
@@ -1595,46 +1595,46 @@ body.is-phone .sprout .lk-review-title-strip-session .lk-review-title-timer-host
 }
 
 /* Compact padding in widget sidebar */
-.sprout-widget .sprout-cloze-typed-correct,
-.sprout-widget .sprout-cloze-typed-wrong {
+.learnkit-widget .learnkit-cloze-typed-correct,
+.learnkit-widget .learnkit-cloze-typed-wrong {
   padding: 2px 4px;
 }
 
 /* When wrong + correct pills sit side-by-side, collapse the gap between them */
-.sprout-cloze-typed-wrong + .sprout-cloze-typed-correct {
+.learnkit-cloze-typed-wrong + .learnkit-cloze-typed-correct {
   margin-left: 0px;
 }
 
-.sprout-cloze-typed-correct {
-  background-color: color-mix(in srgb, var(--sprout-good-bg) 10%, transparent);
-  color: var(--sprout-good-bg);
-  border: 1px solid var(--sprout-good-bg);
+.learnkit-cloze-typed-correct {
+  background-color: color-mix(in srgb, var(--learnkit-good-bg) 10%, transparent);
+  color: var(--learnkit-good-bg);
+  border: 1px solid var(--learnkit-good-bg);
 }
 
-.sprout-cloze-typed-wrong {
-  background-color: color-mix(in srgb, var(--sprout-again-bg) 10%, transparent);
-  color: var(--sprout-again-bg);
-  border: 1px solid var(--sprout-again-bg);
+.learnkit-cloze-typed-wrong {
+  background-color: color-mix(in srgb, var(--learnkit-again-bg) 10%, transparent);
+  color: var(--learnkit-again-bg);
+  border: 1px solid var(--learnkit-again-bg);
   text-decoration: line-through;
 }
 
 /* Mobile session card chrome spacing: 8px margin from card edge,
    8px internal padding. Kept outside the width media query
    so it also applies on wider mobile breakpoints/tablets. */
-body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header.sprout-session-topbar {
+body.is-mobile .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header.learnkit-session-topbar {
   margin: 8px !important;
 }
 
-body.is-mobile .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
+body.is-mobile .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.learnkit-session-study-dock {
   margin: 8px !important;
 }
 
 /* ---- Flexed session layout: phone only ---- */
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
   display: none !important;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] {
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
@@ -1644,12 +1644,12 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] {
   padding-bottom: 100px !important;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] > .lk-review-title-strip {
   flex: 0 0 auto;
   z-index: 10;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-review-content-shell {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] > .lk-review-content-shell {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -1659,16 +1659,16 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] > .lk-revie
   padding: 0 !important;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-column {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-session-card, .lk-session-card.card) {
-  --sprout-session-topbar-clearance: 60px;
-  --sprout-session-dock-clearance: 120px;
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] :is(.lk-session-card, .lk-session-card.card) {
+  --learnkit-session-topbar-clearance: 60px;
+  --learnkit-session-dock-clearance: 120px;
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
@@ -1683,7 +1683,7 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] :is(.lk-ses
 
 /* Note-review-style overlay layout: header & footer float absolute over
    the section, which scrolls behind them with padding clearance. */
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > header {
   position: absolute;
   top: 0;
   left: 0;
@@ -1694,29 +1694,29 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session
   backdrop-filter: blur(10px);
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-top: var(--sprout-session-topbar-clearance);
-  padding-bottom: var(--sprout-session-dock-clearance);
+  padding-top: var(--learnkit-session-topbar-clearance);
+  padding-bottom: var(--learnkit-session-dock-clearance);
 }
 
 /* Keep scrolling at the section level on phone; avoid nested vertical scrollboxes in content blocks.
    Both axes must be reset because CSS computes overflow-y:visible → auto when overflow-x is non-visible
-   (tables.css sets overflow-x:auto on .sprout-md-block for table horizontal scroll). */
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section :is(.bc-q, .bc-a, .bc-info, .sprout-md-block, .sprout-mcq-options, .sprout-oq-answer-list) {
+   (tables.css sets overflow-x:auto on .learnkit-md-block for table horizontal scroll). */
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section :is(.learnkit-q, .learnkit-a, .learnkit-info, .learnkit-md-block, .learnkit-mcq-options, .learnkit-oq-answer-list) {
   max-height: none !important;
   overflow: visible !important;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section :is(.bc-q, .bc-a, .bc-info, .sprout-md-block) > p {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > section :is(.learnkit-q, .learnkit-a, .learnkit-info, .learnkit-md-block) > p {
   max-height: none !important;
   overflow: visible !important;
 }
 
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.sprout-session-study-dock {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card > footer.learnkit-session-study-dock {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -1727,11 +1727,11 @@ body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session
 }
 
 /* Session column spacer no longer needed with flexed layout */
-body.is-phone .sprout .lk-review-root[data-lk-review-mode="session"] .lk-session-column::after {
+body.is-phone .learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-column::after {
   display: none;
 }
 
-body.is-phone .sprout .lk-session-column::after {
+body.is-phone .learnkit .lk-session-column::after {
   content: "";
   display: block;
   height: 104px;
@@ -1740,33 +1740,33 @@ body.is-phone .sprout .lk-session-column::after {
   pointer-events: none;
 }
 
-body.is-phone .sprout .lk-session-card.sprout-session-has-dock {
-  --sprout-session-dock-space: 0px;
+body.is-phone .learnkit .lk-session-card.learnkit-session-has-dock {
+  --learnkit-session-dock-space: 0px;
 }
 
-body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock {
+body.is-phone .learnkit .lk-session-card > footer.learnkit-session-study-dock {
   margin: 8px !important;
   padding: 8px !important;
 }
 
-body.is-phone .sprout .lk-session-card > header.sprout-session-topbar {
+body.is-phone .learnkit .lk-session-card > header.learnkit-session-topbar {
   margin: 8px !important;
   padding: 8px !important;
 }
 
-body.is-phone .sprout .lk-session-card > section {
+body.is-phone .learnkit .lk-session-card > section {
   margin: 0 8px;
 }
 
 /* Bump session card content text to match note-review body size on mobile */
-body.is-phone .sprout .lk-session-card .sprout-md-block,
-body.is-phone .sprout .lk-session-card .sprout-oq-step-text,
-body.is-phone .sprout .lk-session-card .sprout-label-row {
-  font-size: var(--sprout-font-sm);
+body.is-phone .learnkit .lk-session-card .learnkit-md-block,
+body.is-phone .learnkit .lk-session-card .learnkit-oq-step-text,
+body.is-phone .learnkit .lk-session-card .learnkit-label-row {
+  font-size: var(--learnkit-font-sm);
 }
 
-body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn,
-body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn {
+body.is-phone .learnkit .lk-session-card .lk-review-edit-icon-btn,
+body.is-phone .learnkit .lk-session-card .lk-review-more-icon-btn {
   width: 36px;
   min-width: 36px;
   padding-left: 0;
@@ -1776,15 +1776,15 @@ body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn {
 }
 
 /* Ensure all session footer buttons have consistent radius on mobile */
-body.is-phone .sprout .lk-session-card footer button,
-body.is-phone .sprout .lk-session-card footer .btn,
-body.is-phone .sprout .lk-session-card footer .sprout-btn-toolbar,
-body.is-phone .sprout .lk-session-card footer .btn-destructive {
+body.is-phone .learnkit .lk-session-card footer button,
+body.is-phone .learnkit .lk-session-card footer .btn,
+body.is-phone .learnkit .lk-session-card footer .learnkit-btn-toolbar,
+body.is-phone .learnkit .lk-session-card footer .btn-destructive {
   border-radius: var(--radius-md, var(--radius-md));
 }
 
 /* ---- Mobile flashcard footer: grade buttons top row, edit/menu bottom row ---- */
-body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock {
+body.is-phone .learnkit .lk-session-card > footer.learnkit-session-study-dock {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1794,19 +1794,19 @@ body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock {
 }
 
 /* Keep footer internals flush; avoid extra top inset from inherited spacing. */
-body.is-phone .sprout .lk-session-card > footer.sprout-session-study-dock > * {
+body.is-phone .learnkit .lk-session-card > footer.learnkit-session-study-dock > * {
   margin-top: 0 !important;
 }
 
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left,
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center,
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-left,
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-center,
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-right {
   margin: 0 !important;
   padding: 0 !important;
 }
 
 /* Grade buttons row: full width on top */
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-center {
   order: -1;
   width: 100%;
   flex: 0 0 100%;
@@ -1814,20 +1814,20 @@ body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center {
 
 /* If there are no grade buttons (e.g., no-cards/practice prompt),
    remove the empty top row so the footer does not look top-heavy. */
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-center:empty {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-center:empty {
   display: none;
   width: auto;
   flex: 0 0 auto;
 }
 
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-buttons {
   display: flex;
   flex-wrap: nowrap;
   width: 100%;
   gap: 8px;
 }
 
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons .text-muted-foreground {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-buttons .text-muted-foreground {
   width: 100%;
   text-align: center;
   display: inline-flex;
@@ -1841,14 +1841,14 @@ body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons .text-
   padding: 0 12px;
 }
 
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-buttons > * {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-buttons > * {
   flex: 1 1 0;
   min-width: 0;
   justify-content: center;
 }
 
 /* Edit/menu row: underneath, side by side, both with text, flexed */
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-left {
   order: 1;
   flex: 1 1 0;
   min-width: 0;
@@ -1856,7 +1856,7 @@ body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left {
   display: flex;
 }
 
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-right {
   order: 1;
   flex: 1 1 0;
   min-width: 0;
@@ -1865,31 +1865,31 @@ body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right {
 }
 
 /* Make buttons inside left/right fill their container */
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-left > *,
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right > * {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-left > *,
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-right > * {
   width: 100%;
   justify-content: center;
 }
 
 /* Show edit icon button as full width with text on mobile */
-body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn {
+body.is-phone .learnkit .lk-session-card .lk-review-edit-icon-btn {
   width: 100% !important;
   min-width: 0 !important;
 }
 
 /* Ensure the More trigger fills the right 50% dock column like Edit. */
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right > * {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-right > * {
   display: flex;
   width: 100%;
 }
 
-body.is-phone .sprout .lk-session-card .sprout-session-study-dock-right .lk-review-more-icon-btn {
+body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-right .lk-review-more-icon-btn {
   width: 100% !important;
   min-width: 0 !important;
 }
 
-body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn,
-body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn {
+body.is-phone .learnkit .lk-session-card .lk-review-edit-icon-btn,
+body.is-phone .learnkit .lk-session-card .lk-review-more-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1898,30 +1898,30 @@ body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn {
   padding: 0 12px;
 }
 
-body.is-phone .sprout .lk-session-card .lk-review-edit-icon-btn [data-sprout-mobile-label],
-body.is-phone .sprout .lk-session-card .lk-review-more-icon-btn [data-sprout-mobile-label] {
+body.is-phone .learnkit .lk-session-card .lk-review-edit-icon-btn [data-learnkit-mobile-label],
+body.is-phone .learnkit .lk-session-card .lk-review-more-icon-btn [data-learnkit-mobile-label] {
   display: inline;
   font-weight: 500;
 }
 
 /* Hide kbd hints on mobile footer */
-body.is-phone .sprout .lk-session-card footer :is(kbd, .kbd) {
+body.is-phone .learnkit .lk-session-card footer :is(kbd, .kbd) {
   display: none;
 }
 
 /* Hide tooltips on session footer buttons on mobile — tapping triggers :hover
    which shows the ::after tooltip, making grading buttons look duplicated. */
-body.is-phone .sprout .lk-session-card footer [data-tooltip]::after {
+body.is-phone .learnkit .lk-session-card footer [data-tooltip]::after {
   display: none;
 }
 
 /* Phone-sized mobile: fully disable AOS on session elements.
    iPad / tablet / desktop retain normal AOS behaviour. */
-body.is-phone .sprout [data-aos],
-body.is-phone .sprout [data-aos].aos-init,
-body.is-phone .sprout [data-aos].aos-animate,
+body.is-phone .learnkit [data-aos],
+body.is-phone .learnkit [data-aos].aos-init,
+body.is-phone .learnkit [data-aos].aos-animate,
 body.is-phone .lk-session-card[data-aos],
-body.is-phone .sprout .card[data-aos] {
+body.is-phone .learnkit .card[data-aos] {
   opacity: 1;
   visibility: visible;
   transform: none;

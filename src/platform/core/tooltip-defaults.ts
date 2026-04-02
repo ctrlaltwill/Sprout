@@ -1,11 +1,9 @@
 /**
- * @file src/core/tooltip-defaults.ts
- * @summary Ensures interactive buttons use Sprout's `aria-label` system.
+ * @file src/platform/core/tooltip-defaults.ts
+ * @summary Module for tooltip defaults.
  *
- * Goals:
- * - Avoid native browser tooltips (`title`).
- * - Ensure every <button> (and role="button") has a clear tooltip, even when icon-only.
- * - Preserve existing explicit `aria-label` values.
+ * @exports
+ *  - initButtonTooltipDefaults
  */
 
 type TooltipTarget = HTMLElement & {
@@ -23,7 +21,7 @@ function normalizeTooltipText(v: string): string {
 }
 
 function shouldSkipAutoTooltip(el: HTMLElement): boolean {
-  return !!el.closest(".sprout-mcq-options, .sprout-oq-step-list, .sprout-oq-answer-list");
+  return !!el.closest(".learnkit-mcq-options, .learnkit-oq-step-list, .learnkit-oq-answer-list");
 }
 
 function ensureTooltip(el: TooltipTarget): void {

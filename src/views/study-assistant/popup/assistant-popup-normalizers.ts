@@ -1,3 +1,12 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-normalizers.ts
+ * @summary Module for assistant popup normalizers.
+ *
+ * @exports
+ *  - normalizeSuggestionBatches
+ *  - normalizeRemoteConversationRefs
+ */
+
 import type {
   StudyAssistantConversationRef,
 } from "../../../platform/integrations/ai/study-assistant-types";

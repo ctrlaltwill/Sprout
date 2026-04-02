@@ -43,14 +43,14 @@ export function renderStudySessionHeader(
       studySessionHeader.removeAttribute("data-aos");
       studySessionHeader.removeAttribute("data-aos-delay");
       studySessionHeader.classList.remove("aos-init", "aos-animate");
-      studySessionHeader.classList.add("sprout-aos-reset");
+      studySessionHeader.classList.add("learnkit-aos-reset", "learnkit-aos-reset");
     }
     return; // Already created, nothing to do
   }
 
   // ===== Create Study Session header =====
   studySessionHeader = document.createElement("div");
-  studySessionHeader.className = "bc flex items-baseline justify-between";
+  studySessionHeader.className = "flex items-baseline justify-between";
   studySessionHeader.setAttribute("data-study-session-header", "true");
   if (applyAOS) {
     studySessionHeader.setAttribute("data-aos", "fade-up");
@@ -59,10 +59,10 @@ export function renderStudySessionHeader(
 
   // Left column: title and timer stacked
   const leftColumn = document.createElement("div");
-  leftColumn.className = "bc flex flex-col lk-session-header-left";
+  leftColumn.className = "flex flex-col lk-session-header-left";
 
   const studySessionLabel = document.createElement("div");
-  studySessionLabel.className = "bc text-xl font-semibold tracking-tight";
+  studySessionLabel.className = "text-xl font-semibold tracking-tight";
   studySessionLabel.textContent = tx(
     interfaceLanguage,
     options?.titleToken ?? "ui.reviewer.session.header.title",
@@ -72,17 +72,17 @@ export function renderStudySessionHeader(
 
   // Timer and controls
   const timerContainer = document.createElement("div");
-  timerContainer.className = "bc flex items-center gap-3";
+  timerContainer.className = "flex items-center gap-3";
 
   // Standalone timer controls (display, play, pause)
   const timerGroup = document.createElement("div");
-  timerGroup.className = "bc flex items-center gap-2 lk-session-timer-group";
+  timerGroup.className = "flex items-center gap-2 lk-session-timer-group";
 
   const timerDisplay = document.createElement("button");
   timerDisplay.type = "button";
   timerDisplay.disabled = true;
   timerDisplay.className =
-    "bc sprout-btn-toolbar sprout-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-btn-timer-display";
+    "learnkit-btn-toolbar learnkit-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn learnkit-btn-timer-display";
   timerDisplay.setAttribute("aria-label", tx(interfaceLanguage, "ui.reviewer.session.header.timerControls", "Timer controls"));
 
   const timerText = document.createElement("span");
@@ -145,12 +145,12 @@ export function renderStudySessionHeader(
   const playBtn = document.createElement("button");
   playBtn.type = "button";
   playBtn.className =
-    "h-9 flex items-center gap-2 equal-height-btn sprout-btn-outline-muted";
+    "h-9 flex items-center gap-2 equal-height-btn learnkit-btn-outline-muted";
   playBtn.setAttribute("aria-label", tx(interfaceLanguage, "ui.reviewer.session.header.playTooltip", "Start timer"));
   const playIconWrap = document.createElement("span");
-  playIconWrap.className = "inline-flex items-center justify-center sprout-btn-icon";
+  playIconWrap.className = "inline-flex items-center justify-center learnkit-btn-icon";
   setIcon(playIconWrap, "play");
-  queryFirst(playIconWrap, "svg")?.classList.add("bc", "shrink-0");
+  queryFirst(playIconWrap, "svg")?.classList.add("shrink-0");
   playBtn.appendChild(playIconWrap);
   const playLabel = document.createElement("span");
   playLabel.textContent = tx(interfaceLanguage, "ui.reviewer.session.header.play", "Start");
@@ -162,12 +162,12 @@ export function renderStudySessionHeader(
   const pauseBtn = document.createElement("button");
   pauseBtn.type = "button";
   pauseBtn.className =
-    "h-9 flex items-center gap-2 equal-height-btn sprout-btn-outline-muted";
+    "h-9 flex items-center gap-2 equal-height-btn learnkit-btn-outline-muted";
   pauseBtn.setAttribute("aria-label", tx(interfaceLanguage, "ui.reviewer.session.header.pauseTooltip", "Pause timer"));
   const pauseIconWrap = document.createElement("span");
-  pauseIconWrap.className = "inline-flex items-center justify-center sprout-btn-icon";
+  pauseIconWrap.className = "inline-flex items-center justify-center learnkit-btn-icon";
   setIcon(pauseIconWrap, "pause");
-  queryFirst(pauseIconWrap, "svg")?.classList.add("bc", "shrink-0");
+  queryFirst(pauseIconWrap, "svg")?.classList.add("shrink-0");
   pauseBtn.appendChild(pauseIconWrap);
   const pauseLabel = document.createElement("span");
   pauseLabel.textContent = tx(interfaceLanguage, "ui.reviewer.session.header.pause", "Pause");
@@ -176,7 +176,7 @@ export function renderStudySessionHeader(
   timerGroup.appendChild(pauseBtn);
 
   const syncTimerControlState = (_btn: HTMLButtonElement) => {
-    // Appearance is handled by CSS :disabled selectors on sprout-btn-outline-muted
+    // Appearance is handled by CSS :disabled selectors on learnkit-btn-outline-muted
   };
 
   const syncTimerControls = () => {

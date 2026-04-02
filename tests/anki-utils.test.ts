@@ -1,3 +1,11 @@
+/**
+ * @file tests/anki-utils.test.ts
+ * @summary Unit tests for anki utils.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   ankiDeckToGroupPath,

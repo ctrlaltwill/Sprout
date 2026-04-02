@@ -27,12 +27,12 @@ function getDomPurify() {
 type CssDecls = Record<string, string>;
 
 const DYNAMIC_PROPS = new Set<string>([
-  "--sprout-ana-x",
-  "--sprout-ana-y",
-  "--sprout-deck-row-translate",
-  "--sprout-oq-translate",
-  "--sprout-popover-left",
-  "--sprout-popover-top",
+  "--learnkit-ana-x",
+  "--learnkit-ana-y",
+  "--learnkit-deck-row-translate",
+  "--learnkit-oq-translate",
+  "--learnkit-popover-left",
+  "--learnkit-popover-top",
 ]);
 
 let sharedStyleSheet: CSSStyleSheet | null = null;
@@ -107,7 +107,7 @@ export function cssClassForProps(decls: Record<string, CssPropValue>): string {
   const existing = sharedRuleByKey.get(key);
   if (existing) return existing.className;
 
-  const className = `sprout-css-${hashString(key)}`;
+  const className = `learnkit-css-${hashString(key)}`;
   const rule = buildRule(className, norm);
   sharedRuleByKey.set(key, { className, rule });
   sharedCssDirty = true;
@@ -163,7 +163,7 @@ function getAppliedMap(el: HTMLElement): Map<string, AppliedProp> {
 function ensureDynEntry(el: HTMLElement): DynEntry {
   let cls = dynClassByEl.get(el);
   if (!cls) {
-    cls = `sprout-dyn-${dynCounter++}`;
+    cls = `learnkit-dyn-${dynCounter++}`;
     dynClassByEl.set(el, cls);
     el.classList.add(cls);
   }
@@ -241,7 +241,7 @@ export function iconButton(
   onClick: () => void,
 ): HTMLButtonElement {
   const b = document.createElement("button");
-  b.className = "sprout-btn";
+  b.className = "learnkit-btn";
   b.type = "button";
   if (title) {
     b.setAttribute("aria-label", title);
@@ -249,10 +249,10 @@ export function iconButton(
   }
 
   const wrap = el("span");
-  wrap.classList.add("sprout-inline-flex", "sprout-items-center", "sprout-gap-8");
+  wrap.classList.add("learnkit-inline-flex", "learnkit-inline-flex", "learnkit-items-center", "learnkit-items-center", "learnkit-gap-8", "learnkit-gap-8");
 
   const ic = el("span");
-  ic.classList.add("sprout-inline-flex", "sprout-items-center");
+  ic.classList.add("learnkit-inline-flex", "learnkit-inline-flex", "learnkit-items-center", "learnkit-items-center");
   setIcon(ic, iconName);
   wrap.appendChild(ic);
 
@@ -264,7 +264,7 @@ export function iconButton(
 
 export function smallToggleButton(isOpen: boolean, onClick: () => void): HTMLButtonElement {
   const b = document.createElement("button");
-  b.className = "sprout-toggle";
+  b.className = "learnkit-toggle";
   b.type = "button";
   b.setAttribute("aria-label", isOpen ? "Collapse" : "Expand");
   b.setAttribute("data-tooltip-position", "top");
@@ -618,7 +618,7 @@ export interface PlacePopoverOpts {
   dropUp?: boolean;
   /** Gap between trigger and popover edge (default 3). */
   gap?: number;
-  /** Whether to set --sprout-popover-width (default true). */
+  /** Whether to set --learnkit-popover-width (default true). */
   setWidth?: boolean;
   /** Horizontal alignment relative to the trigger (default 'left'). */
   align?: 'left' | 'right';
@@ -657,9 +657,9 @@ export function placePopover(opts: PlacePopoverOpts): void {
   const top = topRaw / zoom;
   const width = popW / zoom;
 
-  setCssProps(popoverEl, "--sprout-popover-left", `${left}px`);
-  setCssProps(popoverEl, "--sprout-popover-top", `${top}px`);
+  setCssProps(popoverEl, "--learnkit-popover-left", `${left}px`);
+  setCssProps(popoverEl, "--learnkit-popover-top", `${top}px`);
   if (setWidth) {
-    setCssProps(popoverEl, "--sprout-popover-width", `${width}px`);
+    setCssProps(popoverEl, "--learnkit-popover-width", `${width}px`);
   }
 }

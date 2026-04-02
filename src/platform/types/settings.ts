@@ -9,11 +9,6 @@
  *   - LearnKitSettings — primary type describing the complete plugin settings structure
  *   - SproutSettings — compatibility alias for LearnKitSettings
  */
-
-/**
- * Full settings structure for the LearnKit plugin.
- * Each top-level key groups settings by feature area.
- */
 export type LearnKitSettings = {
   // General — user identity, greeting, appearance
   general: {

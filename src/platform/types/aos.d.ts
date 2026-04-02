@@ -1,6 +1,9 @@
 /**
- * @file src/types/aos.d.ts
- * @summary Ambient type declarations for the AOS (Animate On Scroll) library.
+ * @file src/platform/types/aos.d.ts
+ * @summary Module for aos.d.
+ *
+ * @exports
+ *  - (no named exports in this module)
  */
 
 declare module "aos" {

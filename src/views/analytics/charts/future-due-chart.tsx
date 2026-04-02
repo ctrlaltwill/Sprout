@@ -96,7 +96,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
+      className={`svg-icon learnkit-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -222,7 +222,7 @@ function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: u
   if (!datum) return null;
   const total = datum.new + datum.learning + datum.relearning + datum.review;
   return (
-    <div className="sprout-data-tooltip-surface">
+    <div className="learnkit-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{datum.date}</div>
       <div className="text-background">Due: {total}</div>
       <div className="text-background">New: {datum.new}</div>
@@ -303,8 +303,8 @@ export function FutureDueChart(props: {
     const place = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     place();
     window.addEventListener("resize", place, true);
@@ -489,7 +489,7 @@ export function FutureDueChart(props: {
   };
 
   return (
-    <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
+    <div className="card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-1">
@@ -501,11 +501,11 @@ export function FutureDueChart(props: {
         <div ref={wrapRef} className="relative inline-flex">
           <button
             type="button"
-            id="sprout-forecast-filter-trigger"
-            className="sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+            id="learnkit-forecast-filter-trigger"
+            className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
-            aria-controls="sprout-forecast-filter-listbox"
+            aria-controls="learnkit-forecast-filter-listbox"
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
@@ -526,10 +526,10 @@ export function FutureDueChart(props: {
           </button>
           {open ? (
             <div
-              id="sprout-forecast-filter-popover"
+              id="learnkit-forecast-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"
+              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm learnkit-ana-popover-left"
             >
               <div className="p-1">
                 <div
@@ -589,7 +589,7 @@ export function FutureDueChart(props: {
                 {cardTypeOpen ? (
                   <div
                     role="menu"
-                    id="sprout-forecast-filter-listbox"
+                    id="learnkit-forecast-filter-listbox"
                     aria-orientation="vertical"
                     data-tooltip="Forecast filter"
                     className="flex flex-col"
@@ -628,7 +628,7 @@ export function FutureDueChart(props: {
                   <input
                     type="text"
                     placeholder="Search decks"
-                    className="input w-full text-sm sprout-filter-search-input"
+                    className="input w-full text-sm learnkit-filter-search-input"
                     value={deckQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -669,7 +669,7 @@ export function FutureDueChart(props: {
                   <input
                     type="text"
                     placeholder="Search groups"
-                    className="input w-full text-sm sprout-filter-search-input"
+                    className="input w-full text-sm learnkit-filter-search-input"
                     value={groupQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -714,11 +714,11 @@ export function FutureDueChart(props: {
         </div>
       </div>
 
-      <div className="w-full flex-1 sprout-analytics-chart">
+      <div className="w-full flex-1 learnkit-analytics-chart">
         <ResponsiveContainer width="100%" height={250}>
           <ComposedChart data={data} margin={{ top: 12, right: 16, bottom: 12, left: 8 }}>
             <defs>
-              <linearGradient id="sprout-forecast-area" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="learnkit-forecast-area" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--theme-accent)" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="var(--theme-accent)" stopOpacity={0.02} />
               </linearGradient>
@@ -749,7 +749,7 @@ export function FutureDueChart(props: {
               dataKey="backlogSmooth"
               type="natural"
               stroke={GREEN_LINE}
-              fill="url(#sprout-forecast-area)"
+              fill="url(#learnkit-forecast-area)"
               strokeWidth={3}
               dot={false}
               isAnimationActive={props.enableAnimations ?? true}
@@ -760,36 +760,36 @@ export function FutureDueChart(props: {
         </ResponsiveContainer>
       </div>
 
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
-        <div className="bc inline-flex items-center gap-2">
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground learnkit-ana-chart-legend">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-1)" })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": "var(--chart-accent-1)" })}`}
           />
-          <span className="bc">New</span>
+          <span className="">New</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-2)" })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": "var(--chart-accent-2)" })}`}
           />
-          <span className="bc">Learning</span>
+          <span className="">Learning</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-3)" })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": "var(--chart-accent-3)" })}`}
           />
-          <span className="bc">Relearning</span>
+          <span className="">Relearning</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-4)" })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": "var(--chart-accent-4)" })}`}
           />
-          <span className="bc">Review</span>
+          <span className="">Review</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-line ${cssClassForProps({ "--sprout-legend-color": "var(--chart-accent-3)" })}`}
+            className={`inline-block learnkit-ana-legend-line ${cssClassForProps({ "--learnkit-legend-color": "var(--chart-accent-3)" })}`}
           />
-          <span className="bc">Backlog</span>
+          <span className="">Backlog</span>
         </div>
       </div>
     </div>

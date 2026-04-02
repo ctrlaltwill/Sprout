@@ -19,8 +19,8 @@ export type { StageTransform };
  * Applies a transform (scale, translate) to a stage element.
  */
 export function applyStageTransform(el: HTMLElement, t: StageTransform) {
-  el.classList.add("sprout-stage-transform");
-  setCssProps(el, "--sprout-stage-transform", `translate(${t.tx}px, ${t.ty}px) scale(${t.scale})`);
+  el.classList.add("learnkit-stage-transform", "learnkit-stage-transform");
+  setCssProps(el, "--learnkit-stage-transform", `translate(${t.tx}px, ${t.ty}px) scale(${t.scale})`);
 }
 
 /**

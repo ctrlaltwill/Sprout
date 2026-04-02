@@ -9,8 +9,6 @@
  *   - detectLanguage — Analyse text and return a BCP-47 language tag or null
  *   - BLANK_WORD_MAP  — Map of language codes to the word "blank" in that language
  */
-
-/** Unicode-range rule: regex pattern → BCP-47 tag. Order matters — more specific first. */
 const SCRIPT_RULES: Array<{ re: RegExp; lang: string }> = [
   // Japanese kana (hiragana + katakana) — checked before CJK since Japanese also uses kanji
   { re: /[\u3040-\u309f\u30a0-\u30ff]/,        lang: "ja" },

@@ -9,25 +9,25 @@
 /*
  * Shared styling for <table> elements rendered by MarkdownRenderer.render()
  * inside card Q/A/Info blocks across all three views:
- *   - Reviewer:     .sprout-md-block table
- *   - Reading view: .sprout-section-content table, .sprout-answer table, .sprout-info table
- *   - Widget:       .sprout-widget-text table
+ *   - Reviewer:     .learnkit-md-block table
+ *   - Reading view: .learnkit-section-content table, .learnkit-answer table, .learnkit-info table
+ *   - Widget:       .learnkit-widget-text table
  */
 
 /* Scrollable wrapper so wide tables don't overflow the card */
-.sprout .sprout-md-block,
-.sprout .sprout-section-content,
-.sprout .sprout-answer,
-.sprout .sprout-info {
+.learnkit .learnkit-md-block,
+.learnkit .learnkit-section-content,
+.learnkit .learnkit-answer,
+.learnkit .learnkit-info {
   overflow-x: auto;
 }
 
 /* Base table layout */
-.sprout .sprout-md-block table,
-.sprout .sprout-section-content table,
-.sprout .sprout-answer table,
-.sprout .sprout-info table,
-.sprout .sprout-widget-text table {
+.learnkit .learnkit-md-block table,
+.learnkit .learnkit-section-content table,
+.learnkit .learnkit-answer table,
+.learnkit .learnkit-info table,
+.learnkit .learnkit-widget-text table {
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
@@ -37,86 +37,86 @@
 }
 
 /* Header cells */
-.sprout .sprout-md-block table th,
-.sprout .sprout-section-content table th,
-.sprout .sprout-answer table th,
-.sprout .sprout-info table th,
-.sprout .sprout-widget-text table th {
+.learnkit .learnkit-md-block table th,
+.learnkit .learnkit-section-content table th,
+.learnkit .learnkit-answer table th,
+.learnkit .learnkit-info table th,
+.learnkit .learnkit-widget-text table th {
   font-weight: 600;
   text-align: left;
   padding: 6px 10px;
-  border-bottom: 2px solid var(--sprout-border-color);
+  border-bottom: 2px solid var(--learnkit-border-color);
   background: var(--background-secondary);
   white-space: nowrap;
 }
 
 /* Body cells */
-.sprout .sprout-md-block table td,
-.sprout .sprout-section-content table td,
-.sprout .sprout-answer table td,
-.sprout .sprout-info table td,
-.sprout .sprout-widget-text table td {
+.learnkit .learnkit-md-block table td,
+.learnkit .learnkit-section-content table td,
+.learnkit .learnkit-answer table td,
+.learnkit .learnkit-info table td,
+.learnkit .learnkit-widget-text table td {
   padding: 5px 10px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
   vertical-align: top;
 }
 
 /* Subtle stripe for readability */
-.sprout .sprout-md-block table tbody tr:nth-child(even),
-.sprout .sprout-section-content table tbody tr:nth-child(even),
-.sprout .sprout-answer table tbody tr:nth-child(even),
-.sprout .sprout-info table tbody tr:nth-child(even),
-.sprout .sprout-widget-text table tbody tr:nth-child(even) {
+.learnkit .learnkit-md-block table tbody tr:nth-child(even),
+.learnkit .learnkit-section-content table tbody tr:nth-child(even),
+.learnkit .learnkit-answer table tbody tr:nth-child(even),
+.learnkit .learnkit-info table tbody tr:nth-child(even),
+.learnkit .learnkit-widget-text table tbody tr:nth-child(even) {
   background: var(--background-secondary-alt, var(--background-secondary));
 }
 
 /* ---- Generic table row hover ---- */
 
-.sprout .bc table tbody tr:hover {
+.learnkit .bc table tbody tr:hover {
   background-color: var(--background-secondary);
 }
-.sprout .bc table tbody tr:hover,
-.sprout .bc table tbody tr:hover td {
+.learnkit .bc table tbody tr:hover,
+.learnkit .bc table tbody tr:hover td {
   border-color: var(--background-secondary);
   border-bottom-color: var(--background-secondary);
 }
 
 @media (hover: hover) {
-  .sprout .table tr:hover {
+  .learnkit .table tr:hover {
     background-color: var(--theme-base-10);
     color: var(--theme-base-95);
   }
 
-  .sprout .table tbody tr:hover td {
+  .learnkit .table tbody tr:hover td {
     border-top-color: var(--theme-base-20);
     border-bottom-color: var(--theme-base-20);
     color: var(--theme-base-95);
   }
 
-  .sprout .table tbody tr:hover td:first-child {
+  .learnkit .table tbody tr:hover td:first-child {
     border-left-color: var(--theme-base-20);
   }
 
-  .sprout .table tbody tr:hover td:last-child {
+  .learnkit .table tbody tr:hover td:last-child {
     border-right-color: var(--theme-base-20);
   }
 
-  .sprout .table tr:hover :is(.sprout-deck-expand-icon, .sprout-deck-disclosure, .sprout-deck-control-icon) {
+  .learnkit .table tr:hover :is(.learnkit-deck-expand-icon, .learnkit-deck-disclosure, .learnkit-deck-control-icon) {
     color: var(--theme-base-95);
   }
 
-  .sprout .table tr:hover :is(.sprout-deck-expand-icon, .sprout-deck-disclosure, .sprout-deck-control-icon) svg {
+  .learnkit .table tr:hover :is(.learnkit-deck-expand-icon, .learnkit-deck-disclosure, .learnkit-deck-control-icon) svg {
     color: inherit;
     stroke: currentColor;
   }
 }
 
-.sprout .table tr {
+.learnkit .table tr {
     transition: background-color .2s;
 }
 /* ---- Toggle buttons & chevrons ---- */
 
-.sprout .sprout-toggle-btn {
+.learnkit .learnkit-toggle-btn {
   box-shadow: none;
   background: none;
   padding: 0;
@@ -128,22 +128,22 @@
 }
 
 /* Ensure chevron SVG is visible and sized correctly */
-.sprout .sprout-toggle-chevron {
+.learnkit .learnkit-toggle-chevron {
   width: 1em;
   height: 1em;
   color: inherit;
   display: inline-block;
   vertical-align: middle;
 }
-.sprout .sprout-toggle-btn:hover,
-.sprout .sprout-toggle-btn:active,
-.sprout .sprout-toggle-btn:focus {
+.learnkit .learnkit-toggle-btn:hover,
+.learnkit .learnkit-toggle-btn:active,
+.learnkit .learnkit-toggle-btn:focus {
   background: none;
 }
 
 /* ---- Changelog table ---- */
 
-.sprout .sprout-changelog-table {
+.learnkit .learnkit-changelog-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -154,9 +154,9 @@
 }
 
 /* Changelog wrapper: padding + border so scroll stays inside */
-.sprout .sprout-changelog-scroll {
+.learnkit .learnkit-changelog-scroll {
   padding: 8px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   max-height: 165px;
   overflow-y: auto;
@@ -164,95 +164,95 @@
   background: var(--background);
 }
 
-.sprout .sprout-changelog-table thead tr {
+.learnkit .learnkit-changelog-table thead tr {
   background: var(--background);
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
-.sprout .sprout-changelog-table tbody tr {
+.learnkit .learnkit-changelog-table tbody tr {
   background: var(--background);
 }
-.sprout .sprout-changelog-table th,
-.sprout .sprout-changelog-table td,
-.sprout .sprout-changelog-cell {
+.learnkit .learnkit-changelog-table th,
+.learnkit .learnkit-changelog-table td,
+.learnkit .learnkit-changelog-cell {
   padding: 8px 10px;
   border: none;
   vertical-align: top;
 }
-.sprout .sprout-changelog-table tbody td {
+.learnkit .learnkit-changelog-table tbody td {
   background: inherit;
   border: none;
 }
-.sprout .sprout-changelog-table tbody td:first-child {
+.learnkit .learnkit-changelog-table tbody td:first-child {
   border-left: none;
 }
-.sprout .sprout-changelog-table tbody td:last-child {
+.learnkit .learnkit-changelog-table tbody td:last-child {
   border-right: none;
 }
 
 /* Add a single border below the header (top of tbody) */
-.sprout .sprout-changelog-table tbody {
-  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
+.learnkit .learnkit-changelog-table tbody {
+  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
-.sprout .sprout-changelog-table th:first-child,
-.sprout .sprout-changelog-table td:first-child {
+.learnkit .learnkit-changelog-table th:first-child,
+.learnkit .learnkit-changelog-table td:first-child {
   border-top-left-radius: var(--radius-l);
   border-bottom-left-radius: var(--radius-l);
 }
 
-.sprout .sprout-changelog-table th:last-child,
-.sprout .sprout-changelog-table td:last-child {
+.learnkit .learnkit-changelog-table th:last-child,
+.learnkit .learnkit-changelog-table td:last-child {
   border-top-right-radius: var(--radius-l);
   border-bottom-right-radius: var(--radius-l);
 }
-.sprout .sprout-changelog-table th {
+.learnkit .learnkit-changelog-table th {
   color: var(--text-color);
   font-weight: 600;
   text-align: left;
 }
-.sprout .sprout-changelog-table td,
-.sprout .sprout-changelog-cell {
+.learnkit .learnkit-changelog-table td,
+.learnkit .learnkit-changelog-cell {
   color: var(--text-muted);
 }
-.sprout .sprout-changelog-table th:last-child,
-.sprout .sprout-changelog-table td:last-child {
+.learnkit .learnkit-changelog-table th:last-child,
+.learnkit .learnkit-changelog-table td:last-child {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 /* Row hover: single rounded rectangle */
-.sprout .sprout-changelog-table tbody tr:hover {
+.learnkit .learnkit-changelog-table tbody tr:hover {
   background-color: var(--color-background);
 }
-.sprout .sprout-changelog-table tbody tr:hover td {
+.learnkit .learnkit-changelog-table tbody tr:hover td {
   background-color: var(--color-background);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
 }
-.sprout .sprout-changelog-table tbody tr:hover td:first-child {
+.learnkit .learnkit-changelog-table tbody tr:hover td:first-child {
   border-top-left-radius: var(--radius-md);
   border-bottom-left-radius: var(--radius-md);
 }
-.sprout .sprout-changelog-table tbody tr:hover td:last-child {
+.learnkit .learnkit-changelog-table tbody tr:hover td:last-child {
   border-top-right-radius: var(--radius-md);
   border-bottom-right-radius: var(--radius-md);
 }
 
-.sprout .sprout-changelog-cell {
+.learnkit .learnkit-changelog-cell {
     border-radius: 0px;
 }
 
 /* Changelog footer with buttons */
-.sprout .sprout-changelog-footer {
-  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
+.learnkit .learnkit-changelog-footer {
+  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
   margin-top: 8px;
   padding-top: 8px;
 }
 
 /* ---- Release summary card (What's New) ---- */
 
-.sprout .sprout-release-summary {
+.learnkit .learnkit-release-summary {
   padding: 10px 12px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   background: var(--background);
   max-height: 200px;
@@ -260,16 +260,16 @@
   overflow-x: hidden;
 }
 
-.sprout .sprout-release-version-row {
+.learnkit .learnkit-release-version-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.sprout .sprout-version-badge {
+.learnkit .learnkit-version-badge {
   display: inline-block;
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   font-weight: 600;
   padding: 1px 8px;
   border-radius: var(--radius-s);
@@ -277,42 +277,42 @@
   color: var(--text-on-accent);
 }
 
-.sprout .sprout-release-content {
+.learnkit .learnkit-release-content {
   line-height: 1.5;
 }
 
-.sprout .sprout-release-heading {
+.learnkit .learnkit-release-heading {
   font-weight: 600;
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   margin-top: 6px;
   margin-bottom: 2px;
   color: var(--text-normal);
 }
 
-.sprout .sprout-release-list {
+.learnkit .learnkit-release-list {
   margin: 0;
   padding-left: 0;
   list-style-position: inside;
   color: var(--text-muted);
 }
 
-.sprout .sprout-release-list li {
+.learnkit .learnkit-release-list li {
   margin-bottom: 1px;
 }
 
-.sprout .sprout-backup-hint {
+.learnkit .learnkit-backup-hint {
   display: flex;
   align-items: flex-start;
   gap: 6px;
   padding: 8px 10px;
   border-radius: var(--radius-md);
   background: var(--background-modifier-message);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-.sprout-release-actions {
+.learnkit-release-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;

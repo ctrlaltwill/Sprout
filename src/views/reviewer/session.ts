@@ -9,7 +9,7 @@
  *   - getNextDueInScope — Returns the earliest future due timestamp among cards in the given scope, or null
  */
 
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { Scope, Session } from "./types";
 import type { CardRecord } from "../../platform/core/store";
 import type { ReviewLogEntry } from "../../platform/types/review";
@@ -77,7 +77,7 @@ function filterReviewable(cards: CardRecord[]): CardRecord[] {
  * Counts are per-card (distinct IDs), not per-review-event.
  */
 function getTodayCountsInScope(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   idsInScope: Set<string>,
   startToday: number,
 ) {
@@ -145,7 +145,7 @@ export function isAvailableNow(st: CardState | undefined, now: number): boolean 
   return false;
 }
 
-function resolveCardsInScope(plugin: SproutPlugin, scope: Scope): CardRecord[] {
+function resolveCardsInScope(plugin: LearnKitPlugin, scope: Scope): CardRecord[] {
   if (!scope || scope.type === "vault") {
     return filterReviewable(plugin.store.getAllCards());
   }
@@ -183,7 +183,7 @@ function resolveCardsInScope(plugin: SproutPlugin, scope: Scope): CardRecord[] {
   return filterReviewable(raw);
 }
 
-export function buildSession(plugin: SproutPlugin, scope: Scope, options?: SessionBuildOptions): Session {
+export function buildSession(plugin: LearnKitPlugin, scope: Scope, options?: SessionBuildOptions): Session {
   const now = Date.now();
   const startToday = startOfTodayMs(now);
 
@@ -382,7 +382,7 @@ function disperseSiblings(cards: CardRecord[]): CardRecord[] {
  * the changes so buried cards are excluded from subsequent sessions today.
  */
 function burySiblings(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   cards: CardRecord[],
   states: Record<string, CardState>,
   now: number,
@@ -433,7 +433,7 @@ function burySiblings(
   }
 }
 
-export function getNextDueInScope(plugin: SproutPlugin, scope: Scope): number | null {
+export function getNextDueInScope(plugin: LearnKitPlugin, scope: Scope): number | null {
   const now = Date.now();
   const cards = resolveCardsInScope(plugin, scope);
 

@@ -1,7 +1,15 @@
+/**
+ * @file src/platform/plugin/navigation-methods.ts
+ * @summary Module for navigation methods.
+ *
+ * @exports
+ *  - installNavigationMethods
+ */
+
 import { Notice, type WorkspaceLeaf } from "obsidian";
 import { LearnKitPluginBase } from "./plugin-base";
 import type { Scope } from "../../views/reviewer/types";
-import type { SproutSettingsView } from "../../views/settings/view/settings-view";
+import type { LearnKitSettingsView } from "../../views/settings/view/settings-view";
 import {
   VIEW_TYPE_REVIEWER,
   VIEW_TYPE_WIDGET,
@@ -75,7 +83,7 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
         const existing = this._ensureSingleLeafOfType(VIEW_TYPE_SETTINGS);
         if (existing) {
           void this.app.workspace.revealLeaf(existing);
-          const view = existing.view as SproutSettingsView | undefined;
+          const view = existing.view as LearnKitSettingsView | undefined;
           if (view && typeof view.navigateToTab === "function") {
             view.navigateToTab(resolvedTargetTab, { reanimateEntrance: true });
           }
@@ -88,7 +96,7 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       void this.app.workspace.revealLeaf(leaf);
 
       setTimeout(() => {
-        const view = leaf.view as SproutSettingsView | undefined;
+        const view = leaf.view as LearnKitSettingsView | undefined;
         if (view && typeof view.navigateToTab === "function") {
           view.navigateToTab(resolvedTargetTab, { reanimateEntrance: true });
         }

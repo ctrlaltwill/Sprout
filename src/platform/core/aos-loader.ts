@@ -8,12 +8,6 @@
  *   - resetAOS    — refresh AOS after DOM changes
  *   - removeAOS   — shut down AOS and clean up global listeners
  */
-
-/**
- * AOS loader with error suppression
- * The querySelector errors don't break anything - we just hide them
- */
-
 import { log } from "./logger";
 import { AOS_DURATION } from "./constants";
 
@@ -55,7 +49,7 @@ function forceRevealAosElements(root: ParentNode = document): void {
 
   for (const el of elements) {
     el.classList.remove("aos-init", "aos-animate");
-    el.classList.add("sprout-aos-fallback");
+    el.classList.add("learnkit-aos-fallback", "learnkit-aos-fallback");
   }
 }
 
@@ -204,7 +198,7 @@ export function cascadeAOSOnLoad(
 
   // Reset any prior forced visibility and ensure a clean starting state.
   for (const el of els) {
-    el.classList.remove("sprout-aos-fallback");
+    el.classList.remove("learnkit-aos-fallback", "learnkit-aos-fallback");
     el.classList.remove("aos-animate");
     // Ensure a duration is present even if AOS JS never runs.
     if (!el.hasAttribute("data-aos-duration")) el.setAttribute("data-aos-duration", String(durationMs));
@@ -244,7 +238,7 @@ export function cascadeAOSOnLoad(
       if (!el.isConnected) continue;
       const cs = getComputedStyle(el);
       if (cs.opacity === "0" || cs.visibility === "hidden") {
-        el.classList.add("sprout-aos-fallback");
+        el.classList.add("learnkit-aos-fallback", "learnkit-aos-fallback");
       }
     }
   }, safetyDelayMs);

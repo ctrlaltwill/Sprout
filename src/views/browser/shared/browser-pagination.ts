@@ -61,7 +61,7 @@ export function renderPagination(
   const mkBtn = (label: string, tooltip: string, disabled: boolean, active: boolean, onClick: () => void) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = `sprout-btn-toolbar${active ? " sprout-btn-control" : ""}`;
+    b.className = `learnkit-btn-toolbar${active ? " learnkit-btn-control" : ""}`;
     b.classList.add(..."h-8 px-2".split(" "));
     b.textContent = label;
     b.setAttribute("aria-label", tooltip);
@@ -80,7 +80,7 @@ export function renderPagination(
   const mkEllipsisBtn = (targetPage: number) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "sprout-btn-toolbar h-8 px-2";
+    b.className = "learnkit-btn-toolbar h-8 px-2";
     b.textContent = "…";
     b.setAttribute("aria-label", tx("ui.browser.pagination.pageN", "Page {page}", { page: targetPage }));
     b.setAttribute("data-tooltip-position", "top");
@@ -106,7 +106,7 @@ export function renderPagination(
   // Prev
   const prev = document.createElement("button");
   prev.type = "button";
-  prev.className = "sprout-btn-toolbar";
+  prev.className = "learnkit-btn-toolbar";
   prev.classList.add(..."h-8 px-2".split(" "));
   prev.setAttribute("aria-label", tx("ui.browser.pagination.prevPage", "Previous page"));
   prev.setAttribute("data-tooltip-position", "top");
@@ -167,7 +167,7 @@ export function renderPagination(
   // Next
   const next = document.createElement("button");
   next.type = "button";
-  next.className = "sprout-btn-toolbar";
+  next.className = "learnkit-btn-toolbar";
   next.classList.add(..."h-8 px-2".split(" "));
   next.setAttribute("aria-label", tx("ui.browser.pagination.nextPage", "Next page"));
   next.setAttribute("data-tooltip-position", "top");

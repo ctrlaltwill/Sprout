@@ -1,3 +1,11 @@
+/**
+ * @file tests/indexes-scope-match.test.ts
+ * @summary Unit tests for indexes scope match.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import { normPath, matchesScope } from "../src/engine/indexing/scope-match";
 import type { Scope } from "../src/views/reviewer/types";

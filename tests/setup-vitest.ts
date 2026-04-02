@@ -1,3 +1,11 @@
+/**
+ * @file tests/setup-vitest.ts
+ * @summary Unit tests for setup vitest behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { vi } from "vitest";
 
 // Node-based Vitest runs cannot import raw .wasm modules directly.

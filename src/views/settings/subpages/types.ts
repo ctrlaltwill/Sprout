@@ -1,3 +1,14 @@
+/**
+ * @file src/views/settings/subpages/types.ts
+ * @summary Module for types.
+ *
+ * @exports
+ *  - GithubReleaseApiItem
+ *  - ReleaseNotesPage
+ *  - GuidePage
+ *  - GuideCategory
+ */
+
 export interface GithubReleaseApiItem {
   tag_name?: string;
   body?: string;

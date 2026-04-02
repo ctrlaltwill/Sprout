@@ -1,3 +1,11 @@
+/**
+ * @file tests/backup-settings-functionality.test.ts
+ * @summary Unit tests for backup settings functionality.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect, vi } from "vitest";
 import {
   createDataJsonBackupNow,

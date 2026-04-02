@@ -1,3 +1,11 @@
+/**
+ * @file tests/context-limit-presets.test.ts
+ * @summary Unit tests for context limit presets.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import {
   getLinkedContextLimits,

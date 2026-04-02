@@ -1,3 +1,11 @@
+/**
+ * @file src/views/analytics/cards/topic-mastery-card.tsx
+ * @summary Module for topic mastery card.
+ *
+ * @exports
+ *  - TopicMasteryCard
+ */
+
 import * as React from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAnalyticsPopoverZIndex } from "../filter-styles";
@@ -211,8 +219,8 @@ export function TopicMasteryCard(props: {
     const placePopover = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -249,21 +257,21 @@ export function TopicMasteryCard(props: {
     const row = ctx.payload[0]?.payload as ChartRow | undefined;
     if (!row) return null;
     return (
-      <div className="bc sprout-data-tooltip-surface">
-        <div className="bc text-sm font-medium text-background">{row.key}</div>
-        <div className="bc text-background">Mastery: {row.score.toFixed(1)}</div>
-        <div className="bc text-background">Confidence: {row.confidence}%</div>
-        <div className="bc text-background">Due soon: {row.dueSoon}</div>
+      <div className="learnkit-data-tooltip-surface">
+        <div className="text-sm font-medium text-background">{row.key}</div>
+        <div className="text-background">Mastery: {row.score.toFixed(1)}</div>
+        <div className="text-background">Confidence: {row.confidence}%</div>
+        <div className="text-background">Due soon: {row.dueSoon}</div>
       </div>
     );
   }, []);
 
   return (
-    <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3" ref={wrapRef}>
-      <div className="bc flex items-start justify-between gap-2">
+    <div className="card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3" ref={wrapRef}>
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="bc flex items-center gap-1">
-            <div className="bc font-semibold lk-home-section-title">Topic mastery</div>
+          <div className="flex items-center gap-1">
+            <div className="font-semibold lk-home-section-title">Topic mastery</div>
             <span
               className="inline-flex items-center text-muted-foreground"
               data-tooltip="Weak-area surfacing and next-review focus based on combined card and note-review performance."
@@ -276,13 +284,13 @@ export function TopicMasteryCard(props: {
               </svg>
             </span>
           </div>
-          <div className="bc text-xs text-muted-foreground">Weak-area surfacing and next-review focus</div>
+          <div className="text-xs text-muted-foreground">Weak-area surfacing and next-review focus</div>
         </div>
-        <div className="bc relative inline-flex">
+        <div className="relative inline-flex">
           <button
             type="button"
-            id="sprout-topic-mastery-filter-trigger"
-            className="bc sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+            id="learnkit-topic-mastery-filter-trigger"
+            className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
             aria-label="Filter"
@@ -295,22 +303,22 @@ export function TopicMasteryCard(props: {
             <span>Filter</span>
           </button>
           {open ? (
-            <div ref={popoverRef} className="bc sprout-ana-popover sprout-ana-popover-right sprout-ana-popover-sm rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1" role="listbox" aria-label="Topic mastery filters">
-              <div className="bc flex flex-col gap-1">
-                <div className="bc px-2 py-1 text-xs text-muted-foreground">Suggested focus topics</div>
-                <div className="bc px-2 pb-2">
+            <div ref={popoverRef} className="learnkit-ana-popover learnkit-ana-popover-right learnkit-ana-popover-sm rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1" role="listbox" aria-label="Topic mastery filters">
+              <div className="flex flex-col gap-1">
+                <div className="px-2 py-1 text-xs text-muted-foreground">Suggested focus topics</div>
+                <div className="px-2 pb-2">
                   <input
                     type="range"
                     min={1}
                     max={Math.max(1, Math.min(20, rows.length || 1))}
                     value={Math.min(focusCount, Math.max(1, rows.length || 1))}
                     onChange={(ev) => setFocusCount(Math.max(1, Number(ev.currentTarget.value || 1)))}
-                    className="bc w-full"
+                    className="w-full"
                   />
-                  <div className="bc text-xs text-muted-foreground mt-1">{Math.min(focusCount, Math.max(1, rows.length || 1))} topics</div>
+                  <div className="text-xs text-muted-foreground mt-1">{Math.min(focusCount, Math.max(1, rows.length || 1))} topics</div>
                 </div>
-                <div className="bc h-px bg-border my-1" role="separator" />
-                <label className="bc px-2 py-1.5 inline-flex items-center gap-2 text-sm cursor-pointer">
+                <div className="h-px bg-border my-1" role="separator" />
+                <label className="px-2 py-1.5 inline-flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
                     checked={includePractice}
@@ -318,8 +326,8 @@ export function TopicMasteryCard(props: {
                   />
                   <span>Include practice events</span>
                 </label>
-                <div className="bc h-px bg-border my-1" role="separator" />
-                <div className="bc px-2 pb-1 text-xs text-muted-foreground">
+                <div className="h-px bg-border my-1" role="separator" />
+                <div className="px-2 pb-1 text-xs text-muted-foreground">
                     Hierarchy is set in settings ({props.hierarchy.replace(/-/g, " / ")}).
                 </div>
               </div>
@@ -332,7 +340,7 @@ export function TopicMasteryCard(props: {
         <div className="text-sm text-muted-foreground">Not enough data to compute topic mastery yet.</div>
       ) : (
         <>
-          <div className="bc w-full flex-1 sprout-analytics-chart">
+          <div className="w-full flex-1 learnkit-analytics-chart">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={chartData} margin={{ top: 12, right: 12, bottom: 12, left: 12 }} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
@@ -344,9 +352,9 @@ export function TopicMasteryCard(props: {
             </ResponsiveContainer>
           </div>
 
-          <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
-            <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-1)" }} />Low mastery focus</div>
-            <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-3)" }} />Higher score</div>
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground learnkit-ana-chart-legend">
+            <div className="inline-flex items-center gap-2"><span className="inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square" style={{ ["--learnkit-legend-color" as string]: "var(--chart-accent-1)" }} />Low mastery focus</div>
+            <div className="inline-flex items-center gap-2"><span className="inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square" style={{ ["--learnkit-legend-color" as string]: "var(--chart-accent-3)" }} />Higher score</div>
           </div>
 
           <div className="space-y-2">

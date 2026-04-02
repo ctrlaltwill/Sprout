@@ -1,3 +1,16 @@
+/**
+ * @file src/platform/core/brand-icons.ts
+ * @summary Module for brand icons.
+ *
+ * @exports
+ *  - LEARNKIT_BRAND_ICON_KEY
+ *  - LEARNKIT_BRAND_HORIZONTAL_ICON_KEY
+ *  - LEARNKIT_WIDGET_STUDY_ICON_KEY
+ *  - LEARNKIT_WIDGET_ASSISTANT_ICON_KEY
+ *  - LEARNKIT_RIBBON_BRAND_ICON
+ *  - LEARNKIT_HORIZONTAL_BRAND_ICON
+ */
+
 import learnkitBrandIconRaw from "../../../site/branding/LearnKit Icon.svg";
 import learnkitStudyWidgetIconRaw from "../../../site/branding/Learnkit Study Widget.svg";
 import learnkitAssistantWidgetIconRaw from "../../../site/branding/Learnkit Chat Widget.svg";
@@ -31,12 +44,22 @@ function normalizeBrandIconSvg(rawSvg: string): string {
   });
 }
 
-export const SPROUT_BRAND_ICON_KEY = "sprout-brand";
-export const SPROUT_BRAND_HORIZONTAL_ICON_KEY = "sprout-brand-horizontal";
-export const SPROUT_WIDGET_STUDY_ICON_KEY = "sprout-widget-study";
-export const SPROUT_WIDGET_ASSISTANT_ICON_KEY = "sprout-widget-assistant";
+export const LEARNKIT_BRAND_ICON_KEY = "learnkit-brand";
+export const LEARNKIT_BRAND_HORIZONTAL_ICON_KEY = "learnkit-brand-horizontal";
+export const LEARNKIT_WIDGET_STUDY_ICON_KEY = "learnkit-widget-study";
+export const LEARNKIT_WIDGET_ASSISTANT_ICON_KEY = "learnkit-widget-assistant";
 
-export const SPROUT_RIBBON_BRAND_ICON = normalizeBrandIconSvg(learnkitBrandIconRaw);
-export const SPROUT_HORIZONTAL_BRAND_ICON = normalizeBrandIconSvg(learnkitHorizontalIconRaw);
-export const SPROUT_STUDY_WIDGET_ICON = normalizeBrandIconSvg(learnkitStudyWidgetIconRaw);
-export const SPROUT_ASSISTANT_WIDGET_ICON = normalizeBrandIconSvg(learnkitAssistantWidgetIconRaw);
+export const LEARNKIT_RIBBON_BRAND_ICON = normalizeBrandIconSvg(learnkitBrandIconRaw);
+export const LEARNKIT_HORIZONTAL_BRAND_ICON = normalizeBrandIconSvg(learnkitHorizontalIconRaw);
+export const LEARNKIT_STUDY_WIDGET_ICON = normalizeBrandIconSvg(learnkitStudyWidgetIconRaw);
+export const LEARNKIT_ASSISTANT_WIDGET_ICON = normalizeBrandIconSvg(learnkitAssistantWidgetIconRaw);
+
+// Backwards-compatible aliases for any older imports that still use SPROUT_* names.
+export const SPROUT_BRAND_ICON_KEY = LEARNKIT_BRAND_ICON_KEY;
+export const SPROUT_BRAND_HORIZONTAL_ICON_KEY = LEARNKIT_BRAND_HORIZONTAL_ICON_KEY;
+export const SPROUT_WIDGET_STUDY_ICON_KEY = LEARNKIT_WIDGET_STUDY_ICON_KEY;
+export const SPROUT_WIDGET_ASSISTANT_ICON_KEY = LEARNKIT_WIDGET_ASSISTANT_ICON_KEY;
+export const SPROUT_RIBBON_BRAND_ICON = LEARNKIT_RIBBON_BRAND_ICON;
+export const SPROUT_HORIZONTAL_BRAND_ICON = LEARNKIT_HORIZONTAL_BRAND_ICON;
+export const SPROUT_STUDY_WIDGET_ICON = LEARNKIT_STUDY_WIDGET_ICON;
+export const SPROUT_ASSISTANT_WIDGET_ICON = LEARNKIT_ASSISTANT_WIDGET_ICON;

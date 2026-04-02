@@ -13,26 +13,26 @@
 
 import * as React from "react";
 import { queryFirst } from "../../platform/core/ui";
-export const endTruncateClass = "sprout-ana-truncate-row sprout-ana-truncate-end";
-export const startTruncateClass = "sprout-ana-truncate-row sprout-ana-truncate-start";
+export const endTruncateClass = "learnkit-ana-truncate-row learnkit-ana-truncate-end";
+export const startTruncateClass = "learnkit-ana-truncate-row learnkit-ana-truncate-start";
 
 export function useAnalyticsPopoverZIndex(open: boolean, wrapRef: React.RefObject<HTMLElement | null>) {
   React.useEffect(() => {
-    const card = wrapRef.current?.closest(".sprout-ana-card") as HTMLElement | null;
+    const card = wrapRef.current?.closest(".learnkit-ana-card") as HTMLElement | null;
     if (!card) return;
-    const grid = card.closest(".sprout-ana-grid, .grid, .sprout-heatmap-host");
+    const grid = card.closest(".learnkit-ana-grid, .grid, .learnkit-heatmap-host");
     if (open) {
       card.setAttribute("data-popover-open", "true");
       if (grid) grid.setAttribute("data-popover-open", "true");
     } else {
       card.removeAttribute("data-popover-open");
-      if (grid && !queryFirst(grid, ".sprout-ana-card[data-popover-open=\"true\"]")) {
+      if (grid && !queryFirst(grid, ".learnkit-ana-card[data-popover-open=\"true\"]")) {
         grid.removeAttribute("data-popover-open");
       }
     }
     return () => {
       card.removeAttribute("data-popover-open");
-      if (grid && !queryFirst(grid, ".sprout-ana-card[data-popover-open=\"true\"]")) {
+      if (grid && !queryFirst(grid, ".learnkit-ana-card[data-popover-open=\"true\"]")) {
         grid.removeAttribute("data-popover-open");
       }
     };

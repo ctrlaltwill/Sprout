@@ -25,7 +25,7 @@ import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-
 import { ParseErrorModal } from "../../platform/modals/parse-error-modal";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../../platform/types/card";
@@ -74,7 +74,7 @@ import {
 // ✅ shared header import (like browser.ts)
 import { type SproutHeader, createViewHeader } from "../../platform/core/header";
 
-function isFourButtonMode(plugin: SproutPlugin): boolean {
+function isFourButtonMode(plugin: LearnKitPlugin): boolean {
   return !!(plugin.settings?.study?.fourButtonMode);
 }
 
@@ -107,7 +107,7 @@ export type WidgetSessionHandoffPayload = {
 };
 
 export class SproutReviewerView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   mode: "deck" | "session" = "deck";
   expanded = new Set<string>([""]);
@@ -180,7 +180,7 @@ export class SproutReviewerView extends ItemView {
   private _mcqMultiSelected = new Set<number>();
   private _mcqMultiCardId = "";
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -220,14 +220,14 @@ export class SproutReviewerView extends ItemView {
     if (!root) return;
     const strip = this._titleStripEl;
 
-    // Set data-sprout-wide attribute on containerEl (same as browser.ts)
-    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-sprout-wide", "1");
-    else this.containerEl.removeAttribute("data-sprout-wide");
+    // Set data-learnkit-wide attribute on containerEl (same as browser.ts)
+    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-learnkit-wide", "1");
+    else this.containerEl.removeAttribute("data-learnkit-wide");
 
     const containerWidth = this.containerEl?.clientWidth ?? 0;
     const hideToggle = containerWidth > 0 ? containerWidth < MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth < MAX_CONTENT_WIDTH;
     if (this._widthToggleActionEl) {
-      this._widthToggleActionEl.classList.toggle("sprout-is-hidden", hideToggle);
+      this._widthToggleActionEl.classList.toggle("learnkit-is-hidden", hideToggle);
     }
 
     if (this.mode === "deck" || this.mode === "session") {
@@ -237,10 +237,10 @@ export class SproutReviewerView extends ItemView {
       setCssProps(root, "--lk-review-max-width", maxWidth);
     } else if (this.plugin.isWideMode) {
       setCssProps(root, "--lk-review-max-width", "100%");
-      if (strip) setCssProps(strip, "--sprout-view-strip-max-width", "100%");
+      if (strip) setCssProps(strip, "--learnkit-view-strip-max-width", "100%");
     } else {
       setCssProps(root, "--lk-review-max-width", MAX_CONTENT_WIDTH_PX);
-      if (strip) setCssProps(strip, "--sprout-view-strip-max-width", MAX_CONTENT_WIDTH_PX);
+      if (strip) setCssProps(strip, "--learnkit-view-strip-max-width", MAX_CONTENT_WIDTH_PX);
     }
 
     const btn = this._widthToggleActionEl;
@@ -1523,7 +1523,7 @@ export class SproutReviewerView extends ItemView {
 
     // Let active zoom modals consume Escape so it closes the modal instead
     // of quitting the study session.
-    if (ev.key === "Escape" && document.querySelector(".lk-modals.sprout-zoom-overlay")) {
+    if (ev.key === "Escape" && document.querySelector(".lk-modals.learnkit-zoom-overlay")) {
       return;
     }
 
@@ -1607,7 +1607,7 @@ export class SproutReviewerView extends ItemView {
       ev.stopPropagation();
       const trigger = queryFirst(
         this.contentEl,
-        'button[data-sprout-action="reviewer-more-trigger"], button[data-bc-action="reviewer-more-trigger"]',
+        'button[data-learnkit-action="reviewer-more-trigger"], button[data-bc-action="reviewer-more-trigger"]',
       );
       if (trigger) {
         trigger.dispatchEvent(new PointerEvent("pointerdown", { button: 0, bubbles: true }));
@@ -1706,11 +1706,11 @@ export class SproutReviewerView extends ItemView {
             this._mcqMultiSelected.add(origIdx);
           }
           // In-place DOM update: toggle the button class and update submit button
-          const optionList = this.contentEl.querySelector(".sprout-mcq-options");
+          const optionList = this.contentEl.querySelector(".learnkit-mcq-options");
           if (optionList) {
-            const buttons = optionList.querySelectorAll<HTMLButtonElement>(":scope > button.sprout-btn-toolbar");
+            const buttons = optionList.querySelectorAll<HTMLButtonElement>(":scope > button.learnkit-btn-toolbar");
             if (buttons[displayIdx]) {
-              buttons[displayIdx].classList.toggle("sprout-mcq-selected", this._mcqMultiSelected.has(origIdx));
+              buttons[displayIdx].classList.toggle("learnkit-mcq-selected", this._mcqMultiSelected.has(origIdx));
             }
             const submitBtnEl = optionList.querySelector<HTMLButtonElement>("button.btn-primary");
             if (submitBtnEl) {
@@ -1721,7 +1721,7 @@ export class SproutReviewerView extends ItemView {
               if (this._mcqMultiSelected.size > 0) {
                 delete submitBtnEl.dataset.emptyAttempt;
                 submitBtnEl.removeAttribute("aria-label");
-                submitBtnEl.classList.remove("sprout-mcq-submit-tooltip-visible");
+                submitBtnEl.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
               }
             }
           }
@@ -1735,18 +1735,18 @@ export class SproutReviewerView extends ItemView {
           ev.stopPropagation();
           closeMoreMenuImpl(this);
           // Shake the submit button and show tooltip on second empty Enter
-          const submitBtnEl = this.contentEl.querySelector<HTMLButtonElement>(".sprout-mcq-submit-btn");
+          const submitBtnEl = this.contentEl.querySelector<HTMLButtonElement>(".learnkit-mcq-submit-btn");
           if (submitBtnEl) {
-            submitBtnEl.classList.add("sprout-mcq-submit-shake");
+            submitBtnEl.classList.add("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
             submitBtnEl.addEventListener("animationend", () => {
-              submitBtnEl.classList.remove("sprout-mcq-submit-shake");
+              submitBtnEl.classList.remove("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
             }, { once: true });
             if (submitBtnEl.dataset.emptyAttempt === "1") {
               submitBtnEl.setAttribute("aria-label", "Choose at least one answer to proceed");
               submitBtnEl.setAttribute("data-tooltip-position", "top");
-              submitBtnEl.classList.add("sprout-mcq-submit-tooltip-visible");
+              submitBtnEl.classList.add("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
               setTimeout(() => {
-                submitBtnEl.classList.remove("sprout-mcq-submit-tooltip-visible");
+                submitBtnEl.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
               }, 2500);
             }
             submitBtnEl.dataset.emptyAttempt = String(Number(submitBtnEl.dataset.emptyAttempt || "0") + 1);
@@ -1932,7 +1932,7 @@ export class SproutReviewerView extends ItemView {
     this._suppressEntranceAosOnce = false;
     const coachShellMode = this._returnToCoach || this._isCoachSession;
     const preservedCoachStrip = coachShellMode
-      ? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.sprout-coach-title-strip")
+      ? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.learnkit-coach-title-strip")
       : null;
     if (preservedCoachStrip) preservedCoachStrip.remove();
     this._titleStripEl?.remove();
@@ -1954,10 +1954,10 @@ export class SproutReviewerView extends ItemView {
     this._moreMenuEl = null;
     this._moreBtnEl = null;
 
-    root.classList.add("sprout-view-content");
+    root.classList.add("learnkit-view-content", "learnkit-view-content");
     root.classList.add("lk-review-root");
     root.setAttribute("data-lk-review-mode", this.mode);
-    this.containerEl.addClass("sprout");
+    this.containerEl.addClass("learnkit");
     if (!preservedCoachStrip) {
       this._ensureTitleStrip(root);
     }
@@ -1973,7 +1973,7 @@ export class SproutReviewerView extends ItemView {
     let sessionColumn: HTMLElement | null = null;
     if (this.mode === "session") {
       sessionColumn = document.createElement("div");
-      sessionColumn.className = "sprout-study-column lk-session-column flex flex-col min-h-0";
+      sessionColumn.className = "learnkit-study-column lk-session-column flex flex-col min-h-0";
       contentHost.appendChild(sessionColumn);
     }
 

@@ -1,3 +1,16 @@
+/**
+ * @file src/views/shared/saved-scope-presets.ts
+ * @summary Module for saved scope presets.
+ *
+ * @exports
+ *  - SavedScopePreset
+ *  - toScopeId
+ *  - parseScopesJson
+ *  - serializeScopes
+ *  - normalizeScopeIdSet
+ *  - scopeIdKeyFromIds
+ */
+
 import type { SavedScopePresetRow, SavedScopePresetScope } from "../../platform/core/coach-plan-sqlite";
 import type { Scope } from "../reviewer/types";
 

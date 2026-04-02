@@ -223,7 +223,7 @@ function matchClozeTokensBraceAware(source: string): ClozeTokenMatch[] {
  *   - Back (revealed):    `answer` (unboxed math content)
  *
  * When outside math, uses class-based cloze markup:
- *   - Front: `<span class="... sprout-cloze-blank hidden-cloze"></span>`
+ *   - Front: `<span class="... learnkit-cloze-blank hidden-cloze"></span>`
  *   - Back:  `**answer**` (bold)
  *
  * @param text        The full cloze text with `{{cN::answer}}` tokens
@@ -242,12 +242,12 @@ export function processClozeForMath(
 ): string {
   const isInsideMath = buildMathRangeChecker(text);
   const clozeMatches = matchClozeTokensBraceAware(text);
-  const blankClassName = (options?.blankClassName || "bc sprout-cloze-blank hidden-cloze").trim();
+  const blankClassName = (options?.blankClassName || "sprout-cloze-blank hidden-cloze").trim();
 
   const buildBlankHtml = (content: string): string => {
     const w = Math.max(4, Math.min(40, (content || "").trim().length || 6));
     const widthPx = Math.max(30, (w * 8) - 20);
-    return `<span class="${blankClassName}" style="--sprout-cloze-width:${widthPx}px"></span>`;
+    return `<span class="${blankClassName}" style="--learnkit-cloze-width:${widthPx}px"></span>`;
   };
 
   let result = '';

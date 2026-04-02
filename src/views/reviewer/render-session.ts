@@ -227,7 +227,7 @@ function extractInfoField(card: CardRecord): string | null {
 /**
  * IMPORTANT:
  * - Add `bc` to every element you want Basecoat to style.
- * - Your PostCSS scoper produces selectors like `.sprout-btn-toolbar.bc`, `div.card.bc`, etc.
+ * - Your PostCSS scoper produces selectors like `.learnkit-btn-toolbar.bc`, `div.card.bc`, etc.
  *   so the presence of class `bc` is required for those rules to match.
  */
 function h(tag: string, className?: string, text?: string) {
@@ -239,7 +239,7 @@ function h(tag: string, className?: string, text?: string) {
 
 function makeKbd(label: string) {
   const k = document.createElement("kbd");
-  k.className = "bc kbd ml-2";
+  k.className = "kbd ml-2";
   k.textContent = label;
   return k;
 }
@@ -259,20 +259,20 @@ function makeTextButton(opts: {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = opts.className.split(/\s+/).includes("bc") ? opts.className : `bc ${opts.className}`;
-  if (btn.classList.contains("sprout-btn-toolbar")) {
-    btn.classList.add("sprout-btn-filter");
+  if (btn.classList.contains("learnkit-btn-toolbar")) {
+    btn.classList.add("learnkit-btn-filter", "learnkit-btn-filter");
   }
   if (opts.subtitle) {
-    btn.classList.add("sprout-grade-btn-with-interval");
+    btn.classList.add("learnkit-grade-btn-with-interval", "learnkit-grade-btn-with-interval");
     const labelWrap = document.createElement("span");
-    labelWrap.className = "bc sprout-grade-btn-label-wrap";
+    labelWrap.className = "learnkit-grade-btn-label-wrap";
 
     const labelLine = document.createElement("span");
-    labelLine.className = "bc sprout-grade-btn-label";
+    labelLine.className = "learnkit-grade-btn-label";
     labelLine.textContent = opts.label;
 
     const subtitleLine = document.createElement("span");
-    subtitleLine.className = "bc sprout-grade-btn-subtitle";
+    subtitleLine.className = "learnkit-grade-btn-subtitle";
     subtitleLine.textContent = opts.subtitle;
 
     labelWrap.appendChild(labelLine);
@@ -428,16 +428,16 @@ function makeHeaderMenu(opts: {
 }) {
   const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
     t(opts.interfaceLanguage, token, fallback, vars);
-  const id = `bc-menu-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `learnkit-menu-${Math.random().toString(36).slice(2, 8)}`;
 
   const root = document.createElement("div");
   root.id = id;
-  root.className = "bc relative inline-flex";
+  root.className = "relative inline-flex";
 
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.id = `${id}-trigger`;
-  trigger.className = "bc sprout-btn-toolbar sprout-btn-filter";
+  trigger.className = "learnkit-btn-toolbar learnkit-btn-filter";
   trigger.dataset.bcAction = "reviewer-more-trigger";
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-controls", `${id}-menu`);
@@ -447,7 +447,7 @@ function makeHeaderMenu(opts: {
     trigger.classList.add("lk-review-more-icon-btn");
     trigger.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "More actions"));
     const iconWrap = document.createElement("span");
-    iconWrap.className = "bc inline-flex items-center justify-center";
+    iconWrap.className = "inline-flex items-center justify-center";
     setIcon(iconWrap, "menu");
     trigger.appendChild(iconWrap);
   } else {
@@ -458,16 +458,16 @@ function makeHeaderMenu(opts: {
 
   const popover = document.createElement("div");
   popover.id = `${id}-popover`;
-  popover.className = "bc sprout";
+  popover.className = "learnkit";
   popover.setAttribute("aria-hidden", "true");
-  popover.classList.add("sprout-popover-overlay");
+  popover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-header-menu-panel sprout-session-more-popover";
+  panel.className = "learnkit rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto learnkit-header-menu-panel learnkit-session-more-popover";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
-  menu.className = "bc sprout flex flex-col";
+  menu.className = "learnkit flex flex-col";
   menu.setAttribute("role", "menu");
   menu.id = `${id}-menu`;
   
@@ -476,22 +476,22 @@ function makeHeaderMenu(opts: {
   const addItem = (label: string, hotkey: string | null, onClick: () => void, disabled = false) => {
     const item = document.createElement("div");
     item.className =
-      "bc group sprout-session-more-item flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+      "group learnkit-session-more-item flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
     if (disabled) {
-      item.classList.add("sprout-menu-item--disabled");
+      item.classList.add("learnkit-menu-item--disabled", "learnkit-menu-item--disabled");
       item.setAttribute("aria-disabled", "true");
     }
 
     const labelSpan = document.createElement("span");
-    labelSpan.className = "bc";
+    labelSpan.className = "";
     labelSpan.textContent = label;
     item.appendChild(labelSpan);
 
     if (hotkey && !opts.compactTrigger) {
       const key = document.createElement("kbd");
-      key.className = "bc kbd ml-auto text-xs text-muted-foreground tracking-widest";
+      key.className = "kbd ml-auto text-xs text-muted-foreground tracking-widest";
       key.textContent = hotkey;
       item.appendChild(key);
     }
@@ -552,9 +552,9 @@ function makeHeaderMenu(opts: {
     // Session More menu should open upward like Note Review.
     const top = Math.max(margin, r.top - panelRect.height - 6);
 
-    setCssProps(popover, "--sprout-popover-left", `${left}px`);
-    setCssProps(popover, "--sprout-popover-top", `${top}px`);
-    setCssProps(popover, "--sprout-popover-width", `${width}px`);
+    setCssProps(popover, "--learnkit-popover-left", `${left}px`);
+    setCssProps(popover, "--learnkit-popover-top", `${top}px`);
+    setCssProps(popover, "--learnkit-popover-width", `${width}px`);
   };
 
   const close = () => {
@@ -631,7 +631,7 @@ function makeHeaderMenu(opts: {
 function renderMcqContent(ctx: CardRenderCtx): void {
   const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
   section.appendChild(labelRow("Question"));
-  section.appendChild(renderMdBlock("bc-q", convertInlineDisplayMath(card.stem || "")));
+  section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(card.stem || "")));
   const reveal = !!graded || !!args.showAnswer;
   const multiAnswer = isMultiAnswerMcq(card);
   const correctSet = new Set(getCorrectIndices(card));
@@ -658,7 +658,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
     : new Set<number>();
 
   const optionList = document.createElement("div");
-  optionList.className = "bc flex flex-col gap-2 sprout-mcq-options";
+  optionList.className = "flex flex-col gap-2 learnkit-mcq-options";
   section.appendChild(optionList);
 
   // Multi-answer: show Submit button when not yet graded
@@ -671,11 +671,11 @@ function renderMcqContent(ctx: CardRenderCtx): void {
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "bc sprout-btn-toolbar w-full justify-start text-left h-auto py-1 mb-2";
+    btn.className = "learnkit-btn-toolbar w-full justify-start text-left h-auto py-1 mb-2";
 
     // Multi-answer selection state (before submit)
     if (multiAnswer && !reveal && multiSelected.has(origIdx)) {
-      btn.classList.add("sprout-mcq-selected");
+      btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
     }
 
     // Apply correctness styles on back of card (revealed).
@@ -688,33 +688,33 @@ function renderMcqContent(ctx: CardRenderCtx): void {
         // - Any correct option is green
         // - Any incorrect selected option is red
         if (isCorrect) {
-          btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
+          btn.classList.add("learnkit-mcq-correct", "learnkit-mcq-correct-highlight", "learnkit-mcq-correct-highlight");
         } else if (isChosen) {
-          btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+          btn.classList.add("learnkit-mcq-wrong", "learnkit-mcq-wrong-highlight", "learnkit-mcq-wrong-highlight");
         }
       } else {
         // Single-answer highlighting (unchanged)
         const isChosenWrong = isChosen && !isCorrect;
         if (isCorrect) {
-          btn.classList.add("bc-mcq-correct", "sprout-mcq-correct-highlight");
+          btn.classList.add("learnkit-mcq-correct", "learnkit-mcq-correct-highlight", "learnkit-mcq-correct-highlight");
         }
         if (isChosenWrong) {
-          btn.classList.add("bc-mcq-wrong", "sprout-mcq-wrong-highlight");
+          btn.classList.add("learnkit-mcq-wrong", "learnkit-mcq-wrong-highlight", "learnkit-mcq-wrong-highlight");
         }
       }
     }
 
     const left = document.createElement("span");
-    left.className = "bc inline-flex items-center gap-2 min-w-0";
+    left.className = "inline-flex items-center gap-2 min-w-0";
 
     const key = document.createElement("kbd");
-    key.className = "bc kbd";
+    key.className = "kbd";
     key.textContent = String(displayIdx + 1);
     left.appendChild(key);
 
     // Render option text with markdown support for wiki links and LaTeX
     const textEl = document.createElement("span");
-    textEl.className = "bc min-w-0 whitespace-pre-wrap break-words sprout-mcq-option-text";
+    textEl.className = "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text";
 
     // Use markdown rendering if text contains wiki links or LaTeX
     if (text && (text.includes('[[') || text.includes('$') || text.includes('\\(') || text.includes('\\['))) {
@@ -723,7 +723,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
       text.split(/\n+/).forEach((line: string) => {
         const p = document.createElement("div");
         applyInlineMarkdownWithFlags(p, line);
-        p.classList.add("sprout-mcq-option-line");
+        p.classList.add("learnkit-mcq-option-line", "learnkit-mcq-option-line");
         textEl.appendChild(p);
       });
     } else {
@@ -741,10 +741,10 @@ function renderMcqContent(ctx: CardRenderCtx): void {
         // Toggle selection in-place (no full re-render)
         if (multiSelected.has(origIdx)) {
           multiSelected.delete(origIdx);
-          btn.classList.remove("sprout-mcq-selected");
+          btn.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected");
         } else {
           multiSelected.add(origIdx);
-          btn.classList.add("sprout-mcq-selected");
+          btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
         }
         // Sync the backing state so keyboard/render stays in sync.
         // Use set/delete (idempotent) — NOT toggle — because after a
@@ -762,7 +762,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
           if (multiSelected.size > 0) {
             delete submitBtn.dataset.emptyAttempt;
             submitBtn.removeAttribute("aria-label");
-            submitBtn.classList.remove("sprout-mcq-submit-tooltip-visible");
+            submitBtn.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
           }
         }
       } else {
@@ -776,17 +776,17 @@ function renderMcqContent(ctx: CardRenderCtx): void {
   // Multi-answer: show Submit button when not yet graded
   if (multiAnswer && !reveal) {
     const submitRow = document.createElement("div");
-    submitRow.className = "bc flex justify-end mt-2";
+    submitRow.className = "flex justify-end mt-2";
     submitBtn = document.createElement("button");
     submitBtn.type = "button";
-    submitBtn.className = "bc btn-primary px-4 py-2 text-sm sprout-mcq-submit-btn";
+    submitBtn.className = "btn-primary px-4 py-2 text-sm learnkit-mcq-submit-btn";
 
     const submitLabel = document.createElement("span");
     submitLabel.textContent = t(args.interfaceLanguage, "ui.reviewer.submit", "Submit");
     submitBtn.appendChild(submitLabel);
 
     const submitKbd = document.createElement("kbd");
-    submitKbd.className = "bc kbd ml-2 text-xs";
+    submitKbd.className = "kbd ml-2 text-xs";
     submitKbd.textContent = "\u21B5";
     submitBtn.appendChild(submitKbd);
 
@@ -800,17 +800,17 @@ function renderMcqContent(ctx: CardRenderCtx): void {
       if (multiSelected.size > 0 && args.answerMcqMulti) {
         void args.answerMcqMulti([...multiSelected]);
       } else if (multiSelected.size === 0 && submitBtn) {
-        submitBtn.classList.add("sprout-mcq-submit-shake");
+        submitBtn.classList.add("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
         submitBtn.addEventListener("animationend", () => {
-          submitBtn!.classList.remove("sprout-mcq-submit-shake");
+          submitBtn!.classList.remove("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
         }, { once: true });
         // Show tooltip on second empty attempt
         if (submitBtn.dataset.emptyAttempt === "1") {
           submitBtn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.mcq.chooseOne", "Choose at least one answer to proceed"));
           submitBtn.setAttribute("data-tooltip-position", "top");
-          submitBtn.classList.add("sprout-mcq-submit-tooltip-visible");
+          submitBtn.classList.add("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
           setTimeout(() => {
-            submitBtn!.classList.remove("sprout-mcq-submit-tooltip-visible");
+            submitBtn!.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
           }, 2500);
         }
         submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
@@ -828,7 +828,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
   const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
   // ── Ordering Question ──────────────────────────────────────────────
   section.appendChild(labelRow("Question"));
-  section.appendChild(renderMdBlock("bc-q", convertInlineDisplayMath(card.q || "")));
+  section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(card.q || "")));
 
   const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
   const reveal = !!graded || !!args.showAnswer;
@@ -843,7 +843,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
     const currentOrder = shuffled.slice();
 
     const listWrap = document.createElement("div");
-    listWrap.className = "bc flex flex-col gap-2 sprout-oq-step-list";
+    listWrap.className = "flex flex-col gap-2 learnkit-oq-step-list";
     section.appendChild(listWrap);
 
     const previewController = createOqReorderPreviewController(listWrap);
@@ -878,26 +878,26 @@ function renderOqContent(ctx: CardRenderCtx): void {
       currentOrder.forEach((origIdx, displayIdx) => {
         const stepText = steps[origIdx] || "";
         const row = document.createElement("div");
-        row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 sprout-oq-step-row";
+        row.className = "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 learnkit-oq-step-row";
         row.draggable = true;
         row.dataset.oqIdx = String(displayIdx);
 
         // Grip handle
         const grip = document.createElement("span");
-        grip.className = "bc sprout-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
+        grip.className = "learnkit-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
         grip.draggable = false;
         setIcon(grip, "grip-vertical");
         row.appendChild(grip);
 
         // Step number badge
         const badge = document.createElement("kbd");
-        badge.className = "bc kbd";
+        badge.className = "kbd";
         badge.textContent = String(displayIdx + 1);
         row.appendChild(badge);
 
         // Step text
         const textEl = document.createElement("span");
-        textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
+        textEl.className = "min-w-0 whitespace-pre-wrap break-words flex-1 learnkit-oq-step-text";
         if (stepText.includes("[[") || stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[")) {
           void args.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(stepText), sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
         } else {
@@ -959,7 +959,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
     section.appendChild(labelRow("Your Order"));
 
     const answerList = document.createElement("div");
-    answerList.className = "bc flex flex-col gap-2 sprout-oq-answer-list";
+    answerList.className = "flex flex-col gap-2 learnkit-oq-answer-list";
     section.appendChild(answerList);
 
     const identity = Array.from({ length: steps.length }, (_, i) => i);
@@ -970,20 +970,20 @@ function renderOqContent(ctx: CardRenderCtx): void {
       const wasInCorrectPosition = origIdx === displayIdx;
 
       const row = document.createElement("div");
-      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-1 sprout-oq-answer-row";
+      row.className = "flex items-center gap-2 rounded-lg border px-3 py-1 learnkit-oq-answer-row";
       if (wasInCorrectPosition) {
-        row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
+        row.classList.add("learnkit-oq-correct", "learnkit-oq-correct", "learnkit-oq-correct-highlight", "learnkit-oq-correct-highlight");
       } else {
-        row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
+        row.classList.add("learnkit-oq-wrong", "learnkit-oq-wrong", "learnkit-oq-wrong-highlight", "learnkit-oq-wrong-highlight");
       }
 
       const badge = document.createElement("kbd");
-      badge.className = "bc kbd";
+      badge.className = "kbd";
       badge.textContent = String(origIdx + 1);
       row.appendChild(badge);
 
       const textEl = document.createElement("span");
-      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text";
+      textEl.className = "min-w-0 whitespace-pre-wrap break-words flex-1 learnkit-oq-step-text";
       if (stepText.includes("[[") || stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[")) {
         void args.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(stepText), sourcePath).then(() => setupLinkHandlers(textEl, sourcePath));
       } else {
@@ -1023,12 +1023,12 @@ export function renderSessionMode(args: Args) {
 
   // ===== Root card (Basecoat) =====
   const wrap = document.createElement("div");
-  wrap.className = "bc card w-full";
+  wrap.className = "card w-full";
   // Optional: keep a plugin hook class for any small overrides you still want.
-  wrap.classList.add("bc-session-card", "lk-session-card", "m-0");
-  wrap.classList.toggle("sprout-session-answer-revealed", !!args.showAnswer || !!graded);
+  wrap.classList.add("learnkit-session-card", "lk-session-card", "m-0");
+  wrap.classList.toggle("learnkit-session-answer-revealed", !!args.showAnswer || !!graded);
   const resetAosState = () => {
-    wrap.classList.remove("aos-init", "aos-animate", "sprout-aos-fallback");
+    wrap.classList.remove("aos-init", "aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
   };
 
   // Always render the card, but only apply AOS for front side (not revealed)
@@ -1048,7 +1048,7 @@ export function renderSessionMode(args: Args) {
     if (!wrap) return;
     const style = getComputedStyle(wrap);
     if (style.opacity === "0") {
-      wrap.classList.add("sprout-aos-fallback");
+      wrap.classList.add("learnkit-aos-fallback", "learnkit-aos-fallback");
     }
   }, 350);
 
@@ -1059,21 +1059,21 @@ export function renderSessionMode(args: Args) {
 
   // Create section once for both empty and card-present states
   const section = document.createElement("section");
-  section.className = "bc flex flex-col gap-3";
+  section.className = "flex flex-col gap-3";
 
   // ===== Empty state rendered like a normal card =====
   if (!card) {
-    section.classList.add("sprout-session-practice-prompt");
+    section.classList.add("learnkit-session-practice-prompt", "learnkit-session-practice-prompt");
     args.clearTimer();
     args.clearCountdown();
 
     // Header
     const header = document.createElement("header");
-    header.className = "bc sprout-session-topbar";
+    header.className = "learnkit-session-topbar";
     wrap.appendChild(header);
 
     const titleWrap = document.createElement("div");
-    titleWrap.className = "bc sprout-session-topbar-title sprout-question-title";
+    titleWrap.className = "learnkit-session-topbar-title learnkit-question-title";
     titleWrap.textContent = practiceMode
       ? tx("ui.reviewer.session.practiceComplete", "Practice complete")
       : tx("ui.reviewer.session.noCardsDue", "No cards are due");
@@ -1082,20 +1082,20 @@ export function renderSessionMode(args: Args) {
     // Section: Practice session message (centered, no alert wrapper)
     if (practiceMode) {
       const d1 = document.createElement("div");
-      d1.className = "bc text-base text-center";
+      d1.className = "text-base text-center";
       d1.textContent = tx("ui.reviewer.session.practiceSessionComplete", "Practice session complete");
       const d2 = document.createElement("div");
-      d2.className = "bc text-sm text-center sprout-session-practice-prompt-subtext";
+      d2.className = "text-sm text-center learnkit-session-practice-prompt-subtext";
       d2.textContent =
         "This was a practice session. Scheduling was not changed. You cannot bury or suspend cards in this mode.";
       section.appendChild(d1);
       section.appendChild(d2);
     } else {
       const d1 = document.createElement("div");
-      d1.className = "bc text-base text-center";
+      d1.className = "text-base text-center";
       d1.textContent = tx("ui.reviewer.session.askStartPractice", "Would you like to start a practice session?");
       const d2 = document.createElement("div");
-      d2.className = "bc text-sm text-center sprout-session-practice-prompt-subtext";
+      d2.className = "text-sm text-center learnkit-session-practice-prompt-subtext";
       d2.textContent =
         "Practice session reviews all cards in this deck, including ones that are not due. It does not affect scheduling. You cannot bury or suspend cards while in this mode";
       section.appendChild(d1);
@@ -1105,24 +1105,24 @@ export function renderSessionMode(args: Args) {
 
     // Footer: practice/return actions centered in the study dock layout
     const footer = document.createElement("footer");
-    footer.className = "bc sprout-session-study-dock";
+    footer.className = "learnkit-session-study-dock";
     wrap.appendChild(footer);
 
     const footerLeft = document.createElement("div");
-    footerLeft.className = "bc flex items-center gap-2 sprout-session-study-dock-left";
+    footerLeft.className = "flex items-center gap-2 learnkit-session-study-dock-left";
     footer.appendChild(footerLeft);
 
     const footerCenter = document.createElement("div");
-    footerCenter.className = "bc flex flex-wrap gap-2 items-center justify-center sprout-session-study-dock-center";
+    footerCenter.className = "flex flex-wrap gap-2 items-center justify-center learnkit-session-study-dock-center";
     footer.appendChild(footerCenter);
 
     const footerRight = document.createElement("div");
-    footerRight.className = "bc flex items-center gap-2 sprout-session-study-dock-right";
+    footerRight.className = "flex items-center gap-2 learnkit-session-study-dock-right";
     footer.appendChild(footerRight);
 
     const backBtn = makeTextButton({
       label: tx("ui.reviewer.session.returnToDecks", "Return to Decks"),
-      className: "sprout-btn-toolbar",
+      className: "learnkit-btn-toolbar",
       onClick: () => args.backToDecks(),
       kbd: isPhoneMobile ? undefined : "Q",
     });
@@ -1131,7 +1131,7 @@ export function renderSessionMode(args: Args) {
     if (canShowPracticeStart) {
       const startBtn = makeTextButton({
         label: tx("ui.reviewer.session.startPractice", "Start Practice"),
-        className: "sprout-btn-toolbar",
+        className: "learnkit-btn-toolbar",
         onClick: () => args.startPractice?.(),
         kbd: isPhoneMobile ? undefined : "↵",
       });
@@ -1157,14 +1157,14 @@ export function renderSessionMode(args: Args) {
 
   // Card present
   args.clearCountdown();
-  if (isFlashcardStudyMode) wrap.classList.add("sprout-session-has-dock");
+  if (isFlashcardStudyMode) wrap.classList.add("learnkit-session-has-dock", "learnkit-session-has-dock");
 
   const sourcePath = card.sourceNotePath || "";
 
   // ===== Header =====
   const header = document.createElement("header");
-  header.className = "bc sprout-session-topbar";
-  if (args.hideSessionTopbar) header.classList.add("sprout-session-topbar-hidden");
+  header.className = "learnkit-session-topbar";
+  if (args.hideSessionTopbar) header.classList.add("learnkit-session-topbar-hidden", "learnkit-session-topbar-hidden");
   wrap.appendChild(header);
 
   // Title in topbar
@@ -1186,7 +1186,7 @@ export function renderSessionMode(args: Args) {
 
   const titleText = displayTitle || fallbackQuestionTitle(args.session, card);
   const titleWrap = document.createElement("div");
-  titleWrap.className = "bc sprout-session-topbar-title sprout-question-title";
+  titleWrap.className = "learnkit-session-topbar-title learnkit-question-title";
   header.appendChild(titleWrap);
 
   const titleEl = titleWrap;
@@ -1204,12 +1204,12 @@ export function renderSessionMode(args: Args) {
   /** Build a "Question" or "Answer" label row with an optional TTS replay button. */
   const labelRow = (text: string, replayFn?: () => void) => {
     const row = document.createElement("div");
-    row.className = "bc flex items-center justify-between sprout-label-row";
+    row.className = "flex items-center justify-between learnkit-label-row";
     row.appendChild(mutedLabel(text));
     if (args.ttsEnabled && replayFn) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "bc btn-icon sprout-tts-replay-btn";
+      btn.className = "btn-icon learnkit-tts-replay-btn";
       btn.setAttribute("aria-label", `Read ${text.toLowerCase()} aloud`);
       btn.setAttribute("data-tooltip-position", "top");
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1274,7 +1274,7 @@ export function renderSessionMode(args: Args) {
 
   const renderMdBlock = (cls: string, md: string) => {
     const block = document.createElement("div");
-    block.className = `bc ${cls} whitespace-pre-wrap break-words sprout-md-block`;
+    block.className = `bc ${cls} whitespace-pre-wrap break-words learnkit-md-block`;
     void args.renderMarkdownInto(block, md ?? "", sourcePath).then(() => setupLinkHandlers(block, sourcePath));
     return block;
   };
@@ -1289,11 +1289,11 @@ export function renderSessionMode(args: Args) {
     const replayBack = card.type === "basic" ? args.ttsReplayBack : undefined;
 
     section.appendChild(labelRow("Question", replayFront));
-    section.appendChild(renderMdBlock("bc-q", convertInlineDisplayMath(frontContent)));
+    section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(frontContent)));
 
     if (args.showAnswer || graded) {
       section.appendChild(labelRow("Answer", replayBack));
-      section.appendChild(renderMdBlock("bc-a", convertInlineDisplayMath(backContent)));
+      section.appendChild(renderMdBlock("learnkit-a", convertInlineDisplayMath(backContent)));
     }
   } else if (card.type === "cloze" || card.type === "cloze-child") {
     const text = String(card.clozeText || "");
@@ -1302,7 +1302,7 @@ export function renderSessionMode(args: Args) {
 
     section.appendChild(labelRow(reveal ? "Answer" : "Question", reveal ? args.ttsReplayBack : args.ttsReplayFront));
     const clozContainer = document.createElement("div");
-    clozContainer.className = "bc bc-cloze whitespace-pre-wrap break-words sprout-md-block";
+    clozContainer.className = "learnkit-cloze whitespace-pre-wrap break-words learnkit-md-block";
     if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[")) {
       const processedText = processClozeForMath(text, reveal, targetIndex);
       void args.renderMarkdownInto(clozContainer, processedText, sourcePath).then(() => setupLinkHandlers(clozContainer, sourcePath));
@@ -1310,7 +1310,7 @@ export function renderSessionMode(args: Args) {
       const clozeContent = args.renderClozeFront(text, reveal, targetIndex, undefined);
       if (reveal) {
         const span = document.createElement("span");
-        span.className = "bc whitespace-pre-wrap break-words";
+        span.className = "whitespace-pre-wrap break-words";
         span.appendChild(clozeContent);
         clozContainer.appendChild(span);
       } else {
@@ -1326,7 +1326,7 @@ export function renderSessionMode(args: Args) {
     const reveal = !!graded || !!args.showAnswer;
 
     const ioHost = document.createElement("div");
-    ioHost.className = "bc bc-io-host";
+    ioHost.className = "learnkit-io-host";
     ioHost.dataset.sproutIoWidget = "1";
     section.appendChild(ioHost);
 
@@ -1345,7 +1345,7 @@ export function renderSessionMode(args: Args) {
     ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") && isBack && !!infoText) || ((args.showInfo || graded) && !!infoText);
   if (shouldShowInfo) {
     section.appendChild(labelRow("Extra information"));
-    section.appendChild(renderMdBlock("bc-info", infoText));
+    section.appendChild(renderMdBlock("learnkit-info", infoText));
   }
 
   // Append section to wrap
@@ -1353,25 +1353,25 @@ export function renderSessionMode(args: Args) {
 
   // ===== Footer (actions) =====
   const footer = document.createElement("footer");
-  footer.className = "bc sprout-session-study-dock";
+  footer.className = "learnkit-session-study-dock";
   wrap.appendChild(footer);
 
   // Left: Edit button
   const footerLeft = document.createElement("div");
-  footerLeft.className = "bc flex items-center gap-2 sprout-session-study-dock-left";
+  footerLeft.className = "flex items-center gap-2 learnkit-session-study-dock-left";
 
   const editBtn = isPhoneMobile
     ? makeTextButton({
       label: "",
       title: t(args.interfaceLanguage, "ui.reviewer.edit", "Edit"),
-      className: "sprout-btn-toolbar lk-review-edit-icon-btn",
+      className: "learnkit-btn-toolbar lk-review-edit-icon-btn",
       onClick: () => {
         args.openEditModal?.();
       },
     })
     : makeTextButton({
       label: t(args.interfaceLanguage, "ui.reviewer.edit", "Edit"),
-      className: "sprout-btn-toolbar",
+      className: "learnkit-btn-toolbar",
       onClick: () => {
         args.openEditModal?.();
       },
@@ -1380,13 +1380,13 @@ export function renderSessionMode(args: Args) {
   if (isPhoneMobile) {
     editBtn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.edit", "Edit"));
     const iconWrap = document.createElement("span");
-    iconWrap.className = "bc inline-flex items-center justify-center";
+    iconWrap.className = "inline-flex items-center justify-center";
     setIcon(iconWrap, "pencil");
     editBtn.appendChild(iconWrap);
 
     const editLabel = document.createElement("span");
-    editLabel.className = "bc";
-    editLabel.setAttribute("data-sprout-mobile-label", "true");
+    editLabel.className = "";
+    editLabel.setAttribute("data-learnkit-mobile-label", "true");
     editLabel.textContent = t(args.interfaceLanguage, "ui.reviewer.edit", "Edit");
     editBtn.appendChild(editLabel);
   }
@@ -1395,7 +1395,7 @@ export function renderSessionMode(args: Args) {
 
   // Center: Reveal/Grade/Next buttons
   const footerCenter = document.createElement("div");
-  footerCenter.className = "bc flex flex-wrap gap-2 items-center justify-center sprout-session-study-dock-center";
+  footerCenter.className = "flex flex-wrap gap-2 items-center justify-center learnkit-session-study-dock-center";
   footer.appendChild(footerCenter);
 
   const canGradeNow =
@@ -1404,7 +1404,7 @@ export function renderSessionMode(args: Args) {
 
   // Grading / next buttons (in center)
   const mainRow = document.createElement("div");
-  mainRow.className = "bc flex flex-wrap items-center justify-center gap-2 sprout-session-study-dock-buttons";
+  mainRow.className = "flex flex-wrap items-center justify-center gap-2 learnkit-session-study-dock-buttons";
   let hasMainRowContent = false;
 
   // Basic/Cloze/IO: reveal gate
@@ -1416,7 +1416,7 @@ export function renderSessionMode(args: Args) {
     mainRow.appendChild(
       makeTextButton({
         label: "Reveal",
-        className: "sprout-btn-toolbar",
+        className: "learnkit-btn-toolbar",
         onClick: () => {
           args.setShowAnswer(true);
           args.rerender();
@@ -1454,7 +1454,7 @@ export function renderSessionMode(args: Args) {
       if (practiceMode) {
         const continueBtn = makeTextButton({
           label: "Continue",
-          className: "sprout-btn-toolbar",
+          className: "learnkit-btn-toolbar",
           onClick: goNext,
           kbd: isPhoneMobile ? undefined : "↵",
         });
@@ -1463,7 +1463,7 @@ export function renderSessionMode(args: Args) {
       } else {
         // Normal mode: grading buttons
         const group = document.createElement("div");
-        group.className = "bc flex flex-wrap justify-center gap-2 sprout-session-study-dock-grade-group";
+        group.className = "flex flex-wrap justify-center gap-2 learnkit-session-study-dock-grade-group";
         mainRow.appendChild(group);
         hasMainRowContent = true;
 
@@ -1475,7 +1475,7 @@ export function renderSessionMode(args: Args) {
           onClick: () => void args.gradeCurrentRating("again", {}).then(goNext),
           kbd: "1",
         });
-        againBtn.classList.add("sprout-btn-again");
+        againBtn.classList.add("learnkit-btn-again", "learnkit-btn-again");
         group.appendChild(againBtn);
 
         if (four) {
@@ -1487,7 +1487,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("hard", {}).then(goNext),
             kbd: "2",
           });
-          hardBtn.classList.add("sprout-btn-hard");
+          hardBtn.classList.add("learnkit-btn-hard", "learnkit-btn-hard");
           group.appendChild(hardBtn);
 
           const goodBtn = makeTextButton({
@@ -1498,7 +1498,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "3",
           });
-          goodBtn.classList.add("sprout-btn-good");
+          goodBtn.classList.add("learnkit-btn-good", "learnkit-btn-good");
           group.appendChild(goodBtn);
 
           const easyBtn = makeTextButton({
@@ -1509,7 +1509,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("easy", {}).then(goNext),
             kbd: "4",
           });
-          easyBtn.classList.add("sprout-btn-easy");
+          easyBtn.classList.add("learnkit-btn-easy", "learnkit-btn-easy");
           group.appendChild(easyBtn);
         } else {
           const goodBtn = makeTextButton({
@@ -1520,7 +1520,7 @@ export function renderSessionMode(args: Args) {
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "2",
           });
-          goodBtn.classList.add("sprout-btn-good");
+          goodBtn.classList.add("learnkit-btn-good", "learnkit-btn-good");
           group.appendChild(goodBtn);
         }
       }
@@ -1529,7 +1529,7 @@ export function renderSessionMode(args: Args) {
         const skipBtn = makeTextButton({
           label: "Skip",
           title: "Skip card (↵)",
-          className: "sprout-btn-toolbar",
+          className: "learnkit-btn-toolbar",
           onClick: () => args.skipCurrentCard({ uiSource: "skip-btn", uiKey: 13, uiButtons: four ? 4 : 2 }),
           kbd: "↵",
         });
@@ -1547,7 +1547,7 @@ export function renderSessionMode(args: Args) {
       mainRow.appendChild(
         makeTextButton({
           label: t(args.interfaceLanguage, "ui.reviewer.oq.submitOrder", "Submit order"),
-          className: "sprout-btn-toolbar",
+          className: "learnkit-btn-toolbar",
           onClick: () => {
             const oqMap = ensureOqOrderMap(args.session);
             const currentOrder = oqMap[String(card.id)];
@@ -1566,7 +1566,7 @@ export function renderSessionMode(args: Args) {
     mainRow.appendChild(
       makeTextButton({
         label: "Next",
-        className: "sprout-btn-toolbar",
+        className: "learnkit-btn-toolbar",
         onClick: () => void args.nextCard(true),
         kbd: "↵",
       }),
@@ -1581,7 +1581,7 @@ export function renderSessionMode(args: Args) {
 
   // Right: More menu
   const footerRight = document.createElement("div");
-  footerRight.className = "bc flex items-center gap-2 sprout-session-study-dock-right";
+  footerRight.className = "flex items-center gap-2 learnkit-session-study-dock-right";
 
   // Provide open note handler globally for menu
   window.sproutOpenCurrentCardNote = () => {
@@ -1610,10 +1610,10 @@ export function renderSessionMode(args: Args) {
 
   if (isPhoneMobile) {
     const moreBtn = footerRight.querySelector<HTMLButtonElement>(".lk-review-more-icon-btn");
-    if (moreBtn && !moreBtn.querySelector("[data-sprout-mobile-label]")) {
+    if (moreBtn && !moreBtn.querySelector("[data-learnkit-mobile-label]")) {
       const menuLabel = document.createElement("span");
-      menuLabel.className = "bc";
-      menuLabel.setAttribute("data-sprout-mobile-label", "true");
+      menuLabel.className = "";
+      menuLabel.setAttribute("data-learnkit-mobile-label", "true");
       menuLabel.textContent = t(args.interfaceLanguage, "ui.reviewer.more.label", "Menu");
       moreBtn.appendChild(menuLabel);
     }

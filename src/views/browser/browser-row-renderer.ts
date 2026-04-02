@@ -14,7 +14,7 @@
  */
 
 import { Notice, setIcon, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions, getCorrectIndices } from "../../platform/core/store";
 import { log } from "../../platform/core/logger";
@@ -52,7 +52,7 @@ import {
 
 export interface RowRendererContext {
   app: App;
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   rowHeightPx: number;
   editorHeightPx: number;
@@ -110,7 +110,7 @@ export function buildPageTableBody(
     const isQuarantined = !!quarantine[String(card.id)];
     const tr = document.createElement("tr");
     tr.className = "lk-browser-row";
-    setCssProps(tr, "--sprout-row-height", `${ctx.rowHeightPx}px`);
+    setCssProps(tr, "--learnkit-row-height", `${ctx.rowHeightPx}px`);
 
     // ── Checkbox cell ──
     const selTd = document.createElement("td");
@@ -178,7 +178,7 @@ export function buildPageTableBody(
 
     const idLink = document.createElement("a");
     idLink.href = sourceLink;
-    idLink.className = "text-[var(--sprout-font-2xs)] leading-none no-underline inline-flex items-center gap-1 text-normal relative z-0 hover:underline";
+    idLink.className = "text-[var(--learnkit-font-2xs)] leading-none no-underline inline-flex items-center gap-1 text-normal relative z-0 hover:underline";
 
     if (isSuspended) {
       idLink.classList.add("text-red-500");
@@ -200,8 +200,8 @@ export function buildPageTableBody(
     setIcon(linkIcon, iconName);
     try {
       const scale = isSuspended || isQuarantined ? 0.7 : 0.75;
-      linkIcon.classList.add("inline-flex", "relative", "z-0", "origin-center", "[transform:scale(var(--sprout-scale,1))]");
-      setCssProps(linkIcon, "--sprout-scale", String(scale));
+      linkIcon.classList.add("inline-flex", "relative", "z-0", "origin-center", "[transform:scale(var(--learnkit-scale,1))]");
+      setCssProps(linkIcon, "--learnkit-scale", String(scale));
     } catch (e) { log.swallow("scale link icon", e); }
     idLink.appendChild(linkIcon);
 
@@ -338,9 +338,9 @@ export function renderEmptyState(
     const availableHeight = Math.max(0, wrap.clientHeight - headerHeight);
     const top =
       wrap.scrollTop + headerHeight + Math.max(0, (availableHeight - msgRect.height) / 2);
-    setCssProps(msg, "--sprout-empty-left", `${wrap.scrollLeft}px`);
-    setCssProps(msg, "--sprout-empty-top", `${Math.round(top)}px`);
-    setCssProps(msg, "--sprout-empty-width", `${wrap.clientWidth}px`);
+    setCssProps(msg, "--learnkit-empty-left", `${wrap.scrollLeft}px`);
+    setCssProps(msg, "--learnkit-empty-top", `${Math.round(top)}px`);
+    setCssProps(msg, "--learnkit-empty-width", `${wrap.clientWidth}px`);
   };
 
   const onScroll = () => place();
@@ -396,7 +396,7 @@ function makeReadOnlyFieldCell(
   if (title) ta.setAttribute("aria-label", title);
 
   const h = `${ctx.editorHeightPx}px`;
-  setCssProps(ta, "--sprout-editor-height", h);
+  setCssProps(ta, "--learnkit-editor-height", h);
 
   td.appendChild(ta);
   return td;
@@ -419,13 +419,13 @@ function makeImageEditorCell(
   /* ── wrapper that stacks textarea behind overlay ── */
   const wrap = document.createElement("div");
   wrap.className = "lk-browser-img-editor-wrap";
-  setCssProps(wrap, "--sprout-editor-height", h);
+  setCssProps(wrap, "--learnkit-editor-height", h);
 
   /* ── real textarea (holds raw markdown, shown when focused) ── */
   const ta = document.createElement("textarea");
   ta.className = `textarea w-full ${ctx.cellTextClass} lk-browser-textarea lk-browser-textarea--editable lk-browser-img-textarea`;
   ta.value = initial;
-  setCssProps(ta, "--sprout-editor-height", h);
+  setCssProps(ta, "--learnkit-editor-height", h);
 
   /* ── overlay (rendered HTML with images, shown when NOT focused) ── */
   const overlay = document.createElement("div");
@@ -540,12 +540,12 @@ function makeFlagPreviewEditorCell(
   const h = `${ctx.editorHeightPx}px`;
   const wrap = document.createElement("div");
   wrap.className = "lk-browser-flag-editor-wrap lk-browser-flag-editor-wrap--multiline";
-  setCssProps(wrap, "--sprout-editor-height", h);
+  setCssProps(wrap, "--learnkit-editor-height", h);
 
   const ta = document.createElement("textarea");
   ta.className = `textarea w-full ${ctx.cellTextClass} lk-browser-textarea lk-browser-textarea--editable lk-browser-flag-textarea`;
   ta.value = initial;
-  setCssProps(ta, "--sprout-editor-height", h);
+  setCssProps(ta, "--learnkit-editor-height", h);
 
   const overlay = document.createElement("div");
   overlay.className = "lk-browser-flag-overlay lk-browser-flag-overlay--multiline";
@@ -631,9 +631,9 @@ function makeMcqAnswerCell(
   const correctIdxSet = new Set(getCorrectIndices(card));
 
   const wrap = document.createElement("div");
-  wrap.className = "bc flex flex-col gap-1 lk-browser-mcq-cell";
+  wrap.className = "flex flex-col gap-1 lk-browser-mcq-cell";
   const h = `${ctx.editorHeightPx}px`;
-  setCssProps(wrap, "--sprout-editor-height", h);
+  setCssProps(wrap, "--learnkit-editor-height", h);
 
   type McqRow = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement };
   const rows: McqRow[] = [];
@@ -707,12 +707,12 @@ function makeMcqAnswerCell(
 
   const addMcqInputRow = (value: string, isCorrect: boolean) => {
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-1 lk-browser-mcq-row";
+    row.className = "flex items-center gap-1 lk-browser-mcq-row";
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = isCorrect;
-    checkbox.className = "bc sprout-mcq-correct-checkbox";
+    checkbox.className = "learnkit-mcq-correct-checkbox";
     checkbox.setAttribute("aria-label", txFromCtx(ctx, "ui.browser.row.mcq.markCorrect", "Mark as correct answer"));
     checkbox.setAttribute("data-tooltip-position", "top");
     row.appendChild(checkbox);
@@ -724,7 +724,7 @@ function makeMcqAnswerCell(
 
     const input = document.createElement("input");
     input.type = "text";
-    input.className = "bc input flex-1 sprout-input-fixed lk-browser-mcq-input";
+    input.className = "input flex-1 learnkit-input-fixed lk-browser-mcq-input";
     input.placeholder = txFromCtx(ctx, "ui.browser.row.mcq.answerOption", "Answer option");
     input.value = value;
     row.appendChild(wrapBrowserFlagPreviewInput(input));
@@ -756,7 +756,7 @@ function makeMcqAnswerCell(
   // "Add option" input at bottom
   const addInput = document.createElement("input");
   addInput.type = "text";
-  addInput.className = "bc input w-full sprout-input-fixed lk-browser-mcq-add";
+  addInput.className = "input w-full learnkit-input-fixed lk-browser-mcq-add";
   addInput.placeholder = txFromCtx(ctx, "ui.browser.row.mcq.addOption", "+ add option");
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
@@ -811,9 +811,9 @@ function makeOqStepsCell(
     : [];
 
   const wrap = document.createElement("div");
-  wrap.className = "bc flex flex-col gap-1 lk-browser-oq-cell";
+  wrap.className = "flex flex-col gap-1 lk-browser-oq-cell";
   const h = `${ctx.editorHeightPx}px`;
-  setCssProps(wrap, "--sprout-editor-height", h);
+  setCssProps(wrap, "--learnkit-editor-height", h);
 
   type OqRow = { row: HTMLElement; input: HTMLInputElement; badge: HTMLElement };
   const oqRows: OqRow[] = [];
@@ -895,26 +895,26 @@ function makeOqStepsCell(
     const idx = oqRows.length;
 
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-1 lk-browser-oq-row";
+    row.className = "flex items-center gap-1 lk-browser-oq-row";
     row.draggable = false;
 
     // Drag grip
     const grip = document.createElement("span");
-    grip.className = "bc inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip-sm";
+    grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab learnkit-oq-grip-sm";
     grip.draggable = true;
     setIcon(grip, "grip-vertical");
     row.appendChild(grip);
 
     // Number badge
     const badge = document.createElement("span");
-    badge.className = "bc text-xs font-medium text-muted-foreground w-4 shrink-0 text-center";
+    badge.className = "text-xs font-medium text-muted-foreground w-4 shrink-0 text-center";
     badge.textContent = String(idx + 1);
     row.appendChild(badge);
 
     // Text input
     const input = document.createElement("input");
     input.type = "text";
-    input.className = "bc input flex-1 sprout-input-fixed lk-browser-oq-input";
+    input.className = "input flex-1 learnkit-input-fixed lk-browser-oq-input";
     input.placeholder = `Step ${idx + 1}`;
     input.value = value;
     row.appendChild(wrapBrowserFlagPreviewInput(input));
@@ -930,11 +930,11 @@ function makeOqStepsCell(
         ev.dataTransfer.effectAllowed = "move";
         ev.dataTransfer.setData("text/plain", String(fromIdx));
       }
-      row.classList.add("sprout-oq-row-dragging");
+      row.classList.add("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
     });
     row.addEventListener("dragend", () => {
       draggingRow = null;
-      row.classList.remove("sprout-oq-row-dragging");
+      row.classList.remove("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
     });
     row.addEventListener("dragover", (ev) => {
       ev.preventDefault();
@@ -982,7 +982,7 @@ function makeOqStepsCell(
   // "Add step" input
   const addInput = document.createElement("input");
   addInput.type = "text";
-  addInput.className = "bc input w-full sprout-input-fixed lk-browser-oq-add";
+  addInput.className = "input w-full learnkit-input-fixed lk-browser-oq-add";
   addInput.placeholder = txFromCtx(ctx, "ui.browser.row.oq.addStep", "+ add step");
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
@@ -1094,7 +1094,7 @@ function makeIoCell(
   const box = document.createElement("div");
   box.className = "lk-browser-io-box";
   const h = `${ctx.editorHeightPx}px`;
-  setCssProps(box, "--sprout-editor-height", h);
+  setCssProps(box, "--learnkit-editor-height", h);
 
   if (col === "question") {
     const ioMap = ctx.plugin.store.data?.io || {};
@@ -1167,7 +1167,7 @@ function makeGroupsEditorCell(
 
   const tagBox = document.createElement("div");
   tagBox.className = `textarea w-full ${ctx.cellTextClass} lk-browser-tag-box`;
-  setCssProps(tagBox, "--sprout-editor-height", `${ctx.editorHeightPx}px`);
+  setCssProps(tagBox, "--learnkit-editor-height", `${ctx.editorHeightPx}px`);
   td.appendChild(tagBox);
 
   const isCompact = ctx.densityMode === "compact";
@@ -1181,7 +1181,7 @@ function makeGroupsEditorCell(
         empty.textContent = "—";
       } else {
         empty.className =
-          "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder sprout-badge-inline lk-browser-tag-empty";
+          "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-placeholder learnkit-badge-inline lk-browser-tag-empty";
         empty.textContent = txFromCtx(ctx, "ui.browser.groups.empty", "No groups");
       }
       tagBox.appendChild(empty);
@@ -1199,7 +1199,7 @@ function makeGroupsEditorCell(
     for (const tag of selected) {
       const badge = document.createElement("span");
       badge.className =
-        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder sprout-badge-inline lk-browser-tag-badge";
+        "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-placeholder learnkit-badge-inline lk-browser-tag-badge";
 
       const txt = document.createElement("span");
       txt.textContent = formatGroupDisplay(tag);
@@ -1249,12 +1249,12 @@ function makeGroupsEditorCell(
 
   // ── Popover ──
   const popover = document.createElement("div");
-  popover.className = "sprout sprout-popover-overlay";
+  popover.className = "learnkit learnkit-popover-overlay";
   popover.setAttribute("aria-hidden", "true");
 
   const panel = document.createElement("div");
   panel.className =
-    "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 sprout-pointer-auto";
+    "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 learnkit-pointer-auto";
   popover.appendChild(panel);
 
   const searchWrap = document.createElement("div");
@@ -1263,14 +1263,14 @@ function makeGroupsEditorCell(
 
   const searchIcon = document.createElement("span");
   searchIcon.className =
-    "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
+    "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-search-icon";
   searchIcon.setAttribute("aria-hidden", "true");
   setIcon(searchIcon, "search");
   searchWrap.appendChild(searchIcon);
 
   const search = document.createElement("input");
   search.type = "text";
-  search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full sprout-search-naked";
+  search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full learnkit-search-naked";
   search.placeholder = txFromCtx(ctx, "ui.browser.groups.searchOrAdd", "Search or add group");
   searchWrap.appendChild(search);
 
@@ -1391,7 +1391,7 @@ function makeGroupsEditorCell(
     if (raw && !exact) addRow(`Add "${rawDisplay || rawTitle}"`, rawTitle || raw, true);
 
     if (allOptions.length === 0 && !raw && selected.length === 0) {
-      list.classList.add("sprout-list-unbounded");
+      list.classList.add("learnkit-list-unbounded", "learnkit-list-unbounded");
       const empty = document.createElement("div");
       empty.className = "px-2 py-2 text-sm text-muted-foreground whitespace-normal break-words";
       empty.textContent = txFromCtx(ctx, "ui.browser.groups.emptyHint", "Type a keyword above to save this flashcard to a group.");
@@ -1399,7 +1399,7 @@ function makeGroupsEditorCell(
       return;
     }
 
-    list.classList.remove("sprout-list-unbounded");
+    list.classList.remove("learnkit-list-unbounded", "learnkit-list-unbounded");
 
     for (const opt of options) addRow(formatGroupDisplay(opt), opt);
 

@@ -7,7 +7,7 @@
  */
 
 import { Modal, Notice, TFile, MarkdownView, setIcon, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../core/store";
 import { parseCardsFromText, type ParsedCard } from "../../engine/parser/parser";
 import { CardEditModal, saveCardEdits } from "../../views/reviewer/card-editor";
@@ -29,10 +29,10 @@ import {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export class ParseErrorModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private quarantinedIds: string[];
 
-  constructor(app: App, plugin: SproutPlugin, quarantinedIds: string[]) {
+  constructor(app: App, plugin: LearnKitPlugin, quarantinedIds: string[]) {
     super(app);
     this.plugin = plugin;
     this.quarantinedIds = Array.isArray(quarantinedIds) ? quarantinedIds : [];
@@ -46,9 +46,8 @@ export class ParseErrorModal extends Modal {
     scopeModalToWorkspace(this);
     this.containerEl.addClass("lk-modal-container");
     this.containerEl.addClass("lk-modal-dim");
-    this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "lk-modals");
-    this.contentEl.addClass("bc");
+    this.containerEl.addClass("learnkit");
+    this.modalEl.addClass("lk-modals");
 
     // Escape key closes modal
     this.scope.register([], "Escape", () => { this.close(); return false; });
@@ -57,7 +56,7 @@ export class ParseErrorModal extends Modal {
     contentEl.empty();
 
 
-    const root = contentEl.createDiv({ cls: "bc flex flex-col gap-4" });
+    const root = contentEl.createDiv({ cls: "flex flex-col gap-4" });
 
     // Callout with common parsing fixes
     mkDangerCallout(
@@ -77,31 +76,31 @@ export class ParseErrorModal extends Modal {
     );
 
     // Render each quarantined card
-    const list = root.createDiv({ cls: "bc flex flex-col gap-3" });
+    const list = root.createDiv({ cls: "flex flex-col gap-3" });
 
     for (const id of this.quarantinedIds) {
       const ref = this.resolveCardRef(id);
 
-      const row = list.createDiv({ cls: "bc card p-3" });
+      const row = list.createDiv({ cls: "card p-3" });
 
-      const top = row.createDiv({ cls: "bc flex items-center justify-between gap-3" });
+      const top = row.createDiv({ cls: "flex items-center justify-between gap-3" });
 
-      const left = top.createDiv({ cls: "bc flex flex-col gap-1" });
-      left.createDiv({ text: `^sprout-${id}`, cls: "bc font-medium" });
+      const left = top.createDiv({ cls: "flex flex-col gap-1" });
+      left.createDiv({ text: `^learnkit-${id}`, cls: "font-medium" });
       left.createDiv({
         text: ref?.sourceNotePath ? ref.sourceNotePath : "(note path unresolved; will try active note)",
-        cls: "bc text-muted-foreground text-xs",
+        cls: "text-muted-foreground text-xs",
       });
 
       // Action buttons: open in note and quick edit
-      const actions = top.createDiv({ cls: "bc flex items-center gap-2" });
+      const actions = top.createDiv({ cls: "flex items-center gap-2" });
 
-      const openBtn = actions.createEl("button", { cls: "bc btn-icon-ghost", attr: { "aria-label": "Open at anchor" } });
+      const openBtn = actions.createEl("button", { cls: "btn-icon-ghost", attr: { "aria-label": "Open at anchor" } });
       openBtn.type = "button";
       setIcon(openBtn, "arrow-up-right");
       openBtn.onclick = () => void this.openAtAnchor(id);
 
-      const editBtn = actions.createEl("button", { cls: "bc btn-icon-ghost", attr: { "aria-label": "Quick edit" } });
+      const editBtn = actions.createEl("button", { cls: "btn-icon-ghost", attr: { "aria-label": "Quick edit" } });
       editBtn.type = "button";
       setIcon(editBtn, "edit-3");
       editBtn.onclick = () => void this.openQuickEdit(id);
@@ -109,19 +108,19 @@ export class ParseErrorModal extends Modal {
       // Show error list if available
       const errs = (ref?.errors || []).filter(Boolean);
       if (errs.length) {
-        const ul = row.createEl("ul", { cls: "bc text-sm sprout-parse-errors-list" });
+        const ul = row.createEl("ul", { cls: "text-sm learnkit-parse-errors-list learnkit-parse-errors-list" });
         for (const e of errs) ul.createEl("li", { text: e });
       } else {
-        row.createDiv({ text: "No error details available.", cls: "bc text-muted-foreground text-sm" });
+        row.createDiv({ text: "No error details available.", cls: "text-muted-foreground text-sm" });
       }
     }
 
-    const footer = root.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer" });
+    const footer = root.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer" });
     const closeBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Close this dialog" },
     });
-    const closeBtnIcon = closeBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const closeBtnIcon = closeBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(closeBtnIcon, "x");
     closeBtn.createSpan({ text: "Close" });
     closeBtn.onclick = () => this.close();
@@ -130,8 +129,7 @@ export class ParseErrorModal extends Modal {
   onClose() {
     this.containerEl.removeClass("lk-modal-container");
     this.containerEl.removeClass("lk-modal-dim");
-    this.modalEl.removeClass("bc", "lk-modals");
-    this.contentEl.removeClass("bc");
+    this.modalEl.removeClass("lk-modals");
     this.contentEl.empty();
   }
 

@@ -13,22 +13,22 @@
   }
 }
 
-.sprout .sprout-note-review-title-strip.sprout-note-review-enter-title {
+.learnkit .learnkit-note-review-title-strip.learnkit-note-review-enter-title {
   animation: lk-note-review-fade-up 600ms ease-out 0ms both;
 }
 
-.sprout .sprout-note-review-content-shell.sprout-note-review-enter-shell {
+.learnkit .learnkit-note-review-content-shell.learnkit-note-review-enter-shell {
   opacity: 0;
   animation: lk-note-review-fade-up 600ms ease-out 100ms both;
 }
 
-.workspace-leaf-content.sprout[data-type="learnkit-note-review"] {
+.workspace-leaf-content.learnkit[data-type="learnkit-note-review"] {
   background-color: var(--background-primary) !important;
 }
 
-.sprout .sprout-note-review-root {
+.learnkit .learnkit-note-review-root {
   width: 100% !important;
-  max-width: var(--sprout-note-review-max-width, 1280px) !important;
+  max-width: var(--learnkit-note-review-max-width, 1280px) !important;
   margin-top: 0;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -46,12 +46,12 @@
 
 /* ---- Flexed note-review layout: pinned header, scrolling content, pinned dock ---- */
 
-.sprout .sprout-note-review-root > .sprout-note-review-title-strip {
+.learnkit .learnkit-note-review-root > .learnkit-note-review-title-strip {
   flex: 0 0 auto;
   z-index: 10;
 }
 
-.sprout .sprout-note-review-root > .sprout-note-review-content-shell {
+.learnkit .learnkit-note-review-root > .learnkit-note-review-content-shell {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -59,31 +59,31 @@
   overflow: hidden;
 }
 
-.sprout .sprout-note-review-title-row {
+.learnkit .learnkit-note-review-title-row {
   width: 100%;
 }
 
-.sprout .sprout-note-review-title-timer-host {
+.learnkit .learnkit-note-review-title-timer-host {
   margin-left: auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
 }
 
-.sprout .sprout-note-review-title-timer-host .sprout-session-timer-group {
+.learnkit .learnkit-note-review-title-timer-host .learnkit-session-timer-group {
   margin-left: auto;
 }
 
-.sprout .sprout-note-review-root [data-study-session-header].sprout-note-review-session-header-hidden {
+.learnkit .learnkit-note-review-root [data-study-session-header].learnkit-note-review-session-header-hidden {
   display: none !important;
 }
 
 
-.sprout .sprout-note-review-panel {
-  --sprout-note-review-dock-space: 86px;
-  --sprout-note-review-edge-fade: 40px;
-  --sprout-note-review-topbar-inset: 1.2rem;
-  --sprout-note-review-topbar-clearance: 7rem;
+.learnkit .learnkit-note-review-panel {
+  --learnkit-note-review-dock-space: 86px;
+  --learnkit-note-review-edge-fade: 40px;
+  --learnkit-note-review-topbar-inset: 1.2rem;
+  --learnkit-note-review-topbar-clearance: 7rem;
   position: relative;
   min-height: 0;
   display: flex;
@@ -99,7 +99,7 @@
   flex: 1 1 auto;
 }
 
-.sprout .sprout-note-review-stage {
+.learnkit .learnkit-note-review-stage {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -112,11 +112,11 @@ border: 1px solid var(--color-base-30);
   background: var(--color-base-00);
 }
 
-.sprout .sprout-note-review-topbar {
+.learnkit .learnkit-note-review-topbar {
   position: absolute;
-  top: var(--sprout-note-review-topbar-inset);
-  left: var(--sprout-note-review-topbar-inset);
-  right: var(--sprout-note-review-topbar-inset);
+  top: var(--learnkit-note-review-topbar-inset);
+  left: var(--learnkit-note-review-topbar-inset);
+  right: var(--learnkit-note-review-topbar-inset);
   z-index: 5;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -132,28 +132,28 @@ border: 1px solid var(--color-base-30);
   backdrop-filter: blur(10px);
 }
 
-.sprout .sprout-note-review-topbar-title {
+.learnkit .learnkit-note-review-topbar-title {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--sprout-font-md-plus);
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 700;
   color: var(--text-normal);
 }
 
-.sprout .sprout-note-review-topbar-actions {
+.learnkit .learnkit-note-review-topbar-actions {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
 }
 
-.sprout .sprout-note-review-viewport {
+.learnkit .learnkit-note-review-viewport {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-.sprout .sprout-note-review-content {
+.learnkit .learnkit-note-review-content {
   position: relative;
   min-height: 0;
   overflow: auto;
@@ -163,7 +163,7 @@ border: 1px solid var(--color-base-30);
   flex: 1 1 auto;
 }
 
-.sprout .sprout-note-review-content:has(.sprout-note-review-empty) {
+.learnkit .learnkit-note-review-content:has(.learnkit-note-review-empty) {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -171,7 +171,7 @@ border: 1px solid var(--color-base-30);
   padding-bottom: 0;
 }
 
-.sprout .sprout-note-review-content > .sprout-note-review-empty {
+.learnkit .learnkit-note-review-content > .learnkit-note-review-empty {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   height: auto !important;
@@ -181,99 +181,99 @@ border: 1px solid var(--color-base-30);
   align-self: stretch !important;
 }
 
-.sprout .sprout-note-review-root.sprout-note-review-overflow .sprout-note-review-panel {
+.learnkit .learnkit-note-review-root.learnkit-note-review-overflow .learnkit-note-review-panel {
   flex: 1 1 auto;
 }
 
-.sprout .sprout-note-review-root.sprout-note-review-overflow .sprout-note-review-content {
+.learnkit .learnkit-note-review-root.learnkit-note-review-overflow .learnkit-note-review-content {
   flex: 1 1 auto;
   overflow: auto;
 }
 
-.sprout .sprout-note-review-article {
+.learnkit .learnkit-note-review-article {
   gap: 0;
   margin: 0;
   min-height: 100%;
   width: 100%;
-  padding: var(--sprout-note-review-topbar-clearance) 0 8rem 0;
+  padding: var(--learnkit-note-review-topbar-clearance) 0 8rem 0;
   border: none;;
 }
 
-.sprout .sprout-note-review-article-loading {
+.learnkit .learnkit-note-review-article-loading {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sprout .sprout-note-review-loading-copy {
+.learnkit .learnkit-note-review-loading-copy {
   color: var(--text-muted);
   text-align: center;
   padding-top: 24px;
 }
 
-.sprout .sprout-note-review-article.sprout-note-review-article-enter {
+.learnkit .learnkit-note-review-article.learnkit-note-review-article-enter {
   opacity: 0;
   transition: opacity 100ms ease-out;
 }
 
-.sprout .sprout-note-review-article.sprout-note-review-article-enter.is-visible {
+.learnkit .learnkit-note-review-article.learnkit-note-review-article-enter.is-visible {
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sprout .sprout-note-review-article.sprout-note-review-article-enter {
+  .learnkit .learnkit-note-review-article.learnkit-note-review-article-enter {
     transition: none;
   }
 }
 
-.sprout .sprout-note-review-note-title {
+.learnkit .learnkit-note-review-note-title {
   margin: 0 0 14px;
-  font-size: var(--sprout-font-xl);
+  font-size: var(--learnkit-font-xl);
   line-height: 1.2;
   font-weight: 700;
 }
 
-.sprout .sprout-note-review-note-body {
-  font-size: var(--sprout-font-sm);
+.learnkit .learnkit-note-review-note-body {
+  font-size: var(--learnkit-font-sm);
   line-height: 1.7;
   width: 100%;
   padding: 0 1.8rem;
 }
 
-.sprout .sprout-note-review-note-body > .sprout-note-review-session-header {
+.learnkit .learnkit-note-review-note-body > .learnkit-note-review-session-header {
   display: block;
   padding: 0 !important;
   margin: 0 !important;
 }
 
-.sprout .sprout-note-review-note-body .sprout-session-location-text {
+.learnkit .learnkit-note-review-note-body .learnkit-session-location-text {
   display: none !important;
 }
 
 
 
 @media (max-width: 720px) {
-  .sprout .sprout-note-review-note-body {
+  .learnkit .learnkit-note-review-note-body {
     padding: 0 16px;
   }
 }
 
-.sprout .sprout-note-review-note-body > *:first-child {
+.learnkit .learnkit-note-review-note-body > *:first-child {
   margin-top: 1rem !important;
 }
 
 /* Keep first note heading compact in Note Review, even when global markdown rules
    add larger spacing for block-to-heading transitions (e.g. hidden frontmatter <pre> + <h1>). */
-.sprout .sprout-note-review-note-body.markdown-rendered h1:first-of-type,
-.sprout .sprout-note-review-note-body.markdown-rendered :is(p, pre, table, ul, ol) + h1:first-of-type,
-.sprout .sprout-note-review-note-body.markdown-preview-view h1:first-of-type,
-.sprout .sprout-note-review-note-body.markdown-preview-view :is(p, pre, table, ul, ol) + h1:first-of-type,
-.sprout .sprout-note-review-note-body.markdown-rendered div:is(.el-p, .el-pre, .el-table, .el-ul, .el-ol) + div > h1:first-of-type,
-.sprout .sprout-note-review-note-body.markdown-preview-view div:is(.el-p, .el-pre, .el-table, .el-ul, .el-ol) + div > h1:first-of-type {
+.learnkit .learnkit-note-review-note-body.markdown-rendered h1:first-of-type,
+.learnkit .learnkit-note-review-note-body.markdown-rendered :is(p, pre, table, ul, ol) + h1:first-of-type,
+.learnkit .learnkit-note-review-note-body.markdown-preview-view h1:first-of-type,
+.learnkit .learnkit-note-review-note-body.markdown-preview-view :is(p, pre, table, ul, ol) + h1:first-of-type,
+.learnkit .learnkit-note-review-note-body.markdown-rendered div:is(.el-p, .el-pre, .el-table, .el-ul, .el-ol) + div > h1:first-of-type,
+.learnkit .learnkit-note-review-note-body.markdown-preview-view div:is(.el-p, .el-pre, .el-table, .el-ul, .el-ol) + div > h1:first-of-type {
   margin-top: 1rem !important;
 }
 
-.sprout .sprout-note-review-empty {
+.learnkit .learnkit-note-review-empty {
   margin: 0;
   position: relative;
   display: flex;
@@ -284,15 +284,15 @@ border: 1px solid var(--color-base-30);
   box-shadow: none !important;
 }
 
-.sprout .sprout-note-review-empty > .sprout-note-review-topbar {
+.learnkit .learnkit-note-review-empty > .learnkit-note-review-topbar {
   position: sticky;
-  top: var(--sprout-note-review-topbar-inset);
+  top: var(--learnkit-note-review-topbar-inset);
   z-index: 5;
   flex-shrink: 0;
-  margin: var(--sprout-note-review-topbar-inset) var(--sprout-note-review-topbar-inset) 0;
+  margin: var(--learnkit-note-review-topbar-inset) var(--learnkit-note-review-topbar-inset) 0;
 }
 
-.sprout .sprout-note-review-empty > .sprout-session-practice-prompt {
+.learnkit .learnkit-note-review-empty > .learnkit-session-practice-prompt {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -301,7 +301,7 @@ border: 1px solid var(--color-base-30);
   padding: 0 2rem;
 }
 
-.sprout .sprout-note-review-empty > .sprout-session-study-dock {
+.learnkit .learnkit-note-review-empty > .learnkit-session-study-dock {
   position: sticky;
   bottom: 0;
   z-index: 80;
@@ -315,7 +315,7 @@ border: 1px solid var(--color-base-30);
   backdrop-filter: blur(10px);
 }
 
-.sprout .sprout-note-review-empty-title {
+.learnkit .learnkit-note-review-empty-title {
   font-size: clamp(1.2rem, 1.1rem + 0.35vw, 1.45rem);
   font-weight: 700;
   line-height: 1.25;
@@ -323,12 +323,12 @@ border: 1px solid var(--color-base-30);
   text-align: center;
 }
 
-.sprout .sprout-note-review-empty-body {
+.learnkit .learnkit-note-review-empty-body {
   text-align: center;
   margin: 0;
 }
 
-.sprout .sprout-note-review-empty-actions {
+.learnkit .learnkit-note-review-empty-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -336,7 +336,7 @@ border: 1px solid var(--color-base-30);
   margin-top: 14px;
 }
 
-.sprout .sprout-note-review-dock {
+.learnkit .learnkit-note-review-dock {
   position: absolute;
   left: 1.2rem;
   right: 1.2rem;
@@ -356,12 +356,12 @@ border: 1px solid var(--color-base-30);
   backdrop-filter: blur(10px);
 }
 
-.sprout .sprout-note-review-dock :is(button, .sprout-note-review-more-menu) {
+.learnkit .learnkit-note-review-dock :is(button, .learnkit-note-review-more-menu) {
   position: relative;
   z-index: 81;
 }
 
-.sprout .sprout-note-review-queue-count {
+.learnkit .learnkit-note-review-queue-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -371,7 +371,7 @@ border: 1px solid var(--color-base-30);
   cursor: default;
 }
 
-.sprout .sprout-note-review-queue-count-label {
+.learnkit .learnkit-note-review-queue-count-label {
   font-weight: inherit;
   font-size: inherit;
   line-height: inherit;
@@ -380,8 +380,8 @@ border: 1px solid var(--color-base-30);
 }
 
 /* Keep queue-count chip visually aligned with the More button style. */
-.sprout .sprout-note-review-queue-count,
-.sprout .sprout-note-review-more-trigger {
+.learnkit .learnkit-note-review-queue-count,
+.learnkit .learnkit-note-review-more-trigger {
   height: 36px;
   padding: 4px 12px;
   border-radius: var(--radius-s, 4px);
@@ -395,101 +395,101 @@ border: 1px solid var(--color-base-30);
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-note-review-dock-buttons {
+.learnkit .learnkit-note-review-dock-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
 }
 
-.sprout .sprout-note-review-dock-left,
-.sprout .sprout-note-review-dock-right {
+.learnkit .learnkit-note-review-dock-left,
+.learnkit .learnkit-note-review-dock-right {
   display: flex;
   align-items: center;
 }
 
-.sprout .sprout-note-review-dock-right {
+.learnkit .learnkit-note-review-dock-right {
   gap: 8px;
   justify-content: flex-end;
 }
 
-.sprout .sprout-note-review-dock-buttons > button {
+.learnkit .learnkit-note-review-dock-buttons > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border-radius: calc(var(--radius-md) + 2px);
-  border: 1px solid var(--sprout-border-color) !important;
+  border: 1px solid var(--learnkit-border-color) !important;
   background: var(--background-secondary) !important;
   color: var(--text-normal) !important;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   font-weight: 600;
   line-height: 1;
   padding: 10px 14px;
 }
 
-.sprout .sprout-note-review-dock-buttons > button:hover:not(:disabled) {
+.learnkit .learnkit-note-review-dock-buttons > button:hover:not(:disabled) {
   background: color-mix(in srgb, var(--interactive-accent) 10%, var(--background-secondary));
 }
 
-.sprout .sprout-note-review-dock-buttons > button:disabled {
+.learnkit .learnkit-note-review-dock-buttons > button:disabled {
   opacity: 0.45;
 }
 
-.sprout .sprout-note-review-dock-buttons > button :is(kbd, .kbd) {
+.learnkit .learnkit-note-review-dock-buttons > button :is(kbd, .kbd) {
   font-size: 10px;
   letter-spacing: 0.08em;
 }
 
-.sprout .sprout-note-review-dock-buttons > .sprout-btn-again {
-  --sprout-btn-tint: var(--destructive);
+.learnkit .learnkit-note-review-dock-buttons > .learnkit-btn-again {
+  --learnkit-btn-tint: var(--destructive);
 }
 
-.sprout .sprout-note-review-dock-buttons > .sprout-btn-hard {
-  --sprout-btn-tint: var(--sprout-hard-bg);
+.learnkit .learnkit-note-review-dock-buttons > .learnkit-btn-hard {
+  --learnkit-btn-tint: var(--learnkit-hard-bg);
 }
 
-.sprout .sprout-note-review-dock-buttons > .sprout-btn-good {
-  --sprout-btn-tint: var(--sprout-good-bg);
+.learnkit .learnkit-note-review-dock-buttons > .learnkit-btn-good {
+  --learnkit-btn-tint: var(--learnkit-good-bg);
 }
 
-.sprout .sprout-note-review-dock-buttons > .sprout-btn-easy {
-  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit .learnkit-note-review-dock-buttons > .learnkit-btn-easy {
+  --learnkit-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout .sprout-note-review-dock-buttons > :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  --sprout-btn-bg-mix: 16%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 45%;
-  --sprout-btn-bg-hover-mix: 24%;
-  --sprout-btn-border-hover-mix: 60%;
-  --sprout-kbd-tint: var(--sprout-btn-tint);
-  --sprout-kbd-bg-mix: 50%;
-  --sprout-kbd-border-mix: 48%;
+.learnkit .learnkit-note-review-dock-buttons > :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  --learnkit-btn-bg-mix: 16%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 45%;
+  --learnkit-btn-bg-hover-mix: 24%;
+  --learnkit-btn-border-hover-mix: 60%;
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
+  --learnkit-kbd-bg-mix: 50%;
+  --learnkit-kbd-border-mix: 48%;
 
-  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background)) !important;
-  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground)) !important;
-  border: 1px solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), transparent) !important;
+  background: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix), var(--background)) !important;
+  color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix), var(--foreground)) !important;
+  border: 1px solid color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-mix), transparent) !important;
 }
 
-.sprout .sprout-note-review-dock-buttons > :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover:not(:disabled),
-.sprout .sprout-note-review-dock-buttons > :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background)) !important;
-  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), transparent) !important;
+.learnkit .learnkit-note-review-dock-buttons > :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover:not(:disabled),
+.learnkit .learnkit-note-review-dock-buttons > :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-hover-mix), var(--background)) !important;
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-hover-mix), transparent) !important;
 }
 
-.sprout .sprout-note-review-dock-buttons > :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-bg-mix), transparent);
-  border-color: color-mix(in srgb, var(--sprout-kbd-tint) var(--sprout-kbd-border-mix), transparent);
-  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--sprout-kbd-tint) 12%);
+.learnkit .learnkit-note-review-dock-buttons > :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-bg-mix), transparent);
+  border-color: color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-border-mix), transparent);
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--learnkit-kbd-tint) 12%);
 }
 
-.sprout .sprout-note-review-more {
+.learnkit .learnkit-note-review-more {
   position: relative;
   z-index: 4000;
 }
 
-.sprout .sprout-note-review-more-trigger {
+.learnkit .learnkit-note-review-more-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -506,24 +506,24 @@ border: 1px solid var(--color-base-30);
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-note-review-more-trigger:is(:hover, :focus-visible, :active):not(:disabled) {
+.learnkit .learnkit-note-review-more-trigger:is(:hover, :focus-visible, :active):not(:disabled) {
   background-color: var(--color-base-30) !important;
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
 @media (min-width: 768px) {
-  .sprout .sprout-note-review-more-trigger .lucide-ellipsis,
-  .sprout .sprout-note-review-more-trigger > span:first-child {
+  .learnkit .learnkit-note-review-more-trigger .lucide-ellipsis,
+  .learnkit .learnkit-note-review-more-trigger > span:first-child {
     display: none;
   }
 }
 
-.sprout .sprout-note-review-more-trigger:focus-visible {
+.learnkit .learnkit-note-review-more-trigger:focus-visible {
   outline: none;
 }
 
-.sprout .sprout-note-review-more-popover {
+.learnkit .learnkit-note-review-more-popover {
   position: absolute;
   width: max-content;
   min-width: 230px;
@@ -534,13 +534,13 @@ border: 1px solid var(--color-base-30);
   z-index: 5000;
 }
 
-.sprout .sprout-note-review-more-item {
+.learnkit .learnkit-note-review-more-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  font-size: var(--sprout-font-sm);
+  font-size: var(--learnkit-font-sm);
   text-align: left;
   border-radius: var(--radius-s, var(--radius-md));
   border: 1px solid transparent !important;
@@ -551,34 +551,34 @@ border: 1px solid var(--color-base-30);
   outline: none;
 }
 
-.sprout .sprout-note-review-more-item:hover:not(:disabled),
-.sprout .sprout-note-review-more-item:focus-visible,
-.sprout .sprout-note-review-more-item:active,
-.sprout .sprout-note-review-more-item[aria-current="true"],
-.sprout .sprout-note-review-more-item[aria-selected="true"] {
+.learnkit .learnkit-note-review-more-item:hover:not(:disabled),
+.learnkit .learnkit-note-review-more-item:focus-visible,
+.learnkit .learnkit-note-review-more-item:active,
+.learnkit .learnkit-note-review-more-item[aria-current="true"],
+.learnkit .learnkit-note-review-more-item[aria-selected="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   color: var(--color-base-100, var(--text-normal)) !important;
 }
 
-.sprout .sprout-note-review-more-item :is(kbd, .kbd) {
+.learnkit .learnkit-note-review-more-item :is(kbd, .kbd) {
   margin-left: auto;
   opacity: 0.85;
 }
 
-.sprout .sprout-note-review-more-item.sprout-menu-item--disabled,
-.sprout .sprout-note-review-more-item:disabled {
+.learnkit .learnkit-note-review-more-item.learnkit-menu-item--disabled,
+.learnkit .learnkit-note-review-more-item:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.sprout .sprout-note-review-more-popover .sprout-menu-item--disabled {
+.learnkit .learnkit-note-review-more-popover .learnkit-menu-item--disabled {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-.sprout .sprout-note-review-panel :is(.sprout-note-review-quit-coach-btn, .sprout-note-review-quit-btn) {
+.learnkit .learnkit-note-review-panel :is(.learnkit-note-review-quit-coach-btn, .learnkit-note-review-quit-btn) {
   min-width: 36px;
   padding-left: 8px;
   padding-right: 8px;
@@ -586,7 +586,7 @@ border: 1px solid var(--color-base-30);
   overflow: hidden;
 }
 
-.sprout .sprout-note-review-panel :is(.sprout-note-review-quit-coach-btn, .sprout-note-review-quit-btn) [data-sprout-label="true"] {
+.learnkit .learnkit-note-review-panel :is(.learnkit-note-review-quit-coach-btn, .learnkit-note-review-quit-btn) [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -597,14 +597,14 @@ border: 1px solid var(--color-base-30);
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .sprout-note-review-panel :is(.sprout-note-review-quit-coach-btn, .sprout-note-review-quit-btn):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+.learnkit .learnkit-note-review-panel :is(.learnkit-note-review-quit-coach-btn, .learnkit-note-review-quit-btn):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
   max-width: 9rem;
   opacity: 1;
   margin-left: 6px;
   transform: translateX(0);
 }
 
-body.is-phone .sprout .sprout-note-review-topbar-title {
+body.is-phone .learnkit .learnkit-note-review-topbar-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -612,22 +612,22 @@ body.is-phone .sprout .sprout-note-review-topbar-title {
   text-align: center;
 }
 
-body.is-phone .sprout .sprout-note-review-topbar-actions {
+body.is-phone .learnkit .learnkit-note-review-topbar-actions {
   display: none !important;
 }
 
-body.is-phone .sprout .sprout-note-review-root > .sprout-note-review-title-strip {
+body.is-phone .learnkit .learnkit-note-review-root > .learnkit-note-review-title-strip {
   display: none !important;
 }
 
 /* Flexed note-review root: reduced bottom padding for Obsidian mobile toolbar */
-body.is-phone .sprout .sprout-note-review-root {
+body.is-phone .learnkit .learnkit-note-review-root {
   margin-top: 16px;
   padding-bottom: 100px;
   overflow: hidden !important;
 }
 
-body.is-phone .sprout .sprout-note-review-content-shell {
+body.is-phone .learnkit .learnkit-note-review-content-shell {
   margin-top: 40px;
   /* Reduced from 100px: flexed root padding-bottom handles Obsidian toolbar offset */
   padding-bottom: 8px !important;
@@ -635,49 +635,49 @@ body.is-phone .sprout .sprout-note-review-content-shell {
 
 /* Neutralize inherited home-shell sibling spacing (lk-home-content-shell > * + *).
    In note review this adds extra top gap above the panel. */
-body.is-phone .sprout .sprout-note-review-content-shell > * + * {
+body.is-phone .learnkit .learnkit-note-review-content-shell > * + * {
   margin-top: 0 !important;
 }
 
-body.is-phone .sprout .sprout-note-review-panel {
-  --sprout-note-review-dock-space: 96px;
-  --sprout-note-review-edge-fade: 32px;
-  --sprout-note-review-topbar-inset: 8px;
-  --sprout-note-review-topbar-clearance: 118px;
+body.is-phone .learnkit .learnkit-note-review-panel {
+  --learnkit-note-review-dock-space: 96px;
+  --learnkit-note-review-edge-fade: 32px;
+  --learnkit-note-review-topbar-inset: 8px;
+  --learnkit-note-review-topbar-clearance: 118px;
 }
 
-body.is-phone .sprout .sprout-note-review-content {
-  padding: 0 0 var(--sprout-note-review-dock-space);
+body.is-phone .learnkit .learnkit-note-review-content {
+  padding: 0 0 var(--learnkit-note-review-dock-space);
   background: var(--color-base-00) !important;
 }
 
-body.is-phone .sprout .sprout-note-review-topbar {
+body.is-phone .learnkit .learnkit-note-review-topbar {
   grid-template-columns: 1fr;
   padding: 8px;
 }
 
-body.is-phone .sprout .sprout-note-review-article {
+body.is-phone .learnkit .learnkit-note-review-article {
   min-height: auto;
-  padding: calc(var(--sprout-note-review-topbar-clearance) - 90px) 0 calc(var(--sprout-note-review-dock-space) + 70px);
+  padding: calc(var(--learnkit-note-review-topbar-clearance) - 90px) 0 calc(var(--learnkit-note-review-dock-space) + 70px);
 }
 
-body.is-phone .sprout .sprout-note-review-note-body {
+body.is-phone .learnkit .learnkit-note-review-note-body {
   padding: 0 8px !important;
 }
 
-body.is-phone .sprout .sprout-note-review-panel {
+body.is-phone .learnkit .learnkit-note-review-panel {
   margin-top: 0 !important;
   padding-top: 0 !important;
   margin-left: 0;
   margin-right: 0;
 }
 
-body.is-phone .sprout .sprout-note-review-stage {
+body.is-phone .learnkit .learnkit-note-review-stage {
   border-radius: 0 !important;
 }
 
 /* Note review dock on phone: only Deferred + Completed buttons, 50% each */
-body.is-phone .sprout .sprout-note-review-dock {
+body.is-phone .learnkit .learnkit-note-review-dock {
   display: flex;
   flex-wrap: wrap;
   padding: 8px;
@@ -688,25 +688,25 @@ body.is-phone .sprout .sprout-note-review-dock {
 }
 
 /* Hide queue count and more menu on phone */
-body.is-phone .sprout .sprout-note-review-dock-left,
-body.is-phone .sprout .sprout-note-review-dock-right {
+body.is-phone .learnkit .learnkit-note-review-dock-left,
+body.is-phone .learnkit .learnkit-note-review-dock-right {
   display: none;
 }
 
-body.is-phone .sprout .sprout-note-review-dock-buttons {
+body.is-phone .learnkit .learnkit-note-review-dock-buttons {
   display: flex;
   flex-wrap: nowrap;
   width: 100%;
   gap: 8px;
 }
 
-body.is-phone .sprout .sprout-note-review-dock-buttons > button {
+body.is-phone .learnkit .learnkit-note-review-dock-buttons > button {
   flex: 1 1 0;
   min-width: 0;
   justify-content: center;
 }
 
 /* Hide kbd hints on phone dock buttons */
-body.is-phone .sprout .sprout-note-review-dock-buttons > button :is(kbd, .kbd) {
+body.is-phone .learnkit .learnkit-note-review-dock-buttons > button :is(kbd, .kbd) {
   display: none;
 }

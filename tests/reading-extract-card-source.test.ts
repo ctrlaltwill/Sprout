@@ -1,3 +1,11 @@
+/**
+ * @file tests/reading-extract-card-source.test.ts
+ * @summary Unit tests for reading extract card source.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import { extractCardFromSource, parseSproutCard } from "../src/views/reading/reading-helpers";
 

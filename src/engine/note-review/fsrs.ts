@@ -1,3 +1,13 @@
+/**
+ * @file src/engine/note-review/fsrs.ts
+ * @summary Module for fsrs.
+ *
+ * @exports
+ *  - defaultFsrsNoteRow
+ *  - gradeNoteFsrs
+ *  - gradeNoteFsrsPass
+ */
+
 import { State } from "ts-fsrs";
 import { gradeFromPassFail } from "../scheduler/scheduler";
 import type { SchedulerSettings } from "../../platform/types/scheduler";

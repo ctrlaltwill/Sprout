@@ -39,7 +39,7 @@
  */
 
 import { type Modal, Platform, TFile, setIcon, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import {
   type CardType,
   createCardEditor,
@@ -54,10 +54,10 @@ import { setCssProps } from "../core/ui";
 
 /** Renders a styled "danger callout" box (used by ParseErrorModal). */
 export function mkDangerCallout(parent: HTMLElement, text: string) {
-  const box = parent.createDiv({ cls: "bc rounded-lg p-3 text-sm sprout-danger-callout" });
+  const box = parent.createDiv({ cls: "rounded-lg p-3 text-sm learnkit-danger-callout learnkit-danger-callout" });
 
-  box.createEl("div", { text: "How to fix parse errors", cls: "bc font-medium mb-1" });
-  box.createEl("div", { text, cls: "bc sprout-danger-callout-body" });
+  box.createEl("div", { text: "How to fix parse errors", cls: "font-medium mb-1" });
+  box.createEl("div", { text, cls: "learnkit-danger-callout-body learnkit-danger-callout-body" });
 
   return box;
 }
@@ -139,10 +139,10 @@ export function parkBehind(modalEl: HTMLElement, behind: boolean) {
 export function setVisible(el: HTMLElement, visible: boolean) {
   if (visible) {
     el.removeAttribute("hidden");
-    el.classList.remove("sprout-hidden-important");
+    el.classList.remove("learnkit-hidden-important", "learnkit-hidden-important");
   } else {
     el.setAttribute("hidden", "");
-    el.classList.add("sprout-hidden-important");
+    el.classList.add("learnkit-hidden-important", "learnkit-hidden-important");
   }
 }
 
@@ -200,7 +200,7 @@ export interface ModalCardEditorConfig {
   type: CardType;
   locationPath: string;
   locationTitle: string;
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   editableFieldHeights?: Partial<Record<"title" | "question" | "answer" | "info", { min: number; max: number }>>;
 }
 
@@ -379,7 +379,7 @@ export async function writeBinaryToVault(app: App, vaultPath: string, data: Arra
  * For card attachments (Q/A/Info fields): uses `plugin.settings.storage.cardAttachmentFolderPath`.
  * Falls back to the Obsidian fileManager or the active note's parent folder.
  */
-export function bestEffortAttachmentPath(plugin: SproutPlugin, active: TFile, baseName: string, type: "io" | "card" = "io"): string {
+export function bestEffortAttachmentPath(plugin: LearnKitPlugin, active: TFile, baseName: string, type: "io" | "card" = "io"): string {
   const folderRaw = type === "card"
     ? (plugin.settings.storage.cardAttachmentFolderPath ?? "")
     : (plugin.settings.storage.imageOcclusionFolderPath ?? "");
@@ -424,13 +424,13 @@ export function hasClozeToken(s: string): boolean {
  */
 export function createModalMcqSection() {
   const container = document.createElement("div");
-  container.className = "bc flex flex-col gap-2";
+  container.className = "flex flex-col gap-2";
 
   const label = document.createElement("label");
-  label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+  label.className = "text-sm font-medium inline-flex items-center gap-1";
   label.textContent = "Answers and options";
   const mcqInfoIcon = document.createElement("span");
-  mcqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+  mcqInfoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
   mcqInfoIcon.setAttribute("aria-label", "Check the box next to each correct answer. At least one correct and one incorrect option required.");
   mcqInfoIcon.setAttribute("data-tooltip-position", "top");
   setIcon(mcqInfoIcon, "info");
@@ -438,7 +438,7 @@ export function createModalMcqSection() {
   container.appendChild(label);
 
   const optionsContainer = document.createElement("div");
-  optionsContainer.className = "bc flex flex-col gap-2";
+  optionsContainer.className = "flex flex-col gap-2";
   container.appendChild(optionsContainer);
 
   type OptionRowEntry = { row: HTMLElement; input: HTMLInputElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
@@ -455,30 +455,30 @@ export function createModalMcqSection() {
 
   const addOptionRow = (value: string, isCorrect: boolean) => {
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-2 sprout-edit-mcq-option-row";
+    row.className = "flex items-center gap-2 learnkit-edit-mcq-option-row";
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = isCorrect;
-    checkbox.className = "bc sprout-mcq-correct-checkbox";
+    checkbox.className = "learnkit-mcq-correct-checkbox";
     checkbox.setAttribute("aria-label", "Mark as correct answer");
     checkbox.setAttribute("data-tooltip-position", "top");
     row.appendChild(checkbox);
 
     const input = document.createElement("input");
     input.type = "text";
-    input.className = "bc input flex-1 text-sm sprout-input-fixed";
+    input.className = "input flex-1 text-sm learnkit-input-fixed";
     input.placeholder = "Enter an answer option";
     input.value = value;
     row.appendChild(input);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 p-0 sprout-remove-btn-ghost";
+    removeBtn.className = "inline-flex items-center justify-center h-9 w-9 p-0 learnkit-remove-btn-ghost";
     removeBtn.setAttribute("aria-label", "Remove option");
     removeBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");
-    xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(xIcon, "x");
     removeBtn.appendChild(xIcon);
     removeBtn.addEventListener("click", (ev) => {
@@ -500,7 +500,7 @@ export function createModalMcqSection() {
 
   const addInput = document.createElement("input");
   addInput.type = "text";
-  addInput.className = "bc input flex-1 text-sm sprout-input-fixed";
+  addInput.className = "input flex-1 text-sm learnkit-input-fixed";
   addInput.placeholder = "Add another option (press enter)";
   addInput.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") {
@@ -520,7 +520,7 @@ export function createModalMcqSection() {
   });
 
   const addInputWrap = document.createElement("div");
-  addInputWrap.className = "bc flex items-center gap-2";
+  addInputWrap.className = "flex items-center gap-2";
   addInputWrap.appendChild(addInput);
   container.appendChild(addInputWrap);
 
@@ -596,7 +596,7 @@ export function createThemedDropdown(
 
   const container = document.createElement("div");
   container.className = [
-    "bc sprout relative inline-flex",
+    "sprout relative inline-flex",
     fullWidth ? "w-full" : "",
     extraCls ?? "",
     config?.containerClassName ?? "",
@@ -606,7 +606,7 @@ export function createThemedDropdown(
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = [
-    "bc sprout-btn-toolbar text-sm inline-flex items-center gap-2",
+    "learnkit-btn-toolbar text-sm inline-flex items-center gap-2",
     buttonSize === "sm" ? "h-7 px-2" : "h-9 px-3",
     fullWidth ? "w-full" : "",
     buttonJustify === "between" ? "justify-between" : "",
@@ -619,27 +619,27 @@ export function createThemedDropdown(
   container.appendChild(btn);
 
   const btnText = document.createElement("span");
-  btnText.className = "bc truncate";
+  btnText.className = "truncate";
   btn.appendChild(btnText);
 
   const btnIcon = document.createElement("span");
-  btnIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3";
+  btnIcon.className = "inline-flex items-center justify-center [&_svg]:size-3";
   setIcon(btnIcon, "chevron-down");
   btn.appendChild(btnIcon);
 
   // Popover dropdown
   const popover = document.createElement("div");
-  popover.className = "sprout-popover-dropdown sprout-popover-dropdown-below";
+  popover.className = "learnkit-popover-dropdown learnkit-popover-dropdown-below";
   popover.setAttribute("aria-hidden", "true");
   container.appendChild(popover);
 
   const panel = document.createElement("div");
-  panel.className = "bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
+  panel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
   menu.setAttribute("role", "menu");
-  menu.className = "bc flex flex-col";
+  menu.className = "flex flex-col";
   panel.appendChild(menu);
 
   const updateLabel = () => {
@@ -664,19 +664,19 @@ export function createThemedDropdown(
       item.setAttribute("aria-checked", opt.value === currentValue ? "true" : "false");
       item.tabIndex = 0;
       item.className =
-        "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+        "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
 
       const dotWrap = document.createElement("div");
-      dotWrap.className = "bc size-4 flex items-center justify-center";
+      dotWrap.className = "size-4 flex items-center justify-center";
       item.appendChild(dotWrap);
 
       const dot = document.createElement("div");
-      dot.className = "bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
+      dot.className = "size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
       dot.setAttribute("aria-hidden", "true");
       dotWrap.appendChild(dot);
 
       const txt = document.createElement("span");
-      txt.className = "bc";
+      txt.className = "";
       txt.textContent = opt.label;
       item.appendChild(txt);
 

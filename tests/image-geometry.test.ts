@@ -1,3 +1,11 @@
+/**
+ * @file tests/image-geometry.test.ts
+ * @summary Unit tests for image geometry.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints } from "../src/platform/image-occlusion/image-geometry";
 

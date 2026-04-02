@@ -1,3 +1,11 @@
+/**
+ * @file src/views/reminders/reminder-engine.ts
+ * @summary Module for reminder engine.
+ *
+ * @exports
+ *  - ReminderEngine
+ */
+
 import { log } from "../../platform/core/logger";
 import {
   VIEW_TYPE_ANALYTICS,
@@ -6,7 +14,7 @@ import {
   VIEW_TYPE_REVIEWER,
   VIEW_TYPE_SETTINGS,
 } from "../../platform/core/constants";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { countDueCardsNow, getDueCardsNow } from "./reminder-due-count";
 import { showReminderNotice } from "./reminder-notice";
 import { minutesToMs, normaliseReminderIntervalMinutes } from "./reminder-timing";
@@ -15,7 +23,7 @@ import { GatekeeperModal } from "./gatekeeper-modal";
 type ReminderSource = "startup" | "interval";
 
 export class ReminderEngine {
-  private readonly plugin: SproutPlugin;
+  private readonly plugin: LearnKitPlugin;
   private static readonly GATEKEEPER_TICK_MS = 1000;
   private static readonly STUDY_VIEW_TYPES = new Set<string>([
     VIEW_TYPE_REVIEWER,
@@ -33,7 +41,7 @@ export class ReminderEngine {
   private _gatekeeperLastTickAt = 0;
   private _gatekeeperModal: GatekeeperModal | null = null;
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
   }
 

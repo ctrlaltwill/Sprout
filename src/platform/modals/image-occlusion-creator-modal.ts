@@ -5,29 +5,10 @@
  * @exports
  *   - ImageOcclusionCreatorModal — Obsidian Modal subclass for IO card creation/editing
  */
-
-/**
- * modals/ImageOcclusionCreatorModal.ts
- * ---------------------------------------------------------------------------
- * Full-featured modal for creating and editing Image Occlusion (IO) cards.
- *
- * Features:
- *  - Image loading from clipboard or file picker
- *  - Drawing rectangle / ellipse occlusion masks
- *  - Text annotations (burned into the image on save)
- *  - Undo / redo history for the canvas
- *  - Crop & rotate tools
- *  - Pan & zoom (mouse wheel)
- *  - Edit mode for existing IO parents (pre-fills from store)
- *  - Saves parent + child card records and IO map to the store
- *  - Writes pipe-format markdown block to the active note
- * ---------------------------------------------------------------------------
- */
-
 import { Modal, Notice, setIcon, type App } from "obsidian";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { createGroupPickerField as createGroupPickerFieldImpl, attachFlagPreviewOverlay } from "../card-editor/card-editor";
 import { normaliseGroupKey } from "../../platform/image-occlusion/mask-tool";
 import { renderOverlay } from "../../platform/image-occlusion/io-overlay-renderer";
@@ -63,7 +44,7 @@ import { saveIoCard } from "../../platform/image-occlusion/io-save";
 // ──────────────────────────────────────────────────────────────────────────────
 
 export class ImageOcclusionCreatorModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private ioImageData: ClipboardImage | null = null;
   private editParentId: string | null = null;
   private onCloseCallback?: () => void;
@@ -135,13 +116,13 @@ export class ImageOcclusionCreatorModal extends Modal {
   private onDocKeyDown?: (ev: KeyboardEvent) => void;
   private fitRetryRaf: number | null = null;
 
-  constructor(app: App, plugin: SproutPlugin) {
+  constructor(app: App, plugin: LearnKitPlugin) {
     super(app);
     this.plugin = plugin;
   }
 
   /** Factory: open the modal pre-loaded for editing an existing IO parent. */
-  static openForParent(plugin: SproutPlugin, parentId: string, opts?: { onClose?: () => void }) {
+  static openForParent(plugin: LearnKitPlugin, parentId: string, opts?: { onClose?: () => void }) {
     const m = new ImageOcclusionCreatorModal(plugin.app, plugin);
     m.editParentId = String(parentId);
     m.onCloseCallback = opts?.onClose;
@@ -159,9 +140,9 @@ export class ImageOcclusionCreatorModal extends Modal {
     scopeModalToWorkspace(this);
     this.containerEl.addClass("lk-modal-container");
     this.containerEl.addClass("lk-modal-dim");
-    this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-io-creator", "sprout-io-creator-modal");
-    this.contentEl.addClass("bc", "sprout-io-creator-content");
+    this.containerEl.addClass("learnkit");
+    this.modalEl.addClass("lk-modals", "learnkit-io-creator", "learnkit-io-creator-modal");
+    this.contentEl.addClass("learnkit-io-creator-content");
 
     // Escape key behavior: first exits focused input, second closes the modal.
     this.scope.register([], "Escape", () => {
@@ -190,38 +171,38 @@ export class ImageOcclusionCreatorModal extends Modal {
       const titleEl = headerEl.querySelector<HTMLElement>(":scope > .modal-title");
       if (titleEl) titleEl.setText(headerTitle);
 
-      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .sprout-io-creator-close-btn");
+      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .learnkit-io-creator-close-btn");
       if (existingCloseBtn) existingCloseBtn.remove();
       const legacyHeaderClose = headerEl.querySelector<HTMLElement>(":scope > .modal-close-button");
       if (legacyHeaderClose) legacyHeaderClose.remove();
 
       const closeBtn = headerEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-io-creator-close-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn learnkit-io-creator-close-btn learnkit-io-creator-close-btn",
         attr: { type: "button", "aria-label": "Close" },
       });
       closeBtn.setAttr("data-tooltip-position", "top");
-      const closeIconWrap = closeBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const closeIconWrap = closeBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(closeIconWrap, "x");
-      closeBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Close" });
+      closeBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: "Close" });
       closeBtn.addEventListener("click", () => this.close());
     }
 
     const legacyRootClose = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
     if (legacyRootClose) legacyRootClose.remove();
 
-    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-io-footer");
+    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .learnkit-io-footer");
     if (existingFooter) existingFooter.remove();
 
     const modalRoot = contentEl;
-    modalRoot.addClass("bc", "sprout-io-creator-root");
+    modalRoot.addClass("learnkit-io-creator-root");
 
-    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = modalRoot.createDiv({ cls: "flex flex-col gap-4" });
 
     // ── Title field ─────────────────────────────────────────────────────────
-    const titleField = body.createDiv({ cls: "bc flex flex-col gap-1 sprout-io-title-field" });
-    const titleLabel = titleField.createEl("label", { cls: "bc text-sm font-medium" });
+    const titleField = body.createDiv({ cls: "flex flex-col gap-1 learnkit-io-title-field learnkit-io-title-field" });
+    const titleLabel = titleField.createEl("label", { cls: "text-sm font-medium" });
     titleLabel.textContent = "Title";
-    const titleInput = titleField.createEl("textarea", { cls: "bc textarea w-full sprout-io-title-input" });
+    const titleInput = titleField.createEl("textarea", { cls: "textarea w-full learnkit-io-title-input learnkit-io-title-input" });
     titleInput.rows = 1;
     setCssProps(titleInput, "min-height", "60px");
     setCssProps(titleInput, "height", "60px");
@@ -235,10 +216,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.titleInput = titleInput;
 
     // ── Canvas editor label ─────────────────────────────────────────────────
-    const canvasSection = body.createDiv({ cls: "bc flex flex-col gap-2" });
-    const canvasLabel = canvasSection.createEl("label", { cls: "bc text-sm font-medium" });
+    const canvasSection = body.createDiv({ cls: "flex flex-col gap-2" });
+    const canvasLabel = canvasSection.createEl("label", { cls: "text-sm font-medium" });
     canvasLabel.textContent = "Image occlusion editor";
-    canvasLabel.createSpan({ text: "*", cls: "bc text-destructive ml-1" });
+    canvasLabel.createSpan({ text: "*", cls: "text-destructive ml-1" });
 
     // ── Toolbar ─────────────────────────────────────────────────────────────
     const toolbarRefs = buildToolbar(body, {
@@ -288,9 +269,9 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.stageEl = canvasRefs.stageEl;
     this.imgEl = canvasRefs.imgEl;
     this.overlayEl = canvasRefs.overlayEl;
-    if (this.canvasContainerEl) this.canvasContainerEl.classList.add("sprout-io-canvas");
+    if (this.canvasContainerEl) this.canvasContainerEl.classList.add("learnkit-io-canvas", "learnkit-io-canvas");
     if (this.canvasContainerEl) this.canvasContainerEl.tabIndex = 0;
-    if (this.stageEl) this.stageEl.classList.add("sprout-io-stage");
+    if (this.stageEl) this.stageEl.classList.add("learnkit-io-stage", "learnkit-io-stage");
     if (this.viewportEl) this.viewportEl.tabIndex = 0;
 
     // Global paste handler
@@ -334,10 +315,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.updateResetMasksButtonState();
 
     // ── Extra information field ──────────────────────────────────────────────
-    const infoField = body.createDiv({ cls: "bc flex flex-col gap-1" });
-    const infoLabel = infoField.createEl("label", { cls: "bc text-sm font-medium" });
+    const infoField = body.createDiv({ cls: "flex flex-col gap-1" });
+    const infoLabel = infoField.createEl("label", { cls: "text-sm font-medium" });
     infoLabel.textContent = "Extra information";
-    const infoInput = infoField.createEl("textarea", { cls: "bc textarea w-full sprout-io-info-input" });
+    const infoInput = infoField.createEl("textarea", { cls: "textarea w-full learnkit-io-info-input learnkit-io-info-input" });
     infoInput.rows = 1;
     setCssProps(infoInput, "min-height", "60px");
     setCssProps(infoInput, "height", "60px");
@@ -351,8 +332,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.infoInput = infoInput;
 
     // ── Groups field ────────────────────────────────────────────────────────
-    const groupsField = body.createDiv({ cls: "bc flex flex-col gap-1" });
-    const groupsLabel = groupsField.createEl("label", { cls: "bc text-sm font-medium" });
+    const groupsField = body.createDiv({ cls: "flex flex-col gap-1" });
+    const groupsLabel = groupsField.createEl("label", { cls: "text-sm font-medium" });
     groupsLabel.textContent = "Groups";
     const initialGroups = editing
       ? (this.plugin.store?.data?.cards || {})[String(this.editParentId)]?.groups
@@ -511,11 +492,11 @@ export class ImageOcclusionCreatorModal extends Modal {
 
   private updateCursor() {
     if (!this.viewportEl) return;
-    this.viewportEl.classList.remove("sprout-cursor-grab", "sprout-cursor-crosshair");
+    this.viewportEl.classList.remove("learnkit-cursor-grab", "learnkit-cursor-grab", "learnkit-cursor-crosshair", "learnkit-cursor-crosshair");
     if (this.currentTool === "transform") {
-      this.viewportEl.classList.add("sprout-cursor-grab");
+      this.viewportEl.classList.add("learnkit-cursor-grab", "learnkit-cursor-grab");
     } else {
-      this.viewportEl.classList.add("sprout-cursor-crosshair");
+      this.viewportEl.classList.add("learnkit-cursor-crosshair", "learnkit-cursor-crosshair");
     }
   }
 
@@ -524,13 +505,13 @@ export class ImageOcclusionCreatorModal extends Modal {
   private updatePlaceholderVisibility() {
     if (!this.placeholderEl || !this.viewportEl) return;
     if (this.ioImageData) {
-      this.placeholderEl.classList.remove("sprout-display-flex");
-      this.placeholderEl.classList.add("sprout-is-hidden");
-      this.viewportEl.classList.remove("sprout-is-hidden");
+      this.placeholderEl.classList.remove("learnkit-display-flex", "learnkit-display-flex");
+      this.placeholderEl.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
+      this.viewportEl.classList.remove("learnkit-is-hidden", "learnkit-is-hidden");
     } else {
-      this.placeholderEl.classList.remove("sprout-is-hidden");
-      this.placeholderEl.classList.add("sprout-display-flex");
-      this.viewportEl.classList.add("sprout-is-hidden");
+      this.placeholderEl.classList.remove("learnkit-is-hidden", "learnkit-is-hidden");
+      this.placeholderEl.classList.add("learnkit-display-flex", "learnkit-display-flex");
+      this.viewportEl.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
       this.updateCanvasHeightForImage();
     }
   }
@@ -538,9 +519,9 @@ export class ImageOcclusionCreatorModal extends Modal {
   private updateCanvasHeightForImage() {
     if (!this.canvasContainerEl) return;
     if (!this.ioImageData) {
-      setCssProps(this.canvasContainerEl, "--sprout-io-canvas-height", this.canvasHeightDefaults.height);
-      setCssProps(this.canvasContainerEl, "--sprout-io-canvas-min-height", this.canvasHeightDefaults.minHeight);
-      setCssProps(this.canvasContainerEl, "--sprout-io-canvas-max-height", this.canvasHeightDefaults.maxHeight);
+      setCssProps(this.canvasContainerEl, "--learnkit-io-canvas-height", this.canvasHeightDefaults.height);
+      setCssProps(this.canvasContainerEl, "--learnkit-io-canvas-min-height", this.canvasHeightDefaults.minHeight);
+      setCssProps(this.canvasContainerEl, "--learnkit-io-canvas-max-height", this.canvasHeightDefaults.maxHeight);
       return;
     }
     const width = this.canvasContainerEl.clientWidth || this.canvasContainerEl.getBoundingClientRect().width;
@@ -548,9 +529,9 @@ export class ImageOcclusionCreatorModal extends Modal {
     const maxHeight = 450;
     const desired = Math.max(1, Math.round((width * this.stageH) / this.stageW));
     const height = Math.min(desired, maxHeight);
-    setCssProps(this.canvasContainerEl, "--sprout-io-canvas-height", `${height}px`);
-    setCssProps(this.canvasContainerEl, "--sprout-io-canvas-min-height", "0px");
-    setCssProps(this.canvasContainerEl, "--sprout-io-canvas-max-height", `${maxHeight}px`);
+    setCssProps(this.canvasContainerEl, "--learnkit-io-canvas-height", `${height}px`);
+    setCssProps(this.canvasContainerEl, "--learnkit-io-canvas-min-height", "0px");
+    setCssProps(this.canvasContainerEl, "--learnkit-io-canvas-max-height", `${maxHeight}px`);
   }
 
   // ── Image limit / delete ──────────────────────────────────────────────────
@@ -565,8 +546,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.historyIndex = -1;
     if (this.imgEl) this.imgEl.src = "";
     if (this.stageEl) {
-      setCssProps(this.stageEl, "--sprout-io-stage-w", "1px");
-      setCssProps(this.stageEl, "--sprout-io-stage-h", "1px");
+      setCssProps(this.stageEl, "--learnkit-io-stage-w", "1px");
+      setCssProps(this.stageEl, "--learnkit-io-stage-h", "1px");
     }
     this.renderRects();
     this.updatePlaceholderVisibility();
@@ -595,12 +576,12 @@ export class ImageOcclusionCreatorModal extends Modal {
     this.stageH = Math.max(1, this.imgEl.naturalHeight || 1);
 
     if (this.stageEl) {
-      setCssProps(this.stageEl, "--sprout-io-stage-w", `${this.stageW}px`);
-      setCssProps(this.stageEl, "--sprout-io-stage-h", `${this.stageH}px`);
+      setCssProps(this.stageEl, "--learnkit-io-stage-w", `${this.stageW}px`);
+      setCssProps(this.stageEl, "--learnkit-io-stage-h", `${this.stageH}px`);
     }
 
-    if (this.viewportEl) this.viewportEl.classList.remove("sprout-is-hidden");
-    if (this.placeholderEl) this.placeholderEl.classList.add("sprout-is-hidden");
+    if (this.viewportEl) this.viewportEl.classList.remove("learnkit-is-hidden", "learnkit-is-hidden");
+    if (this.placeholderEl) this.placeholderEl.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
 
     this.updatePlaceholderVisibility();
     this.seedHistoryFromImage();
@@ -702,7 +683,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     if (!this.stageEl) return;
     setCssProps(
       this.stageEl,
-      "--sprout-io-stage-transform",
+      "--learnkit-io-stage-transform",
       `translate(${this.t.tx}px, ${this.t.ty}px) scale(${this.t.scale})`,
     );
 
@@ -805,8 +786,8 @@ export class ImageOcclusionCreatorModal extends Modal {
         panning = true;
         panStart = { x: e.clientX, y: e.clientY, tx: this.t.tx, ty: this.t.ty };
         if (this.viewportEl) {
-          this.viewportEl.classList.remove("sprout-cursor-grab");
-          this.viewportEl.classList.add("sprout-cursor-grabbing");
+          this.viewportEl.classList.remove("learnkit-cursor-grab", "learnkit-cursor-grab");
+          this.viewportEl.classList.add("learnkit-cursor-grabbing", "learnkit-cursor-grabbing");
         }
         e.preventDefault();
       } else if (isOcclusionTool) {
@@ -844,8 +825,8 @@ export class ImageOcclusionCreatorModal extends Modal {
       if (panning) {
         panning = false;
         if (this.viewportEl) {
-          this.viewportEl.classList.remove("sprout-cursor-grabbing");
-          this.viewportEl.classList.add("sprout-cursor-grab");
+          this.viewportEl.classList.remove("learnkit-cursor-grabbing", "learnkit-cursor-grabbing");
+          this.viewportEl.classList.add("learnkit-cursor-grab", "learnkit-cursor-grab");
         }
       } else if (this.cropDrawing && this.cropStart) {
         const { x: stageX, y: stageY } = this.clientToStagePoint(e.clientX, e.clientY);
@@ -953,19 +934,19 @@ export class ImageOcclusionCreatorModal extends Modal {
     const useY = box ? box.normY * this.stageH : stageY;
 
     const wrap = document.createElement("div");
-    wrap.className = "bc sprout-io-text-wrap";
-    setCssProps(wrap, "--sprout-io-text-x", `${useX * this.t.scale + this.t.tx}px`);
-    setCssProps(wrap, "--sprout-io-text-y", `${useY * this.t.scale + this.t.ty}px`);
+    wrap.className = "learnkit-io-text-wrap";
+    setCssProps(wrap, "--learnkit-io-text-x", `${useX * this.t.scale + this.t.tx}px`);
+    setCssProps(wrap, "--learnkit-io-text-y", `${useY * this.t.scale + this.t.ty}px`);
 
     const input = document.createElement("textarea");
-    input.className = "bc textarea sprout-io-text-input";
+    input.className = "textarea learnkit-io-text-input";
     input.rows = 1;
     input.placeholder = "Type text";
-    setCssProps(input, "--sprout-io-text-w", `${Math.max(40, textW * this.t.scale)}px`);
-    setCssProps(input, "--sprout-io-text-h", `${Math.max(30, textH * this.t.scale)}px`);
-    setCssProps(input, "--sprout-io-text-size", `${this.textFontSize}px`);
-    setCssProps(input, "--sprout-io-text-color", this.textColor);
-    setCssProps(input, "--sprout-io-text-bg", textBgCss(this.textBgColor, this.textBgOpacity));
+    setCssProps(input, "--learnkit-io-text-w", `${Math.max(40, textW * this.t.scale)}px`);
+    setCssProps(input, "--learnkit-io-text-h", `${Math.max(30, textH * this.t.scale)}px`);
+    setCssProps(input, "--learnkit-io-text-size", `${this.textFontSize}px`);
+    setCssProps(input, "--learnkit-io-text-color", this.textColor);
+    setCssProps(input, "--learnkit-io-text-bg", textBgCss(this.textBgColor, this.textBgOpacity));
     wrap.appendChild(input);
 
     this.viewportEl.appendChild(wrap);
@@ -1070,7 +1051,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     if (!this.overlayEl) return;
     if (!this.textPreviewEl) {
       this.textPreviewEl = document.createElement("div");
-      this.textPreviewEl.className = "sprout-io-text-preview";
+      this.textPreviewEl.className = "learnkit-io-text-preview";
       this.overlayEl.appendChild(this.textPreviewEl);
     }
 
@@ -1079,10 +1060,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
 
-    setCssProps(this.textPreviewEl, "--sprout-io-preview-x", `${left}px`);
-    setCssProps(this.textPreviewEl, "--sprout-io-preview-y", `${top}px`);
-    setCssProps(this.textPreviewEl, "--sprout-io-preview-w", `${Math.max(1, width)}px`);
-    setCssProps(this.textPreviewEl, "--sprout-io-preview-h", `${Math.max(1, height)}px`);
+    setCssProps(this.textPreviewEl, "--learnkit-io-preview-x", `${left}px`);
+    setCssProps(this.textPreviewEl, "--learnkit-io-preview-y", `${top}px`);
+    setCssProps(this.textPreviewEl, "--learnkit-io-preview-w", `${Math.max(1, width)}px`);
+    setCssProps(this.textPreviewEl, "--learnkit-io-preview-h", `${Math.max(1, height)}px`);
   }
 
   private clearTextPreview() {
@@ -1096,7 +1077,7 @@ export class ImageOcclusionCreatorModal extends Modal {
     if (!this.overlayEl) return;
     if (!this.cropPreviewEl) {
       this.cropPreviewEl = document.createElement("div");
-      this.cropPreviewEl.className = "sprout-io-crop-preview";
+      this.cropPreviewEl.className = "learnkit-io-crop-preview";
       this.overlayEl.appendChild(this.cropPreviewEl);
     }
 
@@ -1105,10 +1086,10 @@ export class ImageOcclusionCreatorModal extends Modal {
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
 
-    setCssProps(this.cropPreviewEl, "--sprout-io-crop-x", `${left}px`);
-    setCssProps(this.cropPreviewEl, "--sprout-io-crop-y", `${top}px`);
-    setCssProps(this.cropPreviewEl, "--sprout-io-crop-w", `${width}px`);
-    setCssProps(this.cropPreviewEl, "--sprout-io-crop-h", `${height}px`);
+    setCssProps(this.cropPreviewEl, "--learnkit-io-crop-x", `${left}px`);
+    setCssProps(this.cropPreviewEl, "--learnkit-io-crop-y", `${top}px`);
+    setCssProps(this.cropPreviewEl, "--learnkit-io-crop-w", `${width}px`);
+    setCssProps(this.cropPreviewEl, "--learnkit-io-crop-h", `${height}px`);
   }
 
   private clearCropPreview() {
@@ -1132,7 +1113,7 @@ export class ImageOcclusionCreatorModal extends Modal {
 
     if (!this.previewEl) {
       this.previewEl = document.createElement("div");
-      this.previewEl.className = "sprout-io-mask-preview";
+      this.previewEl.className = "learnkit-io-mask-preview";
       this.overlayEl.appendChild(this.previewEl);
     }
 
@@ -1141,11 +1122,11 @@ export class ImageOcclusionCreatorModal extends Modal {
     const width = Math.abs(x2 - x1);
     const height = Math.abs(y2 - y1);
 
-    setCssProps(this.previewEl, "--sprout-io-mask-x", `${left}px`);
-    setCssProps(this.previewEl, "--sprout-io-mask-y", `${top}px`);
-    setCssProps(this.previewEl, "--sprout-io-mask-w", `${width}px`);
-    setCssProps(this.previewEl, "--sprout-io-mask-h", `${height}px`);
-    setCssProps(this.previewEl, "--sprout-io-mask-radius", shape === "circle" ? "50%" : "4px");
+    setCssProps(this.previewEl, "--learnkit-io-mask-x", `${left}px`);
+    setCssProps(this.previewEl, "--learnkit-io-mask-y", `${top}px`);
+    setCssProps(this.previewEl, "--learnkit-io-mask-w", `${width}px`);
+    setCssProps(this.previewEl, "--learnkit-io-mask-h", `${height}px`);
+    setCssProps(this.previewEl, "--learnkit-io-mask-radius", shape === "circle" ? "50%" : "4px");
   }
 
   private clearPreview() {
@@ -1266,8 +1247,8 @@ export class ImageOcclusionCreatorModal extends Modal {
       if (!btn) return;
       btn.disabled = !enabled;
       btn.setAttribute("aria-disabled", enabled ? "false" : "true");
-      btn.classList.toggle("sprout-opacity-35", !enabled);
-      btn.classList.toggle("sprout-pointer-none", !enabled);
+      btn.classList.toggle("learnkit-opacity-35", !enabled);
+      btn.classList.toggle("learnkit-pointer-none", !enabled);
     };
     setBtnState(this.btnUndo, canUndo);
     setBtnState(this.btnRedo, canRedo);
@@ -1279,8 +1260,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     const enabled = !!this.ioImageData && !this.autoMaskBusy;
     btn.disabled = !enabled;
     btn.setAttribute("aria-disabled", enabled ? "false" : "true");
-    btn.classList.toggle("sprout-opacity-35", !enabled);
-    btn.classList.toggle("sprout-pointer-none", !enabled);
+    btn.classList.toggle("learnkit-opacity-35", !enabled);
+    btn.classList.toggle("learnkit-pointer-none", !enabled);
   }
 
   private updateResetMasksButtonState() {
@@ -1289,8 +1270,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     const enabled = this.rects.length > 0;
     btn.disabled = !enabled;
     btn.setAttribute("aria-disabled", enabled ? "false" : "true");
-    btn.classList.toggle("sprout-opacity-35", !enabled);
-    btn.classList.toggle("sprout-pointer-none", !enabled);
+    btn.classList.toggle("learnkit-opacity-35", !enabled);
+    btn.classList.toggle("learnkit-pointer-none", !enabled);
   }
 
   private resetMasks() {
@@ -1501,8 +1482,8 @@ export class ImageOcclusionCreatorModal extends Modal {
     }
     this.containerEl.removeClass("lk-modal-container");
     this.containerEl.removeClass("lk-modal-dim");
-    this.modalEl.removeClass("bc", "lk-modals", "sprout-io-creator");
-    this.contentEl.removeClass("bc", "sprout-io-creator-content");
+    this.modalEl.removeClass("lk-modals", "learnkit-io-creator");
+    this.contentEl.removeClass("learnkit-io-creator-content");
     this.contentEl.empty();
   }
 }

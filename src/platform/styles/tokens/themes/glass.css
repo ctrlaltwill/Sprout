@@ -3,8 +3,8 @@
    Default LearnKit look-and-feel. Duplicate this file to create new theme packs.
    ========================================================================== */
 
-body[data-sprout-theme-preset="glass"] .sprout,
-.sprout {
+body[data-learnkit-theme-preset="glass"] .learnkit,
+.learnkit {
   /* Surfaces - using parent theme color-base variables */
   --background: var(--color-base-00);
   --background-primary: var(--color-base-00);
@@ -57,15 +57,15 @@ body[data-sprout-theme-preset="glass"] .sprout,
   --input: var(--color-base-40);
 
   /* Structural border shorthand */
-  --sprout-border-color: var(--color-base-40);
-  --sprout-border-width: 0px;
+  --learnkit-border-color: var(--color-base-40);
+  --learnkit-border-width: 0px;
 
   /* Ring/focus */
   --ring: rgb(154, 230, 0);
   --sidebar-ring: rgb(154, 230, 0);
 
   /* Theme accent passthrough */
-  --theme-accent: var(--sprout-theme-accent-override, var(--color-accent));
+  --theme-accent: var(--learnkit-theme-accent-override, var(--color-accent));
 
   /* Accent-to-transparent scale */
   --theme-base-05: color-mix(in oklab, var(--theme-accent) 5%, transparent);
@@ -118,23 +118,23 @@ body[data-sprout-theme-preset="glass"] .sprout,
   --chart-accent-4: color-mix(in oklab, var(--theme-accent) 30%, rgb(255, 255, 255) 70%);
 
   /* Ratings */
-  --sprout-again-bg: rgb(239, 68, 68);
-  --sprout-again-fg: var(--bc-btn-fg, rgb(255, 255, 255));
-  --sprout-again-bg-light: rgb(254, 226, 226);
+  --learnkit-again-bg: rgb(239, 68, 68);
+  --learnkit-again-fg: var(--bc-btn-fg, rgb(255, 255, 255));
+  --learnkit-again-bg-light: rgb(254, 226, 226);
 
-  --sprout-good-bg: rgb(34, 197, 94);
-  --sprout-good-fg: rgb(255, 255, 255);
-  --sprout-good-bg-light: rgb(220, 252, 231);
+  --learnkit-good-bg: rgb(34, 197, 94);
+  --learnkit-good-fg: rgb(255, 255, 255);
+  --learnkit-good-bg-light: rgb(220, 252, 231);
 
-  --sprout-hard-bg: rgb(234, 179, 8);
-  --sprout-hard-fg: rgb(66, 32, 6);
-  --sprout-hard-bg-light: rgb(254, 249, 195);
+  --learnkit-hard-bg: rgb(234, 179, 8);
+  --learnkit-hard-fg: rgb(66, 32, 6);
+  --learnkit-hard-bg-light: rgb(254, 249, 195);
 
-  --sprout-easy-bg: rgb(0, 0, 0);
-  --sprout-easy-fg: rgb(255, 255, 255);
+  --learnkit-easy-bg: rgb(0, 0, 0);
+  --learnkit-easy-fg: rgb(255, 255, 255);
 
-  --sprout-deck-dropdown-bg: rgb(255, 255, 255);
-  --sprout-deck-hover-bg: rgb(246, 246, 246);
+  --learnkit-deck-dropdown-bg: rgb(255, 255, 255);
+  --learnkit-deck-hover-bg: rgb(246, 246, 246);
 
   /* Semantic aliases for future theme packs */
   --lk-color-accent: var(--theme-accent);
@@ -144,8 +144,8 @@ body[data-sprout-theme-preset="glass"] .sprout,
   --lk-color-border: var(--border);
 }
 
-body.theme-dark[data-sprout-theme-preset="glass"] .sprout,
-.theme-dark .sprout {
+body.theme-dark[data-learnkit-theme-preset="glass"] .learnkit,
+.theme-dark .learnkit {
   --background: var(--color-base-00);
   --background-primary: var(--color-base-00);
   --color-popover: var(--color-base-00);
@@ -180,7 +180,7 @@ body.theme-dark[data-sprout-theme-preset="glass"] .sprout,
 
   --muted-foreground: var(--color-base-60);
 
-  --theme-accent: var(--sprout-theme-accent-override, var(--color-accent));
+  --theme-accent: var(--learnkit-theme-accent-override, var(--color-accent));
   --sidebar-accent: var(--theme-accent, rgb(39, 39, 42));
 
   --chart-accent-1: color-mix(in oklab, var(--theme-accent) 90%, rgb(255, 255, 255) 10%);
@@ -196,29 +196,29 @@ body.theme-dark[data-sprout-theme-preset="glass"] .sprout,
   --sidebar-border: var(--color-base-40);
   --input: var(--color-base-40);
 
-  --sprout-border-color: var(--color-base-40);
-  --sprout-border-width: 0px;
+  --learnkit-border-color: var(--color-base-40);
+  --learnkit-border-width: 0px;
 
   --ring: rgb(53, 83, 14);
   --sidebar-ring: rgb(53, 83, 14);
 
-  --sprout-again-bg: rgb(185, 28, 28);
-  --sprout-again-fg: var(--bc-btn-fg, rgb(255, 255, 255));
-  --sprout-again-bg-light: rgb(63, 29, 29);
+  --learnkit-again-bg: rgb(185, 28, 28);
+  --learnkit-again-fg: var(--bc-btn-fg, rgb(255, 255, 255));
+  --learnkit-again-bg-light: rgb(63, 29, 29);
 
-  --sprout-good-bg: rgb(21, 128, 61);
-  --sprout-good-fg: rgb(255, 255, 255);
-  --sprout-good-bg-light: rgb(22, 48, 34);
+  --learnkit-good-bg: rgb(21, 128, 61);
+  --learnkit-good-fg: rgb(255, 255, 255);
+  --learnkit-good-bg-light: rgb(22, 48, 34);
 
-  --sprout-hard-bg: rgb(161, 98, 7);
-  --sprout-hard-fg: rgb(255, 255, 255);
-  --sprout-hard-bg-light: rgb(52, 36, 10);
+  --learnkit-hard-bg: rgb(161, 98, 7);
+  --learnkit-hard-fg: rgb(255, 255, 255);
+  --learnkit-hard-bg-light: rgb(52, 36, 10);
 
-  --sprout-easy-bg: rgb(60, 60, 60);
-  --sprout-easy-fg: rgb(255, 255, 255);
+  --learnkit-easy-bg: rgb(60, 60, 60);
+  --learnkit-easy-fg: rgb(255, 255, 255);
 
-  --sprout-deck-dropdown-bg: rgb(42, 42, 42);
-  --sprout-deck-hover-bg: rgb(60, 60, 60);
+  --learnkit-deck-dropdown-bg: rgb(42, 42, 42);
+  --learnkit-deck-hover-bg: rgb(60, 60, 60);
 
   --lk-color-accent: var(--theme-accent);
   --lk-color-text-primary: var(--foreground);

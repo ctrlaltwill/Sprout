@@ -1,3 +1,11 @@
+/**
+ * @file tests/scheduler.test.ts
+ * @summary Unit tests for scheduler.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 // tests/scheduler.test.ts
 // ---------------------------------------------------------------------------
 // Tests for the FSRS scheduler — the most data-critical module.

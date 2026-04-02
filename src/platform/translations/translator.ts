@@ -1,6 +1,9 @@
 /**
- * @file src/translations/translator.ts
- * @summary Minimal token translator with fallback chain and placeholder interpolation.
+ * @file src/platform/translations/translator.ts
+ * @summary Module for translator.
+ *
+ * @exports
+ *  - t
  */
 
 import { DEFAULT_INTERFACE_LOCALE, resolveInterfaceLocale } from "./locale-registry";

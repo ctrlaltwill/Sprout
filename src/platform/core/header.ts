@@ -80,12 +80,12 @@ export class SproutHeader {
 
   private installCenterBrandLogo(viewHeader: HTMLElement) {
     let brandHost =
-      queryFirst<HTMLElement>(viewHeader, ":scope > .sprout-header-center-brand") ??
-      queryFirst<HTMLElement>(viewHeader, ".sprout-header-center-brand");
+      queryFirst<HTMLElement>(viewHeader, ":scope > .learnkit-header-center-brand") ??
+      queryFirst<HTMLElement>(viewHeader, ".learnkit-header-center-brand");
 
     if (!brandHost) {
       brandHost = document.createElement("div");
-      brandHost.className = "sprout-header-center-brand";
+      brandHost.className = "learnkit-header-center-brand";
 
       const actionsHost =
         queryFirst<HTMLElement>(viewHeader, ":scope > .view-actions") ??
@@ -97,14 +97,14 @@ export class SproutHeader {
     clearChildren(brandHost);
 
     const homeLink = document.createElement("a");
-    homeLink.className = "sprout-header-center-brand-link";
+    homeLink.className = "learnkit-header-center-brand-link";
     homeLink.href = "#";
     homeLink.setAttribute("role", "link");
     brandHost.appendChild(homeLink);
 
     const logo = document.createElement("span");
-    logo.className = "sprout-header-center-brand-icon";
-    setIcon(logo, "sprout-brand-horizontal");
+    logo.className = "learnkit-header-center-brand-icon";
+    setIcon(logo, "learnkit-brand-horizontal");
 
     const outerSvg = logo.querySelector(":scope > svg");
     if (outerSvg) {
@@ -248,7 +248,7 @@ export class SproutHeader {
     };
 
     // Remove stale hit targets if this icon is re-initialized.
-    innerSvg.querySelectorAll(".sprout-logo-hit-target").forEach((node) => node.remove());
+    innerSvg.querySelectorAll(".learnkit-logo-hit-target").forEach((node) => node.remove());
 
     const paths = Array.from(innerSvg.querySelectorAll("path"));
     for (let i = 0; i < paths.length; i += 1) {
@@ -259,7 +259,7 @@ export class SproutHeader {
       logoPaths.push(path);
 
       const hit = path.cloneNode(false) as SVGPathElement;
-      hit.classList.add("sprout-logo-hit-target");
+      hit.classList.add("learnkit-logo-hit-target", "learnkit-logo-hit-target");
       hit.setAttribute("data-logo-hit", String(index));
       hit.removeAttribute("data-logo-shape");
       hit.removeAttribute("data-logo-path");
@@ -345,11 +345,11 @@ export class SproutHeader {
       queryFirst<HTMLElement>(this.deps.containerEl, ":scope > .view-header") ??
       queryFirst<HTMLElement>(this.deps.containerEl, ".view-header");
     if (viewHeader) {
-      viewHeader.classList.add("bc", "sprout-header");
+      viewHeader.classList.add("learnkit-header", "learnkit-header");
       // Wrap header in a transparent container if not already wrapped
-      if (!viewHeader.parentElement?.classList.contains("sprout-header-wrap")) {
+      if (!viewHeader.parentElement?.classList.contains("learnkit-header-wrap")) {
         const wrap = document.createElement("div");
-        wrap.className = "sprout-header-wrap learnkit-header-wrap";
+        wrap.className = "learnkit-header-wrap";
         viewHeader.parentElement?.insertBefore(wrap, viewHeader);
         wrap.appendChild(viewHeader);
       }
@@ -379,12 +379,12 @@ export class SproutHeader {
     const availableWidth = header?.clientWidth ?? this.deps.containerEl?.clientWidth ?? 0;
     const hide =
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
-    this.widthBtnEl.classList.toggle("sprout-is-hidden", hide);
+    this.widthBtnEl.classList.toggle("learnkit-is-hidden", hide);
     this.widthBtnEl.setAttribute("aria-label", "Expand / collapse page");
     this.widthBtnEl.setAttribute("data-tooltip-position", "bottom");
 
     const text = isWide ? "Collapse" : "Expand";
-    const textNode = queryFirst(this.widthBtnEl, "[data-sprout-label]");
+    const textNode = queryFirst(this.widthBtnEl, "[data-learnkit-label]");
     if (textNode) textNode.textContent = text;
 
     if (this.widthBtnIconEl) {
@@ -400,11 +400,11 @@ export class SproutHeader {
   }
 
 
-  // Sync theme with Obsidian and append .theme-dark to .sprout wrapper
+  // Sync theme with Obsidian and append .theme-dark to .learnkit wrapper
   private syncThemeWithObsidian() {
     const updateTheme = () => {
       const isDark = document.body.classList.contains("theme-dark");
-      const sprout = this.deps.containerEl?.closest('.sprout');
+      const sprout = this.deps.containerEl?.closest('.learnkit');
       if (sprout) {
         sprout.classList.toggle("theme-dark", isDark);
         sprout.classList.toggle("theme-light", !isDark);
@@ -488,14 +488,14 @@ export class SproutHeader {
     trigger.setAttribute("aria-expanded", "true");
 
     const sproutWrapper = document.createElement("div");
-    sproutWrapper.className = "sprout";
+    sproutWrapper.className = "learnkit";
     const root = document.createElement("div");
     root.className = "dropdown-menu";
-    root.classList.add("sprout-popover-overlay");
+    root.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay");
     sproutWrapper.appendChild(root);
 
     const panel = document.createElement("div");
-    panel.className = "min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel";
+    panel.className = "min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-header-menu-panel";
     root.appendChild(panel);
 
     const menu = document.createElement("div");
@@ -702,19 +702,19 @@ export class SproutHeader {
     if (!navHost) return;
 
     clearNode(navHost);
-    navHost.classList.add("sprout-nav-host");
+    navHost.classList.add("learnkit-nav-host", "learnkit-nav-host");
 
     const navRoot = document.createElement("div");
     navRoot.id = this.headerNavId;
     navRoot.className = "dropdown-menu";
-    navRoot.classList.add("sprout-dropdown-root");
+    navRoot.classList.add("learnkit-dropdown-root", "learnkit-dropdown-root");
     navHost.appendChild(navRoot);
 
     const navTrigger = document.createElement("button");
     navTrigger.type = "button";
     navTrigger.id = `${this.headerNavId}-trigger`;
-    navTrigger.className = "sprout-btn-toolbar h-7 px-2 text-xs inline-flex items-center gap-2";
-    if (isMobile) navTrigger.classList.add("sprout-mobile-nav-trigger");
+    navTrigger.className = "learnkit-btn-toolbar h-7 px-2 text-xs inline-flex items-center gap-2";
+    if (isMobile) navTrigger.classList.add("learnkit-mobile-nav-trigger", "learnkit-mobile-nav-trigger");
     navTrigger.setAttribute("aria-haspopup", "menu");
     navTrigger.setAttribute("aria-expanded", "false");
     navTrigger.setAttribute("aria-label", "Open menu");
@@ -786,14 +786,14 @@ export class SproutHeader {
     trigger.setAttribute("aria-expanded", "true");
 
     const sproutWrapper = document.createElement("div");
-    sproutWrapper.className = "sprout";
+    sproutWrapper.className = "learnkit";
     const root = document.createElement("div");
     root.className = "dropdown-menu";
-    root.classList.add("sprout-popover-overlay");
+    root.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay");
     sproutWrapper.appendChild(root);
 
     const panel = document.createElement("div");
-    panel.className = "min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel";
+    panel.className = "min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-header-menu-panel";
     root.appendChild(panel);
 
     const menu = document.createElement("div");
@@ -980,14 +980,14 @@ export class SproutHeader {
 
     clearNode(actionsHost);
 
-    actionsHost.classList.add("bc", "sprout-view-actions");
-    actionsHost.classList.add("sprout-actions-host");
+    actionsHost.classList.add("learnkit-view-actions", "learnkit-view-actions");
+    actionsHost.classList.add("learnkit-actions-host", "learnkit-actions-host");
 
     // Collapse/Expand
     const widthBtn = document.createElement("button");
     widthBtn.type = "button";
-    widthBtn.className = "sprout-btn-toolbar inline-flex items-center gap-2";
-    widthBtn.setAttribute("data-sprout-expand-collapse", "true");
+    widthBtn.className = "learnkit-btn-toolbar inline-flex items-center gap-2";
+    widthBtn.setAttribute("data-learnkit-expand-collapse", "true");
     widthBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -996,12 +996,12 @@ export class SproutHeader {
     });
 
     const widthIcon = document.createElement("span");
-    widthIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    widthIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     widthIcon.setAttribute("aria-hidden", "true");
     widthBtn.appendChild(widthIcon);
 
     const widthLabel = document.createElement("span");
-    widthLabel.setAttribute("data-sprout-label", "true");
+    widthLabel.setAttribute("data-learnkit-label", "true");
     widthBtn.appendChild(widthLabel);
 
     actionsHost.appendChild(widthBtn);
@@ -1028,10 +1028,10 @@ export class SproutHeader {
     // Sync
     const syncBtn = document.createElement("button");
     syncBtn.type = "button";
-    syncBtn.className = "bc sprout-btn-toolbar inline-flex items-center gap-2";
+    syncBtn.className = "learnkit-btn-toolbar inline-flex items-center gap-2";
     syncBtn.setAttribute("aria-label", "Sync flashcards");
     syncBtn.setAttribute("data-tooltip-position", "bottom");
-    syncBtn.setAttribute("data-sprout-sync", "true");
+    syncBtn.setAttribute("data-learnkit-sync", "true");
     syncBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -1039,12 +1039,12 @@ export class SproutHeader {
     });
 
     const syncIcon = document.createElement("span");
-    syncIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    syncIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     syncIcon.setAttribute("aria-hidden", "true");
     syncBtn.appendChild(syncIcon);
 
     const syncLabel = document.createElement("span");
-    syncLabel.setAttribute("data-sprout-label", "true");
+    syncLabel.setAttribute("data-learnkit-label", "true");
     syncLabel.textContent = "Sync";
     syncBtn.appendChild(syncLabel);
 
@@ -1062,7 +1062,7 @@ export class SproutHeader {
     const moreBtn = document.createElement("button");
     moreBtn.type = "button";
     moreBtn.id = `${this.moreId}-trigger`;
-    moreBtn.className = "bc btn-icon-outline sprout-btn-toolbar";
+    moreBtn.className = "btn-icon-outline learnkit-btn-toolbar";
     moreBtn.setAttribute("aria-haspopup", "menu");
     moreBtn.setAttribute("aria-expanded", "false");
     moreBtn.setAttribute("aria-label", "Tools");
@@ -1070,13 +1070,13 @@ export class SproutHeader {
     moreWrap.appendChild(moreBtn);
 
     const moreIcon = document.createElement("span");
-    moreIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    moreIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     moreIcon.setAttribute("aria-hidden", "true");
     setIcon(moreIcon, "more-vertical");
     moreBtn.appendChild(moreIcon);
 
     const moreLabel = document.createElement("span");
-    moreLabel.setAttribute("data-sprout-label", "true");
+    moreLabel.setAttribute("data-learnkit-label", "true");
     moreLabel.textContent = "Tools";
     moreBtn.appendChild(moreLabel);
 
@@ -1134,7 +1134,7 @@ export class SproutHeader {
  *
  * Each view only needs to supply:
  *  - `view`          – the ItemView instance (`this`)
- *  - `plugin`        – the SproutPlugin (needs `.isWideMode`)
+ *  - `plugin`        – the LearnKitPlugin (needs `.isWideMode`)
  *  - `onToggleWide`  – callback to run *after* isWideMode is flipped
  *  - `beforeSync?`   – optional hook that runs before sync (e.g. save scroll position)
  */

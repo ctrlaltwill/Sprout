@@ -3,7 +3,7 @@ const prefixer = require("postcss-prefix-selector");
 module.exports = {
   plugins: [
     prefixer({
-      prefix: ".sprout",
+      prefix: ".learnkit",
       transform(prefix, selector) {
         if (!selector) return selector;
         if (selector.startsWith("@")) return selector;
@@ -14,7 +14,7 @@ module.exports = {
         }
 
         // Already scoped
-        if (selector.includes(".sprout")) return selector;
+        if (selector.includes(".learnkit")) return selector;
 
         // Scope by ancestor
         return `${prefix} ${selector}`;

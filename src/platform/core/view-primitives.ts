@@ -1,3 +1,13 @@
+/**
+ * @file src/platform/core/view-primitives.ts
+ * @summary Module for view primitives.
+ *
+ * @exports
+ *  - TitleStripFrameOptions
+ *  - TitleStripFrame
+ *  - createTitleStripFrame
+ */
+
 import { SPROUT_TITLE_STRIP_LABEL_CLASS } from "./ui-classes";
 
 export interface TitleStripFrameOptions {

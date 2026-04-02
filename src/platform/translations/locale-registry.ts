@@ -1,6 +1,14 @@
 /**
  * @file src/platform/translations/locale-registry.ts
- * @summary Source of truth for interface locales supported by Sprout.
+ * @summary Module for locale registry.
+ *
+ * @exports
+ *  - InterfaceLocaleDefinition
+ *  - DEFAULT_INTERFACE_LOCALE
+ *  - getSupportedInterfaceLocales
+ *  - normaliseInterfaceLocale
+ *  - resolveInterfaceLocale
+ *  - getInterfaceLocaleLabel
  */
 
 export type InterfaceLocaleDefinition = {

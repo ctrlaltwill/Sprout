@@ -22,7 +22,7 @@
  *  - ensureRoutineBackupIfNeeded   — creates a routine backup if enough time has elapsed since the last one
  */
 
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import type { DataAdapter } from "obsidian";
 import { isParentCard } from "../../core/card-utils";
 import type { CardRecord } from "../../types/card";
@@ -99,7 +99,7 @@ function clampInt(n: unknown, fallback: number, min: number, max: number): numbe
   return Math.max(min, Math.min(max, Math.floor(value)));
 }
 
-function getBackupPolicy(plugin: SproutPlugin): BackupPolicy {
+function getBackupPolicy(plugin: LearnKitPlugin): BackupPolicy {
   const raw = (plugin.settings as Record<string, unknown>)?.storage as Record<string, unknown> | undefined;
   const backups = raw?.backups as Record<string, unknown> | undefined;
   return {
@@ -500,13 +500,13 @@ async function ensureFolder(adapter: AdapterLike | null, path: string): Promise<
   }
 }
 
-function getPluginFolder(plugin: SproutPlugin): string | null {
+function getPluginFolder(plugin: LearnKitPlugin): string | null {
   const pluginId = getPluginId(plugin);
   if (!pluginId) return null;
   return joinPath(plugin.app.vault.configDir, "plugins", pluginId);
 }
 
-function getPreferredBackupFolder(plugin: SproutPlugin): string | null {
+function getPreferredBackupFolder(plugin: LearnKitPlugin): string | null {
   const pluginFolder = getPluginFolder(plugin);
   if (!pluginFolder) return null;
   return joinPath(pluginFolder, BACKUP_SUBFOLDER);
@@ -535,7 +535,7 @@ function backupKindFromPath(path: string): "auto" | "manual" | "other" {
 /**
  * Prunes old backup files, keeping at most `maxCount` (sorted by mtime desc).
  */
-async function pruneDataJsonBackups(plugin: SproutPlugin): Promise<void> {
+async function pruneDataJsonBackups(plugin: LearnKitPlugin): Promise<void> {
   const adapter = plugin.app?.vault?.adapter;
   const folder = getPluginFolder(plugin);
   if (!adapter || !folder) return;
@@ -663,7 +663,7 @@ async function pruneDataJsonBackups(plugin: SproutPlugin): Promise<void> {
 // ────────────────────────────────────────────
 
 /** Reads the plugin manifest ID (e.g. "sprout"). */
-export function getPluginId(plugin: SproutPlugin): string | null {
+export function getPluginId(plugin: LearnKitPlugin): string | null {
   const id = String(plugin.manifest?.id ?? "").trim();
   return id ? id : null;
 }
@@ -794,7 +794,7 @@ export type DataJsonBackupStats = DataJsonBackupEntry & {
  * Lists all data.json backup files in the plugin folder.
  * Sorted newest-first by mtime.
  */
-export async function listDataJsonBackups(plugin: SproutPlugin): Promise<DataJsonBackupEntry[]> {
+export async function listDataJsonBackups(plugin: LearnKitPlugin): Promise<DataJsonBackupEntry[]> {
   const adapter = plugin.app?.vault?.adapter;
   const folder = getPluginFolder(plugin);
   if (!adapter || !folder) return [];
@@ -843,7 +843,7 @@ export async function listDataJsonBackups(plugin: SproutPlugin): Promise<DataJso
   return out;
 }
 
-async function readBackupRawText(plugin: SproutPlugin, path: string): Promise<string | null> {
+async function readBackupRawText(plugin: LearnKitPlugin, path: string): Promise<string | null> {
   const adapter = plugin.app?.vault?.adapter as AdapterLike | null;
   try {
     if (!adapter || !adapter.read) return null;
@@ -856,7 +856,7 @@ async function readBackupRawText(plugin: SproutPlugin, path: string): Promise<st
 }
 
 export async function verifyDataJsonBackupIntegrity(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   backupPath: string,
 ): Promise<{ ok: boolean; verified: boolean; reason?: string }> {
   const adapter = plugin.app?.vault?.adapter as AdapterLike | null;
@@ -933,7 +933,7 @@ export async function verifyDataJsonBackupIntegrity(
 }
 
 export async function readValidatedBackupStates(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   backupPath: string,
 ): Promise<{ states: Record<string, unknown>; verified: boolean } | null> {
   const adapter = plugin.app?.vault?.adapter as AdapterLike | null;
@@ -949,7 +949,7 @@ export async function readValidatedBackupStates(
   return { states, verified: integrity.verified };
 }
 
-export async function deleteDataJsonBackup(plugin: SproutPlugin, backupPath: string): Promise<boolean> {
+export async function deleteDataJsonBackup(plugin: LearnKitPlugin, backupPath: string): Promise<boolean> {
   const adapter = plugin.app?.vault?.adapter as AdapterLike | null;
   if (!adapter || !backupPath) return false;
   const removedPrimary = await safeRemoveFile(adapter, backupPath);
@@ -961,7 +961,7 @@ export async function deleteDataJsonBackup(plugin: SproutPlugin, backupPath: str
  * Reads and parses a backup file to extract scheduling/card statistics.
  * Returns `null` if the file can't be read or doesn't contain valid data.
  */
-export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string): Promise<DataJsonBackupStats | null> {
+export async function getDataJsonBackupStats(plugin: LearnKitPlugin, path: string): Promise<DataJsonBackupStats | null> {
   const adapter = plugin.app?.vault?.adapter;
   if (!adapter || !path) return null;
 
@@ -1046,7 +1046,7 @@ export async function getDataJsonBackupStats(plugin: SproutPlugin, path: string)
  * Saves states, reviewLog, and analytics events — not card content, IO maps, or quarantine.
  * Returns the backup file path, or `null` on failure.
  */
-export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: string): Promise<string | null> {
+export async function createDataJsonBackupNow(plugin: LearnKitPlugin, label?: string): Promise<string | null> {
   const adapter = plugin.app?.vault?.adapter;
   const pluginFolder = getPluginFolder(plugin);
   if (!adapter || !pluginFolder) return null;
@@ -1165,7 +1165,7 @@ export async function createDataJsonBackupNow(plugin: SproutPlugin, label?: stri
  * Mutates `plugin.store.data` in-place and persists.
  */
 export async function restoreFromDataJsonBackup(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   backupPath: string,
   opts: { makeSafetyBackup?: boolean } = {},
 ): Promise<{ ok: boolean; message: string }> {
@@ -1266,7 +1266,7 @@ export async function restoreFromDataJsonBackup(
  * and creates one if needed.  Throttled by `ROUTINE_CHECK_COOLDOWN_MS`
  * and `ROUTINE_BACKUP_MIN_INTERVAL_MS`.
  */
-export async function ensureRoutineBackupIfNeeded(plugin: SproutPlugin): Promise<void> {
+export async function ensureRoutineBackupIfNeeded(plugin: LearnKitPlugin): Promise<void> {
   const now = Date.now();
   if (now - lastRoutineBackupCheck < ROUTINE_CHECK_COOLDOWN_MS) return;
   lastRoutineBackupCheck = now;

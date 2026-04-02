@@ -1,3 +1,11 @@
+/**
+ * @file tests/anki-import-export.test.ts
+ * @summary Unit tests for anki import export.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TFile } from "obsidian";
 import type { AnkiNoteRow, AnkiCardRow, AnkiModel, AnkiDeck } from "../src/platform/integrations/anki/anki-constants";

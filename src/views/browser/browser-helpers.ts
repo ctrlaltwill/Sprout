@@ -136,18 +136,18 @@ export { clearNode } from "../../platform/core/shared-utils";
  * To beat that, we MUST set inline styles with priority "important".
  */
 export function forceWrapStyles(el: HTMLElement) {
-  el.classList.add("sprout-force-wrap");
+  el.classList.add("learnkit-force-wrap", "learnkit-force-wrap");
 }
 
 /** Fixed-row tables: clip extra lines (still wraps, but won't grow row height). */
 export function forceCellClip(el: HTMLElement) {
-  el.classList.add("sprout-cell-clip");
+  el.classList.add("learnkit-cell-clip", "learnkit-cell-clip");
 }
 
 /** Sticky headers (th). */
 export function applyStickyThStyles(th: HTMLTableCellElement, topPx = 0) {
-  th.classList.add("sprout-sticky-th");
-  setCssProps(th, "--sprout-sticky-top", `${topPx}px`);
+  th.classList.add("learnkit-sticky-th", "learnkit-sticky-th");
+  setCssProps(th, "--learnkit-sticky-top", `${topPx}px`);
 
   forceCellClip(th);
   forceWrapStyles(th);
@@ -416,11 +416,11 @@ export function renderOcclusionBadgesHtml(card: CardRecord | Record<string, unkn
   const chips = labels
     .map((l) => {
       const safe = escapeHtml(l);
-      return `<span class="bc inline-flex items-center justify-center px-2 text-[11px] leading-[18px] h-[18px] rounded-full border border-white/20 bg-black/55 text-white/90 backdrop-blur-sm">${safe}</span>`;
+      return `<span class="inline-flex items-center justify-center px-2 text-[11px] leading-[18px] h-[18px] rounded-full border border-white/20 bg-black/55 text-white/90 backdrop-blur-sm">${safe}</span>`;
     })
     .join("");
 
-  return `<div class="bc absolute left-2 top-2 flex gap-1 flex-wrap pointer-events-none z-[2]">${chips}</div>`;
+  return `<div class="absolute left-2 top-2 flex gap-1 flex-wrap pointer-events-none z-[2]">${chips}</div>`;
 }
 
 /** Build HTML for an IO image preview (no occlusions). */
@@ -429,7 +429,7 @@ export function buildIoImgHtml(resolvedSrc: string, _displayRef: string, title: 
   const safeTitle = escapeHtml(title);
 
   return `
-<div class="bc flex items-center" title="${safeTitle}">
+<div class="flex items-center" title="${safeTitle}">
   <img
     src="${safeSrc}"
     alt="${safeTitle}"
@@ -479,20 +479,20 @@ export function buildIoOccludedHtml(
       const height = Math.max(0, Math.min(1, h)) * 100;
 
       const cls = cssClassForProps({
-        "--sprout-io-left": `${left}%`,
-        "--sprout-io-top": `${top}%`,
-        "--sprout-io-width": `${width}%`,
-        "--sprout-io-height": `${height}%`,
+        "--learnkit-io-left": `${left}%`,
+        "--learnkit-io-top": `${top}%`,
+        "--learnkit-io-width": `${width}%`,
+        "--learnkit-io-height": `${height}%`,
       });
 
-      return `<div class="bc lk-browser-io-overlay${cls ? ` ${cls}` : ""}"></div>`;
+      return `<div class="lk-browser-io-overlay${cls ? ` ${cls}` : ""}"></div>`;
     })
     .join("");
 
   return `
-<div class="bc lk-browser-io-wrap" title="${safeTitle}">
-  <div class="bc lk-browser-io-frame">
-    <img class="bc lk-browser-io-img-inner" src="${safeSrc}" alt="${safeTitle}" />
+<div class="lk-browser-io-wrap" title="${safeTitle}">
+  <div class="lk-browser-io-frame">
+    <img class="lk-browser-io-img-inner" src="${safeSrc}" alt="${safeTitle}" />
     ${overlays}
   </div>
 </div>

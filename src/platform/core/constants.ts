@@ -23,16 +23,38 @@
  *   - deepMerge — recursively merge a partial object into a target
  */
 
-export const VIEW_TYPE_REVIEWER = "sprout-reviewer";
-export const VIEW_TYPE_WIDGET = "sprout-widget";
-export const VIEW_TYPE_STUDY_ASSISTANT = "sprout-study-assistant";
-export const VIEW_TYPE_BROWSER = "sprout-browser";
+export const VIEW_TYPE_REVIEWER = "learnkit-reviewer";
+export const VIEW_TYPE_WIDGET = "learnkit-widget";
+export const VIEW_TYPE_STUDY_ASSISTANT = "learnkit-study-assistant";
+export const VIEW_TYPE_BROWSER = "learnkit-browser";
 export const VIEW_TYPE_NOTE_REVIEW = "learnkit-note-review";
-export const VIEW_TYPE_ANALYTICS = "sprout-analytics";
-export const VIEW_TYPE_HOME = "sprout-home";
-export const VIEW_TYPE_SETTINGS = "sprout-settings";
-export const VIEW_TYPE_EXAM_GENERATOR = "sprout-exam-generator";
-export const VIEW_TYPE_COACH = "sprout-coach";
+export const VIEW_TYPE_ANALYTICS = "learnkit-analytics";
+export const VIEW_TYPE_HOME = "learnkit-home";
+export const VIEW_TYPE_SETTINGS = "learnkit-settings";
+export const VIEW_TYPE_EXAM_GENERATOR = "learnkit-exam-generator";
+export const VIEW_TYPE_COACH = "learnkit-coach";
+
+export const LEGACY_VIEW_TYPE_REVIEWER = "sprout-reviewer";
+export const LEGACY_VIEW_TYPE_WIDGET = "sprout-widget";
+export const LEGACY_VIEW_TYPE_STUDY_ASSISTANT = "sprout-study-assistant";
+export const LEGACY_VIEW_TYPE_BROWSER = "sprout-browser";
+export const LEGACY_VIEW_TYPE_ANALYTICS = "sprout-analytics";
+export const LEGACY_VIEW_TYPE_HOME = "sprout-home";
+export const LEGACY_VIEW_TYPE_SETTINGS = "sprout-settings";
+export const LEGACY_VIEW_TYPE_EXAM_GENERATOR = "sprout-exam-generator";
+export const LEGACY_VIEW_TYPE_COACH = "sprout-coach";
+
+export const LEGACY_TO_CURRENT_VIEW_TYPES: Record<string, string> = {
+  [LEGACY_VIEW_TYPE_REVIEWER]: VIEW_TYPE_REVIEWER,
+  [LEGACY_VIEW_TYPE_WIDGET]: VIEW_TYPE_WIDGET,
+  [LEGACY_VIEW_TYPE_STUDY_ASSISTANT]: VIEW_TYPE_STUDY_ASSISTANT,
+  [LEGACY_VIEW_TYPE_BROWSER]: VIEW_TYPE_BROWSER,
+  [LEGACY_VIEW_TYPE_ANALYTICS]: VIEW_TYPE_ANALYTICS,
+  [LEGACY_VIEW_TYPE_HOME]: VIEW_TYPE_HOME,
+  [LEGACY_VIEW_TYPE_SETTINGS]: VIEW_TYPE_SETTINGS,
+  [LEGACY_VIEW_TYPE_EXAM_GENERATOR]: VIEW_TYPE_EXAM_GENERATOR,
+  [LEGACY_VIEW_TYPE_COACH]: VIEW_TYPE_COACH,
+};
 
 export const BRAND = "LearnKit";
 

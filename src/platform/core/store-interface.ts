@@ -1,4 +1,13 @@
-import type SproutPlugin from "../../main";
+/**
+ * @file src/platform/core/store-interface.ts
+ * @summary Module for store interface.
+ *
+ * @exports
+ *  - PersistSafetyResult
+ *  - IStore
+ */
+
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../types/card";
 import type { ReviewLogEntry } from "../types/review";
 import type {
@@ -18,7 +27,7 @@ export type PersistSafetyResult = {
 };
 
 export interface IStore {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   data: StoreData;
   loadedFromDisk: boolean;
   load(rootData: unknown): void;

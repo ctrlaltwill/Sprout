@@ -2,32 +2,32 @@
    HEADER — Brand link, brand icon/text reveal animation.
    ========================================================================== */
 
-.sprout .sprout-header-wrap,
-.sprout .learnkit-header-wrap {
-  --sprout-app-header-inset: 10px;
-  --sprout-app-header-top: 8px;
-  --sprout-app-header-overlay-height: 64px;
+.learnkit .learnkit-header-wrap,
+.learnkit .learnkit-header-wrap {
+  --learnkit-app-header-inset: 10px;
+  --learnkit-app-header-top: 8px;
+  --learnkit-app-header-overlay-height: 64px;
   background: transparent;
   background-color: transparent;
   position: absolute;
-  top: var(--sprout-app-header-top);
+  top: var(--learnkit-app-header-top);
   left: 0;
   right: 0;
   z-index: 120;
   overflow: visible;
-  padding: 0 var(--sprout-app-header-inset);
+  padding: 0 var(--learnkit-app-header-inset);
   border: none;
   display: flow-root; /* contain child margins so ::after sits outside them */
 }
 
-.sprout .sprout-header-wrap + .sprout-view-content,
-.sprout .learnkit-header-wrap + .sprout-view-content,
-.sprout .sprout-header-wrap + .view-content,
-.sprout .learnkit-header-wrap + .view-content,
-.workspace-leaf-content.sprout:has(> .sprout-header-wrap) > .view-content,
-.workspace-leaf-content.sprout:has(> .learnkit-header-wrap) > .view-content,
-.workspace-leaf-content:has(> .sprout-header-wrap) > .sprout-view-content,
-.workspace-leaf-content:has(> .learnkit-header-wrap) > .sprout-view-content {
+.learnkit .learnkit-header-wrap + .learnkit-view-content,
+.learnkit .learnkit-header-wrap + .learnkit-view-content,
+.learnkit .learnkit-header-wrap + .view-content,
+.learnkit .learnkit-header-wrap + .view-content,
+.workspace-leaf-content.learnkit:has(> .learnkit-header-wrap) > .view-content,
+.workspace-leaf-content.learnkit:has(> .learnkit-header-wrap) > .view-content,
+.workspace-leaf-content:has(> .learnkit-header-wrap) > .learnkit-view-content,
+.workspace-leaf-content:has(> .learnkit-header-wrap) > .learnkit-view-content {
   margin-top: 16px;
 }
 
@@ -35,34 +35,35 @@
    z-index kept below tooltip z-index (9999999) so tooltips always render on top. */
 
 /* Settings, Guide, and Release Notes should scroll freely without sticky header. */
-.sprout:has(.sprout-settings-view-root) .sprout-header-wrap,
-.sprout:has(.sprout-settings-view-root) .learnkit-header-wrap {
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap,
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap {
   position: static;
   left: auto;
   right: auto;
   background: transparent;
-  padding: var(--sprout-app-header-top) var(--sprout-app-header-inset) 0;
+  padding: var(--learnkit-app-header-top) var(--learnkit-app-header-inset) 0;
 }
 
-.sprout:has(.sprout-settings-view-root) .sprout-header-wrap + .sprout-view-content,
-.sprout:has(.sprout-settings-view-root) .learnkit-header-wrap + .sprout-view-content,
-.sprout:has(.sprout-settings-view-root) .sprout-header-wrap + .view-content,
-.sprout:has(.sprout-settings-view-root) .learnkit-header-wrap + .view-content,
-.workspace-leaf-content.sprout:has(.sprout-settings-view-root):has(> .sprout-header-wrap) > .view-content,
-.workspace-leaf-content.sprout:has(.sprout-settings-view-root):has(> .learnkit-header-wrap) > .view-content,
-.workspace-leaf-content:has(.sprout-settings-view-root):has(> .sprout-header-wrap) > .sprout-view-content,
-.workspace-leaf-content:has(.sprout-settings-view-root):has(> .learnkit-header-wrap) > .sprout-view-content {
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap + .learnkit-view-content,
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap + .learnkit-view-content,
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap + .view-content,
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap + .view-content,
+.workspace-leaf-content.learnkit:has(.learnkit-settings-view-root):has(> .learnkit-header-wrap) > .view-content,
+.workspace-leaf-content.learnkit:has(.learnkit-settings-view-root):has(> .learnkit-header-wrap) > .view-content,
+.workspace-leaf-content:has(.learnkit-settings-view-root):has(> .learnkit-header-wrap) > .learnkit-view-content,
+.workspace-leaf-content:has(.learnkit-settings-view-root):has(> .learnkit-header-wrap) > .learnkit-view-content {
   margin-top: 0;
 }
 
-.sprout:has(.sprout-settings-view-root) .sprout-header-wrap::after,
-.sprout:has(.sprout-settings-view-root) .learnkit-header-wrap::after {
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap::after,
+.learnkit:has(.learnkit-settings-view-root) .learnkit-header-wrap::after {
   display: none;
 }
 
-.sprout .view-header.sprout-header {
+.learnkit .view-header.learnkit-header {
+  --learnkit-header-surface-bg: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%);
     border-radius: var(--radius-md);
-  background: rgba(127, 127, 127, 0.18);
+  background: var(--learnkit-header-surface-bg);
   border: 1px solid var(--color-base-35);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -76,7 +77,34 @@
     position: relative;
 }
 
-.sprout .view-header.sprout-header .view-header-left {
+/* Keep desktop header surface locked even when workspace/app focus classes flip. */
+body:not(.is-phone) .learnkit .view-header.learnkit-header {
+  background: var(--learnkit-header-surface-bg) !important;
+  background-color: var(--learnkit-header-surface-bg) !important;
+  background-image: none !important;
+  border-color: var(--color-base-35) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+/* Keep desktop header surface identical across focused/unfocused host states. */
+body:not(.is-phone):not(.is-focused) .learnkit .view-header.learnkit-header,
+body:not(.is-phone) .workspace-leaf:not(.mod-active) .learnkit .view-header.learnkit-header,
+body:not(.is-phone) .workspace-leaf.mod-fade .learnkit .view-header.learnkit-header,
+body:not(.is-phone) .workspace-leaf-content.mod-fade .learnkit .view-header.learnkit-header {
+  background: var(--learnkit-header-surface-bg) !important;
+  background-color: var(--learnkit-header-surface-bg) !important;
+  background-image: none !important;
+  border-color: var(--color-base-35) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.learnkit .view-header.learnkit-header .view-header-left {
   margin-left: 0;
   margin-right: 0;
   display: flex;
@@ -87,7 +115,7 @@
   order: 1;
 }
 
-.sprout .view-header.sprout-header .view-actions {
+.learnkit .view-header.learnkit-header .view-actions {
   margin-left: 0;
   display: flex;
   align-items: center;
@@ -99,12 +127,12 @@
   order: 3;
 }
 
-.sprout .view-header.sprout-header .view-header-title-container {
+.learnkit .view-header.learnkit-header .view-header-title-container {
   display: none;
 }
 
 /* Center slot for horizontal brand logo in Sprout headers. */
-.sprout .view-header.sprout-header .sprout-header-center-brand {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,7 +146,7 @@
   overflow: visible;
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -128,7 +156,7 @@
   overflow: visible;
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-link {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -138,13 +166,13 @@
   overflow: visible;
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-link *,
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon,
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon * {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-link *,
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon,
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon * {
   cursor: default;
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon {
   width: 85px;
   height: 17px;
   min-width: 85px;
@@ -153,11 +181,11 @@
   overflow: visible;
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon svg {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon svg {
   overflow: visible;
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon path[data-logo-shape="true"] {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon path[data-logo-shape="true"] {
   transform-box: fill-box;
   transform-origin: center;
   translate: 0 0;
@@ -173,7 +201,7 @@
 }
 
 /* Cursor-proximal interaction by visual distance: 0=active, 1=neighbor, 2=next, 3=farthest. */
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon[data-hover-path] path[data-logo-shape="true"][data-logo-level="0"] {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon[data-hover-path] path[data-logo-shape="true"][data-logo-level="0"] {
   transition-delay: 0ms;
   translate: 0 calc(-1 * var(--logo-active-translate, 8px));
   scale: var(--logo-active-scale, 1.2);
@@ -182,7 +210,7 @@
   filter: brightness(var(--logo-active-brightness, 1.34));
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon[data-hover-path] path[data-logo-shape="true"][data-logo-level="1"] {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon[data-hover-path] path[data-logo-shape="true"][data-logo-level="1"] {
   transition-delay: var(--logo-in-delay, 0ms);
   translate: 0 calc(-1 * var(--logo-neighbor-translate, 5.5px));
   scale: var(--logo-neighbor-scale, 1.1);
@@ -191,14 +219,14 @@
   filter: brightness(var(--logo-neighbor-brightness, 1.2));
 }
 
-.sprout .view-header.sprout-header .sprout-header-center-brand .sprout-header-center-brand-icon .svg-icon .sprout-logo-hit-target {
+.learnkit .view-header.learnkit-header .learnkit-header-center-brand .learnkit-header-center-brand-icon .svg-icon .learnkit-logo-hit-target {
   fill: none;
   stroke: transparent;
   pointer-events: stroke;
 }
 
 /* --- Header nav host (view-header-nav-buttons override) --- */
-.sprout .sprout-nav-host {
+.learnkit .learnkit-nav-host {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -209,7 +237,7 @@
 }
 
 /* --- Dropdown root (inline-flex container for the trigger) --- */
-.sprout .sprout-header .dropdown-menu.sprout-dropdown-root {
+.learnkit .learnkit-header .dropdown-menu.learnkit-dropdown-root {
   position: relative;
   z-index: 10050;
   display: inline-flex;
@@ -222,7 +250,7 @@
 }
 
 /* --- Actions host (view-actions override) --- */
-.sprout .sprout-actions-host {
+.learnkit .learnkit-actions-host {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -231,7 +259,7 @@
 }
 
 /* --- More-menu wrapper --- */
-.sprout .sprout-header .lk-more-wrap {
+.learnkit .learnkit-header .lk-more-wrap {
   position: relative;
   overflow: visible;
   background-color: transparent;
@@ -241,10 +269,10 @@
 }
 
 /* --- Header action buttons (custom style matching header bg) --- */
-.sprout .sprout-header .sprout-btn-toolbar {
+.learnkit .learnkit-header .learnkit-btn-toolbar {
   background-color: transparent;
   color: var(--text-normal);
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   box-shadow: none;
@@ -252,39 +280,39 @@
 }
 
 /* Keep the Tools trigger (btn-icon-outline) visually consistent with other header actions. */
-.sprout .sprout-header .lk-more-wrap .btn-icon-outline.sprout-btn-toolbar {
+.learnkit .learnkit-header .lk-more-wrap .btn-icon-outline.learnkit-btn-toolbar {
   background-color: transparent;
   color: var(--text-normal);
   border: 1px solid transparent;
 }
 
 /* Keep header actions icon-first; text labels slide in on hover/focus. */
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar {
-  --sprout-header-btn-collapsed-width: 36px;
-  --sprout-header-btn-expanded-width: 92px;
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar {
+  --learnkit-header-btn-collapsed-width: 36px;
+  --learnkit-header-btn-expanded-width: 92px;
   gap: 0;
-  width: var(--sprout-header-btn-collapsed-width);
-  min-width: var(--sprout-header-btn-collapsed-width);
-  max-width: var(--sprout-header-btn-collapsed-width);
+  width: var(--learnkit-header-btn-collapsed-width);
+  min-width: var(--learnkit-header-btn-collapsed-width);
+  max-width: var(--learnkit-header-btn-collapsed-width);
   padding-left: 8px;
   padding-right: 8px;
   overflow: hidden;
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), min-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), max-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar[data-sprout-expand-collapse="true"] {
-  --sprout-header-btn-expanded-width: 102px;
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[data-learnkit-expand-collapse="true"] {
+  --learnkit-header-btn-expanded-width: 102px;
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar[data-sprout-sync="true"] {
-  --sprout-header-btn-expanded-width: 80px;
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[data-learnkit-sync="true"] {
+  --learnkit-header-btn-expanded-width: 80px;
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar[aria-haspopup="menu"] {
-  --sprout-header-btn-expanded-width: 86px;
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"] {
+  --learnkit-header-btn-expanded-width: 86px;
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar [data-sprout-label="true"] {
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -295,63 +323,63 @@
   transition: max-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 540ms ease, margin-left 660ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 660ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:hover [data-sprout-label="true"],
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:focus-visible [data-sprout-label="true"],
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:focus-within [data-sprout-label="true"],
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar[aria-expanded="true"] [data-sprout-label="true"] {
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:hover [data-learnkit-label="true"],
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-visible [data-learnkit-label="true"],
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-within [data-learnkit-label="true"],
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-expanded="true"] [data-learnkit-label="true"] {
   max-width: 76px;
   opacity: 1;
   margin-left: 8px;
   transform: translateX(0);
 }
 
-.sprout-attachment-picker {
+.learnkit-attachment-picker {
   border-radius: var(--radius-lg);
   background: var(--background);
   border: 1px solid var(--color-base-40);
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:hover,
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:focus-visible,
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar:focus-within,
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar[aria-expanded="true"] {
-  width: var(--sprout-header-btn-expanded-width);
-  min-width: var(--sprout-header-btn-expanded-width);
-  max-width: var(--sprout-header-btn-expanded-width);
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:hover,
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-visible,
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-within,
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-expanded="true"] {
+  width: var(--learnkit-header-btn-expanded-width);
+  min-width: var(--learnkit-header-btn-expanded-width);
+  max-width: var(--learnkit-header-btn-expanded-width);
 }
 
-.sprout .sprout-header .sprout-actions-host .sprout-btn-toolbar.sprout-is-hidden [data-sprout-label="true"] {
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar.learnkit-is-hidden [data-learnkit-label="true"] {
   display: none;
 }
 
-.sprout .sprout-header .sprout-btn-toolbar:hover {
+.learnkit .learnkit-header .learnkit-btn-toolbar:hover {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--color-base-100) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
-.sprout .sprout-header .sprout-btn-toolbar[aria-expanded="true"] {
+.learnkit .learnkit-header .learnkit-btn-toolbar[aria-expanded="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--color-base-100) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
-.sprout .sprout-header .sprout-btn-toolbar:focus-visible {
+.learnkit .learnkit-header .learnkit-btn-toolbar:focus-visible {
   background-color: color-mix(in srgb, var(--color-base-45) 17%, transparent 83%) !important;
   color: var(--color-base-100) !important;
   border-color: color-mix(in srgb, var(--color-base-70) 28%, transparent 72%) !important;
 }
-.sprout .sprout-header .sprout-btn-toolbar:active {
+.learnkit .learnkit-header .learnkit-btn-toolbar:active {
   background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   color: var(--color-base-100) !important;
   border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
 }
 
 /* --- Mobile header layout --- */
-body.is-phone .sprout .sprout-header-wrap,
-body.is-phone .sprout .learnkit-header-wrap {
-  --sprout-app-header-top: 10px;
+body.is-phone .learnkit .learnkit-header-wrap,
+body.is-phone .learnkit .learnkit-header-wrap {
+  --learnkit-app-header-top: 10px;
 }
 
-body.is-phone .sprout .view-header.sprout-header {
+body.is-phone .learnkit .view-header.learnkit-header {
   padding: 12px;
   border: 1px solid var(--color-base-30);
   border-radius: var(--radius-md);
@@ -361,10 +389,10 @@ body.is-phone .sprout .view-header.sprout-header {
 }
 
 /* Nuke any Obsidian-injected white bg on the view-actions bar */
-body.is-phone .sprout .view-header.sprout-header .view-actions,
-body.is-phone .sprout .sprout-actions-host,
-body.is-phone .sprout .view-header.sprout-header .view-actions::before,
-body.is-phone .sprout .view-header.sprout-header .view-actions::after {
+body.is-phone .learnkit .view-header.learnkit-header .view-actions,
+body.is-phone .learnkit .learnkit-actions-host,
+body.is-phone .learnkit .view-header.learnkit-header .view-actions::before,
+body.is-phone .learnkit .view-header.learnkit-header .view-actions::after {
   background: transparent;
   background-color: transparent;
   border: none;
@@ -372,13 +400,13 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
 }
 
 @media (max-width: 820px) {
-  .sprout .sprout-header-wrap,
-  .sprout .learnkit-header-wrap {
-    --sprout-app-header-inset: 0;
-    --sprout-app-header-top: 6px;
-    --sprout-app-header-overlay-height: 68px;
+  .learnkit .learnkit-header-wrap,
+  .learnkit .learnkit-header-wrap {
+    --learnkit-app-header-inset: 0;
+    --learnkit-app-header-top: 6px;
+    --learnkit-app-header-overlay-height: 68px;
   }
-  .sprout .view-header.sprout-header {
+  .learnkit .view-header.learnkit-header {
     margin: 0 auto;
     padding: 10px 0;
     display: grid;
@@ -395,7 +423,7 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
     border-color: transparent;
     background-color: transparent;
   }
-  .sprout .view-header.sprout-header .sprout-header-center-brand {
+  .learnkit .view-header.learnkit-header .learnkit-header-center-brand {
     grid-column: 2;
     justify-self: center;
     align-self: center;
@@ -404,7 +432,7 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
     height: 36px;
     width: auto;
   }
-  .sprout .view-header.sprout-header .view-header-left {
+  .learnkit .view-header.learnkit-header .view-header-left {
     grid-column: 1;
     justify-self: start;
     align-self: center;
@@ -417,7 +445,7 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
     margin: 0;
     padding: 0;
   }
-  .sprout .view-header.sprout-header .view-header-left .view-header-nav-buttons {
+  .learnkit .view-header.learnkit-header .view-header-left .view-header-nav-buttons {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -426,11 +454,11 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
     max-width: 36px;
     overflow: visible;
   }
-  .sprout .view-header.sprout-header .view-header-left .view-header-nav-buttons > button[aria-label="Navigate back"],
-  .sprout .view-header.sprout-header .view-header-left .view-header-nav-buttons > button[aria-label="Navigate forward"] {
+  .learnkit .view-header.learnkit-header .view-header-left .view-header-nav-buttons > button[aria-label="Navigate back"],
+  .learnkit .view-header.learnkit-header .view-header-left .view-header-nav-buttons > button[aria-label="Navigate forward"] {
     display: none;
   }
-  .sprout .view-header.sprout-header .view-actions {
+  .learnkit .view-header.learnkit-header .view-actions {
     order: initial;
     grid-column: 3;
     grid-row: 1;
@@ -457,25 +485,25 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
     border: none;
     box-shadow: none;
   }
-  .sprout .sprout-actions-host {
+  .learnkit .learnkit-actions-host {
     display: none;
   }
-  .sprout .sprout-header .dropdown-menu.sprout-dropdown-root {
+  .learnkit .learnkit-header .dropdown-menu.learnkit-dropdown-root {
     margin-left: auto;
     margin-right: 0;
   }
-  .sprout .sprout-header .sprout-nav-host {
+  .learnkit .learnkit-header .learnkit-nav-host {
     justify-content: flex-end;
     align-items: center;
     height: 36px;
     margin: 0;
   }
-  .sprout .sprout-header .dropdown-menu.sprout-dropdown-root {
+  .learnkit .learnkit-header .dropdown-menu.learnkit-dropdown-root {
     align-items: center;
     height: 36px;
     margin: 0;
   }
-  .sprout .sprout-header .sprout-mobile-nav-trigger {
+  .learnkit .learnkit-header .learnkit-mobile-nav-trigger {
     width: 36px;
     min-width: 36px;
     max-width: 36px;
@@ -491,37 +519,37 @@ body.is-phone .sprout .view-header.sprout-header .view-actions::after {
     position: relative;
     top: auto;
   }
-  .sprout .sprout-header .sprout-mobile-nav-trigger:hover,
-  .sprout .sprout-header .sprout-mobile-nav-trigger:focus-visible,
-  .sprout .sprout-header .sprout-mobile-nav-trigger:focus-within,
-  .sprout .sprout-header .sprout-mobile-nav-trigger[aria-expanded="true"] {
+  .learnkit .learnkit-header .learnkit-mobile-nav-trigger:hover,
+  .learnkit .learnkit-header .learnkit-mobile-nav-trigger:focus-visible,
+  .learnkit .learnkit-header .learnkit-mobile-nav-trigger:focus-within,
+  .learnkit .learnkit-header .learnkit-mobile-nav-trigger[aria-expanded="true"] {
     width: 36px !important;
     min-width: 36px !important;
     max-width: 36px !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
-  .sprout .sprout-header .sprout-mobile-nav-trigger [data-sprout-label="true"] {
+  .learnkit .learnkit-header .learnkit-mobile-nav-trigger [data-learnkit-label="true"] {
     display: none !important;
     max-width: 0 !important;
     opacity: 0 !important;
     margin-left: 0 !important;
     transform: translateX(0) !important;
   }
-  .sprout .view-header.sprout-header .view-actions .view-action.mod-bookmark,
-  .sprout .view-header.sprout-header [data-sprout-expand-collapse="true"] {
+  .learnkit .view-header.learnkit-header .view-actions .view-action.mod-bookmark,
+  .learnkit .view-header.learnkit-header [data-learnkit-expand-collapse="true"] {
     display: none;
   }
-  .sprout .view-header.sprout-header [data-sprout-sync="true"] [data-sprout-label="true"] {
+  .learnkit .view-header.learnkit-header [data-learnkit-sync="true"] [data-learnkit-label="true"] {
     display: none;
   }
   /* Keep sidebar button on the left and pin other controls to the right */
-  .sprout .view-header.sprout-header .view-actions .view-action {
+  .learnkit .view-header.learnkit-header .view-actions .view-action {
     display: none;
   }
   /* Hide tooltip bubbles on mobile but keep buttons clickable */
-  .sprout .view-header.sprout-header button[data-tooltip]::before,
-  .sprout .view-header.sprout-header button[data-tooltip]::after {
+  .learnkit .view-header.learnkit-header button[data-tooltip]::before,
+  .learnkit .view-header.learnkit-header button[data-tooltip]::after {
     display: none;
   }
 }

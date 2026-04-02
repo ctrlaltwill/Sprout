@@ -1,3 +1,12 @@
+/**
+ * @file src/views/reminders/reminder-timing.ts
+ * @summary Module for reminder timing.
+ *
+ * @exports
+ *  - normaliseReminderIntervalMinutes
+ *  - minutesToMs
+ */
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }

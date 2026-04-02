@@ -1,3 +1,15 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-remote.ts
+ * @summary Module for assistant popup remote.
+ *
+ * @exports
+ *  - setRemoteConversationForMode
+ *  - getRemoteConversationForMode
+ *  - clearRemoteConversationForMode
+ *  - shouldSyncDeletesToProvider
+ *  - bestEffortDeleteRemoteConversation
+ */
+
 import type { SproutSettings } from "../../../platform/types/settings";
 import { deleteStudyAssistantConversation } from "../../../platform/integrations/ai/study-assistant-provider";
 import type { StudyAssistantConversationRef } from "../../../platform/integrations/ai/study-assistant-types";

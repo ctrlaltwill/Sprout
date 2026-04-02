@@ -240,18 +240,18 @@ function CardCurveTooltip(props: { active?: boolean; payload?: Array<{ value?: n
     day: "numeric",
   });
   return (
-    <div className="bc sprout-data-tooltip-surface">
-      <div className="bc text-sm font-medium text-background">{date}</div>
+    <div className="learnkit-data-tooltip-surface">
+      <div className="text-sm font-medium text-background">{date}</div>
       {props.payload.map((entry) => {
         const value = Number(entry?.value ?? 0);
         const idLabel = String(entry?.name ?? entry?.dataKey ?? "");
         return (
-          <div key={entry.dataKey} className="bc flex items-center gap-2">
+          <div key={entry.dataKey} className="flex items-center gap-2">
             <span
-              className={`bc inline-block size-2 rounded-full sprout-ana-legend-dot ${cssClassForProps({ "--sprout-legend-color": entry.color })}`}
+              className={`inline-block size-2 rounded-full learnkit-ana-legend-dot ${cssClassForProps({ "--learnkit-legend-color": entry.color })}`}
             />
-            <span className="bc text-background">{idLabel}</span>
-            <span className="bc text-background">{Math.round(value * 100)}%</span>
+            <span className="text-background">{idLabel}</span>
+            <span className="text-background">{Math.round(value * 100)}%</span>
           </div>
         );
       })}
@@ -293,7 +293,7 @@ export function ForgettingCurveChart(props: {
     if (!open) return undefined;
     const popover = popoverRef.current;
     if (!popover) return undefined;
-    popover.classList.add("sprout-ana-popover", "sprout-ana-popover-right", "sprout-ana-popover-md");
+    popover.classList.add("learnkit-ana-popover", "learnkit-ana-popover", "learnkit-ana-popover-right", "learnkit-ana-popover-right", "learnkit-ana-popover-md", "learnkit-ana-popover-md");
     return undefined;
   }, [open]);
 
@@ -568,14 +568,14 @@ export function ForgettingCurveChart(props: {
   const legendContent = () => {
     if (!legendItems.length) return null;
     return (
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground learnkit-ana-chart-legend">
         {legendItems.map((item) => (
-          <div key={item.id} className="bc inline-flex items-center gap-2">
+          <div key={item.id} className="inline-flex items-center gap-2">
             <span
-              className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": item.color })}`}
+              className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": item.color })}`}
             />
             <span data-tooltip={item.tooltip || undefined}>{item.label}</span>
-            {item.status ? <span className="bc text-muted-foreground">({item.status})</span> : null}
+            {item.status ? <span className="text-muted-foreground">({item.status})</span> : null}
           </div>
         ))}
       </div>
@@ -584,27 +584,27 @@ export function ForgettingCurveChart(props: {
 
   return (
     <div
-      className="card sprout-ana-card sprout-forgetting-curve-card h-full overflow-visible p-4 flex flex-col gap-3"
+      className="card learnkit-ana-card learnkit-forgetting-curve-card h-full overflow-visible p-4 flex flex-col gap-3"
     >
-      <div className="bc flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="bc flex items-center gap-1">
-            <div className="bc font-semibold lk-home-section-title">Forgetting curve</div>
+          <div className="flex items-center gap-1">
+            <div className="font-semibold lk-home-section-title">Forgetting curve</div>
             <InfoIcon text="Estimated recall probability over time for the selected cards based on review history." />
           </div>
-          <div className="bc text-xs text-muted-foreground">Recall probability over time</div>
+          <div className="text-xs text-muted-foreground">Recall probability over time</div>
         </div>
 
-        <div ref={wrapRef} className="bc relative inline-flex">
+        <div ref={wrapRef} className="relative inline-flex">
           <button
             type="button"
-            className="bc sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+            className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
-              className="bc svg-icon lucide-filter text-foreground"
+              className="svg-icon lucide-filter text-foreground"
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -624,13 +624,13 @@ export function ForgettingCurveChart(props: {
             <div
               aria-hidden="false"
               ref={popoverRef}
-              className="bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-right sprout-ana-popover-md"
+              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-right learnkit-ana-popover-md"
             >
-              <div className="bc p-1">
-                <div className="bc text-sm text-muted-foreground px-2 py-1">Search cards</div>
-                <div className="bc px-2 pb-2">
+              <div className="p-1">
+                <div className="text-sm text-muted-foreground px-2 py-1">Search cards</div>
+                <div className="px-2 pb-2">
                   <input
-                    className="bc input w-full text-sm"
+                    className="input w-full text-sm"
                     type="text"
                     placeholder="Search by ID, title, question"
                     value={search.query}
@@ -640,19 +640,19 @@ export function ForgettingCurveChart(props: {
                   />
                 </div>
 
-                {search.error ? <div className="bc text-xs text-muted-foreground px-2 pb-2">{search.error}</div> : null}
+                {search.error ? <div className="text-xs text-muted-foreground px-2 pb-2">{search.error}</div> : null}
 
                 {selectedResults.length ? (
-                  <div className="bc px-2 pb-2">
-                    <div className="bc text-xs text-muted-foreground px-2 pb-1">Selected cards</div>
-                    <div className="bc flex flex-col">
+                  <div className="px-2 pb-2">
+                    <div className="text-xs text-muted-foreground px-2 pb-1">Selected cards</div>
+                    <div className="flex flex-col">
                       {selectedResults.map((result) => (
                         <div
                           key={`selected-${result.id}`}
                           role="menuitemradio"
                           aria-checked="true"
                           tabIndex={0}
-                          className="bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
+                          className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
                           onClick={() => toggleSelection(result.id)}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -661,20 +661,20 @@ export function ForgettingCurveChart(props: {
                             }
                           }}
                         >
-                          <span className="bc size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
-                            <span className="bc size-1.5 rounded-full bg-foreground" />
+                          <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
+                            <span className="size-1.5 rounded-full bg-foreground" />
                           </span>
-                          <div className="bc flex flex-col min-w-0">
-                            <div className="bc flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                               <span
-                                className="bc truncate sprout-ana-truncate-row"
+                                className="truncate learnkit-ana-truncate-row"
                               >
                                 {result.location}
                               </span>
-                              <span className="bc shrink-0">{result.label}</span>
+                              <span className="shrink-0">{result.label}</span>
                             </div>
                             <div
-                              className="bc truncate sprout-ana-truncate"
+                              className="truncate learnkit-ana-truncate"
                             >
                               {result.preview}
                             </div>
@@ -686,12 +686,12 @@ export function ForgettingCurveChart(props: {
                 ) : null}
 
                 {search.query.trim().length ? (
-                  <div className="bc px-2 pb-2">
+                  <div className="px-2 pb-2">
                     {(() => {
                       const selectedSet = new Set(selectedIds);
                       const results = getSearchResults(search.query).filter((result) => !selectedSet.has(result.id));
                       return results.length ? (
-                        <div className="bc flex flex-col">
+                        <div className="flex flex-col">
                           {results.map((result) => {
                             const disabled = selectedIds.length >= MAX_SELECTIONS;
                             return (
@@ -715,18 +715,18 @@ export function ForgettingCurveChart(props: {
                                   }
                                 }}
                               >
-                                <span className="bc size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center" />
-                                <div className="bc flex flex-col min-w-0">
-                                  <div className="bc flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center" />
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                     <span
-                                      className="bc truncate sprout-ana-truncate-row"
+                                      className="truncate learnkit-ana-truncate-row"
                                     >
                                       {result.location || "Unknown location"}
                                     </span>
-                                    <span className="bc shrink-0">{result.label}</span>
+                                    <span className="shrink-0">{result.label}</span>
                                   </div>
                                   <div
-                                    className="bc truncate sprout-ana-truncate"
+                                    className="truncate learnkit-ana-truncate"
                                   >
                                     {result.preview || "No question text."}
                                   </div>
@@ -736,14 +736,14 @@ export function ForgettingCurveChart(props: {
                           })}
                         </div>
                       ) : (
-                        <div className="bc text-xs text-muted-foreground">No matches.</div>
+                        <div className="text-xs text-muted-foreground">No matches.</div>
                       );
                     })()}
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-1" role="separator" />
-                <div className="bc text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
+                <div className="h-px bg-border my-1" role="separator" />
+                <div className="text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
                   Reset filters
                 </div>
               </div>
@@ -753,7 +753,7 @@ export function ForgettingCurveChart(props: {
       </div>
 
       {curves.length ? (
-        <div className="bc sprout-analytics-chart">
+        <div className="learnkit-analytics-chart">
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={data} margin={{ top: 28, right: 12, left: 16, bottom: 0 }}>
               <XAxis
@@ -790,12 +790,12 @@ export function ForgettingCurveChart(props: {
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="bc flex-1 flex items-center justify-center text-sm text-muted-foreground">
+        <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
           {selectedIds.length ? "Selected cards have not been studied yet." : "Search for cards to plot forgetting curves."}
         </div>
       )}
 
-      <div className="bc sprout-ana-scroll-48">
+      <div className="learnkit-ana-scroll-48">
         {legendContent()}
       </div>
 

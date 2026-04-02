@@ -76,7 +76,7 @@ function updateContentPadding() {
   if (!Platform.isMobileApp) return;
 
   const viewContent = document.querySelector<HTMLElement>(
-    ".sprout .sprout-view-content",
+    ".learnkit .learnkit-view-content",
   );
 
   if (!viewContent) return;
@@ -208,7 +208,7 @@ export function cleanupMobileKeyboardHandler(): void {
 
   // Reset padding
   const viewContent = document.querySelector<HTMLElement>(
-    ".sprout .sprout-view-content",
+    ".learnkit .learnkit-view-content",
   );
   if (viewContent) {
     setCssProps(viewContent, "--kb-padding", "");

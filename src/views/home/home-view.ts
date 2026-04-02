@@ -13,7 +13,7 @@ import { type SproutHeader, createViewHeader } from "../../platform/core/header"
 import { log } from "../../platform/core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_BROWSER, VIEW_TYPE_HOME, VIEW_TYPE_REVIEWER } from "../../platform/core/constants";
 import { setCssProps } from "../../platform/core/ui";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import type { Scope } from "../reviewer/types";
 import { isParentCard } from "../../platform/core/card-utils";
@@ -46,7 +46,7 @@ import {
  * - About Sprout + changelog info cards
  */
 export class SproutHomeView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   private _header: SproutHeader | null = null;
   private _rootEl: HTMLElement | null = null;
@@ -59,7 +59,7 @@ export class SproutHomeView extends ItemView {
   private _nameObserver: ResizeObserver | null = null;
   private _themeObserver: MutationObserver | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -73,7 +73,7 @@ export class SproutHomeView extends ItemView {
   }
 
   getIcon() {
-    return "sprout-brand";
+    return "learnkit-brand";
   }
 
   async onOpen() {
@@ -134,8 +134,8 @@ export class SproutHomeView extends ItemView {
 
   /** Apply or remove wide-mode layout constraints. */
   private _applyWidthMode() {
-    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-sprout-wide", "1");
-    else this.containerEl.removeAttribute("data-sprout-wide");
+    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-learnkit-wide", "1");
+    else this.containerEl.removeAttribute("data-learnkit-wide");
 
     const root = this._rootEl;
     const titleStrip = this._titleStripEl;
@@ -183,13 +183,13 @@ export class SproutHomeView extends ItemView {
     }
 
     this._rootEl = root;
-    root.classList.add("bc", "sprout-view-content", "lk-home-root");
+    root.classList.add("learnkit-view-content", "learnkit-view-content", "lk-home-root");
 
-    this.containerEl.addClass("sprout");
+    this.containerEl.addClass("learnkit");
 
     // Animation control
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
-    root.classList.toggle("sprout-no-animate", !animationsEnabled);
+    root.classList.toggle("learnkit-no-animate", !animationsEnabled);
     root.classList.remove("lk-home-root-enter");
     if (animationsEnabled) {
       // Retrigger root entrance animation each render.
@@ -245,7 +245,7 @@ export class SproutHomeView extends ItemView {
     subtitleRow.classList.add("lk-home-title-subtitle");
 
     const quickStudyBtn = document.createElement("button");
-    quickStudyBtn.className = "bc lk-home-quick-study-btn sprout-btn-accent inline-flex items-center gap-2";
+    quickStudyBtn.className = "lk-home-quick-study-btn learnkit-btn-accent inline-flex items-center gap-2";
     quickStudyBtn.type = "button";
     quickStudyBtn.setAttribute("aria-label", tx("ui.home.quickAction.startStudying", "Start studying"));
     quickStudyBtn.setAttribute("data-tooltip-position", "bottom");
@@ -287,12 +287,12 @@ export class SproutHomeView extends ItemView {
       subtitleRow.appendChild(nameInput);
 
       const greetingSuffixEl = document.createElement("div");
-      greetingSuffixEl.className = "sprout-greeting-suffix -ml-1 text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
+      greetingSuffixEl.className = "learnkit-greeting-suffix -ml-1 text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
       greetingSuffixEl.textContent = "!";
       subtitleRow.appendChild(greetingSuffixEl);
 
       const nameSizer = document.createElement("span");
-      nameSizer.className = "sprout-name-sizer absolute invisible whitespace-pre pointer-events-none h-0 overflow-hidden text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
+      nameSizer.className = "learnkit-name-sizer absolute invisible whitespace-pre pointer-events-none h-0 overflow-hidden text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
       subtitleRow.appendChild(nameSizer);
 
       const syncNameWidth = () => {
@@ -355,7 +355,7 @@ export class SproutHomeView extends ItemView {
     // (greeting input logic is now only inside the showGreeting block)
 
     const contentShell = document.createElement("div");
-    contentShell.className = "sprout-view-content-shell lk-home-content-shell";
+    contentShell.className = "learnkit-view-content-shell lk-home-content-shell";
     root.appendChild(contentShell);
 
     const body = document.createElement("div");
@@ -584,7 +584,7 @@ export class SproutHomeView extends ItemView {
       },
     ) => {
       const btn = parent.createEl("button", {
-        cls: "bc sprout-btn-toolbar h-7 px-3 text-sm inline-flex items-center gap-2 lk-home-link-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-7 px-3 text-sm inline-flex items-center gap-2 lk-home-link-btn",
         attr: {
           type: "button",
           "aria-label": options.ariaLabel ?? options.label,
@@ -592,12 +592,12 @@ export class SproutHomeView extends ItemView {
         },
       });
 
-      const leftIcon = btn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const leftIcon = btn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(leftIcon, options.icon);
 
-      btn.createSpan({ cls: "bc", text: options.label });
+      btn.createSpan({ cls: "", text: options.label });
 
-      const rightIcon = btn.createSpan({ cls: "bc inline-flex items-center justify-center ml-auto" });
+      const rightIcon = btn.createSpan({ cls: "inline-flex items-center justify-center ml-auto" });
       setIcon(rightIcon, "chevron-right");
 
       btn.addEventListener("click", () => {
@@ -609,7 +609,7 @@ export class SproutHomeView extends ItemView {
 
     const makeDeckSection = (label: string, iconName?: string) => {
       const section = document.createElement("div");
-      section.className = "card sprout-ana-card lk-home-deck-section flex flex-col gap-3 p-3 rounded-lg border border-border bg-background";
+      section.className = "card learnkit-ana-card lk-home-deck-section flex flex-col gap-3 p-3 rounded-lg border border-border bg-background";
       const headingRow = section.createDiv({ cls: "m-0 flex items-center justify-between gap-2" });
       headingRow.createDiv({ cls: "lk-home-section-title font-semibold", text: label });
       if (iconName) {
@@ -629,7 +629,7 @@ export class SproutHomeView extends ItemView {
     const recentSection = makeDeckSection(tx("ui.home.deck.recent", "Recent decks"), "clock");
 
     const statsRow = document.createElement("div");
-    statsRow.className = "sprout-ana-grid lk-home-stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4";
+    statsRow.className = "learnkit-ana-grid lk-home-stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4";
     applyAos(statsRow, HOME_AOS_FIRST_DELAY + HOME_AOS_STEP);
     body.appendChild(statsRow);
 
@@ -643,7 +643,7 @@ export class SproutHomeView extends ItemView {
 
     const makeStatCard = (label: string, value: string, note?: string) => {
       const card = document.createElement("div");
-      card.className = "card sprout-ana-card sprout-stat-card small-card flex flex-col gap-2 lg:flex-1";
+      card.className = "card learnkit-ana-card learnkit-stat-card small-card flex flex-col gap-2 lg:flex-1";
       statsRow.appendChild(card);
       card.createDiv({ cls: "text-sm text-muted-foreground", text: label });
       card.createDiv({ cls: "text-2xl font-semibold", text: value });
@@ -683,7 +683,7 @@ export class SproutHomeView extends ItemView {
 
     const buildTrendBadge = (trend: { value: number; text: string; dir: number }) => {
       const badge = document.createElement("span");
-      badge.className = "sprout-trend-badge";
+      badge.className = "learnkit-trend-badge";
       const icon = document.createElement("span");
       icon.className = "inline-flex items-center justify-center";
       const iconName = trend.dir > 0 ? "trending-up" : trend.dir < 0 ? "trending-down" : "minus";
@@ -724,10 +724,10 @@ export class SproutHomeView extends ItemView {
     // Avg time/day card with trend badge
     {
       const card = document.createElement("div");
-      card.className = "card sprout-ana-card sprout-stat-card small-card p-4 flex flex-col gap-2 lg:flex-1";
+      card.className = "card learnkit-ana-card learnkit-stat-card small-card p-4 flex flex-col gap-2 lg:flex-1";
       statsRow.appendChild(card);
       const header = card.createDiv({ cls: "flex items-center justify-between text-sm text-muted-foreground" });
-      header.createDiv({ text: tx("ui.home.stat.dailyTime", "Daily time"), cls: "bc lk-home-stat-trend-label" });
+      header.createDiv({ text: tx("ui.home.stat.dailyTime", "Daily time"), cls: "lk-home-stat-trend-label" });
       const timeTrend = formatTrend(avgTimePerDayMinutes, prevAvgTimePerDayMinutes, prevActiveDaysTime);
       header.appendChild(buildTrendBadge(timeTrend));
       card.createDiv({ cls: "text-2xl font-semibold lk-home-stat-trend-value", text: `${Math.ceil(avgTimePerDayMinutes)} min` });
@@ -737,10 +737,10 @@ export class SproutHomeView extends ItemView {
     // Avg cards/day card with trend badge
     {
       const card = document.createElement("div");
-      card.className = "card sprout-ana-card sprout-stat-card small-card p-4 flex flex-col gap-2 lg:flex-1";
+      card.className = "card learnkit-ana-card learnkit-stat-card small-card p-4 flex flex-col gap-2 lg:flex-1";
       statsRow.appendChild(card);
       const header = card.createDiv({ cls: "flex items-center justify-between text-sm text-muted-foreground" });
-      header.createDiv({ text: tx("ui.home.stat.dailyCards", "Daily cards"), cls: "bc lk-home-stat-trend-label" });
+      header.createDiv({ text: tx("ui.home.stat.dailyCards", "Daily cards"), cls: "lk-home-stat-trend-label" });
       const cardsTrend = formatTrend(avgCardsPerDay, prevAvgCardsPerDay, prevActiveDaysReviews);
       header.appendChild(buildTrendBadge(cardsTrend));
       card.createDiv({ cls: "text-2xl font-semibold lk-home-stat-trend-value", text: `${Math.round(avgCardsPerDay)}` });
@@ -779,8 +779,8 @@ export class SproutHomeView extends ItemView {
       pinnedList.empty();
 
       const previewController = createListReorderPreviewController(pinnedList, {
-        rowSelector: ".sprout-deck-row",
-        translateVar: "--sprout-deck-row-translate",
+        rowSelector: ".learnkit-deck-row",
+        translateVar: "--learnkit-deck-row-translate",
         listActiveClass: "sprout-deck-drag-active",
         rowAnimatingClass: "sprout-deck-row-anim",
         rowDraggingClass: "sprout-deck-row-dragging",
@@ -807,7 +807,7 @@ export class SproutHomeView extends ItemView {
           // Render pinned deck button
           const path = currentPinned[i];
           const row = pinnedList.createDiv({ 
-            cls: "sprout-deck-row flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-background cursor-pointer hover:bg-accent/50"
+            cls: "learnkit-deck-row learnkit-deck-row flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-background cursor-pointer hover:bg-accent/50"
           });
           row.dataset.pinnedIdx = String(i);
           const pinnedLeafName = getDeckLeafName(path);
@@ -826,12 +826,12 @@ export class SproutHomeView extends ItemView {
           
           // Hamburger menu for reordering
           const hamburger = left.createEl("span", { 
-            cls: "sprout-drag-handle inline-flex items-center justify-center",
+            cls: "learnkit-drag-handle learnkit-drag-handle inline-flex items-center justify-center",
             attr: { "data-action": "drag", "aria-label": tx("ui.home.deck.tooltip.drag", "Drag to reorder") }
           });
           setIcon(hamburger, "grip-vertical");
           
-          const name = left.createDiv({ cls: "sprout-text-truncate-rtl truncate font-medium min-w-0 flex-1" });
+          const name = left.createDiv({ cls: "learnkit-text-truncate-rtl learnkit-text-truncate-rtl truncate font-medium min-w-0 flex-1" });
           const pinnedLabel = formatPinnedDeckLabel(path);
           name.textContent = pinnedLabel;
           
@@ -841,7 +841,7 @@ export class SproutHomeView extends ItemView {
           right.createDiv({ cls: "text-xs text-muted-foreground", text: tx("ui.home.deck.dueCount", "{count} due", { count: due }) });
           
           const removeBtn = right.createEl("span", { 
-            cls: "sprout-deck-remove-btn inline-flex items-center justify-center cursor-pointer",
+            cls: "learnkit-deck-remove-btn learnkit-deck-remove-btn inline-flex items-center justify-center cursor-pointer",
             attr: { "data-action": "delete", "aria-label": tx("ui.home.deck.tooltip.removePinned", "Remove from pinned decks") }
           });
           setIcon(removeBtn, "x");
@@ -875,20 +875,20 @@ export class SproutHomeView extends ItemView {
           // Render search input in the first empty slot
           const searchRow = pinnedList.createDiv({ cls: "relative" });
           searchInputEl = searchRow.createEl("input", {
-            cls: "sprout-deck-search-input w-full text-sm text-center text-muted-foreground", 
+            cls: "learnkit-deck-search-input learnkit-deck-search-input w-full text-sm text-center text-muted-foreground", 
               attr: { type: "text", placeholder: tx("ui.home.deck.search.placeholder", "Search to add a pinned deck") }
           });
           searchInputEl.setAttr("aria-label", tx("ui.home.deck.tooltip.searchDecks", "Search for decks"));
           searchInputEl.setAttr("title", tx("ui.home.deck.tooltip.searchDecks", "Search for decks"));
           
           searchInputEl.addEventListener("focus", () => {
-            searchInputEl!.classList.add("sprout-deck-search-input-focused");
+            searchInputEl!.classList.add("learnkit-deck-search-input-focused", "learnkit-deck-search-input-focused");
           });
           
           searchInputEl.addEventListener("blur", () => {
             setTimeout(() => {
               if (searchInputEl!.value === "") {
-                searchInputEl!.classList.remove("sprout-deck-search-input-focused");
+                searchInputEl!.classList.remove("learnkit-deck-search-input-focused", "learnkit-deck-search-input-focused");
               }
               searchDropdownOpen = false;
               renderSearchDropdown();
@@ -903,14 +903,14 @@ export class SproutHomeView extends ItemView {
           
           // Dropdown container
           dropdownEl = searchRow.createDiv({ 
-            cls: "sprout-deck-search-dropdown dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto hidden"
+            cls: "learnkit-deck-search-dropdown learnkit-deck-search-dropdown dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto hidden"
           });
           
           renderSearchDropdown();
         } else {
           // Render placeholder - use absolute slot number (i + 1)
           const placeholder = pinnedList.createDiv({ 
-            cls: "sprout-placeholder-slot"
+            cls: "learnkit-placeholder-slot learnkit-placeholder-slot"
           });
           placeholder.textContent = tx("ui.home.deck.emptySlot", "Empty slot {index}", { index: i + 1 });
         }
@@ -986,7 +986,7 @@ export class SproutHomeView extends ItemView {
       
       filtered.forEach(deck => {
         const item = menuEl.createDiv({ 
-          cls: "sprout-deck-search-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground" 
+          cls: "learnkit-deck-search-item learnkit-deck-search-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground" 
         });
         item.setAttr("role", "menuitem");
         item.setAttr("tabindex", "0");
@@ -997,7 +997,7 @@ export class SproutHomeView extends ItemView {
         item.setAttr("aria-label", addPinnedTooltip);
         item.setAttr("title", addPinnedTooltip);
         
-        const label = item.createDiv({ cls: "sprout-text-truncate-rtl truncate flex-1" });
+        const label = item.createDiv({ cls: "learnkit-text-truncate-rtl learnkit-text-truncate-rtl truncate flex-1" });
         const pinnedLabel = formatPinnedDeckLabel(deck);
         label.textContent = pinnedLabel;
         label.setAttr("title", addPinnedTooltip);
@@ -1039,7 +1039,7 @@ export class SproutHomeView extends ItemView {
       const deck = recentSlots[i];
       if (deck) {
         const row = recentList.createDiv({ 
-          cls: "sprout-deck-row flex items-center justify-between gap-3 cursor-pointer p-3 rounded-lg border border-border bg-background hover:bg-accent/30"
+          cls: "learnkit-deck-row learnkit-deck-row flex items-center justify-between gap-3 cursor-pointer p-3 rounded-lg border border-border bg-background hover:bg-accent/30"
         });
         const recentLeafName = deck.scope.type === "vault"
           ? tx("ui.home.deck.allCards", "All cards")
@@ -1050,7 +1050,7 @@ export class SproutHomeView extends ItemView {
         row.addEventListener("click", () => void openStudyForScope(deck.scope));
         
         const left = row.createDiv({ cls: "flex flex-col min-w-0 flex-1" });
-        const name = left.createDiv({ cls: "sprout-text-truncate-rtl truncate font-medium" });
+        const name = left.createDiv({ cls: "learnkit-text-truncate-rtl learnkit-text-truncate-rtl truncate font-medium" });
         name.textContent = formatDeckLabel(deck.label, 60);
         const right = row.createDiv({ cls: "flex items-center gap-2 shrink-0" });
         const due = getDueForScope(deck.scope);
@@ -1060,14 +1060,14 @@ export class SproutHomeView extends ItemView {
         });
       } else {
         const placeholder = recentList.createDiv({ 
-          cls: "sprout-placeholder-slot"
+          cls: "learnkit-placeholder-slot learnkit-placeholder-slot"
         });
         placeholder.textContent = tx("ui.home.deck.emptySlot", "Empty slot {index}", { index: i + 1 });
       }
     }
 
     const heatmapHost = document.createElement("div");
-    heatmapHost.className = "sprout-heatmap-host";
+    heatmapHost.className = "learnkit-heatmap-host";
     applyAos(heatmapHost, HOME_AOS_FIRST_DELAY + HOME_AOS_STEP * 3);
     body.appendChild(heatmapHost);
     this._heatmapRoot = createRoot(heatmapHost);
@@ -1260,7 +1260,7 @@ export class SproutHomeView extends ItemView {
     body.appendChild(infoRow);
 
     const tipCard = document.createElement("div");
-    tipCard.className = "card sprout-ana-card lk-home-tip-card p-4 flex flex-col gap-3";
+    tipCard.className = "card learnkit-ana-card lk-home-tip-card p-4 flex flex-col gap-3";
     infoRow.appendChild(tipCard);
 
     const tipHeader = tipCard.createDiv({ cls: "flex items-center justify-between gap-2" });
@@ -1273,12 +1273,12 @@ export class SproutHomeView extends ItemView {
 
     const tipFooter = tipCard.createDiv({ cls: "flex items-center gap-2 mt-1" });
     const tipPrevBtn = tipFooter.createEl("button", {
-      cls: "bc sprout-btn-toolbar h-7 px-2 text-xs inline-flex items-center justify-center",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-7 px-2 text-xs inline-flex items-center justify-center",
       text: "Prev",
       attr: { type: "button", "aria-label": "Previous tip" },
     });
     const tipNextBtn = tipFooter.createEl("button", {
-      cls: "bc sprout-btn-toolbar h-7 px-2 text-xs inline-flex items-center justify-center",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-7 px-2 text-xs inline-flex items-center justify-center",
       text: "Next",
       attr: { type: "button", "aria-label": "Next tip" },
     });
@@ -1313,7 +1313,7 @@ export class SproutHomeView extends ItemView {
     renderTip();
 
     const projectCard = document.createElement("div");
-    projectCard.className = "card sprout-ana-card lk-home-project-card p-4 flex flex-col gap-3";
+    projectCard.className = "card learnkit-ana-card lk-home-project-card p-4 flex flex-col gap-3";
     infoRow.appendChild(projectCard);
 
     projectCard.createDiv({ cls: "text-sm font-semibold", text: "LearnKit project" });
@@ -1365,7 +1365,7 @@ export class SproutHomeView extends ItemView {
           if (!el.isConnected) return;
           const style = getComputedStyle(el);
           if (style.opacity === '0' || style.visibility === 'hidden') {
-            el.classList.add('sprout-aos-fallback');
+            el.classList.add('learnkit-aos-fallback', 'learnkit-aos-fallback');
           }
         });
       }, fallbackAfterMs);
@@ -1373,7 +1373,7 @@ export class SproutHomeView extends ItemView {
       // If animations disabled, ensure all AOS elements are immediately visible
       const aosElements = root.querySelectorAll('[data-aos]');
       aosElements.forEach((el) => {
-        el.classList.add('sprout-aos-fallback');
+        el.classList.add('learnkit-aos-fallback', 'learnkit-aos-fallback');
       });
     }
   }

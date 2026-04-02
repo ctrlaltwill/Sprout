@@ -16,7 +16,7 @@
  *   - validateCardBeforeWrite — validates a card's fields before writing to markdown, throws on failure
  */
 
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import type { CardRecord, CardState } from "../../../platform/core/store";
 import { normalizeCardOptions } from "../../../platform/core/store";
 import { getGroupIndex, normaliseGroupPath } from "../../../engine/indexing/group-index";
@@ -62,7 +62,7 @@ export interface BrowserRow {
  * as explicit parameters.
  */
 export function computeBrowserRows(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   query: string,
   typeFilter: TypeFilter,
   stageFilter: StageFilter,
@@ -200,7 +200,7 @@ export function browserSortValue(
   state: CardState | null,
   dueMs: number | null,
   key: SortKey,
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
 ): string | number {
   if (key === "due") return dueMs ?? Number.POSITIVE_INFINITY;
   if (key === "id") return card.id;
@@ -280,7 +280,7 @@ export function applyValueToCard(card: CardRecord, col: ColKey, value: string): 
 // ── readCardField ─────────────────────────────────────────
 
 /** Read the display value for a given column from a card. */
-export function readCardField(card: CardRecord, col: ColKey, plugin: SproutPlugin): string {
+export function readCardField(card: CardRecord, col: ColKey, plugin: LearnKitPlugin): string {
   if (col === "id") return String(card.id);
   if (col === "type") return typeLabelBrowser(card.type);
   if (col === "stage") {

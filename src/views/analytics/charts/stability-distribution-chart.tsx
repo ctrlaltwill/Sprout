@@ -46,7 +46,7 @@ function InfoIcon(props: { text: string }) {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
+      className={`svg-icon learnkit-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -106,9 +106,9 @@ function StabilityTooltip(props: { active?: boolean; payload?: Array<{ payload?:
   const datum = props.payload[0]?.payload as StabilityBucket | undefined;
   if (!datum) return null;
   return (
-    <div className="bc sprout-data-tooltip-surface">
-      <div className="bc text-sm font-medium text-background">{formatStabilityLabel(Number(props.label ?? 0), [datum])}</div>
-      <div className="bc text-background">Cards: {datum.count}</div>
+    <div className="learnkit-data-tooltip-surface">
+      <div className="text-sm font-medium text-background">{formatStabilityLabel(Number(props.label ?? 0), [datum])}</div>
+      <div className="text-background">Cards: {datum.count}</div>
     </div>
   );
 }
@@ -309,8 +309,8 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
       const wrap = wrapRef.current;
       const popover = popoverRef.current;
       if (!wrap || !popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -398,7 +398,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
   };
 
   return (
-    <div className={"card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3"}>
+    <div className={"card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3"}>
       <div className={"flex items-start justify-between gap-2"}>
         <div>
           <div className={"flex items-center gap-1"}>
@@ -411,8 +411,8 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
         <div ref={wrapRef} className={"relative inline-flex"}>
           <button
             type="button"
-            id="sprout-stability-filter-trigger"
-            className={"sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"}
+            id="learnkit-stability-filter-trigger"
+            className={"learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"}
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
             onClick={() => setOpen((prev) => !prev)}
@@ -436,10 +436,10 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
 
           {open ? (
             <div
-              id="sprout-stability-filter-popover"
+              id="learnkit-stability-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className={"rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"}
+              className={"rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm learnkit-ana-popover-left"}
             >
               <div className={"p-1"}>
                 <div
@@ -482,7 +482,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
                   <input
                     type="text"
                     placeholder="Search decks"
-                    className={"input w-full text-sm sprout-filter-search-input"}
+                    className={"input w-full text-sm learnkit-filter-search-input"}
                     value={deckQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -528,7 +528,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
                   <input
                     type="text"
                     placeholder="Search groups"
-                    className={"input w-full text-sm sprout-filter-search-input"}
+                    className={"input w-full text-sm learnkit-filter-search-input"}
                     value={tagQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -580,7 +580,7 @@ export function StabilityDistributionChart(props: StabilityDistributionChartProp
         </div>
       </div>
 
-      <div className={"w-full flex-1 sprout-analytics-chart"}>
+      <div className={"w-full flex-1 learnkit-analytics-chart"}>
         <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={data} margin={{ top: 12, right: 12, bottom: 28, left: 8 }}>
             <defs>

@@ -1,5 +1,18 @@
+/**
+ * @file src/platform/core/coach-plan-sqlite.ts
+ * @summary Module for coach plan sqlite.
+ *
+ * @exports
+ *  - CoachScopeType
+ *  - CoachIntensity
+ *  - CoachPlanRow
+ *  - CoachProgressRow
+ *  - SavedScopePresetScope
+ *  - SavedScopePresetRow
+ */
+
 import type { Database } from "sql.js";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { getSqlJs } from "../integrations/anki/anki-sql";
 import { getSchedulingDirPath, copyDbToVaultSyncFolder, reconcileFromVaultSync } from "./sqlite-store";
 
@@ -58,7 +71,7 @@ function joinPath(...parts: string[]): string {
     .replace(/\/+/g, "/");
 }
 
-function getCoachDbPath(plugin: SproutPlugin): string {
+function getCoachDbPath(plugin: LearnKitPlugin): string {
   return joinPath(getSchedulingDirPath(plugin), COACH_DB);
 }
 
@@ -204,11 +217,11 @@ function runSchema(db: Database): void {
 }
 
 export class CoachPlanSqlite {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private db: Database | null = null;
   private opened = false;
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
   }
 

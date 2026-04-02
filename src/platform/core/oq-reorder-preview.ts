@@ -1,3 +1,12 @@
+/**
+ * @file src/platform/core/oq-reorder-preview.ts
+ * @summary Module for oq reorder preview.
+ *
+ * @exports
+ *  - createOqReorderPreviewController
+ *  - createListReorderPreviewController
+ */
+
 import { setCssProps } from "./ui";
 
 type BeginDragArgs = {
@@ -61,14 +70,14 @@ function toTargetIndex(slotIdx: number, fromIdx: number, total: number): number 
 
 export function createOqReorderPreviewController(listWrap: HTMLElement): OqReorderPreviewController {
   return createListReorderPreviewController(listWrap, {
-    rowSelector: ".sprout-oq-step-row",
-    translateVar: "--sprout-oq-translate",
-    listActiveClass: "sprout-oq-drag-active",
-    rowAnimatingClass: "sprout-oq-row-anim",
-    rowDraggingClass: "sprout-oq-row-dragging",
-    rowDraggingNativeClass: "sprout-oq-row-dragging-native",
-    slotBeforeClass: "sprout-oq-slot-before",
-    slotAfterClass: "sprout-oq-slot-after",
+    rowSelector: ".learnkit-oq-step-row",
+    translateVar: "--learnkit-oq-translate",
+    listActiveClass: "learnkit-oq-drag-active",
+    rowAnimatingClass: "learnkit-oq-row-anim",
+    rowDraggingClass: "learnkit-oq-row-dragging",
+    rowDraggingNativeClass: "learnkit-oq-row-dragging-native",
+    slotBeforeClass: "learnkit-oq-slot-before",
+    slotAfterClass: "learnkit-oq-slot-after",
   });
 }
 

@@ -1,3 +1,11 @@
+/**
+ * @file tests/reading-settings.test.ts
+ * @summary Unit tests for reading settings.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS } from "../src/platform/core/default-settings";
 

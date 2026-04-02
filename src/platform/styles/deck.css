@@ -13,18 +13,18 @@
   }
 }
 
-.sprout .lk-review-title-strip.lk-review-enter-title {
+.learnkit .lk-review-title-strip.lk-review-enter-title {
   animation: lk-review-fade-up 600ms ease-out 0ms both;
 }
 
-.sprout .lk-review-content-shell.lk-review-enter-shell {
+.learnkit .lk-review-content-shell.lk-review-enter-shell {
   opacity: 0;
   animation: lk-review-fade-up 600ms ease-out 100ms both;
 }
 
 /* ---- Disclosure chevrons ---- */
 
-.sprout .sprout-deck-disclosure {
+.learnkit .learnkit-deck-disclosure {
   appearance: none;
   border: 0;
   background: transparent;
@@ -42,7 +42,7 @@
   color: var(--text-muted);
 }
 
-.sprout .sprout-deck-disclosure-btn {
+.learnkit .learnkit-deck-disclosure-btn {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -53,22 +53,22 @@
   min-height: 28px !important;
 }
 
-.sprout .sprout-deck-disclosure:hover {
+.learnkit .learnkit-deck-disclosure:hover {
   color: var(--color-base-100);
 }
 
-.sprout .sprout-deck-disclosure:hover svg,
-.sprout .sprout-deck-disclosure:focus-visible svg {
+.learnkit .learnkit-deck-disclosure:hover svg,
+.learnkit .learnkit-deck-disclosure:focus-visible svg {
   color: var(--color-base-100);
 }
 
-.sprout .sprout-deck-disclosure:focus-visible {
+.learnkit .learnkit-deck-disclosure:focus-visible {
   outline: 2px solid rgba(var(--interactive-accent-rgb), 0.45);
   outline-offset: 2px;
   border-radius: var(--radius-l);
 }
 
-.sprout .sprout-deck-disclosure svg {
+.learnkit .learnkit-deck-disclosure svg {
   width: 12.8px;
   height: 12.8px;
   transition: transform 140ms ease;
@@ -76,13 +76,13 @@
 }
 
 /* No rotation for plus/minus disclosure */
-.sprout .sprout-deck-disclosure[data-open="true"] svg {
+.learnkit .learnkit-deck-disclosure[data-open="true"] svg {
   transform: none;
 }
 
 /* ---- Group select popover ---- */
 
-.sprout .sprout-group-select-popover {
+.learnkit .learnkit-group-select-popover {
   position: absolute;
   left: 0;
   top: calc(100% + 6px);
@@ -92,26 +92,26 @@
   z-index: 10000;
   background: var(--background) !important;
   color: var(--foreground) !important;
-  border-color: var(--sprout-border-color) !important;
+  border-color: var(--learnkit-border-color) !important;
   box-shadow: none !important;
   pointer-events: auto;
 }
 
-.sprout .sprout-group-select-popover.is-open {
+.learnkit .learnkit-group-select-popover.is-open {
   display: block !important;
 }
 
-.sprout .sprout-group-select-header {
+.learnkit .learnkit-group-select-header {
   padding: 0px 8px;
   background: transparent !important;
   pointer-events: auto;
 }
 
-.sprout .sprout-group-search-input {
+.learnkit .learnkit-group-search-input {
   width: 100%;
   background: var(--background);
   color: var(--foreground);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-l);
   padding: 6px 10px;
   outline: none;
@@ -119,51 +119,51 @@
   pointer-events: auto;
 }
 
-.sprout .sprout-deck-search-input {
+.learnkit .learnkit-deck-search-input {
   min-width: 0;
   height: var(--lk-home-row-height, 42px);
 }
 
-.sprout .sprout-deck-group-combo {
+.learnkit .learnkit-deck-group-combo {
   flex: 0 1 auto;
   z-index: 100;
 }
 
-.sprout .sprout-deck-title-actions {
+.learnkit .learnkit-deck-title-actions {
   margin-left: auto;
   justify-content: flex-end;
 }
 
-.sprout .lk-review-title-strip-deck .lk-review-title-timer-host,
-.sprout .sprout-review-title-strip-deck .sprout-review-title-timer-host {
+.learnkit .lk-review-title-strip-deck .lk-review-title-timer-host,
+.learnkit .learnkit-review-title-strip-deck .learnkit-review-title-timer-host {
   min-width: 0;
   flex: 0 1 auto;
 }
 
-.sprout .sprout-deck-bottom-actions {
+.learnkit .learnkit-deck-bottom-actions {
   display: flex;
   justify-content: flex-end;
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-deck-controls-row {
+body.is-mobile .learnkit .learnkit-deck-controls-row {
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-deck-title-actions {
+body.is-mobile .learnkit .learnkit-deck-title-actions {
   width: 100%;
   justify-content: stretch;
 }
 
-body.is-mobile .sprout .sprout-deck-group-combo {
+body.is-mobile .learnkit .learnkit-deck-group-combo {
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-deck-group-popover {
+body.is-mobile .learnkit .learnkit-deck-group-popover {
   width: 100% !important;
 }
 
-body.is-mobile .sprout .lk-review-title-strip-deck .lk-review-title-row {
+body.is-mobile .learnkit .lk-review-title-strip-deck .lk-review-title-row {
   display: grid;
   grid-template-columns: 1fr;
   justify-items: center;
@@ -171,94 +171,94 @@ body.is-mobile .sprout .lk-review-title-strip-deck .lk-review-title-row {
   gap: 8px;
 }
 
-body.is-mobile .sprout .lk-review-title-strip-deck .lk-review-title-row > :first-child {
+body.is-mobile .learnkit .lk-review-title-strip-deck .lk-review-title-row > :first-child {
   width: 100%;
   text-align: center;
 }
 
-body.is-mobile .sprout .lk-review-title-strip-deck .lk-review-title-row > :last-child,
-body.is-mobile .sprout .lk-review-title-strip-deck .lk-review-title-timer-host {
+body.is-mobile .learnkit .lk-review-title-strip-deck .lk-review-title-row > :last-child,
+body.is-mobile .learnkit .lk-review-title-strip-deck .lk-review-title-timer-host {
   width: 100%;
 }
 
-body.is-mobile .sprout .lk-review-title-strip-deck .sprout-deck-title-actions {
+body.is-mobile .learnkit .lk-review-title-strip-deck .learnkit-deck-title-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   width: 100%;
 }
 
-body.is-mobile .sprout .lk-review-title-strip-deck .sprout-deck-group-combo {
+body.is-mobile .learnkit .lk-review-title-strip-deck .learnkit-deck-group-combo {
   width: auto;
   min-width: 0;
 }
 
-body.is-mobile .sprout .lk-review-title-strip-deck .sprout-deck-study-all-btn,
-body.is-mobile .sprout .lk-review-title-strip-deck .sprout-deck-group-trigger,
-body.is-mobile .sprout .lk-review-title-strip-deck .sprout-deck-group-combo {
+body.is-mobile .learnkit .lk-review-title-strip-deck .learnkit-deck-study-all-btn,
+body.is-mobile .learnkit .lk-review-title-strip-deck .learnkit-deck-group-trigger,
+body.is-mobile .learnkit .lk-review-title-strip-deck .learnkit-deck-group-combo {
   width: 100% !important;
 }
 
-body.is-mobile .sprout .sprout-deck-left-actions {
+body.is-mobile .learnkit .learnkit-deck-left-actions {
   display: flex;
   flex-wrap: wrap;
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-deck-title-actions {
+body.is-mobile .learnkit .learnkit-deck-title-actions {
   display: flex;
   flex-wrap: wrap;
 }
 
-body.is-mobile .sprout .sprout-deck-study-all-btn,
-body.is-mobile .sprout .sprout-deck-group-combo {
+body.is-mobile .learnkit .learnkit-deck-study-all-btn,
+body.is-mobile .learnkit .learnkit-deck-group-combo {
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-deck-study-all-btn,
-body.is-mobile .sprout .sprout-deck-group-trigger {
+body.is-mobile .learnkit .learnkit-deck-study-all-btn,
+body.is-mobile .learnkit .learnkit-deck-group-trigger {
   width: 100% !important;
   min-width: 0;
   justify-content: center;
 }
 
-body.is-mobile .sprout .sprout-deck-expand-buttons {
+body.is-mobile .learnkit .learnkit-deck-expand-buttons {
   display: flex;
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-deck-bottom-actions {
+body.is-mobile .learnkit .learnkit-deck-bottom-actions {
   justify-content: stretch;
 }
 
-body.is-mobile .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
+body.is-mobile .learnkit .learnkit-deck-expand-buttons .learnkit-btn-toolbar {
   flex: 1 1 0;
   min-width: 0;
   justify-content: center;
 }
 
 @media (max-width: 900px) {
-  .sprout .lk-review-title-strip-deck .lk-review-title-row,
-  .sprout .sprout-review-title-strip-deck .sprout-review-title-row {
+  .learnkit .lk-review-title-strip-deck .lk-review-title-row,
+  .learnkit .learnkit-review-title-strip-deck .learnkit-review-title-row {
     align-items: flex-start;
     gap: 8px;
   }
 
-  .sprout .lk-review-title-strip-deck .lk-review-title-timer-host,
-  .sprout .sprout-review-title-strip-deck .sprout-review-title-timer-host {
+  .learnkit .lk-review-title-strip-deck .lk-review-title-timer-host,
+  .learnkit .learnkit-review-title-strip-deck .learnkit-review-title-timer-host {
     width: 100%;
     margin-left: 0;
     justify-content: stretch;
   }
 
-  .sprout .sprout-deck-title-actions {
+  .learnkit .learnkit-deck-title-actions {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  .sprout .sprout-deck-controls-row {
+  .learnkit .learnkit-deck-controls-row {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr;
@@ -266,31 +266,31 @@ body.is-mobile .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
     gap: 8px;
   }
 
-  .sprout .sprout-deck-left-actions,
-  .sprout .sprout-deck-group-combo,
-  .sprout .sprout-deck-expand-buttons {
+  .learnkit .learnkit-deck-left-actions,
+  .learnkit .learnkit-deck-group-combo,
+  .learnkit .learnkit-deck-expand-buttons {
     width: 100%;
     min-width: 0;
   }
 
-  .sprout .sprout-deck-left-actions {
+  .learnkit .learnkit-deck-left-actions {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  .sprout .sprout-deck-study-all-btn,
-  .sprout .sprout-deck-group-trigger {
+  .learnkit .learnkit-deck-study-all-btn,
+  .learnkit .learnkit-deck-group-trigger {
     width: 100% !important;
     min-width: 0;
     justify-content: space-between;
   }
 
-  .sprout .sprout-deck-bottom-actions {
+  .learnkit .learnkit-deck-bottom-actions {
     justify-content: stretch;
   }
 
-  .sprout .sprout-deck-expand-buttons {
+  .learnkit .learnkit-deck-expand-buttons {
     margin-left: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -298,83 +298,83 @@ body.is-mobile .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
     width: 100%;
   }
 
-  .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
+  .learnkit .learnkit-deck-expand-buttons .learnkit-btn-toolbar {
     width: 100%;
     min-width: 0;
     justify-content: center;
   }
 
-  .sprout .sprout-group-select-popover,
-  .sprout .sprout-deck-group-popover {
+  .learnkit .learnkit-group-select-popover,
+  .learnkit .learnkit-deck-group-popover {
     width: 100%;
     max-width: min(420px, calc(100vw - 32px));
   }
 }
 
 @media (max-width: 560px) {
-  .sprout .sprout-deck-expand-buttons {
+  .learnkit .learnkit-deck-expand-buttons {
     grid-template-columns: 1fr;
   }
 }
 
-.sprout .sprout-deck-table-outer {
+.learnkit .learnkit-deck-table-outer {
   border: none !important;
   height: 100% !important;
 }
 
-.sprout .sprout-deck-row {
+.learnkit .learnkit-deck-row {
   border-radius: var(--radius-md, 8px) !important;
   overflow: hidden !important;
   cursor: pointer !important;
 }
 
-.sprout .sprout-deck-name-row {
-  padding-left: var(--sprout-deck-indent, 0px) !important;
+.learnkit .learnkit-deck-name-row {
+  padding-left: var(--learnkit-deck-indent, 0px) !important;
 }
 
-.sprout .sprout-deck-spacer {
+.learnkit .learnkit-deck-spacer {
   display: inline-block !important;
-  width: var(--sprout-deck-spacer-size, 28px) !important;
-  height: var(--sprout-deck-spacer-size, 28px) !important;
+  width: var(--learnkit-deck-spacer-size, 28px) !important;
+  height: var(--learnkit-deck-spacer-size, 28px) !important;
 }
 
-.sprout .sprout-group-search-input:focus {
+.learnkit .learnkit-group-search-input:focus {
   border-color: var(--ring);
   box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.25);
 }
 
-.sprout .sprout-deck-expand-icon svg {
+.learnkit .learnkit-deck-expand-icon svg {
   width: 12.8px;
   height: 12.8px;
 }
 
 /* Deck Browser: scale down plus/minus icons by 20% */
-.sprout .sprout-deck-expand-icon svg,
-.sprout .sprout-deck-disclosure svg {
+.learnkit .learnkit-deck-expand-icon svg,
+.learnkit .learnkit-deck-disclosure svg {
   width: 12.8px !important;
   height: 12.8px !important;
 }
 
-.sprout .sprout-deck-control-icon svg {
+.learnkit .learnkit-deck-control-icon svg {
   width: 14px !important;
   height: 14px !important;
 }
 
 /* Group select popover: clip inner borders to rounded corners */
-.sprout .sprout-group-select-popover {
+.learnkit .learnkit-group-select-popover {
   border-radius: var(--radius-l);
   overflow: hidden;
 }
 
 /* Ensure group select popover is never transparent */
-.sprout-group-select-popover {
+.learnkit-group-select-popover {
   background: var(--background, #fff) !important;
   background-color: var(--background, #fff) !important;
 }
 
 /* ---- RenderDeck table padding + rounded row edges on hover ---- */
 
-.sprout .sprout-deck-table-wrap {
+.learnkit .learnkit-deck-table-wrap {
   padding: 20px !important;
   transition: background-color .2s;
   background-color: color-mix(in oklab, var(--background) 80%, transparent 20%) !important;
@@ -382,30 +382,30 @@ body.is-mobile .sprout .sprout-deck-expand-buttons .sprout-btn-toolbar {
   border-radius: var(--radius-l) !important;
 }
 
-body.is-phone .sprout .sprout-deck-table-wrap {
+body.is-phone .learnkit .learnkit-deck-table-wrap {
   padding: 0.8rem !important;
 }
 
-.sprout .sprout-deck-table-wrap:hover {
+.learnkit .learnkit-deck-table-wrap:hover {
   background-color: var(--background) !important;
 }
 
-.sprout .sprout-review-root[data-sprout-review-mode="deck"] .sprout-review-content-shell {
+.learnkit .learnkit-review-root[data-learnkit-review-mode="deck"] .learnkit-review-content-shell {
   padding: 20px !important;
 }
 
 /* Subtle hover on deck table header labels to hint at tooltips */
-.sprout .sprout-deck-header-label {
+.learnkit .learnkit-deck-header-label {
   transition: color 0.15s ease;
   cursor: default;
 }
 
-.sprout .sprout-deck-header-label:hover {
+.learnkit .learnkit-deck-header-label:hover {
   color: var(--color-base-100) !important;
 }
 
 /* Deck rows: keep a hidden baseline border so hover border-color can render. */
-.sprout .sprout-deck-table tbody td {
+.learnkit .learnkit-deck-table tbody td {
   border-top: 1px solid var(--background);
   border-bottom: 1px solid var(--background);
   border-left: 0;
@@ -413,20 +413,20 @@ body.is-phone .sprout .sprout-deck-table-wrap {
   transition: border-color 0.18s ease;
 }
 
-.sprout .sprout-deck-table tbody td:first-child {
+.learnkit .learnkit-deck-table tbody td:first-child {
   border-left: 1px solid var(--background);
 }
 
-.sprout .sprout-deck-table tbody td:last-child {
+.learnkit .learnkit-deck-table tbody td:last-child {
   border-right: 1px solid var(--background);
 }
 
-.sprout .sprout-deck-table tbody tr:hover td:first-child {
+.learnkit .learnkit-deck-table tbody tr:hover td:first-child {
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
 }
 
-.sprout .sprout-deck-table tbody tr:hover td:last-child {
+.learnkit .learnkit-deck-table tbody tr:hover td:last-child {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }

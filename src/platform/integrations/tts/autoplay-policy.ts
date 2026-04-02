@@ -1,3 +1,12 @@
+/**
+ * @file src/platform/integrations/tts/autoplay-policy.ts
+ * @summary Module for autoplay policy.
+ *
+ * @exports
+ *  - CardTypeLike
+ *  - shouldSkipBackAutoplay
+ */
+
 export type CardTypeLike = {
   type?: unknown;
 };

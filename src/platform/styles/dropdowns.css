@@ -6,56 +6,56 @@
 /* ---- Basecoat accent tokens passthrough ---- */
 
 /* Sprout: force Basecoat accent tokens on all Basecoat-scoped nodes */
-.sprout :where(.bc),
-:where(.sprout.bc) {
+.learnkit :where(.bc),
+:where(.learnkit.bc) {
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 }
 
 /* Obsidian dark mode class */
-:where(.theme-dark .sprout .bc),
-:where(.theme-dark .sprout.bc) {
+:where(.theme-dark .learnkit .bc),
+:where(.theme-dark .learnkit.bc) {
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 }
 
 /* ---- Dropdown menu basics ---- */
 
-.sprout .dropdown-menu hr {margin: 0; border-radius: var(--radius-md);
+.learnkit .dropdown-menu hr {margin: 0; border-radius: var(--radius-md);
     overflow: hidden;}
 
 
 /* ---- Dropdown menu hover/focus: light + dark ---- */
 
-.sprout.dropdown-menu .bg-popover {
+.learnkit.dropdown-menu .bg-popover {
   background-color: #fff;
   color: var(--popover-fg, var(--foreground));
   border-radius: var(--radius-md);
 }
 
 /* Menu item hover/focus: light theme - very light grey */
-.sprout.dropdown-menu .group:hover,
-.sprout.dropdown-menu .group:focus {
+.learnkit.dropdown-menu .group:hover,
+.learnkit.dropdown-menu .group:focus {
   background-color: var(--color-background);
   color: var(--text-normal, var(--text-color));
 }
 
 /* Menu item hover/focus: dark theme */
-.theme-dark .sprout.dropdown-menu .group:hover,
-.theme-dark .sprout.dropdown-menu .group:focus {
+.theme-dark .learnkit.dropdown-menu .group:hover,
+.theme-dark .learnkit.dropdown-menu .group:focus {
   background-color: var(--color-background);
   color: var(--text-normal, var(--text-color));
 }
 
 /* Dark theme popover background */
-.theme-dark .sprout.dropdown-menu .bg-popover {
+.theme-dark .learnkit.dropdown-menu .bg-popover {
   background-color: var(--popover-bg, var(--background));
 }
 
 /* ---- Unified Basecoat dropdowns + filter panels ---- */
 
 /* Floating popover containers */
-.sprout :where(
+.learnkit :where(
   .dropdown-menu > .min-w-56,
   .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1
 ) {
@@ -66,12 +66,12 @@
 }
 
 /* Inherit theme border-radius on all popover panels (overrides Tailwind rounded-lg) */
-.sprout :where(.rounded-lg.border.bg-popover) {
+.learnkit :where(.rounded-lg.border.bg-popover) {
   border-radius: var(--button-radius, var(--radius-md));
 }
 
 /* Menu items: role=menuitem + role=menuitemradio */
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group {
   color: var(--text-color);
   margin: 1px 0;
@@ -80,80 +80,80 @@
 }
 
 /* Hover / focus / active */
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:hover,
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:focus,
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:focus-visible {
   background-color: var(--color-background);
   color: var(--text-color);
 }
 
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:active {
   background-color: var(--color-background);
   color: var(--text-color);
 }
 
 /* Selected / current states */
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   [role="menuitemradio"].group[aria-checked="true"],
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   [role="menuitem"].group[aria-current="true"],
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   [role="menuitem"].group[aria-selected="true"] {
   background-color: var(--color-background);
   color: var(--text-color);
 }
 
 /* Radio dot matches text color */
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   [role="menuitemradio"].group .bg-foreground {
   background-color: currentColor;
 }
 
 /* Icons inside menu items: override muted + inherit color */
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group > span[aria-hidden="true"] {
   color: currentColor;
   opacity: 0.9;
 }
 
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:hover > span[aria-hidden="true"],
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:focus > span[aria-hidden="true"],
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:focus-visible > span[aria-hidden="true"] {
   opacity: 1;
 }
 
 /* Ensure SVG strokes inherit everywhere */
-.sprout :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   svg {
   stroke: currentColor;
   fill: none;
 }
 
 /* Collapsible section headers in the filter panel (role=button) */
-.sprout :where(.bc.p-1, .p-1) [role="button"] {
+.learnkit :where(.bc.p-1, .p-1) [role="button"] {
   color: var(--text-color);
   margin: 1px 0;
   border-radius: var(--radius-md);
 }
 
-.sprout :where(.bc.p-1, .p-1) [role="button"]:hover,
-.sprout :where(.bc.p-1, .p-1) [role="button"]:active,
-.sprout :where(.bc.p-1, .p-1) [role="button"]:focus,
-.sprout :where(.bc.p-1, .p-1) [role="button"]:focus-visible {
+.learnkit :where(.bc.p-1, .p-1) [role="button"]:hover,
+.learnkit :where(.bc.p-1, .p-1) [role="button"]:active,
+.learnkit :where(.bc.p-1, .p-1) [role="button"]:focus,
+.learnkit :where(.bc.p-1, .p-1) [role="button"]:focus-visible {
   background-color: var(--color-background);
   color: var(--text-color);
   outline: none;
 }
 
 /* Decks / Groups subtitles (non-clickable headings) */
-.sprout :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.px-2.py-1 {
+.learnkit :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.px-2.py-1 {
   color: var(--text-color);
 }
 
@@ -161,61 +161,61 @@
 /* Replaces inline: position:fixed; z-index:999999; display:none;
    pointer-events:auto across 10+ files */
 
-.sprout .sprout-popover-overlay,
-.sprout.sprout-popover-overlay {
+.learnkit .learnkit-popover-overlay,
+.learnkit.learnkit-popover-overlay {
   position: fixed;
   z-index: var(--lk-z-popover-overlay);
   display: none;
   pointer-events: auto;
-  left: var(--sprout-popover-left, auto);
-  top: var(--sprout-popover-top, auto);
-  width: var(--sprout-popover-width, auto);
+  left: var(--learnkit-popover-left, auto);
+  top: var(--learnkit-popover-top, auto);
+  width: var(--learnkit-popover-width, auto);
 }
 
-.sprout .sprout-popover-overlay.is-open,
-.sprout.sprout-popover-overlay.is-open {
+.learnkit .learnkit-popover-overlay.is-open,
+.learnkit.learnkit-popover-overlay.is-open {
   display: block;
 }
 
 /* Browser radio dropdown popovers: match analytics filter popover surface + states. */
-.sprout .sprout-dd-popover .sprout-dd-panel {
+.learnkit .learnkit-dd-popover .learnkit-dd-panel {
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
-.sprout .sprout-dd-popover [role="menuitemradio"].group {
+.learnkit .learnkit-dd-popover [role="menuitemradio"].group {
   border: 1px solid transparent;
   background-color: transparent;
 }
 
-.sprout .sprout-dd-popover [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
-.sprout .sprout-dd-popover [role="menuitemradio"].group[aria-checked="true"] {
+.learnkit .learnkit-dd-popover [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
+.learnkit .learnkit-dd-popover [role="menuitemradio"].group[aria-checked="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 /* Sprout-scoped zoom for portalled popovers / dropdowns */
-.sprout .dropdown-menu.sprout-popover-overlay,
-.sprout.dropdown-menu.sprout-popover-overlay,
-.sprout .sprout-ss-popover.sprout-popover-overlay,
-.sprout.sprout-ss-popover.sprout-popover-overlay {
-  zoom: var(--sprout-leaf-zoom, 1);
+.learnkit .dropdown-menu.learnkit-popover-overlay,
+.learnkit.dropdown-menu.learnkit-popover-overlay,
+.learnkit .learnkit-ss-popover.learnkit-popover-overlay,
+.learnkit.learnkit-ss-popover.learnkit-popover-overlay {
+  zoom: var(--learnkit-leaf-zoom, 1);
 }
 
-.sprout .sprout-overflow-visible {
+.learnkit .learnkit-overflow-visible {
   overflow: visible;
 }
 
-.sprout .sprout-columns-panel {
+.learnkit .learnkit-columns-panel {
   padding: 6px;
 }
 
 /* ---- Columns-panel items (dot / radio-button multiselect) ---- */
 
-.sprout .sprout-cols-item {
+.learnkit .learnkit-cols-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -231,19 +231,19 @@
   transition: background-color 80ms ease, border-color 80ms ease;
 }
 
-.sprout .sprout-cols-item:hover,
-.sprout .sprout-cols-item:focus {
+.learnkit .learnkit-cols-item:hover,
+.learnkit .learnkit-cols-item:focus {
   background-color: var(--color-base-20);
   border-color: var(--color-base-35);
   outline: none;
 }
 
-.sprout .sprout-cols-item[aria-checked="true"] {
+.learnkit .learnkit-cols-item[aria-checked="true"] {
   background-color: transparent;
 }
 
-.sprout .sprout-cols-item[aria-checked="true"]:hover,
-.sprout .sprout-cols-item[aria-checked="true"]:focus {
+.learnkit .learnkit-cols-item[aria-checked="true"]:hover,
+.learnkit .learnkit-cols-item[aria-checked="true"]:focus {
   background-color: var(--color-base-20);
   border-color: var(--color-base-35);
 }
@@ -252,7 +252,7 @@
 /* Replaces inline: position:absolute; top:calc(100%+6px); z-index:1000;
    min-width:250px across 7 analytics files */
 
-.sprout .sprout-chart-filter-panel {
+.learnkit .learnkit-chart-filter-panel {
   position: absolute;
   top: calc(100% + 6px);
   z-index: var(--lk-z-modal-container);
@@ -260,31 +260,31 @@
 }
 
 /* "Reset filters" (clickable text row) */
-.sprout :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
+.learnkit :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
   color: var(--text-color);
   border-radius: var(--radius-md);
   padding-top: 6px;
   padding-bottom: 6px;
 }
 
-.sprout :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:hover,
-.sprout :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:focus,
-.sprout :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:focus-visible {
+.learnkit :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:hover,
+.learnkit :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:focus,
+.learnkit :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer:focus-visible {
   background-color: var(--color-background);
   outline: none;
 }
 
 /* ---- Combobox / search popover ---- */
 
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground):not(.p-1) {
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground):not(.p-1) {
   background-color: var(--background);
   color: var(--text-color);
   border-color: var(--border-color, var(--border-border, var(--border)));
 }
 
 /* Header nav popover panel: transparent glass surface. */
-.sprout .sprout-header-menu-panel,
-.sprout-header-menu-panel {
+.learnkit .learnkit-header-menu-panel,
+.learnkit-header-menu-panel {
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
@@ -292,54 +292,54 @@
 }
 
 /* Keep header menu items visually soft: transparent base border + transparent hover fill. */
-.sprout .sprout-header-menu-panel .group,
-.sprout-header-menu-panel .group {
+.learnkit .learnkit-header-menu-panel .group,
+.learnkit-header-menu-panel .group {
   border: 1px solid transparent !important;
   background-color: transparent !important;
 }
 
-.sprout .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
-.sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
+.learnkit .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
+.learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
-  .sprout .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
-  .sprout-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
+  .learnkit .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
+  .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
     background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
     border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   }
 }
 
 /* Options in the listbox */
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   [role="option"].group {
   color: var(--text-color);
   margin: 1px 0;
   outline: none;
 }
 
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   [role="option"].group:hover,
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   [role="option"].group:active,
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   [role="option"].group:focus,
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   [role="option"].group:focus-visible {
   background-color: var(--color-background);
   color: var(--text-color);
 }
 
 /* If option text uses text-muted-foreground, force it to match */
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   [role="option"] .text-muted-foreground {
   color: var(--text-color);
 }
 
 /* Combobox header icon inherits text color */
-.sprout :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
+.learnkit :where(.rounded-lg.border.border-border.bg-popover.text-popover-foreground)
   .text-muted-foreground svg {
   stroke: currentColor;
 }
@@ -347,14 +347,14 @@
 /* ---- Searchable popover (settings) ---- */
 
 /* Trigger button — styled like Obsidian's native dropdown */
-.sprout-sp-trigger {
+.learnkit-sp-trigger {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   height: 30px;
   padding: 0 10px;
   border-radius: var(--radius-s, 4px);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background-secondary);
   color: var(--text-normal);
   font-size: var(--font-ui-small);
@@ -365,30 +365,30 @@
   transition: border-color 120ms ease;
 }
 
-.sprout-sp-trigger:hover {
+.learnkit-sp-trigger:hover {
   border-color: var(--interactive-accent);
 }
 
-.sprout-sp-trigger-label {
+.learnkit-sp-trigger-label {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
 }
 
-.sprout-sp-trigger-chevron {
+.learnkit-sp-trigger-chevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   opacity: 0.5;
 }
-.sprout-sp-trigger-chevron svg {
+.learnkit-sp-trigger-chevron svg {
   width: 14px;
   height: 14px;
 }
 
 /* Panel */
-.sprout-sp-panel {
+.learnkit-sp-panel {
   padding: 4px;
   max-height: 320px;
   display: flex;
@@ -396,28 +396,28 @@
   overflow: hidden;
   background: var(--background-primary);
   color: var(--text-normal);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
 }
 
 /* Search input wrapper */
-.sprout-sp-search-wrap {
+.learnkit-sp-search-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
 }
 
-.sprout-sp-search-icon {
+.learnkit-sp-search-icon {
   display: inline-flex;
   align-items: center;
   opacity: 0.45;
 }
-.sprout-sp-search-icon svg {
+.learnkit-sp-search-icon svg {
   width: 14px;
   height: 14px;
 }
 
-.sprout-sp-search-input {
+.learnkit-sp-search-input {
   flex: 1;
   border: none;
   outline: none;
@@ -427,27 +427,27 @@
   font-size: var(--font-ui-small);
   padding: 2px 0;
 }
-.sprout-sp-search-input::placeholder {
+.learnkit-sp-search-input::placeholder {
   color: var(--text-faint);
 }
 
 /* Options listbox */
-.sprout-sp-listbox {
+.learnkit-sp-listbox {
   overflow-y: auto;
   flex: 1;
   padding: 2px 0;
 }
 
-.sprout-sp-listbox::before {
+.learnkit-sp-listbox::before {
   content: "";
   display: block;
   height: 1px;
   margin: 4px 0 6px;
-  background: var(--sprout-border-color);
+  background: var(--learnkit-border-color);
 }
 
 /* Individual option item */
-.sprout-sp-item {
+.learnkit-sp-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -458,17 +458,17 @@
   color: var(--text-normal);
   user-select: none;
 }
-.sprout-sp-item:hover,
-.sprout-sp-item:focus {
+.learnkit-sp-item:hover,
+.learnkit-sp-item:focus {
   background: var(--background-modifier-hover);
   outline: none;
 }
-.sprout-sp-item[aria-selected="true"] {
+.learnkit-sp-item[aria-selected="true"] {
   font-weight: 500;
 }
 
 /* Radio dot */
-.sprout-sp-dot-wrap {
+.learnkit-sp-dot-wrap {
   width: 16px;
   height: 16px;
   display: flex;
@@ -477,7 +477,7 @@
   flex-shrink: 0;
 }
 
-.sprout-sp-dot {
+.learnkit-sp-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -485,12 +485,12 @@
   transition: background 100ms ease;
 }
 
-.sprout-sp-dot.is-selected {
+.learnkit-sp-dot.is-selected {
   background: currentColor;
 }
 
 /* Empty state */
-.sprout-sp-empty {
+.learnkit-sp-empty {
   padding: 12px 8px;
   text-align: center;
   color: var(--text-faint);

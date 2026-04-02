@@ -3,11 +3,11 @@
  * @summary Custom Obsidian ItemView that renders Sprout settings inside the
  * workspace leaf (like Home, Analytics, Browser) rather than in the native
  * Obsidian settings modal. Uses the shared Sprout header, tab navigation,
- * and delegates individual tab rendering to the existing SproutSettingsTab
+ * and delegates individual tab rendering to the existing LearnKitSettingsTab
  * methods via a thin adapter layer.
  *
  * @exports
- *   - SproutSettingsView — ItemView subclass implementing the in-workspace settings view
+ *   - LearnKitSettingsView — ItemView subclass implementing the in-workspace settings view
  */
 
 import { ItemView, setIcon, type WorkspaceLeaf, MarkdownRenderer, Component, TFile, normalizePath } from "obsidian";
@@ -18,8 +18,8 @@ import { placePopover, setCssProps } from "../../platform/core/ui";
 import { createTitleStripFrame } from "../../platform/core/view-primitives";
 import { SPROUT_HOME_CONTENT_SHELL_CLASS } from "../../platform/core/ui-classes";
 import { refreshAOS } from "../../platform/core/aos-loader";
-import type SproutPlugin from "../../main";
-import { SproutSettingsTab } from "./settings-tab";
+import type LearnKitPlugin from "../../main";
+import { LearnKitSettingsTab } from "./settings-tab";
 import {
   getGuideCategories,
   getGuidePageDisplayLabel,
@@ -38,8 +38,8 @@ import { t } from "../../platform/translations/translator";
 import { txCommon } from "../../platform/translations/ui-common";
 import { getPluginDirCandidates } from "../../platform/core/identity";
 
-export class SproutSettingsView extends ItemView {
-  plugin: SproutPlugin;
+export class LearnKitSettingsView extends ItemView {
+  plugin: LearnKitPlugin;
 
   private _header: SproutHeader | null = null;
   private _rootEl: HTMLElement | null = null;
@@ -80,12 +80,12 @@ export class SproutSettingsView extends ItemView {
 
   /**
    * Lazily-created SettingsTab adapter used to call the existing render methods.
-   * We create a real SproutSettingsTab instance but never register it with
+    * We create a real LearnKitSettingsTab instance but never register it with
    * Obsidian — it is purely used as a rendering helper.
    */
-  private _settingsTabAdapter: SproutSettingsTab | null = null;
+    private _settingsTabAdapter: LearnKitSettingsTab | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -155,8 +155,8 @@ export class SproutSettingsView extends ItemView {
   }
 
   private _applyWidthMode() {
-    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-sprout-wide", "1");
-    else this.containerEl.removeAttribute("data-sprout-wide");
+    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-learnkit-wide", "1");
+    else this.containerEl.removeAttribute("data-learnkit-wide");
 
     const root = this._rootEl;
     const strip = this._titleStripEl;
@@ -165,7 +165,7 @@ export class SproutSettingsView extends ItemView {
     const maxWidth = this.plugin.isWideMode ? "100%" : MAX_CONTENT_WIDTH_PX;
     if (root) {
       setCssProps(root, "--lk-home-max-width", maxWidth);
-      setCssProps(root, "--sprout-settings-view-max-width", maxWidth);
+      setCssProps(root, "--learnkit-settings-view-max-width", maxWidth);
     }
     if (strip) setCssProps(strip, "--lk-home-max-width", maxWidth);
   }
@@ -192,18 +192,18 @@ export class SproutSettingsView extends ItemView {
     for (const tab of tabs) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "bc sprout-btn-toolbar sprout-settings-title-tab-btn sprout-btn-outline-muted inline-flex items-center gap-2";
+      btn.className = "learnkit-btn-toolbar learnkit-settings-title-tab-btn learnkit-btn-outline-muted inline-flex items-center gap-2";
       btn.setAttribute("aria-label", tab.label);
       btn.setAttribute("aria-pressed", tab.id === this._activeTab ? "true" : "false");
       btn.setAttribute("data-tooltip-position", "bottom");
 
       const iconWrap = document.createElement("span");
-      iconWrap.className = "sprout-settings-title-tab-btn-icon inline-flex items-center justify-center";
+      iconWrap.className = "learnkit-settings-title-tab-btn-icon inline-flex items-center justify-center";
       setIcon(iconWrap, tab.icon);
       btn.appendChild(iconWrap);
 
       const label = document.createElement("span");
-      label.className = "sprout-settings-title-tab-btn-label";
+      label.className = "learnkit-settings-title-tab-btn-label";
       label.textContent = tab.label;
       btn.appendChild(label);
 
@@ -249,8 +249,8 @@ export class SproutSettingsView extends ItemView {
     for (const [id, btn] of this._titleStripTabBtnEls) {
       const active = id === this._activeTab;
       btn.classList.toggle("is-active", active);
-      btn.classList.toggle("sprout-btn-control", active);
-      btn.classList.toggle("sprout-btn-outline-muted", !active);
+      btn.classList.toggle("learnkit-btn-control", active);
+      btn.classList.toggle("learnkit-btn-outline-muted", !active);
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     }
   }
@@ -258,13 +258,13 @@ export class SproutSettingsView extends ItemView {
   // ── Settings tab adapter ────────────────────────────────────
 
   /**
-   * Returns (or creates) a SproutSettingsTab instance that we use purely
+   * Returns (or creates) a LearnKitSettingsTab instance that we use purely
    * as a container for render methods. Its `containerEl` is pointed at our
    * own content element so the Obsidian `Setting` helper works correctly.
    */
-  private _getAdapter(): SproutSettingsTab {
+  private _getAdapter(): LearnKitSettingsTab {
     if (!this._settingsTabAdapter) {
-      this._settingsTabAdapter = new SproutSettingsTab(this.app, this.plugin);
+      this._settingsTabAdapter = new LearnKitSettingsTab(this.app, this.plugin);
       this._settingsTabAdapter.onRequestRerender = () => this._renderActiveTabContent();
     }
     return this._settingsTabAdapter;
@@ -282,23 +282,23 @@ export class SproutSettingsView extends ItemView {
     if (!stages.length) return;
 
     for (const { el } of stages) {
-      el.classList.remove("sprout-settings-top-enter");
-      el.style.removeProperty("--sprout-settings-enter-delay");
+      el.classList.remove("learnkit-settings-top-enter", "learnkit-settings-top-enter");
+      el.style.removeProperty("--learnkit-settings-enter-delay");
       // Remove AOS hooks on top stages so AOS cannot short-circuit title-strip motion.
       el.removeAttribute("data-aos");
       el.removeAttribute("data-aos-delay");
       el.removeAttribute("data-aos-duration");
       el.removeAttribute("data-aos-anchor-placement");
-      el.classList.remove("aos-init", "aos-animate", "sprout-aos-fallback");
+      el.classList.remove("aos-init", "aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
     }
 
     requestAnimationFrame(() => {
       for (const { el, delay } of stages) {
         if (!el.isConnected) continue;
-        el.style.setProperty("--sprout-settings-enter-delay", `${Math.max(0, delay)}ms`);
+        el.style.setProperty("--learnkit-settings-enter-delay", `${Math.max(0, delay)}ms`);
         // Force reflow so class re-add always restarts the keyframe.
         void el.offsetHeight;
-        el.classList.add("sprout-settings-top-enter");
+        el.classList.add("learnkit-settings-top-enter", "learnkit-settings-top-enter");
       }
     });
   }
@@ -315,18 +315,16 @@ export class SproutSettingsView extends ItemView {
     const tx = (token: string, fallback: string) =>
       t(this.plugin.settings?.general?.interfaceLanguage, token, fallback);
 
-    root.classList.add(
-      "bc",
-      "sprout-view-content",
-      "sprout-settings-view-root",
+    root.classList.add("learnkit-view-content", "learnkit-view-content",
+      "learnkit-settings-view-root", "learnkit-settings-view-root",
     );
 
-    this.containerEl.addClass("sprout");
+    this.containerEl.addClass("learnkit");
     this.setTitle?.(tx("ui.view.settings.title", "Settings"));
     this._ensureTitleStrip(root);
 
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
-    root.classList.toggle("sprout-no-animate", !animationsEnabled);
+    root.classList.toggle("learnkit-no-animate", !animationsEnabled);
 
     // ── Header ──
     if (!this._header) {
@@ -341,17 +339,17 @@ export class SproutSettingsView extends ItemView {
     this._applyWidthMode();
 
     const contentShell = document.createElement("div");
-    contentShell.className = `${SPROUT_HOME_CONTENT_SHELL_CLASS} sprout-settings-content-shell`;
+    contentShell.className = `${SPROUT_HOME_CONTENT_SHELL_CLASS} learnkit-settings-content-shell`;
     root.appendChild(contentShell);
     this._contentShellEl = contentShell;
     this._pageTitleEl = null;
 
     // ── Tab content ──
     const tabContentWrapper = document.createElement("div");
-    tabContentWrapper.className = "sprout-settings-tab-content-wrapper";
+    tabContentWrapper.className = "learnkit-settings-tab-content-wrapper";
 
     const tabContent = document.createElement("div");
-    tabContent.className = "sprout-settings-tab-content";
+    tabContent.className = "learnkit-settings-tab-content";
     tabContentWrapper.appendChild(tabContent);
     contentShell.appendChild(tabContentWrapper);
     this._tabContentEl = tabContent;
@@ -391,7 +389,7 @@ export class SproutSettingsView extends ItemView {
 
     // Save scroll position
     const prevScroll = container.scrollTop;
-    const previousInnerScroller = container.querySelector<HTMLElement>(".sprout-guide-content-inner--snap");
+    const previousInnerScroller = container.querySelector<HTMLElement>(".learnkit-guide-content-inner--snap");
     const prevInnerScroll = previousInnerScroller?.scrollTop ?? 0;
 
     // Clear
@@ -430,13 +428,13 @@ export class SproutSettingsView extends ItemView {
     const paneTitle = paneTitleMap[tab];
     if (paneTitle) {
       const heading = document.createElement("h1");
-      heading.className = "sprout-settings-pane-title";
+      heading.className = "learnkit-settings-pane-title";
       heading.textContent = paneTitle;
       container.appendChild(heading);
     }
 
     // We call the tab render methods directly using the adapter.
-    // These are private on SproutSettingsTab but accessible at runtime via
+    // These are private on LearnKitSettingsTab but accessible at runtime via
     // a type-erased reference. This avoids changing the SettingsTab API.
     try {
       type RenderMethodName =
@@ -485,38 +483,38 @@ export class SproutSettingsView extends ItemView {
 
       if (tab === "settings") {
         const settingsLayout = document.createElement("div");
-        settingsLayout.className = "sprout-settings-layout";
+        settingsLayout.className = "learnkit-settings-layout";
         container.appendChild(settingsLayout);
 
         const settingsHeader = document.createElement("div");
-        settingsHeader.className = "sprout-settings-layout-header";
+        settingsHeader.className = "learnkit-settings-layout-header";
         settingsLayout.appendChild(settingsHeader);
 
         const subNav = document.createElement("nav");
-        subNav.className = "sprout-settings-subtab-nav";
+        subNav.className = "learnkit-settings-subtab-nav";
         settingsHeader.appendChild(subNav);
 
         const settingsContentFrame = document.createElement("div");
-        settingsContentFrame.className = "sprout-settings-layout-content-frame sprout-guide-content";
+        settingsContentFrame.className = "learnkit-settings-layout-content-frame learnkit-guide-content";
         settingsLayout.appendChild(settingsContentFrame);
 
         const settingsInner = document.createElement("div");
-        settingsInner.className = "sprout-guide-content-inner sprout-guide-content-inner--snap";
+        settingsInner.className = "learnkit-guide-content-inner learnkit-guide-content-inner--snap";
         settingsContentFrame.appendChild(settingsInner);
         const settingsBody = document.createElement("div");
-        settingsBody.className = "sprout-guide-body markdown-rendered sprout-settings-layout-content";
+        settingsBody.className = "learnkit-guide-body markdown-rendered learnkit-settings-layout-content";
         settingsInner.appendChild(settingsBody);
 
         const settingsFooter = document.createElement("div");
-        settingsFooter.className = "sprout-guide-footer";
+        settingsFooter.className = "learnkit-guide-footer";
         settingsLayout.appendChild(settingsFooter);
 
         settingsSubTabs.forEach((sub) => {
           const group = document.createElement("div");
-          group.className = "sprout-guide-nav-group";
+          group.className = "learnkit-guide-nav-group";
 
           const btn = document.createElement("button");
-          btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-subtab-btn sprout-settings-action-btn";
+          btn.className = "inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-settings-subtab-btn learnkit-settings-action-btn";
           btn.type = "button";
           const tooltipMap: Record<string, string> = {
             general: tx("ui.settings.subTabs.tooltip.general", "Open general options"),
@@ -552,7 +550,7 @@ export class SproutSettingsView extends ItemView {
         });
 
         const updateSettingsHeaderClearance = () => {
-          setCssProps(settingsLayout, "--sprout-guide-topbar-clearance", "55px");
+          setCssProps(settingsLayout, "--learnkit-guide-topbar-clearance", "55px");
         };
 
         requestAnimationFrame(() => updateSettingsHeaderClearance());
@@ -579,18 +577,18 @@ export class SproutSettingsView extends ItemView {
 
         if (prevSubTab || nextSubTab) {
           const navBar = document.createElement("div");
-          navBar.className = "sprout-guide-prev-next";
+          navBar.className = "learnkit-guide-prev-next";
           settingsFooter.appendChild(navBar);
 
           if (prevSubTab) {
             const prevBtn = document.createElement("div");
-            prevBtn.className = "sprout-guide-prev-next-btn sprout-guide-prev-btn";
+            prevBtn.className = "learnkit-guide-prev-next-btn learnkit-guide-prev-btn";
             const label = document.createElement("div");
-            label.className = "sprout-guide-prev-next-label";
+            label.className = "learnkit-guide-prev-next-label";
             label.textContent = tx("ui.settings.nav.previous", "Previous");
             prevBtn.appendChild(label);
             const link = document.createElement("a");
-            link.className = "sprout-guide-prev-next-link";
+            link.className = "learnkit-guide-prev-next-link";
             link.textContent = `← ${prevSubTab.label}`;
             link.addEventListener("click", (ev) => {
               ev.preventDefault();
@@ -601,19 +599,19 @@ export class SproutSettingsView extends ItemView {
             navBar.appendChild(prevBtn);
           } else {
             const spacer = document.createElement("div");
-            spacer.className = "sprout-guide-prev-next-spacer";
+            spacer.className = "learnkit-guide-prev-next-spacer";
             navBar.appendChild(spacer);
           }
 
           if (nextSubTab) {
             const nextBtn = document.createElement("div");
-            nextBtn.className = "sprout-guide-prev-next-btn sprout-guide-next-btn";
+            nextBtn.className = "learnkit-guide-prev-next-btn learnkit-guide-next-btn";
             const label = document.createElement("div");
-            label.className = "sprout-guide-prev-next-label";
+            label.className = "learnkit-guide-prev-next-label";
             label.textContent = tx("ui.settings.nav.next", "Next");
             nextBtn.appendChild(label);
             const link = document.createElement("a");
-            link.className = "sprout-guide-prev-next-link";
+            link.className = "learnkit-guide-prev-next-link";
             link.textContent = `${nextSubTab.label} →`;
             link.addEventListener("click", (ev) => {
               ev.preventDefault();
@@ -624,7 +622,7 @@ export class SproutSettingsView extends ItemView {
             navBar.appendChild(nextBtn);
           } else {
             const spacer = document.createElement("div");
-            spacer.className = "sprout-guide-prev-next-spacer";
+            spacer.className = "learnkit-guide-prev-next-spacer";
             navBar.appendChild(spacer);
           }
         }
@@ -654,7 +652,7 @@ export class SproutSettingsView extends ItemView {
       } else {
         // Fallback: show a message
         const msg = document.createElement("div");
-        msg.className = "sprout-settings-text-muted";
+        msg.className = "learnkit-settings-text-muted";
         msg.textContent = t(
           this.plugin.settings?.general?.interfaceLanguage,
           "ui.settings.error.unknownTab",
@@ -668,14 +666,14 @@ export class SproutSettingsView extends ItemView {
     } catch (e) {
       log.error("Failed to render settings tab", e);
       const msg = document.createElement("div");
-      msg.className = "sprout-settings-text-muted";
+      msg.className = "learnkit-settings-text-muted";
       msg.textContent = tx("ui.settings.error.renderFailed", "Failed to render settings. See console for details.");
       container.appendChild(msg);
     }
 
     // Restore scroll position (or reset to top for fresh tab switch)
     requestAnimationFrame(() => {
-      const nextInnerScroller = container.querySelector<HTMLElement>(".sprout-guide-content-inner--snap");
+      const nextInnerScroller = container.querySelector<HTMLElement>(".learnkit-guide-content-inner--snap");
       if (nextInnerScroller) nextInnerScroller.scrollTop = prevInnerScroll;
       container.scrollTop = prevScroll;
       this._clearInnerAOS(container);
@@ -800,16 +798,16 @@ export class SproutSettingsView extends ItemView {
 
   private _renderGuideTab(container: HTMLElement) {
     const layout = document.createElement("div");
-    layout.className = "sprout-guide-layout";
+    layout.className = "learnkit-guide-layout";
     layout.classList.add("is-loading");
     container.appendChild(layout);
 
     const content = document.createElement("div");
-    content.className = "sprout-guide-content";
+    content.className = "learnkit-guide-content";
     layout.appendChild(content);
 
     let inner = document.createElement("div");
-    inner.className = "sprout-guide-content-inner sprout-guide-content-inner--snap";
+    inner.className = "learnkit-guide-content-inner learnkit-guide-content-inner--snap";
     content.appendChild(inner);
 
     const renderBody = async () => {
@@ -817,7 +815,7 @@ export class SproutSettingsView extends ItemView {
         const pages = this._orderGuidePagesByNavigation(await this._getGuidePages());
         if (!pages.length) {
           layout.classList.remove("is-loading");
-          inner.createDiv({ cls: "sprout-guide-loading-label", text: "No guide content available." });
+          inner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "No guide content available." });
           return;
         }
 
@@ -826,11 +824,11 @@ export class SproutSettingsView extends ItemView {
         }
 
         const nav = document.createElement("nav");
-        nav.className = "sprout-guide-nav";
+        nav.className = "learnkit-guide-nav";
         layout.insertBefore(nav, content);
 
         const dotsRail = document.createElement("div");
-        dotsRail.className = "sprout-guide-dots-rail";
+        dotsRail.className = "learnkit-guide-dots-rail";
         dotsRail.hidden = true;
         const isMobile = document.body.classList.contains("is-mobile");
         if (isMobile) {
@@ -839,7 +837,7 @@ export class SproutSettingsView extends ItemView {
         content.appendChild(dotsRail);
 
         const footer = document.createElement("div");
-        footer.className = "sprout-guide-footer";
+        footer.className = "learnkit-guide-footer";
         layout.appendChild(footer);
         const pageByKey = new Map(pages.map((page) => [page.key, page]));
         const categories = this._getGuideCategories();
@@ -849,7 +847,7 @@ export class SproutSettingsView extends ItemView {
         let openDropdownEl: HTMLDivElement | null = null;
 
         const dropdownPortal = document.createElement("div");
-        dropdownPortal.className = "sprout";
+        dropdownPortal.className = "learnkit";
         document.body.appendChild(dropdownPortal);
         this._guideDropdownPortal = dropdownPortal;
 
@@ -861,17 +859,17 @@ export class SproutSettingsView extends ItemView {
           if (!categoryPages.length) continue;
 
         const group = document.createElement("div");
-        group.className = "sprout-guide-nav-group";
+        group.className = "learnkit-guide-nav-group";
 
         const btn = document.createElement("button");
-        btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-guide-nav-btn sprout-settings-action-btn";
+        btn.className = "inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-guide-nav-btn learnkit-settings-action-btn";
         const isCategoryActive = categoryPages.some((p) => p.key === this._activeGuidePage);
         btn.classList.toggle("is-active", isCategoryActive);
         navCategoryBtns.push({ btn, pageKeys: new Set(categoryPages.map((p) => p.key)) });
 
         const categoryIcon = document.createElement("span");
         categoryIcon.className =
-          "sprout-guide-nav-icon inline-flex items-center justify-center [&_svg]:size-4 text-muted-foreground";
+          "learnkit-guide-nav-icon inline-flex items-center justify-center [&_svg]:size-4 text-muted-foreground";
         setIcon(categoryIcon, category.icon);
         btn.appendChild(categoryIcon);
 
@@ -892,15 +890,15 @@ export class SproutSettingsView extends ItemView {
           btn.setAttribute("aria-expanded", "false");
 
           const chevron = document.createElement("span");
-          chevron.className = "sprout-guide-nav-chevron";
+          chevron.className = "learnkit-guide-nav-chevron";
           setIcon(chevron, "chevron-down");
           btn.appendChild(chevron);
 
           const dropdown = document.createElement("div");
-          dropdown.className = "sprout-guide-dropdown";
+          dropdown.className = "learnkit-guide-dropdown";
           const menu = document.createElement("div");
           menu.className =
-            "sprout-guide-dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel flex flex-col";
+            "learnkit-guide-dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-header-menu-panel flex flex-col";
           menu.setAttribute("role", "menu");
           dropdown.appendChild(menu);
 
@@ -911,13 +909,13 @@ export class SproutSettingsView extends ItemView {
 
             if (!firstSection) {
               const divider = document.createElement("div");
-              divider.className = "sprout-guide-dropdown-divider my-1 h-px bg-border";
+              divider.className = "learnkit-guide-dropdown-divider my-1 h-px bg-border";
               menu.appendChild(divider);
             }
 
             if (section.title) {
               const labelEl = document.createElement("div");
-              labelEl.className = "sprout-guide-dropdown-label px-2 py-1.5 text-sm text-muted-foreground";
+              labelEl.className = "learnkit-guide-dropdown-label px-2 py-1.5 text-sm text-muted-foreground";
               labelEl.textContent = section.title;
               menu.appendChild(labelEl);
             }
@@ -926,7 +924,7 @@ export class SproutSettingsView extends ItemView {
               const item = document.createElement("button");
               item.type = "button";
               item.className =
-                "sprout-guide-dropdown-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+                "learnkit-guide-dropdown-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
               item.classList.toggle("is-active", page.key === this._activeGuidePage);
               item.setAttribute("role", "menuitem");
               item.tabIndex = 0;
@@ -935,7 +933,7 @@ export class SproutSettingsView extends ItemView {
 
               const iconWrap = document.createElement("span");
               iconWrap.className =
-                "sprout-guide-dropdown-icon inline-flex items-center justify-center [&_svg]:size-4 text-muted-foreground group-hover:text-inherit group-focus:text-inherit";
+                "learnkit-guide-dropdown-icon inline-flex items-center justify-center [&_svg]:size-4 text-muted-foreground group-hover:text-inherit group-focus:text-inherit";
               setIcon(iconWrap, this._getGuidePageIcon(page.key));
               item.appendChild(iconWrap);
 
@@ -988,7 +986,7 @@ export class SproutSettingsView extends ItemView {
             }
             if (openDropdownGroup && openDropdownGroup !== group) {
               const openDropdown = openDropdownEl;
-              const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".sprout-guide-nav-btn");
+              const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".learnkit-guide-nav-btn");
               if (openDropdown) openDropdown.classList.remove("is-visible");
               if (openBtn) openBtn.setAttribute("aria-expanded", "false");
               openDropdownGroup = null;
@@ -1038,13 +1036,13 @@ export class SproutSettingsView extends ItemView {
           setActiveGuideNav();
 
           const nextInner = document.createElement("div");
-          nextInner.className = "sprout-guide-content-inner sprout-guide-content-inner--snap";
+          nextInner.className = "learnkit-guide-content-inner learnkit-guide-content-inner--snap";
           if (showInlineLoading) nextInner.classList.add("is-loading-inline");
           inner.replaceWith(nextInner);
           inner = nextInner;
 
           const body = document.createElement("div");
-          body.className = "sprout-guide-body markdown-rendered";
+          body.className = "learnkit-guide-body markdown-rendered";
           inner.appendChild(body);
 
           const selected = pages.find((p) => p.key === this._activeGuidePage) ?? pages[0];
@@ -1088,7 +1086,7 @@ export class SproutSettingsView extends ItemView {
 
             const dotBtns = headingEls.map((heading) => {
               const dot = document.createElement("span");
-              dot.className = "sprout-guide-dot";
+              dot.className = "learnkit-guide-dot";
               dot.setAttribute("role", "button");
               dot.tabIndex = 0;
 
@@ -1190,7 +1188,7 @@ export class SproutSettingsView extends ItemView {
               setActiveDotWithSteps(activeIdx);
 
               const progress = max > 0 ? inner.scrollTop / max : 0;
-              setCssProps(content, "--sprout-guide-scroll-progress", progress.toFixed(4));
+              setCssProps(content, "--learnkit-guide-scroll-progress", progress.toFixed(4));
             };
 
             inner.addEventListener("scroll", updateActiveDot, { passive: true });
@@ -1207,18 +1205,18 @@ export class SproutSettingsView extends ItemView {
           if (prevPage || nextPage) {
             const common = txCommon(this.plugin.settings?.general?.interfaceLanguage);
             const navBar = document.createElement("div");
-            navBar.className = "sprout-guide-prev-next";
+            navBar.className = "learnkit-guide-prev-next";
             footer.appendChild(navBar);
 
             if (prevPage) {
               const prevBtn = document.createElement("div");
-              prevBtn.className = "sprout-guide-prev-next-btn sprout-guide-prev-btn";
+              prevBtn.className = "learnkit-guide-prev-next-btn learnkit-guide-prev-btn";
               const label = document.createElement("div");
-              label.className = "sprout-guide-prev-next-label";
+              label.className = "learnkit-guide-prev-next-label";
               label.textContent = common.previous;
               prevBtn.appendChild(label);
               const link = document.createElement("a");
-              link.className = "sprout-guide-prev-next-link";
+              link.className = "learnkit-guide-prev-next-link";
               link.textContent = `← ${prevPage.label}`;
               link.addEventListener("click", (ev) => {
                 ev.preventDefault();
@@ -1229,19 +1227,19 @@ export class SproutSettingsView extends ItemView {
               navBar.appendChild(prevBtn);
             } else {
               const spacer = document.createElement("div");
-              spacer.className = "sprout-guide-prev-next-spacer";
+              spacer.className = "learnkit-guide-prev-next-spacer";
               navBar.appendChild(spacer);
             }
 
             if (nextPage) {
               const nextBtn = document.createElement("div");
-              nextBtn.className = "sprout-guide-prev-next-btn sprout-guide-next-btn";
+              nextBtn.className = "learnkit-guide-prev-next-btn learnkit-guide-next-btn";
               const label = document.createElement("div");
-              label.className = "sprout-guide-prev-next-label";
+              label.className = "learnkit-guide-prev-next-label";
               label.textContent = common.next;
               nextBtn.appendChild(label);
               const link = document.createElement("a");
-              link.className = "sprout-guide-prev-next-link";
+              link.className = "learnkit-guide-prev-next-link";
               link.textContent = `${nextPage.label} →`;
               link.addEventListener("click", (ev) => {
                 ev.preventDefault();
@@ -1252,7 +1250,7 @@ export class SproutSettingsView extends ItemView {
               navBar.appendChild(nextBtn);
             } else {
               const spacer = document.createElement("div");
-              spacer.className = "sprout-guide-prev-next-spacer";
+              spacer.className = "learnkit-guide-prev-next-spacer";
               navBar.appendChild(spacer);
             }
           }
@@ -1266,7 +1264,7 @@ export class SproutSettingsView extends ItemView {
           const target = ev.target as Node | null;
           if (!target || !openDropdownGroup || openDropdownGroup.contains(target) || openDropdownEl?.contains(target)) return;
           const openDropdown = openDropdownEl;
-          const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".sprout-guide-nav-btn");
+          const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".learnkit-guide-nav-btn");
           if (openDropdown) openDropdown.classList.remove("is-visible");
           if (openBtn) openBtn.setAttribute("aria-expanded", "false");
           openDropdownGroup = null;
@@ -1278,7 +1276,7 @@ export class SproutSettingsView extends ItemView {
             if (pageKey === this._activeGuidePage) return;
             if (openDropdownGroup) {
               const openDropdown = openDropdownEl;
-              const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".sprout-guide-nav-btn");
+              const openBtn = openDropdownGroup.querySelector<HTMLButtonElement>(".learnkit-guide-nav-btn");
               if (openDropdown) openDropdown.classList.remove("is-visible");
               if (openBtn) openBtn.setAttribute("aria-expanded", "false");
               openDropdownGroup = null;
@@ -1294,7 +1292,7 @@ export class SproutSettingsView extends ItemView {
         layout.classList.remove("is-loading");
       } catch {
         layout.classList.remove("is-loading");
-        inner.createDiv({ cls: "sprout-guide-loading-label", text: "Could not load guide." });
+        inner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "Could not load guide." });
       }
     };
 
@@ -1303,29 +1301,29 @@ export class SproutSettingsView extends ItemView {
 
   private _renderReleaseNotesTab(container: HTMLElement) {
     const layout = document.createElement("div");
-    layout.className = "sprout-guide-layout sprout-release-layout";
+    layout.className = "learnkit-guide-layout learnkit-release-layout";
     layout.classList.add("is-loading");
     container.appendChild(layout);
 
     const navFrame = document.createElement("div");
-    navFrame.className = "sprout-release-nav-frame is-at-start";
+    navFrame.className = "learnkit-release-nav-frame is-at-start";
     navFrame.hidden = true;
     layout.appendChild(navFrame);
 
     const nav = document.createElement("nav");
-    nav.className = "sprout-release-nav";
+    nav.className = "learnkit-release-nav";
     navFrame.appendChild(nav);
 
     const content = document.createElement("div");
-    content.className = "sprout-guide-content";
+    content.className = "learnkit-guide-content";
     layout.appendChild(content);
 
     const contentInner = document.createElement("div");
-    contentInner.className = "sprout-guide-content-inner sprout-guide-content-inner--snap";
+    contentInner.className = "learnkit-guide-content-inner learnkit-guide-content-inner--snap";
     content.appendChild(contentInner);
 
     const dotsRail = document.createElement("div");
-    dotsRail.className = "sprout-guide-dots-rail";
+    dotsRail.className = "learnkit-guide-dots-rail";
     dotsRail.hidden = true;
     const isMobile = document.body.classList.contains("is-mobile");
     if (isMobile) {
@@ -1334,7 +1332,7 @@ export class SproutSettingsView extends ItemView {
     content.appendChild(dotsRail);
 
     const footer = document.createElement("div");
-    footer.className = "sprout-guide-footer";
+    footer.className = "learnkit-guide-footer";
     footer.hidden = true;
     layout.appendChild(footer);
 
@@ -1343,7 +1341,7 @@ export class SproutSettingsView extends ItemView {
         const pages = await this._getReleaseNotesPages();
         if (!pages.length) {
           layout.classList.remove("is-loading");
-          contentInner.createDiv({ cls: "sprout-guide-loading-label", text: "No release notes available." });
+          contentInner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "No release notes available." });
           return;
         }
 
@@ -1368,7 +1366,7 @@ export class SproutSettingsView extends ItemView {
         syncFade();
       } catch {
         layout.classList.remove("is-loading");
-        contentInner.createDiv({ cls: "sprout-guide-loading-label", text: "Could not load release notes." });
+        contentInner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "Could not load release notes." });
       }
     })();
   }
@@ -1377,11 +1375,11 @@ export class SproutSettingsView extends ItemView {
     nav.empty();
     for (const page of pages) {
       const group = document.createElement("div");
-      group.className = "sprout-guide-nav-group";
+      group.className = "learnkit-guide-nav-group";
 
       const btn = document.createElement("button");
       const isActive = page.key === this._activeReleasePage;
-      btn.className = "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-subtab-btn sprout-settings-action-btn sprout-release-nav-btn";
+      btn.className = "inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-settings-subtab-btn learnkit-settings-action-btn learnkit-release-nav-btn";
       btn.classList.toggle("is-active", isActive);
       btn.type = "button";
       const label = document.createElement("span");
@@ -1415,7 +1413,7 @@ export class SproutSettingsView extends ItemView {
     dotsRail.hidden = true;
 
     const body = document.createElement("div");
-    body.className = "sprout-guide-body markdown-rendered";
+    body.className = "learnkit-guide-body markdown-rendered";
     contentInner.appendChild(body);
 
     if (active.version) {
@@ -1424,9 +1422,9 @@ export class SproutSettingsView extends ItemView {
       body.appendChild(h1);
 
       const badge = document.createElement("span");
-      badge.className = "sprout-guide-updated-badge";
+      badge.className = "learnkit-guide-updated-badge";
       const iconSpan = document.createElement("span");
-      iconSpan.className = "sprout-guide-updated-badge-icon";
+      iconSpan.className = "learnkit-guide-updated-badge-icon";
       setIcon(iconSpan, "calendar");
       const textSpan = document.createElement("span");
       textSpan.textContent = `Date released: ${active.modifiedDate ?? this._formatDate(undefined)}`;
@@ -1463,7 +1461,7 @@ export class SproutSettingsView extends ItemView {
 
       const dotBtns = headingEls.map((heading) => {
         const dot = document.createElement("span");
-        dot.className = "sprout-guide-dot";
+        dot.className = "learnkit-guide-dot";
         dot.setAttribute("role", "button");
         dot.tabIndex = 0;
 
@@ -1565,7 +1563,7 @@ export class SproutSettingsView extends ItemView {
         setActiveDotWithSteps(activeIdx);
 
         const progress = max > 0 ? contentInner.scrollTop / max : 0;
-        setCssProps(content, "--sprout-guide-scroll-progress", progress.toFixed(4));
+        setCssProps(content, "--learnkit-guide-scroll-progress", progress.toFixed(4));
       };
 
       contentInner.addEventListener("scroll", updateActiveDot, { passive: true });
@@ -1581,18 +1579,18 @@ export class SproutSettingsView extends ItemView {
     if (prevPage || nextPage) {
       const common = txCommon(this.plugin.settings?.general?.interfaceLanguage);
       const navBar = document.createElement("div");
-      navBar.className = "sprout-guide-prev-next";
+      navBar.className = "learnkit-guide-prev-next";
       footer.appendChild(navBar);
 
       if (prevPage) {
         const prevBtn = document.createElement("div");
-        prevBtn.className = "sprout-guide-prev-next-btn sprout-guide-prev-btn";
+        prevBtn.className = "learnkit-guide-prev-next-btn learnkit-guide-prev-btn";
         const label = document.createElement("div");
-        label.className = "sprout-guide-prev-next-label";
+        label.className = "learnkit-guide-prev-next-label";
         label.textContent = common.previous;
         prevBtn.appendChild(label);
         const link = document.createElement("a");
-        link.className = "sprout-guide-prev-next-link";
+        link.className = "learnkit-guide-prev-next-link";
         link.textContent = `← ${prevPage.label}`;
         link.addEventListener("click", (ev) => {
           ev.preventDefault();
@@ -1603,19 +1601,19 @@ export class SproutSettingsView extends ItemView {
         navBar.appendChild(prevBtn);
       } else {
         const spacer = document.createElement("div");
-        spacer.className = "sprout-guide-prev-next-spacer";
+        spacer.className = "learnkit-guide-prev-next-spacer";
         navBar.appendChild(spacer);
       }
 
       if (nextPage) {
         const nextBtn = document.createElement("div");
-        nextBtn.className = "sprout-guide-prev-next-btn sprout-guide-next-btn";
+        nextBtn.className = "learnkit-guide-prev-next-btn learnkit-guide-next-btn";
         const label = document.createElement("div");
-        label.className = "sprout-guide-prev-next-label";
+        label.className = "learnkit-guide-prev-next-label";
         label.textContent = common.next;
         nextBtn.appendChild(label);
         const link = document.createElement("a");
-        link.className = "sprout-guide-prev-next-link";
+        link.className = "learnkit-guide-prev-next-link";
         link.textContent = `${nextPage.label} →`;
         link.addEventListener("click", (ev) => {
           ev.preventDefault();
@@ -1626,7 +1624,7 @@ export class SproutSettingsView extends ItemView {
         navBar.appendChild(nextBtn);
       } else {
         const spacer = document.createElement("div");
-        spacer.className = "sprout-guide-prev-next-spacer";
+        spacer.className = "learnkit-guide-prev-next-spacer";
         navBar.appendChild(spacer);
       }
     }
@@ -1668,21 +1666,21 @@ export class SproutSettingsView extends ItemView {
   ): HTMLAnchorElement | HTMLButtonElement {
     const btn = document.createElement(tagName);
     const variantClass = styleVariant === "active"
-      ? "is-active sprout-btn-control"
+      ? "is-active learnkit-btn-control"
       : styleVariant === "accent"
-        ? "sprout-btn-accent"
-        : "sprout-btn-outline-muted";
-    btn.className = `bc sprout-btn-toolbar sprout-settings-title-tab-btn inline-flex items-center gap-2 sprout-about-btn ${variantClass} ${cls}`;
+        ? "learnkit-btn-accent"
+        : "learnkit-btn-outline-muted";
+    btn.className = `bc learnkit-btn-toolbar learnkit-settings-title-tab-btn inline-flex items-center gap-2 learnkit-about-btn ${variantClass} ${cls}`;
     btn.setAttribute("aria-label", tooltipLabel);
     btn.setAttribute("data-tooltip-position", "top");
     btn.setAttribute("aria-pressed", styleVariant === "active" ? "true" : "false");
 
     const icon = document.createElement("span");
-    icon.className = `bc sprout-settings-title-tab-btn-icon inline-flex items-center justify-center [&_svg]:size-4 sprout-about-btn-icon ${iconCls}`;
+    icon.className = `bc learnkit-settings-title-tab-btn-icon inline-flex items-center justify-center [&_svg]:size-4 learnkit-about-btn-icon ${iconCls}`;
     setIcon(icon, iconName);
 
     const label = document.createElement("span");
-    label.className = "sprout-about-btn-label sprout-settings-title-tab-btn-label";
+    label.className = "learnkit-about-btn-label learnkit-settings-title-tab-btn-label";
     label.textContent = labelText;
 
     btn.appendChild(icon);
@@ -1775,14 +1773,14 @@ export class SproutSettingsView extends ItemView {
       const storyUl = linkedinLink.closest("ul");
       if (storyUl) {
         const storyCard = document.createElement("div");
-        storyCard.className = "sprout-about-story-card";
+        storyCard.className = "learnkit-about-story-card";
 
         const avatar = document.createElement("div");
-        avatar.className = "sprout-about-avatar";
+        avatar.className = "learnkit-about-avatar";
         const avatarSrc = this._getAboutAvatarSrc();
         if (avatarSrc) {
           const image = document.createElement("img");
-          image.className = "sprout-about-avatar-img";
+          image.className = "learnkit-about-avatar-img";
           image.alt = "William Guy";
           image.src = avatarSrc;
           image.addEventListener(
@@ -1799,28 +1797,28 @@ export class SproutSettingsView extends ItemView {
         }
 
         const info = document.createElement("div");
-        info.className = "sprout-about-info";
+        info.className = "learnkit-about-info";
 
         const founderName = document.createElement("div");
-        founderName.className = "sprout-about-name";
+        founderName.className = "learnkit-about-name";
         founderName.textContent = "William guy";
 
         const founderRole = document.createElement("div");
-        founderRole.className = "sprout-about-role";
+        founderRole.className = "learnkit-about-role";
         founderRole.textContent = "Founder of " + "Learn" + "Kit.";
 
         const linksRow = document.createElement("div");
-        linksRow.className = "sprout-about-links-row";
+        linksRow.className = "learnkit-about-links-row";
 
         const githubAnchor = document.createElement("a");
-        githubAnchor.className = "sprout-about-linkedin";
+        githubAnchor.className = "learnkit-about-linkedin";
         githubAnchor.href = "https://github.com/ctrlaltwill";
         githubAnchor.target = "_blank";
         githubAnchor.rel = "noopener nofollow";
         githubAnchor.textContent = "View GitHub profile";
 
         const linkedinAnchor = document.createElement("a");
-        linkedinAnchor.className = "sprout-about-linkedin";
+        linkedinAnchor.className = "learnkit-about-linkedin";
         linkedinAnchor.href = "https://www.linkedin.com/in/williamguy/";
         linkedinAnchor.target = "_blank";
         linkedinAnchor.rel = "noopener nofollow";
@@ -1846,7 +1844,7 @@ export class SproutSettingsView extends ItemView {
     const feedbackUl = (bugLink ?? featureLink ?? browseLink)?.closest("ul");
     if (feedbackUl) {
       const wrapper = document.createElement("div");
-      wrapper.className = "sprout-about-buttons";
+      wrapper.className = "learnkit-about-buttons";
 
       if (bugLink) {
         const btn = this._createAboutBtn("sprout-about-btn--bug", "bug", "", "Report a Bug", "Report a bug on GitHub");
@@ -1885,14 +1883,14 @@ export class SproutSettingsView extends ItemView {
     const supportUl = (githubStarLink ?? shareLink ?? coffeeLink)?.closest("ul");
     if (supportUl) {
       const wrapper = document.createElement("div");
-      wrapper.className = "sprout-about-buttons";
+      wrapper.className = "learnkit-about-buttons";
 
       if (githubStarLink) {
         const btn = this._createAboutBtn("sprout-about-btn--star", "star", "sprout-about-star-spin", "Star on GitHub", "Star on GitHub");
-        const starLabel = btn.querySelector<HTMLElement>(".sprout-about-btn-label");
+        const starLabel = btn.querySelector<HTMLElement>(".learnkit-about-btn-label");
         if (starLabel) {
           const githubIcon = document.createElement("span");
-          githubIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4 sprout-about-btn-icon sprout-about-btn-icon--after";
+          githubIcon.className = "inline-flex items-center justify-center [&_svg]:size-4 learnkit-about-btn-icon learnkit-about-btn-icon--after";
           setIcon(githubIcon, "github");
           starLabel.insertAdjacentElement("afterend", githubIcon);
         }
@@ -1922,8 +1920,8 @@ export class SproutSettingsView extends ItemView {
         shareBtn.target = "";
         shareBtn.rel = "";
 
-        const shareIcon = shareBtn.querySelector<HTMLElement>(".sprout-about-btn-icon");
-        const shareLabel = shareBtn.querySelector<HTMLElement>(".sprout-about-btn-label");
+        const shareIcon = shareBtn.querySelector<HTMLElement>(".learnkit-about-btn-icon");
+        const shareLabel = shareBtn.querySelector<HTMLElement>(".learnkit-about-btn-label");
         if (shareIcon && shareLabel) {
           shareBtn.addEventListener("click", (ev) => {
             ev.preventDefault();
@@ -1958,7 +1956,7 @@ export class SproutSettingsView extends ItemView {
       el.removeAttribute("data-aos-delay");
       el.removeAttribute("data-aos-duration");
       el.removeAttribute("data-aos-anchor-placement");
-      el.classList.remove("aos-init", "aos-animate", "sprout-aos-fallback");
+      el.classList.remove("aos-init", "aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
       el.style.removeProperty("transform");
       el.style.removeProperty("opacity");
     }
@@ -1966,7 +1964,7 @@ export class SproutSettingsView extends ItemView {
 
   /**
    * Promote `Setting#setHeading()` rows to semantic `<h2>` elements,
-   * then unwrap the `.sprout-settings-wrapper` so that headings and
+   * then unwrap the `.learnkit-settings-wrapper` so that headings and
    * setting-items become direct children of the guide body — matching
    * the same flat h1 / h2 / content structure used by the guide tab.
    */
@@ -1981,9 +1979,9 @@ export class SproutSettingsView extends ItemView {
       }
 
       const h2 = document.createElement("h2");
-      h2.classList.add("sprout-guide-snap-heading");
-      if (heading.classList.contains("sprout-settings-conditional-hidden")) {
-        h2.classList.add("sprout-settings-conditional-hidden");
+      h2.classList.add("learnkit-guide-snap-heading", "learnkit-guide-snap-heading");
+      if (heading.classList.contains("learnkit-settings-conditional-hidden")) {
+        h2.classList.add("learnkit-settings-conditional-hidden", "learnkit-settings-conditional-hidden");
       }
       if (heading.classList.contains("is-disabled")) {
         h2.classList.add("is-disabled");
@@ -1992,30 +1990,30 @@ export class SproutSettingsView extends ItemView {
       heading.replaceWith(h2);
     }
 
-    // 2. Unwrap the .sprout-settings-wrapper so h2s and setting-items
+    // 2. Unwrap the .learnkit-settings-wrapper so h2s and setting-items
     //    are direct children of the container (guide body).
-    const wrapper = container.querySelector<HTMLElement>(":scope > .sprout-settings-wrapper");
+    const wrapper = container.querySelector<HTMLElement>(":scope > .learnkit-settings-wrapper");
     if (wrapper) {
       // Move the sprout-settings class to the container so
-      // .sprout-settings .setting-item rules still apply.
-      container.classList.add("sprout-settings");
+      // .learnkit-settings .setting-item rules still apply.
+      container.classList.add("learnkit-settings", "learnkit-settings");
       while (wrapper.firstChild) container.insertBefore(wrapper.firstChild, wrapper);
       wrapper.remove();
     }
   }
 
   private _insertSettingsPaneTitle(container: HTMLElement, title: string) {
-    const existing = container.querySelector<HTMLElement>(":scope > .sprout-settings-pane-title");
+    const existing = container.querySelector<HTMLElement>(":scope > .learnkit-settings-pane-title");
     if (existing) existing.remove();
 
     const h1 = document.createElement("h1");
-    h1.className = "sprout-settings-pane-title sprout-guide-snap-heading";
+    h1.className = "learnkit-settings-pane-title learnkit-guide-snap-heading";
     h1.textContent = title;
     container.prepend(h1);
 
     // Keep a subheading under the pane title, but avoid exact duplicates like
     // "Appearance" -> "Appearance" by converting the first matching h2.
-    const firstH2 = container.querySelector<HTMLElement>(":scope > h2.sprout-guide-snap-heading");
+    const firstH2 = container.querySelector<HTMLElement>(":scope > h2.learnkit-guide-snap-heading");
     const normalizedTitle = (title || "").trim().toLowerCase();
     const normalizedH2 = (firstH2?.textContent || "").trim().toLowerCase();
     if (firstH2 && normalizedTitle && normalizedTitle === normalizedH2) {
@@ -2024,7 +2022,7 @@ export class SproutSettingsView extends ItemView {
   }
 
   private _partitionSettingsContentBySubTab(container: HTMLElement, subTabId: string) {
-    const wrapper = container.querySelector<HTMLElement>(":scope > .sprout-settings-wrapper.sprout-settings");
+    const wrapper = container.querySelector<HTMLElement>(":scope > .learnkit-settings-wrapper.learnkit-settings");
     if (!wrapper) return;
 
     const normalizeHeading = (value: string): string =>
@@ -2141,7 +2139,7 @@ export class SproutSettingsView extends ItemView {
 
     if (!wrapper.children.length) {
       const empty = document.createElement("div");
-      empty.className = "sprout-settings-text-muted";
+      empty.className = "learnkit-settings-text-muted";
       empty.textContent = t(this.plugin.settings?.general?.interfaceLanguage, "ui.settings.empty.section", "No settings in this section yet.");
       wrapper.appendChild(empty);
     }

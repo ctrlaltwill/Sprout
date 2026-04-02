@@ -2,7 +2,7 @@
    TOKENS / TYPOGRAPHY — semantic text scale and legacy aliases
    ========================================================================== */
 
-.sprout {
+.learnkit {
   /* Semantic typography tokens */
   --lk-font-size-3xs: 0.65rem;
   --lk-font-size-2xs: 0.75rem;
@@ -17,17 +17,17 @@
   --lk-font-size-lg: 1.5rem;
 
   /* Legacy Sprout aliases (kept for compatibility) */
-  --sprout-font-3xs: var(--lk-font-size-3xs);
-  --sprout-font-2xs: var(--lk-font-size-2xs);
-  --sprout-font-xs: var(--lk-font-size-xs);
-  --sprout-font-sm: var(--lk-font-size-sm);
-  --sprout-font-sm-plus: var(--lk-font-size-sm-plus);
-  --sprout-font-md-minus: var(--lk-font-size-md-minus);
-  --sprout-font-md-plus: var(--lk-font-size-md-plus);
-  --sprout-font-md: var(--lk-font-size-md);
-  --sprout-font-xl-minus: var(--lk-font-size-xl-minus);
-  --sprout-font-xl: var(--lk-font-size-xl);
-  --sprout-font-lg: var(--lk-font-size-lg);
+  --learnkit-font-3xs: var(--lk-font-size-3xs);
+  --learnkit-font-2xs: var(--lk-font-size-2xs);
+  --learnkit-font-xs: var(--lk-font-size-xs);
+  --learnkit-font-sm: var(--lk-font-size-sm);
+  --learnkit-font-sm-plus: var(--lk-font-size-sm-plus);
+  --learnkit-font-md-minus: var(--lk-font-size-md-minus);
+  --learnkit-font-md-plus: var(--lk-font-size-md-plus);
+  --learnkit-font-md: var(--lk-font-size-md);
+  --learnkit-font-xl-minus: var(--lk-font-size-xl-minus);
+  --learnkit-font-xl: var(--lk-font-size-xl);
+  --learnkit-font-lg: var(--lk-font-size-lg);
 
-  --font-ui-small: var(--sprout-font-xs);
+  --font-ui-small: var(--learnkit-font-xs);
 }

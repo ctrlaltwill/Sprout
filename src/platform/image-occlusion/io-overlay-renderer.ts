@@ -121,18 +121,18 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
   // ── Helpers ─────────────────────────────────────────────────────────────
 
   const positionEl = (el: HTMLElement, normX: number, normY: number, normW: number, normH: number) => {
-    setCssProps(el, "--sprout-io-left", `${normX * stageW}px`);
-    setCssProps(el, "--sprout-io-top", `${normY * stageH}px`);
-    setCssProps(el, "--sprout-io-width", `${normW * stageW}px`);
-    setCssProps(el, "--sprout-io-height", `${normH * stageH}px`);
+    setCssProps(el, "--learnkit-io-left", `${normX * stageW}px`);
+    setCssProps(el, "--learnkit-io-top", `${normY * stageH}px`);
+    setCssProps(el, "--learnkit-io-width", `${normW * stageW}px`);
+    setCssProps(el, "--learnkit-io-height", `${normH * stageH}px`);
   };
 
   // ── Render occlusion rects ──────────────────────────────────────────────
 
   for (const rect of rects) {
     const el = document.createElement("div");
-    el.className = "sprout-io-overlay-item sprout-io-rect sprout-cursor-move";
-    el.classList.toggle("sprout-pointer-none", isCropTool);
+    el.className = "learnkit-io-overlay-item learnkit-io-rect learnkit-cursor-move";
+    el.classList.toggle("learnkit-pointer-none", isCropTool);
     el.setAttribute("data-rect-id", rect.rectId);
     positionEl(el, rect.normX, rect.normY, rect.normW, rect.normH);
 
@@ -145,14 +145,14 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
 
     // GroupKey input controls (centered on rect, visually unscaled from canvas zoom)
     const inputUi = document.createElement("div");
-    inputUi.className = "sprout-io-group-ui";
-    setCssProps(inputUi, "--sprout-io-ui-inverse-scale", `${uiInverseScale}`);
+    inputUi.className = "learnkit-io-group-ui";
+    setCssProps(inputUi, "--learnkit-io-ui-inverse-scale", `${uiInverseScale}`);
 
     const groupInput = document.createElement("input");
     groupInput.type = "text";
     groupInput.value = rect.groupKey || "1";
-    groupInput.className = "sprout-io-group-input";
-    groupInput.classList.toggle("sprout-pointer-none", isCropTool);
+    groupInput.className = "learnkit-io-group-input";
+    groupInput.classList.toggle("learnkit-pointer-none", isCropTool);
     groupInput.setAttribute("data-group-input", rect.rectId);
 
     groupInput.addEventListener("click", (e) => {
@@ -180,7 +180,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
-    deleteBtn.className = "sprout-assistant-popup-close sprout-io-mask-delete";
+    deleteBtn.className = "learnkit-assistant-popup-close learnkit-io-mask-delete";
     deleteBtn.setAttribute("aria-label", "Delete mask");
     deleteBtn.setAttribute("data-tooltip-position", "top");
     deleteBtn.appendChild(createDeleteIcon());
@@ -205,10 +205,10 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
       const cornerSize = 10;
       const addCorner = (cx: string, cy: string) => {
         const c = document.createElement("div");
-        c.className = "sprout-io-corner";
+        c.className = "learnkit-io-corner";
         c.classList.add(cx === "left" ? "is-left" : "is-right");
         c.classList.add(cy === "top" ? "is-top" : "is-bottom");
-        setCssProps(c, "--sprout-io-corner-size", `${cornerSize}px`);
+        setCssProps(c, "--learnkit-io-corner-size", `${cornerSize}px`);
         el.appendChild(c);
       };
       addCorner("left", "top");
@@ -227,19 +227,19 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
       const nearTop = py <= 12;
       const nearBottom = py >= bounds.height - 12;
       if ((nearLeft && nearTop) || (nearRight && nearBottom)) {
-        el.classList.remove("sprout-cursor-nesw-resize", "sprout-cursor-move");
-        el.classList.add("sprout-cursor-nwse-resize");
+        el.classList.remove("learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-move", "learnkit-cursor-move");
+        el.classList.add("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize");
       } else if ((nearRight && nearTop) || (nearLeft && nearBottom)) {
-        el.classList.remove("sprout-cursor-nwse-resize", "sprout-cursor-move");
-        el.classList.add("sprout-cursor-nesw-resize");
+        el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-move", "learnkit-cursor-move");
+        el.classList.add("learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
       } else {
-        el.classList.remove("sprout-cursor-nwse-resize", "sprout-cursor-nesw-resize");
-        el.classList.add("sprout-cursor-move");
+        el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
+        el.classList.add("learnkit-cursor-move", "learnkit-cursor-move");
       }
     });
     el.addEventListener("mouseleave", () => {
-      el.classList.remove("sprout-cursor-nwse-resize", "sprout-cursor-nesw-resize");
-      el.classList.add("sprout-cursor-move");
+      el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
+      el.classList.add("learnkit-cursor-move", "learnkit-cursor-move");
     });
 
     el.addEventListener("click", (e) => {
@@ -258,7 +258,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     // Interactjs: drag + resize
     interact(el)
       .draggable({
-        ignoreFrom: "input,textarea,button,select,.sprout-io-corner,.sprout-io-mask-delete",
+        ignoreFrom: "input,textarea,button,select,.learnkit-io-corner,.learnkit-io-mask-delete",
         listeners: {
           move: (event: DragMoveEvent) => {
             const r = getRectRef();
@@ -284,10 +284,10 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
       .resizable({
         edges: rect.shape !== "circle"
           ? {
-              left: ".sprout-io-corner.is-left",
-              right: ".sprout-io-corner.is-right",
-              top: ".sprout-io-corner.is-top",
-              bottom: ".sprout-io-corner.is-bottom",
+              left: ".learnkit-io-corner.is-left",
+              right: ".learnkit-io-corner.is-right",
+              top: ".learnkit-io-corner.is-top",
+              bottom: ".learnkit-io-corner.is-bottom",
             }
           : { left: true, right: true, top: true, bottom: true },
         listeners: {
@@ -333,8 +333,8 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
 
   for (const textBox of textBoxes) {
     const el = document.createElement("div");
-    el.className = "sprout-io-overlay-item sprout-io-text-box";
-    el.classList.toggle("sprout-pointer-none", isCropTool);
+    el.className = "learnkit-io-overlay-item learnkit-io-text-box";
+    el.classList.toggle("learnkit-pointer-none", isCropTool);
     el.setAttribute("data-text-id", textBox.textId);
     positionEl(el, textBox.normX, textBox.normY, textBox.normW, textBox.normH);
 
@@ -343,25 +343,25 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     const hasBg = bgCss !== "transparent";
     setCssProps(
       el,
-      "--sprout-io-text-border",
+      "--learnkit-io-text-border",
       isSelected ? "2px dashed #10b981" : "1px dashed rgba(16, 185, 129, 0.6)",
     );
     setCssProps(
       el,
-      "--sprout-io-text-bg",
+      "--learnkit-io-text-bg",
       hasBg ? bgCss : isSelected ? "rgba(16, 185, 129, 0.08)" : "transparent",
     );
     setCssProps(
       el,
-      "--sprout-io-text-shadow",
+      "--learnkit-io-text-shadow",
       isSelected ? "0 0 0 2px rgba(16, 185, 129, 0.12)" : "none",
     );
 
     const textEl = document.createElement("div");
     textEl.textContent = textBox.text;
-    textEl.className = "sprout-io-text-content";
-    setCssProps(textEl, "--sprout-io-text-size", `${Math.max(8, textBox.fontSize)}px`);
-    setCssProps(textEl, "--sprout-io-text-color", textBox.color || "#111111");
+    textEl.className = "learnkit-io-text-content";
+    setCssProps(textEl, "--learnkit-io-text-size", `${Math.max(8, textBox.fontSize)}px`);
+    setCssProps(textEl, "--learnkit-io-text-color", textBox.color || "#111111");
     el.appendChild(textEl);
 
     el.addEventListener("click", (e) => {

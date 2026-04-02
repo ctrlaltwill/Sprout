@@ -27,7 +27,7 @@
  *   - restoreSchedulingFromBackup — helper to restore scheduling from backup.json
  */
 
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { State } from "ts-fsrs";
 import { TFile, TFolder, Notice } from "obsidian";
 
@@ -131,7 +131,7 @@ export function defaultStore(): StoreData {
 // --------------------
 
 export class JsonStore {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   data: StoreData;
 
   // ✅ In-memory mutation revision (NOT persisted). Used for cheap index invalidation.
@@ -150,7 +150,7 @@ export class JsonStore {
    */
   loadedFromDisk = false;
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
     this.data = defaultStore();
   }
@@ -716,19 +716,19 @@ export class JsonStore {
   }
 
   // Helper: get backup directory (relative to vault root)
-  getBackupDir(_plugin: SproutPlugin): string {
-    return ".sprout-backups";
+  getBackupDir(_plugin: LearnKitPlugin): string {
+    return ".learnkit-backups";
   }
 
   // Helper: get backup file path for a timestamp
-  getBackupFilePath(plugin: SproutPlugin, ts: number): string {
+  getBackupFilePath(plugin: LearnKitPlugin, ts: number): string {
     const dir = this.getBackupDir(plugin);
     const stamp = new Date(ts).toISOString().replace(/[-:T]/g, "").slice(0, 15);
     return `${dir}/data-${stamp}.json`;
   }
 
   // Helper: list backup files (sorted newest first)
-  listBackups(plugin: SproutPlugin): TFile[] {
+  listBackups(plugin: LearnKitPlugin): TFile[] {
     const dir = this.getBackupDir(plugin);
     const folder = plugin.app.vault.getAbstractFileByPath(dir);
     if (!(folder instanceof TFolder)) return [];
@@ -743,7 +743,7 @@ export class JsonStore {
 // Helper: load scheduling data from the plugin's persistent store (data.json)
 import { log } from "./logger";
 
-export async function loadSchedulingFromDataJson(plugin: SproutPlugin): Promise<Record<string, unknown> | null> {
+export async function loadSchedulingFromDataJson(plugin: LearnKitPlugin): Promise<Record<string, unknown> | null> {
   try {
     const root = (await plugin.loadData()) as unknown;
     if (!root || typeof root !== "object") return null;
@@ -774,7 +774,7 @@ function validateRestoreStates(value: unknown): Record<string, unknown> | null {
 }
 
 // Helper: restore scheduling data from the latest backup
-export async function restoreSchedulingFromBackup(plugin: SproutPlugin): Promise<boolean> {
+export async function restoreSchedulingFromBackup(plugin: LearnKitPlugin): Promise<boolean> {
   // Restore from backup.json in the plugin folder, vault-relative path
   const filePath = `plugins/${plugin.manifest.id}/backup.json`;
   let data: unknown = {};

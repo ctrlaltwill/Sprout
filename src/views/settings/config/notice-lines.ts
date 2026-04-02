@@ -1,3 +1,12 @@
+/**
+ * @file src/views/settings/config/notice-lines.ts
+ * @summary Module for notice lines.
+ *
+ * @exports
+ *  - createSettingsNoticeLines
+ *  - SettingsNoticeLines
+ */
+
 import { fmtSettingValue } from "../settings-utils";
 
 type Tx = (token: string, fallback: string, vars?: Record<string, string | number>) => string;

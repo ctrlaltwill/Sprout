@@ -48,16 +48,16 @@
 
 /* ---- Backdrop ---- */
 
-.sprout .lk-modal-container .modal-bg,
-.sprout .modal-container.mod-dim .modal-bg,
-.sprout .lk-modal-dim .modal-bg,
-.sprout .modal-container .modal-bg,
+.learnkit .lk-modal-container .modal-bg,
+.learnkit .modal-container.mod-dim .modal-bg,
+.learnkit .lk-modal-dim .modal-bg,
+.learnkit .modal-container .modal-bg,
 .lk-modal-container .modal-bg,
 .modal-container.mod-dim .modal-bg,
 .lk-modal-dim .modal-bg,
 .modal-container .modal-bg,
 .modal-container.lk-modal-container.lk-modal-dim.mod-dim > .modal-bg,
-.modal-container.lk-modal-container.lk-modal-dim.sprout.mod-dim > .modal-bg {
+.modal-container.lk-modal-container.lk-modal-dim.learnkit.mod-dim > .modal-bg {
   position: absolute !important;
   inset: 0 !important;
   top: 0 !important;
@@ -74,7 +74,7 @@
 
 /* ---- Panel ---- */
 
-.sprout .lk-modals.modal {
+.learnkit .lk-modals.modal {
     border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
     width: min(720px, 100%);
     background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
@@ -90,7 +90,7 @@
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
-.sprout .modal-container .modal {
+.learnkit .modal-container .modal {
   border-radius: var(--radius-lg);
     border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
     background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
@@ -105,14 +105,14 @@
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
-.sprout-confirm-modal .modal-title {
+.learnkit-confirm-modal .modal-title {
     font-size: 1.2rem !important;
     font-weight: 600;
     letter-spacing: normal;
 }
 /* ---- Header + content spacing ---- */
 
-.sprout .lk-modals.modal .modal-header {
+.learnkit .lk-modals.modal .modal-header {
   padding: 0 1.2rem 1.5rem;
   border-bottom: none;
   display: flex;
@@ -121,7 +121,7 @@
   margin-bottom: 0rem;
 }
 
-.sprout .modal-container .modal-header {
+.learnkit .modal-container .modal-header {
   padding: 0;
   border-bottom: none;
   display: flex;
@@ -129,7 +129,7 @@
   justify-content: space-between;
 }
 
-.sprout .lk-modals.modal .modal-content {
+.learnkit .lk-modals.modal .modal-content {
   padding: 0 !important;
   background: transparent;
   border: none;
@@ -141,7 +141,7 @@
   padding: 0 1.2rem 0 !important;
 }
 
-.sprout .modal-container .modal-content {
+.learnkit .modal-container .modal-content {
   padding: 0px;
   background: transparent;
   border: none;
@@ -152,25 +152,25 @@
   text-align: left;
 }
 
-.sprout .modal-container .modal-title,
-.sprout .modal-container h1,
-.sprout .modal-container h2,
-.sprout .modal-container h3,
-.sprout .modal-container p {
+.learnkit .modal-container .modal-title,
+.learnkit .modal-container h1,
+.learnkit .modal-container h2,
+.learnkit .modal-container h3,
+.learnkit .modal-container p {
   text-align: left;
 }
 
 /* ---- Modal inputs & preview fields: unified 100px sizing ---- */
 
-.sprout .lk-modals.modal .input,
-.sprout .lk-modals.modal select.input,
-.sprout .lk-modals.modal input[type="text"].input {
+.learnkit .lk-modals.modal .input,
+.learnkit .lk-modals.modal select.input,
+.learnkit .lk-modals.modal input[type="text"].input {
   height: 40px;
   min-height: 40px;
 }
 
 /* Modal form controls: glass treatment to match modal shell. */
-.sprout .lk-modals.modal :is(
+.learnkit .lk-modals.modal :is(
   .input,
   select.input,
   input[type="text"].input,
@@ -185,7 +185,7 @@
   box-shadow: none;
 }
 
-.sprout .lk-modals.modal :is(
+.learnkit .lk-modals.modal :is(
   .input,
   select.input,
   input[type="text"].input,
@@ -195,11 +195,11 @@
   color: var(--text-muted);
 }
 
-.sprout .lk-modals.modal :is(
-  .sprout-flag-editor-wrap,
-  .sprout-tag-box,
-  .sprout-export-tag-box,
-  .sprout-card-meta-type-btn
+.learnkit .lk-modals.modal :is(
+  .learnkit-flag-editor-wrap,
+  .learnkit-tag-box,
+  .learnkit-export-tag-box,
+  .learnkit-card-meta-type-btn
 ) {
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
   border-color: color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
@@ -207,33 +207,33 @@
   backdrop-filter: blur(10px) saturate(120%);
 }
 
-.sprout .lk-modals.modal .sprout-btn-toolbar {
+.learnkit .lk-modals.modal .learnkit-btn-toolbar {
   max-height: 36px !important;
   background-color: var(--color-base-20);
     border: 1px solid var(--color-base-35);
 }
 
 /* Standard modal shell buttons: lock compact spacing regardless of theme defaults. */
-.sprout .lk-modals.modal :is(
-  .sprout-card-creator-close-btn,
-  .sprout-attachment-picker-close-btn,
-  .sprout-card-creator-footer .sprout-btn-toolbar,
-  .sprout-attachment-picker-footer .sprout-btn-toolbar
+.learnkit .lk-modals.modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-attachment-picker-close-btn,
+  .learnkit-card-creator-footer .learnkit-btn-toolbar,
+  .learnkit-attachment-picker-footer .learnkit-btn-toolbar
 ) {
   padding: 4px 12px !important;
 }
 
-.sprout .lk-modals.modal.sprout-card-creator-modal .modal-header .sprout-btn-toolbar.sprout-card-creator-close-btn {
+.learnkit .lk-modals.modal.learnkit-card-creator-modal .modal-header .learnkit-btn-toolbar.learnkit-card-creator-close-btn {
   padding: 4px 8px !important;
 }
 
-.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-card-creator-close-btn {
+.learnkit :is(.learnkit-card-creator-modal, .learnkit-bulk-edit-panel, .learnkit-edit-modal, .learnkit-io-creator-modal) .learnkit-card-creator-close-btn {
   min-width: 36px;
   gap: 0;
   overflow: hidden;
 }
 
-.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-card-creator-close-btn [data-sprout-label="true"] {
+.learnkit :is(.learnkit-card-creator-modal, .learnkit-bulk-edit-panel, .learnkit-edit-modal, .learnkit-io-creator-modal) .learnkit-card-creator-close-btn [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -244,14 +244,14 @@
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-card-creator-close-btn:is(:hover, :focus-visible) [data-sprout-label="true"] {
+.learnkit :is(.learnkit-card-creator-modal, .learnkit-bulk-edit-panel, .learnkit-edit-modal, .learnkit-io-creator-modal) .learnkit-card-creator-close-btn:is(:hover, :focus-visible) [data-learnkit-label="true"] {
   max-width: 7rem;
   opacity: 1;
   margin-left: 6px;
   transform: translateX(0);
 }
 
-.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-panel {
+.learnkit .learnkit-card-creator-type-popover .learnkit-card-creator-type-panel {
   background: var(--color-base-00);
   border: 1px solid var(--color-base-40);
   border-radius: var(--radius-md);
@@ -262,11 +262,11 @@
   box-sizing: border-box;
 }
 
-.sprout .sprout-card-creator-type-popover [role="menu"] {
+.learnkit .learnkit-card-creator-type-popover [role="menu"] {
   width: 100%;
 }
 
-.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-item {
+.learnkit .learnkit-card-creator-type-popover .learnkit-card-creator-type-item {
   min-height: 28px;
   padding: 4px 8px;
   border: 1px solid transparent;
@@ -275,26 +275,26 @@
   color: var(--text-normal);
 }
 
-.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-item:is(:hover, :focus, :focus-visible, :active),
-.sprout .sprout-card-creator-type-popover .sprout-card-creator-type-item[aria-checked="true"] {
+.learnkit .learnkit-card-creator-type-popover .learnkit-card-creator-type-item:is(:hover, :focus, :focus-visible, :active),
+.learnkit .learnkit-card-creator-type-popover .learnkit-card-creator-type-item[aria-checked="true"] {
   background: var(--color-base-20) !important;
   border-color: var(--color-base-35) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout .lk-modals.modal .sprout-tag-box {
+.learnkit .lk-modals.modal .learnkit-tag-box {
   height: 40px;
   min-height: 40px;
 }
 
-.sprout .lk-modals.modal .textarea {
+.learnkit .lk-modals.modal .textarea {
   line-height: 1.5;
   min-height: 100px;
   height: 100px;
 }
 
 /* Keep inline flags in modal markdown previews sized to the current text size. */
-.sprout .lk-modals :is(.sprout-flag-editor-overlay, .sprout-single-edit-markdown-preview) img.sprout-inline-flag {
+.learnkit .lk-modals :is(.learnkit-flag-editor-overlay, .learnkit-single-edit-markdown-preview) img.learnkit-inline-flag {
   width: 1em !important;
   height: 1em !important;
   min-width: 1em !important;
@@ -308,26 +308,26 @@
   margin: 0 0.3em;
 }
 
-.sprout .lk-modals.modal .sprout-flag-editor-wrap {
-  --sprout-flag-preview-height: 100px;
-  --sprout-flag-preview-max-height: 100px;
+.learnkit .lk-modals.modal .learnkit-flag-editor-wrap {
+  --learnkit-flag-preview-height: 100px;
+  --learnkit-flag-preview-max-height: 100px;
   min-height: 100px;
 }
 
-.sprout .lk-modals.modal .sprout-flag-editor-control,
-.sprout .lk-modals.modal .sprout-flag-editor-overlay {
+.learnkit .lk-modals.modal .learnkit-flag-editor-control,
+.learnkit .lk-modals.modal .learnkit-flag-editor-overlay {
   min-height: 100px;
   height: 100px;
 }
 
 /* MCQ/OQ option rows should stay compact (fixed 36px) in add/edit modals. */
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-flag-editor-wrap {
-  --sprout-flag-preview-height: 36px !important;
-  --sprout-flag-preview-max-height: 36px !important;
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) .learnkit-flag-editor-wrap {
+  --learnkit-flag-preview-height: 36px !important;
+  --learnkit-flag-preview-max-height: 36px !important;
   min-height: 36px;
 }
 
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) :is(.sprout-flag-editor-control, .sprout-flag-editor-overlay) {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) :is(.learnkit-flag-editor-control, .learnkit-flag-editor-overlay) {
   min-height: 36px !important;
   height: 36px !important;
   max-height: 36px !important;
@@ -336,14 +336,14 @@
 }
 
 /* Center compact MCQ/OQ row text vertically in both preview and edit states. */
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-flag-editor-control {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) .learnkit-flag-editor-control {
   line-height: 1.2;
   /* Keep typed text centered in the fixed 36px compact editor lane. */
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
 
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-flag-editor-overlay {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) .learnkit-flag-editor-overlay {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -352,33 +352,33 @@
   padding-bottom: 0 !important;
 }
 
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row)
-  .sprout-flag-editor-overlay.sprout-flag-editor-overlay--multiline {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row)
+  .learnkit-flag-editor-overlay.learnkit-flag-editor-overlay--multiline {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start;
   overflow-y: hidden;
 }
 
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row)
-  .sprout-flag-editor-overlay > * {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row)
+  .learnkit-flag-editor-overlay > * {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-input-fixed,
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) .sprout-oq-step-input {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) .learnkit-input-fixed,
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) .learnkit-oq-step-input {
   min-height: 36px !important;
   height: 36px !important;
   max-height: 36px !important;
 }
 
 /* OQ row chrome (grip + index + delete) should align to the same 36px centerline as the input. */
-.sprout .lk-modals.modal :is(.sprout-edit-mcq-option-row, .sprout-mcq-add-row, .sprout-oq-editor-row, .sprout-oq-add-row) {
+.learnkit .lk-modals.modal :is(.learnkit-edit-mcq-option-row, .learnkit-mcq-add-row, .learnkit-oq-editor-row, .learnkit-oq-add-row) {
   align-items: center;
 }
 
-.sprout .lk-modals.modal .sprout-oq-editor-row :is(.sprout-oq-grip, .sprout-oq-step-index, .sprout-oq-del-btn) {
+.learnkit .lk-modals.modal .learnkit-oq-editor-row :is(.learnkit-oq-grip, .learnkit-oq-step-index, .learnkit-oq-del-btn) {
   min-height: 36px !important;
   height: 36px !important;
   max-height: 36px !important;
@@ -391,47 +391,47 @@
 }
 
 /* MCQ row chrome (checkbox + delete) aligns to the same centerline as the 36px input lane. */
-.sprout .lk-modals.modal .sprout-edit-mcq-option-row :is(.sprout-mcq-correct-checkbox, .sprout-remove-btn-ghost) {
+.learnkit .lk-modals.modal .learnkit-edit-mcq-option-row :is(.learnkit-mcq-correct-checkbox, .learnkit-remove-btn-ghost) {
   margin: 0;
   align-self: center;
 }
 
-.sprout .lk-modals.modal .sprout-edit-mcq-option-row .sprout-remove-btn-ghost {
+.learnkit .lk-modals.modal .learnkit-edit-mcq-option-row .learnkit-remove-btn-ghost {
   min-height: 36px;
   height: 36px;
   max-height: 36px;
 }
 
-.sprout .lk-modals.modal .sprout-oq-editor-row .sprout-flag-editor-wrap,
-.sprout .lk-modals.modal .sprout-oq-add-row .sprout-flag-editor-wrap {
+.learnkit .lk-modals.modal .learnkit-oq-editor-row .learnkit-flag-editor-wrap,
+.learnkit .lk-modals.modal .learnkit-oq-add-row .learnkit-flag-editor-wrap {
   align-self: center;
 }
 
 /* Add flashcard modal: title/question/answer/extra start at 50px, allow resize up to 150px. */
-.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline {
-  --sprout-flag-preview-height: 50px;
-  --sprout-flag-preview-max-height: 150px;
+.learnkit .learnkit-card-creator-modal .learnkit-card-creator-editor .learnkit-flag-editor-wrap--multiline {
+  --learnkit-flag-preview-height: 50px;
+  --learnkit-flag-preview-max-height: 150px;
   min-height: 50px;
   max-height: 150px;
 }
 
-.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control {
+.learnkit .learnkit-card-creator-modal .learnkit-card-creator-editor .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-control {
   min-height: 50px;
   max-height: 150px;
 }
 
-.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline .sprout-flag-editor-overlay {
+.learnkit .learnkit-card-creator-modal .learnkit-card-creator-editor .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-overlay {
   min-height: 50px;
-  height: var(--sprout-flag-preview-height, 50px);
-  max-height: var(--sprout-flag-preview-max-height, 150px);
+  height: var(--learnkit-flag-preview-height, 50px);
+  max-height: var(--learnkit-flag-preview-max-height, 150px);
 }
 
-.sprout .sprout-card-creator-modal .sprout-card-creator-editor .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control.sprout-textarea-fixed {
+.learnkit .learnkit-card-creator-modal .learnkit-card-creator-editor .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-control.learnkit-textarea-fixed {
   resize: vertical;
 }
 
 /* Quick edit modal — panel structure matching card-creator & bulk-edit */
-.sprout .sprout-edit-modal {
+.learnkit .learnkit-edit-modal {
   padding: 0;
   width: min(640px, 100%);
   max-width: min(640px, 92vw);
@@ -440,7 +440,7 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-l);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
   box-shadow: var(--lk-shadow-modal);
   background: var(--background);
   position: relative;
@@ -448,7 +448,7 @@
   isolation: isolate;
 }
 
-.sprout .sprout-edit-modal > .modal-content > .modal-header {
+.learnkit .learnkit-edit-modal > .modal-content > .modal-header {
   padding: 12px 20px;
   border-bottom: none;
   background: var(--background);
@@ -458,12 +458,12 @@
   flex-shrink: 0;
 }
 
-.sprout .sprout-edit-modal > .modal-content > .modal-header .modal-title {
-  font-size: var(--sprout-font-md-plus);
+.learnkit .learnkit-edit-modal > .modal-content > .modal-header .modal-title {
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 600;
 }
 
-.sprout .sprout-edit-modal > .modal-content {
+.learnkit .learnkit-edit-modal > .modal-content {
   padding: 16px 20px 20px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -477,26 +477,26 @@
 }
 
 /* Quick edit modal field baselines */
-.sprout .sprout-edit-modal .sprout-edit-field-title.input {
+.learnkit .learnkit-edit-modal .learnkit-edit-field-title.input {
   min-height: 100px;
   height: 100px;
 }
 
-.sprout .sprout-edit-modal .sprout-edit-field-question.textarea,
-.sprout .sprout-edit-modal .sprout-edit-field-answer.textarea {
+.learnkit .learnkit-edit-modal .learnkit-edit-field-question.textarea,
+.learnkit .learnkit-edit-modal .learnkit-edit-field-answer.textarea {
   min-height: 100px;
 }
 
-.sprout .sprout-edit-modal .sprout-edit-field-info.textarea {
+.learnkit .learnkit-edit-modal .learnkit-edit-field-info.textarea {
   min-height: 100px;
 }
 
 /* Input and textarea focus styles */
-.sprout .lk-modals.modal .input:focus,
-.sprout .lk-modals.modal select.input:focus,
-.sprout .lk-modals.modal input[type="text"].input:focus,
-.sprout .lk-modals.modal textarea.textarea:focus,
-.sprout .lk-modals.modal .textarea:focus {
+.learnkit .lk-modals.modal .input:focus,
+.learnkit .lk-modals.modal select.input:focus,
+.learnkit .lk-modals.modal input[type="text"].input:focus,
+.learnkit .lk-modals.modal textarea.textarea:focus,
+.learnkit .lk-modals.modal .textarea:focus {
   border: 1.5px solid var(--theme-accent);
   background: color-mix(in srgb, var(--color-base-00) 48%, transparent 52%);
   box-shadow: none;
@@ -504,14 +504,14 @@
 }
 
 /* MCQ answer section label spacing */
-.sprout .lk-modals.modal .bc.text-xs.text-muted-foreground.inline-flex {
+.learnkit .lk-modals.modal .bc.text-xs.text-muted-foreground.inline-flex {
   margin-top: 5px;
 }
 
 /* ---- Export modal: deck & group pickers ---- */
 
-.sprout .sprout-deck-picker .sprout-popover-dropdown,
-.sprout .sprout-group-picker .sprout-popover-dropdown {
+.learnkit .learnkit-deck-picker .learnkit-popover-dropdown,
+.learnkit .learnkit-group-picker .learnkit-popover-dropdown {
   position: absolute;
   bottom: calc(100% + 6px);
   left: 0;
@@ -522,42 +522,42 @@
   pointer-events: auto;
 }
 
-.sprout .sprout-deck-picker .sprout-popover-dropdown.is-open,
-.sprout .sprout-group-picker .sprout-popover-dropdown.is-open {
+.learnkit .learnkit-deck-picker .learnkit-popover-dropdown.is-open,
+.learnkit .learnkit-group-picker .learnkit-popover-dropdown.is-open {
   display: block;
 }
 
 /* Show focus effect on tag box when popover is open */
-.sprout .sprout-group-picker:has(.sprout-popover-dropdown.is-open) .sprout-tag-box {
+.learnkit .learnkit-group-picker:has(.learnkit-popover-dropdown.is-open) .learnkit-tag-box {
   border: 1.5px solid var(--theme-accent);
   box-shadow: none;
   outline: none;
 }
 
 /* ---- Modal popover / dropdown backgrounds & borders ---- */
-.sprout .sprout-popover-dropdown .rounded-md.bg-popover,
-.sprout .sprout-popover-dropdown-below .rounded-md.bg-popover,
-.sprout .lk-modals .sprout-popover-dropdown .bg-popover,
-.sprout .lk-modals .sprout-popover-dropdown-below .bg-popover {
+.learnkit .learnkit-popover-dropdown .rounded-md.bg-popover,
+.learnkit .learnkit-popover-dropdown-below .rounded-md.bg-popover,
+.learnkit .lk-modals .learnkit-popover-dropdown .bg-popover,
+.learnkit .lk-modals .learnkit-popover-dropdown-below .bg-popover {
   background-color: var(--background-primary, var(--background, #fff));
-  border: 1px solid var(--sprout-border-color);
+  border: 1px solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   color: var(--text-normal, var(--foreground, #111));
   box-shadow: var(--lk-shadow-popover-subtle);
   opacity: 1;
 }
 
-.theme-dark .sprout .sprout-popover-dropdown .rounded-md.bg-popover,
-.theme-dark .sprout .sprout-popover-dropdown-below .rounded-md.bg-popover,
-.theme-dark .sprout .lk-modals .sprout-popover-dropdown .bg-popover,
-.theme-dark .sprout .lk-modals .sprout-popover-dropdown-below .bg-popover {
+.theme-dark .learnkit .learnkit-popover-dropdown .rounded-md.bg-popover,
+.theme-dark .learnkit .learnkit-popover-dropdown-below .rounded-md.bg-popover,
+.theme-dark .learnkit .lk-modals .learnkit-popover-dropdown .bg-popover,
+.theme-dark .learnkit .lk-modals .learnkit-popover-dropdown-below .bg-popover {
   background-color: var(--background-secondary, var(--background, #1e1e1e));
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
   box-shadow: var(--lk-shadow-popover-subtle-dark);
   opacity: 1;
 }
 
-.sprout .sprout-export-tag-box {
+.learnkit .learnkit-export-tag-box {
   height: 38px;
   min-height: 38px;
   max-height: 38px;
@@ -571,20 +571,20 @@
   align-content: flex-start;
   cursor: pointer;
   background: var(--background-modifier-form-field);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-shadow: none;
 }
 
 /* Dark mode modal text: force readable foreground */
-.theme-dark .sprout .lk-modals.modal,
-.theme-dark .sprout .lk-modals.modal .modal-content,
-.theme-dark .sprout .sprout-card-editor-modal-root {
+.theme-dark .learnkit .lk-modals.modal,
+.theme-dark .learnkit .lk-modals.modal .modal-content,
+.theme-dark .learnkit .learnkit-card-editor-modal-root {
   color: var(--foreground);
 }
 
 /* ---- Card editor modal ---- */
 
-.sprout .sprout-card-editor-modal-root {
+.learnkit .learnkit-card-editor-modal-root {
   all: unset;
   display: flex;
   flex-direction: column;
@@ -602,36 +602,36 @@
   box-sizing: border-box;
 }
 
-.sprout .sprout-card-editor-modal-root .fieldset {
+.learnkit .learnkit-card-editor-modal-root .fieldset {
   margin: 0;
   padding: 0;
 }
 
 /* ---- Modal utils ---- */
 
-.sprout .sprout-danger-callout {
+.learnkit .learnkit-danger-callout {
   border-color: rgba(220, 38, 38, 0.35);
   background: rgba(220, 38, 38, 0.08);
 }
 
-.sprout .sprout-danger-callout-body {
+.learnkit .learnkit-danger-callout-body {
   white-space: pre-wrap;
   line-height: 1.35;
 }
 
-.sprout .lk-modal-behind-io-editor {
+.learnkit .lk-modal-behind-io-editor {
   pointer-events: none;
   z-index: 0;
 }
 
-.sprout .sprout-parse-errors-list {
+.learnkit .learnkit-parse-errors-list {
   margin: 0;
   padding-left: 18px;
 }
 
 /* ---- Card creator modal ---- */
 
-.sprout .sprout-card-creator-modal {
+.learnkit .learnkit-card-creator-modal {
   backdrop-filter: none;
   padding: 0;
   gap: 0;
@@ -643,7 +643,7 @@ width: min(720px, 100%);
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-l);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
   box-shadow: var(--lk-shadow-modal);
   background: var(--background);
   position: relative;
@@ -651,7 +651,7 @@ width: min(720px, 100%);
   isolation: isolate;
 }
 
-.sprout .sprout-card-creator-content > .modal-header {
+.learnkit .learnkit-card-creator-content > .modal-header {
   padding: 12px 20px;
   border-bottom: none;
   background: var(--background);
@@ -661,12 +661,12 @@ width: min(720px, 100%);
   flex-shrink: 0;
 }
 
-.sprout .sprout-card-creator-content > .modal-header .modal-title {
-  font-size: var(--sprout-font-md-plus);
+.learnkit .learnkit-card-creator-content > .modal-header .modal-title {
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 600;
 }
 
-.sprout .sprout-card-creator-content {
+.learnkit .learnkit-card-creator-content {
   padding: 16px 20px 20px;
   box-sizing: border-box;
   display: flex;
@@ -684,7 +684,7 @@ width: min(720px, 100%);
 
 /* ---- Gatekeeper modal ---- */
 
-.sprout .sprout-gatekeeper-modal {
+.learnkit .learnkit-gatekeeper-modal {
   backdrop-filter: none;
   padding: 0;
   gap: 0;
@@ -699,16 +699,16 @@ width: min(720px, 100%);
   isolation: isolate;
 }
 
-.sprout .sprout-gatekeeper-modal > .modal-header {
+.learnkit .learnkit-gatekeeper-modal > .modal-header {
   padding: 16px 20px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.sprout .sprout-gatekeeper-content {
+.learnkit .learnkit-gatekeeper-content {
   padding: 16px 20px 20px;
   box-sizing: border-box;
   display: flex;
@@ -719,62 +719,62 @@ width: min(720px, 100%);
   min-height: 0;
 }
 
-.sprout .sprout-gatekeeper-card-header {
+.learnkit .learnkit-gatekeeper-card-header {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 4px 0 14px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
-.sprout .sprout-gatekeeper-card-location {
+.learnkit .learnkit-gatekeeper-card-location {
   padding-top: 4px;
   line-height: 1.4;
   word-break: break-word;
 }
 
-.sprout .sprout-gatekeeper-qa-section {
+.learnkit .learnkit-gatekeeper-qa-section {
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.sprout .sprout-gatekeeper-section-label {
+.learnkit .learnkit-gatekeeper-section-label {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
 }
 
-.sprout .sprout-gatekeeper-section-label:not(:first-child) {
+.learnkit .learnkit-gatekeeper-section-label:not(:first-child) {
   margin-top: 1rem;
   margin-block-start: 1rem;
 }
 
-.sprout .sprout-gatekeeper-body {
+.learnkit .learnkit-gatekeeper-body {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words {
+.learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words {
   line-height: 1.75;
 }
 
-.sprout .sprout-gatekeeper-question-block {
+.learnkit .learnkit-gatekeeper-question-block {
   margin: 0;
 }
 
-.sprout .sprout-gatekeeper-footer {
+.learnkit .learnkit-gatekeeper-footer {
   padding: 16px 20px;
-  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
-.sprout .sprout-gatekeeper-grade-grid {
+.learnkit .learnkit-gatekeeper-grade-grid {
   width: 100%;
 }
 
-.sprout .sprout-gatekeeper-warning-wrap {
+.learnkit .learnkit-gatekeeper-warning-wrap {
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -785,68 +785,68 @@ width: min(720px, 100%);
   padding: 8px 0;
 }
 
-.sprout .sprout-gatekeeper-warning-text {
-  font-size: var(--sprout-font-md-plus);
+.learnkit .learnkit-gatekeeper-warning-text {
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 600;
 }
 
-.sprout .sprout-gatekeeper-warning-subtext {
+.learnkit .learnkit-gatekeeper-warning-subtext {
   max-width: 420px;
   line-height: 1.75;
 }
 
-.sprout .sprout-gatekeeper-modal.sprout-gatekeeper-warning-mode > .modal-header {
+.learnkit .learnkit-gatekeeper-modal.learnkit-gatekeeper-warning-mode > .modal-header {
   display: none;
 }
 
-.sprout .sprout-gatekeeper-modal.sprout-gatekeeper-warning-mode > .sprout-gatekeeper-content {
+.learnkit .learnkit-gatekeeper-modal.learnkit-gatekeeper-warning-mode > .learnkit-gatekeeper-content {
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sprout .sprout-gatekeeper-bypass-btn {
-  border: var(--sprout-border-width) solid color-mix(in srgb, var(--destructive) 45%, transparent);
+.learnkit .learnkit-gatekeeper-bypass-btn {
+  border: var(--learnkit-border-width) solid color-mix(in srgb, var(--destructive) 45%, transparent);
   background: color-mix(in srgb, var(--destructive) 16%, var(--background));
   color: color-mix(in srgb, var(--destructive) 72%, var(--foreground));
 }
 
-.sprout .sprout-gatekeeper-bypass-btn:hover,
-.sprout .sprout-gatekeeper-bypass-btn:focus-visible {
+.learnkit .learnkit-gatekeeper-bypass-btn:hover,
+.learnkit .learnkit-gatekeeper-bypass-btn:focus-visible {
   background: color-mix(in srgb, var(--destructive) 24%, var(--background));
   border-color: color-mix(in srgb, var(--destructive) 60%, transparent);
 }
 
-.theme-dark .sprout .sprout-gatekeeper-bypass-btn {
+.theme-dark .learnkit .learnkit-gatekeeper-bypass-btn {
   background: color-mix(in srgb, var(--destructive) 26%, var(--background));
   color: color-mix(in srgb, var(--destructive) 82%, var(--foreground));
 }
 
-.sprout .sprout-card-creator-modal [data-tooltip]:not([data-tooltip-position])::after,
-.sprout .sprout-bulk-edit-panel [data-tooltip]:not([data-tooltip-position])::after {
+.learnkit .learnkit-card-creator-modal [data-tooltip]:not([data-tooltip-position])::after,
+.learnkit .learnkit-bulk-edit-panel [data-tooltip]:not([data-tooltip-position])::after {
   bottom: calc(100% + 6px);
   top: auto;
   left: 50%;
-  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px)));
+  transform: translateX(calc(-50% + var(--learnkit-tooltip-shift-x, 0px)));
 }
 
-.sprout .sprout-card-creator-root {
+.learnkit .learnkit-card-creator-root {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-.sprout .sprout-card-creator-editor {
+.learnkit .learnkit-card-creator-editor {
   width: 100%;
   max-width: 100%;
 }
 
 /* Card creator: keep input surfaces glassy, with transparent text layers. */
-.sprout .sprout-card-creator-modal :is(
-  .sprout-flag-editor-wrap,
-  .sprout-tag-box,
-  .sprout-card-meta-type-btn,
+.learnkit .learnkit-card-creator-modal :is(
+  .learnkit-flag-editor-wrap,
+  .learnkit-tag-box,
+  .learnkit-card-meta-type-btn,
   .input,
   select.input,
   input[type="text"].input
@@ -857,49 +857,49 @@ width: min(720px, 100%);
   backdrop-filter: blur(10px) saturate(120%);
 }
 
-.sprout .sprout-card-creator-modal :is(
+.learnkit .learnkit-card-creator-modal :is(
   textarea,
   .textarea,
-  .sprout-flag-editor-control,
-  .sprout-flag-editor-overlay,
-  .sprout-search-naked
+  .learnkit-flag-editor-control,
+  .learnkit-flag-editor-overlay,
+  .learnkit-search-naked
 ) {
   background: transparent !important;
 }
 
 /* Card creator controls: match header toolbar button language. */
-.sprout .sprout-card-creator-modal :is(
-  .sprout-card-creator-close-btn,
-  .sprout-card-creator-root .sprout-btn-toolbar[aria-haspopup="menu"],
-  .sprout-card-creator-footer .sprout-btn-filter
+.learnkit .learnkit-card-creator-modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-card-creator-root .learnkit-btn-toolbar[aria-haspopup="menu"],
+  .learnkit-card-creator-footer .learnkit-btn-filter
 ) {
   background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
 }
 
-.sprout .sprout-card-creator-modal :is(
-  .sprout-card-creator-close-btn,
-  .sprout-card-creator-root .sprout-btn-toolbar[aria-haspopup="menu"],
-  .sprout-card-creator-footer .sprout-btn-filter
+.learnkit .learnkit-card-creator-modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-card-creator-root .learnkit-btn-toolbar[aria-haspopup="menu"],
+  .learnkit-card-creator-footer .learnkit-btn-filter
 ):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--color-base-100) !important;
   border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
-.sprout .sprout-card-creator-modal :is(
-  .sprout-card-creator-close-btn,
-  .sprout-card-creator-root .sprout-btn-toolbar[aria-haspopup="menu"],
-  .sprout-card-creator-footer .sprout-btn-filter
+.learnkit .learnkit-card-creator-modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-card-creator-root .learnkit-btn-toolbar[aria-haspopup="menu"],
+  .learnkit-card-creator-footer .learnkit-btn-filter
 ):active {
   background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   color: var(--color-base-100) !important;
   border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
 }
 
-.sprout .lk-modals.modal .sprout-location-input,
-.sprout .lk-modals.modal .sprout-card-meta-grid input.input[disabled] {
+.learnkit .lk-modals.modal .learnkit-location-input,
+.learnkit .lk-modals.modal .learnkit-card-meta-grid input.input[disabled] {
   min-height: 40px;
   max-height: 40px;
   height: 40px;
@@ -917,17 +917,17 @@ width: min(720px, 100%);
   cursor: default;
 }
 
-.sprout .lk-modals.modal .sprout-card-meta-grid input.input[disabled] {
+.learnkit .lk-modals.modal .learnkit-card-meta-grid input.input[disabled] {
   cursor: not-allowed;
 }
 
-.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) .sprout-group-picker .sprout-tag-box {
+.learnkit :is(.learnkit-card-creator-modal, .learnkit-bulk-edit-panel, .learnkit-edit-modal, .learnkit-io-creator-modal) .learnkit-group-picker .learnkit-tag-box {
   min-height: 40px;
   max-height: 40px;
   height: 40px;
 }
 
-.sprout .lk-modals.modal .sprout-card-meta-type-btn {
+.learnkit .lk-modals.modal .learnkit-card-meta-type-btn {
   min-height: 40px !important;
   max-height: 40px;
   height: 40px;
@@ -940,7 +940,7 @@ width: min(720px, 100%);
   width: 100%;
 }
 
-.sprout :is(.sprout-btn-primary-action, .sprout-card-creator-add-btn, .sprout-bulk-edit-save-btn, .sprout-io-save-btn) {
+.learnkit :is(.learnkit-btn-primary-action, .learnkit-card-creator-add-btn, .learnkit-bulk-edit-save-btn, .learnkit-io-save-btn) {
   border: 1px solid var(--theme-black-95) !important;
   border-radius: 8px;
   background: var(--theme-base-95) !important;
@@ -949,78 +949,78 @@ width: min(720px, 100%);
   transition: transform 140ms ease, background-color 140ms ease, border-color 140ms ease;
 }
 
-.sprout :is(.sprout-btn-primary-action, .sprout-card-creator-add-btn, .sprout-bulk-edit-save-btn, .sprout-io-save-btn):hover,
-.sprout :is(.sprout-btn-primary-action, .sprout-card-creator-add-btn, .sprout-bulk-edit-save-btn, .sprout-io-save-btn):focus-visible {
+.learnkit :is(.learnkit-btn-primary-action, .learnkit-card-creator-add-btn, .learnkit-bulk-edit-save-btn, .learnkit-io-save-btn):hover,
+.learnkit :is(.learnkit-btn-primary-action, .learnkit-card-creator-add-btn, .learnkit-bulk-edit-save-btn, .learnkit-io-save-btn):focus-visible {
   border-color: var(--theme-black-85) !important;
   background: var(--theme-black-95) !important;
   color: #fff !important;
   transform: translateY(-1px);
 }
 
-.sprout :is(.sprout-btn-primary-action, .sprout-card-creator-add-btn, .sprout-bulk-edit-save-btn, .sprout-io-save-btn):active {
+.learnkit :is(.learnkit-btn-primary-action, .learnkit-card-creator-add-btn, .learnkit-bulk-edit-save-btn, .learnkit-io-save-btn):active {
   border-color: var(--theme-black-75) !important;
   background: var(--theme-black-85) !important;
   color: #fff !important;
   transform: translateY(0);
 }
 
-.sprout .sprout-io-preview-image {
+.learnkit .learnkit-io-preview-image {
   max-height: 300px;
   object-fit: contain;
 }
 
-.sprout .sprout-cloze-mobile-actions {
+.learnkit .learnkit-cloze-mobile-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 6px;
 }
 
-.sprout .sprout-cloze-mobile-actions .sprout-cloze-mobile-btn {
+.learnkit .learnkit-cloze-mobile-actions .learnkit-cloze-mobile-btn {
   min-height: 28px;
 }
 
-body.is-mobile .sprout .sprout-cloze-mobile-actions {
+body.is-mobile .learnkit .learnkit-cloze-mobile-actions {
   gap: 8px;
 }
 
 /* ---- No inner borders inside modals ---- */
 
-.sprout .lk-modals.modal .border,
-.sprout .lk-modals.modal .border-border,
-.sprout .lk-modals.modal .modal-content .border,
-.sprout .lk-modals.modal .modal-content .border-border {
+.learnkit .lk-modals.modal .border,
+.learnkit .lk-modals.modal .border-border,
+.learnkit .lk-modals.modal .modal-content .border,
+.learnkit .lk-modals.modal .modal-content .border-border {
   border-color: transparent;
 }
 
 /* Re-apply visible border on dropdown panels inside modals */
-.sprout .lk-modals.modal .sprout-popover-dropdown .border,
-.sprout .lk-modals.modal .sprout-popover-dropdown .border-border {
-  border-color: var(--sprout-border-color);
+.learnkit .lk-modals.modal .learnkit-popover-dropdown .border,
+.learnkit .lk-modals.modal .learnkit-popover-dropdown .border-border {
+  border-color: var(--learnkit-border-color);
 }
 
 /* Also strip borders inside bulk-edit overlay panels */
-.sprout .sprout-bulk-edit-panel .border,
-.sprout .sprout-bulk-edit-panel .border-border {
+.learnkit .learnkit-bulk-edit-panel .border,
+.learnkit .learnkit-bulk-edit-panel .border-border {
   border-color: transparent;
 }
 
 /* ---- Consistent modal footer spacing ---- */
 
-.sprout .lk-modal-footer {
+.learnkit .lk-modal-footer {
     padding: 1.5rem 1.2rem 0;
   border-top: none;
 }
 
-.sprout .lk-modal-footer.sprout-gatekeeper-footer {
+.learnkit .lk-modal-footer.learnkit-gatekeeper-footer {
   padding: 16px 20px;
   margin-top: 1rem;
-  border-top: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
 /* ---- Bulk edit modal (browser) ---- */
 
-.sprout .sprout-bulk-edit-panel {
+.learnkit .learnkit-bulk-edit-panel {
   padding: 0;
   width: min(640px, 100%);
   max-width: min(640px, 92vw);
@@ -1029,7 +1029,7 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-l);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
   box-shadow: var(--lk-shadow-modal);
   background: var(--background);
   position: relative;
@@ -1037,7 +1037,7 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   isolation: isolate;
 }
 
-.sprout :is(.sprout-bulk-edit-panel > .modal-header, .sprout-bulk-edit-content > .modal-header) {
+.learnkit :is(.learnkit-bulk-edit-panel > .modal-header, .learnkit-bulk-edit-content > .modal-header) {
   padding: 12px 20px;
   border-bottom: none;
   background: transparent;
@@ -1047,12 +1047,12 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   flex-shrink: 0;
 }
 
-.sprout :is(.sprout-bulk-edit-panel > .modal-header, .sprout-bulk-edit-content > .modal-header) .modal-title {
-  font-size: var(--sprout-font-md-plus);
+.learnkit :is(.learnkit-bulk-edit-panel > .modal-header, .learnkit-bulk-edit-content > .modal-header) .modal-title {
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 600;
 }
 
-.sprout .sprout-bulk-edit-content {
+.learnkit .learnkit-bulk-edit-content {
   padding: 16px 20px 20px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1065,35 +1065,35 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   border-radius: 0;
 }
 
-.sprout .sprout-bulk-edit-panel .input,
-.sprout .sprout-bulk-edit-panel input[type="text"].input {
+.learnkit .learnkit-bulk-edit-panel .input,
+.learnkit .learnkit-bulk-edit-panel input[type="text"].input {
   height: 40px;
   min-height: 40px;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-flag-editor-overlay {
+.learnkit .learnkit-bulk-edit-panel .learnkit-flag-editor-overlay {
   pointer-events: auto;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-bulk-edit-form--multi .sprout-flag-editor-wrap--multiline {
-  --sprout-flag-preview-height: 50px;
-  --sprout-flag-preview-max-height: 150px;
+.learnkit .learnkit-bulk-edit-panel .learnkit-bulk-edit-form--multi .learnkit-flag-editor-wrap--multiline {
+  --learnkit-flag-preview-height: 50px;
+  --learnkit-flag-preview-max-height: 150px;
   min-height: 50px !important;
   max-height: 150px !important;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-bulk-edit-form--multi .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control {
+.learnkit .learnkit-bulk-edit-panel .learnkit-bulk-edit-form--multi .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-control {
   min-height: 50px !important;
   max-height: 150px !important;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-bulk-edit-form--multi .sprout-flag-editor-wrap--multiline .sprout-flag-editor-overlay {
+.learnkit .learnkit-bulk-edit-panel .learnkit-bulk-edit-form--multi .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-overlay {
   min-height: 50px !important;
-  height: var(--sprout-flag-preview-height, 50px) !important;
-  max-height: var(--sprout-flag-preview-max-height, 150px) !important;
+  height: var(--learnkit-flag-preview-height, 50px) !important;
+  max-height: var(--learnkit-flag-preview-max-height, 150px) !important;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-field {
   position: relative;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
@@ -1102,33 +1102,33 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   backdrop-filter: blur(10px) saturate(120%);
   overflow: hidden;
-  --sprout-single-edit-height: 80px;
-  --sprout-single-edit-max-height: 80px;
+  --learnkit-single-edit-height: 80px;
+  --learnkit-single-edit-max-height: 80px;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field:not(.is-preview) {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-field:not(.is-preview) {
   overflow: visible;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field textarea {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-field textarea {
   box-sizing: border-box;
   padding: 6px 8px;
   border: 0 !important;
   background: transparent !important;
-  min-height: var(--sprout-single-edit-height, 80px);
-  max-height: var(--sprout-single-edit-max-height, 80px);
+  min-height: var(--learnkit-single-edit-height, 80px);
+  max-height: var(--learnkit-single-edit-max-height, 80px);
   resize: none;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-flag-editor-wrap.sprout-flag-editor--focused {
+.learnkit .learnkit-bulk-edit-panel .learnkit-flag-editor-wrap.learnkit-flag-editor--focused {
   overflow: visible;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field.is-preview textarea {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-field.is-preview textarea {
   display: none;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-preview {
   display: none;
   border: 0;
   border-radius: 0;
@@ -1140,33 +1140,33 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   overflow-wrap: anywhere;
   overflow: auto;
   cursor: text;
-  min-height: var(--sprout-single-edit-height, 80px);
-  max-height: var(--sprout-single-edit-max-height, 80px);
+  min-height: var(--learnkit-single-edit-height, 80px);
+  max-height: var(--learnkit-single-edit-max-height, 80px);
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-field.is-preview .sprout-single-edit-markdown-preview {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-field.is-preview .learnkit-single-edit-markdown-preview {
   display: block;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview :is(ul, ol) {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-preview :is(ul, ol) {
   margin: 0.15em 0;
   padding-inline-start: 1.5em;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview ul {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-preview ul {
   list-style-type: disc;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview ol {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-preview ol {
   list-style-type: decimal;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview li {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-preview li {
   margin: 0;
   padding: 0;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-preview .sprout-inline-flag {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-preview .learnkit-inline-flag {
   width: 1em;
   height: 1em;
   min-width: 1em;
@@ -1186,12 +1186,12 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   margin: 0 5px;
 }
 
-.sprout .sprout-bulk-edit-panel .sprout-single-edit-markdown-placeholder {
+.learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-placeholder {
   margin: 0;
   color: var(--text-muted);
 }
 
-.sprout .sprout-bulk-tag-box {
+.learnkit .learnkit-bulk-tag-box {
   height: 40px;
   min-height: 40px;
   max-height: 40px;
@@ -1210,7 +1210,7 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   box-shadow: none;
 }
 
-.sprout .sprout-bulk-popover {
+.learnkit .learnkit-bulk-popover {
   position: absolute;
   bottom: calc(100% + 6px);
   left: 0;
@@ -1221,13 +1221,13 @@ body.is-mobile .sprout .sprout-cloze-mobile-actions {
   pointer-events: auto;
 }
 
-.sprout .sprout-bulk-popover.is-open {
+.learnkit .learnkit-bulk-popover.is-open {
   display: block;
 }
 
 /* ---- Bulk edit modal (mobile) ---- */
 
-body.is-mobile .sprout .sprout-bulk-edit-panel {
+body.is-mobile .learnkit .learnkit-bulk-edit-panel {
   width: min(640px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   max-height: 72vh;
@@ -1239,15 +1239,15 @@ body.is-mobile .sprout .sprout-bulk-edit-panel {
   overflow: hidden;
 }
 
-body.is-mobile .sprout .sprout-bulk-edit-content {
+body.is-mobile .learnkit .learnkit-bulk-edit-content {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
 /* Mobile: card creator & quick edit — match bulk-edit sizing */
-body.is-mobile .sprout .sprout-card-creator-modal,
-body.is-mobile .sprout .sprout-edit-modal {
+body.is-mobile .learnkit .learnkit-card-creator-modal,
+body.is-mobile .learnkit .learnkit-edit-modal {
   width: min(640px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   max-height: 72vh;
@@ -1261,7 +1261,7 @@ body.is-mobile .sprout .sprout-edit-modal {
 
 /* ---- Image occlusion creator modal ---- */
 
-.sprout .sprout-io-creator-modal {
+.learnkit .learnkit-io-creator-modal {
   width: auto;
   max-width: min(1080px, 95%);
   height: auto;
@@ -1274,7 +1274,7 @@ body.is-mobile .sprout .sprout-edit-modal {
   box-shadow: var(--lk-shadow-modal);
 }
 
-.sprout :is(.sprout-io-creator-modal > .modal-header, .sprout-io-creator-content > .modal-header) {
+.learnkit :is(.learnkit-io-creator-modal > .modal-header, .learnkit-io-creator-content > .modal-header) {
   padding: 12px 20px;
   border-bottom: none;
   background: var(--background);
@@ -1284,12 +1284,12 @@ body.is-mobile .sprout .sprout-edit-modal {
   flex-shrink: 0;
 }
 
-.sprout :is(.sprout-io-creator-modal > .modal-header, .sprout-io-creator-content > .modal-header) .modal-title {
-  font-size: var(--sprout-font-md-plus);
+.learnkit :is(.learnkit-io-creator-modal > .modal-header, .learnkit-io-creator-content > .modal-header) .modal-title {
+  font-size: var(--learnkit-font-md-plus);
   font-weight: 600;
 }
 
-.sprout .sprout-io-creator-root {
+.learnkit .learnkit-io-creator-root {
   width: 100%;
   height: auto;
   max-width: 100%;
@@ -1301,72 +1301,72 @@ body.is-mobile .sprout .sprout-edit-modal {
   box-sizing: border-box;
 }
 
-.sprout .sprout-io-title-field {
+.learnkit .learnkit-io-title-field {
   padding-top: 0;
 }
 
-.sprout .lk-modals.sprout-io-creator-modal .sprout-io-title-input {
+.learnkit .lk-modals.learnkit-io-creator-modal .learnkit-io-title-input {
   resize: vertical;
   min-height: 60px;
   max-height: 150px;
 }
 
-.sprout .lk-modals.sprout-io-creator-modal .sprout-io-info-input {
+.learnkit .lk-modals.learnkit-io-creator-modal .learnkit-io-info-input {
   resize: vertical;
   min-height: 60px;
   max-height: 150px;
 }
 
-.sprout .lk-modals.sprout-io-creator-modal .sprout-flag-editor-wrap--multiline {
-  --sprout-flag-preview-height: 60px;
-  --sprout-flag-preview-max-height: 150px;
+.learnkit .lk-modals.learnkit-io-creator-modal .learnkit-flag-editor-wrap--multiline {
+  --learnkit-flag-preview-height: 60px;
+  --learnkit-flag-preview-max-height: 150px;
   min-height: 60px !important;
   max-height: 150px !important;
 }
 
-.sprout .lk-modals.sprout-io-creator-modal .sprout-flag-editor-wrap--multiline .sprout-flag-editor-control {
+.learnkit .lk-modals.learnkit-io-creator-modal .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-control {
   min-height: 60px;
-  height: var(--sprout-flag-preview-height, 60px);
+  height: var(--learnkit-flag-preview-height, 60px);
   max-height: 150px;
 }
 
-.sprout .lk-modals.sprout-io-creator-modal .sprout-flag-editor-wrap--multiline .sprout-flag-editor-overlay {
+.learnkit .lk-modals.learnkit-io-creator-modal .learnkit-flag-editor-wrap--multiline .learnkit-flag-editor-overlay {
   min-height: 60px !important;
-  height: var(--sprout-flag-preview-height, 60px) !important;
-  max-height: var(--sprout-flag-preview-max-height, 150px) !important;
+  height: var(--learnkit-flag-preview-height, 60px) !important;
+  max-height: var(--learnkit-flag-preview-max-height, 150px) !important;
 }
 
-.sprout .sprout-io-canvas {
-  height: var(--sprout-io-canvas-height, auto);
-  min-height: var(--sprout-io-canvas-min-height, 0px);
-  max-height: var(--sprout-io-canvas-max-height, none);
+.learnkit .learnkit-io-canvas {
+  height: var(--learnkit-io-canvas-height, auto);
+  min-height: var(--learnkit-io-canvas-min-height, 0px);
+  max-height: var(--learnkit-io-canvas-max-height, none);
 }
 
-.sprout .sprout-io-toolbar {
+.learnkit .learnkit-io-toolbar {
   width: fit-content;
   max-width: 100%;
   align-self: flex-start;
 }
 
 
-.sprout .sprout-io-file-input {
+.learnkit .learnkit-io-file-input {
   display: none;
 }
 
-.sprout .sprout-io-canvas-container {
+.learnkit .learnkit-io-canvas-container {
   position: relative;
   width: 100%;
   max-width: 1500px;
   overflow: hidden;
   flex-shrink: 0;
   background-color: var(--background-secondary);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md, var(--radius-md));
   background-color: var(--color-base-10) !important;
     border: 1px solid var(--color-base-40) !important;
 }
 
-.sprout .sprout-io-canvas-placeholder {
+.learnkit .learnkit-io-canvas-placeholder {
   position: absolute;
   inset: 0;
   display: flex;
@@ -1376,7 +1376,7 @@ body.is-mobile .sprout .sprout-edit-modal {
   cursor: pointer;
 }
 
-.sprout .sprout-io-viewport {
+.learnkit .learnkit-io-viewport {
   position: absolute;
   top: 0;
   left: 0;
@@ -1385,32 +1385,32 @@ body.is-mobile .sprout .sprout-edit-modal {
   overflow: hidden;
 }
 
-.sprout .sprout-io-canvas-container:has(.sprout-io-viewport:not(.sprout-is-hidden)) .sprout-io-canvas-placeholder {
+.learnkit .learnkit-io-canvas-container:has(.learnkit-io-viewport:not(.learnkit-is-hidden)) .learnkit-io-canvas-placeholder {
   display: none !important;
 }
 
-.sprout .sprout-io-stage {
+.learnkit .learnkit-io-stage {
   position: absolute;
   top: 0;
   left: 0;
   transform-origin: 0 0;
-  width: var(--sprout-io-stage-w, 1px);
-  height: var(--sprout-io-stage-h, 1px);
-  transform: var(--sprout-io-stage-transform, none);
+  width: var(--learnkit-io-stage-w, 1px);
+  height: var(--learnkit-io-stage-h, 1px);
+  transform: var(--learnkit-io-stage-transform, none);
 }
 
-.sprout .sprout-stage-transform {
-  transform: var(--sprout-stage-transform, none);
+.learnkit .learnkit-stage-transform {
+  transform: var(--learnkit-stage-transform, none);
 }
 
-.sprout .sprout-io-stage-image {
+.learnkit .learnkit-io-stage-image {
   display: block;
   user-select: none;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-sizing: border-box;
 }
 
-.sprout .sprout-io-stage-overlay {
+.learnkit .learnkit-io-stage-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -1419,7 +1419,7 @@ body.is-mobile .sprout .sprout-edit-modal {
   pointer-events: auto;
 }
 
-.sprout .sprout-io-footer {
+.learnkit .learnkit-io-footer {
   margin-top: 16px;
   padding: 16px 1.2rem 0;
   border-top: none;
@@ -1429,14 +1429,14 @@ body.is-mobile .sprout .sprout-edit-modal {
   gap: 16px;
 }
 
-.sprout .sprout-io-creator-modal .sprout-io-creator-close-btn {
+.learnkit .learnkit-io-creator-modal .learnkit-io-creator-close-btn {
   min-width: 36px;
   padding: 4px 8px;
   gap: 0;
   overflow: hidden;
 }
 
-.sprout .sprout-io-creator-modal .sprout-io-creator-close-btn [data-sprout-label="true"] {
+.learnkit .learnkit-io-creator-modal .learnkit-io-creator-close-btn [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -1447,7 +1447,7 @@ body.is-mobile .sprout .sprout-edit-modal {
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .sprout-io-creator-modal .sprout-io-creator-close-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+.learnkit .learnkit-io-creator-modal .learnkit-io-creator-close-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
   max-width: 7rem;
   opacity: 1;
   margin-left: 6px;
@@ -1455,33 +1455,33 @@ body.is-mobile .sprout .sprout-edit-modal {
 }
 
 /* Ensure modal widths are based on workspace container width, not viewport width. */
-.workspace-tab-container .sprout .lk-modals.modal,
-.workspace-tab-container .sprout .modal-container .modal {
+.workspace-tab-container .learnkit .lk-modals.modal,
+.workspace-tab-container .learnkit .modal-container .modal {
   max-width: min(1080px, 95%);
 }
 
-.sprout .sprout-io-mode-trigger {
+.learnkit .learnkit-io-mode-trigger {
   min-width: 112px;
   justify-content: space-between;
 }
 
-.sprout .sprout-io-creator-modal .sprout-io-creator-content,
-.sprout .sprout-io-creator-modal .sprout-io-creator-root {
+.learnkit .learnkit-io-creator-modal .learnkit-io-creator-content,
+.learnkit .learnkit-io-creator-modal .learnkit-io-creator-root {
   overflow: visible;
 }
 
-.sprout .sprout-io-dlg-cancel {
+.learnkit .learnkit-io-dlg-cancel {
   background-color: #000;
   color: #fff;
   border: 1px solid #000;
 }
 
-.sprout .sprout-io-dlg-delete {
+.learnkit .learnkit-io-dlg-delete {
   background-color: #fff;
   color: var(--foreground);
 }
 
-.sprout .sprout-io-close-btn {
+.learnkit .learnkit-io-close-btn {
   border: none;
   background: transparent;
   box-shadow: none;
@@ -1489,99 +1489,99 @@ body.is-mobile .sprout .sprout-edit-modal {
   cursor: pointer;
 }
 
-.sprout .sprout-io-text-wrap {
+.learnkit .learnkit-io-text-wrap {
   position: absolute;
-  left: var(--sprout-io-text-x, 0);
-  top: var(--sprout-io-text-y, 0);
+  left: var(--learnkit-io-text-x, 0);
+  top: var(--learnkit-io-text-y, 0);
   z-index: 20;
 }
 
-.sprout .sprout-io-text-input {
-  width: var(--sprout-io-text-w, 40px);
-  height: var(--sprout-io-text-h, 30px);
+.learnkit .learnkit-io-text-input {
+  width: var(--learnkit-io-text-w, 40px);
+  height: var(--learnkit-io-text-h, 30px);
   padding: 6px 8px;
   resize: none;
-  font-size: var(--sprout-io-text-size, var(--sprout-font-xs));
+  font-size: var(--learnkit-io-text-size, var(--learnkit-font-xs));
   line-height: 1.3;
-  color: var(--sprout-io-text-color, #111);
+  color: var(--learnkit-io-text-color, #111);
   border: 1px dashed rgba(16, 185, 129, 0.6);
   border-radius: var(--radius-md, var(--radius-md));
   outline: none;
-  background: var(--sprout-io-text-bg, transparent);
+  background: var(--learnkit-io-text-bg, transparent);
   box-shadow: var(--lk-shadow-input-sm);
 }
 
-.sprout .sprout-io-text-preview {
+.learnkit .learnkit-io-text-preview {
   position: absolute;
   border: 2px dashed #10b981;
   background-color: rgba(16, 185, 129, 0.08);
   pointer-events: none;
   border-radius: var(--radius-md, var(--radius-md));
-  left: var(--sprout-io-preview-x, 0);
-  top: var(--sprout-io-preview-y, 0);
-  width: var(--sprout-io-preview-w, 1px);
-  height: var(--sprout-io-preview-h, 1px);
+  left: var(--learnkit-io-preview-x, 0);
+  top: var(--learnkit-io-preview-y, 0);
+  width: var(--learnkit-io-preview-w, 1px);
+  height: var(--learnkit-io-preview-h, 1px);
 }
 
-.sprout .sprout-io-crop-preview {
+.learnkit .learnkit-io-crop-preview {
   position: absolute;
   border: 2px dashed #10b981;
   background-color: rgba(16, 185, 129, 0.12);
   pointer-events: none;
   border-radius: var(--radius-s);
-  left: var(--sprout-io-crop-x, 0);
-  top: var(--sprout-io-crop-y, 0);
-  width: var(--sprout-io-crop-w, 1px);
-  height: var(--sprout-io-crop-h, 1px);
+  left: var(--learnkit-io-crop-x, 0);
+  top: var(--learnkit-io-crop-y, 0);
+  width: var(--learnkit-io-crop-w, 1px);
+  height: var(--learnkit-io-crop-h, 1px);
 }
 
-.sprout .sprout-io-mask-preview {
+.learnkit .learnkit-io-mask-preview {
   position: absolute;
   border: 3px dashed #3b82f6;
   background-color: rgba(59, 130, 246, 0.12);
   pointer-events: none;
-  left: var(--sprout-io-mask-x, 0);
-  top: var(--sprout-io-mask-y, 0);
-  width: var(--sprout-io-mask-w, 1px);
-  height: var(--sprout-io-mask-h, 1px);
-  border-radius: var(--sprout-io-mask-radius, 4px);
+  left: var(--learnkit-io-mask-x, 0);
+  top: var(--learnkit-io-mask-y, 0);
+  width: var(--learnkit-io-mask-w, 1px);
+  height: var(--learnkit-io-mask-h, 1px);
+  border-radius: var(--learnkit-io-mask-radius, 4px);
 }
 
-.sprout .sprout-io-overlay-item {
+.learnkit .learnkit-io-overlay-item {
   position: absolute;
-  left: var(--sprout-io-left, 0);
-  top: var(--sprout-io-top, 0);
-  width: var(--sprout-io-width, 1px);
-  height: var(--sprout-io-height, 1px);
+  left: var(--learnkit-io-left, 0);
+  top: var(--learnkit-io-top, 0);
+  width: var(--learnkit-io-width, 1px);
+  height: var(--learnkit-io-height, 1px);
 }
 
-.sprout .sprout-io-rect {
+.learnkit .learnkit-io-rect {
   pointer-events: auto;
   border: 3px dashed #ef4444;
   background-color: rgba(239, 68, 68, 0.08);
   border-radius: var(--radius-s);
 }
 
-.sprout .sprout-io-rect.is-selected {
+.learnkit .learnkit-io-rect.is-selected {
   border: 3px dashed #3b82f6;
   background-color: rgba(59, 130, 246, 0.12);
 }
 
-.sprout .sprout-io-rect.is-circle {
+.learnkit .learnkit-io-rect.is-circle {
   border-radius: 50%;
 }
 
-.sprout .sprout-io-group-ui {
+.learnkit .learnkit-io-group-ui {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(var(--sprout-io-ui-inverse-scale, 1));
+  transform: translate(-50%, -50%) scale(var(--learnkit-io-ui-inverse-scale, 1));
   transform-origin: center center;
   z-index: 10;
   pointer-events: auto;
 }
 
-.sprout .sprout-io-group-input {
+.learnkit .learnkit-io-group-input {
   height: 1.5rem;
   width: 3rem;
   max-width: 3rem;
@@ -1601,7 +1601,7 @@ body.is-mobile .sprout .sprout-edit-modal {
   position: relative;
 }
 
-.sprout .sprout-io-mask-delete {
+.learnkit .learnkit-io-mask-delete {
 z-index: 11;
     opacity: 0;
     pointer-events: none;
@@ -1621,24 +1621,24 @@ z-index: 11;
     left: 50px;
 }
 
-.sprout .sprout-io-mask-delete:hover {
+.learnkit .learnkit-io-mask-delete:hover {
     background-color: var(--interactive-normal);
 }
 
-.sprout .sprout-io-mask-delete .svg-icon {
+.learnkit .learnkit-io-mask-delete .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout .sprout-io-group-ui:focus-within .sprout-io-mask-delete {
+.learnkit .learnkit-io-group-ui:focus-within .learnkit-io-mask-delete {
   opacity: 1;
   pointer-events: auto;
 }
 
-.sprout .sprout-io-corner {
+.learnkit .learnkit-io-corner {
   position: absolute;
-  width: var(--sprout-io-corner-size, 10px);
-  height: var(--sprout-io-corner-size, 10px);
+  width: var(--learnkit-io-corner-size, 10px);
+  height: var(--learnkit-io-corner-size, 10px);
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: var(--radius-s);
@@ -1646,27 +1646,27 @@ z-index: 11;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
-.sprout .sprout-io-corner.is-left {
+.learnkit .learnkit-io-corner.is-left {
   left: -5px;
 }
 
-.sprout .sprout-io-corner.is-right {
+.learnkit .learnkit-io-corner.is-right {
   right: -5px;
 }
 
-.sprout .sprout-io-corner.is-top {
+.learnkit .learnkit-io-corner.is-top {
   top: -5px;
 }
 
-.sprout .sprout-io-corner.is-bottom {
+.learnkit .learnkit-io-corner.is-bottom {
   bottom: -5px;
 }
 
-.sprout .sprout-io-text-box {
+.learnkit .learnkit-io-text-box {
   pointer-events: auto;
-  border: var(--sprout-io-text-border, 1px dashed rgba(16, 185, 129, 0.6));
-  background-color: var(--sprout-io-text-bg, transparent);
-  box-shadow: var(--sprout-io-text-shadow, none);
+  border: var(--learnkit-io-text-border, 1px dashed rgba(16, 185, 129, 0.6));
+  background-color: var(--learnkit-io-text-bg, transparent);
+  box-shadow: var(--learnkit-io-text-shadow, none);
   border-radius: var(--radius-md, var(--radius-md));
   padding: 6px 8px;
   box-sizing: border-box;
@@ -1675,18 +1675,18 @@ z-index: 11;
   justify-content: flex-start;
 }
 
-.sprout .sprout-io-text-content {
+.learnkit .learnkit-io-text-content {
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: var(--sprout-io-text-size, var(--sprout-font-xs));
+  font-size: var(--learnkit-io-text-size, var(--learnkit-font-xs));
   line-height: 1.3;
-  color: var(--sprout-io-text-color, #111111);
+  color: var(--learnkit-io-text-color, #111111);
   pointer-events: none;
 }
 
 /* ---- Close button ---- */
 
-.sprout .lk-modals.modal .modal-close-button {
+.learnkit .lk-modals.modal .modal-close-button {
   position: relative;
   top: auto;
   right: auto;
@@ -1705,7 +1705,7 @@ z-index: 11;
   cursor: pointer;
 }
 
-.sprout .modal-container .modal-close-button {
+.learnkit .modal-container .modal-close-button {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -1721,28 +1721,28 @@ z-index: 11;
   cursor: pointer;
 }
 
-.sprout .modal-container .modal-close-button:hover {
+.learnkit .modal-container .modal-close-button:hover {
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.08);
 }
 
-.theme-dark .sprout .modal-container .modal-close-button:hover {
+.theme-dark .learnkit .modal-container .modal-close-button:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.10);
 }
 
-.sprout .lk-modals.modal .modal-close-button:hover {
+.learnkit .lk-modals.modal .modal-close-button:hover {
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.08);
 }
 
-.theme-dark .sprout .lk-modals.modal .modal-close-button:hover {
+.theme-dark .learnkit .lk-modals.modal .modal-close-button:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.10);
 }
 
 /* Close button: inline in header for card modals (moved into .modal-header via JS) */
-.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal, .sprout-io-creator-modal) > .modal-header > .modal-close-button {
+.learnkit :is(.learnkit-card-creator-modal, .learnkit-bulk-edit-panel, .learnkit-edit-modal, .learnkit-io-creator-modal) > .modal-header > .modal-close-button {
   position: relative;
   top: auto;
   right: auto;
@@ -1760,8 +1760,8 @@ z-index: 11;
   cursor: pointer;
 }
 
-.sprout :is(.sprout-card-creator-content, .sprout-bulk-edit-content, .sprout-io-creator-content) > .modal-header > .modal-close-button,
-.sprout .sprout-edit-modal > .modal-content > .modal-header > .modal-close-button {
+.learnkit :is(.learnkit-card-creator-content, .learnkit-bulk-edit-content, .learnkit-io-creator-content) > .modal-header > .modal-close-button,
+.learnkit .learnkit-edit-modal > .modal-content > .modal-header > .modal-close-button {
   position: relative;
   top: auto;
   right: auto;
@@ -1779,7 +1779,7 @@ z-index: 11;
   cursor: pointer;
 }
 
-.sprout .sprout-card-creator-content > .modal-header > .modal-close-button {
+.learnkit .learnkit-card-creator-content > .modal-header > .modal-close-button {
   position: relative;
   top: auto;
   right: auto;
@@ -1798,18 +1798,18 @@ z-index: 11;
 }
 
 /* IO modal uses a custom Add-style close button in header; hide Obsidian root close control. */
-.sprout .sprout-io-creator-modal > .modal-close-button {
+.learnkit .learnkit-io-creator-modal > .modal-close-button {
   display: none !important;
 }
 
 /* Tag-box: ensure visible border inside modals */
-.sprout :is(.sprout-card-creator-modal, .sprout-bulk-edit-panel, .sprout-edit-modal) .sprout-tag-box {
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+.learnkit :is(.learnkit-card-creator-modal, .learnkit-bulk-edit-panel, .learnkit-edit-modal) .learnkit-tag-box {
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
 }
 
 /* Optional: tighten default modal title spacing if Obsidian inserts one */
-.sprout .lk-modals.modal .modal-title {
+.learnkit .lk-modals.modal .modal-title {
   margin: 0;
       font-size: 1.2rem !important;
     font-weight: 600;
@@ -1835,7 +1835,7 @@ z-index: 11;
 /* ---- Modal content overflow ---- */
 
 /* Ensure Sprout modal-content includes padding in width to prevent horizontal scrollbar */
-.sprout .modal-content,
+.learnkit .modal-content,
 .lk-modals .modal-content {
   box-sizing: border-box;
 }
@@ -1846,35 +1846,35 @@ z-index: 11;
   width: 100%;
 }
 /* Export result view: avoid empty scrollbars on small content */
-.sprout .sprout-anki-export-modal .modal-content.sprout-export-result {
+.learnkit .learnkit-anki-export-modal .modal-content.learnkit-export-result {
   overflow-y: visible;
   max-height: none;
 }
 
 /* ---- Anki export / import: popover z-index ---- */
 /* When a popover is open its wrapper needs a stacking context above siblings */
-.sprout-anki-export-modal .relative:has(.sprout-popover-dropdown.is-open),
-.sprout-anki-import-modal .relative:has(.sprout-popover-dropdown.is-open),
-.sprout-anki-export-modal .sprout-deck-picker:has(.sprout-popover-dropdown.is-open),
-.sprout-anki-export-modal .sprout-group-picker:has(.sprout-popover-dropdown.is-open),
-.sprout-anki-import-modal .sprout-deck-picker:has(.sprout-popover-dropdown.is-open),
-.sprout-anki-import-modal .sprout-group-picker:has(.sprout-popover-dropdown.is-open) {
+.learnkit-anki-export-modal .relative:has(.learnkit-popover-dropdown.is-open),
+.learnkit-anki-import-modal .relative:has(.learnkit-popover-dropdown.is-open),
+.learnkit-anki-export-modal .learnkit-deck-picker:has(.learnkit-popover-dropdown.is-open),
+.learnkit-anki-export-modal .learnkit-group-picker:has(.learnkit-popover-dropdown.is-open),
+.learnkit-anki-import-modal .learnkit-deck-picker:has(.learnkit-popover-dropdown.is-open),
+.learnkit-anki-import-modal .learnkit-group-picker:has(.learnkit-popover-dropdown.is-open) {
   z-index: var(--lk-z-popover-overlay);
   position: relative;
 }
 
-.sprout-anki-export-modal .sprout-popover-dropdown,
-.sprout-anki-import-modal .sprout-popover-dropdown {
+.learnkit-anki-export-modal .learnkit-popover-dropdown,
+.learnkit-anki-import-modal .learnkit-popover-dropdown {
   z-index: var(--lk-z-popover-overlay);
 }
 
 /* ---- Anki import progress bar ---- */
-.sprout .sprout-anki-import-progress-fill {
-  width: var(--sprout-anki-import-progress, 0%);
-  background-color: var(--sprout-anki-import-progress-color, var(--theme-accent));
+.learnkit .learnkit-anki-import-progress-fill {
+  width: var(--learnkit-anki-import-progress, 0%);
+  background-color: var(--learnkit-anki-import-progress-color, var(--theme-accent));
 }
 /* IO modal content: match outer modal width */
-.sprout-io-creator .modal-content {
+.learnkit-io-creator .modal-content {
   max-width: 100%;
   width: 100%;
   background: transparent;
@@ -1884,20 +1884,20 @@ z-index: 11;
 }
 
 /* Keep tooltip hosts neutral globally; only raise tooltip layer inside modals */
-.sprout .modal-container [data-tooltip],
-.sprout .lk-modals [data-tooltip] {
+.learnkit .modal-container [data-tooltip],
+.learnkit .lk-modals [data-tooltip] {
   overflow: visible;
 }
 
-.sprout .modal-container [data-tooltip]::after,
-.sprout .lk-modals [data-tooltip]::after {
+.learnkit .modal-container [data-tooltip]::after,
+.learnkit .lk-modals [data-tooltip]::after {
   z-index: var(--lk-z-max);
 }
 
 /* ---- Image zoom modal ---- */
 /* Replaces inline styles on zoom overlay across image-occlusion-review-render.ts */
 
-.sprout .lk-modals.modal.sprout-zoom-overlay {
+.learnkit .lk-modals.modal.learnkit-zoom-overlay {
   background: transparent;
   backdrop-filter: none;
   border: none;
@@ -1913,7 +1913,7 @@ z-index: 11;
   overflow: hidden !important;
 }
 
-.sprout .lk-modals.modal.sprout-zoom-overlay > .modal-content.sprout-zoom-content {
+.learnkit .lk-modals.modal.learnkit-zoom-overlay > .modal-content.learnkit-zoom-content {
   padding: 0;
   display: flex;
   align-items: center;
@@ -1927,7 +1927,7 @@ z-index: 11;
   margin: 0 !important;
 }
 
-.sprout .sprout-zoom-host {
+.learnkit .learnkit-zoom-host {
   position: relative;
   display: flex;
   align-items: center;
@@ -1942,47 +1942,47 @@ z-index: 11;
   user-select: none;
 }
 
-.sprout .sprout-zoom-canvas {
+.learnkit .learnkit-zoom-canvas {
   position: relative;
   display: inline-block;
   max-width: 100%;
   max-height: 100%;
 }
 
-.sprout .sprout-zoom-surface {
+.learnkit .learnkit-zoom-surface {
   position: relative;
   display: inline-block;
   max-width: 100%;
   max-height: 100%;
   cursor: zoom-in;
   transform-origin: center center;
-  transform: translate3d(var(--sprout-zoom-x, 0px), var(--sprout-zoom-y, 0px), 0)
-    scale(var(--sprout-zoom-scale, 1));
+  transform: translate3d(var(--learnkit-zoom-x, 0px), var(--learnkit-zoom-y, 0px), 0)
+    scale(var(--learnkit-zoom-scale, 1));
   transition: transform 120ms ease-out;
   will-change: transform;
 }
 
-.sprout .sprout-zoom-surface.sprout-io-container.sprout-io-container--clip {
+.learnkit .learnkit-zoom-surface.learnkit-io-container.learnkit-io-container--clip {
   border: 1px solid var(--color-base-40);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
-.sprout .sprout-zoom-host.is-zoomed .sprout-zoom-surface,
-.sprout .sprout-zoom-host.is-zoomed .sprout-zoom-img {
+.learnkit .learnkit-zoom-host.is-zoomed .learnkit-zoom-surface,
+.learnkit .learnkit-zoom-host.is-zoomed .learnkit-zoom-img {
   cursor: grab;
 }
 
-.sprout .sprout-zoom-host.is-dragging .sprout-zoom-surface,
-.sprout .sprout-zoom-host.is-dragging .sprout-zoom-img {
+.learnkit .learnkit-zoom-host.is-dragging .learnkit-zoom-surface,
+.learnkit .learnkit-zoom-host.is-dragging .learnkit-zoom-img {
   cursor: grabbing;
 }
 
-.sprout .sprout-zoom-host.is-dragging .sprout-zoom-surface {
+.learnkit .learnkit-zoom-host.is-dragging .learnkit-zoom-surface {
   transition: none;
 }
 
-.sprout .sprout-zoom-img {
+.learnkit .learnkit-zoom-img {
   max-width: 100%;
   max-height: 100%;
   width: auto;
@@ -1992,14 +1992,14 @@ z-index: 11;
 }
 
 /* In zoom modal, cancel the flashcard inline image cap (350px) from misc.css. */
-.sprout .lk-modals.modal.sprout-zoom-overlay .sprout-io-image-inline.sprout-zoom-img,
-.sprout .lk-modals.modal.sprout-zoom-overlay .sprout-io-image-zoomed.sprout-zoom-img {
+.learnkit .lk-modals.modal.learnkit-zoom-overlay .learnkit-io-image-inline.learnkit-zoom-img,
+.learnkit .lk-modals.modal.learnkit-zoom-overlay .learnkit-io-image-zoomed.learnkit-zoom-img {
   max-height: 100% !important;
   width: auto !important;
   height: auto !important;
 }
 
-.sprout .sprout-zoom-close {
+.learnkit .learnkit-zoom-close {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -2016,179 +2016,179 @@ z-index: 11;
   cursor: pointer;
 }
 
-.sprout .sprout-zoom-close:hover {
+.learnkit .learnkit-zoom-close:hover {
   opacity: 1;
 }
 
-.sprout .sprout-zoom-close:focus,
-.sprout .sprout-zoom-close:focus-visible,
-.sprout .sprout-zoom-close:active {
+.learnkit .learnkit-zoom-close:focus,
+.learnkit .learnkit-zoom-close:focus-visible,
+.learnkit .learnkit-zoom-close:active {
   opacity: 1;
 }
 
-.sprout .sprout-zoom-close [data-sprout-label="true"] {
+.learnkit .learnkit-zoom-close [data-learnkit-label="true"] {
   color: var(--foreground);
 }
 
-.sprout .sprout-zoom-surface .sprout-zoom-close {
-  transform: scale(calc(1 / var(--sprout-zoom-scale, 1)));
+.learnkit .learnkit-zoom-surface .learnkit-zoom-close {
+  transform: scale(calc(1 / var(--learnkit-zoom-scale, 1)));
   transform-origin: top right;
   gap: 0 !important;
 }
 
 /* ---- Confirm modals (settings) ---- */
 
-.sprout-confirm-modal .modal {
+.learnkit-confirm-modal .modal {
   box-shadow: var(--shadow-s);
   max-width: min(500px, 90%);
 }
 
-.sprout-confirm-modal .modal-header {
+.learnkit-confirm-modal .modal-header {
   padding-bottom: 6px;
 }
 
-.sprout-confirm-modal .modal-title {
+.learnkit-confirm-modal .modal-title {
   font-size: var(--font-ui-medium);
   font-weight: 700;
 }
 
-.sprout-confirm-modal .modal-content {
+.learnkit-confirm-modal .modal-content {
   padding-top: 2px;
 }
 
-.sprout-confirm-modal-content {
+.learnkit-confirm-modal-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.sprout-confirm-modal-copy {
+.learnkit-confirm-modal-copy {
   margin: 0;
   font-size: var(--font-ui-small);
   line-height: 1.55;
   color: var(--text-muted);
 }
 
-.sprout-confirm-modal .modal-content,
-.sprout-confirm-modal .modal-content p {
+.learnkit-confirm-modal .modal-content,
+.learnkit-confirm-modal .modal-content p {
   text-align: left;
 }
 
-.sprout-confirm-row {
+.learnkit-confirm-row {
   display: flex;
   gap: 8px;
   margin-top: 12px;
   justify-content: flex-end;
 }
 
-.sprout-confirm-row-lg {
+.learnkit-confirm-row-lg {
   display: flex;
   gap: 8px;
   margin-top: 14px;
   justify-content: flex-end;
 }
 
-.sprout-btn-danger {
+.learnkit-btn-danger {
   background: var(--background-modifier-error);
   color: var(--text-on-accent);
 }
 
-.sprout-confirm-modal .sprout-settings-action-btn.sprout-btn-danger {
+.learnkit-confirm-modal .learnkit-settings-action-btn.learnkit-btn-danger {
   background: var(--background-modifier-error) !important;
   border-color: var(--background-modifier-error-hover, var(--background-modifier-error)) !important;
   color: var(--text-on-accent) !important;
 }
 
-.sprout-confirm-modal .sprout-settings-action-btn.sprout-btn-danger:hover,
-.sprout-confirm-modal .sprout-settings-action-btn.sprout-btn-danger:focus-visible {
+.learnkit-confirm-modal .learnkit-settings-action-btn.learnkit-btn-danger:hover,
+.learnkit-confirm-modal .learnkit-settings-action-btn.learnkit-btn-danger:focus-visible {
   background: var(--background-modifier-error-hover, var(--background-modifier-error)) !important;
   border-color: var(--background-modifier-error-hover, var(--background-modifier-error)) !important;
   color: var(--text-on-accent) !important;
 }
 
-.sprout-confirm-box {
+.learnkit-confirm-box {
   margin-top: 10px;
 }
 
-.sprout-compare-table {
+.learnkit-compare-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.sprout-compare-th {
+.learnkit-compare-th {
   text-align: left;
   padding: 6px 8px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
   font-weight: 600;
 }
 
-.sprout-compare-td {
+.learnkit-compare-td {
   padding: 6px 8px;
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
-.sprout-confirm-meta {
+.learnkit-confirm-meta {
   margin-top: 10px;
 }
 
-.sprout-confirm-muted {
+.learnkit-confirm-muted {
   margin-top: 10px;
   color: var(--text-muted);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   line-height: 1.5;
 }
 
-.sprout-confirm-summary {
+.learnkit-confirm-summary {
   margin-top: 10px;
   padding: 10px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   background: var(--background-secondary, var(--background));
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   color: var(--text-normal);
 }
 
-.sprout-confirm-summary > div + div {
+.learnkit-confirm-summary > div + div {
   margin-top: 4px;
 }
 
-.sprout-confirm-check-row {
+.learnkit-confirm-check-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 10px;
   color: var(--text-normal);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
 }
 
-.sprout-confirm-hint {
+.learnkit-confirm-hint {
   margin-top: 10px;
   padding: 10px 12px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   background: var(--background-modifier-message);
 }
 
-.sprout-confirm-hint-title {
+.learnkit-confirm-hint-title {
   font-weight: 600;
   margin-bottom: 4px;
   color: var(--text-normal);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
 }
 
-.sprout-confirm-hint-body {
+.learnkit-confirm-hint-body {
   color: var(--text-muted);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   line-height: 1.5;
 }
 
-.sprout .modal-container .setting-item-heading {
+.learnkit .modal-container .setting-item-heading {
   border-bottom: none;
   padding-bottom: 0;
   margin-bottom: 8px;
 }
 
-.sprout .modal-container .modal-content p {
+.learnkit .modal-container .modal-content p {
   margin: 8px 0;
   line-height: 1.5;
   font-size: 0.9rem;;
@@ -2196,63 +2196,63 @@ z-index: 11;
 }
 
 /* Remove box shadow from backup table */
-.sprout-backup-table,
-.sprout-backup-table * {
+.learnkit-backup-table,
+.learnkit-backup-table * {
   box-shadow: none;
 }
 
 /* ---- IO Editor Modal (moved from inline <style> in image-mask-renderer.ts) ---- */
 
-.sprout-io-modal .modal-content {
+.learnkit-io-modal .modal-content {
   padding-top: 10px;
   overflow: hidden;
 }
 
-.sprout-io-editor-modal {
+.learnkit-io-editor-modal {
   z-index: 3000;
 }
 
-.sprout-io-editor-modal .modal-bg {
+.learnkit-io-editor-modal .modal-bg {
   z-index: 2999;
 }
 
-.sprout-io-editor-modal .modal {
+.learnkit-io-editor-modal .modal {
   z-index: 3000;
   width: 90%;
   max-width: 800px;
 }
 
-.sprout-io-root {
+.learnkit-io-root {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.sprout-io-toolbar {
+.learnkit-io-toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.sprout-io-viewport {
+.learnkit-io-viewport {
   position: relative;
   width: 100%;
   overflow: hidden;
-  height: var(--sprout-io-viewport-h, auto);
+  height: var(--learnkit-io-viewport-h, auto);
 }
 
-.sprout-io-stage {
+.learnkit-io-stage {
   position: absolute;
   left: 0;
   top: 0;
   transform-origin: 0 0;
   will-change: transform;
-  width: var(--sprout-io-stage-w, 1px);
-  height: var(--sprout-io-stage-h, 1px);
+  width: var(--learnkit-io-stage-w, 1px);
+  height: var(--learnkit-io-stage-h, 1px);
 }
 
-.sprout-io-img {
+.learnkit-io-img {
   position: absolute;
   left: 0;
   top: 0;
@@ -2261,11 +2261,11 @@ z-index: 11;
   user-select: none;
   -webkit-user-drag: none;
   pointer-events: none;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-sizing: border-box;
 }
 
-.sprout-io-overlay {
+.learnkit-io-overlay {
   position: absolute;
   left: 0;
   top: 0;
@@ -2275,29 +2275,29 @@ z-index: 11;
   pointer-events: auto;
 }
 
-.sprout-io-editor-modal .sprout-io-viewport {
+.learnkit-io-editor-modal .learnkit-io-viewport {
   position: relative;
   top: auto;
   left: auto;
   width: 100%;
-  height: var(--sprout-io-viewport-h, auto);
+  height: var(--learnkit-io-viewport-h, auto);
   overflow: hidden;
 }
 
-.sprout-io-editor-modal .sprout-io-stage {
+.learnkit-io-editor-modal .learnkit-io-stage {
   position: absolute;
   left: 0;
   top: 0;
   transform-origin: 0 0;
-  width: var(--sprout-io-stage-w, 1px);
-  height: var(--sprout-io-stage-h, 1px);
+  width: var(--learnkit-io-stage-w, 1px);
+  height: var(--learnkit-io-stage-h, 1px);
 }
 
-.sprout-io-editor-modal .sprout-stage-transform {
-  transform: var(--sprout-stage-transform, none);
+.learnkit-io-editor-modal .learnkit-stage-transform {
+  transform: var(--learnkit-stage-transform, none);
 }
 
-.sprout .sprout-io-editor-modal .sprout-io-overlay {
+.learnkit .learnkit-io-editor-modal .learnkit-io-overlay {
   left: 0;
   top: 0;
   width: 100%;
@@ -2310,7 +2310,7 @@ z-index: 11;
   z-index: 10;
 }
 
-.sprout-io-editor-modal .sprout-io-overlay {
+.learnkit-io-editor-modal .learnkit-io-overlay {
   position: absolute;
   left: 0;
   top: 0;
@@ -2324,12 +2324,12 @@ z-index: 11;
   z-index: 10;
 }
 
-.sprout-io-preview {
+.learnkit-io-preview {
   position: absolute;
-  left: var(--sprout-io-left, 0);
-  top: var(--sprout-io-top, 0);
-  width: var(--sprout-io-width, 0);
-  height: var(--sprout-io-height, 0);
+  left: var(--learnkit-io-left, 0);
+  top: var(--learnkit-io-top, 0);
+  width: var(--learnkit-io-width, 0);
+  height: var(--learnkit-io-height, 0);
   box-sizing: border-box;
   border: 2px dashed var(--interactive-accent);
   border-radius: var(--radius-md);
@@ -2337,38 +2337,38 @@ z-index: 11;
   pointer-events: none;
 }
 
-.sprout-io-rect {
+.learnkit-io-rect {
   position: absolute;
-  left: var(--sprout-io-left, 0);
-  top: var(--sprout-io-top, 0);
-  width: var(--sprout-io-width, 0);
-  height: var(--sprout-io-height, 0);
+  left: var(--learnkit-io-left, 0);
+  top: var(--learnkit-io-top, 0);
+  width: var(--learnkit-io-width, 0);
+  height: var(--learnkit-io-height, 0);
   box-sizing: border-box;
   border: 2px solid var(--interactive-accent);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.06);
 }
 
-.sprout .sprout-io-editor-modal .sprout-io-rect {
+.learnkit .learnkit-io-editor-modal .learnkit-io-rect {
   pointer-events: auto;
 }
 
-.sprout-io-editor-modal .sprout-io-rect {
+.learnkit-io-editor-modal .learnkit-io-rect {
   pointer-events: auto;
 }
 
-.sprout-io-rect.selected {
+.learnkit-io-rect.selected {
   outline: 2px solid var(--text-accent);
   outline-offset: 1px;
 }
 
-.sprout-io-rect-label {
+.learnkit-io-rect-label {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   font-weight: 700;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   padding: 2px 8px;
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.55);
@@ -2376,15 +2376,15 @@ z-index: 11;
   pointer-events: none;
 }
 
-.sprout-io-pan {
+.learnkit-io-pan {
   cursor: grab;
 }
 
-.sprout-io-pan:active {
+.learnkit-io-pan:active {
   cursor: grabbing;
 }
 
-.sprout-io-canvas-controls {
+.learnkit-io-canvas-controls {
   position: absolute;
   right: 12px;
   bottom: 12px;
@@ -2394,12 +2394,12 @@ z-index: 11;
   gap: 8px;
 }
 
-.sprout-io-ico svg {
+.learnkit-io-ico svg {
   width: 16px;
   height: 16px;
 }
 
-.sprout-io-footer {
+.learnkit-io-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -2409,7 +2409,7 @@ z-index: 11;
 
 /* ---- IO Editor Toolbar Styles (moved from io-editor-styles.ts inline <style>) ---- */
 
-[data-sprout-toolbar] {
+[data-learnkit-toolbar] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2417,13 +2417,13 @@ z-index: 11;
   padding: 6px;
   border-radius: var(--radius-md);
   background: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
   width: fit-content;
   max-width: 100%;
 }
 
-.sprout-io-toolbar-group {
+.learnkit-io-toolbar-group {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2431,18 +2431,18 @@ z-index: 11;
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-md);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background-secondary);
 }
 
-.sprout-io-toolbar-sep {
+.learnkit-io-toolbar-sep {
   width: 1px;
   height: 18px;
-  background: var(--sprout-border-color);
+  background: var(--learnkit-border-color);
   margin: 0 2px;
 }
 
-.sprout-io-btn {
+.learnkit-io-btn {
   padding: 4px 8px;
   min-width: 36px;
   height: 28px;
@@ -2456,27 +2456,27 @@ z-index: 11;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
-.sprout-io-btn:hover {
+.learnkit-io-btn:hover {
   background: var(--background-modifier-hover);
 }
 
-.sprout-io-btn.is-active {
+.learnkit-io-btn.is-active {
   background: var(--theme-base-20);
   border-color: var(--theme-base-40);
   color: var(--theme-accent);
 }
 
-.sprout-io-btn.is-disabled {
+.learnkit-io-btn.is-disabled {
   opacity: 0.4;
   pointer-events: none;
 }
 
-.sprout-io-btn svg {
+.learnkit-io-btn svg {
   width: 17px;
   height: 17px;
 }
 
-.sprout-io-btn-text {
+.learnkit-io-btn-text {
   width: auto;
   min-width: 28px;
   padding: 0 8px;
@@ -2484,52 +2484,52 @@ z-index: 11;
   gap: 6px;
 }
 
-.sprout-io-field {
+.learnkit-io-field {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
   border-radius: var(--radius-md);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background);
 }
 
-.sprout-io-toolbar-label {
-  font-size: var(--sprout-font-2xs);
+.learnkit-io-toolbar-label {
+  font-size: var(--learnkit-font-2xs);
   color: var(--muted-foreground);
 }
 
-.sprout-io-input {
+.learnkit-io-input {
   height: 26px;
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   padding: 2px 6px;
   border-radius: var(--radius-md);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background);
   color: var(--foreground);
 }
 
-.sprout-io-input[type="number"] {
+.learnkit-io-input[type="number"] {
   appearance: textfield;
 }
 
-.sprout-io-input[type="number"]::-webkit-outer-spin-button,
-.sprout-io-input[type="number"]::-webkit-inner-spin-button {
+.learnkit-io-input[type="number"]::-webkit-outer-spin-button,
+.learnkit-io-input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.sprout-io-color {
+.learnkit-io-color {
   width: 26px;
   height: 26px;
   padding: 2px;
   border-radius: var(--radius-md);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background);
   cursor: pointer;
 }
 
-.sprout-io-zoom-slider {
+.learnkit-io-zoom-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 70px;
@@ -2541,16 +2541,16 @@ z-index: 11;
   transform-origin: center;
 }
 
-.sprout-io-zoom-slider::-webkit-slider-runnable-track {
+.learnkit-io-zoom-slider::-webkit-slider-runnable-track {
   background: color-mix(in srgb, var(--background) 70%, transparent);
   width: 70px;
   height: 12px;
   border-radius: 999px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 60%, transparent);
 }
 
-.sprout-io-zoom-slider::-webkit-slider-thumb {
+.learnkit-io-zoom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 24px;
@@ -2562,15 +2562,15 @@ z-index: 11;
   margin-left: -7px;
 }
 
-.sprout-io-zoom-slider::-moz-range-track {
+.learnkit-io-zoom-slider::-moz-range-track {
   background: color-mix(in srgb, var(--background) 70%, transparent);
   width: 70px;
   height: 12px;
   border-radius: 999px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
-.sprout-io-zoom-slider::-moz-range-thumb {
+.learnkit-io-zoom-slider::-moz-range-thumb {
   width: 24px;
   height: 24px;
   border-radius: 999px;
@@ -2579,29 +2579,29 @@ z-index: 11;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
 }
 
-.sprout-io-zoom-slider:focus-visible {
+.learnkit-io-zoom-slider:focus-visible {
   outline: none;
 }
 
-.sprout-io-text-icon {
+.learnkit-io-text-icon {
   position: relative;
   width: 20px;
   height: 20px;
 }
 
-.sprout-io-text-icon-svg {
+.learnkit-io-text-icon-svg {
   width: 18px;
   height: 18px;
   display: block;
 }
 
-.sprout-io-text-icon-letter {
+.learnkit-io-text-icon-letter {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   font-weight: 700;
   color: var(--foreground);
 }

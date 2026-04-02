@@ -1,3 +1,11 @@
+/**
+ * @file src/views/note-review/note-review-view.ts
+ * @summary Module for note review view.
+ *
+ * @exports
+ *  - SproutNoteReviewView
+ */
+
 import { Component, ItemView, MarkdownRenderer, Notice, TFile, setIcon, type WorkspaceLeaf } from "obsidian";
 import { createViewHeader, type SproutHeader } from "../../platform/core/header";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_NOTE_REVIEW } from "../../platform/core/constants";
@@ -508,72 +516,68 @@ export class SproutNoteReviewView extends ItemView {
     const backToCoachLabel = `${t(lang, "ui.reviewer.session.backTo", "Back to")} ${coachLabel}`;
     const exitToHomeLabel = `${t(lang, "ui.reviewer.session.exitTo", "Exit to")} ${t(lang, "ui.reviewer.session.scope.home", "Home")}`;
 
-    const card = host.createDiv({ cls: "bc card w-full bc-session-card lk-session-card m-0 sprout-note-review-empty" });
+    const card = host.createDiv({ cls: "card w-full learnkit-session-card lk-session-card m-0 learnkit-note-review-empty learnkit-note-review-empty" });
 
-    const topBar = card.createDiv({ cls: "sprout-note-review-topbar" });
+    const topBar = card.createDiv({ cls: "learnkit-note-review-topbar learnkit-note-review-topbar" });
     topBar.createDiv({
-      cls: "bc sprout-note-review-topbar-title",
+      cls: "learnkit-note-review-topbar-title learnkit-note-review-topbar-title",
       text: t(lang, "ui.view.noteReview.title", "Notes"),
     });
-    const topBarActions = topBar.createDiv({ cls: "sprout-note-review-topbar-actions" });
+    const topBarActions = topBar.createDiv({ cls: "learnkit-note-review-topbar-actions learnkit-note-review-topbar-actions" });
 
     const quitBtn = topBarActions.createEl("button");
     if (isCoachSession) {
-      quitBtn.classList.add(
-        "bc",
-        "sprout-btn-toolbar",
-        "sprout-btn-filter",
+      quitBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-toolbar",
+        "learnkit-btn-filter", "learnkit-btn-filter",
         "h-7",
         "px-3",
         "text-sm",
         "inline-flex",
         "items-center",
         "gap-2",
-        "sprout-scope-clear-btn",
-        "sprout-note-review-quit-coach-btn",
+        "learnkit-scope-clear-btn", "learnkit-scope-clear-btn",
+        "learnkit-note-review-quit-coach-btn", "learnkit-note-review-quit-coach-btn",
       );
     } else {
-      quitBtn.classList.add(
-        "bc",
-        "sprout-btn-toolbar",
-        "sprout-btn-filter",
+      quitBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-toolbar",
+        "learnkit-btn-filter", "learnkit-btn-filter",
         "h-7",
         "px-3",
         "text-sm",
         "inline-flex",
         "items-center",
         "gap-2",
-        "sprout-scope-clear-btn",
-        "sprout-note-review-quit-btn",
+        "learnkit-scope-clear-btn", "learnkit-scope-clear-btn",
+        "learnkit-note-review-quit-btn", "learnkit-note-review-quit-btn",
       );
     }
     quitBtn.setAttr("type", "button");
     quitBtn.setAttr("aria-label", isCoachSession ? backToCoachLabel : exitToHomeLabel);
     quitBtn.setAttr("data-tooltip-position", "top");
-    const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(quitIconWrap, "x");
     quitBtn.createSpan({
-      cls: "bc",
-      attr: { "data-sprout-label": "true" },
+      cls: "",
+      attr: { "data-learnkit-label": "true" },
       text: isCoachSession ? backToCoachLabel : exitToHomeLabel,
     });
     quitBtn.addEventListener("click", () => {
       void this._quitToHome();
     });
 
-    const section = card.createEl("section", { cls: "bc flex flex-col gap-3 sprout-session-practice-prompt" });
+    const section = card.createEl("section", { cls: "flex flex-col gap-3 learnkit-session-practice-prompt learnkit-session-practice-prompt" });
     if (isCoachSession) {
       section.createDiv({
-        cls: "bc text-base text-center",
+        cls: "text-base text-center",
         text: t(lang, "ui.noteReview.session.coachDoneBody", "All due notes for your study plan have been reviewed for today."),
       });
     } else if (isPracticeComplete) {
       section.createDiv({
-        cls: "bc text-base text-center",
+        cls: "text-base text-center",
         text: t(lang, "ui.reviewer.session.practiceSessionComplete", "Practice session complete"),
       });
       section.createDiv({
-        cls: "bc text-sm text-center sprout-session-practice-prompt-subtext",
+        cls: "text-sm text-center learnkit-session-practice-prompt-subtext learnkit-session-practice-prompt-subtext",
         text: t(
           lang,
           "ui.view.noteReview.empty.practiceCompleteDetail",
@@ -582,11 +586,11 @@ export class SproutNoteReviewView extends ItemView {
       });
     } else {
       section.createDiv({
-        cls: "bc text-base text-center",
+        cls: "text-base text-center",
         text: t(lang, "ui.view.noteReview.empty.askStartPractice", "Would you like to start a practice session?"),
       });
       section.createDiv({
-        cls: "bc text-sm text-center sprout-session-practice-prompt-subtext",
+        cls: "text-sm text-center learnkit-session-practice-prompt-subtext learnkit-session-practice-prompt-subtext",
         text: t(
           lang,
           "ui.view.noteReview.empty.practicePrompt",
@@ -596,13 +600,13 @@ export class SproutNoteReviewView extends ItemView {
     }
 
     // Footer
-    const footer = card.createEl("footer", { cls: "bc sprout-session-study-dock" });
-    const footerLeft = footer.createDiv({ cls: "bc flex items-center gap-2 sprout-session-study-dock-left" });
-    const footerCenter = footer.createDiv({ cls: "bc flex flex-wrap gap-2 items-center justify-center sprout-session-study-dock-center" });
-    const footerRight = footer.createDiv({ cls: "bc flex items-center gap-2 sprout-session-study-dock-right" });
+    const footer = card.createEl("footer", { cls: "learnkit-session-study-dock learnkit-session-study-dock" });
+    const footerLeft = footer.createDiv({ cls: "flex items-center gap-2 learnkit-session-study-dock-left learnkit-session-study-dock-left" });
+    const footerCenter = footer.createDiv({ cls: "flex flex-wrap gap-2 items-center justify-center learnkit-session-study-dock-center learnkit-session-study-dock-center" });
+    const footerRight = footer.createDiv({ cls: "flex items-center gap-2 learnkit-session-study-dock-right learnkit-session-study-dock-right" });
 
     const homeBtn = document.createElement("button");
-    homeBtn.className = "bc sprout-btn-toolbar sprout-btn-filter";
+    homeBtn.className = "learnkit-btn-toolbar learnkit-btn-filter";
     homeBtn.setAttr("type", "button");
     homeBtn.setAttr("aria-label", isCoachSession
       ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach")
@@ -612,7 +616,7 @@ export class SproutNoteReviewView extends ItemView {
       ? t(lang, "ui.reviewer.session.backToCoach", "Back to Coach")
       : t(lang, "ui.reviewer.session.returnToHome", "Return to Home");
     if (!isPhoneMobile) {
-      homeBtn.createEl("kbd", { text: "Q", cls: "bc kbd ml-2" });
+      homeBtn.createEl("kbd", { text: "Q", cls: "kbd ml-2" });
     }
     homeBtn.addEventListener("click", () => {
       void this._quitToHome();
@@ -621,13 +625,13 @@ export class SproutNoteReviewView extends ItemView {
     const canShowPractice = !isCoachSession && !this._practiceMode && this._filteredNotes.length > 0;
     if (canShowPractice) {
       const practiceBtn = document.createElement("button");
-      practiceBtn.className = "bc sprout-btn-toolbar sprout-btn-filter";
+      practiceBtn.className = "learnkit-btn-toolbar learnkit-btn-filter";
       practiceBtn.setAttr("type", "button");
       practiceBtn.setAttr("aria-label", t(lang, "ui.reviewer.session.startPractice", "Start Practice"));
       practiceBtn.setAttr("data-tooltip-position", "top");
       practiceBtn.textContent = t(lang, "ui.reviewer.session.startPractice", "Start Practice");
       if (!isPhoneMobile) {
-        practiceBtn.createEl("kbd", { text: "↵", cls: "bc kbd ml-2" });
+        practiceBtn.createEl("kbd", { text: "↵", cls: "kbd ml-2" });
       }
       practiceBtn.addEventListener("click", () => {
         this._startPracticeSession();
@@ -930,20 +934,20 @@ export class SproutNoteReviewView extends ItemView {
   }
 
   private _applyWidthMode() {
-    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-sprout-wide", "1");
-    else this.containerEl.removeAttribute("data-sprout-wide");
+    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-learnkit-wide", "1");
+    else this.containerEl.removeAttribute("data-learnkit-wide");
 
     const strip = this._titleStripEl;
     if (!this._rootEl && !strip) return;
     const maxWidth = this.plugin.isWideMode ? "100%" : MAX_CONTENT_WIDTH_PX;
     if (this._rootEl) {
       setCssProps(this._rootEl, "--lk-home-max-width", maxWidth);
-      setCssProps(this._rootEl, "--sprout-home-max-width", maxWidth);
-      setCssProps(this._rootEl, "--sprout-note-review-max-width", maxWidth);
+      setCssProps(this._rootEl, "--learnkit-home-max-width", maxWidth);
+      setCssProps(this._rootEl, "--learnkit-note-review-max-width", maxWidth);
     }
     if (strip) {
       setCssProps(strip, "--lk-home-max-width", maxWidth);
-      setCssProps(strip, "--sprout-home-max-width", maxWidth);
+      setCssProps(strip, "--learnkit-home-max-width", maxWidth);
     }
   }
 
@@ -962,7 +966,7 @@ export class SproutNoteReviewView extends ItemView {
       : "lk-home-title-strip sprout-note-review-title-strip";
 
     const row = document.createElement("div");
-    row.className = "sprout-inline-sentence w-full flex items-center justify-between gap-[10px] sprout-note-review-title-row";
+    row.className = "learnkit-inline-sentence w-full flex items-center justify-between gap-[10px] learnkit-note-review-title-row";
 
     const left = document.createElement("div");
     left.className = "min-w-0 flex-1 flex flex-col gap-[2px]";
@@ -1006,7 +1010,7 @@ export class SproutNoteReviewView extends ItemView {
     row.appendChild(left);
 
     const timerHost = document.createElement("div");
-    timerHost.className = "sprout-note-review-title-timer-host";
+    timerHost.className = "learnkit-note-review-title-timer-host";
     row.appendChild(timerHost);
 
     strip.appendChild(row);
@@ -1026,10 +1030,10 @@ export class SproutNoteReviewView extends ItemView {
     const locationText = this._buildSessionLocation(note);
     if (!locationText) return;
 
-    const header = root.createEl("header", { cls: "bc px-6 pt-4 pb-2 sprout-note-review-session-header" });
-    const locationRow = header.createDiv({ cls: "bc flex items-center gap-2 min-w-0" });
+    const header = root.createEl("header", { cls: "px-6 pt-4 pb-2 learnkit-note-review-session-header learnkit-note-review-session-header" });
+    const locationRow = header.createDiv({ cls: "flex items-center gap-2 min-w-0" });
     locationRow.createDiv({
-      cls: "bc text-muted-foreground sprout-session-location-text",
+      cls: "text-muted-foreground learnkit-session-location-text learnkit-session-location-text",
       text: locationText,
     });
   }
@@ -1043,14 +1047,14 @@ export class SproutNoteReviewView extends ItemView {
       const rootRect = root.getBoundingClientRect();
       const panelRect = panel.getBoundingClientRect();
       const shouldUseFlexAuto = panelRect.height > rootRect.height + 1;
-      root.classList.toggle("sprout-note-review-overflow", shouldUseFlexAuto);
+      root.classList.toggle("learnkit-note-review-overflow", shouldUseFlexAuto);
     });
   }
 
   private async _renderCurrentNoteContent(host: HTMLElement, note: TFile, token: number): Promise<void> {
     const article = document.createElement("div");
-    article.className = "sprout-note-review-article card";
-    const body = article.createDiv({ cls: "sprout-note-review-note-body markdown-rendered" });
+    article.className = "learnkit-note-review-article card";
+    const body = article.createDiv({ cls: "learnkit-note-review-note-body learnkit-note-review-note-body markdown-rendered" });
     this._renderNoteReviewSessionHeader(body, note);
 
     try {
@@ -1067,7 +1071,7 @@ export class SproutNoteReviewView extends ItemView {
 
       if (!markdown.trim()) {
         body.createEl("p", {
-          cls: "sprout-settings-text-muted",
+          cls: "learnkit-settings-text-muted learnkit-settings-text-muted",
           text: "This note is empty.",
         });
       }
@@ -1075,7 +1079,7 @@ export class SproutNoteReviewView extends ItemView {
       if (token !== this._renderToken) return;
       body.empty();
       body.createEl("p", {
-        cls: "sprout-settings-text-muted",
+        cls: "learnkit-settings-text-muted learnkit-settings-text-muted",
         text: "Could not load this note.",
       });
     }
@@ -1083,7 +1087,7 @@ export class SproutNoteReviewView extends ItemView {
     if (token !== this._renderToken) return;
 
     host.replaceChildren(article);
-    article.classList.add("sprout-note-review-article-enter");
+    article.classList.add("learnkit-note-review-article-enter", "learnkit-note-review-article-enter");
     requestAnimationFrame(() => {
       if (!article.isConnected) return;
       article.classList.add("is-visible");
@@ -1151,15 +1155,15 @@ export class SproutNoteReviewView extends ItemView {
 
     const popover = document.createElement("div");
     popover.className =
-      "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto sprout-note-review-more-popover sprout-header-menu-panel";
+      "learnkit rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto learnkit-note-review-more-popover learnkit-header-menu-panel";
 
     const menu = document.createElement("div");
-    menu.className = "bc sprout flex flex-col";
+    menu.className = "learnkit flex flex-col";
     menu.setAttribute("role", "menu");
     popover.appendChild(menu);
 
     const itemClass =
-      "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+      "group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
 
     const addItem = (label: string, hotkey: string, onClick: () => void) => {
       const item = document.createElement("div");
@@ -1167,11 +1171,11 @@ export class SproutNoteReviewView extends ItemView {
       item.setAttribute("role", "menuitem");
       item.tabIndex = 0;
       const span = document.createElement("span");
-      span.className = "bc";
+      span.className = "";
       span.textContent = label;
       item.appendChild(span);
       const kbd = document.createElement("kbd");
-      kbd.className = "bc kbd ml-auto text-xs text-muted-foreground tracking-widest";
+      kbd.className = "kbd ml-auto text-xs text-muted-foreground tracking-widest";
       kbd.textContent = hotkey;
       item.appendChild(kbd);
       item.addEventListener("click", () => {
@@ -1192,23 +1196,23 @@ export class SproutNoteReviewView extends ItemView {
     addItem("Suspend", "S", () => void this._suspendCurrentNote().then(() => new Notice("Note suspended.")));
 
     const undoItem = document.createElement("div");
-    undoItem.className = `${itemClass} sprout-menu-item--disabled`;
+    undoItem.className = `${itemClass} learnkit-menu-item--disabled`;
     undoItem.setAttribute("role", "menuitem");
     undoItem.tabIndex = -1;
     undoItem.setAttribute("aria-disabled", "true");
     const undoSpan = document.createElement("span");
-    undoSpan.className = "bc";
+    undoSpan.className = "";
     undoSpan.textContent = "Undo last grade";
     undoItem.appendChild(undoSpan);
     const undoKbd = document.createElement("kbd");
-    undoKbd.className = "bc kbd ml-auto text-xs text-muted-foreground tracking-widest";
+    undoKbd.className = "kbd ml-auto text-xs text-muted-foreground tracking-widest";
     undoKbd.textContent = "U";
     undoItem.appendChild(undoKbd);
     menu.appendChild(undoItem);
 
     addItem(coachShellMode ? backToCoachLabel : "Exit to Decks", "Q", () => void this._quitToHome());
 
-    const stage = moreWrap.closest<HTMLElement>(".sprout-note-review-stage");
+    const stage = moreWrap.closest<HTMLElement>(".learnkit-note-review-stage");
     (stage ?? moreWrap).appendChild(popover);
     this._morePopoverEl = popover;
 
@@ -1257,7 +1261,7 @@ export class SproutNoteReviewView extends ItemView {
     this._suppressEntranceAosOnce = false;
     const coachShellMode = !!this._coachScope || this._returnToCoach;
     const preservedCoachStrip = coachShellMode
-      ? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.sprout-coach-title-strip")
+      ? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.learnkit-coach-title-strip")
       : null;
     if (preservedCoachStrip) preservedCoachStrip.remove();
     this._titleStripEl?.remove();
@@ -1280,15 +1284,15 @@ export class SproutNoteReviewView extends ItemView {
     }
 
     this._rootEl = root;
-    root.classList.add("bc", "sprout-view-content", "sprout-note-review-root");
-    this.containerEl.addClass("sprout");
+    root.classList.add("learnkit-view-content", "learnkit-view-content", "learnkit-note-review-root", "learnkit-note-review-root");
+    this.containerEl.addClass("learnkit");
     this.setTitle?.(this.getDisplayText());
     if (!preservedCoachStrip) {
       this._ensureTitleStrip(root);
     }
 
     const contentShell = root.createDiv({
-      cls: `${SPROUT_HOME_CONTENT_SHELL_CLASS} sprout-note-review-content-shell sprout-session-column flex flex-col min-h-0`,
+      cls: `${SPROUT_HOME_CONTENT_SHELL_CLASS} learnkit-note-review-content-shell learnkit-session-column flex flex-col min-h-0`,
     });
 
     if (!this._header) {
@@ -1320,10 +1324,8 @@ export class SproutNoteReviewView extends ItemView {
     }
 
     const current = this._currentNote();
-    const dueSessionComplete = !this._practiceMode && !coachShellMode && (
-      (remainingCount <= 0 && this._queueSessionTotal > 0) ||
-      (this._queueDueCount === 0 && this._queueSessionDone === 0 && this._queue.length > 0)
-    );
+    const dueSessionComplete = !this._practiceMode && !coachShellMode &&
+      remainingCount <= 0 && this._queueSessionTotal > 0;
     const effectiveCurrent = dueSessionComplete ? null : current;
     renderStudySessionHeader(contentShell, this.plugin.settings?.general?.interfaceLanguage, false, {
       titleToken: "ui.noteReview.session.header.title",
@@ -1336,12 +1338,12 @@ export class SproutNoteReviewView extends ItemView {
       el.removeAttribute("data-aos-delay");
       el.removeAttribute("data-aos-duration");
       el.removeAttribute("data-aos-anchor-placement");
-      el.classList.remove("aos-init", "aos-animate", "sprout-aos-fallback");
+      el.classList.remove("aos-init", "aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
     };
 
     const sessionHeader = contentShell.querySelector<HTMLElement>("[data-study-session-header]");
     clearAos(sessionHeader);
-    const sessionTimerRow = sessionHeader?.querySelector<HTMLElement>(".sprout-session-header-left > div:nth-child(2)") ?? null;
+    const sessionTimerRow = sessionHeader?.querySelector<HTMLElement>(".learnkit-session-header-left > div:nth-child(2)") ?? null;
     const stripEl = this._titleStripEl;
     const titleTimerHost = this._titleTimerHostEl as HTMLElement | null;
     if (titleTimerHost) {
@@ -1351,28 +1353,28 @@ export class SproutNoteReviewView extends ItemView {
       }
     }
     if (sessionHeader) {
-      sessionHeader.classList.add("sprout-note-review-session-header-hidden");
+      sessionHeader.classList.add("learnkit-note-review-session-header-hidden", "learnkit-note-review-session-header-hidden");
     }
     clearAos(titleTimerHost);
     if (animationsEnabled && !this._didEntranceAos && !coachShellMode && !suppressEntranceAos) {
       if (stripEl) {
         clearAos(stripEl);
-        stripEl.classList.remove("sprout-note-review-enter-title");
+        stripEl.classList.remove("learnkit-note-review-enter-title", "learnkit-note-review-enter-title");
         void stripEl.offsetWidth;
-        stripEl.classList.add("sprout-note-review-enter-title");
+        stripEl.classList.add("learnkit-note-review-enter-title", "learnkit-note-review-enter-title");
       }
       clearAos(contentShell);
-      contentShell.classList.remove("sprout-note-review-enter-shell");
+      contentShell.classList.remove("learnkit-note-review-enter-shell", "learnkit-note-review-enter-shell");
       void contentShell.offsetWidth;
-      contentShell.classList.add("sprout-note-review-enter-shell");
+      contentShell.classList.add("learnkit-note-review-enter-shell", "learnkit-note-review-enter-shell");
       this._didEntranceAos = true;
     } else if (!animationsEnabled) {
       root.querySelectorAll("[data-aos]").forEach((el) => {
-        el.classList.add("sprout-aos-fallback");
+        el.classList.add("learnkit-aos-fallback", "learnkit-aos-fallback");
       });
     }
 
-    const panel = contentShell.createDiv({ cls: "sprout-note-review-panel" });
+    const panel = contentShell.createDiv({ cls: "learnkit-note-review-panel learnkit-note-review-panel" });
     const lang = this.plugin.settings?.general?.interfaceLanguage;
     const isMobile = document.body.classList.contains("is-mobile");
     const coachLabel = "Coach";
@@ -1380,69 +1382,65 @@ export class SproutNoteReviewView extends ItemView {
     const exitToHomeLabel = `${t(lang, "ui.reviewer.session.exitTo", "Exit to")} ${t(lang, "ui.reviewer.session.scope.home", "Home")}`;
 
     if (effectiveCurrent) {
-      const topBar = panel.createDiv({ cls: "sprout-note-review-topbar" });
+      const topBar = panel.createDiv({ cls: "learnkit-note-review-topbar learnkit-note-review-topbar" });
       topBar.createDiv({
-        cls: "bc sprout-note-review-topbar-title",
+        cls: "learnkit-note-review-topbar-title learnkit-note-review-topbar-title",
         text: isMobile ? effectiveCurrent.basename : `Note: ${effectiveCurrent.basename}`,
       });
-      const topBarActions = topBar.createDiv({ cls: "sprout-note-review-topbar-actions" });
+      const topBarActions = topBar.createDiv({ cls: "learnkit-note-review-topbar-actions learnkit-note-review-topbar-actions" });
 
       const quitBtn = topBarActions.createEl("button");
       if (coachShellMode) {
-        quitBtn.classList.add(
-          "bc",
-          "sprout-btn-toolbar",
-          "sprout-btn-filter",
+        quitBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-toolbar",
+          "learnkit-btn-filter", "learnkit-btn-filter",
           "h-7",
           "px-3",
           "text-sm",
           "inline-flex",
           "items-center",
           "gap-2",
-          "sprout-scope-clear-btn",
-          "sprout-note-review-quit-coach-btn",
+          "learnkit-scope-clear-btn", "learnkit-scope-clear-btn",
+          "learnkit-note-review-quit-coach-btn", "learnkit-note-review-quit-coach-btn",
         );
       } else {
-        quitBtn.classList.add(
-          "bc",
-          "sprout-btn-toolbar",
-          "sprout-btn-filter",
+        quitBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-toolbar",
+          "learnkit-btn-filter", "learnkit-btn-filter",
           "h-7",
           "px-3",
           "text-sm",
           "inline-flex",
           "items-center",
           "gap-2",
-          "sprout-scope-clear-btn",
-          "sprout-note-review-quit-btn",
+          "learnkit-scope-clear-btn", "learnkit-scope-clear-btn",
+          "learnkit-note-review-quit-btn", "learnkit-note-review-quit-btn",
         );
       }
       quitBtn.setAttr("type", "button");
       quitBtn.setAttr("aria-label", coachShellMode ? backToCoachLabel : exitToHomeLabel);
       quitBtn.setAttr("data-tooltip-position", "top");
-      const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(quitIconWrap, "x");
       if (coachShellMode) {
-        quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: backToCoachLabel });
+        quitBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: backToCoachLabel });
       } else {
-        quitBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: exitToHomeLabel });
+        quitBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: exitToHomeLabel });
       }
       quitBtn.addEventListener("click", () => {
         void this._quitToHome();
       });
     }
 
-    const stage = panel.createDiv({ cls: "sprout-note-review-stage" });
+    const stage = panel.createDiv({ cls: "learnkit-note-review-stage learnkit-note-review-stage" });
 
-    const viewport = stage.createDiv({ cls: "sprout-note-review-content" });
+    const viewport = stage.createDiv({ cls: "learnkit-note-review-content learnkit-note-review-content" });
 
     this._renderToken += 1;
     const renderToken = this._renderToken;
 
     if (effectiveCurrent) {
-      const loadingArticle = viewport.createDiv({ cls: "sprout-note-review-article card sprout-note-review-article-loading" });
+      const loadingArticle = viewport.createDiv({ cls: "learnkit-note-review-article learnkit-note-review-article card learnkit-note-review-article-loading learnkit-note-review-article-loading" });
       loadingArticle.createDiv({
-        cls: "sprout-note-review-note-body markdown-rendered sprout-note-review-loading-copy",
+        cls: "learnkit-note-review-note-body learnkit-note-review-note-body markdown-rendered learnkit-note-review-loading-copy learnkit-note-review-loading-copy",
         text: "Loading note...",
       });
       void this._renderCurrentNoteContent(viewport, effectiveCurrent, renderToken).then(() => {
@@ -1457,22 +1455,22 @@ export class SproutNoteReviewView extends ItemView {
       return;
     }
 
-    const controls = stage.createDiv({ cls: "sprout-note-review-dock" });
-    const left = controls.createDiv({ cls: "sprout-note-review-dock-left" });
-    const countCard = left.createDiv({ cls: "sprout-note-review-queue-count" });
-    setCssProps(countCard, "--sprout-note-review-progress", `${Math.round(progress * 100)}%`);
+    const controls = stage.createDiv({ cls: "learnkit-note-review-dock learnkit-note-review-dock" });
+    const left = controls.createDiv({ cls: "learnkit-note-review-dock-left learnkit-note-review-dock-left" });
+    const countCard = left.createDiv({ cls: "learnkit-note-review-queue-count learnkit-note-review-queue-count" });
+    setCssProps(countCard, "--learnkit-note-review-progress", `${Math.round(progress * 100)}%`);
     countCard.createDiv({
-      cls: "sprout-note-review-queue-count-label",
+      cls: "learnkit-note-review-queue-count-label learnkit-note-review-queue-count-label",
       text: isMobile ? `${remainingCount} remaining` : `${remainingCount} out of ${totalCount} remaining`,
     });
 
-    const buttonGroup = controls.createDiv({ cls: "sprout-note-review-dock-buttons" });
+    const buttonGroup = controls.createDiv({ cls: "learnkit-note-review-dock-buttons learnkit-note-review-dock-buttons" });
     if (algorithm === "fsrs") {
       const againBtn = buttonGroup.createEl("button");
-      againBtn.classList.add("btn-destructive", "sprout-btn-again");
+      againBtn.classList.add("btn-destructive", "learnkit-btn-again", "learnkit-btn-again");
       againBtn.createSpan({ text: "Deferred" });
       const againKey = againBtn.createEl("kbd", { text: "1" });
-      againKey.classList.add("bc", "kbd", "ml-2");
+      againKey.classList.add("kbd", "ml-2");
       againBtn.disabled = !current;
       againBtn.setAttr("aria-label", "Defer note (1)");
       againBtn.setAttr("data-tooltip-position", "top");
@@ -1481,10 +1479,10 @@ export class SproutNoteReviewView extends ItemView {
       });
 
       const goodBtn = buttonGroup.createEl("button");
-      goodBtn.classList.add("btn", "sprout-btn-good");
+      goodBtn.classList.add("btn", "learnkit-btn-good", "learnkit-btn-good");
       goodBtn.createSpan({ text: "Completed" });
       const goodKey = goodBtn.createEl("kbd", { text: "2" });
-      goodKey.classList.add("bc", "kbd", "ml-2");
+      goodKey.classList.add("kbd", "ml-2");
       goodBtn.disabled = !current;
       goodBtn.setAttr("aria-label", "Mark note as completed (2)");
       goodBtn.setAttr("data-tooltip-position", "top");
@@ -1493,10 +1491,10 @@ export class SproutNoteReviewView extends ItemView {
       });
     } else {
       const skipBtn = buttonGroup.createEl("button");
-      skipBtn.classList.add("btn-destructive", "sprout-btn-again");
+      skipBtn.classList.add("btn-destructive", "learnkit-btn-again", "learnkit-btn-again");
       skipBtn.createSpan({ text: "Deferred" });
       const skipKey = skipBtn.createEl("kbd", { text: "1" });
-      skipKey.classList.add("bc", "kbd", "ml-2");
+      skipKey.classList.add("kbd", "ml-2");
       skipBtn.disabled = !current;
       skipBtn.setAttr("aria-label", "Defer note (1)");
       skipBtn.setAttr("data-tooltip-position", "top");
@@ -1505,10 +1503,10 @@ export class SproutNoteReviewView extends ItemView {
       });
 
       const markBtn = buttonGroup.createEl("button");
-      markBtn.classList.add("btn", "sprout-btn-good");
+      markBtn.classList.add("btn", "learnkit-btn-good", "learnkit-btn-good");
       markBtn.createSpan({ text: "Completed" });
       const markKey = markBtn.createEl("kbd", { text: "2" });
-      markKey.classList.add("bc", "kbd", "ml-2");
+      markKey.classList.add("kbd", "ml-2");
       markBtn.disabled = !current;
       markBtn.setAttr("aria-label", "Mark note as completed (2)");
       markBtn.setAttr("data-tooltip-position", "top");
@@ -1518,18 +1516,18 @@ export class SproutNoteReviewView extends ItemView {
     }
 
     if (!isMobile) {
-      const right = controls.createDiv({ cls: "sprout-note-review-dock-right" });
-      const moreWrap = right.createDiv({ cls: "sprout-note-review-more" });
+      const right = controls.createDiv({ cls: "learnkit-note-review-dock-right learnkit-note-review-dock-right" });
+      const moreWrap = right.createDiv({ cls: "learnkit-note-review-more learnkit-note-review-more" });
       this._moreWrapEl = moreWrap;
       const moreBtn = moreWrap.createEl("button");
       moreBtn.disabled = !current || this._practiceMode || this._coachNoScheduling;
-      moreBtn.classList.add("sprout-note-review-more-trigger", "bc", "sprout-btn-toolbar");
+      moreBtn.classList.add("learnkit-note-review-more-trigger", "learnkit-note-review-more-trigger", "learnkit-btn-toolbar", "learnkit-btn-toolbar");
       moreBtn.setAttr("aria-label", "More actions");
-      const moreIconWrap = moreBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const moreIconWrap = moreBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(moreIconWrap, "ellipsis");
-      moreBtn.createSpan({ cls: "bc sprout-note-review-more-label", text: "More" });
+      moreBtn.createSpan({ cls: "learnkit-note-review-more-label learnkit-note-review-more-label", text: "More" });
       const moreKbd = moreBtn.createEl("kbd", { text: "M" });
-      moreKbd.classList.add("bc", "kbd", "ml-2");
+      moreKbd.classList.add("kbd", "ml-2");
       moreBtn.setAttr("data-tooltip-position", "top");
       moreBtn.addEventListener("click", () => {
         this._toggleDockMore();

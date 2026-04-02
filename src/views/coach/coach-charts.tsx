@@ -1,3 +1,15 @@
+/**
+ * @file src/views/coach/coach-charts.tsx
+ * @summary Module for coach charts.
+ *
+ * @exports
+ *  - ExamReadinessPoint
+ *  - CoachHealthPanelProps
+ *  - CoachHealthPanel
+ *  - CoachReadinessPanelProps
+ *  - CoachReadinessPanel
+ */
+
 import * as React from "react";
 import {
   Area,
@@ -60,17 +72,17 @@ function HealthIndicatorRow(props: { title: string; score: number; label: string
   const clampedScore = Math.max(0, Math.min(100, props.score));
   const tip = `${props.title}: ${props.score}% — ${scoreName(props.label)}`;
   return (
-    <div className="sprout-coach-health-bar-row" data-tooltip={tip} data-tooltip-position="top">
-      <div className="sprout-coach-health-bar-meta">
-        <div className="sprout-coach-health-bar-title">{props.title}</div>
-        <div className="sprout-coach-health-bar-status" style={{ color: barColor }}>
+    <div className="learnkit-coach-health-bar-row" data-tooltip={tip} data-tooltip-position="top">
+      <div className="learnkit-coach-health-bar-meta">
+        <div className="learnkit-coach-health-bar-title">{props.title}</div>
+        <div className="learnkit-coach-health-bar-status" style={{ color: barColor }}>
           {scoreName(props.label)}
         </div>
       </div>
-      <div className="sprout-coach-health-bar-track">
-        <div className="sprout-coach-health-bar-fill sprout-coach-health-bar-fill-animated" style={{ "--sprout-health-bar-width": `${clampedScore}%`, backgroundColor: barColor } as React.CSSProperties} />
+      <div className="learnkit-coach-health-bar-track">
+        <div className="learnkit-coach-health-bar-fill learnkit-coach-health-bar-fill-animated" style={{ "--learnkit-health-bar-width": `${clampedScore}%`, backgroundColor: barColor } as React.CSSProperties} />
       </div>
-      <div className="sprout-coach-health-bar-score" style={{ color: barColor }}>
+      <div className="learnkit-coach-health-bar-score" style={{ color: barColor }}>
         {props.score}%
       </div>
     </div>
@@ -120,7 +132,7 @@ function ReadinessTooltip(props: { active?: boolean; payload?: Array<{ dataKey?:
   const actual = payload.find((p: { dataKey?: string }) => p.dataKey === "readiness");
   const proj = payload.find((p: { dataKey?: string }) => p.dataKey === "projected");
   return (
-    <div className="sprout-data-tooltip-surface">
+    <div className="learnkit-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{label}</div>
       {actual?.value != null && (
         <div className="text-background">Readiness: {Math.round(actual.value)}</div>
@@ -140,17 +152,17 @@ export type CoachHealthPanelProps = {
 
 export function CoachHealthPanel(props: CoachHealthPanelProps) {
   return (
-    <div className="card sprout-coach-health-summary-card">
-      <div className="sprout-coach-progress-header">
+    <div className="card learnkit-coach-health-summary-card">
+      <div className="learnkit-coach-progress-header">
         <div>
-          <div className="sprout-coach-health-heading-row">
-            <div className="sprout-coach-health-title">Study Plan Health</div>
+          <div className="learnkit-coach-health-heading-row">
+            <div className="learnkit-coach-health-title">Study Plan Health</div>
             <InfoIcon text="Flashcard health blends FSRS retrievability for studied cards with time feasibility for unstudied cards. Note health uses the same model for reviewed vs unreviewed notes. Exam health is a weighted composite of both." />
           </div>
-          <div className="sprout-coach-step-copy">At-a-glance breakdown of your study health</div>
+          <div className="learnkit-coach-step-copy">At-a-glance breakdown of your study health</div>
         </div>
       </div>
-      <div className="sprout-coach-health-bars">
+      <div className="learnkit-coach-health-bars">
         <HealthIndicatorRow title="Flashcards" score={props.flash.score} label={props.flash.label} />
         <HealthIndicatorRow title="Notes" score={props.note.score} label={props.note.label} />
         <HealthIndicatorRow title="Exam" score={props.exam.score} label={props.exam.label} />
@@ -171,18 +183,18 @@ export function CoachReadinessPanel(props: CoachReadinessPanelProps) {
   const { readiness, todayIndex, startLabel, endLabel, totalDays } = props;
 
   return (
-    <div className="card sprout-coach-timeline-rechart-card">
-      <div className="sprout-coach-progress-header">
+    <div className="card learnkit-coach-timeline-rechart-card">
+      <div className="learnkit-coach-progress-header">
         <div>
           <div className="flex items-center gap-1">
-            <div className="sprout-coach-health-title">Exam Readiness</div>
+            <div className="learnkit-coach-health-title">Exam Readiness</div>
             <InfoIcon text="Blends card mastery (FSRS retrievability) with time feasibility for remaining material into a 0–100 score. The dashed line projects readiness assuming you follow your daily targets." />
           </div>
-          <div className="sprout-coach-step-copy">Track how ready you are — from now until exam day</div>
+          <div className="learnkit-coach-step-copy">Track how ready you are — from now until exam day</div>
         </div>
       </div>
 
-      <SizedChartContainer className="sprout-coach-timeline-rechart">
+      <SizedChartContainer className="learnkit-coach-timeline-rechart">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={readiness} margin={{ top: 24, right: 12, bottom: 4, left: 8 }}>
             <defs>
@@ -247,17 +259,17 @@ export function CoachReadinessPanel(props: CoachReadinessPanelProps) {
         </ResponsiveContainer>
       </SizedChartContainer>
 
-      <div className="sprout-coach-chart-legend">
-        <div className="sprout-coach-legend-item">
-          <span className="sprout-coach-legend-swatch" style={{ backgroundColor: "var(--chart-accent-3)" }} />
+      <div className="learnkit-coach-chart-legend">
+        <div className="learnkit-coach-legend-item">
+          <span className="learnkit-coach-legend-swatch" style={{ backgroundColor: "var(--chart-accent-3)" }} />
           <span>Readiness</span>
         </div>
-        <div className="sprout-coach-legend-item">
-          <span className="sprout-coach-legend-line sprout-coach-legend-dashed" style={{ borderColor: "var(--chart-accent-2)" }} />
+        <div className="learnkit-coach-legend-item">
+          <span className="learnkit-coach-legend-line learnkit-coach-legend-dashed" style={{ borderColor: "var(--chart-accent-2)" }} />
           <span>Projected</span>
         </div>
-        <div className="sprout-coach-legend-item">
-          <span className="sprout-coach-legend-line sprout-coach-legend-dashed" style={{ borderColor: "var(--text-muted)" }} />
+        <div className="learnkit-coach-legend-item">
+          <span className="learnkit-coach-legend-line learnkit-coach-legend-dashed" style={{ borderColor: "var(--text-muted)" }} />
           <span>Today</span>
         </div>
       </div>

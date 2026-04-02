@@ -1,5 +1,13 @@
+/**
+ * @file src/platform/plugin/plugin-base.ts
+ * @summary Module for plugin base.
+ *
+ * @exports
+ *  - LearnKitPluginBase
+ *  - SproutPluginBase
+ */
+
 import { Plugin, type Editor, type MarkdownView, type TFile, type WorkspaceLeaf } from "obsidian";
-import type { Root as ReactRoot } from "react-dom/client";
 
 import { DEFAULT_SETTINGS, type LearnKitSettings } from "../core/constants";
 import type { IStore } from "../core/store-interface";
@@ -23,8 +31,6 @@ export class LearnKitPluginBase extends Plugin {
   declare _saving: Promise<void> | null;
   declare _ribbonEls: HTMLElement[];
   declare _hideStatusBarViewTypes: Set<string>;
-  declare _whatsNewModalContainer: HTMLElement | null;
-  declare _whatsNewModalRoot: ReactRoot | null;
   declare _sproutZoomValue: number;
   declare _sproutZoomSaveTimer: number | null;
   declare _disposeTooltipPositioner: (() => void) | null;
@@ -56,9 +62,6 @@ export class LearnKitPluginBase extends Plugin {
   declare _registerSproutPinchZoom: () => void;
   declare _ensureSingleLeafOfType: (viewType: string) => WorkspaceLeaf | null;
   declare _destroyRibbonIcons: () => void;
-  declare _checkAndShowWhatsNewModal: () => void;
-  declare _showWhatsNewModal: (version: string) => void;
-  declare _closeWhatsNewModal: () => void;
   declare _getActiveMarkdownFile: () => TFile | null;
   declare _ensureEditingNoteEditor: () => { view: MarkdownView; editor: Editor } | null;
   declare _applyClozeShortcutToEditor: (editor: Editor, clozeIndex?: number) => void;

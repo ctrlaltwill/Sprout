@@ -1,3 +1,11 @@
+/**
+ * @file tests/anki-media.test.ts
+ * @summary Unit tests for anki media.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import {
   collectMediaRefs,

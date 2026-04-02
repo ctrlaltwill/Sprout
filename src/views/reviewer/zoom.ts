@@ -25,15 +25,15 @@ export class SproutImageZoomModal extends Modal {
     this.contentEl.empty();
 
     // CSS hooks (you'll add CSS below)
-    this.containerEl.addClass("sprout-img-zoom-container");
-    this.modalEl.addClass("sprout-img-zoom-modal");
-    this.contentEl.addClass("sprout-img-zoom-content");
+    this.containerEl.addClass("learnkit-img-zoom-container");
+    this.modalEl.addClass("learnkit-img-zoom-modal");
+    this.contentEl.addClass("learnkit-img-zoom-content");
 
     const wrap = document.createElement("div");
-    wrap.className = "sprout-img-zoom-wrap";
+    wrap.className = "learnkit-img-zoom-wrap";
 
     const img = document.createElement("img");
-    img.className = "sprout-img-zoom-full";
+    img.className = "learnkit-img-zoom-full";
     img.src = this.src;
     img.alt = this.alt;
 

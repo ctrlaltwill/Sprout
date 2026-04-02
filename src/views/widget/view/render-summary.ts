@@ -29,8 +29,8 @@ import { t } from "../../../platform/translations/translator";
 export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): void {
   const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
     t(view.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
-  const wrap = el("div", "bc bg-background");
-  wrap.classList.add("sprout-widget", "sprout");
+  const wrap = el("div", "bg-background");
+  wrap.classList.add("learnkit-widget", "learnkit-widget", "learnkit", "learnkit");
 
   const f = view.activeFile;
   const noteName = f ? f.basename : tx("ui.widget.summary.noNoteOpen", "No note open");
@@ -39,7 +39,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const counts = computeCounts(cards, view.plugin.store);
 
   // Header: study title with open button
-  const header = el("div", "bc sprout-widget-summary-header flex items-center justify-between gap-2 border-none rounded-none mx-5 px-0 pt-[15px] pb-[10px]");
+  const header = el("div", "sprout-widget-summary-header flex items-center justify-between gap-2 border-none rounded-none mx-5 px-0 pt-[15px] pb-[10px]");
 
   // Create title (not a button)
   const isFolder = isFolderNote(f);
@@ -48,8 +48,8 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const titleText = noteName.replace(/\.md$/, ""); // Remove .md extension
   const titleCased = toTitleCase(titleText);
 
-  const summaryLabelWrap = el("div", "bc flex flex-col items-start gap-2");
-  const summaryTitle = el("div", "bc sprout-widget-summary-title m-0 text-[var(--sprout-widget-font-summary-title)] font-semibold text-foreground", tx("ui.widget.summary.headerTitle", "Flashcards"));
+  const summaryLabelWrap = el("div", "flex flex-col items-start gap-2");
+  const summaryTitle = el("div", "sprout-widget-summary-title m-0 text-[var(--learnkit-widget-font-summary-title)] font-semibold text-foreground", tx("ui.widget.summary.headerTitle", "Flashcards"));
   summaryLabelWrap.appendChild(summaryTitle);
 
   const scopeKind = studyingAsFolder
@@ -59,14 +59,14 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
     scope: titleText,
     kind: scopeKind,
   });
-  const remainingLine = el("div", "bc sprout-widget-remaining-line mt-0 text-[var(--sprout-widget-font-summary-count)] font-normal text-foreground", remainingLabel);
+  const remainingLine = el("div", "sprout-widget-remaining-line mt-0 text-[var(--learnkit-widget-font-summary-count)] font-normal text-foreground", remainingLabel);
   summaryLabelWrap.appendChild(remainingLine);
 
   header.appendChild(summaryLabelWrap);
 
   if (!f) {
-    const body = el("div", "bc px-4 py-6 text-center");
-    const msg = el("div", "bc text-muted-foreground text-sm", tx("ui.widget.summary.openNote", "Open a note to see flashcards."));
+    const body = el("div", "px-4 py-6 text-center");
+    const msg = el("div", "text-muted-foreground text-sm", tx("ui.widget.summary.openNote", "Open a note to see flashcards."));
     body.appendChild(msg);
     wrap.appendChild(body);
     root.appendChild(wrap);
@@ -76,7 +76,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   wrap.appendChild(header);
 
   if (!cards.length) {
-    const body = el("div", "bc text-center rounded-none mx-[10px] px-[5px] py-[15px]");
+    const body = el("div", "text-center rounded-none mx-[10px] px-[5px] py-[15px]");
     let msg = tx("ui.widget.summary.noFlashcardsInNote", "No flashcards found in this note.");
     if (isFolder && folderDecksEnabled) {
       msg = tx("ui.widget.summary.noFlashcardsInFolder", "No flashcards found in this note or folder.");
@@ -84,7 +84,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
       msg = tx("ui.widget.summary.enableFolderDecks", "No flashcards found. Enable 'Treat folder notes as decks' in settings.");
     }
 
-    const msgEl = el("div", "bc text-muted-foreground mt-3 text-sm", msg);
+    const msgEl = el("div", "text-muted-foreground mt-3 text-sm", msg);
     body.appendChild(msgEl);
     wrap.appendChild(body);
     root.appendChild(wrap);
@@ -92,9 +92,9 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   }
 
   // Teaser card: summary + next up preview
-  const teaser = el("div", "bc sprout-widget-teaser card mx-auto my-[10px] flex h-auto w-[90%] max-h-[calc(100%-170px)] min-h-0 flex-none flex-col gap-2.5 overflow-y-auto border border-[var(--sprout-border-color)] p-5 shadow-none text-[var(--sprout-widget-font-teaser-title)]");
+  const teaser = el("div", "sprout-widget-teaser card mx-auto my-[10px] flex h-auto w-[90%] max-h-[calc(100%-170px)] min-h-0 flex-none flex-col gap-2.5 overflow-y-auto border border-[var(--learnkit-border-color)] p-5 shadow-none text-[var(--learnkit-widget-font-teaser-title)]");
 
-  const teaserTitle = el("div", "bc sprout-widget-teaser-title mb-0 font-semibold text-foreground", titleCased);
+  const teaserTitle = el("div", "sprout-widget-teaser-title mb-0 font-semibold text-foreground", titleCased);
   teaser.appendChild(teaserTitle);
 
   const previewSession = view.buildSessionForActiveNote();
@@ -120,16 +120,16 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const dueLabel = queueCount > 0
     ? tx("ui.widget.summary.cardsDue", "{count} Cards Due", { count: queueCount })
     : tx("ui.widget.summary.noCardsDue", "No Cards Due");
-  const countsLine = el("div", "bc sprout-widget-counts-line m-0 text-foreground opacity-70", `${dueLabel}  •  ${counts.total} Cards Total`);
+  const countsLine = el("div", "sprout-widget-counts-line m-0 text-foreground opacity-70", `${dueLabel}  •  ${counts.total} Cards Total`);
   teaser.appendChild(countsLine);
 
   if (queueCount > 0) {
-    const timeLine = el("div", "bc sprout-widget-info-line text-foreground opacity-70 leading-[1.5]", tx("ui.widget.summary.estimatedTime", "Estimated Time: {minutes} min", { minutes: estMinutes }));
+    const timeLine = el("div", "sprout-widget-info-line text-foreground opacity-70 leading-[1.5]", tx("ui.widget.summary.estimatedTime", "Estimated Time: {minutes} min", { minutes: estMinutes }));
     teaser.appendChild(timeLine);
   } else {
     const practiceLine = el(
       "div",
-      "bc sprout-widget-info-line text-foreground opacity-70 leading-[1.5]",
+      "sprout-widget-info-line text-foreground opacity-70 leading-[1.5]",
       tx("ui.widget.summary.practicePrompt", "Would you like to start a practice session? This won't count towards card scheduling and you cannot bury cards or undo answers in this mode."),
     );
     teaser.appendChild(practiceLine);
@@ -138,19 +138,19 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   wrap.appendChild(teaser);
 
   // Footer: Study button
-  const footer = el("div", "bc sprout-widget-summary-footer mx-auto mt-2 mb-[10px] flex max-w-[90%] gap-2 border-none rounded-none p-0");
+  const footer = el("div", "sprout-widget-summary-footer mx-auto mt-2 mb-[10px] flex max-w-[90%] gap-2 border-none rounded-none p-0");
   const studyLabel = queueCount > 0
     ? tx("ui.widget.summary.startStudying", "Start Studying")
     : tx("ui.widget.summary.startPractice", "Start A Practice Session");
   const studyBtn = makeTextButton({
     label: studyLabel,
-    className: "bc sprout-btn-toolbar w-full flex items-center justify-center gap-2",
+    className: "learnkit-btn-toolbar w-full flex items-center justify-center gap-2",
     onClick: () => (queueCount > 0 ? view.startSession() : view.startPracticeSession()),
   });
   applyWidgetActionButtonStyles(studyBtn);
 
   const studyKbd = document.createElement("kbd");
-  studyKbd.className = "bc kbd ml-2";
+  studyKbd.className = "kbd ml-2";
   studyKbd.textContent = "↵";
   studyBtn.appendChild(studyKbd);
 

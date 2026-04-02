@@ -8,7 +8,7 @@
  */
 
 import { Modal, Notice, setIcon } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { log } from "../core/logger";
 import { previewApkg, importFromApkg, type ImportOptions, type ImportPreview, type ImportResult, type ModelFieldMapping } from "../../platform/integrations/anki/anki-import";
 import { setModalTitle, createThemedDropdown, scopeModalToWorkspace } from "./modal-utils";
@@ -17,7 +17,7 @@ import { txCommon } from "../translations/ui-common";
 import { t } from "../translations/translator";
 
 export class AnkiImportModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private apkgBytes: Uint8Array | null = null;
   private apkgFileName = "";
   private preview: ImportPreview | null = null;
@@ -27,7 +27,7 @@ export class AnkiImportModal extends Modal {
     return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
   }
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     super(plugin.app);
     this.plugin = plugin;
   }
@@ -38,9 +38,8 @@ export class AnkiImportModal extends Modal {
     scopeModalToWorkspace(this);
     this.containerEl.addClass("lk-modal-container");
     this.containerEl.addClass("lk-modal-dim");
-    this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-anki-import-modal");
-    this.contentEl.addClass("bc");
+    this.containerEl.addClass("learnkit");
+    this.modalEl.addClass("lk-modals", "learnkit-anki-import-modal");
 
     // Escape key closes modal
     this.scope.register([], "Escape", () => { this.close(); return false; });
@@ -56,9 +55,8 @@ export class AnkiImportModal extends Modal {
   onClose() {
     this.containerEl.removeClass("lk-modal-container");
     this.containerEl.removeClass("lk-modal-dim");
-    this.containerEl.removeClass("sprout");
-    this.modalEl.removeClass("bc", "lk-modals", "sprout-anki-import-modal");
-    this.contentEl.removeClass("bc");
+    this.containerEl.removeClass("learnkit");
+    this.modalEl.removeClass("lk-modals", "learnkit-anki-import-modal");
     this.contentEl.empty();
     this.apkgBytes = null;
     this.preview = null;
@@ -67,16 +65,16 @@ export class AnkiImportModal extends Modal {
 
   /** Shared footer builder. */
   private buildFooter(root: HTMLElement): HTMLElement {
-    return root.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer" });
+    return root.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer" });
   }
 
   /** Shared nav button builder (← Back, Cancel, Next →, Import, etc.). */
   private mkNavBtn(parent: HTMLElement, label: string, icon: string, opts?: { tooltip?: string }): HTMLButtonElement {
     const btn = parent.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": opts?.tooltip || label },
     });
-    const ic = btn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const ic = btn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(ic, icon);
     btn.createSpan({ text: label });
     return btn;
@@ -84,8 +82,8 @@ export class AnkiImportModal extends Modal {
 
   /** Helper: label + control row. */
   private mkField(parent: HTMLElement, label: string, hint?: string) {
-    const wrapper = parent.createDiv({ cls: "bc flex flex-col gap-1" });
-    const lbl = wrapper.createEl("label", { cls: "bc text-sm font-medium", text: label });
+    const wrapper = parent.createDiv({ cls: "flex flex-col gap-1" });
+    const lbl = wrapper.createEl("label", { cls: "text-sm font-medium", text: label });
     if (hint) lbl.setAttribute("aria-label", hint);
     return wrapper;
   }
@@ -97,32 +95,32 @@ export class AnkiImportModal extends Modal {
     root.empty();
     setModalTitle(this, "Import from Anki");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = root.createDiv({ cls: "flex flex-col gap-4" });
 
     body.createDiv({
       text: "Select an Anki .apkg file to import. Image occlusion cards will be skipped.",
-      cls: "bc text-sm text-muted-foreground",
+      cls: "text-sm text-muted-foreground",
     });
 
-    const fileRow = body.createDiv({ cls: "bc flex items-center gap-3" });
+    const fileRow = body.createDiv({ cls: "flex items-center gap-3" });
 
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = ".apkg";
-    fileInput.classList.add("sprout-hidden-important");
+    fileInput.classList.add("learnkit-hidden-important", "learnkit-hidden-important");
     fileRow.appendChild(fileInput);
 
     const pickBtn = fileRow.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Choose an Anki .apkg file from your computer" },
     });
-    const pickIcon = pickBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const pickIcon = pickBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(pickIcon, "file-up");
     pickBtn.createSpan({ text: this.tx("ui.anki.import.action.chooseApkg", "Choose .apkg file") });
 
     const fileLabel = fileRow.createEl("span", {
       text: "No file selected",
-      cls: "bc text-sm text-muted-foreground",
+      cls: "text-sm text-muted-foreground",
     });
 
     pickBtn.onclick = () => fileInput.click();
@@ -178,14 +176,14 @@ export class AnkiImportModal extends Modal {
     root.empty();
     setModalTitle(this, "Import Preview");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = root.createDiv({ cls: "flex flex-col gap-4" });
 
     // Stats grid
-    const statsGrid = body.createDiv({ cls: "bc grid grid-cols-1 gap-1 md:grid-cols-2" });
+    const statsGrid = body.createDiv({ cls: "grid grid-cols-1 gap-1 md:grid-cols-2" });
 
     const addStat = (icon: string, label: string, value: string | number) => {
-      const row = statsGrid.createDiv({ cls: "bc flex items-center gap-2 text-sm py-0.5" });
-      const ic = row.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4 text-muted-foreground" });
+      const row = statsGrid.createDiv({ cls: "flex items-center gap-2 text-sm py-0.5" });
+      const ic = row.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-4 text-muted-foreground" });
       setIcon(ic, icon);
       row.createSpan({ text: this.tx("ui.anki.import.preview.statLabel", "{label}:", { label }) });
       row.createEl("strong", { text: String(value) });
@@ -200,25 +198,25 @@ export class AnkiImportModal extends Modal {
     if (p.mediaCount > 0) addStat("image", "Media files", p.mediaCount);
 
     if (p.deckNames.length > 0) {
-      const deckSection = body.createDiv({ cls: "bc flex flex-col gap-1" });
-      deckSection.createEl("label", { text: this.tx("ui.anki.import.preview.decks", "Decks"), cls: "bc text-sm font-medium" });
-      const deckList = deckSection.createEl("ul", { cls: "bc text-sm pl-4 m-0" });
+      const deckSection = body.createDiv({ cls: "flex flex-col gap-1" });
+      deckSection.createEl("label", { text: this.tx("ui.anki.import.preview.decks", "Decks"), cls: "text-sm font-medium" });
+      const deckList = deckSection.createEl("ul", { cls: "text-sm pl-4 m-0" });
       for (const name of p.deckNames.slice(0, 20)) {
         deckList.createEl("li", { text: name });
       }
       if (p.deckNames.length > 20) {
         deckList.createEl("li", {
           text: this.tx("ui.anki.import.preview.moreDecks", "… and {count} more", { count: p.deckNames.length - 20 }),
-          cls: "bc text-muted-foreground",
+          cls: "text-muted-foreground",
         });
       }
     }
 
     // Warnings
     if (p.warnings.length > 0) {
-      const warnBox = body.createDiv({ cls: "bc rounded-lg p-3 text-sm sprout-danger-callout" });
+      const warnBox = body.createDiv({ cls: "rounded-lg p-3 text-sm learnkit-danger-callout learnkit-danger-callout" });
       for (const w of p.warnings) {
-        warnBox.createEl("p", { text: this.tx("ui.anki.import.preview.warningItem", "⚠️ {warning}", { warning: w }), cls: "bc mb-1" });
+        warnBox.createEl("p", { text: this.tx("ui.anki.import.preview.warningItem", "⚠️ {warning}", { warning: w }), cls: "mb-1" });
       }
     }
 
@@ -240,11 +238,11 @@ export class AnkiImportModal extends Modal {
     root.empty();
     setModalTitle(this, "Import Options");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = root.createDiv({ cls: "flex flex-col gap-4" });
 
     // Target folder
     const folderField = this.mkField(body, "Target folder", "Vault folder where deck folders and files will be created");
-    const folderInput = folderField.createEl("input", { type: "text", cls: "bc input w-full", value: "Imported Flashcards" });
+    const folderInput = folderField.createEl("input", { type: "text", cls: "input w-full", value: "Imported Flashcards" });
 
     // Scheduling
     const schedField = this.mkField(body, "Scheduling", "Import as new cards or preserve Anki scheduling data");
@@ -305,11 +303,11 @@ export class AnkiImportModal extends Modal {
     root.empty();
     setModalTitle(this, "Map Custom Note Types");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = root.createDiv({ cls: "flex flex-col gap-4" });
 
     body.createDiv({
       text: "These note types don't match standard Basic or Cloze. Map their fields to Sprout fields, or skip them.",
-      cls: "bc text-sm text-muted-foreground",
+      cls: "text-sm text-muted-foreground",
     });
 
     // Track per-model state: { action, importAs, qIdx, aIdx, iIdx }
@@ -332,18 +330,18 @@ export class AnkiImportModal extends Modal {
       const m = unknowns[mi];
       const st = states[mi];
 
-      const card = body.createDiv({ cls: "bc rounded-lg p-3 flex flex-col gap-2" });
+      const card = body.createDiv({ cls: "rounded-lg p-3 flex flex-col gap-2" });
 
       // Header: model name + note count
-      const hdr = card.createDiv({ cls: "bc flex items-center justify-between" });
-      hdr.createEl("strong", { text: m.modelName, cls: "bc text-sm" });
+      const hdr = card.createDiv({ cls: "flex items-center justify-between" });
+      hdr.createEl("strong", { text: m.modelName, cls: "text-sm" });
       hdr.createSpan({
         text: this.tx("ui.anki.import.mapping.noteCount", "{count} note(s)", { count: m.noteCount }),
-        cls: "bc text-xs text-muted-foreground",
+        cls: "text-xs text-muted-foreground",
       });
 
       // Fields list
-      const fieldsList = card.createDiv({ cls: "bc text-xs text-muted-foreground" });
+      const fieldsList = card.createDiv({ cls: "text-xs text-muted-foreground" });
       fieldsList.textContent = this.tx("ui.anki.import.mapping.fields", "Fields: {fields}", { fields: m.fieldNames.join(", ") });
 
       // Action: Map or Skip
@@ -355,12 +353,12 @@ export class AnkiImportModal extends Modal {
       actionField.appendChild(actionDropdown.element);
 
       // Mapping controls container
-      const mapControls = card.createDiv({ cls: "bc flex flex-col gap-2" });
+      const mapControls = card.createDiv({ cls: "flex flex-col gap-2" });
 
       const renderMapControls = () => {
         mapControls.empty();
         if (st.action === "skip") {
-          mapControls.createDiv({ text: this.tx("ui.anki.import.mapping.skippedNotes", "These notes will be skipped."), cls: "bc text-xs text-muted-foreground italic" });
+          mapControls.createDiv({ text: this.tx("ui.anki.import.mapping.skippedNotes", "These notes will be skipped."), cls: "text-xs text-muted-foreground italic" });
           return;
         }
 
@@ -434,20 +432,20 @@ export class AnkiImportModal extends Modal {
     root.empty();
     setModalTitle(this, "Importing…");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = root.createDiv({ cls: "flex flex-col gap-4" });
 
-    const bar = body.createDiv({ cls: "bc w-full h-2 rounded-full bg-secondary overflow-hidden" });
-    const fill = bar.createDiv({ cls: "bc h-full bg-primary rounded-full transition-all duration-300 sprout-anki-import-progress-fill" });
-    setCssProps(fill, "--sprout-anki-import-progress", "2%");
+    const bar = body.createDiv({ cls: "w-full h-2 rounded-full bg-secondary overflow-hidden" });
+    const fill = bar.createDiv({ cls: "h-full bg-primary rounded-full transition-all duration-300 learnkit-anki-import-progress-fill learnkit-anki-import-progress-fill" });
+    setCssProps(fill, "--learnkit-anki-import-progress", "2%");
 
     const statusText = body.createEl("p", {
       text: `Processing ${this.apkgFileName}…`,
-      cls: "bc text-sm text-muted-foreground",
+      cls: "text-sm text-muted-foreground",
     });
 
     /** Update the bar and status text, yielding to the browser so the repaint is visible. */
     const setProgress = async (pct: number, phase: string) => {
-      setCssProps(fill, "--sprout-anki-import-progress", `${Math.min(pct, 100)}%`);
+      setCssProps(fill, "--learnkit-anki-import-progress", `${Math.min(pct, 100)}%`);
       statusText.textContent = phase;
       // Yield so the browser can repaint the bar
       await new Promise((r) => requestAnimationFrame(r));
@@ -470,8 +468,8 @@ export class AnkiImportModal extends Modal {
       this.renderResultStep(root, result);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setCssProps(fill, "--sprout-anki-import-progress", "100%");
-      setCssProps(fill, "--sprout-anki-import-progress-color", "var(--text-error)");
+      setCssProps(fill, "--learnkit-anki-import-progress", "100%");
+      setCssProps(fill, "--learnkit-anki-import-progress-color", "var(--text-error)");
       statusText.textContent = this.tx("ui.anki.import.status.error", "Error: {message}", { message: msg });
       log.error("Anki import failed", err);
       new Notice(this.tx("ui.anki.import.error.importFailed", "Import failed — {message}", { message: msg }));
@@ -487,10 +485,10 @@ export class AnkiImportModal extends Modal {
     root.empty();
     setModalTitle(this, "Import Complete");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-1" });
+    const body = root.createDiv({ cls: "flex flex-col gap-1" });
 
     const addRow = (label: string, value: number | string) => {
-      const row = body.createDiv({ cls: "bc flex justify-between text-sm py-1" });
+      const row = body.createDiv({ cls: "flex justify-between text-sm py-1" });
       row.createSpan({ text: label });
       row.createEl("strong", { text: String(value) });
     };
@@ -502,10 +500,10 @@ export class AnkiImportModal extends Modal {
     addRow("Files created", result.filesCreated.length);
 
     if (result.warnings.length > 0) {
-      const warnBox = root.createDiv({ cls: "bc rounded-lg p-3 text-sm mt-3" });
+      const warnBox = root.createDiv({ cls: "rounded-lg p-3 text-sm mt-3" });
       warnBox.createEl("strong", { text: this.tx("ui.anki.import.result.warnings", "Warnings:") });
       for (const w of result.warnings.slice(0, 10)) {
-        warnBox.createEl("p", { text: w, cls: "bc mb-1" });
+        warnBox.createEl("p", { text: w, cls: "mb-1" });
       }
     }
 

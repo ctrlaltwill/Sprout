@@ -1,5 +1,13 @@
+/**
+ * @file src/platform/core/migration.ts
+ * @summary Module for migration.
+ *
+ * @exports
+ *  - migrateJsonToSqlite
+ */
+
 import { Notice } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { log } from "./logger";
 import { SqliteStore, getFlashcardsDbPath, getSchedulingDirPath, isSqliteDatabasePresent } from "./sqlite-store";
 
@@ -30,7 +38,7 @@ function hasLegacyStoreData(root: Record<string, unknown>): boolean {
 }
 
 export async function migrateJsonToSqlite(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   rootData?: unknown,
 ): Promise<boolean> {
   try {

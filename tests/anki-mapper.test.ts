@@ -1,3 +1,11 @@
+/**
+ * @file tests/anki-mapper.test.ts
+ * @summary Unit tests for anki mapper.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import {
   cardRecordToAnkiNote,

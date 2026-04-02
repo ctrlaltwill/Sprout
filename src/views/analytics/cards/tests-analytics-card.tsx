@@ -1,3 +1,11 @@
+/**
+ * @file src/views/analytics/cards/tests-analytics-card.tsx
+ * @summary Module for tests analytics card.
+ *
+ * @exports
+ *  - TestsAnalyticsCard
+ */
+
 import * as React from "react";
 import { ComposedChart, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
 import { createXAxisTicks, formatAxisLabel } from "../chart-axis-utils";
@@ -97,7 +105,7 @@ function InfoIcon(props: { text: string }) {
 function ChevronIcon(props: { open: boolean }) {
   return (
     <svg
-      className={`svg-icon sprout-ana-chevron${props.open ? " is-open" : ""}`}
+      className={`svg-icon learnkit-ana-chevron${props.open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -212,7 +220,7 @@ function TestsTooltipContent(props: {
   if (!dailyDatum || dailyDatum.averageScore == null) return null;
 
   return (
-    <div className="sprout-data-tooltip-surface">
+    <div className="learnkit-data-tooltip-surface">
       <div className="text-background">Date: {dailyDatum.date}</div>
       <div className="text-background">Tests completed: {dailyDatum.attempts}</div>
       <div className="text-background">Average result: {dailyDatum.averageScore.toFixed(1)}%</div>
@@ -321,8 +329,8 @@ export function TestsAnalyticsCard(props: {
     const placePopover = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -361,7 +369,7 @@ export function TestsAnalyticsCard(props: {
   }, []);
 
   return (
-    <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
+    <div className="card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-1">
@@ -373,8 +381,8 @@ export function TestsAnalyticsCard(props: {
         <div ref={wrapRef} className="relative inline-flex">
           <button
             type="button"
-            id="sprout-tests-filter-trigger"
-            className="sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+            id="learnkit-tests-filter-trigger"
+            className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
             aria-label="Filter"
@@ -389,7 +397,7 @@ export function TestsAnalyticsCard(props: {
           {open ? (
             <div
               ref={popoverRef}
-              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm"
+              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm"
               role="listbox"
               aria-label="Tests filters"
             >
@@ -447,7 +455,7 @@ export function TestsAnalyticsCard(props: {
         <div className="text-sm text-muted-foreground">No test attempts yet.</div>
       ) : (
         <>
-          <div className="bc w-full flex-1 sprout-analytics-chart">
+          <div className="w-full flex-1 learnkit-analytics-chart">
             <ResponsiveContainer width="100%" height={250}>
               <ComposedChart margin={{ left: 8, right: 8, top: 12, bottom: 12 }}>
                 <XAxis
@@ -492,9 +500,9 @@ export function TestsAnalyticsCard(props: {
             </ResponsiveContainer>
           </div>
 
-          <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
-            <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-dot" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-2)" }} />Score</div>
-            <div className="bc inline-flex items-center gap-2"><span className="bc inline-block sprout-ana-legend-line" style={{ ["--sprout-legend-color" as string]: "var(--chart-accent-3)" }} />Daily average</div>
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground learnkit-ana-chart-legend">
+            <div className="inline-flex items-center gap-2"><span className="inline-block learnkit-ana-legend-dot" style={{ ["--learnkit-legend-color" as string]: "var(--chart-accent-2)" }} />Score</div>
+            <div className="inline-flex items-center gap-2"><span className="inline-block learnkit-ana-legend-line" style={{ ["--learnkit-legend-color" as string]: "var(--chart-accent-3)" }} />Daily average</div>
           </div>
         </>
       )}

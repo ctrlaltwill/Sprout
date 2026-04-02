@@ -1,3 +1,11 @@
+/**
+ * @file src/views/exam-generator/exam-generator-view.ts
+ * @summary Module for exam generator view.
+ *
+ * @exports
+ *  - SproutExamGeneratorView
+ */
+
 import { ItemView, Notice, TFile, setIcon, type WorkspaceLeaf } from "obsidian";
 import { createViewHeader, type SproutHeader } from "../../platform/core/header";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_EXAM_GENERATOR } from "../../platform/core/constants";
@@ -6,7 +14,7 @@ import { createTitleStripFrame } from "../../platform/core/view-primitives";
 import { ExamTestsSqlite, type SavedExamTestSummary } from "../../platform/core/exam-tests-sqlite";
 import { CoachPlanSqlite } from "../../platform/core/coach-plan-sqlite";
 import { initAOS } from "../../platform/core/aos-loader";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { t } from "../../platform/translations/translator";
 import type { Scope } from "../reviewer/types";
 import {
@@ -63,7 +71,7 @@ const MAX_SELECTABLE_NOTES = 5;
 const DEFAULT_MAX_FOLDER_NOTES = 20;
 
 export class SproutExamGeneratorView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   private _header: SproutHeader | null = null;
   private _rootEl: HTMLElement | null = null;
@@ -134,7 +142,7 @@ export class SproutExamGeneratorView extends ItemView {
 
   private _attachedFiles: AttachedFile[] = [];
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -153,10 +161,10 @@ export class SproutExamGeneratorView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.empty();
-    this.containerEl.addClass("sprout");
+    this.containerEl.addClass("learnkit");
 
     this._rootEl = this.contentEl;
-    this._rootEl.classList.add("bc", "sprout-view-content", "sprout-exam-generator-root");
+    this._rootEl.classList.add("learnkit-view-content", "learnkit-view-content", "learnkit-exam-generator-root", "learnkit-exam-generator-root");
 
     this._header = createViewHeader({
       view: this,
@@ -233,7 +241,7 @@ export class SproutExamGeneratorView extends ItemView {
     if (!this._rootEl) return;
     const maxWidth = this.plugin.isWideMode ? "100%" : MAX_CONTENT_WIDTH_PX;
     setCssProps(this._rootEl, "--lk-home-max-width", maxWidth);
-    setCssProps(this._rootEl, "--sprout-exam-generator-max-width", maxWidth);
+    setCssProps(this._rootEl, "--learnkit-exam-generator-max-width", maxWidth);
   }
 
   private _applyCoachScope(scope: Scope): void {
@@ -608,7 +616,7 @@ export class SproutExamGeneratorView extends ItemView {
 
     if (!this._shellEl) {
       this._rootEl.empty();
-      this._shellEl = this._rootEl.createDiv({ cls: "sprout-view-content-shell sprout-exam-generator-content-shell" });
+      this._shellEl = this._rootEl.createDiv({ cls: "learnkit-view-content-shell learnkit-view-content-shell learnkit-exam-generator-content-shell learnkit-exam-generator-content-shell" });
     }
 
     const shell = this._shellEl;
@@ -622,7 +630,7 @@ export class SproutExamGeneratorView extends ItemView {
 
     const titleFrame = createTitleStripFrame({
       root: this._rootEl,
-      stripClassName: "lk-home-title-strip sprout-exam-generator-title-strip",
+      stripClassName: "lk-home-title-strip learnkit-exam-generator-title-strip",
       rowClassName: "sprout-inline-sentence w-full flex items-center justify-between gap-[10px]",
       leftClassName: "min-w-0 flex-1 flex flex-col gap-[2px]",
       rightClassName: "flex items-center gap-2",
@@ -648,38 +656,38 @@ export class SproutExamGeneratorView extends ItemView {
       );
 
     const savedTestsWrap = document.createElement("div");
-    savedTestsWrap.className = "sprout-exam-generator-saved-tests-wrap";
+    savedTestsWrap.className = "learnkit-exam-generator-saved-tests-wrap";
 
     const savedTestsBtn = document.createElement("button");
-    savedTestsBtn.className = "bc sprout-btn-accent inline-flex items-center gap-2 sprout-exam-generator-saved-tests-btn";
+    savedTestsBtn.className = "learnkit-btn-accent inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn";
     savedTestsBtn.type = "button";
     savedTestsBtn.setAttribute("aria-label", "Saved tests");
     savedTestsBtn.createSpan({ text: "Saved tests" });
     const chevronWrap = savedTestsBtn.createSpan({
-      cls: "sprout-exam-generator-saved-tests-chevron inline-flex items-center justify-center [&_svg]:size-3.5",
+      cls: "learnkit-exam-generator-saved-tests-chevron learnkit-exam-generator-saved-tests-chevron inline-flex items-center justify-center [&_svg]:size-3.5",
     });
     setIcon(chevronWrap, "chevron-down");
 
     const savedTestsPanel = savedTestsWrap.createDiv({
-      cls: "sprout-popover-dropdown sprout-popover-dropdown-below sprout-exam-generator-saved-tests-popover",
+      cls: "learnkit-popover-dropdown learnkit-popover-dropdown learnkit-popover-dropdown-below learnkit-popover-dropdown-below learnkit-exam-generator-saved-tests-popover learnkit-exam-generator-saved-tests-popover",
     });
-    const panel = savedTestsPanel.createDiv({ cls: "bc rounded-md border border-border bg-popover text-popover-foreground p-1 flex flex-col sprout-pointer-auto sprout-exam-generator-saved-tests-panel" });
-    const searchWrap = panel.createDiv({ cls: "sprout-ss-search-wrap sprout-scope-preset-create sprout-exam-generator-saved-tests-search-wrap" });
+    const panel = savedTestsPanel.createDiv({ cls: "rounded-md border border-border bg-popover text-popover-foreground p-1 flex flex-col learnkit-pointer-auto learnkit-pointer-auto learnkit-exam-generator-saved-tests-panel learnkit-exam-generator-saved-tests-panel" });
+    const searchWrap = panel.createDiv({ cls: "learnkit-ss-search-wrap learnkit-ss-search-wrap learnkit-scope-preset-create learnkit-scope-preset-create learnkit-exam-generator-saved-tests-search-wrap learnkit-exam-generator-saved-tests-search-wrap" });
     const searchInput = searchWrap.createEl("input", {
       type: "text",
-      cls: "sprout-ss-search-input sprout-exam-generator-saved-tests-search",
+      cls: "learnkit-ss-search-input learnkit-ss-search-input learnkit-exam-generator-saved-tests-search learnkit-exam-generator-saved-tests-search",
       attr: { placeholder: "Search saved tests", autocomplete: "off", spellcheck: "false" },
     });
-    const savedSearchIcon = searchWrap.createSpan({ cls: "sprout-exam-generator-saved-tests-search-icon-right" });
+    const savedSearchIcon = searchWrap.createSpan({ cls: "learnkit-exam-generator-saved-tests-search-icon-right learnkit-exam-generator-saved-tests-search-icon-right" });
     setIcon(savedSearchIcon, "search");
     searchInput.value = this._savedTestsSearchQuery;
-    panel.createDiv({ cls: "my-1 h-px bg-border sprout-exam-generator-saved-tests-divider" });
+    panel.createDiv({ cls: "my-1 h-px bg-border learnkit-exam-generator-saved-tests-divider learnkit-exam-generator-saved-tests-divider" });
     const savedTestsSubtitle = panel.createDiv({
-      cls: "px-2 py-1.5 text-sm text-muted-foreground sprout-exam-generator-popover-subtitle",
+      cls: "px-2 py-1.5 text-sm text-muted-foreground learnkit-exam-generator-popover-subtitle learnkit-exam-generator-popover-subtitle",
       text: "Saved tests",
     });
     savedTestsSubtitle.setAttr("role", "presentation");
-    const savedList = panel.createDiv({ cls: "bc sprout-ss-listbox flex flex-col max-h-60 overflow-auto sprout-exam-generator-saved-tests-list" });
+    const savedList = panel.createDiv({ cls: "learnkit-ss-listbox learnkit-ss-listbox flex flex-col max-h-60 overflow-auto learnkit-exam-generator-saved-tests-list learnkit-exam-generator-saved-tests-list" });
     savedList.setAttr("role", "listbox");
     let savedTestsPanelLockedWidthPx: number | null = null;
 
@@ -741,7 +749,7 @@ export class SproutExamGeneratorView extends ItemView {
       }
 
       const probe = panel.createSpan({
-        cls: "sprout-coach-scope-item-label sprout-exam-generator-width-probe",
+        cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label learnkit-exam-generator-width-probe learnkit-exam-generator-width-probe",
       });
       const lines = this._savedTests.map((test) => formatSavedTestLine(test));
       lines.push("Search saved tests");
@@ -780,32 +788,32 @@ export class SproutExamGeneratorView extends ItemView {
       const hasSavedTests = this._savedTests.length > 0;
       searchWrap.classList.toggle("hidden", !hasSavedTests);
       savedTestsSubtitle.classList.toggle("hidden", !hasSavedTests);
-      panel.querySelector(".sprout-exam-generator-saved-tests-divider")?.classList.toggle("hidden", !hasSavedTests);
-      savedList.classList.toggle("sprout-ss-listbox", hasSavedTests);
+      panel.querySelector(".learnkit-exam-generator-saved-tests-divider")?.classList.toggle("hidden", !hasSavedTests);
+      savedList.classList.toggle("learnkit-ss-listbox", hasSavedTests);
       savedList.empty();
       const results = filteredSavedTests();
       if (results.length === 0) {
-        const emptyMsg = savedList.createDiv({ cls: "sprout-exam-generator-saved-tests-empty-message sprout-settings-text-muted" });
+        const emptyMsg = savedList.createDiv({ cls: "learnkit-exam-generator-saved-tests-empty-message learnkit-exam-generator-saved-tests-empty-message learnkit-settings-text-muted learnkit-settings-text-muted" });
         if (this._savedTests.length === 0) {
-          emptyMsg.createDiv({ cls: "sprout-exam-generator-saved-tests-empty-title", text: "No saved tests yet." });
-          emptyMsg.createDiv({ cls: "sprout-exam-generator-saved-tests-empty-body", text: "Generate a test and it will be saved here automatically." });
+          emptyMsg.createDiv({ cls: "learnkit-exam-generator-saved-tests-empty-title learnkit-exam-generator-saved-tests-empty-title", text: "No saved tests yet." });
+          emptyMsg.createDiv({ cls: "learnkit-exam-generator-saved-tests-empty-body learnkit-exam-generator-saved-tests-empty-body", text: "Generate a test and it will be saved here automatically." });
         } else {
-          emptyMsg.createDiv({ cls: "sprout-exam-generator-saved-tests-empty-body", text: "No saved tests match your search." });
+          emptyMsg.createDiv({ cls: "learnkit-exam-generator-saved-tests-empty-body learnkit-exam-generator-saved-tests-empty-body", text: "No saved tests match your search." });
         }
         return;
       }
       for (const test of results) {
-        const row = savedList.createDiv({ cls: "sprout-coach-scope-row sprout-exam-generator-saved-tests-item" });
+        const row = savedList.createDiv({ cls: "learnkit-coach-scope-row learnkit-coach-scope-row learnkit-exam-generator-saved-tests-item learnkit-exam-generator-saved-tests-item" });
         row.setAttr("role", "option");
         const lineBtn = row.createEl("button", {
-          cls: "sprout-scope-preset-apply sprout-exam-generator-saved-tests-line",
+          cls: "learnkit-scope-preset-apply learnkit-scope-preset-apply learnkit-exam-generator-saved-tests-line learnkit-exam-generator-saved-tests-line",
           attr: { type: "button" },
         });
-        const lineIcon = lineBtn.createSpan({ cls: "sprout-exam-generator-saved-tests-line-icon" });
+        const lineIcon = lineBtn.createSpan({ cls: "learnkit-exam-generator-saved-tests-line-icon learnkit-exam-generator-saved-tests-line-icon" });
         setIcon(lineIcon, "file-question-mark");
         const lineText = formatSavedTestLine(test);
-        const textWrap = lineBtn.createSpan({ cls: "sprout-scope-preset-item-text sprout-exam-generator-saved-tests-line-text" });
-        textWrap.createSpan({ cls: "sprout-coach-scope-item-label", text: lineText });
+        const textWrap = lineBtn.createSpan({ cls: "learnkit-scope-preset-item-text learnkit-scope-preset-item-text learnkit-exam-generator-saved-tests-line-text learnkit-exam-generator-saved-tests-line-text" });
+        textWrap.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: lineText });
         lineBtn.setAttribute("aria-label", lineText);
         lineBtn.addEventListener("click", () => {
           this._savedTestsPopoverOpen = false;
@@ -814,7 +822,7 @@ export class SproutExamGeneratorView extends ItemView {
         });
 
         const deleteBtn = row.createSpan({
-          cls: "sprout-scope-preset-remove sprout-exam-generator-saved-tests-delete",
+          cls: "learnkit-scope-preset-remove learnkit-scope-preset-remove learnkit-exam-generator-saved-tests-delete learnkit-exam-generator-saved-tests-delete",
         });
         deleteBtn.setAttribute("aria-label", `Delete ${test.label || "saved test"}`);
         deleteBtn.setAttribute("role", "button");
@@ -940,7 +948,7 @@ export class SproutExamGeneratorView extends ItemView {
       shell.removeAttribute("data-aos-anchor-placement");
       shell.removeAttribute("data-aos-duration");
       shell.removeAttribute("data-aos-delay");
-      shell.classList.add("aos-animate", "sprout-aos-fallback");
+      shell.classList.add("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
       this._titleStripAnimatedOnce = true;
     }
 
@@ -976,20 +984,20 @@ export class SproutExamGeneratorView extends ItemView {
     const slide = this._wizardSlide;
     this._wizardSlide = null;
 
-    const card = host.createDiv({ cls: "card sprout-coach-wizard-card sprout-exam-generator-card sprout-exam-generator-setup-card" });
+    const card = host.createDiv({ cls: "card learnkit-coach-wizard-card learnkit-coach-wizard-card learnkit-exam-generator-card learnkit-exam-generator-card learnkit-exam-generator-setup-card learnkit-exam-generator-setup-card" });
 
-    const setupTopline = card.createDiv({ cls: "sprout-exam-generator-setup-topline" });
+    const setupTopline = card.createDiv({ cls: "learnkit-exam-generator-setup-topline learnkit-exam-generator-setup-topline" });
     const stepLabels = ["Source", "Settings"];
     const currentStep = this._setupStage === "source" ? 0 : 1;
-    const stepper = setupTopline.createDiv({ cls: "sprout-coach-stepper" });
+    const stepper = setupTopline.createDiv({ cls: "learnkit-coach-stepper learnkit-coach-stepper" });
     stepLabels.forEach((label, idx) => {
-      const item = stepper.createDiv({ cls: "sprout-coach-step-item" });
-      const dot = item.createDiv({ cls: "sprout-coach-step-dot" });
+      const item = stepper.createDiv({ cls: "learnkit-coach-step-item learnkit-coach-step-item" });
+      const dot = item.createDiv({ cls: "learnkit-coach-step-dot learnkit-coach-step-dot" });
       if (idx < currentStep) dot.classList.add("is-done");
       else if (idx === currentStep) dot.classList.add("is-active");
-      item.createDiv({ cls: "sprout-coach-step-label", text: label });
+      item.createDiv({ cls: "learnkit-coach-step-label learnkit-coach-step-label", text: label });
       if (idx < stepLabels.length - 1) {
-        const line = item.createDiv({ cls: "sprout-coach-step-line" });
+        const line = item.createDiv({ cls: "learnkit-coach-step-line learnkit-coach-step-line" });
         if (idx < currentStep) line.classList.add("is-done");
       }
     });
@@ -997,20 +1005,20 @@ export class SproutExamGeneratorView extends ItemView {
     if (this._coachScopePrefilled) {
       const coachLabel = "Coach";
       const backToCoachLabel = `Back to ${coachLabel}`;
-      const setupToplineRight = setupTopline.createDiv({ cls: "sprout-exam-generator-setup-topline-right" });
+      const setupToplineRight = setupTopline.createDiv({ cls: "learnkit-exam-generator-setup-topline-right learnkit-exam-generator-setup-topline-right" });
       const backToCoachBtn = setupToplineRight.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
         attr: { type: "button", "aria-label": backToCoachLabel, "data-tooltip-position": "top" },
       });
-      const iconWrap = backToCoachBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const iconWrap = backToCoachBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(iconWrap, "x");
-      backToCoachBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: backToCoachLabel });
+      backToCoachBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: backToCoachLabel });
       backToCoachBtn.addEventListener("click", () => {
         void this.plugin.openCoachTab(false, { suppressEntranceAos: true, refresh: false }, this.leaf);
       });
     }
 
-    const page = card.createDiv({ cls: "sprout-coach-wizard-page" });
+    const page = card.createDiv({ cls: "learnkit-coach-wizard-page learnkit-coach-wizard-page" });
     if (slide === "next") page.classList.add("is-enter-next");
     if (slide === "back") page.classList.add("is-enter-back");
 
@@ -1036,7 +1044,7 @@ export class SproutExamGeneratorView extends ItemView {
 
       page.createEl("h3", { text: sourceHeading });
       page.createEl("p", {
-        cls: "sprout-coach-step-copy",
+        cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
         text: sourceCopy,
       });
 
@@ -1046,9 +1054,9 @@ export class SproutExamGeneratorView extends ItemView {
       };
 
       if (this._config.sourceMode === "folder") {
-        const switchWrap = page.createDiv({ cls: "sprout-exam-generator-actions" });
+        const switchWrap = page.createDiv({ cls: "learnkit-exam-generator-actions learnkit-exam-generator-actions" });
         const useSelectedBtn = switchWrap.createEl("button", {
-          cls: "bc sprout-btn-toolbar h-9 inline-flex items-center gap-2",
+          cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-9 inline-flex items-center gap-2",
           text: "Switch to note selection",
         });
         useSelectedBtn.type = "button";
@@ -1057,9 +1065,9 @@ export class SproutExamGeneratorView extends ItemView {
           this._render();
         });
 
-        const footer = page.createDiv({ cls: "sprout-coach-wizard-footer" });
+        const footer = page.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer" });
         nextBtn = footer.createEl("button", {
-          cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2",
+          cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
         });
         nextBtn.type = "button";
         nextBtn.createSpan({ text: "Next" });
@@ -1074,29 +1082,29 @@ export class SproutExamGeneratorView extends ItemView {
         return;
       }
 
-      page.createDiv({ cls: "sprout-coach-field-label", text: "Content sources" });
-      const searchWrap = page.createDiv({ cls: "sprout-coach-search-wrap" });
-      const searchIcon = searchWrap.createSpan({ cls: "sprout-coach-search-icon" });
+      page.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Content sources" });
+      const searchWrap = page.createDiv({ cls: "learnkit-coach-search-wrap learnkit-coach-search-wrap" });
+      const searchIcon = searchWrap.createSpan({ cls: "learnkit-coach-search-icon learnkit-coach-search-icon" });
       setIcon(searchIcon, "search");
       const search = searchWrap.createEl("input", {
-        cls: "bc input h-9",
+        cls: "input h-9",
         attr: { type: "search", placeholder: "Search notes, folders, tags, or properties..." },
       });
       search.value = this._noteSearchQuery;
-      const popover = searchWrap.createDiv({ cls: "sprout-coach-scope-popover dropdown-menu hidden" });
+      const popover = searchWrap.createDiv({ cls: "learnkit-coach-scope-popover learnkit-coach-scope-popover dropdown-menu hidden" });
       const scopeList = popover.createDiv({
-        cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
+        cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel",
       });
       scopeList.setAttr("role", "menu");
       scopeList.setAttr("aria-label", "Source matches");
 
-      const chipsWrap = page.createDiv({ cls: "sprout-coach-selected-wrap" });
-      const selectedTitle = chipsWrap.createDiv({ cls: "sprout-coach-selected-title" });
-      const chips = chipsWrap.createDiv({ cls: "sprout-coach-selected-chips" });
-      const actionsGrid = chipsWrap.createDiv({ cls: "sprout-coach-scope-actions-grid" });
-      const presetWrap = actionsGrid.createDiv({ cls: "sprout-coach-scope-action" });
+      const chipsWrap = page.createDiv({ cls: "learnkit-coach-selected-wrap learnkit-coach-selected-wrap" });
+      const selectedTitle = chipsWrap.createDiv({ cls: "learnkit-coach-selected-title learnkit-coach-selected-title" });
+      const chips = chipsWrap.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips" });
+      const actionsGrid = chipsWrap.createDiv({ cls: "learnkit-coach-scope-actions-grid learnkit-coach-scope-actions-grid" });
+      const presetWrap = actionsGrid.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action" });
       const presetBtn = presetWrap.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-preset-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-preset-btn learnkit-scope-preset-btn",
         attr: {
           type: "button",
           "aria-haspopup": "listbox",
@@ -1104,13 +1112,13 @@ export class SproutExamGeneratorView extends ItemView {
           "aria-label": "Saved presets",
         },
       });
-      const presetBtnIcon = presetBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const presetBtnIcon = presetBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(presetBtnIcon, "bookmark");
-      const presetBtnLabel = presetBtn.createSpan({ cls: "bc", text: "Saved presets" });
+      const presetBtnLabel = presetBtn.createSpan({ cls: "", text: "Saved presets" });
 
-      const presetPopover = presetWrap.createDiv({ cls: "sprout-scope-preset-popover dropdown-menu hidden" });
+      const presetPopover = presetWrap.createDiv({ cls: "learnkit-scope-preset-popover learnkit-scope-preset-popover dropdown-menu hidden" });
       const presetList = presetPopover.createDiv({
-        cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
+        cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel",
       });
       presetList.setAttr("role", "listbox");
       presetList.setAttr("aria-label", "Saved presets");
@@ -1140,17 +1148,17 @@ export class SproutExamGeneratorView extends ItemView {
         closePresetPopover();
       };
 
-      const clearWrap = actionsGrid.createDiv({ cls: "sprout-coach-scope-action hidden" });
+      const clearWrap = actionsGrid.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action hidden" });
       const clearBtn = clearWrap.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
         attr: {
           type: "button",
           "aria-label": "Clear selection",
         },
       });
-      const clearBtnIcon = clearBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const clearBtnIcon = clearBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(clearBtnIcon, "x");
-      clearBtn.createSpan({ cls: "bc", text: "Clear selection" });
+      clearBtn.createSpan({ cls: "", text: "Clear selection" });
 
       const buildSearchOptions = (): SearchPopoverOption[] => {
         const metadata = collectVaultTagAndPropertyPairs(this.app, this._notes);
@@ -1322,11 +1330,11 @@ export class SproutExamGeneratorView extends ItemView {
         let hasTopSection = false;
         if (hasSelection && !duplicate) {
           const createRow = presetList.createDiv({
-            cls: "sprout-ss-search-wrap sprout-scope-preset-create",
+            cls: "learnkit-ss-search-wrap learnkit-ss-search-wrap learnkit-scope-preset-create learnkit-scope-preset-create",
           });
           hasTopSection = true;
           nameInput = createRow.createEl("input", {
-            cls: "sprout-ss-search-input",
+            cls: "learnkit-ss-search-input learnkit-ss-search-input",
             attr: {
               type: "text",
               placeholder: "Preset name",
@@ -1336,7 +1344,7 @@ export class SproutExamGeneratorView extends ItemView {
             },
           });
           addBtn = createRow.createSpan({
-            cls: "sprout-scope-preset-add hidden",
+            cls: "learnkit-scope-preset-add learnkit-scope-preset-add hidden",
             text: "+",
             attr: {
               role: "button",
@@ -1346,7 +1354,7 @@ export class SproutExamGeneratorView extends ItemView {
           });
         } else if (matchingPreset) {
           hasTopSection = true;
-          const status = presetList.createDiv({ cls: "sprout-scope-preset-status" });
+          const status = presetList.createDiv({ cls: "learnkit-scope-preset-status learnkit-scope-preset-status" });
           status.createSpan({ text: "Selection saved as " });
           status.createEl("strong", { text: matchingPreset.name });
         }
@@ -1403,7 +1411,7 @@ export class SproutExamGeneratorView extends ItemView {
         }
 
         const presetSubtitle = presetList.createDiv({
-          cls: "px-2 py-1.5 text-sm text-muted-foreground sprout-exam-generator-popover-subtitle",
+          cls: "px-2 py-1.5 text-sm text-muted-foreground learnkit-exam-generator-popover-subtitle learnkit-exam-generator-popover-subtitle",
           text: "Saved presets",
         });
         presetSubtitle.setAttr("role", "presentation");
@@ -1412,19 +1420,19 @@ export class SproutExamGeneratorView extends ItemView {
 
         for (const preset of presets) {
           const selected = selectionMatchesPreset(this._selectedScopesForPresets().map(toScopeId), preset);
-          const row = presetList.createDiv({ cls: "sprout-coach-scope-row" });
+          const row = presetList.createDiv({ cls: "learnkit-coach-scope-row learnkit-coach-scope-row" });
           row.setAttr("role", "option");
           row.setAttr("aria-selected", selected ? "true" : "false");
           const applyBtn = row.createEl("button", {
-            cls: "sprout-scope-preset-apply",
+            cls: "learnkit-scope-preset-apply learnkit-scope-preset-apply",
           });
           applyBtn.type = "button";
           if (selected) {
             row.classList.add("is-selected");
             applyBtn.classList.add("is-selected");
           }
-          const itemText = applyBtn.createSpan({ cls: "sprout-scope-preset-item-text" });
-          itemText.createSpan({ cls: "sprout-coach-scope-item-label", text: `${preset.name} (${preset.scopes.length})` });
+          const itemText = applyBtn.createSpan({ cls: "learnkit-scope-preset-item-text learnkit-scope-preset-item-text" });
+          itemText.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: `${preset.name} (${preset.scopes.length})` });
           applyBtn.addEventListener("click", () => {
             this._applySavedScopes(preset.scopes);
             closePresetPopover();
@@ -1434,7 +1442,7 @@ export class SproutExamGeneratorView extends ItemView {
           });
 
           const deleteBtn = row.createSpan({
-            cls: "sprout-scope-preset-remove",
+            cls: "learnkit-scope-preset-remove learnkit-scope-preset-remove",
             attr: { "aria-label": `Delete ${preset.name}` },
           });
           setIcon(deleteBtn, "x");
@@ -1511,9 +1519,9 @@ export class SproutExamGeneratorView extends ItemView {
           chips.createDiv({ cls: "text-muted-foreground", text: "No content selected yet." });
         } else {
           if (this._selectedVault) {
-            const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+            const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
             chip.createSpan({ text: `Vault: ${this.app.vault.getName()} (${this._notes.length})` });
-            const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+            const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
             remove.type = "button";
             remove.setAttr("aria-label", "Remove");
             setIcon(remove, "x");
@@ -1528,11 +1536,11 @@ export class SproutExamGeneratorView extends ItemView {
 
           const selectedFolders = Array.from(this._selectedFolders).sort((a, b) => a.localeCompare(b));
           for (const folder of selectedFolders) {
-            const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+            const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
             const folderLabel = this._formatFolderChipLabel(folder);
             const count = this._notes.filter((n) => this._folderIncludesPath(folder, n.path)).length;
             chip.createSpan({ text: `Folder: ${folderLabel} (${count})` });
-            const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+            const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
             remove.type = "button";
             remove.setAttr("aria-label", "Remove");
             setIcon(remove, "x");
@@ -1549,9 +1557,9 @@ export class SproutExamGeneratorView extends ItemView {
             .filter((n) => this._selectedPaths.has(n.path))
             .sort((a, b) => a.path.localeCompare(b.path));
           for (const note of selectedNotes) {
-            const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+            const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
             chip.createSpan({ text: `Note: ${note.basename}` });
-            const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+            const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
             remove.type = "button";
             remove.setAttr("aria-label", "Remove");
             setIcon(remove, "x");
@@ -1571,9 +1579,9 @@ export class SproutExamGeneratorView extends ItemView {
             .sort((a, b) => a.token.localeCompare(b.token));
 
           for (const tag of selectedTags) {
-            const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+            const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
             chip.createSpan({ text: `Tag: ${tag.display} (${tag.count})` });
-            const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+            const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
             remove.type = "button";
             remove.setAttr("aria-label", "Remove");
             setIcon(remove, "x");
@@ -1596,9 +1604,9 @@ export class SproutExamGeneratorView extends ItemView {
 
           for (const pair of selectedProperties) {
             const encoded = `${encodeURIComponent(pair.key)}=${encodeURIComponent(pair.value)}`;
-            const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+            const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
             chip.createSpan({ text: `${pair.displayKey}: ${pair.displayValue} (${pair.count})` });
-            const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+            const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
             remove.type = "button";
             remove.setAttr("aria-label", "Remove");
             setIcon(remove, "x");
@@ -1619,28 +1627,28 @@ export class SproutExamGeneratorView extends ItemView {
       scopePicker.render();
 
       // ---- Attachments (optional) ----
-      const attachArea = page.createDiv({ cls: "sprout-exam-generator-attachments" });
-      const attachWrap = attachArea.createDiv({ cls: "sprout-coach-selected-wrap" });
-      const attachmentsTitle = attachWrap.createDiv({ cls: "sprout-coach-selected-title" });
-      const attachChips = attachWrap.createDiv({ cls: "sprout-coach-selected-chips" });
-      const attachActions = attachWrap.createDiv({ cls: "sprout-coach-scope-actions-grid" });
-      const attachAction = attachActions.createDiv({ cls: "sprout-coach-scope-action" });
-      const clearAttachAction = attachActions.createDiv({ cls: "sprout-coach-scope-action sprout-exam-generator-hidden" });
+      const attachArea = page.createDiv({ cls: "learnkit-exam-generator-attachments learnkit-exam-generator-attachments" });
+      const attachWrap = attachArea.createDiv({ cls: "learnkit-coach-selected-wrap learnkit-coach-selected-wrap" });
+      const attachmentsTitle = attachWrap.createDiv({ cls: "learnkit-coach-selected-title learnkit-coach-selected-title" });
+      const attachChips = attachWrap.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips" });
+      const attachActions = attachWrap.createDiv({ cls: "learnkit-coach-scope-actions-grid learnkit-coach-scope-actions-grid" });
+      const attachAction = attachActions.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action" });
+      const clearAttachAction = attachActions.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action learnkit-exam-generator-hidden learnkit-exam-generator-hidden" });
 
       const clearAttachBtn = clearAttachAction.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
         attr: {
           type: "button",
           "aria-label": "Clear attachments",
         },
       });
-      const clearAttachIcon = clearAttachBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const clearAttachIcon = clearAttachBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(clearAttachIcon, "x");
-      clearAttachBtn.createSpan({ cls: "bc", text: "Clear attachments" });
+      clearAttachBtn.createSpan({ cls: "", text: "Clear attachments" });
 
       const renderAttachChips = () => {
         attachmentsTitle.setText(`Attachments (${this._attachedFiles.length})`);
-        clearAttachAction.classList.toggle("sprout-exam-generator-hidden", this._attachedFiles.length <= 0);
+        clearAttachAction.classList.toggle("learnkit-exam-generator-hidden", this._attachedFiles.length <= 0);
         attachChips.empty();
         if (this._attachedFiles.length === 0) {
           attachChips.createDiv({ cls: "text-muted-foreground", text: "No content attached yet." });
@@ -1648,9 +1656,9 @@ export class SproutExamGeneratorView extends ItemView {
         }
         for (let i = 0; i < this._attachedFiles.length; i++) {
           const af = this._attachedFiles[i];
-          const chip = attachChips.createDiv({ cls: "sprout-coach-chip sprout-assistant-popup-attachment-chip" });
-          chip.createSpan({ text: formatAttachmentChipLabel(af.name, af.extension), cls: "sprout-assistant-popup-attachment-name" });
-          const removeBtn = chip.createEl("button", { cls: "sprout-coach-chip-remove sprout-assistant-popup-attachment-remove" });
+          const chip = attachChips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip learnkit-assistant-popup-attachment-chip learnkit-assistant-popup-attachment-chip" });
+          chip.createSpan({ text: formatAttachmentChipLabel(af.name, af.extension), cls: "learnkit-assistant-popup-attachment-name learnkit-assistant-popup-attachment-name" });
+          const removeBtn = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove learnkit-assistant-popup-attachment-remove learnkit-assistant-popup-attachment-remove" });
           removeBtn.type = "button";
           removeBtn.setAttribute("aria-label", "Remove");
           setIcon(removeBtn, "x");
@@ -1675,12 +1683,12 @@ export class SproutExamGeneratorView extends ItemView {
       renderAttachChips();
 
       const addBtn = attachAction.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       });
       addBtn.type = "button";
-      const addBtnIcon = addBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const addBtnIcon = addBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(addBtnIcon, "paperclip");
-      addBtn.createSpan({ cls: "bc", text: "Attach file" });
+      addBtn.createSpan({ cls: "", text: "Attach file" });
       addBtn.addEventListener("click", () => {
         if (this._attachedFiles.length >= MAX_ATTACHMENTS) {
           new Notice(`Maximum ${MAX_ATTACHMENTS} attachments.`);
@@ -1716,9 +1724,9 @@ export class SproutExamGeneratorView extends ItemView {
         modal.open();
       });
 
-      const footer = page.createDiv({ cls: "sprout-coach-wizard-footer" });
+      const footer = page.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer" });
       nextBtn = footer.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
       });
       nextBtn.type = "button";
       nextBtn.createSpan({ text: "Next" });
@@ -1735,11 +1743,11 @@ export class SproutExamGeneratorView extends ItemView {
 
     page.createEl("h3", { text: "Test settings" });
     page.createEl("p", {
-      cls: "sprout-coach-step-copy",
+      cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
       text: "Set difficulty, question type, count, and timing.",
     });
 
-    const options = page.createDiv({ cls: "sprout-exam-generator-options" });
+    const options = page.createDiv({ cls: "learnkit-exam-generator-options learnkit-exam-generator-options" });
 
     this._renderSelectOption(options, "Difficulty", ["easy", "medium", "hard"], this._config.difficulty, (value) => {
       this._config.difficulty = value as ExamDifficulty;
@@ -1753,11 +1761,11 @@ export class SproutExamGeneratorView extends ItemView {
       this._config.questionCount = Math.max(1, Number(value) || 5);
     });
 
-    const testNameRow = options.createDiv({ cls: "sprout-exam-generator-row" });
-    testNameRow.createDiv({ cls: "sprout-exam-generator-label", text: "Test name (optional)" });
+    const testNameRow = options.createDiv({ cls: "learnkit-exam-generator-row learnkit-exam-generator-row" });
+    testNameRow.createDiv({ cls: "learnkit-exam-generator-label learnkit-exam-generator-label", text: "Test name (optional)" });
     const testNameInput = testNameRow.createEl("input", {
       type: "text",
-      cls: "bc input h-9 sprout-exam-generator-input",
+      cls: "input h-9 learnkit-exam-generator-input learnkit-exam-generator-input",
       attr: { maxlength: "120" },
     });
     testNameInput.value = this._config.testName;
@@ -1773,25 +1781,25 @@ export class SproutExamGeneratorView extends ItemView {
     if (this._config.includeFlashcards) selectedExamOptions.add("includeFlashcards");
 
     // Dynamic conditional rows container — only checked options show their inputs, no gaps.
-    const conditionalContainer = options.createDiv({ cls: "sprout-exam-generator-row sprout-exam-generator-conditional-rows" });
+    const conditionalContainer = options.createDiv({ cls: "learnkit-exam-generator-row learnkit-exam-generator-row learnkit-exam-generator-conditional-rows learnkit-exam-generator-conditional-rows" });
 
-    const durationRow = conditionalContainer.createDiv({ cls: "sprout-exam-generator-conditional-item" });
-    durationRow.classList.toggle("sprout-exam-generator-hidden", !this._config.timed);
-    durationRow.createDiv({ cls: "sprout-exam-generator-label", text: "Time limit" });
-    const durationInputWrap = durationRow.createDiv({ cls: "sprout-exam-generator-input-wrap" });
+    const durationRow = conditionalContainer.createDiv({ cls: "learnkit-exam-generator-conditional-item learnkit-exam-generator-conditional-item" });
+    durationRow.classList.toggle("learnkit-exam-generator-hidden", !this._config.timed);
+    durationRow.createDiv({ cls: "learnkit-exam-generator-label learnkit-exam-generator-label", text: "Time limit" });
+    const durationInputWrap = durationRow.createDiv({ cls: "learnkit-exam-generator-input-wrap learnkit-exam-generator-input-wrap" });
     const durationInput = durationInputWrap.createEl("input", {
       type: "number",
-      cls: "bc input h-9 sprout-exam-generator-input",
+      cls: "input h-9 learnkit-exam-generator-input learnkit-exam-generator-input",
       attr: { min: "1", step: "1", inputmode: "numeric", placeholder: "20" },
     });
     const durationUnit = durationInputWrap.createSpan({
-      cls: "sprout-exam-generator-input-suffix sprout-exam-generator-hidden",
+      cls: "learnkit-exam-generator-input-suffix learnkit-exam-generator-input-suffix learnkit-exam-generator-hidden learnkit-exam-generator-hidden",
       text: "minutes",
     });
     durationInput.value = String(this._config.durationMinutes);
 
     const syncDurationSuffix = () => {
-      durationUnit.classList.toggle("sprout-exam-generator-hidden", !durationInput.value.trim());
+      durationUnit.classList.toggle("learnkit-exam-generator-hidden", !durationInput.value.trim());
     };
 
     durationInput.addEventListener("input", () => {
@@ -1811,11 +1819,11 @@ export class SproutExamGeneratorView extends ItemView {
     });
     syncDurationSuffix();
 
-    const customInstructionsRow = conditionalContainer.createDiv({ cls: "sprout-exam-generator-conditional-item" });
-    customInstructionsRow.classList.toggle("sprout-exam-generator-hidden", !selectedExamOptions.has("customInstructions"));
-    customInstructionsRow.createDiv({ cls: "sprout-exam-generator-label", text: "Custom instructions" });
+    const customInstructionsRow = conditionalContainer.createDiv({ cls: "learnkit-exam-generator-conditional-item learnkit-exam-generator-conditional-item" });
+    customInstructionsRow.classList.toggle("learnkit-exam-generator-hidden", !selectedExamOptions.has("customInstructions"));
+    customInstructionsRow.createDiv({ cls: "learnkit-exam-generator-label learnkit-exam-generator-label", text: "Custom instructions" });
     const customInstructionsInput = customInstructionsRow.createEl("textarea", {
-      cls: "bc input sprout-exam-generator-input sprout-exam-generator-custom-instructions",
+      cls: "input learnkit-exam-generator-input learnkit-exam-generator-input learnkit-exam-generator-custom-instructions learnkit-exam-generator-custom-instructions",
       attr: { maxlength: "500", placeholder: "Add additional instructions for the exam generator\u2026", rows: "3" },
     });
     customInstructionsInput.value = this._config.customInstructions;
@@ -1826,11 +1834,11 @@ export class SproutExamGeneratorView extends ItemView {
     const syncConditionalVisibility = () => {
       const timedEnabled = selectedExamOptions.has("timed");
       const customEnabled = selectedExamOptions.has("customInstructions");
-      durationRow.classList.toggle("sprout-exam-generator-hidden", !timedEnabled);
-      customInstructionsRow.classList.toggle("sprout-exam-generator-hidden", !customEnabled);
+      durationRow.classList.toggle("learnkit-exam-generator-hidden", !timedEnabled);
+      customInstructionsRow.classList.toggle("learnkit-exam-generator-hidden", !customEnabled);
       // Hide the entire container when no conditional rows are visible
       const anyVisible = timedEnabled || customEnabled;
-      conditionalContainer.classList.toggle("sprout-exam-generator-hidden", !anyVisible);
+      conditionalContainer.classList.toggle("learnkit-exam-generator-hidden", !anyVisible);
     };
     syncConditionalVisibility();
 
@@ -1862,14 +1870,14 @@ export class SproutExamGeneratorView extends ItemView {
       },
     );
 
-    const footer = page.createDiv({ cls: "sprout-coach-wizard-footer sprout-exam-generator-settings-footer" });
+    const footer = page.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer learnkit-exam-generator-settings-footer learnkit-exam-generator-settings-footer" });
     const backBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
     });
     backBtn.type = "button";
-    const backBtnIcon = backBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const backBtnIcon = backBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(backBtnIcon, "chevron-left");
-    backBtn.createSpan({ cls: "bc", text: "Back" });
+    backBtn.createSpan({ cls: "", text: "Back" });
     backBtn.addEventListener("click", () => {
       this._wizardSlide = "back";
       this._setupStage = "source";
@@ -1877,7 +1885,7 @@ export class SproutExamGeneratorView extends ItemView {
     });
 
     const generateBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
     });
     generateBtn.type = "button";
     const generateBtnIcon = generateBtn.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5" });
@@ -1900,16 +1908,16 @@ export class SproutExamGeneratorView extends ItemView {
     onChange: (value: string) => void,
     labels?: Record<string, string>,
   ): void {
-    const row = host.createDiv({ cls: "sprout-exam-generator-row" });
-    row.createDiv({ cls: "sprout-exam-generator-label", text: label });
+    const row = host.createDiv({ cls: "learnkit-exam-generator-row learnkit-exam-generator-row" });
+    row.createDiv({ cls: "learnkit-exam-generator-label learnkit-exam-generator-label", text: label });
     const getTextForValue = (value: string): string => labels?.[value] ?? value
       .replace(/[-_]+/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
-    const wrap = row.createDiv({ cls: "sprout-exam-generator-select-wrap" });
+    const wrap = row.createDiv({ cls: "learnkit-exam-generator-select-wrap learnkit-exam-generator-select-wrap" });
     const id = `sprout-dd-${Math.random().toString(36).slice(2, 9)}`;
     const trigger = wrap.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-pointer-auto sprout-exam-generator-select-trigger",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-pointer-auto learnkit-pointer-auto learnkit-exam-generator-select-trigger learnkit-exam-generator-select-trigger",
       attr: {
         type: "button",
         id: `${id}-trigger`,
@@ -1923,9 +1931,9 @@ export class SproutExamGeneratorView extends ItemView {
     chevron.setAttr("aria-hidden", "true");
     setIcon(chevron, "chevron-down");
 
-    const popover = wrap.createDiv({ cls: "sprout-exam-generator-select-popover dropdown-menu hidden" });
+    const popover = wrap.createDiv({ cls: "learnkit-exam-generator-select-popover learnkit-exam-generator-select-popover dropdown-menu hidden" });
     const panel = popover.createDiv({
-      cls: "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-exam-generator-select-panel",
+      cls: "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-exam-generator-select-panel learnkit-exam-generator-select-panel",
     });
     const menu = panel.createDiv({ cls: "flex flex-col" });
     menu.setAttr("role", "menu");
@@ -2022,8 +2030,8 @@ export class SproutExamGeneratorView extends ItemView {
     onChange: (values: T[]) => void,
     labels?: Record<string, string>,
   ): void {
-    const row = host.createDiv({ cls: "sprout-exam-generator-row" });
-    row.createDiv({ cls: "sprout-exam-generator-label", text: label });
+    const row = host.createDiv({ cls: "learnkit-exam-generator-row learnkit-exam-generator-row" });
+    row.createDiv({ cls: "learnkit-exam-generator-label learnkit-exam-generator-label", text: label });
 
     const getTextForValue = (value: string): string => labels?.[value] ?? value
       .replace(/[-_]+/g, " ")
@@ -2036,10 +2044,10 @@ export class SproutExamGeneratorView extends ItemView {
       return `${selectedValues.length} selected`;
     };
 
-    const wrap = row.createDiv({ cls: "sprout-exam-generator-select-wrap" });
+    const wrap = row.createDiv({ cls: "learnkit-exam-generator-select-wrap learnkit-exam-generator-select-wrap" });
     const id = `sprout-dd-${Math.random().toString(36).slice(2, 9)}`;
     const trigger = wrap.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-pointer-auto sprout-exam-generator-select-trigger",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-pointer-auto learnkit-pointer-auto learnkit-exam-generator-select-trigger learnkit-exam-generator-select-trigger",
       attr: {
         type: "button",
         id: `${id}-trigger`,
@@ -2053,9 +2061,9 @@ export class SproutExamGeneratorView extends ItemView {
     chevron.setAttr("aria-hidden", "true");
     setIcon(chevron, "chevron-down");
 
-    const popover = wrap.createDiv({ cls: "sprout-exam-generator-select-popover dropdown-menu hidden" });
+    const popover = wrap.createDiv({ cls: "learnkit-exam-generator-select-popover learnkit-exam-generator-select-popover dropdown-menu hidden" });
     const panel = popover.createDiv({
-      cls: "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-exam-generator-select-panel",
+      cls: "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-exam-generator-select-panel learnkit-exam-generator-select-panel",
     });
     const menu = panel.createDiv({ cls: "flex flex-col" });
     menu.setAttr("role", "menu");
@@ -2352,16 +2360,16 @@ export class SproutExamGeneratorView extends ItemView {
   }
 
   private _renderGenerating(host: HTMLElement): void {
-    const card = host.createDiv({ cls: "card sprout-exam-generator-card sprout-exam-generator-card-loading" });
-    const center = card.createDiv({ cls: "sprout-exam-generator-loading-center" });
+    const card = host.createDiv({ cls: "card learnkit-exam-generator-card learnkit-exam-generator-card learnkit-exam-generator-card-loading learnkit-exam-generator-card-loading" });
+    const center = card.createDiv({ cls: "learnkit-exam-generator-loading-center learnkit-exam-generator-loading-center" });
 
-    const loader = center.createDiv({ cls: "sprout-exam-generator-loading-loader" });
-    const firstSlot = loader.createSpan({ cls: "sprout-exam-generator-loading-word-slot is-first" });
-    const secondSlot = loader.createSpan({ cls: "sprout-exam-generator-loading-word-slot is-second" });
-    const firstCurrent = firstSlot.createSpan({ cls: "sprout-exam-generator-loading-word current", text: "" });
-    const firstNext = firstSlot.createSpan({ cls: "sprout-exam-generator-loading-word next", text: "" });
-    const secondCurrent = secondSlot.createSpan({ cls: "sprout-exam-generator-loading-word current", text: "" });
-    const secondNext = secondSlot.createSpan({ cls: "sprout-exam-generator-loading-word next", text: "" });
+    const loader = center.createDiv({ cls: "learnkit-exam-generator-loading-loader learnkit-exam-generator-loading-loader" });
+    const firstSlot = loader.createSpan({ cls: "learnkit-exam-generator-loading-word-slot learnkit-exam-generator-loading-word-slot is-first" });
+    const secondSlot = loader.createSpan({ cls: "learnkit-exam-generator-loading-word-slot learnkit-exam-generator-loading-word-slot is-second" });
+    const firstCurrent = firstSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word current", text: "" });
+    const firstNext = firstSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word next", text: "" });
+    const secondCurrent = secondSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word current", text: "" });
+    const secondNext = secondSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word next", text: "" });
 
     const loadingPairs: Array<[string, string]> = [
       ["Untangling", "Spaghetti"],
@@ -2581,13 +2589,13 @@ export class SproutExamGeneratorView extends ItemView {
 
   private _renderTitleTimer(container: HTMLElement): void {
     const timerGroup = document.createElement("div");
-    timerGroup.className = "bc flex items-center gap-2 lk-session-timer-group";
+    timerGroup.className = "flex items-center gap-2 lk-session-timer-group";
 
     const timerDisplay = document.createElement("button");
     timerDisplay.type = "button";
     timerDisplay.disabled = true;
     timerDisplay.className =
-      "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2 equal-height-btn sprout-btn-timer-display";
+      "learnkit-btn-toolbar learnkit-btn-accent h-9 inline-flex items-center gap-2 equal-height-btn learnkit-btn-timer-display";
     timerDisplay.setAttribute("aria-label", this._config.timed ? "Time remaining" : "Elapsed time");
 
     const timerText = document.createElement("span");
@@ -2602,11 +2610,11 @@ export class SproutExamGeneratorView extends ItemView {
     if (!this._config.timed) {
       const playBtn = document.createElement("button");
       playBtn.type = "button";
-      playBtn.className = "h-9 flex items-center gap-2 equal-height-btn sprout-btn-outline-muted";
+      playBtn.className = "h-9 flex items-center gap-2 equal-height-btn learnkit-btn-outline-muted";
       playBtn.setAttribute("aria-label", "Resume timer");
       playBtn.disabled = !this._untimedPaused;
       const playIconWrap = document.createElement("span");
-      playIconWrap.className = "inline-flex items-center justify-center sprout-btn-icon";
+      playIconWrap.className = "inline-flex items-center justify-center learnkit-btn-icon";
       setIcon(playIconWrap, "play");
       playBtn.appendChild(playIconWrap);
       playBtn.appendChild(Object.assign(document.createElement("span"), { textContent: "Resume" }));
@@ -2619,11 +2627,11 @@ export class SproutExamGeneratorView extends ItemView {
 
       const pauseBtn = document.createElement("button");
       pauseBtn.type = "button";
-      pauseBtn.className = "h-9 flex items-center gap-2 equal-height-btn sprout-btn-outline-muted";
+      pauseBtn.className = "h-9 flex items-center gap-2 equal-height-btn learnkit-btn-outline-muted";
       pauseBtn.setAttribute("aria-label", "Pause timer");
       pauseBtn.disabled = this._untimedPaused;
       const pauseIconWrap = document.createElement("span");
-      pauseIconWrap.className = "inline-flex items-center justify-center sprout-btn-icon";
+      pauseIconWrap.className = "inline-flex items-center justify-center learnkit-btn-icon";
       setIcon(pauseIconWrap, "pause");
       pauseBtn.appendChild(pauseIconWrap);
       pauseBtn.appendChild(Object.assign(document.createElement("span"), { textContent: "Pause" }));
@@ -2651,19 +2659,19 @@ export class SproutExamGeneratorView extends ItemView {
     }
 
     const q = this._questions[this._currentIndex];
-    const card = host.createDiv({ cls: "card sprout-exam-generator-card" });
+    const card = host.createDiv({ cls: "card learnkit-exam-generator-card learnkit-exam-generator-card" });
 
     // Auto-submit warning banner (shown when timed grace period is active)
     if (this._autoSubmitGrace !== null) {
-      const banner = card.createDiv({ cls: "sprout-exam-autosubmit-warning" });
-      const messageEl = banner.createDiv({ cls: "sprout-exam-autosubmit-message" });
+      const banner = card.createDiv({ cls: "learnkit-exam-autosubmit-warning learnkit-exam-autosubmit-warning" });
+      const messageEl = banner.createDiv({ cls: "learnkit-exam-autosubmit-message learnkit-exam-autosubmit-message" });
       messageEl.createEl("strong", { text: "Time's up! " });
       const countdownSpan = messageEl.createSpan({ text: String(this._autoSubmitGrace) });
       this._autoSubmitWarningCountdownEl = countdownSpan;
       messageEl.createSpan({ text: " seconds until auto-submit." });
-      const actionsEl = banner.createDiv({ cls: "sprout-exam-autosubmit-actions" });
+      const actionsEl = banner.createDiv({ cls: "learnkit-exam-autosubmit-actions learnkit-exam-autosubmit-actions" });
       const extendBtn = actionsEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar h-8 inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-8 inline-flex items-center gap-2",
         text: "Extend +5 min",
         attr: { type: "button" },
       });
@@ -2674,7 +2682,7 @@ export class SproutExamGeneratorView extends ItemView {
         this._render();
       });
       const cancelBtn = actionsEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar h-8 inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-8 inline-flex items-center gap-2",
         text: "Cancel auto-submit",
         attr: { type: "button" },
       });
@@ -2683,7 +2691,7 @@ export class SproutExamGeneratorView extends ItemView {
         this._render();
       });
       const submitNowBtn = actionsEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-accent h-8 inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-8 inline-flex items-center gap-2",
         text: "Submit now",
         attr: { type: "button" },
       });
@@ -2693,21 +2701,21 @@ export class SproutExamGeneratorView extends ItemView {
       });
     }
 
-    const top = card.createDiv({ cls: "sprout-exam-generator-topline" });
+    const top = card.createDiv({ cls: "learnkit-exam-generator-topline learnkit-exam-generator-topline" });
     top.createDiv({ text: `Question ${this._currentIndex + 1} of ${this._questions.length}` });
 
-    const topRight = top.createDiv({ cls: "sprout-exam-generator-topline-right" });
+    const topRight = top.createDiv({ cls: "learnkit-exam-generator-topline-right learnkit-exam-generator-topline-right" });
 
     const quitBtn = topRight.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
       attr: { type: "button", "aria-label": this._coachScopePrefilled ? "Back to Coach" : "Quit test" },
     });
     quitBtn.setAttr("data-tooltip-position", "top");
-    const quitIconWrap = quitBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(quitIconWrap, "x");
     quitBtn.createSpan({
-      cls: "bc",
-      attr: { "data-sprout-label": "true" },
+      cls: "",
+      attr: { "data-learnkit-label": "true" },
       text: this._coachScopePrefilled ? "Back to Coach" : "Quit test",
     });
     quitBtn.addEventListener("click", () => {
@@ -2718,31 +2726,31 @@ export class SproutExamGeneratorView extends ItemView {
       this._resetToSetup();
     });
 
-    const promptEl = card.createEl("h3", { cls: "sprout-exam-generator-question-prompt" });
+    const promptEl = card.createEl("h3", { cls: "learnkit-exam-generator-question-prompt learnkit-exam-generator-question-prompt" });
     renderMarkdownPreviewInElement(promptEl, q.prompt);
 
     if (q.type === "mcq") {
       const options = q.options || [];
       const selected = this._answers.has(q.id) ? Number(this._answers.get(q.id)) : -1;
-      const optionList = card.createDiv({ cls: "sprout-mcq-options" });
+      const optionList = card.createDiv({ cls: "learnkit-mcq-options learnkit-mcq-options" });
       for (let i = 0; i < options.length; i += 1) {
-        const btn = optionList.createEl("button", { cls: "sprout-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
-        if (selected === i) btn.classList.add("sprout-mcq-selected");
+        const btn = optionList.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
+        if (selected === i) btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
         const left = btn.createSpan({ cls: "inline-flex items-center gap-2 min-w-0" });
         left.createEl("kbd", { cls: "kbd", text: String(i + 1) });
-        const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words sprout-mcq-option-text" });
+        const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text learnkit-mcq-option-text" });
         renderMarkdownPreviewInElement(optionText, options[i]);
         btn.addEventListener("click", () => {
           const selection = window.getSelection();
           if (selection && selection.toString().trim().length > 0) return;
           this._answers.set(q.id, i);
-          optionList.querySelectorAll(".sprout-btn-toolbar").forEach((el) => el.classList.remove("sprout-mcq-selected"));
-          btn.classList.add("sprout-mcq-selected");
+          optionList.querySelectorAll(".learnkit-btn-toolbar").forEach((el) => el.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected"));
+          btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
         });
       }
     } else {
       const area = card.createEl("textarea", {
-        cls: "sprout-exam-generator-textarea",
+        cls: "learnkit-exam-generator-textarea learnkit-exam-generator-textarea",
       });
       area.value = String(this._answers.get(q.id) || "");
       area.placeholder = "Write your answer...";
@@ -2751,14 +2759,14 @@ export class SproutExamGeneratorView extends ItemView {
       });
     }
 
-    const actions = card.createDiv({ cls: "sprout-exam-generator-actions" });
+    const actions = card.createDiv({ cls: "learnkit-exam-generator-actions learnkit-exam-generator-actions" });
     const prev = actions.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       attr: { type: "button", "aria-label": "Previous", "data-tooltip-position": "top" },
     });
-    const prevIcon = prev.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const prevIcon = prev.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(prevIcon, "chevron-left");
-    prev.createSpan({ cls: "bc", text: "Previous" });
+    prev.createSpan({ cls: "", text: "Previous" });
     prev.disabled = this._currentIndex <= 0;
     prev.addEventListener("click", () => {
       this._currentIndex = Math.max(0, this._currentIndex - 1);
@@ -2768,7 +2776,7 @@ export class SproutExamGeneratorView extends ItemView {
     const isLastQuestion = this._currentIndex >= this._questions.length - 1;
     if (isLastQuestion) {
       const submit = actions.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2 sprout-exam-generator-actions-advance",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2 learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
         attr: { type: "button", "aria-label": "Submit exam", "data-tooltip-position": "top" },
       });
       submit.createSpan({ text: "Submit exam" });
@@ -2779,11 +2787,11 @@ export class SproutExamGeneratorView extends ItemView {
       });
     } else {
       const next = actions.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-exam-generator-actions-advance",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
         attr: { type: "button", "aria-label": "Next", "data-tooltip-position": "top" },
       });
       next.createSpan({ text: "Next" });
-      const nextIcon = next.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const nextIcon = next.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(nextIcon, "chevron-right");
       next.addEventListener("click", () => {
         this._currentIndex = Math.min(this._questions.length - 1, this._currentIndex + 1);
@@ -2890,16 +2898,16 @@ export class SproutExamGeneratorView extends ItemView {
   }
 
   private _renderGrading(host: HTMLElement): void {
-    const card = host.createDiv({ cls: "card sprout-exam-generator-card sprout-exam-generator-card-loading" });
-    const center = card.createDiv({ cls: "sprout-exam-generator-loading-center" });
+    const card = host.createDiv({ cls: "card learnkit-exam-generator-card learnkit-exam-generator-card learnkit-exam-generator-card-loading learnkit-exam-generator-card-loading" });
+    const center = card.createDiv({ cls: "learnkit-exam-generator-loading-center learnkit-exam-generator-loading-center" });
 
-    const loader = center.createDiv({ cls: "sprout-exam-generator-loading-loader" });
-    const firstSlot = loader.createSpan({ cls: "sprout-exam-generator-loading-word-slot is-first" });
-    const secondSlot = loader.createSpan({ cls: "sprout-exam-generator-loading-word-slot is-second" });
-    const firstCurrent = firstSlot.createSpan({ cls: "sprout-exam-generator-loading-word current", text: "" });
-    const firstNext = firstSlot.createSpan({ cls: "sprout-exam-generator-loading-word next", text: "" });
-    const secondCurrent = secondSlot.createSpan({ cls: "sprout-exam-generator-loading-word current", text: "" });
-    const secondNext = secondSlot.createSpan({ cls: "sprout-exam-generator-loading-word next", text: "" });
+    const loader = center.createDiv({ cls: "learnkit-exam-generator-loading-loader learnkit-exam-generator-loading-loader" });
+    const firstSlot = loader.createSpan({ cls: "learnkit-exam-generator-loading-word-slot learnkit-exam-generator-loading-word-slot is-first" });
+    const secondSlot = loader.createSpan({ cls: "learnkit-exam-generator-loading-word-slot learnkit-exam-generator-loading-word-slot is-second" });
+    const firstCurrent = firstSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word current", text: "" });
+    const firstNext = firstSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word next", text: "" });
+    const secondCurrent = secondSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word current", text: "" });
+    const secondNext = secondSlot.createSpan({ cls: "learnkit-exam-generator-loading-word learnkit-exam-generator-loading-word next", text: "" });
 
     const gradingPairs: Array<[string, string]> = [
       ["Scoring", "Answers"],
@@ -2932,39 +2940,39 @@ export class SproutExamGeneratorView extends ItemView {
   }
 
   private _renderResults(host: HTMLElement): void {
-    const card = host.createDiv({ cls: "card sprout-exam-generator-card" });
+    const card = host.createDiv({ cls: "card learnkit-exam-generator-card learnkit-exam-generator-card" });
     const score = this._finalPercent == null ? "0" : `${this._finalPercent.toFixed(1)}%`;
 
-    const resultsHeader = card.createDiv({ cls: "sprout-exam-generator-results-header" });
+    const resultsHeader = card.createDiv({ cls: "learnkit-exam-generator-results-header learnkit-exam-generator-results-header" });
     resultsHeader.createEl("h3", { text: `Final score: ${score}` });
 
     if (this._autoSubmitted) {
-      card.createDiv({ cls: "sprout-settings-text-muted", text: "Timed exam auto-submitted when the timer reached zero." });
+      card.createDiv({ cls: "learnkit-settings-text-muted learnkit-settings-text-muted", text: "Timed exam auto-submitted when the timer reached zero." });
     }
 
-    const list = card.createDiv({ cls: "sprout-exam-generator-results" });
+    const list = card.createDiv({ cls: "learnkit-exam-generator-results learnkit-exam-generator-results" });
     for (let i = 0; i < this._questions.length; i += 1) {
       const q = this._questions[i];
       const r = this._questionResults.find((item) => item.questionId === q.id);
-      const row = list.createDiv({ cls: "sprout-exam-generator-result-row" });
+      const row = list.createDiv({ cls: "learnkit-exam-generator-result-row learnkit-exam-generator-result-row" });
       const scorePercent = Math.round(r?.scorePercent ?? 0);
       const scoreTone = scorePercent > 80 ? "is-strong" : scorePercent >= 50 ? "is-mid" : "is-weak";
       const status = scorePercent > 80 ? "Correct" : scorePercent >= 50 ? "Partly correct" : "Wrong";
 
-      const header = row.createDiv({ cls: "sprout-exam-generator-result-header" });
-      header.createDiv({ cls: "sprout-exam-generator-result-title", text: `Question ${i + 1}:` });
+      const header = row.createDiv({ cls: "learnkit-exam-generator-result-header learnkit-exam-generator-result-header" });
+      header.createDiv({ cls: "learnkit-exam-generator-result-title learnkit-exam-generator-result-title", text: `Question ${i + 1}:` });
       header.createDiv({
-        cls: `sprout-exam-generator-result-score ${scoreTone}`,
+        cls: `learnkit-exam-generator-result-score ${scoreTone}`,
         text: `${scorePercent}%`,
       });
 
-      const body = row.createDiv({ cls: "sprout-exam-generator-result-body" });
-      body.createDiv({ cls: "sprout-exam-generator-result-detail", text: status });
+      const body = row.createDiv({ cls: "learnkit-exam-generator-result-body learnkit-exam-generator-result-body" });
+      body.createDiv({ cls: "learnkit-exam-generator-result-detail learnkit-exam-generator-result-detail", text: status });
     }
 
-    const actions = card.createDiv({ cls: "sprout-exam-generator-actions" });
+    const actions = card.createDiv({ cls: "learnkit-exam-generator-actions learnkit-exam-generator-actions" });
     const review = actions.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
       text: "Review mistakes",
     });
     review.setAttribute("aria-label", "Review mistakes");
@@ -2977,7 +2985,7 @@ export class SproutExamGeneratorView extends ItemView {
     });
 
     const reviewAll = actions.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
       text: "Review all answers",
     });
     reviewAll.setAttribute("aria-label", "Review all answers");
@@ -2989,7 +2997,7 @@ export class SproutExamGeneratorView extends ItemView {
     });
 
     const setup = actions.createEl("button", {
-      cls: "bc sprout-btn-accent inline-flex items-center gap-2 sprout-exam-generator-saved-tests-btn sprout-exam-generator-actions-advance",
+      cls: "learnkit-btn-accent learnkit-btn-accent inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
       text: "Back to tests",
     });
     setup.setAttribute("aria-label", "Back to tests");
@@ -3003,9 +3011,9 @@ export class SproutExamGeneratorView extends ItemView {
   }
 
   private _renderReview(host: HTMLElement): void {
-    const card = host.createDiv({ cls: "card sprout-exam-generator-card" });
+    const card = host.createDiv({ cls: "card learnkit-exam-generator-card learnkit-exam-generator-card" });
     card.createEl("h3", {
-      cls: "sprout-exam-generator-review-title",
+      cls: "learnkit-exam-generator-review-title learnkit-exam-generator-review-title",
       text: this._reviewWrongOnly ? "Review mistakes" : "Review all answers",
     });
 
@@ -3014,31 +3022,31 @@ export class SproutExamGeneratorView extends ItemView {
       .filter(({ result }) => (this._reviewWrongOnly ? result.scorePercent < 100 : true));
 
     if (rows.length === 0) {
-      card.createDiv({ cls: "sprout-settings-text-muted", text: "No mistakes to review." });
+      card.createDiv({ cls: "learnkit-settings-text-muted learnkit-settings-text-muted", text: "No mistakes to review." });
     } else {
-      const list = card.createDiv({ cls: "sprout-exam-generator-results" });
+      const list = card.createDiv({ cls: "learnkit-exam-generator-results learnkit-exam-generator-results" });
       for (const { result, index } of rows) {
-        const row = list.createDiv({ cls: "sprout-exam-generator-result-row" });
+        const row = list.createDiv({ cls: "learnkit-exam-generator-result-row learnkit-exam-generator-result-row" });
         const scorePercent = Math.round(result.scorePercent);
         const scoreTone = scorePercent > 80 ? "is-strong" : scorePercent >= 50 ? "is-mid" : "is-weak";
 
-        const header = row.createDiv({ cls: "sprout-exam-generator-result-header" });
-        header.createDiv({ cls: "sprout-exam-generator-result-title", text: `Question ${index + 1}:` });
+        const header = row.createDiv({ cls: "learnkit-exam-generator-result-header learnkit-exam-generator-result-header" });
+        header.createDiv({ cls: "learnkit-exam-generator-result-title learnkit-exam-generator-result-title", text: `Question ${index + 1}:` });
         header.createDiv({
-          cls: `sprout-exam-generator-result-score ${scoreTone}`,
+          cls: `learnkit-exam-generator-result-score ${scoreTone}`,
           text: `${scorePercent}%`,
         });
 
-        const body = row.createDiv({ cls: "sprout-exam-generator-result-body" });
-        const prompt = body.createDiv({ cls: "sprout-exam-generator-result-prompt" });
+        const body = row.createDiv({ cls: "learnkit-exam-generator-result-body learnkit-exam-generator-result-body" });
+        const prompt = body.createDiv({ cls: "learnkit-exam-generator-result-prompt learnkit-exam-generator-result-prompt" });
         renderMarkdownPreviewInElement(prompt, result.prompt);
 
-        const userAnswerLine = body.createDiv({ cls: "sprout-exam-generator-result-detail" });
+        const userAnswerLine = body.createDiv({ cls: "learnkit-exam-generator-result-detail learnkit-exam-generator-result-detail" });
         userAnswerLine.createEl("strong", { text: "Your answer: " });
         const userAnswerValue = userAnswerLine.createSpan();
         renderMarkdownPreviewInElement(userAnswerValue, result.userAnswer?.trim() || "(blank)");
 
-        const expectedLine = body.createDiv({ cls: "sprout-exam-generator-result-detail" });
+        const expectedLine = body.createDiv({ cls: "learnkit-exam-generator-result-detail learnkit-exam-generator-result-detail" });
         const expectedLabel = result.questionType === "mcq" ? "Correct option: " : "Model answer: ";
         expectedLine.createEl("strong", { text: expectedLabel });
         const expectedValue = expectedLine.createSpan();
@@ -3048,7 +3056,7 @@ export class SproutExamGeneratorView extends ItemView {
         if (feedback) {
           const statusOnly = feedback === "Correct" || feedback === "Partly correct" || feedback === "Incorrect" || feedback === "Wrong";
           if (!statusOnly) {
-            const feedbackLine = body.createDiv({ cls: "sprout-exam-generator-result-feedback" });
+            const feedbackLine = body.createDiv({ cls: "learnkit-exam-generator-result-feedback learnkit-exam-generator-result-feedback" });
             feedbackLine.createEl("strong", { text: "Feedback: " });
             const feedbackValue = feedbackLine.createSpan();
             renderMarkdownPreviewInElement(feedbackValue, feedback);
@@ -3058,9 +3066,9 @@ export class SproutExamGeneratorView extends ItemView {
       }
     }
 
-    const actions = card.createDiv({ cls: "sprout-exam-generator-actions" });
+    const actions = card.createDiv({ cls: "learnkit-exam-generator-actions learnkit-exam-generator-actions" });
     const back = actions.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
       text: "Back to results",
     });
     back.setAttribute("aria-label", "Back to results");
@@ -3070,7 +3078,7 @@ export class SproutExamGeneratorView extends ItemView {
       this._render();
     });
     const setup = actions.createEl("button", {
-      cls: "bc sprout-btn-accent inline-flex items-center gap-2 sprout-exam-generator-saved-tests-btn sprout-exam-generator-actions-advance",
+      cls: "learnkit-btn-accent learnkit-btn-accent inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
       text: "Back to tests",
     });
     setup.setAttribute("aria-label", "Back to tests");
@@ -3271,55 +3279,54 @@ class ExamAttachmentPickerModal extends Modal {
 
   onOpen(): void {
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout", "mod-dim");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-attachment-picker");
+    this.modalEl.addClass("lk-modals", "learnkit-attachment-picker");
     scopeModalToWorkspace(this);
-    this.contentEl.addClass("bc");
 
     const headerEl = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header");
     if (headerEl) {
       const titleEl = headerEl.querySelector<HTMLElement>(":scope > .modal-title");
       if (titleEl) titleEl.setText("Add attachment");
 
-      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .sprout-attachment-picker-close-btn");
+      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .learnkit-attachment-picker-close-btn");
       if (existingCloseBtn) existingCloseBtn.remove();
 
       const closeBtn = headerEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-attachment-picker-close-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn learnkit-attachment-picker-close-btn learnkit-attachment-picker-close-btn",
         attr: { type: "button", "aria-label": "Close" },
       });
       closeBtn.setAttr("data-tooltip-position", "top");
-      const closeIconWrap = closeBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const closeIconWrap = closeBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(closeIconWrap, "x");
-      closeBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Close" });
+      closeBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: "Close" });
       closeBtn.addEventListener("click", () => this.close());
     }
 
     const legacyCloseBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
     if (legacyCloseBtn) legacyCloseBtn.remove();
 
-    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-attachment-picker-footer");
+    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .learnkit-attachment-picker-footer");
     if (existingFooter) existingFooter.remove();
 
-    const root = this.contentEl.createDiv({ cls: "sprout-attachment-picker-root" });
-    const body = root.createDiv({ cls: "sprout-attachment-picker-body" });
+    const root = this.contentEl.createDiv({ cls: "learnkit-attachment-picker-root learnkit-attachment-picker-root" });
+    const body = root.createDiv({ cls: "learnkit-attachment-picker-body learnkit-attachment-picker-body" });
 
     // ---- "Choose from computer" button ----
     const systemBtn = body.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-attachment-picker-system-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-attachment-picker-system-btn learnkit-attachment-picker-system-btn",
       text: "Choose from computer",
     });
-    setIcon(systemBtn.createSpan({ cls: "sprout-attachment-picker-system-icon" }), "hard-drive");
+    setIcon(systemBtn.createSpan({ cls: "learnkit-attachment-picker-system-icon learnkit-attachment-picker-system-icon" }), "hard-drive");
     systemBtn.addEventListener("click", () => this._pickSystemFile());
 
     // ---- Divider ----
-    body.createEl("div", { cls: "sprout-attachment-picker-divider", text: "Or choose from vault" });
+    body.createEl("div", { cls: "learnkit-attachment-picker-divider learnkit-attachment-picker-divider", text: "Or choose from vault" });
 
     const search = body.createEl("input", {
-      cls: "bc input w-full sprout-attachment-picker-search",
+      cls: "input w-full learnkit-attachment-picker-search learnkit-attachment-picker-search",
       attr: { type: "text", placeholder: "Search vault files..." },
     });
 
-    this._listEl = body.createDiv({ cls: "sprout-attachment-picker-list" });
+    this._listEl = body.createDiv({ cls: "learnkit-attachment-picker-list learnkit-attachment-picker-list" });
     this._renderList();
 
     search.addEventListener("input", () => {
@@ -3330,24 +3337,24 @@ class ExamAttachmentPickerModal extends Modal {
       this._renderList();
     });
 
-    const footer = this.modalEl.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer sprout-attachment-picker-footer" });
+    const footer = this.modalEl.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer learnkit-attachment-picker-footer learnkit-attachment-picker-footer" });
 
     const cancelBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Cancel" },
     });
     cancelBtn.setAttr("data-tooltip-position", "top");
-    const cancelIcon = cancelBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const cancelIcon = cancelBtn.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(cancelIcon, "x");
     cancelBtn.createSpan({ text: "Cancel" });
     cancelBtn.addEventListener("click", () => this.close());
 
     const addBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
       attr: { type: "button", "aria-label": "Add selected attachment" },
     });
     addBtn.setAttr("data-tooltip-position", "top");
-    const addIcon = addBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const addIcon = addBtn.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(addIcon, "plus");
     addBtn.createSpan({ text: "Add" });
     addBtn.disabled = true;
@@ -3359,11 +3366,10 @@ class ExamAttachmentPickerModal extends Modal {
 
   onClose(): void {
     this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "sprout", "mod-dim");
-    this.modalEl.removeClass("bc", "lk-modals", "sprout-attachment-picker");
-    this.contentEl.removeClass("bc");
-    const footerEl = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-attachment-picker-footer");
+    this.modalEl.removeClass("lk-modals", "learnkit-attachment-picker");
+    const footerEl = this.modalEl.querySelector<HTMLElement>(":scope > .learnkit-attachment-picker-footer");
     if (footerEl) footerEl.remove();
-    const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header .sprout-attachment-picker-close-btn");
+    const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header .learnkit-attachment-picker-close-btn");
     if (closeBtn) closeBtn.remove();
     this.contentEl.empty();
     this._addBtnEl = null;
@@ -3409,7 +3415,7 @@ class ExamAttachmentPickerModal extends Modal {
     const max = 100;
     const shown = this._filteredFiles.slice(0, max);
     for (const file of shown) {
-      const item = this._listEl.createDiv({ cls: "sprout-attachment-picker-item" });
+      const item = this._listEl.createDiv({ cls: "learnkit-attachment-picker-item learnkit-attachment-picker-item" });
       if (file.path === this._selectedFilePath) item.addClass("is-selected");
       item.createSpan({ text: file.path });
       item.addEventListener("click", () => {
@@ -3424,13 +3430,13 @@ class ExamAttachmentPickerModal extends Modal {
     }
     if (this._filteredFiles.length > max) {
       this._listEl.createDiv({
-        cls: "sprout-attachment-picker-overflow",
+        cls: "learnkit-attachment-picker-overflow learnkit-attachment-picker-overflow",
         text: `… and ${this._filteredFiles.length - max} more`,
       });
     }
     if (!shown.length) {
       this._listEl.createDiv({
-        cls: "sprout-attachment-picker-empty",
+        cls: "learnkit-attachment-picker-empty learnkit-attachment-picker-empty",
         text: "No matching files",
       });
     }

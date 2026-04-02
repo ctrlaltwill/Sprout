@@ -1,3 +1,12 @@
+/**
+ * @file src/platform/integrations/ai/study-assistant-generator.ts
+ * @summary Module for study assistant generator.
+ *
+ * @exports
+ *  - generateStudyAssistantSuggestions
+ *  - generateStudyAssistantChatReply
+ */
+
 import type { SproutSettings } from "../../types/settings";
 import { requestStudyAssistantCompletionDetailed } from "./study-assistant-provider";
 import { buildStudyAssistantHiddenPrompt } from "./study-assistant-hidden-prompts";

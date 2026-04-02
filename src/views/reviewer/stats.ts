@@ -6,10 +6,10 @@
  *   - getStageCountsAll — Returns an object with counts of new, learning, review, relearning, and suspended cards
  */
 
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { isParentCard } from "../../platform/core/card-utils";
 
-export function getStageCountsAll(plugin: SproutPlugin): {
+export function getStageCountsAll(plugin: LearnKitPlugin): {
   new: number;
   learning: number;
   review: number;

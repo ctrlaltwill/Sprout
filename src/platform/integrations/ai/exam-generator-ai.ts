@@ -1,3 +1,12 @@
+/**
+ * @file src/platform/integrations/ai/exam-generator-ai.ts
+ * @summary Module for exam generator ai.
+ *
+ * @exports
+ *  - generateExamQuestions
+ *  - gradeSaqAnswer
+ */
+
 import { requestStudyAssistantCompletion } from "./study-assistant-provider";
 import type { SproutSettings } from "../../types/settings";
 import type {

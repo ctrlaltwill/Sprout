@@ -14,7 +14,7 @@
 
 // src/views/browser/card-browser-view.ts
 import { ItemView, Notice, TFile, type WorkspaceLeaf, setIcon } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../../platform/core/constants";
 import type { CardRecord } from "../../platform/core/store";
 import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
@@ -70,7 +70,7 @@ const COMPACT_DEFAULT_HIDDEN_COLS: ColKey[] = ["id", "stage", "due", "location"]
 const ALL_COLS: ColKey[] = ["id", "type", "stage", "due", "title", "question", "answer", "info", "location", "groups"];
 
 export class SproutCardBrowserView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   query = "";
   typeFilter: TypeFilter = "all";
@@ -149,7 +149,7 @@ export class SproutCardBrowserView extends ItemView {
   private _uiCleanups: Array<() => void> = [];
   private _mobileKeyboardCleanup: (() => void) | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
     this._loadDensityMode();
@@ -305,8 +305,8 @@ export class SproutCardBrowserView extends ItemView {
   // ── Width mode ──────────────────────────────────────────
 
   private _applyWidthMode() {
-    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-sprout-wide", "1");
-    else this.containerEl.removeAttribute("data-sprout-wide");
+    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-learnkit-wide", "1");
+    else this.containerEl.removeAttribute("data-learnkit-wide");
 
     const root = this._rootEl;
     const strip = this._titleStripEl;
@@ -403,8 +403,8 @@ export class SproutCardBrowserView extends ItemView {
 
     const setActive = (btn: HTMLButtonElement, active: boolean) => {
       btn.setAttribute("aria-pressed", active ? "true" : "false");
-      btn.classList.toggle("sprout-btn-control", active);
-      btn.classList.toggle("sprout-btn-outline-muted", !active);
+      btn.classList.toggle("learnkit-btn-control", active);
+      btn.classList.toggle("learnkit-btn-outline-muted", !active);
       btn.classList.toggle("lk-browser-density-btn-active", active);
     };
 
@@ -498,8 +498,8 @@ export class SproutCardBrowserView extends ItemView {
       this._selectionCountEl.textContent = count === 0 ? "No cards selected" : `${count.toLocaleString()} selected`;
       if (this._clearSelectionEl) {
         const active = count > 0;
-        this._clearSelectionEl.classList.toggle("sprout-is-hidden", !active);
-        this._clearSelectionEl.classList.toggle("sprout-pointer-auto", active);
+        this._clearSelectionEl.classList.toggle("learnkit-is-hidden", !active);
+        this._clearSelectionEl.classList.toggle("learnkit-pointer-auto", active);
         this._clearSelectionEl.classList.toggle("pointer-events-none", !active);
       }
       if (this._clearSelectionPlaceholderEl) {
@@ -603,9 +603,9 @@ export class SproutCardBrowserView extends ItemView {
     for (const col of this._allCols) {
       const show = this._isColumnShown(col);
       const colEl = this._colEls[col];
-      if (colEl) colEl.classList.toggle("sprout-is-hidden", !show);
+      if (colEl) colEl.classList.toggle("learnkit-is-hidden", !show);
       table.querySelectorAll(`[data-col="${col}"]`).forEach((el) => {
-        (el as HTMLElement).classList.toggle("sprout-is-hidden", !show);
+        (el as HTMLElement).classList.toggle("learnkit-is-hidden", !show);
       });
     }
   }
@@ -626,7 +626,7 @@ export class SproutCardBrowserView extends ItemView {
       const icon = this._headerSortIcons[k];
       if (icon) {
         icon.classList.add("inline-flex", "opacity-100", "transition-all", "duration-200", "ease-in-out");
-        icon.classList.toggle("sprout-is-hidden", !isSorted);
+        icon.classList.toggle("learnkit-is-hidden", !isSorted);
         icon.classList.toggle("rotate-180", isSorted && !this.sortAsc);
       }
     }
@@ -883,11 +883,11 @@ export class SproutCardBrowserView extends ItemView {
     root.empty();
     this._rootEl = root;
 
-    root.classList.add("bc", "sprout-view-content", "lk-browser-view", "lk-browser-width");
+    root.classList.add("learnkit-view-content", "learnkit-view-content", "lk-browser-view", "lk-browser-width");
     root.setAttribute("data-lk-browser-root", "1");
     this._syncDensityDataset();
 
-    this.containerEl.addClass("sprout");
+    this.containerEl.addClass("learnkit");
     this._ensureTitleStrip(root);
 
     // ✅ Universal shared header
@@ -927,8 +927,8 @@ export class SproutCardBrowserView extends ItemView {
       void contentShell.offsetWidth;
       contentShell.classList.add("lk-browser-enter-shell");
 
-      titleStripEl?.classList.remove("aos-animate", "sprout-aos-fallback");
-      contentShell.classList.remove("aos-animate", "sprout-aos-fallback");
+      titleStripEl?.classList.remove("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
+      contentShell.classList.remove("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
     } else {
       if (titleStripEl) {
         titleStripEl.removeAttribute("data-aos");
@@ -936,14 +936,14 @@ export class SproutCardBrowserView extends ItemView {
         titleStripEl.removeAttribute("data-aos-anchor-placement");
         titleStripEl.removeAttribute("data-aos-duration");
         titleStripEl.classList.remove("lk-browser-enter-title");
-        titleStripEl.classList.add("aos-animate", "sprout-aos-fallback");
+        titleStripEl.classList.add("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
       }
       contentShell.removeAttribute("data-aos");
       contentShell.removeAttribute("data-aos-delay");
       contentShell.removeAttribute("data-aos-anchor-placement");
       contentShell.removeAttribute("data-aos-duration");
       contentShell.classList.remove("lk-browser-enter-shell");
-      contentShell.classList.add("aos-animate", "sprout-aos-fallback");
+      contentShell.classList.add("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
     }
 
     // Build the full layout via browser-toolbar.ts

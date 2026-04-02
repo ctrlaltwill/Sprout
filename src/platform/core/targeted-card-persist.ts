@@ -1,4 +1,12 @@
-import type SproutPlugin from "../../main";
+/**
+ * @file src/platform/core/targeted-card-persist.ts
+ * @summary Module for targeted card persist.
+ *
+ * @exports
+ *  - persistEditedCardAndSiblings
+ */
+
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "./store";
 import { normaliseGroupKey, stableIoChildId } from "../image-occlusion/mask-tool";
 
@@ -6,15 +14,15 @@ type PersistEditedCardOptions = {
   persist?: boolean;
 };
 
-function hasState(plugin: SproutPlugin, id: string): boolean {
+function hasState(plugin: LearnKitPlugin, id: string): boolean {
   return !!plugin.store.data.states?.[id];
 }
 
-function ensureStateIfMissing(plugin: SproutPlugin, id: string, now: number): void {
+function ensureStateIfMissing(plugin: LearnKitPlugin, id: string, now: number): void {
   if (!hasState(plugin, id)) plugin.store.ensureState(id, now, 2.5);
 }
 
-function deleteChildrenByType(plugin: SproutPlugin, parentId: string, childType: string): void {
+function deleteChildrenByType(plugin: LearnKitPlugin, parentId: string, childType: string): void {
   for (const id of Object.keys(plugin.store.data.cards || {})) {
     const rec = plugin.store.data.cards[id];
     if (!rec) continue;
@@ -25,7 +33,7 @@ function deleteChildrenByType(plugin: SproutPlugin, parentId: string, childType:
   }
 }
 
-function collectChildrenByType(plugin: SproutPlugin, parentId: string, childType: string): CardRecord[] {
+function collectChildrenByType(plugin: LearnKitPlugin, parentId: string, childType: string): CardRecord[] {
   const out: CardRecord[] = [];
   for (const rec of Object.values(plugin.store.data.cards || {})) {
     if (!rec) continue;
@@ -61,7 +69,7 @@ function resolveChildCreatedAt(prev: CardRecord | undefined, parent: CardRecord,
   return now;
 }
 
-function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number): void {
+function syncClozeChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number): void {
   const parentId = String(parent.id || "");
   if (!parentId) return;
 
@@ -103,7 +111,7 @@ function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number
   }
 }
 
-function syncReversedChildren(plugin: SproutPlugin, parent: CardRecord, now: number): void {
+function syncReversedChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number): void {
   const parentId = String(parent.id || "");
   if (!parentId) return;
 
@@ -156,7 +164,7 @@ function syncReversedChildren(plugin: SproutPlugin, parent: CardRecord, now: num
   }
 }
 
-function syncIoChildren(plugin: SproutPlugin, parent: CardRecord, now: number): void {
+function syncIoChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number): void {
   const parentId = String(parent.id || "");
   if (!parentId) return;
   const ioMap = plugin.store.data.io || {};
@@ -213,7 +221,7 @@ function syncIoChildren(plugin: SproutPlugin, parent: CardRecord, now: number): 
 }
 
 export async function persistEditedCardAndSiblings(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   card: CardRecord,
   options: PersistEditedCardOptions = {},
 ): Promise<void> {

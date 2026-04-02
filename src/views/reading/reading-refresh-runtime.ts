@@ -1,3 +1,16 @@
+/**
+ * @file src/views/reading/reading-refresh-runtime.ts
+ * @summary Module for reading refresh runtime.
+ *
+ * @exports
+ *  - ReadingRefreshState
+ *  - isMainWorkspaceMarkdownLeaf
+ *  - computeContentSignature
+ *  - getMarkdownLeafSource
+ *  - refreshReadingViewMarkdownLeaves
+ *  - scheduleReadingViewRefresh
+ */
+
 import { type App, MarkdownView, TFile, type WorkspaceLeaf } from "obsidian";
 
 import { log } from "../../platform/core/logger";

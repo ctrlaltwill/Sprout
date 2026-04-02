@@ -1,7 +1,15 @@
+/**
+ * @file src/views/coach/coach-view.ts
+ * @summary Module for coach view.
+ *
+ * @exports
+ *  - SproutCoachView
+ */
+
 import { ItemView, Notice, TFile, setIcon, type WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { createViewHeader, type SproutHeader } from "../../platform/core/header";
 import { log } from "../../platform/core/logger";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_COACH } from "../../platform/core/constants";
@@ -74,15 +82,6 @@ function intensityMultiplier(intensity: CoachIntensity): number {
   if (intensity === "relaxed") return 0.9;
   if (intensity === "aggressive") return 1.15;
   return 1;
-}
-
-function computeStatus(targetFlash: number, targetNote: number, doneFlash: number, doneNote: number): CoachPlanRow["status"] {
-  const flashRatio = targetFlash > 0 ? doneFlash / targetFlash : 1;
-  const noteRatio = targetNote > 0 ? doneNote / targetNote : 1;
-  const ratio = Math.min(flashRatio, noteRatio);
-  if (ratio >= 1) return "on-track";
-  if (ratio >= 0.65) return "at-risk";
-  return "behind";
 }
 
 function clamp01(n: number): number {
@@ -162,7 +161,7 @@ function switcherStatusBadge(status: CoachPlanRow["status"]): { label: string; t
 }
 
 export class SproutCoachView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   private _header: SproutHeader | null = null;
   private _rootEl: HTMLElement | null = null;
@@ -189,7 +188,7 @@ export class SproutCoachView extends ItemView {
   private _wizardEditingPlanId: string | null = null;
   private _selectedPlanScopeId: string | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -208,7 +207,7 @@ export class SproutCoachView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.contentEl.empty();
-    this.containerEl.addClass("sprout");
+    this.containerEl.addClass("learnkit");
 
     this._header = createViewHeader({
       view: this,
@@ -297,7 +296,7 @@ export class SproutCoachView extends ItemView {
       el.removeAttribute("data-aos-delay");
       el.removeAttribute("data-aos-duration");
       el.removeAttribute("data-aos-anchor-placement");
-      el.classList.add("aos-animate", "sprout-aos-fallback");
+      el.classList.add("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
     });
   }
 
@@ -323,8 +322,8 @@ export class SproutCoachView extends ItemView {
   }
 
   private _applyMaxWidth(): void {
-    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-sprout-wide", "1");
-    else this.containerEl.removeAttribute("data-sprout-wide");
+    if (this.plugin.isWideMode) this.containerEl.setAttribute("data-learnkit-wide", "1");
+    else this.containerEl.removeAttribute("data-learnkit-wide");
 
     if (!this._rootEl) return;
     const maxWidth = this.plugin.isWideMode ? "100%" : MAX_CONTENT_WIDTH_PX;
@@ -584,6 +583,71 @@ export class SproutCoachView extends ItemView {
     return { flash, note, exam };
   }
 
+  private _computeHealthForPlan(
+    plan: CoachPlanRow,
+    now: number,
+  ): { flash: HealthStatus; note: HealthStatus; exam: HealthStatus } {
+    const scope = this._scopeFromParts(plan.scope_type, plan.scope_key, plan.scope_name);
+    const allScopes = this._scopesForPlan(plan);
+    const stats = this._computeAggregateStats(allScopes, now);
+    const daysLeft = daysLeftToExam(plan.exam_date_utc, now);
+    const dailyFlashTarget = Math.max(0, plan.daily_flashcard_target);
+    const dailyNoteTarget = Math.max(0, plan.daily_note_target);
+    const totalCards = allScopes.length > 1
+      ? allScopes.reduce((sum, s) => sum + this._cardsInScope(s).length, 0)
+      : this._cardsInScope(scope).length;
+
+    const aggregate: AggregateStats = {
+      dueCards: stats.dueCards,
+      newCards: stats.newCards,
+      dueNotes: stats.dueNotes,
+      totalCards: Math.max(1, totalCards),
+    };
+
+    // Compute average FSRS retrievability for in-scope cards
+    const cardStates = this.plugin.store.data.states || {};
+    const schedulingCfg = this.plugin.settings?.scheduling;
+    const requestRetention = Math.max(0.8, Math.min(0.97, Number(schedulingCfg?.requestRetention) || 0.9));
+    const fsrsParams = generatorParameters({ request_retention: requestRetention });
+    const scopeCards = allScopes.length > 1
+      ? allScopes.flatMap((s) => this._cardsInScope(s))
+      : this._cardsInScope(scope);
+    let retSum = 0;
+    let retCount = 0;
+    for (const sc of scopeCards) {
+      const st = cardStates[sc.id];
+      if (!st || st.stage === "new" || st.stage === "suspended") continue;
+      const stability = Number(st.stabilityDays ?? 0);
+      const lastReviewed = Number(st.lastReviewed ?? 0);
+      if (stability <= 0 || lastReviewed <= 0) continue;
+      const elapsed = Math.max(0, (now - lastReviewed) / MS_DAY);
+      retSum += forgetting_curve(fsrsParams.w, elapsed, stability);
+      retCount += 1;
+    }
+    const avgRetention = retCount > 0 ? retSum / retCount : 0;
+
+    // Compute note review coverage + average note retention
+    const dayUtc = startOfDayUtc(now);
+    const progress = this._coachDb?.getProgress(dayUtc, plan.scope_type, plan.scope_key);
+    const allNoteIds = allScopes.length > 1
+      ? [...new Set(allScopes.flatMap((s) => this._dueNoteIdsInScope(s, now)))]
+      : this._dueNoteIdsInScope(scope, now);
+    const totalNotes = Math.max(1, allNoteIds.length);
+    const reviewedNoteCount = progress?.note ?? 0;
+    const avgNoteRetention = reviewedNoteCount > 0 ? requestRetention : 0;
+
+    return this._computeHealth(
+      aggregate,
+      daysLeft,
+      dailyFlashTarget,
+      dailyNoteTarget,
+      avgRetention,
+      totalNotes,
+      reviewedNoteCount,
+      avgNoteRetention,
+    );
+  }
+
   private async _upsertPlan(
     scope: Scope,
     examDateUtc: number,
@@ -603,15 +667,12 @@ export class SproutCoachView extends ItemView {
     const dailyFlashcardTarget = Math.max(0, Math.ceil(((stats.dueCards + stats.newCards) / days) * mul));
     const dailyNoteTarget = Math.max(0, Math.ceil((stats.dueNotes / days) * mul));
 
-    const dayUtc = startOfDayUtc(now);
-    const progress = this._coachDb.getProgress(dayUtc, scope.type, scope.key);
-    const status = computeStatus(dailyFlashcardTarget, dailyNoteTarget, progress.flashcard, progress.note);
-
     const scopeData = allScopes.length > 1
       ? JSON.stringify(allScopes.map((s) => ({ type: s.type, key: s.key, name: s.name })))
       : "";
 
-    this._coachDb.upsertPlan({
+    // Build a temporary plan row so _computeHealthForPlan can derive status
+    const tempPlan: CoachPlanRow = {
       plan_id: planId || (globalThis.crypto?.randomUUID?.() ?? `plan-${now}-${Math.random().toString(36).slice(2, 9)}`),
       scope_type: scope.type,
       scope_key: scope.key,
@@ -622,9 +683,20 @@ export class SproutCoachView extends ItemView {
       intensity,
       daily_flashcard_target: dailyFlashcardTarget,
       daily_note_target: dailyNoteTarget,
-      status,
+      status: "on-track", // placeholder — overwritten below
       updated_at: now,
-    });
+    };
+
+    // Derive plan status from exam health score (consistent with health bars)
+    const health = this._computeHealthForPlan(tempPlan, now);
+    const examLabel = health.exam.label;
+    const status: CoachPlanRow["status"] =
+      examLabel === "ready" || examLabel === "on-track" ? "on-track"
+      : examLabel === "at-risk" ? "at-risk"
+      : "behind";
+    tempPlan.status = status;
+
+    this._coachDb.upsertPlan(tempPlan);
 
     await this._coachDb.persist();
   }
@@ -644,14 +716,14 @@ export class SproutCoachView extends ItemView {
   }
 
   private _renderEmptyCta(host: HTMLElement): void {
-    const card = host.createDiv({ cls: "card sprout-coach-cta-card" });
+    const card = host.createDiv({ cls: "card learnkit-coach-cta-card learnkit-coach-cta-card" });
     card.createEl("h3", { text: "Create your first exam plan" });
     card.createEl("p", {
       text: "Build a custom study plan with focused targets on notes and folders within your vault. Study coach will develop a unique, tailored plan to ensure you are ready for exam day.",
     });
 
     const cta = card.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-accent",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent",
       text: "Get started",
     });
     cta.type = "button";
@@ -715,17 +787,17 @@ export class SproutCoachView extends ItemView {
   }
 
   private _renderWizard(shell: HTMLElement, options: ScopeOption[], hasExistingPlans: boolean): void {
-    const card = shell.createDiv({ cls: "card sprout-coach-wizard-card" });
+    const card = shell.createDiv({ cls: "card learnkit-coach-wizard-card learnkit-coach-wizard-card" });
     const isEditingContent = !!this._wizardEditingPlanId;
     const coachLabel = "Coach";
     const backToCoachLabel = `Back to ${coachLabel}`;
     if (isEditingContent && this._wizardStep !== 0) this._wizardStep = 0;
 
     if (hasExistingPlans && !isEditingContent) {
-      const exitBtn = card.createEl("button", { cls: "sprout-btn-toolbar h-9 flex items-center gap-2 equal-height-btn sprout-btn-exit-sm sprout-btn-top-right" });
+      const exitBtn = card.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-9 flex items-center gap-2 equal-height-btn learnkit-btn-exit-sm learnkit-btn-exit-sm learnkit-btn-top-right learnkit-btn-top-right" });
       exitBtn.type = "button";
       exitBtn.ariaLabel = "Exit plan creator";
-      const exitIcon = exitBtn.createSpan({ cls: "inline-flex items-center justify-center sprout-btn-icon" });
+      const exitIcon = exitBtn.createSpan({ cls: "inline-flex items-center justify-center learnkit-btn-icon learnkit-btn-icon" });
       setIcon(exitIcon, "x");
       exitBtn.addEventListener("click", () => {
         this._resetWizardDraft();
@@ -734,22 +806,22 @@ export class SproutCoachView extends ItemView {
     }
 
     const stepperHost = isEditingContent
-      ? card.createDiv({ cls: "sprout-coach-wizard-topline" })
+      ? card.createDiv({ cls: "learnkit-coach-wizard-topline learnkit-coach-wizard-topline" })
       : card;
-    const stepper = stepperHost.createDiv({ cls: "sprout-coach-stepper" });
+    const stepper = stepperHost.createDiv({ cls: "learnkit-coach-stepper learnkit-coach-stepper" });
     if (isEditingContent) {
-      const topRight = stepperHost.createDiv({ cls: "sprout-coach-wizard-topline-right" });
+      const topRight = stepperHost.createDiv({ cls: "learnkit-coach-wizard-topline-right learnkit-coach-wizard-topline-right" });
       const backToCoachBtn = topRight.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
         attr: {
           type: "button",
           "aria-label": backToCoachLabel,
           "data-tooltip-position": "top",
         },
       });
-      const iconWrap = backToCoachBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const iconWrap = backToCoachBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(iconWrap, "x");
-      backToCoachBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: backToCoachLabel });
+      backToCoachBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: backToCoachLabel });
       backToCoachBtn.addEventListener("click", () => {
         this._resetWizardDraft();
         void this._render();
@@ -760,18 +832,18 @@ export class SproutCoachView extends ItemView {
     this._wizardStepperEl = stepper;
     const stepLabels = isEditingContent ? ["Edit scope"] : ["Topics", "Schedule", "Review"];
     stepLabels.forEach((label, idx) => {
-      const step = stepper.createDiv({ cls: "sprout-coach-step-item" });
-      const dot = step.createDiv({ cls: "sprout-coach-step-dot" });
+      const step = stepper.createDiv({ cls: "learnkit-coach-step-item learnkit-coach-step-item" });
+      const dot = step.createDiv({ cls: "learnkit-coach-step-dot learnkit-coach-step-dot" });
       if (idx < this._wizardStep) dot.classList.add("is-done");
       else if (idx === this._wizardStep) dot.classList.add("is-active");
-      step.createDiv({ cls: "sprout-coach-step-label", text: label });
+      step.createDiv({ cls: "learnkit-coach-step-label learnkit-coach-step-label", text: label });
       if (idx < stepLabels.length - 1) {
-        const line = step.createDiv({ cls: "sprout-coach-step-line" });
+        const line = step.createDiv({ cls: "learnkit-coach-step-line learnkit-coach-step-line" });
         if (idx < this._wizardStep) line.classList.add("is-done");
       }
     });
 
-    const page = card.createDiv({ cls: "sprout-coach-wizard-page" });
+    const page = card.createDiv({ cls: "learnkit-coach-wizard-page learnkit-coach-wizard-page" });
     this._wizardPageEl = page;
     if (!isEditingContent) {
       if (this._wizardSlide === "next") page.classList.add("is-enter-next");
@@ -804,8 +876,8 @@ export class SproutCoachView extends ItemView {
 
     this._wizardStep = newStep;
 
-    const dots = stepper.querySelectorAll<HTMLElement>(".sprout-coach-step-dot");
-    const lines = stepper.querySelectorAll<HTMLElement>(".sprout-coach-step-line");
+    const dots = stepper.querySelectorAll<HTMLElement>(".learnkit-coach-step-dot");
+    const lines = stepper.querySelectorAll<HTMLElement>(".learnkit-coach-step-line");
     dots.forEach((dot, idx) => {
       dot.classList.toggle("is-done", idx < newStep);
       dot.classList.toggle("is-active", idx === newStep);
@@ -821,7 +893,7 @@ export class SproutCoachView extends ItemView {
       oldPage.removeEventListener("animationend", onExitDone);
       oldPage.remove();
 
-      const newPage = card.createDiv({ cls: "sprout-coach-wizard-page" });
+      const newPage = card.createDiv({ cls: "learnkit-coach-wizard-page learnkit-coach-wizard-page" });
       this._wizardPageEl = newPage;
       const enterClass = direction === "next" ? "is-enter-next" : "is-enter-back";
       newPage.classList.add(enterClass);
@@ -846,37 +918,37 @@ export class SproutCoachView extends ItemView {
         : "Select what you are studying",
     });
     card.createEl("p", {
-      cls: "sprout-coach-step-copy",
+      cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
       text: isEditingContent
         ? "Edit the content in your study plan by adding or removing notes, folders, tags, or properties."
         : "Choose the content to include in your study plan, such as the notes or folders you need to revise.",
     });
 
-    card.createDiv({ cls: "sprout-coach-field-label", text: "Plan name" });
-    const nameInput = card.createEl("input", { cls: "bc input h-9", attr: { type: "text", placeholder: "Biology finals" } });
+    card.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Plan name" });
+    const nameInput = card.createEl("input", { cls: "input h-9", attr: { type: "text", placeholder: "Biology finals" } });
     nameInput.value = this._planName;
     nameInput.addEventListener("input", () => {
       this._planName = String(nameInput.value || "").trim();
     });
 
-    card.createDiv({ cls: "sprout-coach-field-label sprout-coach-field-label-gap", text: "Content scope" });
-    const searchWrap = card.createDiv({ cls: "sprout-coach-search-wrap" });
-    const searchIcon = searchWrap.createSpan({ cls: "sprout-coach-search-icon" });
+    card.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label learnkit-coach-field-label-gap learnkit-coach-field-label-gap", text: "Content scope" });
+    const searchWrap = card.createDiv({ cls: "learnkit-coach-search-wrap learnkit-coach-search-wrap" });
+    const searchIcon = searchWrap.createSpan({ cls: "learnkit-coach-search-icon learnkit-coach-search-icon" });
     setIcon(searchIcon, "search");
-    const search = searchWrap.createEl("input", { cls: "bc input h-9", attr: { type: "search", placeholder: "Search notes, folders, tags, or properties..." } });
+    const search = searchWrap.createEl("input", { cls: "input h-9", attr: { type: "search", placeholder: "Search notes, folders, tags, or properties..." } });
     search.value = this._searchQuery;
-    const popover = searchWrap.createDiv({ cls: "sprout-coach-scope-popover dropdown-menu hidden" });
-    const list = popover.createDiv({ cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel" });
+    const popover = searchWrap.createDiv({ cls: "learnkit-coach-scope-popover learnkit-coach-scope-popover dropdown-menu hidden" });
+    const list = popover.createDiv({ cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel" });
     list.setAttr("role", "menu");
     list.setAttr("aria-label", "Content matches");
 
-    const chipsWrap = card.createDiv({ cls: "sprout-coach-selected-wrap" });
-    const selectedTitle = chipsWrap.createDiv({ cls: "sprout-coach-selected-title", text: `Study content (${this._selectedScopeIds.size})` });
-    const chips = chipsWrap.createDiv({ cls: "sprout-coach-selected-chips" });
-    const actionsGrid = chipsWrap.createDiv({ cls: "sprout-coach-scope-actions-grid" });
-    const presetWrap = actionsGrid.createDiv({ cls: "sprout-coach-scope-action" });
+    const chipsWrap = card.createDiv({ cls: "learnkit-coach-selected-wrap learnkit-coach-selected-wrap" });
+    const selectedTitle = chipsWrap.createDiv({ cls: "learnkit-coach-selected-title learnkit-coach-selected-title", text: `Study content (${this._selectedScopeIds.size})` });
+    const chips = chipsWrap.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips" });
+    const actionsGrid = chipsWrap.createDiv({ cls: "learnkit-coach-scope-actions-grid learnkit-coach-scope-actions-grid" });
+    const presetWrap = actionsGrid.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action" });
     const presetBtn = presetWrap.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-preset-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-preset-btn learnkit-scope-preset-btn",
       attr: {
         type: "button",
         "aria-haspopup": "listbox",
@@ -884,12 +956,12 @@ export class SproutCoachView extends ItemView {
         "aria-label": "Saved presets",
       },
     });
-    const presetBtnIcon = presetBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const presetBtnIcon = presetBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(presetBtnIcon, "bookmark");
-    const presetBtnLabel = presetBtn.createSpan({ cls: "bc", text: "Saved presets" });
-    const presetPopover = presetWrap.createDiv({ cls: "sprout-scope-preset-popover dropdown-menu hidden" });
+    const presetBtnLabel = presetBtn.createSpan({ cls: "", text: "Saved presets" });
+    const presetPopover = presetWrap.createDiv({ cls: "learnkit-scope-preset-popover learnkit-scope-preset-popover dropdown-menu hidden" });
     const presetList = presetPopover.createDiv({
-      cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
+      cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel",
     });
     presetList.setAttr("role", "listbox");
     presetList.setAttr("aria-label", "Saved presets");
@@ -919,36 +991,36 @@ export class SproutCoachView extends ItemView {
       closePresetPopover();
     };
 
-    const clearWrap = actionsGrid.createDiv({ cls: "sprout-coach-scope-action hidden" });
+    const clearWrap = actionsGrid.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action hidden" });
     const clearBtn = clearWrap.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
       attr: {
         type: "button",
         "aria-label": "Clear selection",
       },
     });
-    const clearBtnIcon = clearBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const clearBtnIcon = clearBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(clearBtnIcon, "x");
-    clearBtn.createSpan({ cls: "bc", text: "Clear selection" });
+    clearBtn.createSpan({ cls: "", text: "Clear selection" });
 
-    const footer = card.createDiv({ cls: "sprout-coach-wizard-footer" });
+    const footer = card.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer" });
     if (!isEditingContent) {
       const cancel = footer.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
         attr: {
           "aria-label": "Cancel",
           "data-tooltip-position": "top",
         },
       });
       cancel.type = "button";
-      cancel.createSpan({ cls: "bc", text: "Cancel" });
+      cancel.createSpan({ cls: "", text: "Cancel" });
       cancel.addEventListener("click", () => {
         this._resetWizardDraft();
         void this._render();
       });
     }
 
-    const next = footer.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2", text: isEditingContent ? "Save" : "Next" });
+    const next = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2", text: isEditingContent ? "Save" : "Next" });
     next.type = "button";
     if (!isEditingContent) {
       const nextIcon = next.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5" });
@@ -1042,10 +1114,10 @@ export class SproutCoachView extends ItemView {
       let addBtn: HTMLSpanElement | null = null;
       if (hasSelection && !duplicate) {
         const createRow = presetList.createDiv({
-          cls: "sprout-ss-search-wrap sprout-scope-preset-create",
+          cls: "learnkit-ss-search-wrap learnkit-ss-search-wrap learnkit-scope-preset-create learnkit-scope-preset-create",
         });
         nameInput = createRow.createEl("input", {
-          cls: "sprout-ss-search-input",
+          cls: "learnkit-ss-search-input learnkit-ss-search-input",
           attr: {
             type: "text",
             placeholder: "Preset name",
@@ -1055,7 +1127,7 @@ export class SproutCoachView extends ItemView {
           },
         });
         addBtn = createRow.createSpan({
-          cls: "sprout-scope-preset-add hidden",
+          cls: "learnkit-scope-preset-add learnkit-scope-preset-add hidden",
           text: "+",
           attr: {
             role: "button",
@@ -1064,7 +1136,7 @@ export class SproutCoachView extends ItemView {
           },
         });
       } else if (matchingPreset) {
-        const status = presetList.createDiv({ cls: "sprout-scope-preset-status" });
+        const status = presetList.createDiv({ cls: "learnkit-scope-preset-status learnkit-scope-preset-status" });
         status.createSpan({ text: "Selection saved as " });
         status.createEl("strong", { text: matchingPreset.name });
       }
@@ -1122,19 +1194,19 @@ export class SproutCoachView extends ItemView {
 
       for (const preset of presets) {
         const selected = selectionMatchesPreset(this._selectedScopeIds, preset);
-        const row = presetList.createDiv({ cls: "sprout-coach-scope-row" });
+        const row = presetList.createDiv({ cls: "learnkit-coach-scope-row learnkit-coach-scope-row" });
         row.setAttr("role", "option");
         row.setAttr("aria-selected", selected ? "true" : "false");
         const applyBtn = row.createEl("button", {
-          cls: "sprout-scope-preset-apply",
+          cls: "learnkit-scope-preset-apply learnkit-scope-preset-apply",
         });
         applyBtn.type = "button";
         if (selected) {
           row.classList.add("is-selected");
           applyBtn.classList.add("is-selected");
         }
-        const itemText = applyBtn.createSpan({ cls: "sprout-scope-preset-item-text" });
-        itemText.createSpan({ cls: "sprout-coach-scope-item-label", text: `${preset.name} (${preset.scopes.length})` });
+        const itemText = applyBtn.createSpan({ cls: "learnkit-scope-preset-item-text learnkit-scope-preset-item-text" });
+        itemText.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: `${preset.name} (${preset.scopes.length})` });
         applyBtn.addEventListener("click", () => {
           this._selectedScopeIds.clear();
           for (const scope of preset.scopes) {
@@ -1148,7 +1220,7 @@ export class SproutCoachView extends ItemView {
         });
 
         const deleteBtn = row.createSpan({
-          cls: "sprout-scope-preset-remove",
+          cls: "learnkit-scope-preset-remove learnkit-scope-preset-remove",
           attr: { "aria-label": `Delete ${preset.name}` },
         });
         setIcon(deleteBtn, "x");
@@ -1226,7 +1298,7 @@ export class SproutCoachView extends ItemView {
         for (const scopeId of this._selectedScopeIds) {
           const option = options.find((entry) => toScopeId(entry.scope) === scopeId);
           if (!option) continue;
-          const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+          const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
           if (option.scope.type === "folder") {
             const folderPath = String(option.scope.key || option.scope.name || "").trim();
             const count = this._allFiles().filter((file) => file.path.startsWith(`${folderPath}/`)).length;
@@ -1234,7 +1306,7 @@ export class SproutCoachView extends ItemView {
           } else {
             chip.createSpan({ text: option.label });
           }
-          const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+          const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
           remove.type = "button";
           remove.setAttr("aria-label", "Remove");
           setIcon(remove, "x");
@@ -1292,27 +1364,27 @@ export class SproutCoachView extends ItemView {
   }
 
   private _renderWizardScheduleStep(card: HTMLElement): void {
-    card.classList.add("sprout-coach-wizard-page-schedule");
+    card.classList.add("learnkit-coach-wizard-page-schedule", "learnkit-coach-wizard-page-schedule");
 
-    const intro = card.createDiv({ cls: "sprout-coach-schedule-intro" });
+    const intro = card.createDiv({ cls: "learnkit-coach-schedule-intro learnkit-coach-schedule-intro" });
     intro.createEl("h3", { text: "Set timeline and intensity" });
     intro.createEl("p", {
-      cls: "sprout-coach-step-copy",
+      cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
       text: "Choose your exam date and study pressure level. Targets update dynamically as your workload changes.",
     });
 
-    const dateBlock = card.createDiv({ cls: "sprout-coach-schedule-field" });
-    dateBlock.createDiv({ cls: "sprout-coach-field-label", text: "Exam date" });
-    const dateInput = dateBlock.createEl("input", { cls: "bc input h-9 sprout-coach-date-input" });
+    const dateBlock = card.createDiv({ cls: "learnkit-coach-schedule-field learnkit-coach-schedule-field" });
+    dateBlock.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Exam date" });
+    const dateInput = dateBlock.createEl("input", { cls: "input h-9 learnkit-coach-date-input learnkit-coach-date-input" });
     dateInput.type = "date";
     dateInput.value = this._examDateInput;
     dateInput.addEventListener("change", () => {
       this._examDateInput = String(dateInput.value || "").trim();
     });
 
-    const intensityBlock = card.createDiv({ cls: "sprout-coach-schedule-intensity" });
-    intensityBlock.createDiv({ cls: "sprout-coach-field-label", text: "Intensity" });
-    const optionsWrap = intensityBlock.createDiv({ cls: "sprout-coach-intensity-grid" });
+    const intensityBlock = card.createDiv({ cls: "learnkit-coach-schedule-intensity learnkit-coach-schedule-intensity" });
+    intensityBlock.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Intensity" });
+    const optionsWrap = intensityBlock.createDiv({ cls: "learnkit-coach-intensity-grid learnkit-coach-intensity-grid" });
     const intensityMeta: Array<{ value: CoachIntensity; title: string; desc: string; level: number }> = [
       {
         value: "relaxed",
@@ -1335,42 +1407,42 @@ export class SproutCoachView extends ItemView {
     ];
 
     for (const entry of intensityMeta) {
-      const option = optionsWrap.createDiv({ cls: "sprout-coach-intensity-option" });
-      const btn = option.createEl("button", { cls: "sprout-coach-intensity-btn" });
+      const option = optionsWrap.createDiv({ cls: "learnkit-coach-intensity-option learnkit-coach-intensity-option" });
+      const btn = option.createEl("button", { cls: "learnkit-coach-intensity-btn learnkit-coach-intensity-btn" });
       btn.type = "button";
       if (entry.value === this._intensity) btn.classList.add("is-active");
-      const header = btn.createDiv({ cls: "sprout-coach-intensity-header" });
-      header.createDiv({ cls: "sprout-coach-intensity-title", text: entry.title });
-      const level = header.createDiv({ cls: "sprout-coach-intensity-level", attr: { "aria-hidden": "true" } });
+      const header = btn.createDiv({ cls: "learnkit-coach-intensity-header learnkit-coach-intensity-header" });
+      header.createDiv({ cls: "learnkit-coach-intensity-title learnkit-coach-intensity-title", text: entry.title });
+      const level = header.createDiv({ cls: "learnkit-coach-intensity-level learnkit-coach-intensity-level", attr: { "aria-hidden": "true" } });
       for (let i = 0; i < entry.level; i += 1) {
-        const star = level.createSpan({ cls: "sprout-coach-intensity-star" });
+        const star = level.createSpan({ cls: "learnkit-coach-intensity-star learnkit-coach-intensity-star" });
         setIcon(star, "star");
       }
-      option.createDiv({ cls: "sprout-coach-intensity-desc", text: entry.desc });
+      option.createDiv({ cls: "learnkit-coach-intensity-desc learnkit-coach-intensity-desc", text: entry.desc });
       btn.addEventListener("click", () => {
         this._intensity = entry.value;
-        optionsWrap.querySelectorAll<HTMLElement>(".sprout-coach-intensity-btn").forEach((b) => b.classList.remove("is-active"));
+        optionsWrap.querySelectorAll<HTMLElement>(".learnkit-coach-intensity-btn").forEach((b) => b.classList.remove("is-active"));
         btn.classList.add("is-active");
       });
     }
 
-    const footer = card.createDiv({ cls: "sprout-coach-wizard-footer" });
+    const footer = card.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer" });
     const back = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       attr: {
         "aria-label": "Back",
         "data-tooltip-position": "top",
       },
     });
     back.type = "button";
-    const backIcon = back.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const backIcon = back.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(backIcon, "chevron-left");
-    back.createSpan({ cls: "bc", text: "Back" });
+    back.createSpan({ cls: "", text: "Back" });
     back.addEventListener("click", () => {
       this._transitionWizardPage(0, "back");
     });
 
-    const next = footer.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2", text: "Next" });
+    const next = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2", text: "Next" });
     next.type = "button";
     const nextIcon = next.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5" });
     setIcon(nextIcon, "chevron-right");
@@ -1384,16 +1456,16 @@ export class SproutCoachView extends ItemView {
   }
 
   private _renderWizardReviewStep(card: HTMLElement): void {
-    card.classList.add("sprout-coach-wizard-page-review");
+    card.classList.add("learnkit-coach-wizard-page-review", "learnkit-coach-wizard-page-review");
 
     const selectedScopes = Array.from(this._selectedScopeIds)
       .map((id) => fromScopeId(id, this._scopeLookup))
       .filter((scope): scope is Scope => !!scope);
 
-    const intro = card.createDiv({ cls: "sprout-coach-review-intro" });
+    const intro = card.createDiv({ cls: "learnkit-coach-review-intro learnkit-coach-review-intro" });
     intro.createEl("h3", { text: "Review and start plan" });
     intro.createEl("p", {
-      cls: "sprout-coach-step-copy",
+      cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
       text: "Targets will update dynamically each day to track readiness and keep studying within your chosen scope.",
     });
 
@@ -1405,22 +1477,22 @@ export class SproutCoachView extends ItemView {
     const dailyFlash = Math.max(0, Math.ceil(((stats.dueCards + stats.newCards) / daysLeft) * intensityMultiplier(this._intensity)));
     const dailyNote = Math.max(0, Math.ceil((stats.dueNotes / daysLeft) * intensityMultiplier(this._intensity)));
 
-    const details = card.createDiv({ cls: "sprout-coach-review-details" });
-    details.createDiv({ cls: "sprout-coach-field-label", text: "Plan details" });
-    const detailRows = details.createDiv({ cls: "sprout-coach-review-details-rows" });
+    const details = card.createDiv({ cls: "learnkit-coach-review-details learnkit-coach-review-details" });
+    details.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Plan details" });
+    const detailRows = details.createDiv({ cls: "learnkit-coach-review-details-rows learnkit-coach-review-details-rows" });
     const addDetail = (label: string, value: string): void => {
-      const row = detailRows.createDiv({ cls: "sprout-coach-review-detail-row" });
-      row.createSpan({ cls: "sprout-coach-review-detail-label", text: label });
-      row.createSpan({ cls: "sprout-coach-review-detail-value", text: value });
+      const row = detailRows.createDiv({ cls: "learnkit-coach-review-detail-row learnkit-coach-review-detail-row" });
+      row.createSpan({ cls: "learnkit-coach-review-detail-label learnkit-coach-review-detail-label", text: label });
+      row.createSpan({ cls: "learnkit-coach-review-detail-value learnkit-coach-review-detail-value", text: value });
     };
     if (this._planName) addDetail("Plan Name", this._planName);
     addDetail("Date", formatShortDate(examDateUtc));
     addDetail("Intensity", titleCaseIntensity(this._intensity));
     addDetail("Workload", `${dailyFlash} flashcards + ${dailyNote} notes per day`);
 
-    const content = card.createDiv({ cls: "sprout-coach-review-content" });
-    content.createDiv({ cls: "sprout-coach-field-label", text: "Content" });
-    const chips = content.createDiv({ cls: "sprout-coach-selected-chips sprout-coach-review-chips" });
+    const content = card.createDiv({ cls: "learnkit-coach-review-content learnkit-coach-review-content" });
+    content.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Content" });
+    const chips = content.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips learnkit-coach-review-chips learnkit-coach-review-chips" });
 
     const scopeChipLabel = (scope: Scope): string => {
       if (scope.type === "folder") {
@@ -1440,28 +1512,28 @@ export class SproutCoachView extends ItemView {
       chips.createDiv({ cls: "text-muted-foreground", text: "No content selected yet." });
     } else {
       for (const scope of selectedScopes.slice(0, 12)) {
-        const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+        const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
         chip.createSpan({ text: scopeChipLabel(scope) });
       }
     }
 
-    const footer = card.createDiv({ cls: "sprout-coach-wizard-footer" });
+    const footer = card.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer" });
     const back = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       attr: {
         "aria-label": "Back",
         "data-tooltip-position": "top",
       },
     });
     back.type = "button";
-    const backIcon = back.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const backIcon = back.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(backIcon, "chevron-left");
-    back.createSpan({ cls: "bc", text: "Back" });
+    back.createSpan({ cls: "", text: "Back" });
     back.addEventListener("click", () => {
       this._transitionWizardPage(1, "back");
     });
 
-    const start = footer.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-accent h-9 inline-flex items-center gap-2", text: "Start plan" });
+    const start = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2", text: "Start plan" });
     start.type = "button";
     start.addEventListener("click", () => {
       void (async () => {
@@ -1673,33 +1745,33 @@ export class SproutCoachView extends ItemView {
     const totalTarget = Math.max(1, dailyFlashTarget + dailyNoteTarget);
     const donePct = Math.round(clamp01((progress.flashcard + progress.note) / totalTarget) * 100);
 
-    const card = host.createDiv({ cls: "card sprout-coach-plan-card" });
+    const card = host.createDiv({ cls: "card learnkit-coach-plan-card learnkit-coach-plan-card" });
 
-    const titleSection = card.createDiv({ cls: "sprout-coach-plan-section sprout-coach-plan-section-title" });
-    const header = titleSection.createDiv({ cls: "sprout-coach-progress-header" });
+    const titleSection = card.createDiv({ cls: "learnkit-coach-plan-section learnkit-coach-plan-section learnkit-coach-plan-section-title learnkit-coach-plan-section-title" });
+    const header = titleSection.createDiv({ cls: "learnkit-coach-progress-header learnkit-coach-progress-header" });
     const headerLeft = header.createDiv();
-    const headingRow = headerLeft.createDiv({ cls: "sprout-coach-health-heading-row" });
+    const headingRow = headerLeft.createDiv({ cls: "learnkit-coach-health-heading-row learnkit-coach-health-heading-row" });
     const heroTitle = formatScopePlanTitle(plan.plan_name || plan.scope_name || scope.name);
-    headingRow.createDiv({ cls: "sprout-coach-health-title", text: heroTitle.title });
+    headingRow.createDiv({ cls: "learnkit-coach-health-title learnkit-coach-health-title", text: heroTitle.title });
     const planScopes = this._scopesForPlan(plan);
     const latestProgressDayUtc = this._coachDb.latestProgressDayUtc(plan.scope_type, plan.scope_key);
     const latestCardReviewAt = this._latestCardReviewAtMs(planScopes);
     const latestProgressApproxMs = latestProgressDayUtc > 0 ? latestProgressDayUtc + (12 * 60 * 60 * 1000) : 0;
     const latestSessionMs = Math.max(latestCardReviewAt, latestProgressApproxMs);
     const lastSessionLabel = latestSessionMs > 0 ? `Last session: ${formatTimeAgo(latestSessionMs)}` : "Last session: Not started";
-    headerLeft.createDiv({ cls: "sprout-coach-step-copy", text: lastSessionLabel });
+    headerLeft.createDiv({ cls: "learnkit-coach-step-copy learnkit-coach-step-copy", text: lastSessionLabel });
 
-    const targetSection = card.createDiv({ cls: "sprout-coach-plan-section sprout-coach-plan-section-target" });
+    const targetSection = card.createDiv({ cls: "learnkit-coach-plan-section learnkit-coach-plan-section learnkit-coach-plan-section-target learnkit-coach-plan-section-target" });
 
     // Daily progress bar
-    const progressSection = targetSection.createDiv({ cls: "sprout-coach-daily-progress" });
-    const progressMeta = progressSection.createDiv({ cls: "sprout-coach-daily-progress-meta" });
-    progressMeta.createSpan({ cls: "sprout-coach-daily-progress-label", text: `${donePct}% of today's target` });
+    const progressSection = targetSection.createDiv({ cls: "learnkit-coach-daily-progress learnkit-coach-daily-progress" });
+    const progressMeta = progressSection.createDiv({ cls: "learnkit-coach-daily-progress-meta learnkit-coach-daily-progress-meta" });
+    progressMeta.createSpan({ cls: "learnkit-coach-daily-progress-label learnkit-coach-daily-progress-label", text: `${donePct}% of today's target` });
     const doneCount = progress.flashcard + progress.note;
-    progressMeta.createSpan({ cls: "sprout-coach-daily-progress-count", text: `${doneCount} / ${totalTarget}` });
-    const progressTrack = progressSection.createDiv({ cls: "sprout-coach-daily-progress-track" });
-    const progressFill = progressTrack.createDiv({ cls: "sprout-coach-daily-progress-fill" });
-    setCssProps(progressFill, "--sprout-daily-progress-width", `${Math.min(100, donePct)}%`);
+    progressMeta.createSpan({ cls: "learnkit-coach-daily-progress-count learnkit-coach-daily-progress-count", text: `${doneCount} / ${totalTarget}` });
+    const progressTrack = progressSection.createDiv({ cls: "learnkit-coach-daily-progress-track learnkit-coach-daily-progress-track" });
+    const progressFill = progressTrack.createDiv({ cls: "learnkit-coach-daily-progress-fill learnkit-coach-daily-progress-fill" });
+    setCssProps(progressFill, "--learnkit-daily-progress-width", `${Math.min(100, donePct)}%`);
     if (donePct >= 100) progressFill.classList.add("is-complete");
 
     // Remaining today line
@@ -1708,21 +1780,21 @@ export class SproutCoachView extends ItemView {
     const remainingParts: string[] = [];
     if (remainingFlash > 0) remainingParts.push(`${remainingFlash} flashcard${remainingFlash === 1 ? "" : "s"}`);
     if (remainingNotes > 0) remainingParts.push(`${remainingNotes} note${remainingNotes === 1 ? "" : "s"}`);
-    const remainingLine = targetSection.createDiv({ cls: "sprout-coach-remaining-line" });
+    const remainingLine = targetSection.createDiv({ cls: "learnkit-coach-remaining-line learnkit-coach-remaining-line" });
     if (remainingParts.length) {
       remainingLine.createSpan({ text: `${remainingParts.join(" + ")} remaining` });
     } else {
-      const doneWrap = remainingLine.createSpan({ cls: "bc inline-flex items-center gap-1" });
+      const doneWrap = remainingLine.createSpan({ cls: "inline-flex items-center gap-1" });
       doneWrap.createSpan({ text: "All done for today" });
       const doneIcon = doneWrap.createSpan({
-        cls: "bc inline-flex items-center justify-center [&_svg]:size-4",
+        cls: "inline-flex items-center justify-center [&_svg]:size-4",
         attr: { "aria-hidden": "true" },
       });
       setIcon(doneIcon, "circle-check");
     }
 
-    const actionsSection = card.createDiv({ cls: "sprout-coach-plan-section sprout-coach-plan-section-actions" });
-    const actions = actionsSection.createDiv({ cls: "sprout-coach-actions" });
+    const actionsSection = card.createDiv({ cls: "learnkit-coach-plan-section learnkit-coach-plan-section learnkit-coach-plan-section-actions learnkit-coach-plan-section-actions" });
+    const actions = actionsSection.createDiv({ cls: "learnkit-coach-actions learnkit-coach-actions" });
     const isFlashDone = remainingFlash <= 0;
     const isNotesDone = remainingNotes <= 0;
     const extraFlashTarget = Math.max(1, dailyFlashTarget || 10);
@@ -1730,15 +1802,15 @@ export class SproutCoachView extends ItemView {
 
     const buildActionButton = (label: string, icon: string): HTMLButtonElement => {
       const btn = actions.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       });
       btn.type = "button";
       btn.createSpan({
-        cls: "bc inline-flex items-center justify-center [&_svg]:size-4",
+        cls: "inline-flex items-center justify-center [&_svg]:size-4",
       });
       const iconHost = btn.lastElementChild as HTMLElement | null;
       if (iconHost) setIcon(iconHost, icon);
-      btn.createSpan({ cls: "bc", text: label });
+      btn.createSpan({ cls: "", text: label });
       return btn;
     };
 
@@ -1812,14 +1884,14 @@ export class SproutCoachView extends ItemView {
     const freshPlans = this._coachDb.listPlans();
     const maxPlans = 4;
     const shownPlans = [...freshPlans].sort((a, b) => a.exam_date_utc - b.exam_date_utc || a.scope_name.localeCompare(b.scope_name)).slice(0, maxPlans);
-    shell.classList.toggle("sprout-coach-shell--empty", shownPlans.length === 0);
+    shell.classList.toggle("learnkit-coach-shell--empty", shownPlans.length === 0);
     const shownIds = new Set(shownPlans.map((plan) => planScopeId(plan)));
     if (!this._selectedPlanScopeId || !shownIds.has(this._selectedPlanScopeId)) {
       this._selectedPlanScopeId = shownPlans[0] ? planScopeId(shownPlans[0]) : null;
     }
 
-    const switcherCard = shell.createDiv({ cls: "sprout-coach-switcher-card" });
-    const switcherGrid = switcherCard.createDiv({ cls: "sprout-coach-switcher-grid" });
+    const switcherCard = shell.createDiv({ cls: "learnkit-coach-switcher-card learnkit-coach-switcher-card" });
+    const switcherGrid = switcherCard.createDiv({ cls: "learnkit-coach-switcher-grid learnkit-coach-switcher-grid" });
     const selectorCards: HTMLButtonElement[] = [];
     const firstEmptySlot = shownPlans.length < maxPlans ? shownPlans.length : -1;
     const slotPlanLabels = ["Plan One", "Plan Two", "Plan Three", "Plan Four"];
@@ -1827,11 +1899,11 @@ export class SproutCoachView extends ItemView {
     const slotLabelFor = (idx: number): string => slotPlanLabels[idx] ?? `Plan ${idx + 1}`;
 
     const createSlotIndicator = (host: HTMLElement, idx: number, active: boolean, labelText?: string): HTMLElement => {
-      const indicator = host.createDiv({ cls: "sprout-coach-switcher-slot-indicator" });
-      const indicatorMeta = indicator.createDiv({ cls: "sprout-coach-switcher-slot-meta" });
-      const dot = indicatorMeta.createDiv({ cls: "sprout-coach-switcher-slot-dot" });
+      const indicator = host.createDiv({ cls: "learnkit-coach-switcher-slot-indicator learnkit-coach-switcher-slot-indicator" });
+      const indicatorMeta = indicator.createDiv({ cls: "learnkit-coach-switcher-slot-meta learnkit-coach-switcher-slot-meta" });
+      const dot = indicatorMeta.createDiv({ cls: "learnkit-coach-switcher-slot-dot learnkit-coach-switcher-slot-dot" });
       if (active) dot.classList.add("is-active");
-      indicatorMeta.createDiv({ cls: "sprout-coach-switcher-slot-label", text: labelText ?? slotLabelFor(idx) });
+      indicatorMeta.createDiv({ cls: "learnkit-coach-switcher-slot-label learnkit-coach-switcher-slot-label", text: labelText ?? slotLabelFor(idx) });
       return indicator;
     };
 
@@ -1840,12 +1912,12 @@ export class SproutCoachView extends ItemView {
         const scopeId = card.dataset.scopeId || "";
         const isActive = scopeId === this._selectedPlanScopeId;
         card.setAttribute("aria-pressed", isActive ? "true" : "false");
-        const dot = card.querySelector<HTMLElement>(".sprout-coach-switcher-slot-dot");
+        const dot = card.querySelector<HTMLElement>(".learnkit-coach-switcher-slot-dot");
         dot?.classList.toggle("is-active", isActive);
       }
     };
 
-    const dashboardBody = shell.createDiv({ cls: "sprout-coach-dashboard-body" });
+    const dashboardBody = shell.createDiv({ cls: "learnkit-coach-dashboard-body learnkit-coach-dashboard-body" });
 
     const renderSelectedPlanBody = () => {
       const activePlan = shownPlans.find((plan) => planScopeId(plan) === this._selectedPlanScopeId) ?? shownPlans[0] ?? null;
@@ -1856,7 +1928,7 @@ export class SproutCoachView extends ItemView {
     };
 
     for (let idx = 0; idx < maxPlans; idx += 1) {
-      const slot = switcherGrid.createDiv({ cls: "sprout-coach-switcher-slot" });
+      const slot = switcherGrid.createDiv({ cls: "learnkit-coach-switcher-slot learnkit-coach-switcher-slot" });
       const plan = shownPlans[idx] ?? null;
 
       if (plan) {
@@ -1867,17 +1939,17 @@ export class SproutCoachView extends ItemView {
         const statusBadge = switcherStatusBadge(plan.status);
         slot.classList.add("is-filled");
 
-        const planCard = slot.createEl("button", { cls: "card sprout-coach-switcher-plan-card" });
+        const planCard = slot.createEl("button", { cls: "card learnkit-coach-switcher-plan-card learnkit-coach-switcher-plan-card" });
         planCard.type = "button";
         planCard.dataset.scopeId = id;
         planCard.setAttr("aria-label", `${scopeMeta.title} ${days} days remaining`);
         const indicator = createSlotIndicator(planCard, idx, id === this._selectedPlanScopeId, examDate);
         selectorCards.push(planCard);
 
-        const deleteBtn = indicator.createEl("button", { cls: "sprout-coach-switcher-delete" });
+        const deleteBtn = indicator.createEl("button", { cls: "learnkit-coach-switcher-delete learnkit-coach-switcher-delete" });
         deleteBtn.type = "button";
         deleteBtn.setAttr("aria-label", `Delete plan ${scopeMeta.title}`);
-        deleteBtn.createSpan({ cls: "sprout-coach-switcher-delete-label", text: "Delete plan" });
+        deleteBtn.createSpan({ cls: "learnkit-coach-switcher-delete-label learnkit-coach-switcher-delete-label", text: "Delete plan" });
         setIcon(deleteBtn, "x");
         deleteBtn.addEventListener("click", (evt) => {
           evt.stopPropagation();
@@ -1888,12 +1960,12 @@ export class SproutCoachView extends ItemView {
           })();
         });
 
-        const titleRow = planCard.createDiv({ cls: "sprout-coach-switcher-plan-top" });
-        titleRow.createSpan({ cls: "sprout-coach-switcher-plan-title", text: scopeMeta.title });
+        const titleRow = planCard.createDiv({ cls: "learnkit-coach-switcher-plan-top learnkit-coach-switcher-plan-top" });
+        titleRow.createSpan({ cls: "learnkit-coach-switcher-plan-title learnkit-coach-switcher-plan-title", text: scopeMeta.title });
 
-        planCard.createDiv({ cls: "sprout-coach-switcher-plan-date", text: `${days} day${days === 1 ? "" : "s"} remaining` });
+        planCard.createDiv({ cls: "learnkit-coach-switcher-plan-date learnkit-coach-switcher-plan-date", text: `${days} day${days === 1 ? "" : "s"} remaining` });
         planCard.createDiv({
-          cls: `sprout-coach-switcher-plan-overview ${statusBadge.toneClass}`,
+          cls: `learnkit-coach-switcher-plan-overview ${statusBadge.toneClass}`,
           text: statusBadge.label,
         });
 
@@ -1907,13 +1979,13 @@ export class SproutCoachView extends ItemView {
 
       if (idx === firstEmptySlot && freshPlans.length < maxPlans) {
         const addCard = slot.createEl("button", {
-          cls: "card sprout-coach-switcher-plan-card is-create",
+          cls: "card learnkit-coach-switcher-plan-card learnkit-coach-switcher-plan-card is-create",
         });
         addCard.type = "button";
         addCard.setAttr("aria-label", "Add plan");
         createSlotIndicator(addCard, idx, false);
-        addCard.createDiv({ cls: "sprout-coach-switcher-create-title", text: "Create plan" });
-        addCard.createDiv({ cls: "sprout-coach-switcher-create-copy", text: "Create a new study plan" });
+        addCard.createDiv({ cls: "learnkit-coach-switcher-create-title learnkit-coach-switcher-create-title", text: "Create plan" });
+        addCard.createDiv({ cls: "learnkit-coach-switcher-create-copy learnkit-coach-switcher-create-copy", text: "Create a new study plan" });
         addCard.addEventListener("click", () => {
           this._openCreateWizard();
           void this._render();
@@ -1921,10 +1993,10 @@ export class SproutCoachView extends ItemView {
         continue;
       }
 
-      const placeholder = slot.createDiv({ cls: "card sprout-coach-switcher-plan-card is-placeholder" });
+      const placeholder = slot.createDiv({ cls: "card learnkit-coach-switcher-plan-card learnkit-coach-switcher-plan-card is-placeholder" });
       createSlotIndicator(placeholder, idx, false);
-      placeholder.createDiv({ cls: "sprout-coach-switcher-placeholder-title", text: "Nothing here yet" });
-      placeholder.createDiv({ cls: "sprout-coach-switcher-placeholder-copy", text: "Add a plan to fill this slot." });
+      placeholder.createDiv({ cls: "learnkit-coach-switcher-placeholder-title learnkit-coach-switcher-placeholder-title", text: "Nothing here yet" });
+      placeholder.createDiv({ cls: "learnkit-coach-switcher-placeholder-copy learnkit-coach-switcher-placeholder-copy", text: "Add a plan to fill this slot." });
     }
 
     refreshSelectedCardState();
@@ -1935,68 +2007,7 @@ export class SproutCoachView extends ItemView {
   private _renderSelectedPlanBody(host: HTMLElement, selectedPlan: CoachPlanRow, now: number): void {
     if (!this._coachDb) return;
 
-    const selectedScope = this._scopeFromParts(selectedPlan.scope_type, selectedPlan.scope_key, selectedPlan.scope_name);
-    const allScopes = this._scopesForPlan(selectedPlan);
-    const selectedStats = allScopes.length > 1
-      ? this._computeAggregateStats(allScopes, now)
-      : this._computeStats(selectedScope, now);
-    const daysLeft = daysLeftToExam(selectedPlan.exam_date_utc, now);
-    const dayUtc = startOfDayUtc(now);
-    const progress = this._coachDb.getProgress(dayUtc, selectedPlan.scope_type, selectedPlan.scope_key);
-    const dailyFlashTarget = Math.max(0, selectedPlan.daily_flashcard_target);
-    const dailyNoteTarget = Math.max(0, selectedPlan.daily_note_target);
-    const totalCards = allScopes.length > 1
-      ? allScopes.reduce((sum, s) => sum + this._cardsInScope(s).length, 0)
-      : this._cardsInScope(selectedScope).length;
-
-    const aggregate: AggregateStats = {
-      dueCards: selectedStats.dueCards,
-      newCards: selectedStats.newCards,
-      dueNotes: selectedStats.dueNotes,
-      totalCards: Math.max(1, totalCards),
-    };
-
-    // Compute average FSRS retrievability for in-scope cards
-    const states = this.plugin.store.data.states || {};
-    const schedulingCfg = this.plugin.settings?.scheduling;
-    const requestRetention = Math.max(0.8, Math.min(0.97, Number(schedulingCfg?.requestRetention) || 0.9));
-    const fsrsParams = generatorParameters({ request_retention: requestRetention });
-    const scopeCards = allScopes.length > 1
-      ? allScopes.flatMap((s) => this._cardsInScope(s))
-      : this._cardsInScope(selectedScope);
-    let retSum = 0;
-    let retCount = 0;
-    for (const sc of scopeCards) {
-      const st = states[sc.id];
-      if (!st || st.stage === "new" || st.stage === "suspended") continue;
-      const stability = Number(st.stabilityDays ?? 0);
-      const lastReviewed = Number(st.lastReviewed ?? 0);
-      if (stability <= 0 || lastReviewed <= 0) continue;
-      const elapsed = Math.max(0, (now - lastReviewed) / MS_DAY);
-      retSum += forgetting_curve(fsrsParams.w, elapsed, stability);
-      retCount += 1;
-    }
-    const avgRetention = retCount > 0 ? retSum / retCount : 0;
-
-    // Compute note review coverage + average note retention
-    const allNoteIds = allScopes.length > 1
-      ? [...new Set(allScopes.flatMap((s) => this._dueNoteIdsInScope(s, now)))]
-      : this._dueNoteIdsInScope(selectedScope, now);
-    const totalNotes = Math.max(1, allNoteIds.length + (this._notesDb ? 0 : 0));
-    // Notes that have been reviewed today count as reviewed
-    const reviewedNoteCount = progress.note;
-    const avgNoteRetention = reviewedNoteCount > 0 ? requestRetention : 0;
-
-    const health = this._computeHealth(
-      aggregate,
-      daysLeft,
-      dailyFlashTarget,
-      dailyNoteTarget,
-      avgRetention,
-      totalNotes,
-      reviewedNoteCount,
-      avgNoteRetention,
-    );
+    const health = this._computeHealthForPlan(selectedPlan, now);
 
     try {
       this._chartsRoot?.unmount();
@@ -2012,13 +2023,14 @@ export class SproutCoachView extends ItemView {
     }
     this._readinessRoot = null;
 
-    const topRow = host.createDiv({ cls: "sprout-coach-dashboard-top-row" });
+    const topRow = host.createDiv({ cls: "learnkit-coach-dashboard-top-row learnkit-coach-dashboard-top-row" });
     this._renderScopeCard(topRow, selectedPlan, now);
 
-    const healthHost = topRow.createDiv({ cls: "sprout-coach-health-host" });
+    const healthHost = topRow.createDiv({ cls: "learnkit-coach-health-host learnkit-coach-health-host" });
     this._mountHealthPanel(healthHost, health);
 
-    const readinessHost = host.createDiv({ cls: "sprout-coach-recharts-host" });
+    const readinessHost = host.createDiv({ cls: "learnkit-coach-recharts-host learnkit-coach-recharts-host" });
+    const selectedScope = this._scopeFromParts(selectedPlan.scope_type, selectedPlan.scope_key, selectedPlan.scope_name);
     const { points, todayIndex, startLabel, endLabel, totalDays } = this._buildReadinessTimeline(selectedPlan, selectedScope, now);
     this._mountReadinessChart(readinessHost, points, todayIndex, startLabel, endLabel, totalDays);
   }
@@ -2045,12 +2057,12 @@ export class SproutCoachView extends ItemView {
     const animationsEnabled = this.plugin.settings?.general?.enableAnimations ?? true;
     const suppressEntranceAos = this._suppressEntranceAosOnce;
     this._suppressEntranceAosOnce = false;
-    root.classList.toggle("sprout-no-animate", !animationsEnabled);
+    root.classList.toggle("learnkit-no-animate", !animationsEnabled);
 
     if (!this._shellEl) {
       root.empty();
-      root.classList.add("bc", "sprout-view-content", "lk-home-root");
-      this.containerEl.addClass("sprout");
+      root.classList.add("learnkit-view-content", "learnkit-view-content", "lk-home-root");
+      this.containerEl.addClass("learnkit");
       this._applyMaxWidth();
 
       const titleFrame = createTitleStripFrame({
@@ -2072,7 +2084,7 @@ export class SproutCoachView extends ItemView {
       titleFrame.subtitle.classList.add("text-[0.95rem]", "font-normal", "leading-[1.3]", "text-muted-foreground");
       titleFrame.subtitle.textContent = "Build and manage focused study plans.";
 
-      this._shellEl = root.createDiv({ cls: "sprout-view-content-shell lk-home-content-shell flex flex-col gap-4 sprout-coach-shell" });
+      this._shellEl = root.createDiv({ cls: "learnkit-view-content-shell learnkit-view-content-shell lk-home-content-shell flex flex-col gap-4 learnkit-coach-shell learnkit-coach-shell" });
     }
 
     const shell = this._shellEl;
@@ -2087,7 +2099,7 @@ export class SproutCoachView extends ItemView {
       shell.removeAttribute("data-aos");
       shell.removeAttribute("data-aos-anchor-placement");
       shell.removeAttribute("data-aos-delay");
-      shell.classList.add("aos-animate", "sprout-aos-fallback");
+      shell.classList.add("aos-animate", "learnkit-aos-fallback", "learnkit-aos-fallback");
     }
 
     const plans = this._coachDb.listPlans();
@@ -2117,7 +2129,7 @@ export class SproutCoachView extends ItemView {
           if (!el.isConnected) return;
           const style = getComputedStyle(el);
           if (style.opacity === "0" || style.visibility === "hidden") {
-            el.classList.add("sprout-aos-fallback");
+            el.classList.add("learnkit-aos-fallback", "learnkit-aos-fallback");
           }
         });
       }, fallbackAfterMs);

@@ -1,3 +1,11 @@
+/**
+ * @file tests/store.test.ts
+ * @summary Unit tests for store.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 // tests/store.test.ts
 // ---------------------------------------------------------------------------
 // Tests for the data store's pure/static helpers — defaultStore shape,

@@ -1,3 +1,16 @@
+/**
+ * @file src/views/shared/scope-metadata.ts
+ * @summary Module for scope metadata.
+ *
+ * @exports
+ *  - PropertyPair
+ *  - ScopedTag
+ *  - ScopedProperty
+ *  - extractFileTags
+ *  - extractFilePropertyPairs
+ *  - encodePropertyPair
+ */
+
 import type { App, TFile } from "obsidian";
 
 export type PropertyPair = {

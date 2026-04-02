@@ -1,3 +1,12 @@
+/**
+ * @file src/platform/core/grade-intervals.ts
+ * @summary Module for grade intervals.
+ *
+ * @exports
+ *  - formatCompactInterval
+ *  - getRatingIntervalPreview
+ */
+
 import { gradeFromRating } from "../../engine/scheduler/scheduler";
 import type { SchedulerSettings, CardState, ReviewRating } from "../types/scheduler";
 

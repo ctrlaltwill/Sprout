@@ -1,6 +1,6 @@
 /**
  * @file src/settings/confirm-modals.ts
- * @summary Confirmation-dialog modals used exclusively by SproutSettingsTab. Contains Modal subclasses for destructive or irreversible settings actions: card scheduling reset, note scheduling reset, analytics reset, card deletion, defaults restoration, backup comparison, backup restoration, and backup deletion.
+ * @summary Confirmation-dialog modals used exclusively by LearnKitSettingsTab. Contains Modal subclasses for destructive or irreversible settings actions: card scheduling reset, note scheduling reset, analytics reset, card deletion, defaults restoration, backup comparison, backup restoration, and backup deletion.
  *
  * @exports
  *  - ConfirmResetSchedulingModal     — modal confirming a wipe of all card scheduling data (reset to New)
@@ -15,7 +15,7 @@
  */
 
 import { type App, Modal, Notice, Setting } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { log } from "../../platform/core/logger";
 import type { DataJsonBackupStats } from "../../platform/integrations/sync/backup";
 import { restoreFromDataJsonBackup, deleteDataJsonBackup } from "../../platform/integrations/sync/backup";
@@ -31,16 +31,16 @@ function tx(locale: unknown, token: string, fallback: string, vars?: Record<stri
 
 function styleConfirmActionButton(button: HTMLButtonElement, kind: ConfirmButtonKind = "default") {
   button.type = "button";
-  button.classList.add("bc", "inline-flex", "items-center", "gap-2", "h-9", "px-3", "text-sm", "sprout-settings-action-btn");
-  if (kind === "danger") button.classList.add("sprout-btn-danger");
+  button.classList.add("inline-flex", "items-center", "gap-2", "h-9", "px-3", "text-sm", "learnkit-settings-action-btn", "learnkit-settings-action-btn");
+  if (kind === "danger") button.classList.add("learnkit-btn-danger", "learnkit-btn-danger");
 }
 
 function initConfirmModal(modal: Modal, title: string): HTMLElement {
   scopeModalToWorkspace(modal);
-  modal.containerEl.addClass("sprout-confirm-modal");
+  modal.containerEl.addClass("learnkit-confirm-modal");
   modal.titleEl.setText(title);
   modal.contentEl.empty();
-  modal.contentEl.addClass("sprout-confirm-modal-content");
+  modal.contentEl.addClass("learnkit-confirm-modal-content");
   return modal.contentEl;
 }
 
@@ -55,9 +55,9 @@ function initConfirmModal(modal: Modal, title: string): HTMLElement {
  * scheduling state.
  */
 export class ConfirmResetSchedulingModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
-  constructor(app: App, plugin: SproutPlugin) {
+  constructor(app: App, plugin: LearnKitPlugin) {
     super(app);
     this.plugin = plugin;
   }
@@ -67,12 +67,12 @@ export class ConfirmResetSchedulingModal extends Modal {
     const common = txCommon(locale);
     const contentEl = initConfirmModal(this, tx(locale, "ui.settings.modals.confirmResetScheduling", "Reset scheduling?"));
     contentEl.createEl("p", {
-      cls: "sprout-confirm-modal-copy",
+      cls: "learnkit-confirm-modal-copy learnkit-confirm-modal-copy",
       text: tx(locale, "ui.settings.modals.resetScheduling.body", "All card and note scheduling states will be reset. This can be restored from a backup."),
     });
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row");
+    row.classList.add("learnkit-confirm-row", "learnkit-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");
@@ -103,9 +103,9 @@ export class ConfirmResetSchedulingModal extends Modal {
  * note-review scheduling state table (notes.db).
  */
 export class ConfirmResetNoteSchedulingModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
-  constructor(app: App, plugin: SproutPlugin) {
+  constructor(app: App, plugin: LearnKitPlugin) {
     super(app);
     this.plugin = plugin;
   }
@@ -115,12 +115,12 @@ export class ConfirmResetNoteSchedulingModal extends Modal {
     const common = txCommon(locale);
     const contentEl = initConfirmModal(this, tx(locale, "ui.settings.modals.confirmResetNoteScheduling", "Reset note scheduling?"));
     contentEl.createEl("p", {
-      cls: "sprout-confirm-modal-copy",
+      cls: "learnkit-confirm-modal-copy learnkit-confirm-modal-copy",
       text: tx(locale, "ui.settings.modals.resetNoteScheduling.body", "All note scheduling states will be cleared. This can be restored from a backup."),
     });
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row");
+    row.classList.add("learnkit-confirm-row", "learnkit-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");
@@ -155,9 +155,9 @@ export class ConfirmResetNoteSchedulingModal extends Modal {
  * heatmaps, and statistics are wiped.
  */
 export class ConfirmResetAnalyticsModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
-  constructor(app: App, plugin: SproutPlugin) {
+  constructor(app: App, plugin: LearnKitPlugin) {
     super(app);
     this.plugin = plugin;
   }
@@ -167,12 +167,12 @@ export class ConfirmResetAnalyticsModal extends Modal {
     const common = txCommon(locale);
     const contentEl = initConfirmModal(this, tx(locale, "ui.settings.modals.confirmResetAnalytics", "Reset analytics?"));
     contentEl.createEl("p", {
-      cls: "sprout-confirm-modal-copy",
+      cls: "learnkit-confirm-modal-copy learnkit-confirm-modal-copy",
       text: tx(locale, "ui.settings.modals.resetAnalytics.body", "All review history and statistics will be cleared. Scheduling is preserved. This can be restored from a backup."),
     });
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row");
+    row.classList.add("learnkit-confirm-row", "learnkit-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");
@@ -204,14 +204,14 @@ export class ConfirmResetAnalyticsModal extends Modal {
 /**
  * Destructive action: deletes every Sprout flashcard from every markdown
  * note in the vault and clears the plugin database.  Accepts an `onConfirm`
- * callback so the caller (SproutSettingsTab) can orchestrate vault-wide
+ * callback so the caller (LearnKitSettingsTab) can orchestrate vault-wide
  * deletion and store clearing.
  */
 export class ConfirmDeleteAllFlashcardsModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   onConfirm: () => Promise<void>;
 
-  constructor(app: App, plugin: SproutPlugin, onConfirm: () => Promise<void>) {
+  constructor(app: App, plugin: LearnKitPlugin, onConfirm: () => Promise<void>) {
     super(app);
     this.plugin = plugin;
     this.onConfirm = onConfirm;
@@ -223,12 +223,12 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
     const contentEl = initConfirmModal(this, tx(locale, "ui.settings.modals.confirmDeleteAllFlashcards", "Delete all flashcards?"));
 
     contentEl.createEl("p", {
-      cls: "sprout-confirm-modal-copy",
+      cls: "learnkit-confirm-modal-copy learnkit-confirm-modal-copy",
       text: tx(locale, "ui.settings.modals.deleteAllFlashcards.body", "All flashcards will be permanently removed from your notes and database. Restore is only possible from a vault backup."),
     });
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row");
+    row.classList.add("learnkit-confirm-row", "learnkit-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");
@@ -262,10 +262,10 @@ export class ConfirmDeleteAllFlashcardsModal extends Modal {
  * limits, toggles, folder paths, etc.
  */
 export class ConfirmResetDefaultsModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   onConfirm: () => Promise<void>;
 
-  constructor(app: App, plugin: SproutPlugin, onConfirm: () => Promise<void>) {
+  constructor(app: App, plugin: LearnKitPlugin, onConfirm: () => Promise<void>) {
     super(app);
     this.plugin = plugin;
     this.onConfirm = onConfirm;
@@ -276,12 +276,12 @@ export class ConfirmResetDefaultsModal extends Modal {
     const common = txCommon(locale);
     const contentEl = initConfirmModal(this, tx(locale, "ui.settings.modals.confirmResetSettings", "Reset settings?"));
     contentEl.createEl("p", {
-      cls: "sprout-confirm-modal-copy",
+      cls: "learnkit-confirm-modal-copy learnkit-confirm-modal-copy",
       text: tx(locale, "ui.settings.modals.resetSettings.body", "All settings will be restored to defaults. Cards and scheduling are not affected."),
     });
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row");
+    row.classList.add("learnkit-confirm-row", "learnkit-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");
@@ -356,10 +356,10 @@ export class BackupCompareModal extends Modal {
 
     /* ── comparison table ── */
     const box = contentEl.createDiv();
-    box.classList.add("sprout-confirm-box");
+    box.classList.add("learnkit-confirm-box", "learnkit-confirm-box");
 
     const tbl = box.createEl("table");
-    tbl.classList.add("sprout-compare-table");
+    tbl.classList.add("learnkit-compare-table", "learnkit-compare-table");
 
     const header = tbl.createEl("tr");
     [
@@ -369,7 +369,7 @@ export class BackupCompareModal extends Modal {
       tx(this.locale, "ui.settings.modals.backupComparison.table.delta", "Δ"),
     ].forEach((h) => {
       const th = header.createEl("th", { text: h });
-      th.classList.add("sprout-compare-th");
+      th.classList.add("learnkit-compare-th", "learnkit-compare-th");
     });
 
     const addRow = (label: string, cur: number, bak: number) => {
@@ -379,7 +379,7 @@ export class BackupCompareModal extends Modal {
       const td3 = tr.createEl("td", { text: String(bak) });
       const td4 = tr.createEl("td", { text: this.fmtDelta(bak - cur) });
       [td1, td2, td3, td4].forEach((td) => {
-        td.classList.add("sprout-compare-td");
+        td.classList.add("learnkit-compare-td", "learnkit-compare-td");
       });
     };
 
@@ -391,7 +391,7 @@ export class BackupCompareModal extends Modal {
 
     /* ── metadata ── */
     const meta = contentEl.createDiv();
-    meta.classList.add("sprout-confirm-meta");
+    meta.classList.add("learnkit-confirm-meta", "learnkit-confirm-meta");
     meta.createDiv({
       text: tx(this.locale, "ui.settings.modals.backupComparison.meta.modified", "Modified: {value}", {
         value: this.backup.mtime ? new Date(this.backup.mtime).toLocaleString() : "—",
@@ -406,10 +406,10 @@ export class BackupCompareModal extends Modal {
     const note = contentEl.createEl("p", {
       text: tx(this.locale, "ui.settings.modals.backupComparison.note", "Restoring will overwrite the current database scheduling by card anchor. It will not affect question wording or Markdown."),
     });
-    note.classList.add("sprout-confirm-muted");
+    note.classList.add("learnkit-confirm-muted", "learnkit-confirm-muted");
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row-lg");
+    row.classList.add("learnkit-confirm-row-lg", "learnkit-confirm-row-lg");
 
     const closeBtn = row.createEl("button", { text: common.close });
     styleConfirmActionButton(closeBtn, "default");
@@ -431,14 +431,14 @@ export class BackupCompareModal extends Modal {
  * and optionally creates a safety backup before proceeding.
  */
 export class ConfirmRestoreBackupModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   backup: DataJsonBackupStats;
   current: CurrentDbSnapshot;
   onRestored: () => void;
 
   constructor(
     app: App,
-    plugin: SproutPlugin,
+    plugin: LearnKitPlugin,
     backup: DataJsonBackupStats,
     current: CurrentDbSnapshot,
     onRestored: () => void,
@@ -470,7 +470,7 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     /* ── change summary ── */
     const summary = contentEl.createDiv();
-    summary.classList.add("sprout-confirm-summary");
+    summary.classList.add("learnkit-confirm-summary", "learnkit-confirm-summary");
 
     const add = (label: string, cur: number, bak: number) => {
       summary.createDiv({
@@ -486,13 +486,13 @@ export class ConfirmRestoreBackupModal extends Modal {
     add(tx(locale, "ui.settings.modals.restoreBackup.row.states", "States"), this.current.states, this.backup.states);
     add(tx(locale, "ui.settings.modals.restoreBackup.row.reviewLog", "Review log"), this.current.reviewLog, this.backup.reviewLog);
     add(tx(locale, "ui.settings.modals.restoreBackup.row.analytics", "Analytics events"), this.current.analyticsEvents ?? 0, this.backup.analyticsEvents ?? 0);
-    const hint = contentEl.createDiv({ cls: "sprout-confirm-hint" });
+    const hint = contentEl.createDiv({ cls: "learnkit-confirm-hint learnkit-confirm-hint" });
     hint.createDiv({
-      cls: "sprout-confirm-hint-title",
+      cls: "learnkit-confirm-hint-title learnkit-confirm-hint-title",
       text: tx(locale, "ui.settings.modals.restoreBackup.noteTitle", "Note"),
     });
     hint.createDiv({
-      cls: "sprout-confirm-hint-body",
+      cls: "learnkit-confirm-hint-body learnkit-confirm-hint-body",
       text: tx(locale, "ui.settings.modals.restoreBackup.noteBody", "Card content ({count} cards) is unchanged. Restore does not edit markdown notes; it only restores scheduling and analytics data.", {
         count: this.current.cards,
       }),
@@ -502,7 +502,7 @@ export class ConfirmRestoreBackupModal extends Modal {
     let makeSafetyBackup = true;
 
     const checkRow = contentEl.createDiv();
-    checkRow.classList.add("sprout-confirm-check-row");
+    checkRow.classList.add("learnkit-confirm-check-row", "learnkit-confirm-check-row");
 
     const cb = checkRow.createEl("input");
     cb.type = "checkbox";
@@ -515,7 +515,7 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     /* ── action buttons ── */
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row-lg");
+    row.classList.add("learnkit-confirm-row-lg", "learnkit-confirm-row-lg");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");
@@ -558,11 +558,11 @@ export class ConfirmRestoreBackupModal extends Modal {
  * Uses the vault adapter's `trash()` or `remove()` method.
  */
 export class ConfirmDeleteBackupModal extends Modal {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   backup: DataJsonBackupStats;
   onDone?: () => void;
 
-  constructor(app: App, plugin: SproutPlugin, backup: DataJsonBackupStats, onDone?: () => void) {
+  constructor(app: App, plugin: LearnKitPlugin, backup: DataJsonBackupStats, onDone?: () => void) {
     super(app);
     this.plugin = plugin;
     this.backup = backup;
@@ -579,7 +579,7 @@ export class ConfirmDeleteBackupModal extends Modal {
     contentEl.createEl("p", { text: tx(locale, "ui.settings.modals.deleteBackup.body", "This will permanently delete: {name}", { name: this.backup.name }) });
 
     const row = contentEl.createDiv();
-    row.classList.add("sprout-confirm-row");
+    row.classList.add("learnkit-confirm-row", "learnkit-confirm-row");
 
     const cancelBtn = row.createEl("button", { text: common.cancel });
     styleConfirmActionButton(cancelBtn, "default");

@@ -9,7 +9,7 @@
  */
 
 import { type App, Modal, setIcon } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/types/card";
 import type { StoredIORect } from "./image-occlusion-types";
 import { resolveImageFile } from "./io-helpers";
@@ -59,9 +59,9 @@ function installSmoothZoomInteractions(host: HTMLElement, zoomLayer: HTMLElement
       offsetY = clampNumber(offsetY, -maxY, maxY);
     }
 
-    setCssProps(zoomLayer, "--sprout-zoom-scale", String(scale));
-    setCssProps(zoomLayer, "--sprout-zoom-x", `${offsetX}px`);
-    setCssProps(zoomLayer, "--sprout-zoom-y", `${offsetY}px`);
+    setCssProps(zoomLayer, "--learnkit-zoom-scale", String(scale));
+    setCssProps(zoomLayer, "--learnkit-zoom-x", `${offsetX}px`);
+    setCssProps(zoomLayer, "--learnkit-zoom-y", `${offsetY}px`);
     host.classList.toggle("is-zoomed", scale > 1);
   };
 
@@ -81,7 +81,7 @@ function installSmoothZoomInteractions(host: HTMLElement, zoomLayer: HTMLElement
 
   zoomLayer.addEventListener("click", (ev: MouseEvent) => {
     const target = ev.target as HTMLElement | null;
-    if (target?.closest(".sprout-zoom-close")) return;
+    if (target?.closest(".learnkit-zoom-close")) return;
     ev.preventDefault();
     ev.stopPropagation();
     if (movedSincePointerDown) return;
@@ -99,7 +99,7 @@ function installSmoothZoomInteractions(host: HTMLElement, zoomLayer: HTMLElement
 
   host.addEventListener("pointerdown", (ev: PointerEvent) => {
     const target = ev.target as HTMLElement | null;
-    if (target?.closest(".sprout-zoom-close")) return;
+    if (target?.closest(".learnkit-zoom-close")) return;
     if (ev.button !== 0 || scale <= 1) return;
     movedSincePointerDown = false;
     isDragging = true;
@@ -148,7 +148,7 @@ export function isIoRevealableType(card: CardRecord): boolean {
 
 export function renderImageOcclusionReviewInto(args: {
   app: App;
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   containerEl: HTMLElement;
   card: CardRecord;
   sourcePath: string;
@@ -163,16 +163,16 @@ export function renderImageOcclusionReviewInto(args: {
 
   // Clear container
   containerEl.replaceChildren();
-  containerEl.classList.add("sprout-io-container");
+  containerEl.classList.add("learnkit-io-container", "learnkit-io-container");
   if (widgetMode) {
-    containerEl.classList.add("sprout-io-container--clip");
+    containerEl.classList.add("learnkit-io-container--clip", "learnkit-io-container--clip");
   }
 
   // Get image reference
   const imageRef = String(card.imageRef || "").trim();
   if (!imageRef) {
     const msg = document.createElement("div");
-    msg.className = "bc text-muted-foreground text-sm";
+    msg.className = "text-muted-foreground text-sm";
     msg.textContent = "Image occlusion card missing image reference.";
     containerEl.appendChild(msg);
     return;
@@ -182,7 +182,7 @@ export function renderImageOcclusionReviewInto(args: {
   const imageFile = resolveImageFile(app, sourcePath, imageRef);
   if (!imageFile) {
     const msg = document.createElement("div");
-    msg.className = "bc text-muted-foreground text-sm";
+    msg.className = "text-muted-foreground text-sm";
     msg.textContent = `Image not found: ${imageRef}`;
     containerEl.appendChild(msg);
     return;
@@ -221,21 +221,21 @@ export function renderImageOcclusionReviewInto(args: {
 
   const host = widgetMode ? containerEl : document.createElement("div");
   if (!widgetMode) {
-    host.className = "bc sprout-io-host-card";
+    host.className = "learnkit-io-host-card";
   }
 
   const img = document.createElement("img");
   img.src = imageSrc;
   img.alt = card.title || "Card image";
-  img.classList.add("sprout-io-image");
+  img.classList.add("learnkit-io-image", "learnkit-io-image");
   // Modal mode: larger image, zoom-out cursor, fit modal
   if (args.enableWidgetModal) {
-    img.classList.add("sprout-io-image-zoomed");
+    img.classList.add("learnkit-io-image-zoomed", "learnkit-io-image-zoomed");
   } else {
-    img.classList.add("sprout-io-image-inline");
+    img.classList.add("learnkit-io-image-inline", "learnkit-io-image-inline");
   }
   if (widgetMode) {
-    img.classList.add("sprout-io-image-widget");
+    img.classList.add("learnkit-io-image-widget", "learnkit-io-image-widget");
   }
   host.appendChild(img);
 
@@ -245,7 +245,7 @@ export function renderImageOcclusionReviewInto(args: {
       onOpen() {
         scopeModalToWorkspace(this);
         this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
-        this.modalEl.addClass("bc", "lk-modals", "sprout-zoom-overlay");
+        this.modalEl.addClass("lk-modals", "learnkit-zoom-overlay");
         queryFirst(this.modalEl, ".modal-header")?.remove();
         queryFirst(this.modalEl, ".modal-close-button")?.remove();
 
@@ -262,22 +262,22 @@ export function renderImageOcclusionReviewInto(args: {
         }
 
         this.contentEl.empty();
-        this.contentEl.classList.add("sprout-zoom-content");
+        this.contentEl.classList.add("learnkit-zoom-content", "learnkit-zoom-content");
         this.contentEl.addEventListener("click", (ev) => {
           if (ev.target !== this.contentEl) return;
           this.close();
         });
 
-        const zoomHost = this.contentEl.createDiv({ cls: "bc sprout-zoom-host" });
-        const zoomCanvas = zoomHost.createDiv({ cls: "bc sprout-zoom-canvas" });
-        const zoomSurface = zoomCanvas.createDiv({ cls: "bc sprout-zoom-surface" });
+        const zoomHost = this.contentEl.createDiv({ cls: "learnkit-zoom-host learnkit-zoom-host" });
+        const zoomCanvas = zoomHost.createDiv({ cls: "learnkit-zoom-canvas learnkit-zoom-canvas" });
+        const zoomSurface = zoomCanvas.createDiv({ cls: "learnkit-zoom-surface learnkit-zoom-surface" });
         zoomSurface.dataset.sproutIoWidget = "1";
 
         const closeIfOutsideSurface = (ev: MouseEvent) => {
           const target = ev.target as HTMLElement | null;
           if (!target) return;
-          if (target.closest(".sprout-zoom-surface")) return;
-          if (target.closest(".sprout-zoom-close")) return;
+          if (target.closest(".learnkit-zoom-surface")) return;
+          if (target.closest(".learnkit-zoom-close")) return;
           this.close();
         };
         zoomHost.addEventListener("click", closeIfOutsideSurface);
@@ -297,35 +297,33 @@ export function renderImageOcclusionReviewInto(args: {
 
         const zoomImg = queryFirst(zoomSurface, "img");
         if (zoomImg instanceof HTMLImageElement) {
-          zoomImg.classList.add("sprout-zoom-img", "sprout-io-image-zoomed");
+          zoomImg.classList.add("learnkit-zoom-img", "learnkit-zoom-img", "learnkit-io-image-zoomed", "learnkit-io-image-zoomed");
           installSmoothZoomInteractions(zoomHost, zoomSurface);
         }
 
         const closeBtn = document.createElement("button");
         closeBtn.type = "button";
         closeBtn.setAttribute("aria-label", "Close");
-        closeBtn.setAttribute("data-sprout-expand-collapse", "true");
-        closeBtn.classList.add(
-          "bc",
-          "sprout-btn-toolbar",
-          "sprout-btn-filter",
+        closeBtn.setAttribute("data-learnkit-expand-collapse", "true");
+        closeBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-toolbar",
+          "learnkit-btn-filter", "learnkit-btn-filter",
           "h-7",
           "px-3",
           "text-sm",
           "inline-flex",
           "items-center",
           "gap-2",
-          "sprout-zoom-close",
+          "learnkit-zoom-close", "learnkit-zoom-close",
         );
 
         const closeIcon = document.createElement("span");
-        closeIcon.className = "bc inline-flex items-center justify-center";
+        closeIcon.className = "inline-flex items-center justify-center";
         setIcon(closeIcon, "x");
         closeBtn.appendChild(closeIcon);
 
         const closeLabel = document.createElement("span");
-        closeLabel.className = "bc";
-        closeLabel.setAttribute("data-sprout-label", "true");
+        closeLabel.className = "";
+        closeLabel.setAttribute("data-learnkit-label", "true");
         closeLabel.textContent = "Close";
         closeBtn.appendChild(closeLabel);
 
@@ -339,7 +337,7 @@ export function renderImageOcclusionReviewInto(args: {
 
       onClose() {
         this.contentEl.empty();
-        this.modalEl.removeClass("lk-modals", "sprout-zoom-overlay");
+        this.modalEl.removeClass("lk-modals", "learnkit-zoom-overlay");
         this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "sprout");
       }
     })(app);
@@ -389,7 +387,7 @@ export function renderImageOcclusionReviewInto(args: {
 
   if (masksForOverlay.length > 0) {
     const overlay = document.createElement("div");
-    overlay.classList.add("sprout-io-overlay");
+    overlay.classList.add("learnkit-io-overlay", "learnkit-io-overlay");
     const hintSizeUpdaters: Array<() => void> = [];
 
 
@@ -401,13 +399,13 @@ export function renderImageOcclusionReviewInto(args: {
       const left = imgRect.left - hostRect.left;
       const top = imgRect.top - hostRect.top;
       const imgStyles = getComputedStyle(img);
-      setCssProps(overlay, "--sprout-io-left", `${left}px`);
-      setCssProps(overlay, "--sprout-io-top", `${top}px`);
-      setCssProps(overlay, "--sprout-io-width", `${imgRect.width}px`);
-      setCssProps(overlay, "--sprout-io-height", `${imgRect.height}px`);
-      setCssProps(overlay, "--sprout-io-max-width", imgStyles.maxWidth);
-      setCssProps(overlay, "--sprout-io-max-height", imgStyles.maxHeight);
-      setCssProps(overlay, "--sprout-io-radius", imgStyles.borderRadius);
+      setCssProps(overlay, "--learnkit-io-left", `${left}px`);
+      setCssProps(overlay, "--learnkit-io-top", `${top}px`);
+      setCssProps(overlay, "--learnkit-io-width", `${imgRect.width}px`);
+      setCssProps(overlay, "--learnkit-io-height", `${imgRect.height}px`);
+      setCssProps(overlay, "--learnkit-io-max-width", imgStyles.maxWidth);
+      setCssProps(overlay, "--learnkit-io-max-height", imgStyles.maxHeight);
+      setCssProps(overlay, "--learnkit-io-radius", imgStyles.borderRadius);
     }
 
     // Add masks
@@ -419,23 +417,23 @@ export function renderImageOcclusionReviewInto(args: {
       const isTarget = isTargetRect(rect);
 
       const mask = document.createElement("div");
-      mask.classList.add("sprout-io-mask");
-      setCssProps(mask, "--sprout-io-x", `${Math.max(0, Math.min(1, x)) * 100}%`);
-      setCssProps(mask, "--sprout-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
-      setCssProps(mask, "--sprout-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
-      setCssProps(mask, "--sprout-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
+      mask.classList.add("learnkit-io-mask", "learnkit-io-mask");
+      setCssProps(mask, "--learnkit-io-x", `${Math.max(0, Math.min(1, x)) * 100}%`);
+      setCssProps(mask, "--learnkit-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
+      setCssProps(mask, "--learnkit-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
+      setCssProps(mask, "--learnkit-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
       if (reveal) {
-        mask.classList.add("sprout-io-mask-other");
+        mask.classList.add("learnkit-io-mask-other", "learnkit-io-mask-other");
       } else if (isTarget) {
-        mask.classList.add("sprout-io-mask-target");
+        mask.classList.add("learnkit-io-mask-target", "learnkit-io-mask-target");
       } else {
-        mask.classList.add("sprout-io-mask-other");
+        mask.classList.add("learnkit-io-mask-other", "learnkit-io-mask-other");
       }
       // Render true ovals for ellipse/circle masks
       if (rect.shape === "circle") {
-        mask.classList.add("sprout-io-mask-circle");
+        mask.classList.add("learnkit-io-mask-circle", "learnkit-io-mask-circle");
       } else {
-        mask.classList.add("sprout-io-mask-rect");
+        mask.classList.add("learnkit-io-mask-rect", "learnkit-io-mask-rect");
       }
 
       overlay.appendChild(mask);
@@ -486,8 +484,8 @@ export function renderImageOcclusionReviewInto(args: {
   }
 
   if (widgetMode && enableWidgetModal) {
-    host.classList.add("sprout-io-zoom-in");
-    img.classList.add("sprout-io-zoom-in");
+    host.classList.add("learnkit-io-zoom-in", "learnkit-io-zoom-in");
+    img.classList.add("learnkit-io-zoom-in", "learnkit-io-zoom-in");
     host.onclick = (ev) => {
       ev.preventDefault();
       ev.stopPropagation();

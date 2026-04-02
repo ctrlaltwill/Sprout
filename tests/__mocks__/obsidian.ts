@@ -1,3 +1,16 @@
+/**
+ * @file tests/__mocks__/obsidian.ts
+ * @summary Unit tests for obsidian behavior.
+ *
+ * @exports
+ *  - TFile
+ *  - TFolder
+ *  - Notice
+ *  - Plugin
+ *  - ItemView
+ *  - MarkdownRenderer
+ */
+
 // tests/__mocks__/obsidian.ts
 // ---------------------------------------------------------------------------
 // Minimal shim for the "obsidian" module so that source files which

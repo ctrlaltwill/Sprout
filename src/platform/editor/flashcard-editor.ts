@@ -1,3 +1,13 @@
+/**
+ * @file src/platform/editor/flashcard-editor.ts
+ * @summary Module for flashcard editor.
+ *
+ * @exports
+ *  - applyClozeShortcutToEditor
+ *  - registerMarkdownSourceClozeShortcuts
+ *  - registerEditorContextMenu
+ */
+
 import { type App, type Editor, type EventRef, MarkdownView, type Menu, type MenuItem, Platform, TFile } from "obsidian";
 
 import type { FlashcardType } from "../core/utils";

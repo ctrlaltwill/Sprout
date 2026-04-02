@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/plugin/runtime-state.ts
+ * @summary Module for runtime state.
+ *
+ * @exports
+ *  - ensurePluginRuntimeState
+ */
+
 import {
   VIEW_TYPE_REVIEWER,
   VIEW_TYPE_WIDGET,
@@ -30,9 +38,6 @@ export function ensurePluginRuntimeState(plugin: LearnKitPluginBase): void {
       VIEW_TYPE_EXAM_GENERATOR,
     ]);
   }
-
-  plugin._whatsNewModalContainer ??= null;
-  plugin._whatsNewModalRoot ??= null;
 
   plugin._sproutZoomValue ??= 1;
   plugin._sproutZoomSaveTimer ??= null;

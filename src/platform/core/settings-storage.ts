@@ -1,8 +1,19 @@
-import { deepMerge, DEFAULT_SETTINGS, type SproutSettings } from "./constants";
+/**
+ * @file src/platform/core/settings-storage.ts
+ * @summary Module for settings storage.
+ *
+ * @exports
+ *  - normaliseApiKeys
+ *  - hasAnyApiKey
+ *  - loadApiKeysFromDedicatedFile
+ *  - persistApiKeysToDedicatedFile
+ *  - initialiseDedicatedApiKeyStorage
+ *  - migrateLegacyConfigFiles
+ */
+
+import { deepMerge, type SproutSettings } from "./constants";
 import { isPlainObject } from "./utils";
 import { log } from "./logger";
-
-export type StudyAssistantApiKeys = SproutSettings["studyAssistant"]["apiKeys"];
 
 type AdapterLike = {
   exists(path: string): Promise<boolean>;
@@ -34,7 +45,7 @@ const LEGACY_CONFIG_FILES: ReadonlyArray<{
   { file: "audio.json", keys: ["audio"] },
 ];
 
-export function normaliseApiKeys(raw: unknown): StudyAssistantApiKeys {
+export function normaliseApiKeys(raw: unknown): SproutSettings["studyAssistant"]["apiKeys"] {
   const obj = isPlainObject(raw) ? raw : {};
   const asApiKey = (value: unknown): string => {
     if (typeof value === "string") return value.trim();
@@ -56,7 +67,7 @@ export function normaliseApiKeys(raw: unknown): StudyAssistantApiKeys {
   };
 }
 
-export function hasAnyApiKey(apiKeys: StudyAssistantApiKeys): boolean {
+export function hasAnyApiKey(apiKeys: SproutSettings["studyAssistant"]["apiKeys"]): boolean {
   return Object.values(apiKeys).some((value) => String(value || "").trim().length > 0);
 }
 
@@ -83,7 +94,7 @@ export async function persistApiKeysToDedicatedFile(params: {
   adapter: AdapterLike | null | undefined;
   dirPath: string | null;
   filePath: string | null;
-  apiKeys: StudyAssistantApiKeys;
+  apiKeys: SproutSettings["studyAssistant"]["apiKeys"];
 }): Promise<boolean> {
   const { adapter, dirPath, filePath, apiKeys } = params;
   if (!adapter || !dirPath || !filePath) return false;
@@ -182,8 +193,3 @@ export async function migrateLegacyConfigFiles(params: {
   }
 }
 
-export function settingsWithoutApiKeys(settings: SproutSettings): SproutSettings {
-  const snapshot = structuredClone(settings);
-  snapshot.studyAssistant.apiKeys = { ...DEFAULT_SETTINGS.studyAssistant.apiKeys };
-  return snapshot;
-}

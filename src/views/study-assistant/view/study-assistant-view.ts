@@ -1,18 +1,21 @@
 /**
  * @file src/views/study-assistant/view/study-assistant-view.ts
- * @summary Sidebar assistant view that renders the same UI as the floating popup.
+ * @summary Module for study assistant view.
+ *
+ * @exports
+ *  - SproutStudyAssistantView
  */
 
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import { VIEW_TYPE_STUDY_ASSISTANT } from "../../../platform/core/constants";
 import { SproutAssistantPopup } from "../popup/assistant-popup";
 
 export class SproutStudyAssistantView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   private popup: SproutAssistantPopup;
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
     this.popup = new SproutAssistantPopup(plugin);
@@ -27,12 +30,12 @@ export class SproutStudyAssistantView extends ItemView {
   }
 
   getIcon(): string {
-    return "sprout-widget-assistant";
+    return "learnkit-widget-assistant";
   }
 
   onOpen(): Promise<void> {
     this.contentEl.empty();
-    this.contentEl.addClass("sprout", "sprout-study-assistant-root");
+    this.contentEl.addClass("sprout", "learnkit-study-assistant-root");
     this.popup.mountEmbedded(this.contentEl);
     this.popup.onFileOpen(this.app.workspace.getActiveFile());
     return Promise.resolve();

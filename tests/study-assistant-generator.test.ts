@@ -1,3 +1,11 @@
+/**
+ * @file tests/study-assistant-generator.test.ts
+ * @summary Unit tests for study assistant generator.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generateStudyAssistantSuggestions } from "../src/platform/integrations/ai/study-assistant-generator";

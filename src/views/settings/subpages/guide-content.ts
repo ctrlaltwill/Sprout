@@ -1,3 +1,16 @@
+/**
+ * @file src/views/settings/subpages/guide-content.ts
+ * @summary Module for guide content.
+ *
+ * @exports
+ *  - GUIDE_CATEGORIES
+ *  - loadGuidePages
+ *  - getGuideCategories
+ *  - orderGuidePagesByNavigation
+ *  - getGuidePageDisplayLabel
+ *  - getGuideTooltipLabel
+ */
+
 import { type App, requestUrl } from "obsidian";
 import type { GuideCategory, GuidePage } from "./types";
 import { t } from "../../../platform/translations/translator";

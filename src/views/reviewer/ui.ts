@@ -33,7 +33,7 @@ export function appendKeyboxRight(btn: HTMLElement, label: string) {
 export function makePlainButton(
   label: string,
   onClick: () => void,
-  className = "sprout-btn",
+  className = "learnkit-btn",
 ): HTMLButtonElement {
   const b = document.createElement("button");
   b.type = "button";

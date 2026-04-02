@@ -1,7 +1,14 @@
 /**
  * @file src/platform/integrations/ai/attachment-helpers.ts
- * @summary Helpers for reading vault files and converting them to base64 data
- *          URLs suitable for AI provider multimodal content blocks.
+ * @summary Module for attachment helpers.
+ *
+ * @exports
+ *  - SUPPORTED_FILE_ACCEPT
+ *  - MAX_ATTACHMENTS
+ *  - AttachedFile
+ *  - isSupportedAttachmentExt
+ *  - isImageExt
+ *  - isPdfExt
  */
 
 import type { App, TFile } from "obsidian";

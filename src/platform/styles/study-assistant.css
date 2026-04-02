@@ -4,9 +4,9 @@
 
 /* ---- Study Assistant widget chat ---- */
 
-.sprout .sprout-study-assistant-root {
-  --sprout-sa-font: var(--sprout-widget-font-card-text, 0.9rem);
-  --sprout-sa-font-small: var(--sprout-widget-font-info, 0.88rem);
+.learnkit .learnkit-study-assistant-root {
+  --learnkit-sa-font: var(--learnkit-widget-font-card-text, 0.9rem);
+  --learnkit-sa-font-small: var(--learnkit-widget-font-info, 0.88rem);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -15,7 +15,7 @@
   min-height: 0;
 }
 
-.sprout .sprout-study-assistant-toolbar {
+.learnkit .learnkit-study-assistant-toolbar {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,44 +25,44 @@
   width: 100%;
 }
 
-.sprout .sprout-study-assistant-mode-row {
+.learnkit .learnkit-study-assistant-mode-row {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
   width: 100%;
 }
 
-.sprout .sprout-study-assistant-mode-btn,
-.sprout .sprout-study-assistant-composer .sprout-btn-toolbar,
-.sprout .sprout-study-assistant-flashcards .sprout-btn-toolbar,
-.sprout .sprout-study-assistant-card > .flex .sprout-btn-toolbar {
+.learnkit .learnkit-study-assistant-mode-btn,
+.learnkit .learnkit-study-assistant-composer .learnkit-btn-toolbar,
+.learnkit .learnkit-study-assistant-flashcards .learnkit-btn-toolbar,
+.learnkit .learnkit-study-assistant-card > .flex .learnkit-btn-toolbar {
   background-color: var(--background);
   color: var(--foreground);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-shadow: none;
   min-height: 32px;
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   border-radius: var(--radius-md);
 }
 
-.sprout .sprout-study-assistant-mode-btn:hover,
-.sprout .sprout-study-assistant-mode-btn:focus-visible,
-.sprout .sprout-study-assistant-composer .sprout-btn-toolbar:hover,
-.sprout .sprout-study-assistant-composer .sprout-btn-toolbar:focus-visible,
-.sprout .sprout-study-assistant-flashcards .sprout-btn-toolbar:hover,
-.sprout .sprout-study-assistant-flashcards .sprout-btn-toolbar:focus-visible,
-.sprout .sprout-study-assistant-card > .flex .sprout-btn-toolbar:hover,
-.sprout .sprout-study-assistant-card > .flex .sprout-btn-toolbar:focus-visible {
+.learnkit .learnkit-study-assistant-mode-btn:hover,
+.learnkit .learnkit-study-assistant-mode-btn:focus-visible,
+.learnkit .learnkit-study-assistant-composer .learnkit-btn-toolbar:hover,
+.learnkit .learnkit-study-assistant-composer .learnkit-btn-toolbar:focus-visible,
+.learnkit .learnkit-study-assistant-flashcards .learnkit-btn-toolbar:hover,
+.learnkit .learnkit-study-assistant-flashcards .learnkit-btn-toolbar:focus-visible,
+.learnkit .learnkit-study-assistant-card > .flex .learnkit-btn-toolbar:hover,
+.learnkit .learnkit-study-assistant-card > .flex .learnkit-btn-toolbar:focus-visible {
   background-color: var(--color-base-25);
   border-color: var(--color-base-30);
 }
 
-.sprout .sprout-study-assistant-mode-btn.is-active {
+.learnkit .learnkit-study-assistant-mode-btn.is-active {
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 16%, var(--background));
-  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 38%, var(--sprout-border-color));
+  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 38%, var(--learnkit-border-color));
 }
 
-.sprout .sprout-study-assistant-card {
+.learnkit .learnkit-study-assistant-card {
   overflow: hidden;
   padding: 0;
   gap: 0;
@@ -73,7 +73,7 @@
 }
 
 
-.sprout .sprout-study-assistant-content-host {
+.learnkit .learnkit-study-assistant-content-host {
   margin: 10px auto 20px;
   display: flex;
   flex-direction: column;
@@ -82,36 +82,36 @@
 }
 
 /* Allow copy/select interactions inside Ask, Review, and Generate cards. */
-.sprout .sprout-study-assistant-content-host,
-.sprout .sprout-study-assistant-content-host * {
+.learnkit .learnkit-study-assistant-content-host,
+.learnkit .learnkit-study-assistant-content-host * {
   user-select: text;
   -webkit-user-select: text;
 }
 
-.sprout .sprout-study-assistant-content-host.sprout-widget-teaser {
+.learnkit .learnkit-study-assistant-content-host.learnkit-widget-teaser {
   margin: 10px auto 10px;
 }
 
-.sprout .sprout-study-assistant-card > h3 {
+.learnkit .learnkit-study-assistant-card > h3 {
   margin: 0;
   padding: 20px 20px 00px 20px;
-  font-size: var(--sprout-sa-font);
+  font-size: var(--learnkit-sa-font);
   line-height: 1.25;
 }
 
-.sprout .sprout-study-assistant-error {
+.learnkit .learnkit-study-assistant-error {
   color: var(--text-error);
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   margin: 0;
 }
 
-.sprout .sprout-study-assistant-chat-root {
+.learnkit .learnkit-study-assistant-chat-root {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.sprout .sprout-study-assistant-chat-wrap {
+.learnkit .learnkit-study-assistant-chat-wrap {
   position: relative;
   border: none;
   border-radius: var(--radius-md);
@@ -125,21 +125,21 @@
   gap: 0.55rem;
 }
 
-.sprout .sprout-study-assistant-chat-card .sprout-study-assistant-chat-wrap {
+.learnkit .learnkit-study-assistant-chat-card .learnkit-study-assistant-chat-wrap {
   flex: 1;
   min-height: 0;
   max-height: none;
 }
 
-.sprout .sprout-study-assistant-chat-title {
+.learnkit .learnkit-study-assistant-chat-title {
   margin: 0;
   padding-top: 20px;
-  font-size: var(--sprout-sa-font);
+  font-size: var(--learnkit-sa-font);
   line-height: 1.25;
 }
 
-.sprout .sprout-study-assistant-chat-wrap::before,
-.sprout .sprout-study-assistant-chat-wrap::after {
+.learnkit .learnkit-study-assistant-chat-wrap::before,
+.learnkit .learnkit-study-assistant-chat-wrap::after {
   content: "";
   position: sticky;
   left: 0;
@@ -150,43 +150,43 @@
   z-index: 2;
 }
 
-.sprout .sprout-study-assistant-chat-wrap::before {
+.learnkit .learnkit-study-assistant-chat-wrap::before {
   top: 0;
   margin-bottom: -14px;
   background: linear-gradient(to bottom, var(--background), transparent);
 }
 
-.sprout .sprout-study-assistant-chat-wrap::after {
+.learnkit .learnkit-study-assistant-chat-wrap::after {
   bottom: 0;
   margin-top: -14px;
   background: linear-gradient(to top, var(--background), transparent);
 }
 
-.sprout .sprout-study-assistant-empty {
+.learnkit .learnkit-study-assistant-empty {
   color: var(--text-muted);
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   line-height: 1.45;
 }
 
-.sprout .sprout-study-assistant-message-row {
+.learnkit .learnkit-study-assistant-message-row {
   display: flex;
   gap: 0.5rem;
 }
 
-.sprout .sprout-study-assistant-message-row.is-user {
+.learnkit .learnkit-study-assistant-message-row.is-user {
   justify-content: flex-end;
 }
 
-.sprout .sprout-study-assistant-message-row.is-assistant {
+.learnkit .learnkit-study-assistant-message-row.is-assistant {
   justify-content: flex-start;
   align-items: flex-start;
 }
 
-.sprout .sprout-study-assistant-message-avatar {
+.learnkit .learnkit-study-assistant-message-avatar {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 999px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -197,94 +197,94 @@
   flex: 0 0 auto;
 }
 
-.sprout .sprout-study-assistant-message-bubble {
+.learnkit .learnkit-study-assistant-message-bubble {
   max-width: min(88%, 36rem);
   padding: 0.48rem 0.65rem;
   border-radius: var(--radius-md);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
-  font-size: var(--sprout-sa-font-small);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
+  font-size: var(--learnkit-sa-font-small);
   line-height: 1.45;
 }
 
-.sprout .sprout-study-assistant-message-bubble.is-user {
+.learnkit .learnkit-study-assistant-message-bubble.is-user {
   border-top-right-radius: 0.3rem;
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 16%, var(--background));
-  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 30%, var(--sprout-border-color));
+  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 30%, var(--learnkit-border-color));
 }
 
-.sprout .sprout-study-assistant-message-bubble.is-assistant {
+.learnkit .learnkit-study-assistant-message-bubble.is-assistant {
   border-top-left-radius: 0.3rem;
   background: color-mix(in srgb, var(--background-secondary) 75%, var(--background-primary));
 }
 
-.sprout .sprout-study-assistant-message-text {
+.learnkit .learnkit-study-assistant-message-text {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.sprout .sprout-study-assistant-message-bubble code {
+.learnkit .learnkit-study-assistant-message-bubble code {
   font-size: 0.82em;
 }
 
-.sprout .sprout-study-assistant-message-bubble > :first-child {
+.learnkit .learnkit-study-assistant-message-bubble > :first-child {
   margin-top: 0;
 }
 
-.sprout .sprout-study-assistant-message-bubble > :last-child {
+.learnkit .learnkit-study-assistant-message-bubble > :last-child {
   margin-bottom: 0;
 }
 
-.sprout .sprout-study-assistant-message-actions {
+.learnkit .learnkit-study-assistant-message-actions {
   margin-top: 0.55rem;
 }
 
-.sprout .sprout-study-assistant-switch-generate-btn {
+.learnkit .learnkit-study-assistant-switch-generate-btn {
   min-height: 30px;
   border-radius: var(--radius-md);
   font-size: 0.82rem;
   padding: 0 0.65rem;
 }
 
-.sprout .sprout-study-assistant-composer {
+.learnkit .learnkit-study-assistant-composer {
   padding: 12px 20px 16px;
-  border-top: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-border-color) 70%, transparent);
+  border-top: var(--learnkit-border-width) solid color-mix(in srgb, var(--learnkit-border-color) 70%, transparent);
 }
 
-.sprout .sprout-study-assistant-composer-shell {
+.learnkit .learnkit-study-assistant-composer-shell {
   position: relative;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: 0.9rem;
   background: var(--background);
 }
 
-.sprout .sprout-study-assistant-review-controls {
+.learnkit .learnkit-study-assistant-review-controls {
   display: grid;
   grid-template-columns: minmax(150px, 220px) auto;
   gap: 0.45rem;
   align-items: center;
 }
 
-.sprout .sprout-study-assistant-review-select {
+.learnkit .learnkit-study-assistant-review-select {
   min-height: 32px;
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   border-radius: var(--radius-md);
   background: var(--background);
   color: var(--foreground);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   padding-inline: 0.5rem;
 }
 
-.sprout .sprout-study-assistant-review-select:focus-visible {
+.learnkit .learnkit-study-assistant-review-select:focus-visible {
   outline: none;
-  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 38%, var(--sprout-border-color));
+  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 38%, var(--learnkit-border-color));
 }
 
-.sprout .sprout-study-assistant-input {
+.learnkit .learnkit-study-assistant-input {
   width: 100%;
   min-height: 58px;
   max-height: 180px;
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   line-height: 1.45;
   resize: none;
   background: transparent;
@@ -292,7 +292,7 @@
   padding: 10px 46px 10px 12px;
 }
 
-.sprout .sprout-study-assistant-composer .sprout-study-assistant-send-btn {
+.learnkit .learnkit-study-assistant-composer .learnkit-study-assistant-send-btn {
   position: absolute;
   right: 8px;
   bottom: 8px;
@@ -306,67 +306,67 @@
   justify-content: center;
 }
 
-.sprout .sprout-study-assistant-composer .sprout-study-assistant-send-btn .svg-icon.lucide-loader-2 {
+.learnkit .learnkit-study-assistant-composer .learnkit-study-assistant-send-btn .svg-icon.lucide-loader-2 {
   animation: sprout-assistant-spin 0.9s linear infinite;
 }
 
 @media (max-width: 560px) {
-  .sprout .sprout-study-assistant-review-controls {
+  .learnkit .learnkit-study-assistant-review-controls {
     grid-template-columns: 1fr;
   }
 }
 
-.sprout .sprout-study-assistant-flashcards .card {
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+.learnkit .learnkit-study-assistant-flashcards .card {
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--background-secondary) 55%, var(--background));
 }
 
-.sprout .sprout-study-assistant-suggestion-card {
+.learnkit .learnkit-study-assistant-suggestion-card {
   cursor: pointer;
 }
 
-.sprout .sprout-study-assistant-suggestion-card:hover,
-.sprout .sprout-study-assistant-suggestion-card:focus-visible {
-  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 38%, var(--sprout-border-color));
+.learnkit .learnkit-study-assistant-suggestion-card:hover,
+.learnkit .learnkit-study-assistant-suggestion-card:focus-visible {
+  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 38%, var(--learnkit-border-color));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--interactive-accent, #7c9dff) 20%, transparent);
 }
 
-.sprout .sprout-study-assistant-suggestion-summary {
+.learnkit .learnkit-study-assistant-suggestion-summary {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 
-.sprout .sprout-study-assistant-suggestion-line {
+.learnkit .learnkit-study-assistant-suggestion-line {
   margin: 0;
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   line-height: 1.45;
 }
 
-.sprout .sprout-study-assistant-suggestion-list {
+.learnkit .learnkit-study-assistant-suggestion-list {
   margin: 0;
   padding-left: 1.1rem;
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
   line-height: 1.45;
 }
 
-.sprout .sprout-study-assistant-flashcards .card strong {
-  font-size: var(--sprout-sa-font-small);
+.learnkit .learnkit-study-assistant-flashcards .card strong {
+  font-size: var(--learnkit-sa-font-small);
 }
 
-.sprout .sprout-study-assistant-card details {
-  border: var(--sprout-border-width) dashed color-mix(in srgb, var(--sprout-border-color) 85%, transparent);
+.learnkit .learnkit-study-assistant-card details {
+  border: var(--learnkit-border-width) dashed color-mix(in srgb, var(--learnkit-border-color) 85%, transparent);
   border-radius: var(--radius-md);
   padding: 0.4rem 0.55rem;
 }
 
-.sprout .sprout-study-assistant-card summary {
+.learnkit .learnkit-study-assistant-card summary {
   cursor: pointer;
-  font-size: var(--sprout-sa-font-small);
+  font-size: var(--learnkit-sa-font-small);
 }
 
-.sprout .sprout-study-assistant-card pre {
+.learnkit .learnkit-study-assistant-card pre {
   margin: 0.45rem 0 0;
   max-height: 180px;
   overflow: auto;
@@ -384,7 +384,7 @@
 }
 
 /* ---- Trigger button (bottom-right per-leaf circle) ---- */
-.sprout-assistant-trigger {
+.learnkit-assistant-trigger {
   position: absolute;
   bottom: 24px;
   right: 24px;
@@ -404,32 +404,32 @@
   padding: 0;
 }
 
-.sprout-assistant-trigger:hover {
+.learnkit-assistant-trigger:hover {
   transform: scale(1.08);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.24);
 }
 
-.sprout-assistant-trigger:active {
+.learnkit-assistant-trigger:active {
   transform: scale(0.96);
 }
 
-.sprout-assistant-trigger.is-open {
+.learnkit-assistant-trigger.is-open {
   background: color-mix(in srgb, var(--interactive-accent-hover, #6b8ef0) 78%, #000);
   color: #fff;
 }
 
-.theme-dark .sprout-assistant-trigger.is-open {
+.theme-dark .learnkit-assistant-trigger.is-open {
   background: color-mix(in srgb, var(--interactive-accent-hover, #6b8ef0) 62%, #000);
   color: #fff;
 }
 
-.sprout-assistant-trigger .svg-icon {
+.learnkit-assistant-trigger .svg-icon {
   width: 20px;
   height: 20px;
 }
 
 /* Companion icon motion: hover in quickly, then unwind in two staged steps on hover-out. */
-.sprout-assistant-trigger .svg-icon.sprout-widget-assistant {
+.learnkit-assistant-trigger .svg-icon.learnkit-widget-assistant {
   transform-origin: center;
   transform: translateY(0) scale(1);
   filter: brightness(1);
@@ -439,7 +439,7 @@
     filter 180ms ease 240ms;
 }
 
-.sprout-assistant-trigger .svg-icon.sprout-widget-assistant > svg {
+.learnkit-assistant-trigger .svg-icon.learnkit-widget-assistant > svg {
   transform-origin: center;
   transform-box: fill-box;
   transform: rotate(0deg);
@@ -447,42 +447,42 @@
   transition: transform 220ms cubic-bezier(0.2, 0.85, 0.35, 1) 460ms;
 }
 
-.sprout-assistant-trigger:hover .svg-icon.sprout-widget-assistant,
-.sprout-assistant-trigger:focus-visible .svg-icon.sprout-widget-assistant,
-.sprout-assistant-trigger.is-open .svg-icon.sprout-widget-assistant {
+.learnkit-assistant-trigger:hover .svg-icon.learnkit-widget-assistant,
+.learnkit-assistant-trigger:focus-visible .svg-icon.learnkit-widget-assistant,
+.learnkit-assistant-trigger.is-open .svg-icon.learnkit-widget-assistant {
   transform: translateY(-2px) scale(1.18);
   filter: brightness(1.18);
   transition-delay: 0ms, 0ms;
 }
 
-.sprout-assistant-trigger:hover .svg-icon.sprout-widget-assistant > svg,
-.sprout-assistant-trigger:focus-visible .svg-icon.sprout-widget-assistant > svg,
-.sprout-assistant-trigger.is-open .svg-icon.sprout-widget-assistant > svg {
+.learnkit-assistant-trigger:hover .svg-icon.learnkit-widget-assistant > svg,
+.learnkit-assistant-trigger:focus-visible .svg-icon.learnkit-widget-assistant > svg,
+.learnkit-assistant-trigger.is-open .svg-icon.learnkit-widget-assistant > svg {
   transform: rotate(8deg);
   transition-delay: 70ms;
 }
 
-.sprout-assistant-trigger:active .svg-icon.sprout-widget-assistant {
+.learnkit-assistant-trigger:active .svg-icon.learnkit-widget-assistant {
   transform: translateY(0) scale(1.04);
   filter: brightness(1.06);
   transition-delay: 0ms, 0ms;
 }
 
-.sprout-assistant-trigger:active .svg-icon.sprout-widget-assistant > svg {
+.learnkit-assistant-trigger:active .svg-icon.learnkit-widget-assistant > svg {
   transform: rotate(2deg);
   transition-delay: 0ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sprout-assistant-trigger .svg-icon.sprout-widget-assistant,
-  .sprout-assistant-trigger .svg-icon.sprout-widget-assistant > svg {
+  .learnkit-assistant-trigger .svg-icon.learnkit-widget-assistant,
+  .learnkit-assistant-trigger .svg-icon.learnkit-widget-assistant > svg {
     transition: none;
     transform: none;
     filter: none;
   }
 }
 
-.sprout-assistant-trigger-pending-badge {
+.learnkit-assistant-trigger-pending-badge {
   position: absolute;
   top: -3px;
   right: -3px;
@@ -501,24 +501,24 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
 }
 
-.sprout-assistant-trigger.is-hidden {
+.learnkit-assistant-trigger.is-hidden {
   display: none;
 }
 
-.sprout-assistant-trigger.is-hover-only {
+.learnkit-assistant-trigger.is-hover-only {
   opacity: 0;
   transform: translateY(8px) scale(0.96);
   pointer-events: none;
 }
 
-.sprout-assistant-trigger.is-hover-only.is-hover-active,
-.sprout-assistant-trigger.is-hover-only.is-open {
+.learnkit-assistant-trigger.is-hover-only.is-hover-active,
+.learnkit-assistant-trigger.is-hover-only.is-open {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
 }
 
-.sprout-assistant-trigger.is-reply-bounce {
+.learnkit-assistant-trigger.is-reply-bounce {
   animation: sprout-assistant-trigger-reply-bounce 0.64s cubic-bezier(0.2, 0.85, 0.35, 1) 0s 3;
 }
 
@@ -537,7 +537,7 @@
   }
 }
 
-.sprout-assistant-trigger-hotzone {
+.learnkit-assistant-trigger-hotzone {
   position: absolute;
   right: 0;
   bottom: 0;
@@ -547,12 +547,12 @@
   pointer-events: none;
 }
 
-.sprout-assistant-trigger-hotzone.is-hidden {
+.learnkit-assistant-trigger-hotzone.is-hidden {
   display: none;
 }
 
 /* ---- Popup panel ---- */
-.sprout-assistant-popup {
+.learnkit-assistant-popup {
   position: absolute;
   bottom: 84px; /* trigger bottom (24) + trigger height (48) + gap (12) */
   right: 24px;
@@ -572,15 +572,15 @@
 }
 
 
-.sprout-assistant-popup.is-closing {
+.learnkit-assistant-popup.is-closing {
   animation: sprout-popup-out 0.18s ease-in;
   pointer-events: none;
 }
 
-/* Guard popup surface against broad `.sprout` reset selectors in view containers. */
-.view-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-modal-location),
-.workspace-leaf .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-modal-location),
-.workspace-leaf-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-modal-location) {
+/* Guard popup surface against broad `.learnkit` reset selectors in view containers. */
+.view-content .learnkit.learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded):not(.is-modal-location),
+.workspace-leaf .learnkit.learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded):not(.is-modal-location),
+.workspace-leaf-content .learnkit.learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded):not(.is-modal-location) {
   border-radius: var(--radius-md);
   background: var(--background-primary, #fff);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -589,7 +589,7 @@
 }
 
 /* Modal Companion only: glass panel treatment (do not affect embedded/sidebar mode). */
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) {
   border: 1px solid color-mix(in srgb, var(--color-base-70) 18%, transparent 82%);
   background: var(--color-base-00) !important;
   -webkit-backdrop-filter: blur(16px) saturate(125%);
@@ -597,21 +597,21 @@
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header,
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-composer {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header,
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-composer {
   background: transparent !important;
   border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-content {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-content {
   background: transparent;
 }
 
-.sprout-assistant-popup.is-hidden {
+.learnkit-assistant-popup.is-hidden {
   display: none;
 }
 
-.sprout-assistant-popup.sprout-assistant-popup-embedded {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded {
   position: relative;
   right: auto;
   bottom: auto;
@@ -628,35 +628,35 @@
 }
 
 /* Widget-only: remove section divider lines while keeping modal styling intact. */
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-header,
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-toolbar,
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-composer {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-header,
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-toolbar,
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-composer {
   border: none;
 }
 
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-header-title {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-header-title {
   font-size: 0.9rem;
 }
 
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-header-left {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-header-left {
   gap: 8px;
 }
 
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-header-note {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-header-note {
   font-size: 0.9rem;
   color: var(--foreground);
   font-weight: 400;
 }
 
 /* Widget-only: assistant bubbles use teaser card surface styling. */
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-message-bubble.is-assistant {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-message-bubble.is-assistant {
   background: var(--background);
   box-shadow: none;
   border: var(--color-base-40) 1px solid;
 }
 
 /* Widget-only: preserve emphasized user bubble styling. */
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-message-bubble.is-user {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-message-bubble.is-user {
   box-shadow: none;
   background: color-mix(in oklab, var(--theme-accent) 20%, var(--background));
   color: var(--theme-base-95);
@@ -664,21 +664,21 @@
 }
 
 /* Widget-only: make header action buttons match teaser card surface. */
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-overflow,
-.sprout-assistant-popup.sprout-assistant-popup-embedded .sprout-assistant-popup-close {
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-overflow,
+.learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-close {
   background: var(--background) !important;
   box-shadow: none;
   border: var(--color-base-40) 1px solid !important;
 }
 
 /* Widget tab icons should follow the active theme icon color. */
-.workspace-tab-header .svg-icon.sprout-widget-study,
-.workspace-tab-header .svg-icon.sprout-widget-assistant {
+.workspace-tab-header .svg-icon.learnkit-widget-study,
+.workspace-tab-header .svg-icon.learnkit-widget-assistant {
   color: inherit;
 }
 
-.workspace-tab-header .svg-icon.sprout-widget-study *,
-.workspace-tab-header .svg-icon.sprout-widget-assistant * {
+.workspace-tab-header .svg-icon.learnkit-widget-study *,
+.workspace-tab-header .svg-icon.learnkit-widget-assistant * {
   stroke: currentColor;
 }
 
@@ -705,7 +705,7 @@
 }
 
 /* ---- Header ---- */
-.sprout-assistant-popup-header {
+.learnkit-assistant-popup-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -715,21 +715,21 @@
   overflow: visible;
 }
 
-.sprout-assistant-popup-header-left {
+.learnkit-assistant-popup-header-left {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
 }
 
-.sprout-assistant-popup-header-title {
+.learnkit-assistant-popup-header-title {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-normal);
   line-height: 1.2;
 }
 
-.sprout-assistant-popup-header-note {
+.learnkit-assistant-popup-header-note {
   font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.3;
@@ -739,7 +739,7 @@
   max-width: 280px;
 }
 
-.sprout-assistant-popup-close {
+.learnkit-assistant-popup-close {
   width: 36px !important;
   height: 36px !important;
   min-width: 36px !important;
@@ -759,7 +759,7 @@
   transition: background 0.12s ease, color 0.12s ease;
 }
 
-.sprout-assistant-popup-header-actions {
+.learnkit-assistant-popup-header-actions {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -767,39 +767,39 @@
   overflow: visible;
 }
 
-.sprout-assistant-popup-header-menu {
+.learnkit-assistant-popup-header-menu {
   position: relative;
   display: inline-flex;
   align-items: center;
   overflow: visible;
 }
 
-.sprout-assistant-popup-mobile-sidebar-btn,
-.sprout-assistant-popup-header-center-brand,
-.sprout-assistant-popup-header-menu-item.is-mobile-nav-item,
-.sprout-assistant-popup-header-menu-divider.is-mobile-nav-divider {
+.learnkit-assistant-popup-mobile-sidebar-btn,
+.learnkit-assistant-popup-header-center-brand,
+.learnkit-assistant-popup-header-menu-item.is-mobile-nav-item,
+.learnkit-assistant-popup-header-menu-divider.is-mobile-nav-divider {
   display: none;
 }
 
-.sprout-assistant-popup-header-center-brand {
+.learnkit-assistant-popup-header-center-brand {
   align-items: center;
   justify-content: center;
 }
 
-.sprout-assistant-popup-header-center-brand-icon {
+.learnkit-assistant-popup-header-center-brand-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.sprout-assistant-popup-header-center-brand-icon .svg-icon {
+.learnkit-assistant-popup-header-center-brand-icon .svg-icon {
   width: 98px;
   height: auto;
 }
 
-.sprout-assistant-popup-overflow {
-  --sprout-assistant-overflow-collapsed-width: 36px;
-  --sprout-assistant-overflow-expanded-width: 102px;
+.learnkit-assistant-popup-overflow {
+  --learnkit-assistant-overflow-collapsed-width: 36px;
+  --learnkit-assistant-overflow-expanded-width: 102px;
   width: 36px !important;
   height: 36px !important;
   min-width: 36px !important;
@@ -823,11 +823,11 @@
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.sprout-assistant-popup-overflow > [aria-hidden="true"] {
+.learnkit-assistant-popup-overflow > [aria-hidden="true"] {
   flex: 0 0 auto;
 }
 
-.sprout-assistant-popup-overflow [data-sprout-label="true"] {
+.learnkit-assistant-popup-overflow [data-learnkit-label="true"] {
   display: inline-block;
   flex: 0 0 auto;
   opacity: 0;
@@ -839,40 +839,40 @@
   transition: max-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 540ms ease, margin-left 660ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 660ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout-assistant-popup-overflow:hover,
-.sprout-assistant-popup-overflow:focus-visible,
-.sprout-assistant-popup-overflow:focus-within,
-.sprout-assistant-popup-overflow[aria-expanded="true"] {
+.learnkit-assistant-popup-overflow:hover,
+.learnkit-assistant-popup-overflow:focus-visible,
+.learnkit-assistant-popup-overflow:focus-within,
+.learnkit-assistant-popup-overflow[aria-expanded="true"] {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.06));
 }
 
-.sprout-assistant-popup-overflow:hover [data-sprout-label="true"],
-.sprout-assistant-popup-overflow:focus-visible [data-sprout-label="true"],
-.sprout-assistant-popup-overflow:focus-within [data-sprout-label="true"],
-.sprout-assistant-popup-overflow[aria-expanded="true"] [data-sprout-label="true"] {
+.learnkit-assistant-popup-overflow:hover [data-learnkit-label="true"],
+.learnkit-assistant-popup-overflow:focus-visible [data-learnkit-label="true"],
+.learnkit-assistant-popup-overflow:focus-within [data-learnkit-label="true"],
+.learnkit-assistant-popup-overflow[aria-expanded="true"] [data-learnkit-label="true"] {
   max-width: 0;
   opacity: 0;
   margin-left: 0;
   transform: translateX(0);
 }
 
-.sprout-assistant-popup-overflow:focus-visible,
-.sprout-assistant-popup-overflow:active {
+.learnkit-assistant-popup-overflow:focus-visible,
+.learnkit-assistant-popup-overflow:active {
   border-color: var(--color-base-40);
 }
 
-.sprout-assistant-popup-overflow .svg-icon {
+.learnkit-assistant-popup-overflow .svg-icon {
   width: 16px;
   height: 16px;
 }
 
-.sprout-assistant-popup-header-popover {
+.learnkit-assistant-popup-header-popover {
   display: none;
   position: fixed;
   top: auto;
   right: auto;
-  left: var(--sprout-popover-left, auto);
-  width: var(--sprout-popover-width, auto);
+  left: var(--learnkit-popover-left, auto);
+  width: var(--learnkit-popover-width, auto);
   min-width: 224px;
   z-index: var(--lk-z-popover-overlay);
   border: 1px solid var(--color-base-35) !important;
@@ -885,22 +885,22 @@
   backdrop-filter: blur(14px);
 }
 
-.sprout-assistant-popup-header-popover.is-open {
+.learnkit-assistant-popup-header-popover.is-open {
   display: block;
 }
 
-.sprout-assistant-popup-header-menu-list {
+.learnkit-assistant-popup-header-menu-list {
   display: flex;
   flex-direction: column;
 }
 
-.sprout-assistant-popup-header-menu-divider {
+.learnkit-assistant-popup-header-menu-divider {
   margin: 4px 0;
   height: 1px;
   background: var(--background-modifier-border, var(--background-border, rgba(0, 0, 0, 0.08)));
 }
 
-.sprout-assistant-popup-header-menu-item {
+.learnkit-assistant-popup-header-menu-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -918,36 +918,36 @@
   transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
 
-.sprout-assistant-popup-header-menu-item:hover,
-.sprout-assistant-popup-header-menu-item:focus-visible {
+.learnkit-assistant-popup-header-menu-item:hover,
+.learnkit-assistant-popup-header-menu-item:focus-visible {
   background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--text-normal);
   border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
-.sprout-assistant-popup-header-menu-item:active,
-.sprout-assistant-popup-header-menu-item[aria-checked="true"],
-.sprout-assistant-popup-header-menu-item[aria-current="true"],
-.sprout-assistant-popup-header-menu-item[aria-selected="true"] {
+.learnkit-assistant-popup-header-menu-item:active,
+.learnkit-assistant-popup-header-menu-item[aria-checked="true"],
+.learnkit-assistant-popup-header-menu-item[aria-current="true"],
+.learnkit-assistant-popup-header-menu-item[aria-selected="true"] {
   background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--text-normal);
   border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
-.sprout-assistant-popup-header-menu-item:focus-visible {
+.learnkit-assistant-popup-header-menu-item:focus-visible {
   box-shadow: none;
 }
 
-.sprout-assistant-popup-header-menu-item.is-danger {
+.learnkit-assistant-popup-header-menu-item.is-danger {
   color: var(--text-error, #b42318);
 }
 
-.sprout-assistant-popup-header-menu-item.is-danger:hover,
-.sprout-assistant-popup-header-menu-item.is-danger:focus-visible {
+.learnkit-assistant-popup-header-menu-item.is-danger:hover,
+.learnkit-assistant-popup-header-menu-item.is-danger:focus-visible {
   background: color-mix(in srgb, var(--text-error, #b42318) 10%, transparent);
 }
 
-.sprout-assistant-popup-header-menu-icon {
+.learnkit-assistant-popup-header-menu-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -955,41 +955,41 @@
   transition: color 0.14s ease;
 }
 
-.sprout-assistant-popup-header-menu-item:hover .sprout-assistant-popup-header-menu-icon,
-.sprout-assistant-popup-header-menu-item:focus-visible .sprout-assistant-popup-header-menu-icon,
-.sprout-assistant-popup-header-menu-item:active .sprout-assistant-popup-header-menu-icon,
-.sprout-assistant-popup-header-menu-item[aria-checked="true"] .sprout-assistant-popup-header-menu-icon,
-.sprout-assistant-popup-header-menu-item[aria-current="true"] .sprout-assistant-popup-header-menu-icon,
-.sprout-assistant-popup-header-menu-item[aria-selected="true"] .sprout-assistant-popup-header-menu-icon {
+.learnkit-assistant-popup-header-menu-item:hover .learnkit-assistant-popup-header-menu-icon,
+.learnkit-assistant-popup-header-menu-item:focus-visible .learnkit-assistant-popup-header-menu-icon,
+.learnkit-assistant-popup-header-menu-item:active .learnkit-assistant-popup-header-menu-icon,
+.learnkit-assistant-popup-header-menu-item[aria-checked="true"] .learnkit-assistant-popup-header-menu-icon,
+.learnkit-assistant-popup-header-menu-item[aria-current="true"] .learnkit-assistant-popup-header-menu-icon,
+.learnkit-assistant-popup-header-menu-item[aria-selected="true"] .learnkit-assistant-popup-header-menu-icon {
   color: inherit;
 }
 
-.sprout-assistant-popup-header-menu-icon .svg-icon {
+.learnkit-assistant-popup-header-menu-icon .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout-assistant-popup-close:hover {
+.learnkit-assistant-popup-close:hover {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.06));
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-close .svg-icon {
+.learnkit-assistant-popup-close .svg-icon {
   width: 16px;
   height: 16px;
 }
 
-/* Keep popup icon button padding against global `.sprout button` resets. */
-.sprout-assistant-popup .sprout-assistant-popup-close {
+/* Keep popup icon button padding against global `.learnkit button` resets. */
+.learnkit-assistant-popup .learnkit-assistant-popup-close {
   padding: 0 !important;
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-overflow {
+.learnkit-assistant-popup .learnkit-assistant-popup-overflow {
   padding: 0 !important;
 }
 
 /* ---- Mode toolbar ---- */
-.sprout-assistant-popup-toolbar {
+.learnkit-assistant-popup-toolbar {
   display: flex;
   gap: 12px;
   padding: 10px 12px;
@@ -997,7 +997,7 @@
   flex: 0 0 auto;
 }
 
-.sprout-assistant-popup-mode-btn {
+.learnkit-assistant-popup-mode-btn {
   position: relative;
   flex: 1;
   display: flex;
@@ -1017,43 +1017,43 @@
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.sprout-assistant-popup-mode-btn:hover,
-.sprout-assistant-popup-mode-btn:focus-visible {
+.learnkit-assistant-popup-mode-btn:hover,
+.learnkit-assistant-popup-mode-btn:focus-visible {
   background: var(--background-modifier-hover);
   color: var(--color-base-100);
   border-color: var(--color-base-30);
 }
 
-.sprout-assistant-popup-mode-btn:focus-visible {
+.learnkit-assistant-popup-mode-btn:focus-visible {
   outline: 2px solid rgba(var(--interactive-accent-rgb), 0.5);
   outline-offset: 2px;
 }
 
-.sprout-assistant-popup-mode-btn:active {
+.learnkit-assistant-popup-mode-btn:active {
   background: var(--muted);
   color: var(--foreground);
   border-color: var(--muted);
 }
 
-.sprout-assistant-popup-mode-btn.is-active {
+.learnkit-assistant-popup-mode-btn.is-active {
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 12%, var(--background));
-  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 30%, var(--sprout-border-color));
+  border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 30%, var(--learnkit-border-color));
   color: var(--foreground);
 }
 
-.theme-dark .sprout-assistant-popup-mode-btn:hover,
-.theme-dark .sprout-assistant-popup-mode-btn:focus-visible {
+.theme-dark .learnkit-assistant-popup-mode-btn:hover,
+.theme-dark .learnkit-assistant-popup-mode-btn:focus-visible {
   background: var(--color-base-25);
   color: var(--color-base-100);
   border-color: var(--color-base-35);
 }
 
-.sprout-assistant-popup-mode-btn .svg-icon {
+.learnkit-assistant-popup-mode-btn .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout-assistant-popup-mode-btn-pending-badge {
+.learnkit-assistant-popup-mode-btn-pending-badge {
   position: absolute;
   top: -3px;
   right: -3px;
@@ -1073,7 +1073,7 @@
 }
 
 /* ---- Content area ---- */
-.sprout-assistant-popup-content {
+.learnkit-assistant-popup-content {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -1082,7 +1082,7 @@
 }
 
 /* ---- Chat wrap (scrollable message area) ---- */
-.sprout-assistant-popup-chat-wrap {
+.learnkit-assistant-popup-chat-wrap {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -1095,28 +1095,28 @@
 }
 
 /* Allow text selection in popup */
-.sprout-assistant-popup,
-.sprout-assistant-popup * {
+.learnkit-assistant-popup,
+.learnkit-assistant-popup * {
   user-select: text;
   -webkit-user-select: text;
 }
 
 /* ---- Messages ---- */
-.sprout-assistant-popup-message-row {
+.learnkit-assistant-popup-message-row {
   display: flex;
   gap: 8px;
 }
 
-.sprout-assistant-popup-message-row.is-user {
+.learnkit-assistant-popup-message-row.is-user {
   justify-content: flex-end;
 }
 
-.sprout-assistant-popup-message-row.is-assistant {
+.learnkit-assistant-popup-message-row.is-assistant {
   justify-content: flex-start;
   align-items: flex-start;
 }
 
-.sprout-assistant-popup-message-avatar {
+.learnkit-assistant-popup-message-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -1132,23 +1132,23 @@
   margin-top: 2px;
 }
 
-.sprout-assistant-popup-message-avatar.is-assistant .svg-icon {
+.learnkit-assistant-popup-message-avatar.is-assistant .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout-assistant-popup-message-avatar.is-assistant.is-error {
+.learnkit-assistant-popup-message-avatar.is-assistant.is-error {
   color: var(--text-error, #b42318);
   border-color: color-mix(in srgb, var(--text-error, #b42318) 35%, var(--background-modifier-border, rgba(0, 0, 0, 0.1)));
   background: color-mix(in srgb, var(--text-error, #b42318) 10%, var(--background-secondary, #f5f5f5));
 }
 
-.sprout-assistant-popup-message-avatar.is-user {
+.learnkit-assistant-popup-message-avatar.is-user {
   font-size: 0.72rem;
   font-weight: 700;
 }
 
-.sprout-assistant-popup-message-bubble {
+.learnkit-assistant-popup-message-bubble {
   max-width: 85%;
   padding: 8px 12px 2px 12px;
   border-radius: var(--radius-md);
@@ -1157,7 +1157,7 @@
   overflow-wrap: anywhere;
 }
 
-.sprout-assistant-popup-message-bubble.is-user {
+.learnkit-assistant-popup-message-bubble.is-user {
   background: var(--theme-base-20);
   color: var(--theme-base-95);
   border: 1px solid var(--theme-base-95);
@@ -1165,7 +1165,7 @@
 }
 
 /* ---- Attachment indicator tags (below user messages) ---- */
-.sprout-assistant-popup-msg-attachments {
+.learnkit-assistant-popup-msg-attachments {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -1173,14 +1173,14 @@
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.sprout-assistant-popup-msg-attachment-tag {
+.learnkit-assistant-popup-msg-attachment-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
   border-radius: var(--radius-md);
   background: var(--theme-base-95);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   line-height: 1.3;
   color: #fff;
   max-width: 200px;
@@ -1189,45 +1189,45 @@
   text-overflow: ellipsis;
 }
 
-.sprout-assistant-popup-msg-attachment-icon {
+.learnkit-assistant-popup-msg-attachment-icon {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   color: #fff;
 }
 
-.sprout-assistant-popup-msg-attachment-icon .svg-icon {
+.learnkit-assistant-popup-msg-attachment-icon .svg-icon {
   width: 12px;
   height: 12px;
 }
 
-.sprout-assistant-popup-message-bubble.is-assistant {
+.learnkit-assistant-popup-message-bubble.is-assistant {
   border-top-left-radius: 1px;
   background: var(--background-secondary, #f5f5f5);
   border: 1px solid var(--color-base-40, rgba(0, 0, 0, 0.06));
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-message-bubble.is-assistant.is-error {
+.learnkit-assistant-popup-message-bubble.is-assistant.is-error {
   background: color-mix(in srgb, var(--text-error, #b42318) 8%, var(--background-primary, #fff));
   border-color: color-mix(in srgb, var(--text-error, #b42318) 32%, transparent);
 }
 
-.sprout-assistant-popup-message-bubble > :first-child {
+.learnkit-assistant-popup-message-bubble > :first-child {
   margin-top: 0;
 }
 
-.sprout-assistant-popup-message-bubble > :last-child {
+.learnkit-assistant-popup-message-bubble > :last-child {
   margin-bottom: 0;
 }
 
-.sprout-assistant-popup-message-bubble code {
+.learnkit-assistant-popup-message-bubble code {
   font-size: 0.82em;
 }
 
 /* Normalize markdown typography inside popup bubbles.
    Keep the bubble container style, but flatten per-element markdown defaults. */
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble :is(
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble :is(
   h1,
   h2,
   h3,
@@ -1250,52 +1250,52 @@
   border: 0;
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble :is(pre) {
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble :is(pre) {
     overflow: scroll;
     background-color: var(--color-base-25);
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-s);
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble :is(ul, ol) {
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble :is(ul, ol) {
   margin: 0.35em 0 0.6em 1.2em;
   padding: 0;
   border: 0;
   list-style-position: outside;
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble li {
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble li {
   margin: 0.18em 0;
   padding: 0;
   border: 0;
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble li > :is(ul, ol) {
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble li > :is(ul, ol) {
   margin: 0.25em 0 0.4em 1.1em;
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble :is(h1, h2, h3, h4, h5, h6) {
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble :is(h1, h2, h3, h4, h5, h6) {
   font-size: 1em;
   line-height: inherit;
   font-weight: 600;
 }
 
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble h1 { font-size: 1.2rem; }
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble h2 { font-size: 1.15rem; }
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble h3 { font-size: 1.1rem; }
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble h4 { font-size: 1.05rem; }
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble h5 { font-size: 1rem; }
-.sprout-assistant-popup .sprout-assistant-popup-message-bubble p { font-size: 0.9rem; line-height: 1.6; }
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h1 { font-size: 1.2rem; }
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h2 { font-size: 1.15rem; }
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h3 { font-size: 1.1rem; }
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h4 { font-size: 1.05rem; }
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h5 { font-size: 1rem; }
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble p { font-size: 0.9rem; line-height: 1.6; }
 
 /* ---- Typing indicator ---- */
-.sprout-assistant-popup-typing {
+.learnkit-assistant-popup-typing {
   display: flex;
   gap: 4px;
   padding: 4px 0 8px;
 }
 
-.sprout-assistant-popup-typing::before,
-.sprout-assistant-popup-typing::after {
+.learnkit-assistant-popup-typing::before,
+.learnkit-assistant-popup-typing::after {
   content: "";
 }
 
@@ -1304,7 +1304,7 @@
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
-.sprout-assistant-popup-typing::before {
+.learnkit-assistant-popup-typing::before {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -1312,7 +1312,7 @@
   animation: sprout-typing-bounce 1.2s infinite;
 }
 
-.sprout-assistant-popup-typing::after {
+.learnkit-assistant-popup-typing::after {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -1324,8 +1324,8 @@
    use a simple repeating background instead. The indicator is a simple "..." pulse. */
 
 /* ---- Empty / hint text ---- */
-.sprout-assistant-popup-empty,
-.sprout-assistant-popup-hint {
+.learnkit-assistant-popup-empty,
+.learnkit-assistant-popup-hint {
   color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.45;
@@ -1333,7 +1333,7 @@
 }
 
 /* ---- Error ---- */
-.sprout-assistant-popup-error {
+.learnkit-assistant-popup-error {
   color: var(--text-error, #e03e3e);
   font-size: 0.9rem;
   line-height: 1.4;
@@ -1341,13 +1341,13 @@
 }
 
 /* ---- Composer (Ask mode input) ---- */
-.sprout-assistant-popup-composer {
+.learnkit-assistant-popup-composer {
   padding: 10px 14px 14px;
   border-top: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
   flex: 0 0 auto;
 }
 
-.sprout-assistant-popup-composer-shell {
+.learnkit-assistant-popup-composer-shell {
   position: relative;
   border: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
   border-radius: 14px;
@@ -1358,12 +1358,12 @@
   transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
-.sprout-assistant-popup-composer-shell:focus-within {
+.learnkit-assistant-popup-composer-shell:focus-within {
   border-color: var(--theme-base-80, color-mix(in srgb, var(--interactive-accent, #6a8dff) 42%, var(--background-modifier-border, rgba(0, 0, 0, 0.12)))) !important;
   background: var(--theme-base-05, color-mix(in srgb, var(--interactive-accent, #6a8dff) 8%, var(--background-primary, #fff))) !important;
 }
 
-.sprout-assistant-popup-input {
+.learnkit-assistant-popup-input {
   flex: 1;
   min-height: 36px;
   max-height: 120px;
@@ -1379,19 +1379,19 @@
   font-family: inherit;
 }
 
-.sprout-assistant-popup-input:focus,
-.sprout-assistant-popup-input:focus-visible {
+.learnkit-assistant-popup-input:focus,
+.learnkit-assistant-popup-input:focus-visible {
   outline: none;
   border: none;
   box-shadow: none;
 }
 
-.sprout-assistant-popup-input::placeholder {
+.learnkit-assistant-popup-input::placeholder {
   color: var(--text-faint, var(--text-muted));
 }
 
 @media (hover: hover) {
-  .sprout-assistant-popup-input:hover {
+  .learnkit-assistant-popup-input:hover {
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -1399,7 +1399,7 @@
   }
 }
 
-.sprout-assistant-popup-send {
+.learnkit-assistant-popup-send {
   position: absolute;
   right: 6px;
   top: 50%;
@@ -1423,7 +1423,7 @@
 }
 
 /* Guard against global button reset rules in Sprout core styles. */
-.sprout .sprout-assistant-popup-send {
+.learnkit .learnkit-assistant-popup-send {
   width: 36px !important;
   height: 36px !important;
   min-height: 36px !important;
@@ -1431,27 +1431,27 @@
   line-height: 0;
 }
 
-.sprout-assistant-popup-send:hover:not(:disabled) {
+.learnkit-assistant-popup-send:hover:not(:disabled) {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.06)) !important;
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-send:disabled {
+.learnkit-assistant-popup-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.sprout-assistant-popup-send .svg-icon {
+.learnkit-assistant-popup-send .svg-icon {
   width: 16px;
   height: 16px;
 }
 
-.sprout-assistant-popup-send .svg-icon.lucide-loader-2 {
+.learnkit-assistant-popup-send .svg-icon.lucide-loader-2 {
   animation: sprout-assistant-spin 0.9s linear infinite;
 }
 
-/* Keep popup send button padding against global `.sprout button` resets. */
-.sprout-assistant-popup .sprout-assistant-popup-send {
+/* Keep popup send button padding against global `.learnkit button` resets. */
+.learnkit-assistant-popup .learnkit-assistant-popup-send {
   padding: 0 !important;
 }
 
@@ -1466,7 +1466,7 @@
 }
 
 /* ---- Attach button (inside composer shell) ---- */
-.sprout-assistant-popup-attach-btn {
+.learnkit-assistant-popup-attach-btn {
   position: absolute;
   left: 6px;
   top: 50%;
@@ -1489,34 +1489,34 @@
   transition: color 0.12s ease;
 }
 
-.sprout-assistant-popup-attach-btn:hover:not(:disabled) {
+.learnkit-assistant-popup-attach-btn:hover:not(:disabled) {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.06)) !important;
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-attach-btn:focus-visible,
-.sprout-assistant-popup-attach-btn:active {
+.learnkit-assistant-popup-attach-btn:focus-visible,
+.learnkit-assistant-popup-attach-btn:active {
   border-color: var(--color-base-40);
 }
 
-.sprout-assistant-popup-attach-btn:disabled {
+.learnkit-assistant-popup-attach-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.sprout-assistant-popup-attach-btn .svg-icon {
+.learnkit-assistant-popup-attach-btn .svg-icon {
   width: 16px;
   height: 16px;
 }
 
 /* Shift input padding when attach button is present */
-.sprout-assistant-popup-composer-shell:has(.sprout-assistant-popup-attach-btn) .sprout-assistant-popup-input {
+.learnkit-assistant-popup-composer-shell:has(.learnkit-assistant-popup-attach-btn) .learnkit-assistant-popup-input {
   padding-left: 54px;
 }
 
 /* Force composer action buttons to stay circular against global button resets. */
-.sprout .sprout-assistant-popup .sprout-assistant-popup-attach-btn,
-.sprout .sprout-assistant-popup .sprout-assistant-popup-send {
+.learnkit .learnkit-assistant-popup .learnkit-assistant-popup-attach-btn,
+.learnkit .learnkit-assistant-popup .learnkit-assistant-popup-send {
   width: 36px !important;
   height: 36px !important;
   min-width: 36px !important;
@@ -1530,24 +1530,24 @@
 }
 
 /* ---- Attachment chips strip (above composer shell) ---- */
-.sprout-assistant-popup-attachments {
+.learnkit-assistant-popup-attachments {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   padding: 0 2px 8px;
 }
 
-.sprout-assistant-popup-attachment-chip {
+.learnkit-assistant-popup-attachment-chip {
   min-width: 0;
   max-width: 200px;
   box-sizing: border-box;
 }
 
-.sprout-assistant-popup-attachment-chip:hover {
+.learnkit-assistant-popup-attachment-chip:hover {
   background: var(--theme-base-15);
 }
 
-.sprout-assistant-popup-attachment-ext {
+.learnkit-assistant-popup-attachment-ext {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1556,7 +1556,7 @@
   border-radius: calc(var(--radius-md) - 1px) 0 0 calc(var(--radius-md) - 1px);
   background: var(--theme-base-80);
   color: var(--text-on-accent, #fff);
-  font-size: var(--sprout-font-3xs, 0.68rem);
+  font-size: var(--learnkit-font-3xs, 0.68rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1564,27 +1564,27 @@
   flex-shrink: 0;
 }
 
-.sprout-assistant-popup-attachment-name {
+.learnkit-assistant-popup-attachment-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }
 
-.sprout-assistant-popup-attachment-remove {
+.learnkit-assistant-popup-attachment-remove {
   flex-shrink: 0;
 }
 
-.sprout-assistant-popup-attachment-remove:hover {
+.learnkit-assistant-popup-attachment-remove:hover {
   color: var(--theme-base-95, var(--text-normal));
 }
 
-.sprout-assistant-popup-attachment-remove .svg-icon {
+.learnkit-assistant-popup-attachment-remove .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout .sprout-assistant-popup .sprout-assistant-popup-attach-btn {
+.learnkit .learnkit-assistant-popup .learnkit-assistant-popup-attach-btn {
   width: 36px !important;
   height: 36px !important;
   min-width: 36px !important;
@@ -1595,13 +1595,13 @@
   line-height: 0 !important;
 }
 
-.sprout .sprout-assistant-popup .sprout-assistant-popup-attachment-remove {
+.learnkit .learnkit-assistant-popup .learnkit-assistant-popup-attachment-remove {
   padding: 0 !important;
   line-height: 0 !important;
 }
 
 /* Final guard: beat broad button padding rules with a more specific chip button selector. */
-.sprout .sprout-assistant-popup .sprout-assistant-popup-attachment-chip > button.sprout-assistant-popup-attachment-remove {
+.learnkit .learnkit-assistant-popup .learnkit-assistant-popup-attachment-chip > button.learnkit-assistant-popup-attachment-remove {
   padding: 0 !important;
   padding-block: 0 !important;
   padding-inline: 0 !important;
@@ -1609,35 +1609,35 @@
 }
 
 /* Modal Companion: subtle transparent internals (single outer glass panel remains the primary effect). */
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-message-bubble.is-assistant {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-message-bubble.is-assistant {
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
   border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-message-bubble.is-user {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-message-bubble.is-user {
   background: color-mix(in srgb, var(--theme-accent) 16%, transparent 84%);
   border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--theme-base-95) 72%);
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-composer-shell {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-composer-shell {
   background: color-mix(in srgb, var(--color-base-00) 20%, transparent 80%);
   border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-composer-shell:focus-within {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-composer-shell:focus-within {
   background: color-mix(in srgb, var(--color-base-00) 34%, transparent 66%) !important;
   border-color: color-mix(in srgb, var(--theme-accent, var(--interactive-accent, #6a8dff)) 34%, var(--color-base-70) 66%) !important;
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-input {
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-input {
   background: color-mix(in srgb, var(--color-base-00) 10%, transparent 90%);
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
-  .sprout-assistant-popup-overflow,
-  .sprout-assistant-popup-close,
-  .sprout-assistant-popup-btn,
-  .sprout-assistant-popup-insert-btn
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
+  .learnkit-assistant-popup-overflow,
+  .learnkit-assistant-popup-close,
+  .learnkit-assistant-popup-btn,
+  .learnkit-assistant-popup-insert-btn
 ) {
   border-radius: var(--radius-md) !important;
   background: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
@@ -1645,22 +1645,22 @@
   border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
-  .sprout-assistant-popup-overflow,
-  .sprout-assistant-popup-close,
-  .sprout-assistant-popup-btn,
-  .sprout-assistant-popup-insert-btn
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
+  .learnkit-assistant-popup-overflow,
+  .learnkit-assistant-popup-close,
+  .learnkit-assistant-popup-btn,
+  .learnkit-assistant-popup-insert-btn
 ):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) {
   background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--color-base-100) !important;
   border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
-.sprout-assistant-popup.is-modal-location:not(.sprout-assistant-popup-embedded) :is(
-  .sprout-assistant-popup-overflow,
-  .sprout-assistant-popup-close,
-  .sprout-assistant-popup-btn,
-  .sprout-assistant-popup-insert-btn
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
+  .learnkit-assistant-popup-overflow,
+  .learnkit-assistant-popup-close,
+  .learnkit-assistant-popup-btn,
+  .learnkit-assistant-popup-insert-btn
 ):active {
   background: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   color: var(--color-base-100) !important;
@@ -1668,41 +1668,41 @@
 }
 
 /* ---- Attachment picker modal ---- */
-.sprout-attachment-picker .modal-content {
+.learnkit-attachment-picker .modal-content {
   padding: 0 !important;
 }
 
-.sprout-attachment-picker-root {
+.learnkit-attachment-picker-root {
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-height: 0;
 }
 
-.sprout-attachment-picker-body {
+.learnkit-attachment-picker-body {
   display: flex;
   flex-direction: column;
   gap: 0;
   min-height: 0;
 }
 
-.sprout-attachment-picker-footer {
+.learnkit-attachment-picker-footer {
   border-top: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.08));
   padding-top: 10px;
 }
 
-.sprout-attachment-picker .modal-header {
+.learnkit-attachment-picker .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.sprout-attachment-picker .modal-title {
+.learnkit-attachment-picker .modal-title {
   margin: 0;
 }
 
-.sprout-attachment-picker .sprout-attachment-picker-close-btn {
+.learnkit-attachment-picker .learnkit-attachment-picker-close-btn {
   min-width: 36px;
   padding-left: 8px;
   padding-right: 8px;
@@ -1710,7 +1710,7 @@
   overflow: hidden;
 }
 
-.sprout-attachment-picker .sprout-attachment-picker-close-btn [data-sprout-label="true"] {
+.learnkit-attachment-picker .learnkit-attachment-picker-close-btn [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -1721,19 +1721,19 @@
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout-attachment-picker .sprout-attachment-picker-close-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+.learnkit-attachment-picker .learnkit-attachment-picker-close-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
   max-width: 7rem;
   opacity: 1;
   margin-left: 6px;
   transform: translateX(0);
 }
 
-.sprout-attachment-picker-search {
+.learnkit-attachment-picker-search {
   margin-bottom: 1rem;
       box-shadow: none !important;
 }
 
-.sprout-attachment-picker-list {
+.learnkit-attachment-picker-list {
   max-height: 320px;
   overflow-y: auto;
   padding: 0.5rem;
@@ -1742,7 +1742,7 @@
 }
 
 
-.sprout-attachment-picker-item {
+.learnkit-attachment-picker-item {
   display: flex;
   align-items: center;
   padding: 6px 10px;
@@ -1760,31 +1760,31 @@
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.sprout-attachment-picker-item:is(:hover, :focus, :focus-visible) {
+.learnkit-attachment-picker-item:is(:hover, :focus, :focus-visible) {
   background: var(--color-base-20);
   color: var(--color-base-100);
   border-color: var(--color-base-35);
 }
 
-.sprout-attachment-picker-item.is-selected {
+.learnkit-attachment-picker-item.is-selected {
   background: color-mix(in oklab, var(--interactive-accent) 14%, var(--background-primary) 86%);
   border: 1px solid color-mix(in oklab, var(--interactive-accent) 55%, var(--background-modifier-border) 45%);
 }
 
-.sprout-attachment-picker-item.is-selected:is(:hover, :focus, :focus-visible) {
+.learnkit-attachment-picker-item.is-selected:is(:hover, :focus, :focus-visible) {
   background: color-mix(in oklab, var(--interactive-accent) 18%, var(--background-primary) 82%);
   border-color: color-mix(in oklab, var(--interactive-accent) 62%, var(--background-modifier-border) 38%);
 }
 
-.sprout-attachment-picker-overflow,
-.sprout-attachment-picker-empty {
+.learnkit-attachment-picker-overflow,
+.learnkit-attachment-picker-empty {
   padding: 8px 10px;
   font-size: 0.82rem;
   color: var(--text-faint);
   font-style: italic;
 }
 
-.sprout-attachment-picker-system-btn {
+.learnkit-attachment-picker-system-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1793,18 +1793,18 @@
   cursor: pointer;
 }
 
-.sprout-attachment-picker-system-icon {
+.learnkit-attachment-picker-system-icon {
   display: inline-flex;
   align-items: center;
   order: -1;
 }
 
-.sprout-attachment-picker-system-icon .svg-icon {
+.learnkit-attachment-picker-system-icon .svg-icon {
   width: 16px;
   height: 16px;
 }
 
-.sprout-attachment-picker-divider {
+.learnkit-attachment-picker-divider {
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -1812,7 +1812,7 @@
 }
 
 /* ---- Review mode controls ---- */
-.sprout-assistant-popup-review-controls {
+.learnkit-assistant-popup-review-controls {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
@@ -1823,14 +1823,14 @@
   flex: 0 0 auto;
 }
 
-.sprout-assistant-popup-review-picker {
+.learnkit-assistant-popup-review-picker {
   position: relative;
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.sprout-assistant-popup-review-trigger {
+.learnkit-assistant-popup-review-trigger {
   width: 100%;
   min-width: 0;
   flex: 1 1 auto;
@@ -1845,21 +1845,21 @@
   padding: 0 10px;
 }
 
-.sprout-assistant-popup-review-trigger .svg-icon {
+.learnkit-assistant-popup-review-trigger .svg-icon {
   width: 14px;
   height: 14px;
   transition: transform 0.12s ease;
 }
 
-.sprout-assistant-popup-review-trigger[aria-expanded="true"] .svg-icon {
+.learnkit-assistant-popup-review-trigger[aria-expanded="true"] .svg-icon {
   transform: rotate(180deg);
 }
 
-.sprout-assistant-popup-review-trigger:focus-visible {
+.learnkit-assistant-popup-review-trigger:focus-visible {
   border-color: var(--interactive-accent, #7c9dff);
 }
 
-.sprout-assistant-popup-review-popover {
+.learnkit-assistant-popup-review-popover {
   display: none;
   position: absolute;
   top: calc(100% + 6px);
@@ -1871,16 +1871,16 @@
   background: var(--background-primary, #fff);
 }
 
-.sprout-assistant-popup-review-popover.is-open {
+.learnkit-assistant-popup-review-popover.is-open {
   display: block;
 }
 
-.sprout-assistant-popup-review-menu {
+.learnkit-assistant-popup-review-menu {
   display: flex;
   flex-direction: column;
 }
 
-.sprout-assistant-popup-review-option {
+.learnkit-assistant-popup-review-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1892,28 +1892,28 @@
   outline: none;
 }
 
-.sprout-assistant-popup-review-option[aria-disabled="true"] {
+.learnkit-assistant-popup-review-option[aria-disabled="true"] {
   opacity: 0.6;
   pointer-events: none;
 }
 
-.sprout-assistant-popup-review-option:hover,
-.sprout-assistant-popup-review-option:focus-visible {
+.learnkit-assistant-popup-review-option:hover,
+.learnkit-assistant-popup-review-option:focus-visible {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.04));
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-review-option[aria-checked="true"] {
+.learnkit-assistant-popup-review-option[aria-checked="true"] {
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 14%, var(--background-primary, #fff));
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-review-option[aria-checked="true"]:hover,
-.sprout-assistant-popup-review-option[aria-checked="true"]:focus-visible {
+.learnkit-assistant-popup-review-option[aria-checked="true"]:hover,
+.learnkit-assistant-popup-review-option[aria-checked="true"]:focus-visible {
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 18%, var(--background-primary, #fff));
 }
 
-.sprout-assistant-popup-review-indicator {
+.learnkit-assistant-popup-review-indicator {
   width: 16px;
   height: 16px;
   display: inline-flex;
@@ -1922,7 +1922,7 @@
   flex: 0 0 auto;
 }
 
-.sprout-assistant-popup-review-indicator-dot {
+.learnkit-assistant-popup-review-indicator-dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
@@ -1930,16 +1930,16 @@
   opacity: 0;
 }
 
-.sprout-assistant-popup-review-option[aria-checked="true"] .sprout-assistant-popup-review-indicator-dot {
+.learnkit-assistant-popup-review-option[aria-checked="true"] .learnkit-assistant-popup-review-indicator-dot {
   opacity: 1;
 }
 
-.sprout-assistant-popup-review-option-label {
+.learnkit-assistant-popup-review-option-label {
   font-size: 0.9rem;
   color: inherit;
 }
 
-.sprout-assistant-popup-review-controls .sprout-assistant-popup-send {
+.learnkit-assistant-popup-review-controls .learnkit-assistant-popup-send {
   position: static;
   top: auto;
   right: auto;
@@ -1951,16 +1951,16 @@
   flex: 0 0 36px;
 }
 
-.sprout-assistant-popup-review-starters {
+.learnkit-assistant-popup-review-starters {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   padding: 2px 32px 0;
 }
 
-.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn,
-.sprout-assistant-popup-switch-generate-btn,
-.sprout-assistant-popup-switch-ask-btn {
+.learnkit-assistant-popup-review-starters .learnkit-assistant-popup-btn,
+.learnkit-assistant-popup-switch-generate-btn,
+.learnkit-assistant-popup-switch-ask-btn {
   min-height: 32px;
   border-radius: var(--radius-md);
   font-size: 0.9rem;
@@ -1972,12 +1972,12 @@
   box-shadow: none;
 }
 
-.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn:hover:not(:disabled),
-.sprout-assistant-popup-review-starters .sprout-assistant-popup-btn:focus-visible,
-.sprout-assistant-popup-switch-generate-btn:hover:not(:disabled),
-.sprout-assistant-popup-switch-generate-btn:focus-visible,
-.sprout-assistant-popup-switch-ask-btn:hover:not(:disabled),
-.sprout-assistant-popup-switch-ask-btn:focus-visible {
+.learnkit-assistant-popup-review-starters .learnkit-assistant-popup-btn:hover:not(:disabled),
+.learnkit-assistant-popup-review-starters .learnkit-assistant-popup-btn:focus-visible,
+.learnkit-assistant-popup-switch-generate-btn:hover:not(:disabled),
+.learnkit-assistant-popup-switch-generate-btn:focus-visible,
+.learnkit-assistant-popup-switch-ask-btn:hover:not(:disabled),
+.learnkit-assistant-popup-switch-ask-btn:focus-visible {
   background: var(--background-modifier-hover);
   border-color: var(--color-base-40);
   color: var(--color-base-100);
@@ -1985,7 +1985,7 @@
 }
 
 /* ---- Shared button style ---- */
-.sprout-assistant-popup-btn {
+.learnkit-assistant-popup-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2002,18 +2002,18 @@
   white-space: nowrap;
 }
 
-.sprout-assistant-popup-btn:hover:not(:disabled) {
+.learnkit-assistant-popup-btn:hover:not(:disabled) {
   background: var(--background-modifier-hover, rgba(0, 0, 0, 0.04));
   border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 30%, var(--background-modifier-border));
   box-shadow: 0 1px 0 color-mix(in srgb, var(--interactive-accent, #7c9dff) 18%, transparent);
 }
 
-.sprout-assistant-popup-btn:disabled {
+.learnkit-assistant-popup-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.sprout-assistant-popup-btn-sm {
+.learnkit-assistant-popup-btn-sm {
   width: 24px;
   min-width: 24px;
   height: 24px;
@@ -2027,20 +2027,20 @@
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 8%, var(--background-primary, #fff));
 }
 
-.sprout-assistant-popup-btn-sm:hover:not(:disabled) {
+.learnkit-assistant-popup-btn-sm:hover:not(:disabled) {
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 14%, var(--background-primary, #fff));
 }
 
 
 /* ---- Generate mode ---- */
-.sprout-assistant-popup-generate-starters {
+.learnkit-assistant-popup-generate-starters {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding: 2px 32px 0;
 }
 
-.sprout-assistant-popup-generate-starters .sprout-assistant-popup-btn {
+.learnkit-assistant-popup-generate-starters .learnkit-assistant-popup-btn {
   min-height: 32px;
   border-radius: var(--radius-md);
   font-size: 0.9rem;
@@ -2052,25 +2052,25 @@
   box-shadow: none;
 }
 
-.sprout-assistant-popup-generate-starters .sprout-assistant-popup-btn:hover:not(:disabled),
-.sprout-assistant-popup-generate-starters .sprout-assistant-popup-btn:focus-visible {
+.learnkit-assistant-popup-generate-starters .learnkit-assistant-popup-btn:hover:not(:disabled),
+.learnkit-assistant-popup-generate-starters .learnkit-assistant-popup-btn:focus-visible {
   background: var(--background-modifier-hover);
   border-color: none;
   color: var(--color-base-100);
   box-shadow: none;
 }
 
-.sprout-assistant-popup-generated-cards {
+.learnkit-assistant-popup-generated-cards {
   display: flex;
   flex-direction: column;
   margin-top: 1rem;
 }
 
-.sprout-assistant-popup-generated-card {
-  --sprout-assistant-insert-btn-size: 36px;
-  --sprout-assistant-insert-btn-offset: 8px;
-  --sprout-assistant-insert-safe-area: calc(
-    var(--sprout-assistant-insert-btn-size) + var(--sprout-assistant-insert-btn-offset) + 4px
+.learnkit-assistant-popup-generated-card {
+  --learnkit-assistant-insert-btn-size: 36px;
+  --learnkit-assistant-insert-btn-offset: 8px;
+  --learnkit-assistant-insert-safe-area: calc(
+    var(--learnkit-assistant-insert-btn-size) + var(--learnkit-assistant-insert-btn-offset) + 4px
   );
   border: 1px solid var(--color-base-40);
   border-radius: var(--radius-sm);
@@ -2080,22 +2080,22 @@
   margin-bottom: 12px;
 }
 
-.sprout-assistant-popup-generated-card.is-clickable {
+.learnkit-assistant-popup-generated-card.is-clickable {
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
-.sprout-assistant-popup-generated-card.is-clickable:hover {
+.learnkit-assistant-popup-generated-card.is-clickable:hover {
   border-color: var(--color-base-40);
   background: color-mix(in srgb, var(--interactive-accent, var(--text-accent)) 4%, transparent);
 }
 
-.sprout-assistant-popup-generated-card.is-clickable:focus-visible {
+.learnkit-assistant-popup-generated-card.is-clickable:focus-visible {
   outline: 2px solid var(--interactive-accent, var(--text-accent));
   outline-offset: 2px;
 }
 
-.sprout-assistant-popup-generated-card-header {
+.learnkit-assistant-popup-generated-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2103,7 +2103,7 @@
   margin:0.3rem 0rem;
 }
 
-.sprout-assistant-popup-generated-card-type {
+.learnkit-assistant-popup-generated-card-type {
   font-size: 0.85rem;
   font-weight: 600;
   margin: 0;
@@ -2111,23 +2111,23 @@
   color: var(--text-muted);
 }
 
-.sprout-assistant-popup-generated-card .sprout-assistant-popup-suggestion-summary {
+.learnkit-assistant-popup-generated-card .learnkit-assistant-popup-suggestion-summary {
   gap: 4px;
   padding-bottom: 0;
-  padding-right: var(--sprout-assistant-insert-safe-area);
+  padding-right: var(--learnkit-assistant-insert-safe-area);
 }
 
 /* Apply right-side protection to any direct summary block (p/ul/ol/etc.). */
-.sprout-assistant-popup-generated-card .sprout-assistant-popup-suggestion-summary > * {
+.learnkit-assistant-popup-generated-card .learnkit-assistant-popup-suggestion-summary > * {
   font-size: 0.9rem;
 }
 
-.sprout-assistant-popup-insert-btn {
+.learnkit-assistant-popup-insert-btn {
   position: absolute;
-  bottom: var(--sprout-assistant-insert-btn-offset);
-  right: var(--sprout-assistant-insert-btn-offset);
-  width: var(--sprout-assistant-insert-btn-size);
-  height: var(--sprout-assistant-insert-btn-size);
+  bottom: var(--learnkit-assistant-insert-btn-offset);
+  right: var(--learnkit-assistant-insert-btn-offset);
+  width: var(--learnkit-assistant-insert-btn-size);
+  height: var(--learnkit-assistant-insert-btn-size);
   border-radius: 50%;
   border: 1px solid var(--color-base-40, rgba(0, 0, 0, 0.12));
   background: var(--background-primary, #fff);
@@ -2140,8 +2140,8 @@
   transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.1s;
 }
 
-/* Beat global `.sprout button` padding rules for the circular insert button. */
-.sprout .sprout-assistant-popup-insert-btn {
+/* Beat global `.learnkit button` padding rules for the circular insert button. */
+.learnkit .learnkit-assistant-popup-insert-btn {
   padding: 0;
   padding-top: 0;
   padding-right: 0;
@@ -2149,26 +2149,26 @@
   padding-left: 0;
 }
 
-.sprout-assistant-popup-insert-btn:hover,
-.sprout-assistant-popup-insert-btn:focus-visible {
+.learnkit-assistant-popup-insert-btn:hover,
+.learnkit-assistant-popup-insert-btn:focus-visible {
   background: var(--interactive-accent, #7c9dff);
   border-color: var(--interactive-accent, #7c9dff);
   color: var(--text-on-accent, #fff);
   transform: scale(1.1);
 }
 
-.sprout-assistant-popup-insert-btn:disabled {
+.learnkit-assistant-popup-insert-btn:disabled {
   opacity: 0.45;
   cursor: default;
   transform: none;
 }
 
-.sprout-assistant-popup-insert-btn .svg-icon {
+.learnkit-assistant-popup-insert-btn .svg-icon {
   width: 13px;
   height: 13px;
 }
 
-.sprout-assistant-popup-generate-actions {
+.learnkit-assistant-popup-generate-actions {
   display: flex;
   gap: 8px;
   padding: 10px 16px 10px;
@@ -2176,7 +2176,7 @@
   flex: 0 0 auto;
 }
 
-.sprout-assistant-popup-generate-actions .sprout-assistant-popup-btn {
+.learnkit-assistant-popup-generate-actions .learnkit-assistant-popup-btn {
   width: 100%;
   min-height: 34px;
   border-radius: var(--radius-md, 10px);
@@ -2185,11 +2185,11 @@
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 10%, var(--background-primary, #fff));
 }
 
-.sprout-assistant-popup-generate-error {
+.learnkit-assistant-popup-generate-error {
   padding: 12px 16px;
 }
 
-.sprout-assistant-popup-suggestions {
+.learnkit-assistant-popup-suggestions {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2199,7 +2199,7 @@
   min-height: 0;
 }
 
-.sprout-assistant-popup-suggestion-card {
+.learnkit-assistant-popup-suggestion-card {
   align-self: center;
   width: min(92%, 34rem);
   border: 1px solid var(--color-base-40);
@@ -2210,18 +2210,18 @@
   transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
 }
 
-.sprout-assistant-popup-suggestion-card.sprout-assistant-popup-message-bubble.is-assistant {
+.learnkit-assistant-popup-suggestion-card.learnkit-assistant-popup-message-bubble.is-assistant {
   border-top-left-radius: var(--radius-md);
 }
 
-.sprout-assistant-popup-suggestion-card:hover,
-.sprout-assistant-popup-suggestion-card:focus-visible {
+.learnkit-assistant-popup-suggestion-card:hover,
+.learnkit-assistant-popup-suggestion-card:focus-visible {
   border-color: color-mix(in srgb, var(--interactive-accent, #7c9dff) 40%, var(--background-modifier-border));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--interactive-accent, #7c9dff) 16%, transparent);
   transform: translateY(-1px);
 }
 
-.sprout-assistant-popup-suggestion-header {
+.learnkit-assistant-popup-suggestion-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2229,67 +2229,67 @@
   margin-bottom: 6px;
 }
 
-.sprout-assistant-popup-suggestion-meta {
+.learnkit-assistant-popup-suggestion-meta {
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
 }
 
-.sprout-assistant-popup-suggestion-header strong {
+.learnkit-assistant-popup-suggestion-header strong {
   font-size: 0.9rem;
 }
 
-.sprout-assistant-popup-suggestion-stars {
+.learnkit-assistant-popup-suggestion-stars {
   display: inline-flex;
   align-items: center;
   gap: 2px;
 }
 
-.sprout-assistant-popup-suggestion-star {
+.learnkit-assistant-popup-suggestion-star {
   font-size: 0.9rem;
   line-height: 1;
   color: var(--text-faint, var(--text-muted));
 }
 
-.sprout-assistant-popup-suggestion-star.is-active {
+.learnkit-assistant-popup-suggestion-star.is-active {
   color: var(--text-normal);
 }
 
-.sprout-assistant-popup-suggestion-summary {
+.learnkit-assistant-popup-suggestion-summary {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.sprout-assistant-popup-suggestion-question,
-.sprout-assistant-popup-suggestion-answer {
+.learnkit-assistant-popup-suggestion-question,
+.learnkit-assistant-popup-suggestion-answer {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.45;
 }
 
-.sprout-assistant-popup-suggestion-divider {
+.learnkit-assistant-popup-suggestion-divider {
   border: 0;
   border-top: 1px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 85%, transparent);
   margin: 2px 0;
 }
 
-.sprout-assistant-popup-suggestion-line {
+.learnkit-assistant-popup-suggestion-line {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.45;
 }
 
-.sprout-assistant-popup-suggestion-list {
+.learnkit-assistant-popup-suggestion-list {
   margin: 0;
   padding-left: 1.1rem;
   font-size: 0.9rem;
   line-height: 1.45;
 }
 
-.sprout-assistant-popup-io-preview,
-.sprout .sprout-study-assistant-io-preview {
+.learnkit-assistant-popup-io-preview,
+.learnkit .learnkit-study-assistant-io-preview {
   margin-top: 0.45rem;
   border: 1px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 90%, transparent);
   border-radius: 10px;
@@ -2297,13 +2297,13 @@
   background: var(--background-primary, #fff);
 }
 
-.sprout-assistant-popup-io-preview,
-.sprout .sprout-study-assistant-io-preview {
+.learnkit-assistant-popup-io-preview,
+.learnkit .learnkit-study-assistant-io-preview {
   position: relative;
 }
 
-.sprout-assistant-popup-io-preview-image,
-.sprout .sprout-study-assistant-io-preview-image {
+.learnkit-assistant-popup-io-preview-image,
+.learnkit .learnkit-study-assistant-io-preview-image {
   display: block;
   width: 100%;
   max-height: 190px;
@@ -2311,28 +2311,28 @@
   background: color-mix(in srgb, var(--background-secondary, #f5f5f5) 85%, var(--background-primary, #fff));
 }
 
-.sprout-assistant-popup-io-preview-overlay,
-.sprout .sprout-study-assistant-io-preview-overlay {
+.learnkit-assistant-popup-io-preview-overlay,
+.learnkit .learnkit-study-assistant-io-preview-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.sprout-assistant-popup-io-preview-rect,
-.sprout .sprout-study-assistant-io-preview-rect {
+.learnkit-assistant-popup-io-preview-rect,
+.learnkit .learnkit-study-assistant-io-preview-rect {
   position: absolute;
   border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c9dff) 75%, #ffffff);
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 34%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent, #7c9dff) 20%, transparent);
 }
 
-.sprout-assistant-popup-io-preview-rect.is-circle,
-.sprout .sprout-study-assistant-io-preview-rect.is-circle {
+.learnkit-assistant-popup-io-preview-rect.is-circle,
+.learnkit .learnkit-study-assistant-io-preview-rect.is-circle {
   border-radius: 999px;
 }
 
-.sprout-assistant-popup-io-preview-meta,
-.sprout .sprout-study-assistant-io-preview-meta {
+.learnkit-assistant-popup-io-preview-meta,
+.learnkit .learnkit-study-assistant-io-preview-meta {
   padding: 0.3rem 0.45rem;
   font-size: 0.74rem;
   color: var(--text-muted);
@@ -2341,7 +2341,7 @@
 }
 
 /* ---- Assistant reply read-aloud controls ---- */
-.sprout-assistant-reply-audio {
+.learnkit-assistant-reply-audio {
   align-items: center;
   gap: 6px;
   width: fit-content;
@@ -2360,9 +2360,9 @@
   transition: max-height 0.22s ease, opacity 0.18s ease, margin-bottom 0.22s ease, padding 0.22s ease, transform 0.22s ease;
 }
 
-.sprout-assistant-popup-message-row.is-assistant:hover .sprout-assistant-reply-audio,
-.sprout-assistant-popup-message-bubble.is-assistant:hover .sprout-assistant-reply-audio,
-.sprout-assistant-reply-audio.is-active:not(.is-paused) {
+.learnkit-assistant-popup-message-row.is-assistant:hover .learnkit-assistant-reply-audio,
+.learnkit-assistant-popup-message-bubble.is-assistant:hover .learnkit-assistant-reply-audio,
+.learnkit-assistant-reply-audio.is-active:not(.is-paused) {
   max-height: 30px;
   opacity: 1;
   margin-bottom: 8px;
@@ -2372,7 +2372,7 @@
   border-color: var(--color-base-40);
 }
 
-.sprout-assistant-reply-audio.is-finishing {
+.learnkit-assistant-reply-audio.is-finishing {
   max-height: 0;
   opacity: 0;
   margin-bottom: 0;
@@ -2381,11 +2381,11 @@
   transform: translateY(-2px);
 }
 
-.sprout-assistant-reply-audio.is-paused {
+.learnkit-assistant-reply-audio.is-paused {
   opacity: 0.85;
 }
 
-.sprout-assistant-reply-audio-btn {
+.learnkit-assistant-reply-audio-btn {
   width: 20px;
   height: 20px;
   min-width: 20px;
@@ -2403,12 +2403,12 @@
   padding: 0;
 }
 
-.sprout-assistant-reply-audio-btn:hover {
+.learnkit-assistant-reply-audio-btn:hover {
   background: transparent;
   color: var(--text-normal);
 }
 
-.sprout-assistant-reply-audio-solid-icon {
+.learnkit-assistant-reply-audio-solid-icon {
   width: 14px;
   height: 14px;
   display: block;
@@ -2417,16 +2417,16 @@
   animation: sprout-reply-audio-icon-in 0.26s ease;
 }
 
-.sprout-assistant-reply-audio-solid-icon path {
+.learnkit-assistant-reply-audio-solid-icon path {
   fill: currentColor;
 }
 
-.sprout-assistant-reply-audio-solid-icon.is-pause {
+.learnkit-assistant-reply-audio-solid-icon.is-pause {
   width: 13px;
 }
 
-.sprout .sprout-assistant-reply-audio-btn,
-.sprout-assistant-popup .sprout-assistant-reply-audio-btn {
+.learnkit .learnkit-assistant-reply-audio-btn,
+.learnkit-assistant-popup .learnkit-assistant-reply-audio-btn {
   width: 20px;
   height: 20px;
   min-width: 20px;
@@ -2438,7 +2438,7 @@
   box-shadow: none;
 }
 
-.sprout-assistant-reply-audio-wave {
+.learnkit-assistant-reply-audio-wave {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -2447,7 +2447,7 @@
   padding-right: 2px;
 }
 
-.sprout-assistant-reply-audio-wave-bar {
+.learnkit-assistant-reply-audio-wave-bar {
   display: block;
   width: 3px;
   height: 4px;
@@ -2457,11 +2457,11 @@
   opacity: 0.45;
 }
 
-.sprout-assistant-reply-audio.is-active .sprout-assistant-reply-audio-wave-bar {
+.learnkit-assistant-reply-audio.is-active .learnkit-assistant-reply-audio-wave-bar {
   opacity: 1;
 }
 
-.sprout-assistant-reply-audio.is-paused .sprout-assistant-reply-audio-wave-bar {
+.learnkit-assistant-reply-audio.is-paused .learnkit-assistant-reply-audio-wave-bar {
   opacity: 0.5;
 }
 
@@ -2483,7 +2483,7 @@
 
 /* ---- Mobile responsive ---- */
 @media (max-width: 480px) {
-  .sprout-assistant-popup {
+  .learnkit-assistant-popup {
     width: calc(100% - 8px);
     right: 4px;
     bottom: 72px;
@@ -2491,7 +2491,7 @@
     border-radius: 12px;
   }
 
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header {
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header {
     display: grid;
     grid-template-columns: 36px 1fr 36px;
     align-items: center;
@@ -2499,7 +2499,7 @@
     padding: 10px 8px;
   }
 
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-mobile-sidebar-btn {
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-mobile-sidebar-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2510,25 +2510,25 @@
     border-radius: var(--radius-md);
   }
 
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header-left {
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header-left {
     display: none;
   }
 
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header-center-brand {
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header-center-brand {
     display: flex;
   }
 
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header-actions {
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header-actions {
     justify-self: end;
     gap: 0;
   }
 
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header-menu-item.is-mobile-nav-item,
-  .sprout-assistant-popup:not(.sprout-assistant-popup-embedded) .sprout-assistant-popup-header-menu-divider.is-mobile-nav-divider {
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header-menu-item.is-mobile-nav-item,
+  .learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header-menu-divider.is-mobile-nav-divider {
     display: flex;
   }
 
-  .sprout-assistant-trigger {
+  .learnkit-assistant-trigger {
     right: 16px;
     bottom: 16px;
   }

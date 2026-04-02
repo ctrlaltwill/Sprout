@@ -70,7 +70,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`bc svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
+      className={`bc svg-icon learnkit-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -210,9 +210,9 @@ function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: u
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;
   return (
-    <div className="bc sprout-data-tooltip-surface">
-      <div className="bc text-sm font-medium text-background">{datum.date}</div>
-      <div className="bc text-background">Created: {datum.created}</div>
+    <div className="learnkit-data-tooltip-surface">
+      <div className="text-sm font-medium text-background">{datum.date}</div>
+      <div className="text-background">Created: {datum.created}</div>
     </div>
   );
 }
@@ -286,8 +286,8 @@ export function NewCardsPerDayChart(props: {
     const place = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     place();
     window.addEventListener("resize", place, true);
@@ -430,27 +430,27 @@ export function NewCardsPerDayChart(props: {
   const yTicks = React.useMemo(() => buildYAxisTicks(yMax), [yMax]);
 
   return (
-    <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
-      <div className="bc flex items-start justify-between gap-2">
+    <div className="card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="bc flex items-center gap-1">
-            <div className="bc font-semibold lk-home-section-title">New cards added</div>
+          <div className="flex items-center gap-1">
+            <div className="font-semibold lk-home-section-title">New cards added</div>
             <InfoIcon text="Daily count of newly created cards in your vault." />
           </div>
-          <div className="bc text-xs text-muted-foreground">Daily totals</div>
+          <div className="text-xs text-muted-foreground">Daily totals</div>
         </div>
 
-        <div ref={wrapRef} className="bc relative inline-flex">
+        <div ref={wrapRef} className="relative inline-flex">
           <button
             type="button"
-            id="sprout-newcards-filter-trigger"
-            className="bc sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+            id="learnkit-newcards-filter-trigger"
+            className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
-              className="bc svg-icon lucide-filter text-foreground"
+              className="svg-icon lucide-filter text-foreground"
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -468,14 +468,14 @@ export function NewCardsPerDayChart(props: {
 
           {open ? (
             <div
-              id="sprout-newcards-filter-popover"
+              id="learnkit-newcards-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className="bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"
+              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm learnkit-ana-popover-left"
             >
-              <div className="bc p-1">
+              <div className="p-1">
                 <div
-                  className="bc flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
+                  className="flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
                   role="button"
                   tabIndex={0}
                   aria-expanded={durationOpen ? "true" : "false"}
@@ -487,7 +487,7 @@ export function NewCardsPerDayChart(props: {
                 </div>
 
                 {durationOpen ? (
-                  <div role="menu" aria-orientation="vertical" className="bc flex flex-col">
+                  <div role="menu" aria-orientation="vertical" className="flex flex-col">
                     {durationOptions.map((opt) => {
                       const selected = durationDays === opt;
                       return (
@@ -496,7 +496,7 @@ export function NewCardsPerDayChart(props: {
                           role="menuitemradio"
                           aria-checked={selected ? "true" : "false"}
                           tabIndex={0}
-                          className="bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                          className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           onClick={() => setDurationDays(opt)}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -505,9 +505,9 @@ export function NewCardsPerDayChart(props: {
                             }
                           }}
                         >
-                          <div className="bc size-4 flex items-center justify-center">
+                          <div className="size-4 flex items-center justify-center">
                             <div
-                              className="bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible"
+                              className="size-2 rounded-full bg-foreground invisible group-aria-checked:visible"
                               aria-hidden="true"
                             />
                           </div>
@@ -518,10 +518,10 @@ export function NewCardsPerDayChart(props: {
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-1" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
 
                 <div
-                  className="bc flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
+                  className="flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
                   role="button"
                   tabIndex={0}
                   aria-expanded={cardTypeOpen ? "true" : "false"}
@@ -535,10 +535,10 @@ export function NewCardsPerDayChart(props: {
                 {cardTypeOpen ? (
                   <div
                     role="menu"
-                    id="sprout-newcards-filter-listbox"
+                    id="learnkit-newcards-filter-listbox"
                     aria-orientation="vertical"
                     data-tooltip="New cards filter"
-                    className="bc flex flex-col"
+                    className="flex flex-col"
                   >
                     {availableTypes.map((type) => {
                       const label = TYPE_LABELS[type] ?? type;
@@ -550,18 +550,18 @@ export function NewCardsPerDayChart(props: {
                           role="menuitemradio"
                           aria-checked={selected ? "true" : "false"}
                           tabIndex={0}
-                          className="bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                          className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           onClick={() => setSelectedType(type)}
                         >
-                          <div className="bc size-4 flex items-center justify-center">
+                          <div className="size-4 flex items-center justify-center">
                             <div
-                              className="bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible"
+                              className="size-2 rounded-full bg-foreground invisible group-aria-checked:visible"
                               aria-hidden="true"
                             />
                           </div>
-                          <span className="bc flex items-center gap-2">
+                          <span className="flex items-center gap-2">
                             <span>{label}</span>
-                            <span className="bc text-muted-foreground">{`(${count})`}</span>
+                            <span className="text-muted-foreground">{`(${count})`}</span>
                           </span>
                         </div>
                       );
@@ -569,14 +569,14 @@ export function NewCardsPerDayChart(props: {
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-1" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
 
-                <div className="bc text-sm text-muted-foreground px-2 py-1">Decks</div>
-                <div className="bc px-2 pb-2">
+                <div className="text-sm text-muted-foreground px-2 py-1">Decks</div>
+                <div className="px-2 pb-2">
                   <input
                     type="text"
                     placeholder="Search decks"
-                    className="bc input w-full text-sm sprout-filter-search-input"
+                    className="input w-full text-sm learnkit-filter-search-input"
                     value={deckQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -587,20 +587,20 @@ export function NewCardsPerDayChart(props: {
                 </div>
 
                 {deckQuery.trim().length ? (
-                  <div className="bc px-2 pb-2">
-                    <div className="bc flex flex-col">
+                  <div className="px-2 pb-2">
+                    <div className="flex flex-col">
                       {matchedDecks.length ? (
                         matchedDecks.map((deck) => (
                           <div
                             key={deck}
                             role="menuitem"
                             tabIndex={0}
-                            className="bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
+                            className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
                             onClick={() => toggleDeck(deck)}
                           >
-                            <span className="bc size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
+                            <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
                               {selectedDecks.includes(deck) ? (
-                                <span className="bc size-1.5 rounded-full bg-foreground" />
+                                <span className="size-1.5 rounded-full bg-foreground" />
                               ) : null}
                             </span>
                             <span className={`bc truncate ${endTruncateClass}`}>
@@ -609,20 +609,20 @@ export function NewCardsPerDayChart(props: {
                           </div>
                         ))
                       ) : (
-                        <div className="bc px-2 py-1 text-sm text-muted-foreground">No decks found.</div>
+                        <div className="px-2 py-1 text-sm text-muted-foreground">No decks found.</div>
                       )}
                     </div>
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-1" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
 
-                <div className="bc text-sm text-muted-foreground px-2 py-1">Groups</div>
-                <div className="bc px-2 pb-2">
+                <div className="text-sm text-muted-foreground px-2 py-1">Groups</div>
+                <div className="px-2 pb-2">
                   <input
                     type="text"
                     placeholder="Search groups"
-                    className="bc input w-full text-sm sprout-filter-search-input"
+                    className="input w-full text-sm learnkit-filter-search-input"
                     value={groupQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -633,20 +633,20 @@ export function NewCardsPerDayChart(props: {
                 </div>
 
                 {groupQuery.trim().length ? (
-                  <div className="bc px-2 pb-2">
-                    <div className="bc flex flex-col">
+                  <div className="px-2 pb-2">
+                    <div className="flex flex-col">
                       {matchedGroups.length ? (
                         matchedGroups.map((group) => (
                           <div
                             key={group}
                             role="menuitem"
                             tabIndex={0}
-                            className="bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
+                            className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground min-w-0"
                             onClick={() => toggleGroup(group)}
                           >
-                            <span className="bc size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
+                            <span className="size-3 rounded-full border border-muted-foreground/40 flex items-center justify-center">
                               {selectedGroups.includes(group) ? (
-                                <span className="bc size-1.5 rounded-full bg-foreground" />
+                                <span className="size-1.5 rounded-full bg-foreground" />
                               ) : null}
                             </span>
                             <span className={`bc truncate ${endTruncateClass}`}>
@@ -655,15 +655,15 @@ export function NewCardsPerDayChart(props: {
                           </div>
                         ))
                       ) : (
-                        <div className="bc px-2 py-1 text-sm text-muted-foreground">No groups found.</div>
+                        <div className="px-2 py-1 text-sm text-muted-foreground">No groups found.</div>
                       )}
                     </div>
                   </div>
                 ) : null}
 
-                <div className="bc h-px bg-border my-1" role="separator" />
+                <div className="h-px bg-border my-1" role="separator" />
 
-                <div className="bc text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
+                <div className="text-sm text-muted-foreground cursor-pointer px-2" onClick={resetFilters}>
                   Reset filters
                 </div>
               </div>
@@ -672,7 +672,7 @@ export function NewCardsPerDayChart(props: {
         </div>
       </div>
 
-      <div className="bc w-full flex-1 sprout-analytics-chart">
+      <div className="w-full flex-1 learnkit-analytics-chart">
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={data} margin={{ top: 12, right: 12, bottom: 12, left: 8 }}>
             <XAxis

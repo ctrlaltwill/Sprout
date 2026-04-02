@@ -78,7 +78,7 @@ function PieTooltip(props: { active?: boolean; payload?: Array<{ name?: string; 
   const item = props.payload[0] as { name?: string; value?: number } | undefined;
   if (!item) return null;
   return (
-    <div className="sprout-data-tooltip-surface">
+    <div className="learnkit-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{item.name}</div>
       <div className="text-background">Count: {item.value ?? 0}</div>
     </div>
@@ -88,7 +88,7 @@ function PieTooltip(props: { active?: boolean; payload?: Array<{ name?: string; 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
+      className={`svg-icon learnkit-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -145,7 +145,7 @@ function PieCard(props: {
   );
 
   return (
-    <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
+    <div className="card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-1">
@@ -157,15 +157,15 @@ function PieCard(props: {
         {props.headerSlot}
       </div>
 
-      <div className="w-full flex-1 sprout-ana-pie-wrap">
+      <div className="w-full flex-1 learnkit-ana-pie-wrap">
         {total <= 0 ? (
-          <div className="text-sm text-muted-foreground sprout-ana-empty-center">
+          <div className="text-sm text-muted-foreground learnkit-ana-empty-center">
             No cards selected.
           </div>
         ) : null}
 
         {total > 0 ? (
-          <div className="sprout-analytics-chart">
+          <div className="learnkit-analytics-chart">
             <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Tooltip content={<PieTooltip />} />
@@ -177,7 +177,7 @@ function PieCard(props: {
                 outerRadius={85}
                 paddingAngle={2}
                 stroke="var(--background)"
-                className={highlightLabel ? "sprout-pie-highlightable" : undefined}
+                className={highlightLabel ? "learnkit-pie-highlightable" : undefined}
               >
                 <Label
                   content={({ viewBox }) => {
@@ -207,15 +207,15 @@ function PieCard(props: {
         ) : null}
       </div>
 
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-min-20 sprout-ana-chart-legend">
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground learnkit-ana-min-20 learnkit-ana-chart-legend">
         {total > 0
           ? props.data.map((entry, index) => (
-              <div key={`legend-${entry.name}`} className="bc inline-flex items-center gap-2">
+              <div key={`legend-${entry.name}`} className="inline-flex items-center gap-2">
                 <span
-                  className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": palette[index % palette.length] })}`}
+                  className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": palette[index % palette.length] })}`}
                 />
-                <span className="bc">{entry.name}</span>
-                <span className="bc text-foreground">{entry.value}</span>
+                <span className="">{entry.name}</span>
+                <span className="text-foreground">{entry.value}</span>
               </div>
             ))
           : null}
@@ -316,8 +316,8 @@ export function StagePieCard(props: {
       const wrap = wrapRef.current;
       const popover = popoverRef.current;
       if (!wrap || !popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -405,11 +405,11 @@ export function StagePieCard(props: {
     <div ref={wrapRef} className="relative inline-flex">
       <button
         type="button"
-        id="sprout-stage-filter-trigger"
-        className="sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+        id="learnkit-stage-filter-trigger"
+        className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
         aria-haspopup="listbox"
         aria-expanded={open ? "true" : "false"}
-        aria-controls="sprout-stage-filter-listbox"
+        aria-controls="learnkit-stage-filter-listbox"
         onClick={() => setOpen((prev) => !prev)}
       >
         <svg
@@ -431,10 +431,10 @@ export function StagePieCard(props: {
 
       {open ? (
         <div
-          id="sprout-stage-filter-popover"
+          id="learnkit-stage-filter-popover"
           aria-hidden="false"
           ref={popoverRef}
-          className="rounded-md w-72 border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm sprout-ana-popover-left"
+          className="rounded-md w-72 border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm learnkit-ana-popover-left"
         >
           <div className="p-1">
             <div
@@ -452,7 +452,7 @@ export function StagePieCard(props: {
             {cardTypesOpen ? (
               <div
                 role="menu"
-                id="sprout-stage-filter-listbox"
+                id="learnkit-stage-filter-listbox"
                 aria-orientation="vertical"
                 data-tooltip="Stage filter"
                 className="flex flex-col"
@@ -492,7 +492,7 @@ export function StagePieCard(props: {
               <input
                 type="text"
                 placeholder="Search decks"
-                className="input w-full text-sm sprout-filter-search-input"
+                className="input w-full text-sm learnkit-filter-search-input"
                 value={deckQuery}
                 onChange={(event) => {
                   const next = event.currentTarget.value;
@@ -535,7 +535,7 @@ export function StagePieCard(props: {
               <input
                 type="text"
                 placeholder="Search groups"
-                className="input w-full text-sm sprout-filter-search-input"
+                className="input w-full text-sm learnkit-filter-search-input"
                 value={tagQuery}
                 onChange={(event) => {
                   const next = event.currentTarget.value;
@@ -580,7 +580,7 @@ export function StagePieCard(props: {
         </div>
       ) : null}
 
-      <input type="hidden" name="sprout-stage-filter-value" value="" />
+      <input type="hidden" name="learnkit-stage-filter-value" value="" />
     </div>
   );
 
@@ -647,8 +647,8 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
       const wrap = wrapRef.current;
       const popover = popoverRef.current;
       if (!wrap || !popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     placePopover();
     window.addEventListener("resize", placePopover, true);
@@ -770,11 +770,11 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
     <div ref={wrapRef} className="relative">
       <button
         type="button"
-        id="sprout-answer-filter-trigger"
-        className="sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+        id="learnkit-answer-filter-trigger"
+        className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
         aria-haspopup="listbox"
         aria-expanded={open ? "true" : "false"}
-        aria-controls="sprout-answer-filter-listbox"
+        aria-controls="learnkit-answer-filter-listbox"
         onClick={() => setOpen((prev) => !prev)}
       >
         <svg
@@ -796,17 +796,17 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
 
       {open ? (
         <div
-          id="sprout-answer-filter-popover"
+          id="learnkit-answer-filter-popover"
           aria-hidden="false"
           ref={popoverRef}
           data-popover="true"
-          className="sprout dropdown-menu w-72 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-left"
+          className="learnkit dropdown-menu w-72 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-left"
         >
           <div className="p-1">
             <div className="text-sm text-muted-foreground px-2 py-1">Card type</div>
             <div
               role="menu"
-              id="sprout-answer-filter-listbox"
+              id="learnkit-answer-filter-listbox"
               aria-orientation="vertical"
               data-tooltip="Answer filter"
               className="flex flex-col"
@@ -845,7 +845,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
               <input
                 type="text"
                 placeholder="Search decks"
-                className="input w-full text-sm sprout-filter-search-input"
+                className="input w-full text-sm learnkit-filter-search-input"
                 value={deckQuery}
                 onChange={(event) => {
                   const next = event.currentTarget.value;
@@ -894,7 +894,7 @@ export function AnswerButtonsPieCard(props: { events: Record<string, unknown>[];
               <input
                 type="text"
                 placeholder="Search groups"
-                className="input w-full text-sm sprout-filter-search-input"
+                className="input w-full text-sm learnkit-filter-search-input"
                 value={groupQuery}
                 onChange={(event) => {
                   const next = event.currentTarget.value;

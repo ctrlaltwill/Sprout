@@ -15,7 +15,7 @@ import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusio
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
 import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
 import type { CardRecord } from "../../platform/core/store";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
 import { DEFAULT_SETTINGS } from "../../platform/core/default-settings";
 import { resolveImageFile } from "../../platform/image-occlusion/io-helpers";
@@ -405,7 +405,7 @@ export function syncReadingViewStyles(): void {
   const rv = plugin?.settings?.readingView;
   const macroPreset = normaliseMacroPreset((rv?.activeMacro as string | undefined) ?? rv?.preset);
   const effectiveLayout = resolveReadingLayout(rv?.layout, macroPreset);
-  const macroSelector = `.sprout-pretty-card.sprout-macro-${macroPreset}`;
+  const macroSelector = `.learnkit-pretty-card.learnkit-macro-${macroPreset}`;
 
   const styleSheet = getReadingDynamicStyleSheet();
   if (!styleSheet) return;
@@ -431,22 +431,22 @@ export function syncReadingViewStyles(): void {
   // ── Font size ──
   const fontSize = Number(rv?.fontSize);
   const effectiveFontSize = Number.isFinite(fontSize) && fontSize > 0 ? fontSize : 0.9;
-  css += `.sprout-pretty-card .sprout-section-content,\n`;
-  css += `.sprout-pretty-card .sprout-answer,\n`;
-  css += `.sprout-pretty-card .sprout-info,\n`;
-  css += `.sprout-pretty-card .sprout-section-label,\n`;
-  css += `.sprout-pretty-card .sprout-text-muted,\n`;
-  css += `.sprout-pretty-card .sprout-option,\n`;
-  css += `.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-question,\n`;
-  css += `.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-answer,\n`;
-  css += `.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-options,\n`;
-  css += `.sprout-pretty-card.sprout-macro-flashcards .sprout-flashcard-info {\n`;
+  css += `.learnkit-pretty-card .learnkit-section-content,\n`;
+  css += `.learnkit-pretty-card .learnkit-answer,\n`;
+  css += `.learnkit-pretty-card .learnkit-info,\n`;
+  css += `.learnkit-pretty-card .learnkit-section-label,\n`;
+  css += `.learnkit-pretty-card .learnkit-text-muted,\n`;
+  css += `.learnkit-pretty-card .learnkit-option,\n`;
+  css += `.learnkit-pretty-card.learnkit-macro-flashcards .learnkit-flashcard-question,\n`;
+  css += `.learnkit-pretty-card.learnkit-macro-flashcards .learnkit-flashcard-answer,\n`;
+  css += `.learnkit-pretty-card.learnkit-macro-flashcards .learnkit-flashcard-options,\n`;
+  css += `.learnkit-pretty-card.learnkit-macro-flashcards .learnkit-flashcard-info {\n`;
   css += `  font-size: ${effectiveFontSize}rem !important;\n`;
   css += `}\n`;
 
   // Ensure hidden source fragments never leak below prettified cards,
   // even when scoped stylesheet transforms miss plain markdown leaves.
-  css += `.markdown-preview-section > [data-sprout-hidden="true"] {\n`;
+  css += `.markdown-preview-section > [data-learnkit-hidden="true"] {\n`;
   css += `  display: none !important;\n`;
   css += `  max-height: 0 !important;\n`;
   css += `  overflow: hidden !important;\n`;
@@ -454,29 +454,29 @@ export function syncReadingViewStyles(): void {
   css += `  padding: 0 !important;\n`;
   css += `  border: none !important;\n`;
   css += `}\n`;
-  css += `.markdown-preview-section > .el-p[data-sprout-processed] {\n`;
+  css += `.markdown-preview-section > .el-p[data-learnkit-processed] {\n`;
   css += `  opacity: 1;\n`;
   css += `  max-height: none;\n`;
   css += `}\n`;
 
   // ── Layout ──
   if (effectiveLayout === 'vertical') {
-    css += `.markdown-preview-section.sprout-layout-vertical > .sprout-reading-card-run {\n`;
+    css += `.markdown-preview-section.learnkit-layout-vertical > .learnkit-reading-card-run {\n`;
     css += `  column-width: unset !important;\n  column-gap: unset !important;\n  column-count: 1 !important;\n`;
     css += `  display: flex;\n  flex-direction: column;\n  gap: 12px;\n`;
     css += `}\n`;
-    css += `.markdown-preview-section.sprout-layout-vertical > .sprout-reading-card-run > .sprout-pretty-card {\n`;
+    css += `.markdown-preview-section.learnkit-layout-vertical > .learnkit-reading-card-run > .learnkit-pretty-card {\n`;
     css += `  margin-top: 0 !important;\n  margin-bottom: 0 !important;\n`;
     css += `}\n`;
   }
 
   if (macroPreset === 'flashcards') {
-    css += `.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run:has(.sprout-pretty-card.sprout-macro-flashcards) {\n`;
+    css += `.markdown-preview-section.learnkit-layout-masonry > .learnkit-reading-card-run:has(.learnkit-pretty-card.learnkit-macro-flashcards) {\n`;
     css += `  column-width: 280px !important;\n`;
     css += `  column-gap: 16px !important;\n`;
     css += `  display: block !important;\n`;
     css += `}\n`;
-    css += `.markdown-preview-section.sprout-layout-masonry > .sprout-reading-card-run:has(.sprout-pretty-card.sprout-macro-flashcards) > .sprout-pretty-card.sprout-macro-flashcards {\n`;
+    css += `.markdown-preview-section.learnkit-layout-masonry > .learnkit-reading-card-run:has(.learnkit-pretty-card.learnkit-macro-flashcards) > .learnkit-pretty-card.learnkit-macro-flashcards {\n`;
     css += `  margin-top: 0 !important;\n`;
     css += `  margin-bottom: 16px !important;\n`;
     css += `}\n`;
@@ -484,8 +484,8 @@ export function syncReadingViewStyles(): void {
 
   // ── Card mode: full (expand collapsibles, hide toggle buttons) ──
   if (rv?.cardMode === 'full') {
-    css += `.sprout-pretty-card .sprout-collapsible { max-height: none !important; overflow: visible !important; }\n`;
-    css += `.sprout-pretty-card .sprout-toggle-btn { display: none !important; }\n`;
+    css += `.learnkit-pretty-card .learnkit-collapsible { max-height: none !important; overflow: visible !important; }\n`;
+    css += `.learnkit-pretty-card .learnkit-toggle-btn { display: none !important; }\n`;
   }
 
   // ── Field visibility / included data ──
@@ -506,27 +506,27 @@ export function syncReadingViewStyles(): void {
   const activeFields = macroFields ?? rv?.visibleFields;
   if (activeFields) {
     const vf = activeFields;
-    if (!vf.title) css += `${macroSelector} .sprout-card-header { display: none !important; }\n`;
-    if (!vf.question) css += `${macroSelector} .sprout-section-question { display: none !important; }\n`;
-    if (!vf.options) css += `${macroSelector} .sprout-section-options { display: none !important; }\n`;
-    if (!vf.answer) css += `${macroSelector} .sprout-section-answer { display: none !important; }\n`;
-    if (!vf.info) css += `${macroSelector} .sprout-section-info { display: none !important; }\n`;
-    if (!vf.groups) css += `${macroSelector} .sprout-groups-list, ${macroSelector} .sprout-section-groups { display: none !important; }\n`;
-    if (!vf.edit && macroPreset !== 'flashcards') css += `${macroSelector} .sprout-card-edit-btn { display: none !important; }\n`;
+    if (!vf.title) css += `${macroSelector} .learnkit-card-header { display: none !important; }\n`;
+    if (!vf.question) css += `${macroSelector} .learnkit-section-question { display: none !important; }\n`;
+    if (!vf.options) css += `${macroSelector} .learnkit-section-options { display: none !important; }\n`;
+    if (!vf.answer) css += `${macroSelector} .learnkit-section-answer { display: none !important; }\n`;
+    if (!vf.info) css += `${macroSelector} .learnkit-section-info { display: none !important; }\n`;
+    if (!vf.groups) css += `${macroSelector} .learnkit-groups-list, ${macroSelector} .learnkit-section-groups { display: none !important; }\n`;
+    if (!vf.edit && macroPreset !== 'flashcards') css += `${macroSelector} .learnkit-card-edit-btn { display: none !important; }\n`;
   }
 
   if (macroPreset === 'flashcards') {
     const showAudioButton = macroFields?.displayAudioButton !== false;
     const showEditButton = macroFields?.displayEditButton !== false;
-    if (!showAudioButton) css += `${macroSelector} .sprout-flashcard-speak-btn { display: none !important; }\n`;
-    if (!showEditButton) css += `${macroSelector} .sprout-card-edit-btn { display: none !important; }\n`;
+    if (!showAudioButton) css += `${macroSelector} .learnkit-flashcard-speak-btn { display: none !important; }\n`;
+    if (!showEditButton) css += `${macroSelector} .learnkit-card-edit-btn { display: none !important; }\n`;
   }
   const showLabels = (macroConfig as { fields?: { labels?: boolean } } | undefined)?.fields?.labels ?? rv?.displayLabels;
   if (showLabels === false) {
-    css += `${macroSelector} .sprout-section-label { display: none !important; }\n`;
+    css += `${macroSelector} .learnkit-section-label { display: none !important; }\n`;
   }
   if (macroPreset === 'classic') {
-    css += `.sprout-pretty-card.sprout-macro-classic .sprout-section-label { display: flex !important; }\n`;
+    css += `.learnkit-pretty-card.learnkit-macro-classic .learnkit-section-label { display: flex !important; }\n`;
   }
 
   if (macroPreset === 'custom') {
@@ -790,7 +790,7 @@ function setupDebouncedMutationObserver() {
         // Skip mutations inside the editor
         if (m.target instanceof Element && m.target.closest('.cm-content')) continue;
         // Skip mutations inside our own card-run wrappers (from wrapping/unwrapping)
-        if (m.target instanceof Element && m.target.closest('.sprout-reading-card-run')) continue;
+        if (m.target instanceof Element && m.target.closest('.learnkit-reading-card-run')) continue;
         // Skip mutations outside reading view contexts
         if (m.target instanceof Element && !m.target.closest('.markdown-reading-view, .markdown-preview-view, .markdown-rendered')) continue;
 
@@ -799,28 +799,28 @@ function setupDebouncedMutationObserver() {
             const el = n as Element;
 
             // Skip our own wrapper nodes being added
-            if (el instanceof HTMLElement && el.classList.contains('sprout-reading-card-run')) continue;
+            if (el instanceof HTMLElement && el.classList.contains('learnkit-reading-card-run')) continue;
 
             // Only trigger if we see actual NEW .el-p or sprout cards
             // Skip if the added node is just being moved (check if it already has sprout-processed)
-            if (el.matches && el.matches('.el-p') && !el.hasAttribute('data-sprout-processed')) {
+            if (el.matches && el.matches('.el-p') && !el.hasAttribute('data-learnkit-processed')) {
               // Find the closest section or reading view container
               const section = el.closest('.markdown-preview-section') as HTMLElement;
               if (section) dirtyContainers.add(section);
               else dirtyContainers.add(el as HTMLElement);
-            } else if (queryFirst(el as ParentNode, '.el-p:not([data-sprout-processed])')) {
+            } else if (queryFirst(el as ParentNode, '.el-p:not([data-learnkit-processed])')) {
               dirtyContainers.add(el as HTMLElement);
             }
 
             // Detect sections re-entering the DOM with already-processed
-            // cards that aren't wrapped in .sprout-reading-card-run yet.
+            // cards that aren't wrapped in .learnkit-reading-card-run yet.
             // This handles Obsidian's virtualised scroll (#56) — sections
             // removed from the DOM and re-added lose their card-run wrappers.
             if (el instanceof HTMLElement) {
               const isSection = el.classList.contains('markdown-preview-section');
-              if (isSection && el.querySelector('.sprout-pretty-card') && !el.querySelector('.sprout-reading-card-run')) {
+              if (isSection && el.querySelector('.learnkit-pretty-card') && !el.querySelector('.learnkit-reading-card-run')) {
                 sectionsNeedingLayout.add(el);
-              } else if (el.classList.contains('sprout-pretty-card') && !el.closest('.sprout-reading-card-run')) {
+              } else if (el.classList.contains('learnkit-pretty-card') && !el.closest('.learnkit-reading-card-run')) {
                 // A processed card was added outside a card-run wrapper
                 // (e.g. post-processor ran while element was detached).
                 const section = el.closest<HTMLElement>('.markdown-preview-section');
@@ -828,7 +828,7 @@ function setupDebouncedMutationObserver() {
               } else if (!isSection) {
                 // The added node might contain sections (e.g. a container node)
                 el.querySelectorAll?.('.markdown-preview-section')?.forEach((sec) => {
-                  if (sec instanceof HTMLElement && sec.querySelector('.sprout-pretty-card') && !sec.querySelector('.sprout-reading-card-run')) {
+                  if (sec instanceof HTMLElement && sec.querySelector('.learnkit-pretty-card') && !sec.querySelector('.learnkit-reading-card-run')) {
                     sectionsNeedingLayout.add(sec);
                   }
                 });
@@ -927,7 +927,7 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
     // ignore
   }
 
-  container.querySelectorAll<HTMLElement>('.el-p:not([data-sprout-processed])').forEach(el => found.push(el));
+  container.querySelectorAll<HTMLElement>('.el-p:not([data-learnkit-processed])').forEach(el => found.push(el));
 
   if (found.length === 0) {
     debugLog('[LearnKit] No unprocessed .el-p elements found in container');
@@ -988,7 +988,7 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
 }
 
 async function refreshProcessedCards(container: HTMLElement, sourceContent?: string) {
-  const cards = Array.from(container.querySelectorAll<HTMLElement>('.sprout-pretty-card[data-sprout-raw-text], .el-p[data-sprout-processed][data-sprout-raw-text]'));
+  const cards = Array.from(container.querySelectorAll<HTMLElement>('.learnkit-pretty-card[data-learnkit-raw-text], .el-p[data-learnkit-processed][data-learnkit-raw-text]'));
   if (!cards.length) return;
 
   const latestSource = sourceContent?.trim() ? sourceContent : await getLiveMarkdownSourceContent();
@@ -999,8 +999,8 @@ async function refreshProcessedCards(container: HTMLElement, sourceContent?: str
     try {
       if (el.closest('.cm-content')) continue;
 
-      let rawText = String(el.getAttribute('data-sprout-raw-text') || '');
-      const anchorFromAttr = String(el.getAttribute('data-sprout-id') || '').trim();
+      let rawText = String(el.getAttribute('data-learnkit-raw-text') || '');
+      const anchorFromAttr = String(el.getAttribute('data-learnkit-id') || '').trim();
       const anchorFromRaw = rawText.match(ANCHOR_RE)?.[1] ?? '';
       const anchorId = anchorFromAttr || anchorFromRaw;
 
@@ -1008,7 +1008,7 @@ async function refreshProcessedCards(container: HTMLElement, sourceContent?: str
         const extracted = extractCardFromSource(latestSource, anchorId);
         if (extracted) {
           rawText = extracted;
-          el.setAttribute('data-sprout-raw-text', extracted);
+          el.setAttribute('data-learnkit-raw-text', extracted);
         }
       }
 
@@ -1034,33 +1034,33 @@ async function refreshProcessedCards(container: HTMLElement, sourceContent?: str
 }
 
 function resetCardsToNativeReading(container: HTMLElement) {
-  const cards = Array.from(container.querySelectorAll<HTMLElement>('.sprout-pretty-card'));
+  const cards = Array.from(container.querySelectorAll<HTMLElement>('.learnkit-pretty-card'));
   for (const card of cards) {
     try {
-      const originalHtml = card.querySelector<HTMLElement>('.sprout-original-content')?.innerHTML ?? '';
+      const originalHtml = card.querySelector<HTMLElement>('.learnkit-original-content')?.innerHTML ?? '';
       if (originalHtml) replaceChildrenWithHTML(card, originalHtml);
 
       card.classList.remove(
-        'sprout-pretty-card',
-        'sprout-reading-card',
-        'sprout-reading-view-wrapper',
-        'sprout-single-card',
-        'sprout-custom-root',
-        'sprout-flashcard-flipped',
-        'sprout-flashcard-animating',
+        'learnkit-pretty-card', 'learnkit-pretty-card',
+        'learnkit-reading-card', 'learnkit-reading-card',
+        'learnkit-reading-view-wrapper', 'learnkit-reading-view-wrapper',
+        'learnkit-single-card', 'learnkit-single-card',
+        'learnkit-custom-root', 'learnkit-custom-root',
+        'learnkit-flashcard-flipped', 'learnkit-flashcard-flipped',
+        'learnkit-flashcard-animating', 'learnkit-flashcard-animating',
         'accent',
         'theme',
-        'sprout-macro-classic',
-        'sprout-macro-guidebook',
-        'sprout-macro-flashcards',
-        'sprout-macro-markdown',
-        'sprout-macro-custom',
+        'learnkit-macro-classic', 'learnkit-macro-classic',
+        'learnkit-macro-guidebook', 'learnkit-macro-guidebook',
+        'learnkit-macro-flashcards', 'learnkit-macro-flashcards',
+        'learnkit-macro-markdown', 'learnkit-macro-markdown',
+        'learnkit-macro-custom', 'learnkit-macro-custom',
       );
 
-      card.removeAttribute('data-sprout-processed');
-      card.removeAttribute('data-sprout-id');
-      card.removeAttribute('data-sprout-type');
-      card.removeAttribute('data-sprout-raw-text');
+      card.removeAttribute('data-learnkit-processed');
+      card.removeAttribute('data-learnkit-id');
+      card.removeAttribute('data-learnkit-type');
+      card.removeAttribute('data-learnkit-raw-text');
       card.removeAttribute('data-hide-title');
       card.removeAttribute('data-hide-question');
       card.removeAttribute('data-hide-options');
@@ -1085,25 +1085,25 @@ function resetCardsToNativeReading(container: HTMLElement) {
 
   sections.forEach((section) => {
     applySectionCardRunLayout(section, 'vertical');
-    section.classList.remove('sprout-layout-vertical', 'sprout-layout-masonry');
+    section.classList.remove('learnkit-layout-vertical', 'learnkit-layout-vertical', 'learnkit-layout-masonry', 'learnkit-layout-masonry');
   });
 }
 
 function clearStaleReadingViewState(container: HTMLElement) {
   // Reveal any source fragments hidden by prior pretty-card passes.
   container
-    .querySelectorAll<HTMLElement>('[data-sprout-hidden="true"], .sprout-hidden-important')
+    .querySelectorAll<HTMLElement>('[data-learnkit-hidden="true"], .learnkit-hidden-important')
     .forEach((el) => {
-      el.classList.remove('sprout-hidden-important');
-      el.removeAttribute('data-sprout-hidden');
+      el.classList.remove('learnkit-hidden-important', 'learnkit-hidden-important');
+      el.removeAttribute('data-learnkit-hidden');
     });
 
   // Drop stale processed markers so updated markdown paragraphs are reparsed.
-  container.querySelectorAll<HTMLElement>('.el-p[data-sprout-processed]').forEach((el) => {
-    el.removeAttribute('data-sprout-processed');
-    el.removeAttribute('data-sprout-raw-text');
-    el.removeAttribute('data-sprout-id');
-    el.removeAttribute('data-sprout-type');
+  container.querySelectorAll<HTMLElement>('.el-p[data-learnkit-processed]').forEach((el) => {
+    el.removeAttribute('data-learnkit-processed');
+    el.removeAttribute('data-learnkit-raw-text');
+    el.removeAttribute('data-learnkit-id');
+    el.removeAttribute('data-learnkit-type');
   });
 
   const sections = new Set<HTMLElement>();
@@ -1115,7 +1115,7 @@ function clearStaleReadingViewState(container: HTMLElement) {
   // Ensure any stale wrappers/layout classes are rebuilt from a clean DOM.
   sections.forEach((section) => {
     unwrapCardRuns(section);
-    section.classList.remove('sprout-layout-vertical', 'sprout-layout-masonry');
+    section.classList.remove('learnkit-layout-vertical', 'learnkit-layout-vertical', 'learnkit-layout-masonry', 'learnkit-layout-masonry');
   });
 }
 
@@ -1126,14 +1126,14 @@ function clearStaleReadingViewState(container: HTMLElement) {
 const FLIP_DURATION = 280; // ms
 
 /**
- * Snapshot the bounding rect of every visible `.sprout-pretty-card` inside
+ * Snapshot the bounding rect of every visible `.learnkit-pretty-card` inside
  * the closest masonry section.  Returns a Map keyed by element.
  */
 function snapshotCardPositions(cardEl: HTMLElement): Map<HTMLElement, DOMRect> {
   const section = cardEl.closest('.markdown-preview-section');
   if (!section) return new Map();
   const positions = new Map<HTMLElement, DOMRect>();
-  section.querySelectorAll<HTMLElement>('.sprout-pretty-card').forEach(card => {
+  section.querySelectorAll<HTMLElement>('.learnkit-pretty-card').forEach(card => {
     if (card.offsetParent !== null) { // visible
       positions.set(card, card.getBoundingClientRect());
     }
@@ -1191,21 +1191,21 @@ function flipAnimateCards(before: Map<HTMLElement, DOMRect>, lockedCard?: HTMLEl
     if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
 
     // "Invert" — move card back to where it was
-    card.classList.add('sprout-flip-animating', 'sprout-flip-no-transition');
+    card.classList.add('learnkit-flip-animating', 'learnkit-flip-animating', 'learnkit-flip-no-transition', 'learnkit-flip-no-transition');
     setCssProps(card, {
-      '--sprout-flip-x': `${dx}px`,
-      '--sprout-flip-y': `${dy}px`,
-      '--sprout-flip-duration': `${FLIP_DURATION}ms`,
+      '--learnkit-flip-x': `${dx}px`,
+      '--learnkit-flip-y': `${dy}px`,
+      '--learnkit-flip-duration': `${FLIP_DURATION}ms`,
     });
 
     // Force reflow so the inverted position is painted
     void card.offsetHeight;
 
     // "Play" — animate from inverted position to final (transform: none)
-    card.classList.remove('sprout-flip-no-transition');
+    card.classList.remove('learnkit-flip-no-transition', 'learnkit-flip-no-transition');
     setCssProps(card, {
-      '--sprout-flip-x': '0px',
-      '--sprout-flip-y': '0px',
+      '--learnkit-flip-x': '0px',
+      '--learnkit-flip-y': '0px',
     });
   }
 
@@ -1213,11 +1213,11 @@ function flipAnimateCards(before: Map<HTMLElement, DOMRect>, lockedCard?: HTMLEl
   const cleanup = () => {
     for (const [card] of before) {
       if (lockedCards.has(card)) continue;
-      card.classList.remove('sprout-flip-animating', 'sprout-flip-no-transition');
+      card.classList.remove('learnkit-flip-animating', 'learnkit-flip-animating', 'learnkit-flip-no-transition', 'learnkit-flip-no-transition');
       setCssProps(card, {
-        '--sprout-flip-x': null,
-        '--sprout-flip-y': null,
-        '--sprout-flip-duration': null,
+        '--learnkit-flip-x': null,
+        '--learnkit-flip-y': null,
+        '--learnkit-flip-duration': null,
       });
     }
   };
@@ -1225,7 +1225,7 @@ function flipAnimateCards(before: Map<HTMLElement, DOMRect>, lockedCard?: HTMLEl
 }
 
 function unwrapCardRuns(section: HTMLElement) {
-  const wrappers = Array.from(section.querySelectorAll<HTMLElement>(':scope > .sprout-reading-card-run'));
+  const wrappers = Array.from(section.querySelectorAll<HTMLElement>(':scope > .learnkit-reading-card-run'));
   for (const wrapper of wrappers) {
     const children = Array.from(wrapper.children);
     for (const child of children) {
@@ -1241,14 +1241,14 @@ function unwrapCardRuns(section: HTMLElement) {
 
 function wrapContiguousCardRuns(section: HTMLElement) {
   // Fast-path: skip destructive teardown + rebuild when every visible
-  // card is already inside a .sprout-reading-card-run wrapper.
+  // card is already inside a .learnkit-reading-card-run wrapper.
   // This prevents the column→single-column→column flicker (#56)
   // that occurs when scroll / resize debounce triggers a full reflow.
   const hasUnwrappedVisibleCards = Array.from(section.children).some(child => {
     if (!(child instanceof HTMLElement)) return false;
-    return child.classList.contains('sprout-pretty-card') &&
-           !child.classList.contains('sprout-hidden-important') &&
-           child.getAttribute('data-sprout-hidden') !== 'true';
+    return child.classList.contains('learnkit-pretty-card') &&
+           !child.classList.contains('learnkit-hidden-important') &&
+           child.getAttribute('data-learnkit-hidden') !== 'true';
   });
   if (!hasUnwrappedVisibleCards) return;
 
@@ -1258,13 +1258,13 @@ function wrapContiguousCardRuns(section: HTMLElement) {
   let currentRun: HTMLDivElement | null = null;
 
   for (const child of children) {
-    const isCard = child.classList.contains('sprout-pretty-card');
-    const isHidden = child.classList.contains('sprout-hidden-important') || child.getAttribute('data-sprout-hidden') === 'true';
+    const isCard = child.classList.contains('learnkit-pretty-card');
+    const isHidden = child.classList.contains('learnkit-hidden-important') || child.getAttribute('data-learnkit-hidden') === 'true';
 
     if (isCard && !isHidden) {
       if (!currentRun) {
         currentRun = section.ownerDocument.createElement('div');
-        currentRun.className = 'sprout-reading-card-run';
+        currentRun.className = 'learnkit-reading-card-run';
         section.insertBefore(currentRun, child);
       }
       currentRun.appendChild(child);
@@ -1303,7 +1303,7 @@ function resolveSectionLayoutFromDomAndSettings(
   section: HTMLElement,
   rvSettings: ReadingViewSettings | undefined,
 ): 'masonry' | 'vertical' {
-  if (section.querySelector('.sprout-pretty-card.sprout-macro-flashcards, .sprout-pretty-card.sprout-macro-classic')) {
+  if (section.querySelector('.learnkit-pretty-card.learnkit-macro-flashcards, .learnkit-pretty-card.learnkit-macro-classic')) {
     return 'masonry';
   }
 
@@ -1319,12 +1319,12 @@ function applyLayoutToSections(sections: Iterable<HTMLElement>, rvSettings: Read
   for (const section of sections) {
     const effectiveLayout = resolveSectionLayoutFromDomAndSettings(section, rvSettings);
     if (effectiveLayout === 'vertical') {
-      section.classList.add('sprout-layout-vertical');
-      section.classList.remove('sprout-layout-masonry');
+      section.classList.add('learnkit-layout-vertical', 'learnkit-layout-vertical');
+      section.classList.remove('learnkit-layout-masonry', 'learnkit-layout-masonry');
       applySectionCardRunLayout(section, 'vertical');
     } else {
-      section.classList.remove('sprout-layout-vertical');
-      section.classList.add('sprout-layout-masonry');
+      section.classList.remove('learnkit-layout-vertical', 'learnkit-layout-vertical');
+      section.classList.add('learnkit-layout-masonry', 'learnkit-layout-masonry');
       applySectionCardRunLayout(section, 'masonry');
     }
   }
@@ -1335,17 +1335,17 @@ function collectSectionsWithPrettyCards(scope: ParentNode): Set<HTMLElement> {
 
   if (scope instanceof HTMLElement) {
     // If scope itself is a .markdown-preview-section containing cards
-    if (scope.classList.contains('markdown-preview-section') && scope.querySelector('.sprout-pretty-card')) {
+    if (scope.classList.contains('markdown-preview-section') && scope.querySelector('.learnkit-pretty-card')) {
       sections.add(scope);
     }
     // If scope itself is (or has become) a pretty card, find its parent section
-    if (scope.classList.contains('sprout-pretty-card')) {
+    if (scope.classList.contains('learnkit-pretty-card')) {
       const section = scope.closest<HTMLElement>('.markdown-preview-section');
       if (section) sections.add(section);
     }
   }
 
-  scope.querySelectorAll<HTMLElement>('.sprout-pretty-card').forEach((card) => {
+  scope.querySelectorAll<HTMLElement>('.learnkit-pretty-card').forEach((card) => {
     const section = card.closest<HTMLElement>('.markdown-preview-section');
     if (section) sections.add(section);
   });
@@ -1507,7 +1507,7 @@ function isLikelyDanglingCardResidue(siblingText: string, siblingEl: Element): b
   // Restrict to flashcard section context so ordinary prose elsewhere is untouched.
   const section = siblingEl.closest<HTMLElement>('.markdown-preview-section');
   if (section) {
-    const hasFlashcardRun = !!section.querySelector('.sprout-reading-card-run .sprout-pretty-card.sprout-macro-flashcards');
+    const hasFlashcardRun = !!section.querySelector('.learnkit-reading-card-run .learnkit-pretty-card.learnkit-macro-flashcards');
     if (!hasFlashcardRun) return false;
   }
 
@@ -1532,7 +1532,7 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   // fall back to the run's next sibling to catch trailing spillover nodes.
   let next = cardEl.nextElementSibling;
   if (!next) {
-    const run = cardEl.closest('.sprout-reading-card-run');
+    const run = cardEl.closest('.learnkit-reading-card-run');
     if (run && cardEl.parentElement === run) {
       next = run.nextElementSibling;
     }
@@ -1543,13 +1543,13 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
     const classes = next.className || '';
     
     // Skip siblings already hidden by a previous run
-    if (next.hasAttribute('data-sprout-hidden')) {
+    if (next.hasAttribute('data-learnkit-hidden')) {
       next = next.nextElementSibling;
       continue;
     }
     
     // Stop if we hit another sprout card (already processed)
-    if (classes.includes('sprout-pretty-card') || classes.includes('sprout-reading-card-run') || next.hasAttribute('data-sprout-processed')) {
+    if (classes.includes('sprout-pretty-card') || classes.includes('sprout-reading-card-run') || next.hasAttribute('data-learnkit-processed')) {
       break;
     }
     
@@ -1608,8 +1608,8 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   
   // Hide collected elements with increased specificity
   for (const el of toHide) {
-    (el as HTMLElement).classList.add('sprout-hidden-important');
-    (el as HTMLElement).setAttribute('data-sprout-hidden', 'true');
+    (el as HTMLElement).classList.add('learnkit-hidden-important', 'learnkit-hidden-important');
+    (el as HTMLElement).setAttribute('data-learnkit-hidden', 'true');
   }
 }
 
@@ -1642,14 +1642,14 @@ function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
   const trailingDelimRe = new RegExp(`${delimEsc}\\s*$`);
 
   for (const section of sections) {
-    const hasFlashcards = !!section.querySelector('.sprout-reading-card-run .sprout-pretty-card.sprout-macro-flashcards');
+    const hasFlashcards = !!section.querySelector('.learnkit-reading-card-run .learnkit-pretty-card.learnkit-macro-flashcards');
     if (!hasFlashcards) continue;
 
     const children = Array.from(section.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
     for (let i = 0; i < children.length; i++) {
       const el = children[i];
       if (!el.classList.contains('el-p')) continue;
-      if (el.hasAttribute('data-sprout-processed')) continue;
+      if (el.hasAttribute('data-learnkit-processed')) continue;
 
       const raw = extractRawTextFromParagraph(el);
       const lines = String(raw ?? '')
@@ -1663,13 +1663,13 @@ function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
       const prev = children[i - 1] ?? null;
       const next = children[i + 1] ?? null;
       const nearCardRun =
-        !!prev?.classList.contains('sprout-reading-card-run') ||
-        !!next?.classList.contains('sprout-reading-card-run');
+        !!prev?.classList.contains('learnkit-reading-card-run') ||
+        !!next?.classList.contains('learnkit-reading-card-run');
 
       if (!nearCardRun) continue;
 
-      el.classList.add('sprout-hidden-important');
-      el.setAttribute('data-sprout-hidden', 'true');
+      el.classList.add('learnkit-hidden-important', 'learnkit-hidden-important');
+      el.setAttribute('data-learnkit-hidden', 'true');
     }
   }
 }
@@ -1752,10 +1752,10 @@ function buildCleanMarkdownClozeSpanStyle(style?: CleanMarkdownClozeStyle): stri
   const text = sanitizeHexColor(style?.textColor);
   if (!bg && !text) return '';
   const rules: string[] = [];
-  if (bg) rules.push(`--sprout-clean-md-cloze-bg: ${bg}`);
+  if (bg) rules.push(`--learnkit-clean-md-cloze-bg: ${bg}`);
   if (text) {
-    rules.push(`--sprout-clean-md-cloze-text: ${text}`);
-    rules.push(`--sprout-cloze-color: ${text}`);
+    rules.push(`--learnkit-clean-md-cloze-text: ${text}`);
+    rules.push(`--learnkit-cloze-color: ${text}`);
   }
   return ` style="${rules.join('; ')}"`;
 }
@@ -1898,7 +1898,7 @@ function renderLatexInContainer(container: HTMLElement): void {
     if (!parent) continue;
 
     // Skip text nodes inside the hidden original content store.
-    if (parent.closest('.sprout-original-content')) continue;
+    if (parent.closest('.learnkit-original-content')) continue;
 
     // Skip nodes already rendered by Obsidian/MathJax.
     if (parent.closest('.MathJax, mjx-container, .math')) continue;
@@ -2030,11 +2030,11 @@ function renderMarkdownLineWithClozeSpans(value: string, style?: CleanMarkdownCl
         const clozeIdMatch = cm.fullMatch.match(/^\{\{c(\d+)::/i);
         const clozeId = clozeIdMatch?.[1] ?? '1';
         const tokenText = `{{c${clozeId}::${answer}}}`;
-        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${escapeHtml(tokenText)}</span>`;
+        out += `<span class="learnkit-cloze-revealed learnkit-clean-markdown-cloze"${spanStyle}>${escapeHtml(tokenText)}</span>`;
       } else if (isInsideMath(cm.index)) {
         out += `\\boxed{${answer}}`;
       } else {
-        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${processMarkdownFeatures(answer)}</span>`;
+        out += `<span class="learnkit-cloze-revealed learnkit-clean-markdown-cloze"${spanStyle}>${processMarkdownFeatures(answer)}</span>`;
       }
     }
     last = cm.index + cm.fullMatch.length;
@@ -2087,9 +2087,9 @@ function renderSanitizedPlainTextWithCloze(value: string, style?: CleanMarkdownC
         const clozeIdMatch = cm.fullMatch.match(/^\{\{c(\d+)::/i);
         const clozeId = clozeIdMatch?.[1] ?? '1';
         const tokenText = `{{c${clozeId}::${answer}}}`;
-        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${escapeHtml(tokenText)}</span>`;
+        out += `<span class="learnkit-cloze-revealed learnkit-clean-markdown-cloze"${spanStyle}>${escapeHtml(tokenText)}</span>`;
       } else {
-        out += `<span class="sprout-cloze-revealed sprout-clean-markdown-cloze"${spanStyle}>${escapeHtml(answer)}</span>`;
+        out += `<span class="learnkit-cloze-revealed learnkit-clean-markdown-cloze"${spanStyle}>${escapeHtml(answer)}</span>`;
       }
     }
     last = cm.index + cm.fullMatch.length;
@@ -2149,7 +2149,7 @@ function renderListLinesHtml(
   const ordered = lines.every((line) => line.ordered);
   const tag = ordered ? 'ol' : 'ul';
   const items = lines
-    .map((line) => `<li class="${className}-item" style="--sprout-list-indent:${line.indent}">${renderItem(line.content)}</li>`)
+    .map((line) => `<li class="${className}-item" style="--learnkit-list-indent:${line.indent}">${renderItem(line.content)}</li>`)
     .join('');
   return `<${tag} class="${className}">${items}</${tag}>`;
 }
@@ -2338,16 +2338,16 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     const renderedField = renderSanitizedPlainFieldValue(v, clozeStyle);
     if (renderedField.isBlock) {
       if (showLabels) {
-        lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block"><div class="sprout-markdown-label">${escapeHtml(label)}:</div><div class="sprout-markdown-plain-block">${renderedField.html}</div></div>`);
+        lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-label">${escapeHtml(label)}:</div><div class="learnkit-markdown-plain-block">${renderedField.html}</div></div>`);
       } else {
-        lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block"><div class="sprout-markdown-plain-block">${renderedField.html}</div></div>`);
+        lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-plain-block">${renderedField.html}</div></div>`);
       }
       return;
     }
     if (showLabels) {
-      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-label">${escapeHtml(label)}:</span> <span class="sprout-markdown-plain-inline">${renderedField.html}</span></div>`);
+      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-label">${escapeHtml(label)}:</span> <span class="learnkit-markdown-plain-inline">${renderedField.html}</span></div>`);
     } else {
-      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-plain-inline">${renderedField.html}</span></div>`);
+      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-plain-inline">${renderedField.html}</span></div>`);
     }
   };
 
@@ -2357,10 +2357,10 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     const rendered = renderMarkdownLineWithClozeSpans(v, clozeStyle);
     const isBlock = /^\s*<(?:ul|ol|table|blockquote|pre)\b/i.test(rendered);
     if (showLabels && isBlock) {
-      lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block"><div class="sprout-markdown-label">${label}:</div>${rendered}</div>`);
+      lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-label">${label}:</div>${rendered}</div>`);
       return;
     }
-    lines.push(`<div class="sprout-markdown-line">${showLabels ? `<span class="sprout-markdown-label">${label}:</span> ` : ''}${rendered}</div>`);
+    lines.push(`<div class="learnkit-markdown-line">${showLabels ? `<span class="learnkit-markdown-label">${label}:</span> ` : ''}${rendered}</div>`);
   };
 
   const getOqSteps = (): string[] => {
@@ -2385,16 +2385,16 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
   const addListSection = (label: string, items: string[], ordered = false) => {
     if (!items.length) return;
     const listHtml = renderList(items, ordered);
-    lines.push(`<div class="sprout-markdown-line sprout-markdown-line-block">${showLabels ? `<div class="sprout-markdown-label">${label}:</div>` : ''}${listHtml}</div>`);
+    lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block">${showLabels ? `<div class="learnkit-markdown-label">${label}:</div>` : ''}${listHtml}</div>`);
   };
 
   const addGroupsLine = (groups: string[]) => {
     if (!groups.length) return;
     const safeGroups = groups.map((g) => escapeHtml(String(g))).join(', ');
     if (showLabels) {
-      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-label">Groups:</span> <span class="sprout-markdown-plain-inline">${safeGroups}</span></div>`);
+      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-label">Groups:</span> <span class="learnkit-markdown-plain-inline">${safeGroups}</span></div>`);
     } else {
-      lines.push(`<div class="sprout-markdown-line"><span class="sprout-markdown-plain-inline">${safeGroups}</span></div>`);
+      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-plain-inline">${safeGroups}</span></div>`);
     }
   };
 
@@ -2456,7 +2456,7 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
   const groups = normalizeGroupsForDisplay(card.fields.G);
   addGroupsLine(groups);
 
-  return `<div class="sprout-markdown-lines">${lines.join('')}</div>`;
+  return `<div class="learnkit-markdown-lines">${lines.join('')}</div>`;
 }
 
 function normalizeGroupsForDisplay(groupsField: string | string[] | undefined): string[] {
@@ -2490,11 +2490,11 @@ function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
     const inMath = isInsideMath(cm.index);
     if (mode === 'front') {
       const placeholderSeed = ans || 'x';
-      out += inMath ? `\\boxed{\\phantom{${placeholderSeed}}}` : `<span class="sprout-flashcard-blank">&nbsp;</span>`;
+      out += inMath ? `\\boxed{\\phantom{${placeholderSeed}}}` : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
     } else {
       out += inMath
         ? `\\boxed{${ans}}`
-        : `<span class="sprout-reading-view-cloze"><span class="sprout-cloze-text">${renderMarkdownTextWithExplicitBreaks(ans)}</span></span>`;
+        : `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${renderMarkdownTextWithExplicitBreaks(ans)}</span></span>`;
     }
     last = cm.index + cm.fullMatch.length;
   }
@@ -2522,13 +2522,13 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
 
   const actionsFor = (side: 'front' | 'back') => {
     const speaker = options.includeSpeakerButton && allowSpeakerForCardType
-      ? `<button class="sprout-flashcard-action-btn sprout-flashcard-speak-btn" type="button" data-sprout-tts-side="${side}" aria-label="Read aloud" data-tooltip-position="top"></button>`
+      ? `<button class="learnkit-flashcard-action-btn learnkit-flashcard-speak-btn" type="button" data-learnkit-tts-side="${side}" aria-label="Read aloud" data-tooltip-position="top"></button>`
       : '';
     const edit = options.includeEditButton
-      ? `<button class="sprout-flashcard-action-btn sprout-card-edit-btn" type="button" aria-label="Edit card" data-tooltip-position="top"></button>`
+      ? `<button class="learnkit-flashcard-action-btn learnkit-card-edit-btn" type="button" aria-label="Edit card" data-tooltip-position="top"></button>`
       : '';
     if (!edit && !speaker) return '';
-    return `<div class="sprout-flashcard-actions">${edit}${speaker}</div>`;
+    return `<div class="learnkit-flashcard-actions">${edit}${speaker}</div>`;
   };
 
   if (card.type === 'cloze') {
@@ -2536,8 +2536,8 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
     front = buildFlashcardCloze(cq, 'front');
     back = buildFlashcardCloze(cq, 'back');
   } else if (card.type === 'io') {
-    front = `<div class="sprout-flashcard-io" id="sprout-io-question-${idSeed}"></div>`;
-    back = `<div class="sprout-flashcard-io" id="sprout-io-answer-${idSeed}"></div>`;
+    front = `<div class="learnkit-flashcard-io" id="learnkit-io-question-${idSeed}"></div>`;
+    back = `<div class="learnkit-flashcard-io" id="learnkit-io-answer-${idSeed}"></div>`;
   } else if (card.type === 'mcq') {
     const q = toTextField(card.fields.MCQ);
     const answers = toListField(card.fields.A)
@@ -2566,14 +2566,14 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
       [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
     }
 
-    const questionHtml = `<div class="sprout-flashcard-question-text">${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
+    const questionHtml = `<div class="learnkit-flashcard-question-text">${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
     const optionsListHtml = allOptions.length
-      ? `<ul class="sprout-flashcard-options sprout-flashcard-options-list">${allOptions.map((opt) => `<li>${renderMarkdownLineWithClozeSpans(String(opt))}</li>`).join('')}</ul>`
+      ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => `<li>${renderMarkdownLineWithClozeSpans(String(opt))}</li>`).join('')}</ul>`
       : '';
     // Back: same question + same randomised list with correct answer(s) bolded.
     // Wrap the entire <li> content (including any LaTeX) in <strong> for correct answers.
     const backOptionsListHtml = allOptions.length
-      ? `<ul class="sprout-flashcard-options sprout-flashcard-options-list">${allOptions.map((opt) => {
+      ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => {
           const rendered = renderMarkdownLineWithClozeSpans(String(opt));
           const isCorrect = answersLower.has(opt.toLowerCase());
           return isCorrect ? `<li><strong>${rendered}</strong></li>` : `<li>${rendered}</li>`;
@@ -2591,9 +2591,9 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
       const j = Math.floor(Math.random() * (i + 1));
       [shuffledSteps[i], shuffledSteps[j]] = [shuffledSteps[j], shuffledSteps[i]];
     }
-    const oqQuestionHtml = `<div class="sprout-flashcard-question-text">${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
-    front = `${oqQuestionHtml}${shuffledSteps.length ? `<ul class="sprout-flashcard-options sprout-flashcard-options-list">${shuffledSteps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ul>` : ''}`;
-    back = `${oqQuestionHtml}<ol class="sprout-flashcard-sequence-list">${steps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ol>`;
+    const oqQuestionHtml = `<div class="learnkit-flashcard-question-text">${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
+    front = `${oqQuestionHtml}${shuffledSteps.length ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${shuffledSteps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ul>` : ''}`;
+    back = `${oqQuestionHtml}<ol class="learnkit-flashcard-sequence-list">${steps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ol>`;
   } else {
     const q = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
     const a = toTextField(card.fields.A);
@@ -2609,8 +2609,8 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
     : 'sprout-flashcard-body';
 
   return `
-    <div class="sprout-flashcard-question">${actionsFor('front')}<div class="${frontBodyClass}">${front}</div></div>
-    <div class="sprout-flashcard-answer" hidden>${actionsFor('back')}<div class="${backBodyClass}">${back}</div></div>
+    <div class="learnkit-flashcard-question">${actionsFor('front')}<div class="${frontBodyClass}">${front}</div></div>
+    <div class="learnkit-flashcard-answer" hidden>${actionsFor('back')}<div class="${backBodyClass}">${back}</div></div>
   `;
 }
 
@@ -2618,77 +2618,77 @@ function buildGroupsSectionHTML(groups: string[]): string {
   if (!groups.length) return '';
   const contentId = `sprout-groups-${Math.random().toString(36).slice(2, 8)}`;
   return `
-    <div class="sprout-card-section sprout-section-groups">
-      <div class="sprout-section-label">
+    <div class="learnkit-card-section learnkit-section-groups">
+      <div class="learnkit-section-label">
         <span>Groups</span>
-        <button class="sprout-toggle-btn sprout-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" aria-label="Toggle Groups" data-tooltip-position="top">
-          <svg class="sprout-toggle-chevron sprout-toggle-chevron-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+        <button class="learnkit-toggle-btn learnkit-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" aria-label="Toggle Groups" data-tooltip-position="top">
+          <svg class="learnkit-toggle-chevron learnkit-toggle-chevron-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
         </button>
       </div>
-      <div class="${contentId} sprout-collapsible collapsed sprout-p-spacing-none">
-        <div class="sprout-groups-list">${groups.map(g => `<span class="sprout-group-tag">${renderMarkdownLineWithClozeSpans(String(g))}</span>`).join('')}</div>
+      <div class="${contentId} learnkit-collapsible collapsed learnkit-p-spacing-none">
+        <div class="learnkit-groups-list">${groups.map(g => `<span class="learnkit-group-tag">${renderMarkdownLineWithClozeSpans(String(g))}</span>`).join('')}</div>
       </div>
     </div>
   `;
 }
 
 function applyCustomHookClasses(el: HTMLElement): void {
-  if (!el.classList.contains('sprout-macro-custom')) return;
+  if (!el.classList.contains('learnkit-macro-custom')) return;
 
-  el.classList.add('sprout-custom-root');
-  const header = el.querySelector<HTMLElement>('.sprout-card-header');
-  const title = el.querySelector<HTMLElement>('.sprout-card-title');
-  const body = el.querySelector<HTMLElement>('.sprout-card-content');
-  const groups = el.querySelector<HTMLElement>('.sprout-groups-list');
+  el.classList.add('learnkit-custom-root', 'learnkit-custom-root');
+  const header = el.querySelector<HTMLElement>('.learnkit-card-header');
+  const title = el.querySelector<HTMLElement>('.learnkit-card-title');
+  const body = el.querySelector<HTMLElement>('.learnkit-card-content');
+  const groups = el.querySelector<HTMLElement>('.learnkit-groups-list');
 
-  header?.classList.add('sprout-custom-header');
-  title?.classList.add('sprout-custom-title');
-  body?.classList.add('sprout-custom-body');
-  groups?.classList.add('sprout-custom-groups');
+  header?.classList.add('learnkit-custom-header', 'learnkit-custom-header');
+  title?.classList.add('learnkit-custom-title', 'learnkit-custom-title');
+  body?.classList.add('learnkit-custom-body', 'learnkit-custom-body');
+  groups?.classList.add('learnkit-custom-groups', 'learnkit-custom-groups');
 
-  el.querySelectorAll<HTMLElement>('.sprout-card-section').forEach((section) => {
-    section.classList.add('sprout-custom-section');
-    if (section.classList.contains('sprout-section-question')) section.classList.add('sprout-custom-section-question');
-    if (section.classList.contains('sprout-section-options')) section.classList.add('sprout-custom-section-options');
-    if (section.classList.contains('sprout-section-answer')) section.classList.add('sprout-custom-section-answer');
-    if (section.classList.contains('sprout-section-info')) section.classList.add('sprout-custom-section-info');
-    if (section.classList.contains('sprout-section-groups')) section.classList.add('sprout-custom-section-groups');
+  el.querySelectorAll<HTMLElement>('.learnkit-card-section').forEach((section) => {
+    section.classList.add('learnkit-custom-section', 'learnkit-custom-section');
+    if (section.classList.contains('learnkit-section-question')) section.classList.add('learnkit-custom-section-question', 'learnkit-custom-section-question');
+    if (section.classList.contains('learnkit-section-options')) section.classList.add('learnkit-custom-section-options', 'learnkit-custom-section-options');
+    if (section.classList.contains('learnkit-section-answer')) section.classList.add('learnkit-custom-section-answer', 'learnkit-custom-section-answer');
+    if (section.classList.contains('learnkit-section-info')) section.classList.add('learnkit-custom-section-info', 'learnkit-custom-section-info');
+    if (section.classList.contains('learnkit-section-groups')) section.classList.add('learnkit-custom-section-groups', 'learnkit-custom-section-groups');
   });
 
-  el.querySelectorAll<HTMLElement>('.sprout-section-label').forEach((label) => {
-    label.classList.add('sprout-custom-label');
+  el.querySelectorAll<HTMLElement>('.learnkit-section-label').forEach((label) => {
+    label.classList.add('learnkit-custom-label', 'learnkit-custom-label');
   });
 
-  el.querySelectorAll<HTMLElement>('.sprout-section-content').forEach((content) => {
-    content.classList.add('sprout-custom-content');
+  el.querySelectorAll<HTMLElement>('.learnkit-section-content').forEach((content) => {
+    content.classList.add('learnkit-custom-content', 'learnkit-custom-content');
   });
 }
 
 function setupGuidebookCarousel(el: HTMLElement) {
-  if (!el.classList.contains('sprout-macro-guidebook')) return;
-  const content = el.querySelector<HTMLElement>('.sprout-card-content');
+  if (!el.classList.contains('learnkit-macro-guidebook')) return;
+  const content = el.querySelector<HTMLElement>('.learnkit-card-content');
   if (!content) return;
 
-  const slides = Array.from(content.querySelectorAll<HTMLElement>('.sprout-card-section'));
+  const slides = Array.from(content.querySelectorAll<HTMLElement>('.learnkit-card-section'));
   if (slides.length <= 1) return;
 
   const prevBtn = document.createElement('button');
-  prevBtn.className = 'sprout-guidebook-nav sprout-guidebook-nav-prev';
+  prevBtn.className = 'learnkit-guidebook-nav learnkit-guidebook-nav-prev';
   prevBtn.type = 'button';
   prevBtn.setAttribute('aria-label', 'Previous section');
   prevBtn.textContent = '‹';
 
   const nextBtn = document.createElement('button');
-  nextBtn.className = 'sprout-guidebook-nav sprout-guidebook-nav-next';
+  nextBtn.className = 'learnkit-guidebook-nav learnkit-guidebook-nav-next';
   nextBtn.type = 'button';
   nextBtn.setAttribute('aria-label', 'Next section');
   nextBtn.textContent = '›';
 
   const dots = document.createElement('div');
-  dots.className = 'sprout-guidebook-dots';
+  dots.className = 'learnkit-guidebook-dots';
   const dotEls = slides.map((_, i) => {
     const dot = document.createElement('button');
-    dot.className = 'sprout-guidebook-dot';
+    dot.className = 'learnkit-guidebook-dot';
     dot.type = 'button';
     dot.setAttribute('aria-label', `Go to section ${i + 1}`);
     dots.appendChild(dot);
@@ -2733,7 +2733,7 @@ function setupGuidebookCarousel(el: HTMLElement) {
   updateDots();
 
   const wrap = document.createElement('div');
-  wrap.className = 'sprout-guidebook-controls';
+  wrap.className = 'learnkit-guidebook-controls';
   wrap.appendChild(prevBtn);
   wrap.appendChild(dots);
   wrap.appendChild(nextBtn);
@@ -2741,13 +2741,13 @@ function setupGuidebookCarousel(el: HTMLElement) {
 }
 
 function setupFlashcardFlip(el: HTMLElement) {
-  if (!el.classList.contains('sprout-macro-flashcards')) return;
+  if (!el.classList.contains('learnkit-macro-flashcards')) return;
   type FlashcardFlipElement = HTMLElement & { __sproutFlipAC?: AbortController };
   const flipEl = el as FlashcardFlipElement;
-  const content = el.querySelector<HTMLElement>('.sprout-card-content');
+  const content = el.querySelector<HTMLElement>('.learnkit-card-content');
   if (!content) return;
-  const question = content.querySelector<HTMLElement>('.sprout-flashcard-question');
-  const answer = content.querySelector<HTMLElement>('.sprout-flashcard-answer');
+  const question = content.querySelector<HTMLElement>('.learnkit-flashcard-question');
+  const answer = content.querySelector<HTMLElement>('.learnkit-flashcard-answer');
   if (!question || !answer) return;
 
   // Abort any previous flip handler so stale listeners referencing
@@ -2762,7 +2762,7 @@ function setupFlashcardFlip(el: HTMLElement) {
   const applyFaceState = () => {
     question.hidden = showingAnswer;
     answer.hidden = !showingAnswer;
-    el.classList.toggle('sprout-flashcard-flipped', showingAnswer);
+    el.classList.toggle('learnkit-flashcard-flipped', showingAnswer);
   };
 
   const recalcHeight = () => {
@@ -2776,17 +2776,17 @@ function setupFlashcardFlip(el: HTMLElement) {
     question.hidden = prevQHidden;
     answer.hidden = prevAHidden;
 
-    setCssProps(el, { '--sprout-flashcard-height': `${Math.ceil(maxH)}px` });
+    setCssProps(el, { '--learnkit-flashcard-height': `${Math.ceil(maxH)}px` });
   };
 
   el.addEventListener('click', (ev: Event) => {
     const target = ev.target instanceof Element ? ev.target : null;
-    if (target?.closest('.sprout-card-edit-btn, .sprout-flashcard-speak-btn')) return;
-    if (el.classList.contains('sprout-flashcard-animating')) return;
+    if (target?.closest('.learnkit-card-edit-btn, .learnkit-flashcard-speak-btn')) return;
+    if (el.classList.contains('learnkit-flashcard-animating')) return;
 
     const before = snapshotCardPositions(el);
 
-    el.classList.add('sprout-flashcard-animating');
+    el.classList.add('learnkit-flashcard-animating', 'learnkit-flashcard-animating');
     window.setTimeout(() => {
       showingAnswer = !showingAnswer;
       applyFaceState();
@@ -2796,7 +2796,7 @@ function setupFlashcardFlip(el: HTMLElement) {
       });
     }, 180);
     window.setTimeout(() => {
-      el.classList.remove('sprout-flashcard-animating');
+      el.classList.remove('learnkit-flashcard-animating', 'learnkit-flashcard-animating');
     }, 360);
   }, { signal: ac.signal });
 
@@ -2853,9 +2853,9 @@ function enhanceCardElement(
   } catch (e) { log.swallow("read prettify plugin setting", e); }
 
   el.classList.add(
-    'sprout-pretty-card',
-    'sprout-reading-card',
-    'sprout-reading-view-wrapper',
+    'learnkit-pretty-card', 'learnkit-pretty-card',
+    'learnkit-reading-card', 'learnkit-reading-card',
+    'learnkit-reading-view-wrapper', 'learnkit-reading-view-wrapper',
     'accent',
     `sprout-macro-${macroPreset}`,
   );
@@ -2865,7 +2865,7 @@ function enhanceCardElement(
   
   // Store raw text for masonry grid sibling hiding
   if (cardRawText) {
-    el.setAttribute('data-sprout-raw-text', cardRawText);
+    el.setAttribute('data-learnkit-raw-text', cardRawText);
   }
 
   // ── Build groups HTML (always rendered; visibility controlled by dynamic CSS) ──
@@ -2878,7 +2878,7 @@ function enhanceCardElement(
         ? ''
         : macroPreset === 'classic'
         ? buildGroupsSectionHTML(groupArr)
-        : `<div class="sprout-groups-list">${groupArr.map(g => `<span class="sprout-group-tag">${renderMarkdownLineWithClozeSpans(String(g))}</span>`).join('')}</div>`;
+        : `<div class="learnkit-groups-list">${groupArr.map(g => `<span class="learnkit-group-tag">${renderMarkdownLineWithClozeSpans(String(g))}</span>`).join('')}</div>`;
     }
   }
 
@@ -2895,22 +2895,22 @@ function enhanceCardElement(
       ? ``
       : macroPreset === 'markdown'
         ? ``
-        : `<div class="sprout-card-header sprout-reading-card-header"><div class="sprout-card-title sprout-reading-card-title">${processMarkdownFeatures(card.title || '')}</div><span class="sprout-card-edit-btn" role="button" aria-label="Edit card" data-tooltip-position="top" tabindex="0"></span></div>`;
+        : `<div class="learnkit-card-header learnkit-reading-card-header"><div class="learnkit-card-title learnkit-reading-card-title">${processMarkdownFeatures(card.title || '')}</div><span class="learnkit-card-edit-btn" role="button" aria-label="Edit card" data-tooltip-position="top" tabindex="0"></span></div>`;
 
     const innerHTML = `
       ${headerHTML}
 
-      <div class="sprout-card-content sprout-reading-card-content">
+      <div class="learnkit-card-content learnkit-reading-card-content">
         ${cardContentHTML}
       </div>
 
       ${groupsHtml}
 
-      <div class="sprout-original-content" aria-hidden="true">${originalContent}</div>
+      <div class="learnkit-original-content" aria-hidden="true">${originalContent}</div>
     `;
 
   replaceChildrenWithHTML(el, innerHTML);
-  el.classList.add('sprout-single-card');
+  el.classList.add('learnkit-single-card', 'learnkit-single-card');
   applyCustomHookClasses(el);
 
   // Included-data toggles are applied as data attributes for CSS hooks
@@ -2954,7 +2954,7 @@ function enhanceCardElement(
   });
 
   // Hook up edit button in card header
-  const editBtns = Array.from(el.querySelectorAll<HTMLElement>(".sprout-card-edit-btn"));
+  const editBtns = Array.from(el.querySelectorAll<HTMLElement>(".learnkit-card-edit-btn"));
   for (const editBtn of editBtns) {
     setIcon(editBtn, "pencil");
     editBtn.tabIndex = 0;
@@ -2994,7 +2994,7 @@ function enhanceCardElement(
 
       // IO cards open the image occlusion editor instead of the generic editor
       if (targetCard.type === "io") {
-        ImageOcclusionCreatorModal.openForParent(plugin as unknown as SproutPlugin, String(targetCard.id), {
+        ImageOcclusionCreatorModal.openForParent(plugin as unknown as LearnKitPlugin, String(targetCard.id), {
           onClose: () => {
             if (typeof plugin.refreshAllViews === "function") {
               plugin.refreshAllViews();
@@ -3004,7 +3004,7 @@ function enhanceCardElement(
         return;
       }
 
-      void openBulkEditModalForCards(plugin as unknown as SproutPlugin, [targetCard], async (updatedCards) => {
+      void openBulkEditModalForCards(plugin as unknown as LearnKitPlugin, [targetCard], async (updatedCards) => {
         if (!updatedCards.length) return;
 
         try {
@@ -3025,7 +3025,7 @@ function enhanceCardElement(
           await plugin.app.vault.modify(file, updatedSource);
 
           // Persist only this edited card (plus required siblings), avoiding full bank sync.
-          await persistEditedCardAndSiblings(plugin as unknown as SproutPlugin, updatedCard);
+          await persistEditedCardAndSiblings(plugin as unknown as LearnKitPlugin, updatedCard);
           if (typeof plugin.refreshAllViews === "function") {
             plugin.refreshAllViews();
           }
@@ -3067,7 +3067,7 @@ function enhanceCardElement(
     });
   }
 
-  const speakBtns = Array.from(el.querySelectorAll<HTMLElement>(".sprout-flashcard-speak-btn"));
+  const speakBtns = Array.from(el.querySelectorAll<HTMLElement>(".learnkit-flashcard-speak-btn"));
   for (const speakBtn of speakBtns) {
     setIcon(speakBtn, "volume-2");
     speakBtn.tabIndex = 0;
@@ -3083,9 +3083,9 @@ function enhanceCardElement(
         return;
       }
 
-      const side = ((e.currentTarget as HTMLElement).getAttribute("data-sprout-tts-side") === "back") ? "back" : "front";
-      const panelSelector = side === "back" ? ".sprout-flashcard-answer" : ".sprout-flashcard-question";
-      const cardContent = el.querySelector<HTMLElement>('.sprout-card-content');
+      const side = ((e.currentTarget as HTMLElement).getAttribute("data-learnkit-tts-side") === "back") ? "back" : "front";
+      const panelSelector = side === "back" ? ".learnkit-flashcard-answer" : ".learnkit-flashcard-question";
+      const cardContent = el.querySelector<HTMLElement>('.learnkit-card-content');
       const panel = (cardContent ?? el).querySelector<HTMLElement>(panelSelector);
       if (!panel) return;
 
@@ -3099,7 +3099,7 @@ function enhanceCardElement(
 
       const panelText = (panel.innerText || panel.textContent || "").replace(/\s+/g, " ").trim();
       const imageAlt = Array.from(panel.querySelectorAll<HTMLImageElement>("img[alt]"))
-        .filter((img) => !img.classList.contains("sprout-inline-flag") && !img.hasAttribute("data-sprout-flag-code"))
+        .filter((img) => !img.classList.contains("learnkit-inline-flag") && !img.hasAttribute("data-learnkit-flag-code"))
         .map((img) => (img.alt || "").trim())
         .filter(Boolean)
         .join(" ");
@@ -3143,16 +3143,16 @@ function enhanceCardElement(
   }
 
   // Hook up toggles inside this card
-  const toggles = el.querySelectorAll<HTMLButtonElement>('.sprout-toggle-btn');
+  const toggles = el.querySelectorAll<HTMLButtonElement>('.learnkit-toggle-btn');
   toggles.forEach(btn => {
     const target = btn.getAttribute('data-target');
     if (!target) return;
     const content = el.querySelector<HTMLElement>(target);
     if (!content) return;
-    const section = btn.closest('.sprout-card-section');
-    const isAnswer = !!section?.classList.contains('sprout-section-answer');
-    const isGroups = !!section?.classList.contains('sprout-section-groups');
-    const isInfo = !!section?.classList.contains('sprout-section-info');
+    const section = btn.closest('.learnkit-card-section');
+    const isAnswer = !!section?.classList.contains('learnkit-section-answer');
+    const isGroups = !!section?.classList.contains('learnkit-section-groups');
+    const isInfo = !!section?.classList.contains('learnkit-section-info');
     const defaultExpanded =
       macroPreset === 'guidebook' || macroPreset === 'markdown'
         ? true
@@ -3160,15 +3160,15 @@ function enhanceCardElement(
           ? !(isAnswer || isGroups || isInfo)
           : false;
 
-    content.classList.add('sprout-collapsible');
+    content.classList.add('learnkit-collapsible', 'learnkit-collapsible');
     content.classList.toggle('collapsed', !defaultExpanded);
     content.classList.toggle('expanded', defaultExpanded);
     btn.setAttribute('aria-expanded', defaultExpanded ? 'true' : 'false');
-    const chevron = btn.querySelector<HTMLElement>('.sprout-toggle-chevron');
+    const chevron = btn.querySelector<HTMLElement>('.learnkit-toggle-chevron');
     if (chevron) {
-      chevron.classList.toggle('sprout-reading-chevron-collapsed', !defaultExpanded);
+      chevron.classList.toggle('learnkit-reading-chevron-collapsed', !defaultExpanded);
     }
-    const isFlashcards = el.classList.contains('sprout-macro-flashcards');
+    const isFlashcards = el.classList.contains('learnkit-macro-flashcards');
     if (isFlashcards) {
       setCssProps(btn, 'display', 'none');
       return;
@@ -3185,12 +3185,12 @@ function enhanceCardElement(
         content.classList.remove('expanded');
         content.classList.add('collapsed');
         btn.setAttribute('aria-expanded', 'false');
-        if (chevron) chevron.classList.add('sprout-reading-chevron-collapsed');
+        if (chevron) chevron.classList.add('learnkit-reading-chevron-collapsed', 'learnkit-reading-chevron-collapsed');
       } else {
         content.classList.remove('collapsed');
         content.classList.add('expanded');
         btn.setAttribute('aria-expanded', 'true');
-        if (chevron) chevron.classList.remove('sprout-reading-chevron-collapsed');
+        if (chevron) chevron.classList.remove('learnkit-reading-chevron-collapsed', 'learnkit-reading-chevron-collapsed');
       }
 
       // FLIP step 2: after the browser reflows, animate cards
@@ -3216,16 +3216,16 @@ function enhanceCardElement(
 
 export function renderReadingViewPreviewCard(el: HTMLElement, card: SproutCard): void {
   el.classList.add("el-p");
-  el.setAttribute("data-sprout-processed", "true");
+  el.setAttribute("data-learnkit-processed", "true");
   enhanceCardElement(el, card, "", undefined, true);
 
-  const editButtons = el.querySelectorAll<HTMLElement>(".sprout-card-edit-btn");
+  const editButtons = el.querySelectorAll<HTMLElement>(".learnkit-card-edit-btn");
   editButtons.forEach((button) => {
     button.setAttribute("aria-disabled", "true");
     button.setAttribute("tabindex", "-1");
   });
 
-  const audioButtons = el.querySelectorAll<HTMLButtonElement>(".sprout-flashcard-speak-btn");
+  const audioButtons = el.querySelectorAll<HTMLButtonElement>(".learnkit-flashcard-speak-btn");
   audioButtons.forEach((button) => {
     button.disabled = true;
     button.setAttribute("aria-disabled", "true");
@@ -3342,18 +3342,18 @@ function resolveUnloadedEmbeds(
         const img = document.createElement('img');
         img.src = app.vault.getResourcePath(imageFile);
         img.alt = embedSrc.split('/').pop() || embedSrc;
-        img.className = 'sprout-reading-embed-img';
+        img.className = 'learnkit-reading-embed-img';
         embed.replaceChildren(img);
         embed.classList.add('media-embed', 'image-embed', 'is-loaded');
       } else {
         // Image not found — show a comment-like placeholder
         embed.textContent = `⚠️ Image not found: ${embedSrc}`;
-        embed.classList.add('sprout-missing-image');
+        embed.classList.add('learnkit-missing-image', 'learnkit-missing-image');
       }
     } catch (err) {
       log.warn('Failed to resolve internal embed:', embedSrc, err);
       embed.textContent = `⚠️ Image not found: ${embedSrc}`;
-      embed.classList.add('sprout-missing-image');
+      embed.classList.add('learnkit-missing-image', 'learnkit-missing-image');
     }
   }
 }
@@ -3487,17 +3487,17 @@ function renderIoInReadingCard(
   if (questionEl) {
     questionEl.replaceChildren();
     const container = document.createElement('div');
-    container.className = 'sprout-io-reading-container';
+    container.className = 'learnkit-io-reading-container';
 
     const img = document.createElement('img');
     img.src = imageSrc;
     img.alt = card.title || 'Image Occlusion';
-    img.className = 'sprout-io-reading-img';
+    img.className = 'learnkit-io-reading-img';
     container.appendChild(img);
 
     if (occlusions.length > 0) {
       const overlay = document.createElement('div');
-      overlay.className = 'sprout-io-reading-overlay';
+      overlay.className = 'learnkit-io-reading-overlay';
 
       for (const rect of occlusions) {
         const x = Number.isFinite(rect.x) ? Number(rect.x) : 0;
@@ -3506,8 +3506,13 @@ function renderIoInReadingCard(
         const h = Number.isFinite(rect.h) ? Number(rect.h) : 0;
 
         const mask = document.createElement('div');
-        mask.className = 'sprout-io-reading-mask sprout-io-reading-mask-filled';
-        mask.classList.add(rect.shape === 'circle' ? 'sprout-io-reading-mask-circle' : 'sprout-io-reading-mask-rect');
+        mask.className = 'learnkit-io-reading-mask learnkit-io-reading-mask-filled';
+        mask.classList.add(
+          rect.shape === 'circle' ? 'learnkit-io-reading-mask-circle' : 'learnkit-io-reading-mask-rect',
+        );
+        mask.classList.add(
+          rect.shape === 'circle' ? 'learnkit-io-reading-mask-circle' : 'learnkit-io-reading-mask-rect',
+        );
 
         setCssProps(mask, 'left', `${Math.max(0, Math.min(1, x)) * 100}%`);
         setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
@@ -3516,7 +3521,7 @@ function renderIoInReadingCard(
 
         const hint = document.createElement('span');
         hint.textContent = '?';
-        hint.className = 'sprout-io-reading-mask-hint';
+        hint.className = 'learnkit-io-reading-mask-hint';
         mask.appendChild(hint);
 
         overlay.appendChild(mask);
@@ -3533,12 +3538,12 @@ function renderIoInReadingCard(
   if (answerEl) {
     answerEl.replaceChildren();
     const container = document.createElement('div');
-    container.className = 'sprout-io-reading-container';
+    container.className = 'learnkit-io-reading-container';
 
     const img = document.createElement('img');
     img.src = imageSrc;
     img.alt = card.title || 'Image Occlusion — Answer';
-    img.className = 'sprout-io-reading-img';
+    img.className = 'learnkit-io-reading-img';
     container.appendChild(img);
 
     answerEl.appendChild(container);

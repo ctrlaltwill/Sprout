@@ -44,9 +44,9 @@ export class ChartErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
-          className="bc card sprout-ana-card sprout-ana-min-300 p-6 flex flex-col items-center justify-center gap-3"
+          className="card learnkit-ana-card learnkit-ana-min-300 p-6 flex flex-col items-center justify-center gap-3"
         >
-          <div className="bc inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -57,25 +57,25 @@ export class ChartErrorBoundary extends React.Component<Props, State> {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="bc text-destructive"
+              className="text-destructive"
             >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <div className="bc text-center">
-            <div className="bc font-semibold lk-home-section-title text-foreground">
+          <div className="text-center">
+            <div className="font-semibold lk-home-section-title text-foreground">
               {this.props.chartName} unavailable
             </div>
-            <div className="bc text-sm text-muted-foreground mt-1">
+            <div className="text-sm text-muted-foreground mt-1">
               Unable to render this chart. Check the console for details.
             </div>
           </div>
           {this.state.error && (
-            <details className="bc text-xs text-muted-foreground mt-2">
-              <summary className="bc cursor-pointer">Error details</summary>
-              <pre className="bc mt-2 p-2 bg-muted rounded text-xs overflow-auto max-w-full">
+            <details className="text-xs text-muted-foreground mt-2">
+              <summary className="cursor-pointer">Error details</summary>
+              <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-w-full">
                 {this.state.error.message}
               </pre>
             </details>

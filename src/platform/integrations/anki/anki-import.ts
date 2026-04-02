@@ -12,7 +12,7 @@
  */
 
 import { TFile } from "obsidian";
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import type { CardRecord } from "../../types/card";
 import {
   type AnkiNoteRow,
@@ -190,7 +190,7 @@ export async function previewApkg(apkgBytes: Uint8Array): Promise<ImportPreview>
 
 /** Import cards from an .apkg file into the vault. */
 export async function importFromApkg(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   apkgBytes: Uint8Array,
   options: ImportOptions,
 ): Promise<ImportResult> {
@@ -417,7 +417,7 @@ function makeFallbackModel(mid: number): AnkiModel {
   };
 }
 
-async function ensureFolderExists(plugin: SproutPlugin, path: string): Promise<void> {
+async function ensureFolderExists(plugin: LearnKitPlugin, path: string): Promise<void> {
   const parts = path.split("/").filter(Boolean);
   let current = "";
   for (const part of parts) {
@@ -479,7 +479,7 @@ function normalizeForHash(s: string): string {
 
 /** After sync assigns IDs, patch scheduling states from Anki card data. */
 function patchSchedulingStates(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   patches: { noteRow: AnkiNoteRow; ankiCards: AnkiCardRow[] }[],
   collectionCrt: number,
   filePath: string,

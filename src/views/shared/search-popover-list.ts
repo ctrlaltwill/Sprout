@@ -1,3 +1,15 @@
+/**
+ * @file src/views/shared/search-popover-list.ts
+ * @summary Module for search popover list.
+ *
+ * @exports
+ *  - SearchPopoverOption
+ *  - SearchPopoverListController
+ *  - SearchPopoverListArgs
+ *  - buildScopeSearchPlaceholder
+ *  - mountSearchPopoverList
+ */
+
 import { setIcon } from "obsidian";
 
 export type SearchPopoverOption = {
@@ -135,7 +147,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
   const filterPopoverId = `sprout-scope-type-filter-listbox-${Math.random().toString(36).slice(2, 9)}`;
   const typeFilterBtn = typeFilterDefs.length
     ? searchWrap?.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-type-filter-btn",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-type-filter-btn learnkit-scope-type-filter-btn",
       attr: {
         type: "button",
         "aria-label": "Filter scope item types",
@@ -146,10 +158,10 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
     })
     : null;
   const typeFilterPopover = typeFilterDefs.length
-    ? searchWrap?.createDiv({ cls: "sprout-scope-type-filter-popover dropdown-menu hidden" })
+    ? searchWrap?.createDiv({ cls: "learnkit-scope-type-filter-popover learnkit-scope-type-filter-popover dropdown-menu hidden" })
     : null;
   const typeFilterList = typeFilterPopover?.createDiv({
-    cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel",
+    cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel",
   }) ?? null;
   if (typeFilterList) {
     typeFilterList.setAttr("id", filterPopoverId);
@@ -157,10 +169,10 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
   }
 
   const typeFilterBtnLabel = typeFilterBtn
-    ? typeFilterBtn.createSpan({ cls: "bc", text: "Filters" })
+    ? typeFilterBtn.createSpan({ cls: "", text: "Filters" })
     : null;
   if (typeFilterBtn) {
-    const typeFilterIcon = typeFilterBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+    const typeFilterIcon = typeFilterBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(typeFilterIcon, "filter");
     typeFilterBtn.insertBefore(typeFilterIcon, typeFilterBtnLabel);
   }
@@ -201,22 +213,22 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
       .sort((a, b) => a.display.localeCompare(b.display, undefined, { sensitivity: "base" }));
 
     if (visibleTypeFilterDefs.length) {
-      typeFilterList.createDiv({ cls: "sprout-coach-scope-section-title", text: "Filters", attr: { role: "presentation" } });
+      typeFilterList.createDiv({ cls: "learnkit-coach-scope-section-title learnkit-coach-scope-section-title", text: "Filters", attr: { role: "presentation" } });
     }
 
     for (const entry of visibleTypeFilterDefs) {
       const selected = enabledTypes.has(entry.type);
       const item = typeFilterList.createEl("button", {
-        cls: "bc sprout-coach-scope-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+        cls: "learnkit-coach-scope-item learnkit-coach-scope-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
       });
       item.type = "button";
       item.setAttr("role", "menuitemcheckbox");
       item.setAttr("aria-checked", selected ? "true" : "false");
-      const iconWrap = item.createSpan({ cls: "sprout-coach-scope-item-icon" });
+      const iconWrap = item.createSpan({ cls: "learnkit-coach-scope-item-icon learnkit-coach-scope-item-icon" });
       renderScopeItemIcon(iconWrap, entry.type);
-      const dotWrap = item.createSpan({ cls: "sprout-coach-scope-item-dot-wrap" });
-      dotWrap.createSpan({ cls: `sprout-coach-scope-item-dot${selected ? " is-selected" : ""}` });
-      item.createSpan({ cls: "sprout-coach-scope-item-label", text: entry.label });
+      const dotWrap = item.createSpan({ cls: "learnkit-coach-scope-item-dot-wrap learnkit-coach-scope-item-dot-wrap" });
+      dotWrap.createSpan({ cls: `learnkit-coach-scope-item-dot${selected ? " is-selected" : ""}` });
+      item.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: entry.label });
       if (selected) item.classList.add("is-selected");
       item.addEventListener("mousedown", (evt) => evt.preventDefault());
       item.addEventListener("click", () => {
@@ -230,23 +242,23 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
 
     if (propertyGroupList.length) {
       if (visibleTypeFilterDefs.length) {
-        typeFilterList.createDiv({ cls: "sprout-coach-scope-separator", attr: { role: "separator" } });
+        typeFilterList.createDiv({ cls: "learnkit-coach-scope-separator learnkit-coach-scope-separator", attr: { role: "separator" } });
       }
-      typeFilterList.createDiv({ cls: "sprout-coach-scope-section-title", text: "Properties", attr: { role: "presentation" } });
+      typeFilterList.createDiv({ cls: "learnkit-coach-scope-section-title learnkit-coach-scope-section-title", text: "Properties", attr: { role: "presentation" } });
       for (const group of propertyGroupList) {
         const selected = enabledPropertyKeys.has(group.key);
         const item = typeFilterList.createEl("button", {
-          cls: "bc sprout-coach-scope-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+          cls: "learnkit-coach-scope-item learnkit-coach-scope-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
         });
         item.type = "button";
         item.setAttr("role", "menuitemcheckbox");
         item.setAttr("aria-checked", selected ? "true" : "false");
         item.setAttr("aria-label", pluralizeLabel(group.display));
-        const iconWrap = item.createSpan({ cls: "sprout-coach-scope-item-icon" });
+        const iconWrap = item.createSpan({ cls: "learnkit-coach-scope-item-icon learnkit-coach-scope-item-icon" });
         renderScopeItemIcon(iconWrap, "property");
-        const dotWrap = item.createSpan({ cls: "sprout-coach-scope-item-dot-wrap" });
-        dotWrap.createSpan({ cls: `sprout-coach-scope-item-dot${selected ? " is-selected" : ""}` });
-        item.createSpan({ cls: "sprout-coach-scope-item-label", text: pluralizeLabel(group.display) });
+        const dotWrap = item.createSpan({ cls: "learnkit-coach-scope-item-dot-wrap learnkit-coach-scope-item-dot-wrap" });
+        dotWrap.createSpan({ cls: `learnkit-coach-scope-item-dot${selected ? " is-selected" : ""}` });
+        item.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: pluralizeLabel(group.display) });
         if (selected) item.classList.add("is-selected");
         item.addEventListener("mousedown", (evt) => evt.preventDefault());
         item.addEventListener("click", () => {
@@ -262,7 +274,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
   const applySearchIconOffset = (): void => {
     if (!searchWrap || !typeFilterBtn) return;
     const offset = typeFilterBtn.offsetWidth + 6;
-    searchWrap.style.setProperty("--sprout-scope-filter-offset", `${offset}px`);
+    searchWrap.style.setProperty("--learnkit-scope-filter-offset", `${offset}px`);
   };
 
   const applyPlaceholder = (): void => {
@@ -326,7 +338,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
   };
 
   if (typeFilterBtn && searchWrap) {
-    searchWrap.classList.add("sprout-coach-search-wrap-has-filters");
+    searchWrap.classList.add("learnkit-coach-search-wrap-has-filters", "learnkit-coach-search-wrap-has-filters");
     searchWrap.insertBefore(typeFilterBtn, args.searchInput);
     applySearchIconOffset();
     typeFilterBtn.addEventListener("click", (evt) => {
@@ -375,7 +387,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
     if (!filteredOptions.length) {
       activeIndex = -1;
       const empty = args.listEl.createDiv({
-        cls: "sprout-coach-scope-empty",
+        cls: "learnkit-coach-scope-empty learnkit-coach-scope-empty",
         text: query.trim() ? args.emptyTextWhenQuery : args.emptyTextWhenIdle,
       });
       empty.setAttr("role", "status");
@@ -386,16 +398,16 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
       for (let idx = 0; idx < filteredOptions.length; idx += 1) {
         const option = filteredOptions[idx];
         const item = args.listEl.createEl("button", {
-          cls: "bc sprout-coach-scope-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+          cls: "learnkit-coach-scope-item learnkit-coach-scope-item group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
         });
         item.type = "button";
         item.setAttr("role", "menuitemcheckbox");
         item.setAttr("aria-checked", option.selected ? "true" : "false");
         item.setAttr("aria-label", option.label);
         item.tabIndex = idx === activeIndex ? 0 : -1;
-        const iconWrap = item.createSpan({ cls: "sprout-coach-scope-item-icon" });
+        const iconWrap = item.createSpan({ cls: "learnkit-coach-scope-item-icon learnkit-coach-scope-item-icon" });
         renderScopeItemIcon(iconWrap, option.type);
-        item.createSpan({ cls: "sprout-coach-scope-item-label", text: option.label });
+        item.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: option.label });
 
         if (idx === activeIndex) item.classList.add("is-active");
         if (option.selected) item.classList.add("is-selected");
@@ -405,7 +417,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
         });
 
         item.addEventListener("mouseenter", () => {
-          const prev = args.listEl.querySelector(".sprout-coach-scope-item.is-active");
+          const prev = args.listEl.querySelector(".learnkit-coach-scope-item.is-active");
           if (prev instanceof HTMLElement) {
             prev.classList.remove("is-active");
             prev.tabIndex = -1;
@@ -449,7 +461,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
       if (evt.key === "ArrowDown") activeIndex = (activeIndex + 1 + max) % max;
       else activeIndex = (activeIndex - 1 + max) % max;
       render();
-      const activeItem = args.listEl.querySelector(".sprout-coach-scope-item.is-active");
+      const activeItem = args.listEl.querySelector(".learnkit-coach-scope-item.is-active");
       if (activeItem instanceof HTMLElement) activeItem.focus();
       return;
     }

@@ -1,6 +1,9 @@
 /**
- * @file src/types/assets.d.ts
- * @summary Ambient type declarations for binary asset imports (e.g. .wasm files).
+ * @file src/platform/types/assets.d.ts
+ * @summary Module for assets.d.
+ *
+ * @exports
+ *  - (no named exports in this module)
  */
 
 declare module "*.wasm" {

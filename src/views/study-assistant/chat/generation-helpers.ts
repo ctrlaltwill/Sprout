@@ -1,3 +1,16 @@
+/**
+ * @file src/views/study-assistant/chat/generation-helpers.ts
+ * @summary Module for generation helpers.
+ *
+ * @exports
+ *  - isFlashcardRequest
+ *  - flashcardDisclaimerText
+ *  - appendFlashcardDisclaimerIfNeeded
+ *  - shouldShowGenerateSwitch
+ *  - generateNonFlashcardHintText
+ *  - shouldShowAskSwitch
+ */
+
 type Tx = (token: string, fallback: string, vars?: Record<string, string | number>) => string;
 
 export function isFlashcardRequest(text: string): boolean {

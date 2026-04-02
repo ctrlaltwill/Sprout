@@ -10,7 +10,7 @@
  *  - exportToApkg — main export function → Uint8Array (.apkg bytes)
  */
 
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import type { CardRecord } from "../../types/card";
 import type { ReviewLogEntry } from "../../types/review";
 import type { SchedulerSettings } from "../../types/scheduler";
@@ -79,7 +79,7 @@ export type ExportResult = {
 // ── Main export function ──────────────────────────────────────────────────────
 
 export async function exportToApkg(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   options: ExportOptions,
 ): Promise<ExportResult> {
   _resetIdCounter();

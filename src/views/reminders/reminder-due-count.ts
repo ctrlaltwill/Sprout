@@ -1,3 +1,12 @@
+/**
+ * @file src/views/reminders/reminder-due-count.ts
+ * @summary Module for reminder due count.
+ *
+ * @exports
+ *  - getDueCardsNow
+ *  - countDueCardsNow
+ */
+
 import type { CardRecord, CardState } from "../../platform/core/store";
 import { isParentCard } from "../../platform/core/card-utils";
 

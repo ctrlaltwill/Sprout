@@ -1,3 +1,11 @@
+/**
+ * @file tests/parser.test.ts
+ * @summary Unit tests for parser.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 // tests/parser.test.ts
 // ---------------------------------------------------------------------------
 // Tests for the card parser — ensures all card formats (basic, MCQ, cloze, IO)

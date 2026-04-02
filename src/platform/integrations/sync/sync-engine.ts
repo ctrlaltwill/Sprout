@@ -11,7 +11,7 @@
 import { TFile } from "obsidian";
 import { parseCardsFromText, type ParsedCard } from "../../../engine/parser/parser";
 import { generateUniqueId } from "../../../platform/core/ids";
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import type { CardRecord } from "../../../platform/types/card";
 import { normalizeCardOptions } from "../../../platform/types/card";
 import {
@@ -195,7 +195,7 @@ function inferPrefixAt(lines: string[], lineIndex: number): string {
 // ────────────────────────────────────────────
 
 /** Checks whether a scheduling state already exists for `id`. */
-function hasState(plugin: SproutPlugin, id: string): boolean {
+function hasState(plugin: LearnKitPlugin, id: string): boolean {
   const states = plugin.store.data.states;
   return !!(states && Object.prototype.hasOwnProperty.call(states, id));
 }
@@ -204,7 +204,7 @@ function hasState(plugin: SproutPlugin, id: string): boolean {
  * Create-only wrapper around `plugin.store.ensureState`.
  * Never resets an existing state — only creates if missing.
  */
-function ensureStateIfMissing(plugin: SproutPlugin, id: string, now: number, defaultDifficulty: number) {
+function ensureStateIfMissing(plugin: LearnKitPlugin, id: string, now: number, defaultDifficulty: number) {
   if (hasState(plugin, id)) return;
   plugin.store.ensureState(id, now, defaultDifficulty);
 }
@@ -213,7 +213,7 @@ function ensureStateIfMissing(plugin: SproutPlugin, id: string, now: number, def
  * Restores a card's scheduling state from a snapshot (e.g. a backup).
  * Returns `true` if the state was found and restored.
  */
-function upsertStateIfPresent(plugin: SproutPlugin, snapshot: StateMap | null | undefined, id: string): boolean {
+function upsertStateIfPresent(plugin: LearnKitPlugin, snapshot: StateMap | null | undefined, id: string): boolean {
   if (!snapshot) return false;
   const st = snapshot[id];
   if (!st || typeof st !== "object") return false;
@@ -227,7 +227,7 @@ function upsertStateIfPresent(plugin: SproutPlugin, snapshot: StateMap | null | 
  *
  * Used when the in-memory store has zero states but cards exist in notes.
  */
-async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMap | null> {
+async function loadBestSchedulingSnapshot(plugin: LearnKitPlugin): Promise<StateMap | null> {
   const inMem = plugin.store.data.states;
   if (countObjectKeys(inMem) > 0) return inMem as StateMap;
 
@@ -287,7 +287,7 @@ async function loadBestSchedulingSnapshot(plugin: SproutPlugin): Promise<StateMa
  * Decides if the current run should use "recovery mode":
  * store has zero scheduling, but parsed cards exist in markdown.
  */
-function isLikelyRecoveryScenario(plugin: SproutPlugin, parsedCardCount: number): boolean {
+function isLikelyRecoveryScenario(plugin: LearnKitPlugin, parsedCardCount: number): boolean {
   const stateCount = countObjectKeys(plugin.store.data.states);
   const cardCount = countObjectKeys(plugin.store.data.cards);
   if (stateCount > 0) return false;
@@ -358,7 +358,7 @@ function cardSignature(rec: CardRecord | null): string {
 // ────────────────────────────────────────────
 
 /** Removes cards with legacy types ("lq", "fq") from cards + quarantine. */
-function purgeDeprecatedTypes(plugin: SproutPlugin) {
+function purgeDeprecatedTypes(plugin: LearnKitPlugin) {
   const cards = plugin.store.data.cards || {};
   const states = plugin.store.data.states || {};
   for (const [id, rec] of Object.entries(cards)) {
@@ -377,7 +377,7 @@ function purgeDeprecatedTypes(plugin: SproutPlugin) {
 }
 
 /** Quarantines IO cards whose referenced image file is missing from the vault. */
-function quarantineIoCardsWithMissingImages(plugin: SproutPlugin): number {
+function quarantineIoCardsWithMissingImages(plugin: LearnKitPlugin): number {
   const cards = plugin.store.data.cards || {};
   const now = Date.now();
   let count = 0;
@@ -497,7 +497,7 @@ function applyEditsToLines(lines: string[], edits: TextEdit[]): string[] {
 // ────────────────────────────────────────────
 
 /** Deletes the image file associated with an IO card. */
-async function deleteIoImage(plugin: SproutPlugin, imageRef: string): Promise<void> {
+async function deleteIoImage(plugin: LearnKitPlugin, imageRef: string): Promise<void> {
   const normalized = normalizeIoImageRef(imageRef);
   if (!normalized) return;
 
@@ -515,7 +515,7 @@ async function deleteIoImage(plugin: SproutPlugin, imageRef: string): Promise<vo
 // ────────────────────────────────────────────
 
 /** Deletes all child records (and their states) of `childType` for a given `parentId`. */
-function deleteChildrenByType(plugin: SproutPlugin, parentId: string, childType: string): number {
+function deleteChildrenByType(plugin: LearnKitPlugin, parentId: string, childType: string): number {
   let deleted = 0;
   const pid = String(parentId || "");
 
@@ -547,7 +547,7 @@ function deleteChildrenByType(plugin: SproutPlugin, parentId: string, childType:
 }
 
 /** Sweep: deletes child cards of `childType` whose parentId no longer exists as a `parentType` card. */
-function deleteOrphanChildren(plugin: SproutPlugin, parentType: string, childType: string): number {
+function deleteOrphanChildren(plugin: LearnKitPlugin, parentType: string, childType: string): number {
   const liveParents = new Set<string>();
   for (const id of Object.keys(plugin.store.data.cards || {})) {
     const rec = plugin.store.data.cards[id];
@@ -572,7 +572,7 @@ function deleteOrphanChildren(plugin: SproutPlugin, parentType: string, childTyp
 }
 
 /** Collects existing child records of `childType` for a given `parentId`. */
-function collectExistingChildren(plugin: SproutPlugin, parentId: string, childType: string): CardRecord[] {
+function collectExistingChildren(plugin: LearnKitPlugin, parentId: string, childType: string): CardRecord[] {
   const out: CardRecord[] = [];
   for (const c of Object.values(plugin.store.data.cards || {})) {
     if (!c) continue;
@@ -592,7 +592,7 @@ function resolveChildCreatedAt(prev: CardRecord | undefined, parent: CardRecord,
 
 /** Upserts a child card record, merging with previous if it exists, and ensures scheduling state. */
 function upsertChildRecord(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   childId: string,
   rec: CardRecord,
   now: number,
@@ -618,7 +618,7 @@ function upsertChildRecord(
 }
 
 /** Removes child records not in `keepChildIds`. */
-function pruneStaleChildren(plugin: SproutPlugin, existingChildren: CardRecord[], keepChildIds: Set<string>): void {
+function pruneStaleChildren(plugin: LearnKitPlugin, existingChildren: CardRecord[], keepChildIds: Set<string>): void {
   for (const ch of existingChildren) {
     const id = String(ch.id || "");
     if (!id) continue;
@@ -632,7 +632,7 @@ function pruneStaleChildren(plugin: SproutPlugin, existingChildren: CardRecord[]
  * Removes scheduling states that no longer correspond to any live card or quarantine entry.
  * This keeps backup/state counts aligned with studyable data and prevents stale carry-over.
  */
-function sanitizeOrphanStates(plugin: SproutPlugin): number {
+function sanitizeOrphanStates(plugin: LearnKitPlugin): number {
   const states = plugin.store.data.states || {};
   const liveIds = new Set<string>([
     ...Object.keys(plugin.store.data.cards || {}),
@@ -650,12 +650,12 @@ function sanitizeOrphanStates(plugin: SproutPlugin): number {
 }
 
 // Convenience wrappers (preserve call-site readability)
-function deleteIoChildren(plugin: SproutPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "io-child"); }
-function deleteClozeChildren(plugin: SproutPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "cloze-child"); }
-function deleteReversedChildren(plugin: SproutPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "reversed-child"); }
-function deleteOrphanIoChildren(plugin: SproutPlugin): number { return deleteOrphanChildren(plugin, "io", "io-child"); }
-function deleteOrphanClozeChildren(plugin: SproutPlugin): number { return deleteOrphanChildren(plugin, "cloze", "cloze-child"); }
-function deleteOrphanReversedChildren(plugin: SproutPlugin): number { return deleteOrphanChildren(plugin, "reversed", "reversed-child"); }
+function deleteIoChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "io-child"); }
+function deleteClozeChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "cloze-child"); }
+function deleteReversedChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "reversed-child"); }
+function deleteOrphanIoChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "io", "io-child"); }
+function deleteOrphanClozeChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "cloze", "cloze-child"); }
+function deleteOrphanReversedChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "reversed", "reversed-child"); }
 
 // ────────────────────────────────────────────
 // Child-type-specific utilities
@@ -689,7 +689,7 @@ function stableReversedChildId(parentId: string, dir: "forward" | "back"): strin
  * Creates two children: "forward" (Q→A) and "back" (A→Q), each with
  * independent scheduling.
  */
-function syncReversedChildren(plugin: SproutPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
+function syncReversedChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
   const parentId = String(parent?.id ?? "");
   if (!parentId) return;
 
@@ -768,7 +768,7 @@ function countRemovedGroups(before: Set<string>, after: Set<string>): number {
  * Deletes orphaned IO images from the vault.
  * An image is orphaned if it matches `sprout-io-*` but no IO card references it.
  */
-async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
+async function deleteOrphanedIoImages(plugin: LearnKitPlugin): Promise<number> {
   if (!plugin.settings?.storage?.deleteOrphanedImages) return 0;
 
   const vault = plugin.app.vault;
@@ -836,7 +836,7 @@ async function deleteOrphanedIoImages(plugin: SproutPlugin): Promise<number> {
  * Creates new children for added deletions, preserves existing ones,
  * and removes children for deletions that no longer exist.
  */
-function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
+function syncClozeChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
   const parentId = String(parent?.id ?? "");
   if (!parentId) return;
 
@@ -884,7 +884,7 @@ function syncClozeChildren(plugin: SproutPlugin, parent: CardRecord, now: number
  * but the parent record has an `occlusions` array, rebuilds the IO map entry
  * from that data so children can be created.
  */
-function syncIoChildren(plugin: SproutPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
+function syncIoChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
   const parentId = String(parent?.id ?? "");
   if (!parentId) return;
 
@@ -1103,7 +1103,7 @@ function inferIoIdFromCard(c: ParsedCard): string | null {
  *  7. Manages IO / cloze child records
  */
 export async function syncOneFile(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   file: TFile,
   options?: { pruneGlobalOrphans?: boolean },
 ) {
@@ -1424,7 +1424,7 @@ export async function syncOneFile(
  * card database, inserts missing anchors, removes stale entries,
  * and cleans up orphaned IO images.
  */
-export async function syncQuestionBank(plugin: SproutPlugin) {
+export async function syncQuestionBank(plugin: LearnKitPlugin) {
   return withVaultSyncLock(async () => {
     const now = Date.now();
 

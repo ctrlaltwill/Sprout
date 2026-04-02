@@ -1,3 +1,11 @@
+/**
+ * @file tests/anki-zip.test.ts
+ * @summary Unit tests for anki zip.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import { packApkg, unpackApkg } from "../src/platform/integrations/anki/anki-zip";
 import { strToU8, strFromU8 } from "fflate";

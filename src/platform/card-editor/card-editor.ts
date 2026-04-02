@@ -11,7 +11,7 @@
  */
 
 import { Notice, Platform, setIcon } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions } from "../../platform/core/store";
 import { getCorrectIndices } from "../../platform/types/card";
@@ -142,21 +142,21 @@ export function attachClozeShortcuts(textarea: HTMLTextAreaElement) {
 
 export function createMobileClozeButtons(textarea: HTMLTextAreaElement): HTMLElement {
   const wrap = document.createElement("div");
-  wrap.className = "bc sprout-cloze-mobile-actions";
+  wrap.className = "learnkit-cloze-mobile-actions";
 
   const repeatBtn = document.createElement("button");
   repeatBtn.type = "button";
-  repeatBtn.className = "bc sprout-btn-toolbar h-7 px-2 text-sm inline-flex items-center justify-center sprout-cloze-mobile-btn sprout-is-hidden";
+  repeatBtn.className = "learnkit-btn-toolbar h-7 px-2 text-sm inline-flex items-center justify-center learnkit-cloze-mobile-btn learnkit-is-hidden";
   repeatBtn.textContent = "Repeat cloze";
 
   const addBtn = document.createElement("button");
   addBtn.type = "button";
-  addBtn.className = "bc sprout-btn-toolbar h-7 px-2 text-sm inline-flex items-center justify-center sprout-cloze-mobile-btn";
+  addBtn.className = "learnkit-btn-toolbar h-7 px-2 text-sm inline-flex items-center justify-center learnkit-cloze-mobile-btn";
   addBtn.textContent = "Add cloze";
 
   const refreshState = () => {
     const hasCloze = getClozeIndices(String(textarea.value ?? "")).length > 0;
-    repeatBtn.classList.toggle("sprout-is-hidden", !hasCloze);
+    repeatBtn.classList.toggle("learnkit-is-hidden", !hasCloze);
   };
 
   addBtn.addEventListener("click", (ev) => {
@@ -196,12 +196,12 @@ export function attachFlagPreviewOverlay(
   opts?: { preferInlineControlHeight?: boolean; deferMeasuredHeightUntilInteraction?: boolean },
 ): HTMLElement {
   const wrap = document.createElement("div");
-  wrap.className = `bc sprout-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-wrap--multiline" : ""}`;
+  wrap.className = `bc learnkit-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " learnkit-flag-editor-wrap--multiline" : ""}`;
 
   const overlay = document.createElement("div");
-  overlay.className = `bc sprout-flag-editor-overlay${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-overlay--multiline" : ""}`;
+  overlay.className = `bc learnkit-flag-editor-overlay${control instanceof HTMLTextAreaElement ? " learnkit-flag-editor-overlay--multiline" : ""}`;
 
-  control.classList.add("sprout-flag-editor-control");
+  control.classList.add("learnkit-flag-editor-control", "learnkit-flag-editor-control");
 
   if (control instanceof HTMLTextAreaElement) {
     // Let actual content drive height instead of keeping a fixed multi-row baseline.
@@ -257,9 +257,9 @@ export function attachFlagPreviewOverlay(
     applyControlHeight(previewHeight);
     if (previewHeight === lastPreviewHeight) return;
     lastPreviewHeight = previewHeight;
-    wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
+    wrap.style.setProperty("--learnkit-flag-preview-height", `${previewHeight}px`);
     if (Number.isFinite(maxControlHeight)) {
-      wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
+      wrap.style.setProperty("--learnkit-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
     }
   };
 
@@ -332,19 +332,19 @@ export function attachFlagPreviewOverlay(
   document.addEventListener("pointerdown", handleDocumentPointerDown, true);
 
   control.addEventListener("focus", () => {
-    wrap.classList.add("sprout-flag-editor--focused");
+    wrap.classList.add("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
     syncPreviewHeight();
   });
 
   control.addEventListener("blur", () => {
-    wrap.classList.remove("sprout-flag-editor--focused");
+    wrap.classList.remove("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
     renderOverlay();
   });
 
   control.addEventListener("input", () => {
     unlockMeasuredHeight();
     syncPreviewHeight();
-    if (!wrap.classList.contains("sprout-flag-editor--focused")) renderOverlay();
+    if (!wrap.classList.contains("learnkit-flag-editor--focused")) renderOverlay();
   });
 
   control.addEventListener("pointerdown", () => {
@@ -394,9 +394,9 @@ export function attachFlagPreviewOverlay(
 
   renderOverlay();
   applyControlHeight(minControlHeight);
-  wrap.style.setProperty("--sprout-flag-preview-height", `${minControlHeight}px`);
+  wrap.style.setProperty("--learnkit-flag-preview-height", `${minControlHeight}px`);
   if (Number.isFinite(maxControlHeight)) {
-    wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
+    wrap.style.setProperty("--learnkit-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
   }
   wrap.appendChild(control);
   wrap.appendChild(overlay);
@@ -721,7 +721,7 @@ function attachFormatShortcuts(textarea: HTMLTextAreaElement) {
 const escapePipeText = escapeDelimiterText;
 
 interface CardEditorConfig {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   cards: CardRecord[];
   locationTitle?: string;
   locationPath?: string;
@@ -760,7 +760,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
   const showReadOnlyFields = config.showReadOnlyFields ?? true;
 
   const root = document.createElement("div");
-  root.className = "bc flex flex-col gap-3";
+  root.className = "flex flex-col gap-3";
 
   const formFields: Array<{ key: ColKey; label: string; editable: boolean }> = [];
 
@@ -804,36 +804,36 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
 
   const appendField = (field: { key: ColKey; label: string; editable: boolean }) => {
     const wrapper = document.createElement("div");
-    wrapper.className = "bc flex flex-col gap-1";
+    wrapper.className = "flex flex-col gap-1";
 
     const label = document.createElement("label");
-    label.className = "bc text-sm font-medium";
+    label.className = "text-sm font-medium";
     label.textContent = field.label;
     if (field.key === "question") {
       const required = document.createElement("span");
-      required.className = "bc text-destructive ml-1";
+      required.className = "text-destructive ml-1";
       required.textContent = "*";
       label.appendChild(required);
     }
     if (field.key === "answer" && !isSingleMcq) {
       const required = document.createElement("span");
-      required.className = "bc text-destructive ml-1";
+      required.className = "text-destructive ml-1";
       required.textContent = "*";
       label.appendChild(required);
     }
     const suppressGenericInfoIcons = isSingleBasicOrReversed || isSingleMcq || isSingleOq || isClozeOnly;
     if (field.key === "question" && isClozeOnly) {
-      label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+      label.className = "text-sm font-medium inline-flex items-center gap-1";
       const infoIcon = document.createElement("span");
-      infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+      infoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
       infoIcon.setAttribute("aria-label", CLOZE_TOOLTIP);
       infoIcon.setAttribute("data-tooltip-position", "top");
       setIcon(infoIcon, "info");
       label.appendChild(infoIcon);
     } else if (!suppressGenericInfoIcons && field.editable && ["title", "question", "answer", "info"].includes(field.key)) {
-      label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+      label.className = "text-sm font-medium inline-flex items-center gap-1";
       const infoIcon = document.createElement("span");
-      infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+      infoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
       infoIcon.setAttribute("aria-label", FORMAT_TOOLTIP);
       infoIcon.setAttribute("data-tooltip-position", "top");
       setIcon(infoIcon, "info");
@@ -859,7 +859,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
 
     if (field.editable && ["title", "question", "answer", "info"].includes(field.key)) {
       const textarea = document.createElement("textarea");
-      textarea.className = "bc textarea w-full sprout-textarea-fixed";
+      textarea.className = "textarea w-full learnkit-textarea-fixed";
       textarea.rows = 3;
       textarea.value = value;
       if (field.key === "title") textarea.placeholder = PLACEHOLDER_TITLE;
@@ -870,7 +870,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
     } else {
       const txt = document.createElement("input");
       txt.type = "text";
-      txt.className = "bc input w-full";
+      txt.className = "input w-full";
       txt.value = value;
       txt.disabled = !field.editable;
       input = txt;
@@ -878,15 +878,15 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
 
     if (cards.length > 1 && field.editable) {
       const overwriteNotice = document.createElement("div");
-      overwriteNotice.className = "bc text-xs text-muted-foreground";
+      overwriteNotice.className = "text-xs text-muted-foreground";
       const cardCount = cards.length;
       const cardLabel = cardCount === 1 ? "card" : "cards";
       overwriteNotice.textContent = `You have selected ${cardCount} ${cardLabel}. Any input in this field will overwrite all ${cardCount} ${cardLabel}. To leave all cards in their current form, leave this field blank.`;
-      overwriteNotice.classList.add("sprout-is-hidden");
+      overwriteNotice.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
 
       const updateOverwriteNotice = () => {
         const value = String(input.value ?? "").trim();
-        overwriteNotice.classList.toggle("sprout-is-hidden", !value.length);
+        overwriteNotice.classList.toggle("learnkit-is-hidden", !value.length);
       };
       input.addEventListener("input", updateOverwriteNotice);
       updateOverwriteNotice();
@@ -1032,25 +1032,25 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
   }
 }
 
-export function createGroupPickerField(initialValue: string, cardsCount: number, plugin: SproutPlugin) {
+export function createGroupPickerField(initialValue: string, cardsCount: number, plugin: LearnKitPlugin) {
   const hiddenInput = document.createElement("input");
   hiddenInput.type = "hidden";
   hiddenInput.value = initialValue;
 
   const container = document.createElement("div");
-  container.className = "bc relative sprout-group-picker";
+  container.className = "relative learnkit-group-picker";
 
   const tagBox = document.createElement("div");
-  tagBox.className = "bc textarea w-full sprout-tag-box";
+  tagBox.className = "textarea w-full learnkit-tag-box";
   container.appendChild(tagBox);
 
   let overwriteNotice: HTMLDivElement | null = null;
   if (cardsCount > 1) {
     overwriteNotice = document.createElement("div");
-    overwriteNotice.className = "bc text-xs text-muted-foreground";
+    overwriteNotice.className = "text-xs text-muted-foreground";
     overwriteNotice.textContent =
       "Typing here will overwrite this field for every selected card; leave it blank to keep existing values.";
-    overwriteNotice.classList.add("sprout-is-hidden");
+    overwriteNotice.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
     container.appendChild(overwriteNotice);
   }
 
@@ -1068,30 +1068,30 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   );
 
   const list = document.createElement("div");
-  list.className = "bc flex flex-col max-h-60 overflow-auto p-1";
+  list.className = "flex flex-col max-h-60 overflow-auto p-1";
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full min-h-[44px]";
+  searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 w-full min-h-[44px]";
 
   const searchIcon = document.createElement("span");
-  searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
+  searchIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-search-icon";
   searchIcon.setAttribute("aria-hidden", "true");
   setIcon(searchIcon, "search");
   searchWrap.appendChild(searchIcon);
 
   const search = document.createElement("input");
   search.type = "text";
-  search.className = "bc bg-transparent text-sm flex-1 h-9 sprout-search-naked";
+  search.className = "bg-transparent text-sm flex-1 h-9 learnkit-search-naked";
   search.placeholder = "Search or add group";
   searchWrap.appendChild(search);
 
   const panel = document.createElement("div");
-  panel.className = "bc rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
+  panel.className = "rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col learnkit-pointer-auto";
   panel.appendChild(searchWrap);
   panel.appendChild(list);
 
   const popover = document.createElement("div");
-  popover.className = "sprout-popover-dropdown";
+  popover.className = "learnkit-popover-dropdown";
   popover.setAttribute("aria-hidden", "true");
   popover.appendChild(panel);
   container.appendChild(popover);
@@ -1100,14 +1100,14 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
     clearNode(tagBox);
     if (!selected.length) {
       const placeholder = document.createElement("span");
-      placeholder.className = "bc badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder";
+      placeholder.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-placeholder";
       placeholder.textContent = "No groups";
       tagBox.appendChild(placeholder);
       return;
     }
     for (const tag of selected) {
       const badge = document.createElement("span");
-      badge.className = "bc badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-inline";
+      badge.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-inline";
 
       const txt = document.createElement("span");
       txt.textContent = formatGroupDisplay(tag);
@@ -1115,7 +1115,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
 
       const removeBtn = document.createElement("span");
       removeBtn.className =
-        "bc ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white";
+        "ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white";
       setIcon(removeBtn, "x");
       removeBtn.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();
@@ -1136,7 +1136,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
 
   const updateOverwriteNotice = () => {
     const value = groupsToInput(selected).trim();
-    if (overwriteNotice) overwriteNotice.classList.toggle("sprout-is-hidden", !(cardsCount > 1 && value));
+    if (overwriteNotice) overwriteNotice.classList.toggle("learnkit-is-hidden", !(cardsCount > 1 && value));
   };
 
   const commit = () => {
@@ -1170,7 +1170,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
       row.setAttribute("aria-checked", selected.includes(value) ? "true" : "false");
       row.tabIndex = 0;
       row.className =
-        "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground justify-between";
+        "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground justify-between";
 
       const text = document.createElement("span");
       text.textContent = label;
@@ -1178,12 +1178,12 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
 
       if (selected.includes(value) && !isAdd) {
         const check = document.createElement("span");
-        check.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+        check.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
         setIcon(check, "check");
         row.appendChild(check);
       } else {
         const spacer = document.createElement("span");
-        spacer.className = "bc inline-flex items-center justify-center [&_svg]:size-3 opacity-0";
+        spacer.className = "inline-flex items-center justify-center [&_svg]:size-3 opacity-0";
         setIcon(spacer, "check");
         row.appendChild(spacer);
       }
@@ -1222,9 +1222,9 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
 
     if (raw && !exact) addRow(`Add “${rawDisplay || rawTitle}”`, rawTitle || raw, true);
     if (allOptions.length === 0 && !raw && selected.length === 0) {
-      list.classList.add("sprout-list-unbounded");
+      list.classList.add("learnkit-list-unbounded", "learnkit-list-unbounded");
       const empty = document.createElement("div");
-      empty.className = "bc px-2 py-2 text-sm text-muted-foreground whitespace-normal break-words";
+      empty.className = "px-2 py-2 text-sm text-muted-foreground whitespace-normal break-words";
       empty.textContent = "Type a keyword above to save this flashcard to a group.";
       list.appendChild(empty);
       return;
@@ -1303,21 +1303,21 @@ function createOqEditor(card: CardRecord) {
   const initialSteps = Array.isArray(card.oqSteps) ? [...card.oqSteps] : ["", ""];
 
   const container = document.createElement("div");
-  container.className = "bc flex flex-col gap-2";
+  container.className = "flex flex-col gap-2";
 
   const label = document.createElement("label");
-  label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+  label.className = "text-sm font-medium inline-flex items-center gap-1";
   label.append("Steps", " ", "(", "Correct", " ", "Order", ")");
-  label.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
+  label.appendChild(Object.assign(document.createElement("span"), { className: "text-destructive", textContent: "*" }));
   container.appendChild(label);
 
   const hint = document.createElement("div");
-  hint.className = "bc text-xs text-muted-foreground";
+  hint.className = "text-xs text-muted-foreground";
   hint.textContent = "List each step in the correct sequence. Drag the grip handle to reorder. Steps will be shuffled during review.";
   container.appendChild(hint);
 
   const listContainer = document.createElement("div");
-  listContainer.className = "bc flex flex-col gap-2 sprout-oq-editor-list";
+  listContainer.className = "flex flex-col gap-2 learnkit-oq-editor-list";
   container.appendChild(listContainer);
 
   const stepRows: Array<{ row: HTMLElement; input: HTMLTextAreaElement; badge: HTMLElement }> = [];
@@ -1331,7 +1331,7 @@ function createOqEditor(card: CardRecord) {
   const updateRemoveButtons = () => {
     const disable = stepRows.length <= 2;
     for (const entry of stepRows) {
-      const delBtn = entry.row.querySelector<HTMLButtonElement>(".sprout-oq-del-btn");
+      const delBtn = entry.row.querySelector<HTMLButtonElement>(".learnkit-oq-del-btn");
       if (delBtn) {
         delBtn.disabled = disable;
         delBtn.setAttribute("aria-disabled", disable ? "true" : "false");
@@ -1344,25 +1344,25 @@ function createOqEditor(card: CardRecord) {
     const idx = stepRows.length;
 
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-2 sprout-oq-editor-row";
+    row.className = "flex items-center gap-2 learnkit-oq-editor-row";
     row.draggable = false;
 
     // Drag grip
     const grip = document.createElement("span");
-    grip.className = "bc inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip";
+    grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab learnkit-oq-grip";
     grip.draggable = true;
     setIcon(grip, "grip-vertical");
     row.appendChild(grip);
 
     // Number badge
     const badge = document.createElement("span");
-    badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0 sprout-oq-step-index";
+    badge.className = "inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0 learnkit-oq-step-index";
     badge.textContent = String(idx + 1);
     row.appendChild(badge);
 
     // Text input
     const input = document.createElement("textarea");
-    input.className = "bc textarea flex-1 text-sm sprout-oq-step-input";
+    input.className = "textarea flex-1 text-sm learnkit-oq-step-input";
     input.rows = 1;
     input.placeholder = `Step ${idx + 1}`;
     input.value = value;
@@ -1384,11 +1384,11 @@ function createOqEditor(card: CardRecord) {
     // Delete button
     const delBtn = document.createElement("button");
     delBtn.type = "button";
-    delBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost sprout-oq-del-btn";
+    delBtn.className = "inline-flex items-center justify-center p-0 learnkit-remove-btn-ghost learnkit-oq-del-btn";
     delBtn.setAttribute("aria-label", "Remove step");
     delBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");
-    xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(xIcon, "x");
     delBtn.appendChild(xIcon);
     delBtn.addEventListener("click", (ev) => {
@@ -1409,10 +1409,10 @@ function createOqEditor(card: CardRecord) {
     row.addEventListener("dragstart", (ev) => {
       dragIdx = stepRows.findIndex((e) => e.row === row);
       ev.dataTransfer?.setData("text/plain", String(dragIdx));
-      row.classList.add("sprout-oq-row-dragging");
+      row.classList.add("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
     });
     row.addEventListener("dragend", () => {
-      row.classList.remove("sprout-oq-row-dragging");
+      row.classList.remove("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
     });
     row.addEventListener("dragover", (ev) => {
       ev.preventDefault();
@@ -1452,9 +1452,9 @@ function createOqEditor(card: CardRecord) {
 
   // "Add step" button
   const addRow = document.createElement("div");
-  addRow.className = "bc flex items-center gap-2 sprout-oq-add-row";
+  addRow.className = "flex items-center gap-2 learnkit-oq-add-row";
   const addInput = document.createElement("textarea");
-  addInput.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+  addInput.className = "textarea flex-1 text-sm learnkit-input-fixed learnkit-textarea-fixed";
   addInput.rows = 1;
   addInput.placeholder = "Add another step (press enter)";
   addInput.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -1497,21 +1497,21 @@ function createMcqEditor(card: CardRecord) {
   const correctSet = new Set(getCorrectIndices(card));
 
   const container = document.createElement("div");
-  container.className = "bc flex flex-col gap-2";
+  container.className = "flex flex-col gap-2";
 
   const label = document.createElement("label");
-  label.className = "bc text-sm font-medium inline-flex items-center gap-1";
+  label.className = "text-sm font-medium inline-flex items-center gap-1";
   label.append("Correct", " ", "and", " ", "Incorrect", " ", "Options");
-  label.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
+  label.appendChild(Object.assign(document.createElement("span"), { className: "text-destructive", textContent: "*" }));
   container.appendChild(label);
 
   const hint = document.createElement("div");
-  hint.className = "bc text-xs text-muted-foreground";
+  hint.className = "text-xs text-muted-foreground";
   hint.textContent = "Select at least one correct option and one incorrect option. Mark each correct option using its checkbox.";
   container.appendChild(hint);
 
   const optionsContainer = document.createElement("div");
-  optionsContainer.className = "bc flex flex-col gap-2";
+  optionsContainer.className = "flex flex-col gap-2";
   container.appendChild(optionsContainer);
 
   type OptionRowEntry = { row: HTMLElement; input: HTMLTextAreaElement; checkbox: HTMLInputElement; removeBtn: HTMLButtonElement };
@@ -1528,18 +1528,18 @@ function createMcqEditor(card: CardRecord) {
 
   const addOptionRow = (value: string, isCorrect: boolean) => {
     const row = document.createElement("div");
-    row.className = "bc flex items-center gap-2 sprout-edit-mcq-option-row";
+    row.className = "flex items-center gap-2 learnkit-edit-mcq-option-row";
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = isCorrect;
-    checkbox.className = "bc sprout-mcq-correct-checkbox";
+    checkbox.className = "learnkit-mcq-correct-checkbox";
     checkbox.setAttribute("aria-label", "Mark as correct answer");
     checkbox.setAttribute("data-tooltip-position", "top");
     row.appendChild(checkbox);
 
     const input = document.createElement("textarea");
-    input.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+    input.className = "textarea flex-1 text-sm learnkit-input-fixed learnkit-textarea-fixed";
     input.rows = 1;
     input.placeholder = "Enter an answer option";
     input.value = value;
@@ -1555,11 +1555,11 @@ function createMcqEditor(card: CardRecord) {
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost";
+    removeBtn.className = "inline-flex items-center justify-center p-0 learnkit-remove-btn-ghost";
     removeBtn.setAttribute("aria-label", "Remove option");
     removeBtn.setAttribute("data-tooltip-position", "top");
     const xIcon = document.createElement("span");
-    xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+    xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
     setIcon(xIcon, "x");
     removeBtn.appendChild(xIcon);
     removeBtn.addEventListener("click", (ev) => {
@@ -1580,7 +1580,7 @@ function createMcqEditor(card: CardRecord) {
   };
 
   const addInput = document.createElement("textarea");
-  addInput.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+  addInput.className = "textarea flex-1 text-sm learnkit-input-fixed learnkit-textarea-fixed";
   addInput.rows = 1;
   addInput.placeholder = "Add another option (press enter)";
   addInput.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -1603,7 +1603,7 @@ function createMcqEditor(card: CardRecord) {
   });
 
   const addInputWrap = document.createElement("div");
-  addInputWrap.className = "bc flex items-center gap-2 sprout-mcq-add-row";
+  addInputWrap.className = "flex items-center gap-2 learnkit-mcq-add-row";
   addInputWrap.appendChild(attachFlagPreviewOverlay(addInput, 36, 36));
   container.appendChild(addInputWrap);
 

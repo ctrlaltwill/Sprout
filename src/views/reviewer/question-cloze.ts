@@ -55,13 +55,13 @@ export function renderClozeFront(
   const typedAnswers = opts?.typedAnswers ?? new Map<number, string>();
 
   const container = el("div", "");
-  container.className = "bc whitespace-pre-wrap break-words";
+  container.className = "whitespace-pre-wrap break-words";
 
   // Wrap cloze content in a <p dir="auto"> so it matches MarkdownRenderer output
   // (and therefore matches spacing/margins between basic vs cloze cards).
   const p = document.createElement("p");
   p.setAttribute("dir", "auto");
-  p.className = "bc whitespace-pre-wrap break-words";
+  p.className = "whitespace-pre-wrap break-words";
   container.appendChild(p);
 
   const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
@@ -70,7 +70,7 @@ export function renderClozeFront(
 
   const measureChPx = (): number => {
     const probe = document.createElement("span");
-    probe.className = "bc sprout-cloze-probe";
+    probe.className = "learnkit-cloze-probe";
     probe.textContent = "0000000000";
     p.appendChild(probe);
     const px = probe.getBoundingClientRect().width / 10;
@@ -131,27 +131,27 @@ export function renderClozeFront(
         if (isCorrect) {
           // Correct: green pill with answer text
           const span = document.createElement("span");
-          span.className = "sprout-cloze-revealed sprout-cloze-typed-correct";
+          span.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
           applyInlineMarkdownWithFlags(span, ans);
           p.appendChild(span);
         } else {
           // Wrong: red pill with strikethrough showing what was typed, then green pill with correct
           if (typed) {
             const wrongSpan = document.createElement("span");
-            wrongSpan.className = "sprout-cloze-revealed sprout-cloze-typed-wrong";
+            wrongSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-wrong";
             wrongSpan.textContent = typed;
             p.appendChild(wrongSpan);
             p.appendChild(document.createTextNode(" "));
           }
           const correctSpan = document.createElement("span");
-          correctSpan.className = "sprout-cloze-revealed sprout-cloze-typed-correct";
+          correctSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
           applyInlineMarkdownWithFlags(correctSpan, ans);
           p.appendChild(correctSpan);
         }
       } else {
         // Standard mode back: normal accent-coloured reveal
         const answerSpan = document.createElement("span");
-        answerSpan.className = "sprout-cloze-revealed";
+        answerSpan.className = "learnkit-cloze-revealed";
         applyInlineMarkdownWithFlags(answerSpan, ans);
 
         // Apply custom colours if provided (standard mode only)
@@ -159,7 +159,7 @@ export function renderClozeFront(
           setCssProps(answerSpan, "background-color", opts.clozeBgColor);
         }
         if (opts?.clozeTextColor) {
-          setCssProps(answerSpan, "--sprout-cloze-color", opts.clozeTextColor);
+          setCssProps(answerSpan, "--learnkit-cloze-color", opts.clozeTextColor);
         } else {
           // Auto-contrast detection
           setTimeout(() => {
@@ -168,7 +168,7 @@ export function renderClozeFront(
             if (rgb && rgb.length >= 3) {
               const [r, g, b] = rgb;
               const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-              setCssProps(answerSpan, "--sprout-cloze-color", luminance > 0.7 ? "#111" : "#fff");
+              setCssProps(answerSpan, "--learnkit-cloze-color", luminance > 0.7 ? "#111" : "#fff");
             }
           }, 0);
         }
@@ -182,11 +182,11 @@ export function renderClozeFront(
       if (mode === "typed") {
         // Typed mode: render a text input
         const wrap = document.createElement("span");
-        wrap.className = "sprout-cloze-typed-wrap";
+        wrap.className = "learnkit-cloze-typed-wrap";
 
         const input = document.createElement("input");
         input.type = "text";
-        input.className = "sprout-cloze-typed-input";
+        input.className = "learnkit-cloze-typed-input";
         input.setAttribute("autocomplete", "off");
         input.setAttribute("autocorrect", "off");
         input.setAttribute("autocapitalize", "off");
@@ -232,12 +232,12 @@ export function renderClozeFront(
       } else {
         // Standard mode: blank underline
         const blank = document.createElement("span");
-        blank.className = "bc sprout-cloze-blank hidden-cloze";
+        blank.className = "learnkit-cloze-blank hidden-cloze";
 
         const w = Math.max(4, Math.min(40, ans.length));
         const wAdj = Math.max(1, w - subtractCh);
         blank.textContent = "";
-        setCssProps(blank, "--sprout-cloze-width", `${Math.max(30, wAdj * chPx)}px`);
+        setCssProps(blank, "--learnkit-cloze-width", `${Math.max(30, wAdj * chPx)}px`);
 
         p.appendChild(blank);
       }
@@ -268,9 +268,9 @@ export function renderClozeFront(
  */
 function updateTypedInputState(input: HTMLInputElement, typed: string, expected: string) {
   input.classList.remove(
-    "sprout-cloze-typed--partial",
-    "sprout-cloze-typed--correct",
-    "sprout-cloze-typed--wrong",
+    "learnkit-cloze-typed--partial", "learnkit-cloze-typed--partial",
+    "learnkit-cloze-typed--correct", "learnkit-cloze-typed--correct",
+    "learnkit-cloze-typed--wrong", "learnkit-cloze-typed--wrong",
   );
 
   if (!typed) return; // empty → neutral
@@ -279,10 +279,10 @@ function updateTypedInputState(input: HTMLInputElement, typed: string, expected:
   const eLower = expected.toLowerCase();
 
   if (tLower === eLower) {
-    input.classList.add("sprout-cloze-typed--correct");
+    input.classList.add("learnkit-cloze-typed--correct", "learnkit-cloze-typed--correct");
   } else if (eLower.startsWith(tLower)) {
-    input.classList.add("sprout-cloze-typed--partial");
+    input.classList.add("learnkit-cloze-typed--partial", "learnkit-cloze-typed--partial");
   } else {
-    input.classList.add("sprout-cloze-typed--wrong");
+    input.classList.add("learnkit-cloze-typed--wrong", "learnkit-cloze-typed--wrong");
   }
 }

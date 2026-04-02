@@ -93,10 +93,10 @@ export class BulkEditModal extends Modal {
     // positioning CSS (position:absolute, z-index, etc.) is already active.
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
     setCssProps(this.containerEl, "z-index", "2147483000");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-bulk-edit-panel");
+    this.modalEl.addClass("lk-modals", "learnkit-bulk-edit-panel");
     setCssProps(this.modalEl, "z-index", "2147483001");
     scopeModalToWorkspace(this);
-    this.contentEl.addClass("bc", "sprout-bulk-edit-content");
+    this.contentEl.addClass("learnkit-bulk-edit-content");
 
     // Replace native close icon with card-creator style close button.
     const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
@@ -105,17 +105,17 @@ export class BulkEditModal extends Modal {
     if (headerEl) {
       const close = document.createElement("button");
       close.type = "button";
-      close.className = "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-card-creator-close-btn sprout-bulk-edit-close-btn";
+      close.className = "learnkit-btn-toolbar learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-card-creator-close-btn learnkit-bulk-edit-close-btn";
       close.setAttribute("aria-label", tx("ui.common.close", "Close"));
       close.setAttribute("data-tooltip-position", "top");
 
       const closeIcon = document.createElement("span");
-      closeIcon.className = "bc inline-flex items-center justify-center";
+      closeIcon.className = "inline-flex items-center justify-center";
       setIcon(closeIcon, "x");
 
       const closeLabel = document.createElement("span");
-      closeLabel.className = "bc";
-      closeLabel.setAttribute("data-sprout-label", "true");
+      closeLabel.className = "";
+      closeLabel.setAttribute("data-learnkit-label", "true");
       closeLabel.textContent = tx("ui.common.close", "Close");
 
       close.appendChild(closeIcon);
@@ -142,8 +142,8 @@ export class BulkEditModal extends Modal {
       if (!(target instanceof Node)) return;
       const active = document.activeElement;
       if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) return;
-      if (!active.classList.contains("sprout-flag-editor-control")) return;
-      const activeWrap = active.closest<HTMLElement>(".sprout-flag-editor-wrap");
+      if (!active.classList.contains("learnkit-flag-editor-control")) return;
+      const activeWrap = active.closest<HTMLElement>(".learnkit-flag-editor-wrap");
       if (activeWrap?.contains(target)) return;
       active.blur();
     };
@@ -153,7 +153,7 @@ export class BulkEditModal extends Modal {
     });
 
   const form = document.createElement("div");
-  form.className = `flex flex-col gap-4 sprout-bulk-edit-form${cards.length > 1 ? " sprout-bulk-edit-form--multi" : ""}`;
+  form.className = `flex flex-col gap-4 learnkit-bulk-edit-form${cards.length > 1 ? " learnkit-bulk-edit-form--multi" : ""}`;
 
   const normalizedTypes = cards.map((card) => String(card?.type ?? "").toLowerCase());
   const canBulkToggleType =
@@ -199,12 +199,12 @@ export class BulkEditModal extends Modal {
     maxControlHeight = Number.POSITIVE_INFINITY,
   ): HTMLElement => {
     const wrap = document.createElement("div");
-    wrap.className = `sprout-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-wrap--multiline" : ""}`;
+    wrap.className = `learnkit-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " learnkit-flag-editor-wrap--multiline" : ""}`;
 
     const overlay = document.createElement("div");
-    overlay.className = `sprout-flag-editor-overlay${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-overlay--multiline" : ""}`;
+    overlay.className = `learnkit-flag-editor-overlay${control instanceof HTMLTextAreaElement ? " learnkit-flag-editor-overlay--multiline" : ""}`;
 
-    control.classList.add("sprout-flag-editor-control");
+    control.classList.add("learnkit-flag-editor-control", "learnkit-flag-editor-control");
 
     if (control instanceof HTMLTextAreaElement) {
       // Let actual content drive height instead of keeping a fixed multi-row baseline.
@@ -243,9 +243,9 @@ export class BulkEditModal extends Modal {
       if (nextHeight !== lastPreviewHeight) {
         lastPreviewHeight = nextHeight;
       }
-      wrap.style.setProperty("--sprout-flag-preview-height", `${lastPreviewHeight}px`);
+      wrap.style.setProperty("--learnkit-flag-preview-height", `${lastPreviewHeight}px`);
       if (Number.isFinite(maxControlHeight)) {
-        wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
+        wrap.style.setProperty("--learnkit-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
       }
       applyControlHeight(lastPreviewHeight);
     };
@@ -325,14 +325,14 @@ export class BulkEditModal extends Modal {
     document.addEventListener("pointerdown", handleDocumentPointerDown, true);
 
     control.addEventListener("focus", () => {
-      wrap.classList.add("sprout-flag-editor--focused");
+      wrap.classList.add("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
       if (control instanceof HTMLTextAreaElement) {
         setCssProps(wrap, "overflow", "visible");
       }
       syncPreviewHeight();
     });
     control.addEventListener("blur", () => {
-      wrap.classList.remove("sprout-flag-editor--focused");
+      wrap.classList.remove("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
       if (control instanceof HTMLTextAreaElement) {
         setCssProps(wrap, "overflow", "hidden");
       }
@@ -340,7 +340,7 @@ export class BulkEditModal extends Modal {
     });
     control.addEventListener("input", () => {
       syncPreviewHeight();
-      if (!wrap.classList.contains("sprout-flag-editor--focused")) renderOverlay();
+      if (!wrap.classList.contains("learnkit-flag-editor--focused")) renderOverlay();
     });
 
     if (control instanceof HTMLTextAreaElement) {
@@ -353,7 +353,7 @@ export class BulkEditModal extends Modal {
 
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => {
-        if (control instanceof HTMLTextAreaElement && wrap.classList.contains("sprout-flag-editor--focused")) {
+        if (control instanceof HTMLTextAreaElement && wrap.classList.contains("learnkit-flag-editor--focused")) {
           const renderedHeight = Math.ceil(control.getBoundingClientRect().height || 0);
           if (renderedHeight > 0) lastPreviewHeight = clampHeight(renderedHeight);
         }
@@ -395,10 +395,10 @@ export class BulkEditModal extends Modal {
     hiddenInput.value = initialValue;
 
     const container = document.createElement("div");
-    container.className = "relative sprout-group-picker";
+    container.className = "relative learnkit-group-picker";
 
     const tagBox = document.createElement("div");
-    tagBox.className = `textarea w-full ${ctx.cellTextClass} sprout-tag-box`;
+    tagBox.className = `textarea w-full ${ctx.cellTextClass} learnkit-tag-box`;
     container.appendChild(tagBox);
 
     let overwriteNotice: HTMLDivElement | null = null;
@@ -410,7 +410,7 @@ export class BulkEditModal extends Modal {
           "ui.browser.bulkEdit.groups.overwriteHint",
           "Typing here will overwrite this field for every selected card; leave it blank to keep existing values.",
         );
-      overwriteNotice.classList.add("sprout-is-hidden");
+      overwriteNotice.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
       container.appendChild(overwriteNotice);
     }
 
@@ -435,24 +435,24 @@ export class BulkEditModal extends Modal {
     searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 lk-browser-search-wrap min-h-[38px]";
 
     const searchIconEl = document.createElement("span");
-    searchIconEl.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
+    searchIconEl.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-search-icon";
     searchIconEl.setAttribute("aria-hidden", "true");
     setIcon(searchIconEl, "search");
     searchWrap.appendChild(searchIconEl);
 
     const search = document.createElement("input");
     search.type = "text";
-    search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full sprout-search-naked";
+    search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full learnkit-search-naked";
     search.placeholder = tx("ui.browser.bulkEdit.groups.searchPlaceholder", "Search or add group");
     searchWrap.appendChild(search);
 
     const panelEl = document.createElement("div");
-    panelEl.className = "rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
+    panelEl.className = "rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col learnkit-pointer-auto";
     panelEl.appendChild(searchWrap);
     panelEl.appendChild(list);
 
     const popover = document.createElement("div");
-    popover.className = "sprout-popover-dropdown";
+    popover.className = "learnkit-popover-dropdown";
     popover.setAttribute("aria-hidden", "true");
     popover.appendChild(panelEl);
     container.appendChild(popover);
@@ -474,7 +474,7 @@ export class BulkEditModal extends Modal {
 
     const updateOverwriteNotice = () => {
       const value = groupsToInput(selected).trim();
-      if (overwriteNotice) overwriteNotice.classList.toggle("sprout-is-hidden", !(cardsCount > 1 && value));
+      if (overwriteNotice) overwriteNotice.classList.toggle("learnkit-is-hidden", !(cardsCount > 1 && value));
     };
 
     const commit = () => {
@@ -486,14 +486,14 @@ export class BulkEditModal extends Modal {
       clearNode(tagBox);
       if (selected.length === 0) {
         const empty = document.createElement("span");
-        empty.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder sprout-badge-inline";
+        empty.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-placeholder learnkit-badge-inline";
         empty.textContent = tx("ui.browser.bulkEdit.groups.empty", "No groups");
         tagBox.appendChild(empty);
         return;
       }
       for (const tag of selected) {
         const badge = document.createElement("span");
-        badge.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-inline";
+        badge.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-inline";
 
         const txt = document.createElement("span");
         txt.textContent = formatGroupDisplay(tag);
@@ -599,7 +599,7 @@ export class BulkEditModal extends Modal {
 
       if (raw && !exact) addRow(tx("ui.browser.bulkEdit.groups.add", "Add \"{group}\"", { group: rawDisplay || rawTitle }), rawTitle || raw, true);
       if (allOptions.length === 0 && !raw && selected.length === 0) {
-        list.classList.add("sprout-list-unbounded");
+        list.classList.add("learnkit-list-unbounded", "learnkit-list-unbounded");
         const empty = document.createElement("div");
         empty.className = "px-2 py-2 text-sm text-muted-foreground whitespace-normal break-words";
         empty.textContent = tx("ui.browser.bulkEdit.groups.emptyHint", "Type a keyword above to save this flashcard to a group.");
@@ -607,7 +607,7 @@ export class BulkEditModal extends Modal {
         return;
       }
 
-      list.classList.remove("sprout-list-unbounded");
+      list.classList.remove("learnkit-list-unbounded", "learnkit-list-unbounded");
 
       for (const opt of options) addRow(formatGroupDisplay(opt), opt);
     };
@@ -700,7 +700,7 @@ export class BulkEditModal extends Modal {
 
   const createFieldWrapper = (field: { key: ColKey; label: string; editable: boolean }) => {
     const wrapper = document.createElement("div");
-    wrapper.className = `flex flex-col gap-1${field.key === "type" ? " sprout-card-meta-field" : ""}`;
+    wrapper.className = `flex flex-col gap-1${field.key === "type" ? " learnkit-card-meta-field" : ""}`;
 
     const label = document.createElement("label");
     label.className = "text-sm font-medium";
@@ -720,11 +720,11 @@ export class BulkEditModal extends Modal {
     const value = sharedValue(field.key, predicate);
     if (field.key === "type" && canBulkToggleType) {
       const typeRoot = document.createElement("div");
-      typeRoot.className = "sprout relative inline-flex";
+      typeRoot.className = "learnkit relative inline-flex";
 
       const typeButton = document.createElement("button");
       typeButton.type = "button";
-      typeButton.className = "sprout-btn-toolbar text-sm inline-flex items-center gap-2 h-7 px-2 cursor-pointer sprout-card-meta-type-btn";
+      typeButton.className = "learnkit-btn-toolbar text-sm inline-flex items-center gap-2 h-7 px-2 cursor-pointer learnkit-card-meta-type-btn";
       typeButton.setAttribute("aria-label", tx("ui.browser.bulkEdit.field.type", "Type"));
       typeButton.setAttribute("data-tooltip-position", "top");
       typeButton.setAttribute("aria-haspopup", "menu");
@@ -746,11 +746,11 @@ export class BulkEditModal extends Modal {
       typeButton.appendChild(chevron);
 
       const menu = document.createElement("div");
-      menu.className = "sprout-popover-dropdown sprout-popover-dropdown-below";
+      menu.className = "learnkit-popover-dropdown learnkit-popover-dropdown-below";
       menu.setAttribute("aria-hidden", "true");
 
       const panel = document.createElement("div");
-      panel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
+      panel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto";
       const menuList = document.createElement("div");
       menuList.setAttribute("role", "menu");
       menuList.className = "flex flex-col";
@@ -868,7 +868,7 @@ export class BulkEditModal extends Modal {
 
     if (field.editable && (field.key === "title" || field.key === "question" || field.key === "answer" || field.key === "info")) {
       const textarea = document.createElement("textarea");
-      textarea.className = "textarea w-full sprout-textarea-fixed";
+      textarea.className = "textarea w-full learnkit-textarea-fixed";
       textarea.rows = 3;
       textarea.value = value;
       if (field.key === "title") textarea.placeholder = tx("ui.browser.bulkEdit.placeholder.title", "Enter a descriptive title for this flashcard");
@@ -881,7 +881,7 @@ export class BulkEditModal extends Modal {
     } else {
       const txt = document.createElement("input");
       txt.type = "text";
-      txt.className = `input w-full${field.key === "location" ? " sprout-location-input" : ""}`;
+      txt.className = `input w-full${field.key === "location" ? " learnkit-location-input" : ""}`;
       txt.value = value;
       txt.disabled = !field.editable;
       input = txt;
@@ -899,12 +899,12 @@ export class BulkEditModal extends Modal {
         "You have selected {count} {label}. Any input in this field will overwrite this field for all cards. To leave all cards in their current form, leave this field blank.",
         { count: cardCount, label: cardLabel },
       );
-      overwriteNotice.classList.add("sprout-is-hidden");
+      overwriteNotice.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
       wrapper.appendChild(overwriteNotice);
 
       const updateOverwriteNotice = () => {
         const value = String(input.value ?? "").trim();
-        overwriteNotice.classList.toggle("sprout-is-hidden", !value.length);
+        overwriteNotice.classList.toggle("learnkit-is-hidden", !value.length);
       };
       input.addEventListener("input", updateOverwriteNotice);
       updateOverwriteNotice();
@@ -955,7 +955,7 @@ export class BulkEditModal extends Modal {
     label.className = "text-sm font-medium inline-flex items-center gap-1";
     label.textContent = tx("ui.browser.bulkEdit.mcq.answersAndOptions", "Answers and options");
     const mcqInfoIcon = document.createElement("span");
-    mcqInfoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+    mcqInfoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
     mcqInfoIcon.setAttribute("aria-label", tx("ui.browser.bulkEdit.mcq.correctHint", "Check the box next to each correct answer. At least one correct and one incorrect option required."));
     mcqInfoIcon.setAttribute("data-tooltip-position", "top");
     setIcon(mcqInfoIcon, "info");
@@ -980,26 +980,26 @@ export class BulkEditModal extends Modal {
 
     const addOptionRow = (value: string, isCorrect: boolean) => {
       const row = document.createElement("div");
-      row.className = "flex items-center gap-2 sprout-edit-mcq-option-row";
+      row.className = "flex items-center gap-2 learnkit-edit-mcq-option-row";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = isCorrect;
-      checkbox.className = "sprout-mcq-correct-checkbox";
+      checkbox.className = "learnkit-mcq-correct-checkbox";
       checkbox.setAttribute("aria-label", tx("ui.browser.bulkEdit.mcq.markCorrect", "Mark as correct answer"));
       checkbox.setAttribute("data-tooltip-position", "top");
       row.appendChild(checkbox);
 
       const input = document.createElement("input");
       input.type = "text";
-      input.className = "input flex-1 text-sm sprout-input-fixed";
+      input.className = "input flex-1 text-sm learnkit-input-fixed";
       input.placeholder = tx("ui.browser.bulkEdit.mcq.optionPlaceholder", "Enter an answer option");
       input.value = value;
       row.appendChild(attachFlagPreviewOverlay(input, 36, 36));
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "inline-flex items-center justify-center h-9 w-9 p-0 sprout-remove-btn-ghost";
+      removeBtn.className = "inline-flex items-center justify-center h-9 w-9 p-0 learnkit-remove-btn-ghost";
       removeBtn.setAttribute("aria-label", tx("ui.browser.bulkEdit.mcq.removeOption", "Remove option"));
       removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
@@ -1037,7 +1037,7 @@ export class BulkEditModal extends Modal {
     // "Add another option" input
     const addInput = document.createElement("input");
     addInput.type = "text";
-    addInput.className = "input flex-1 text-sm sprout-input-fixed";
+    addInput.className = "input flex-1 text-sm learnkit-input-fixed";
     addInput.placeholder = tx("ui.browser.bulkEdit.mcq.addOptionPlaceholder", "Add another option (press enter)");
     addInput.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") {
@@ -1056,7 +1056,7 @@ export class BulkEditModal extends Modal {
       addInput.value = "";
     });
     const addInputWrap = document.createElement("div");
-    addInputWrap.className = "flex items-center gap-2 sprout-mcq-add-row";
+    addInputWrap.className = "flex items-center gap-2 learnkit-mcq-add-row";
     addInputWrap.appendChild(attachFlagPreviewOverlay(addInput, 36, 36));
     container.appendChild(addInputWrap);
 
@@ -1089,7 +1089,7 @@ export class BulkEditModal extends Modal {
   // ── Assemble the form ─────────────────────────────────────
 
   const topGrid = document.createElement("div");
-  topGrid.className = "grid grid-cols-1 gap-3 md:grid-cols-2 sprout-card-meta-grid";
+  topGrid.className = "grid grid-cols-1 gap-3 md:grid-cols-2 learnkit-card-meta-grid";
   for (const key of topKeys) {
     const field = fields.find((f) => f.key === key);
     if (!field) continue;
@@ -1113,12 +1113,12 @@ export class BulkEditModal extends Modal {
 
   // ── Footer (Cancel / Save) ────────────────────────────────
 
-  this.modalEl.querySelectorAll<HTMLElement>(":scope > .lk-modal-footer.sprout-bulk-edit-footer").forEach((node) => node.remove());
+  this.modalEl.querySelectorAll<HTMLElement>(":scope > .lk-modal-footer.learnkit-bulk-edit-footer").forEach((node) => node.remove());
   const footer = document.createElement("div");
-  footer.className = "bc flex items-center justify-end gap-4 lk-modal-footer sprout-card-creator-footer sprout-bulk-edit-footer";
+  footer.className = "flex items-center justify-end gap-4 lk-modal-footer learnkit-card-creator-footer learnkit-bulk-edit-footer";
   const cancel = document.createElement("button");
   cancel.type = "button";
-  cancel.className = "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm";
+  cancel.className = "learnkit-btn-toolbar learnkit-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm";
   cancel.setAttribute("aria-label", tx("ui.common.cancel", "Cancel"));
   cancel.setAttribute("data-tooltip-position", "top");
   const cancelText = document.createElement("span");
@@ -1127,7 +1127,7 @@ export class BulkEditModal extends Modal {
   cancel.addEventListener("click", () => this.close());
   const save = document.createElement("button");
   save.type = "button";
-  save.className = "bc sprout-btn-toolbar sprout-btn-accent sprout-bulk-edit-save-btn h-9 inline-flex items-center gap-2";
+  save.className = "learnkit-btn-toolbar learnkit-btn-accent learnkit-bulk-edit-save-btn h-9 inline-flex items-center gap-2";
   save.setAttribute("aria-label", tx("ui.common.save", "Save"));
   save.setAttribute("data-tooltip-position", "top");
   const saveText = document.createElement("span");

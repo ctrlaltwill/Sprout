@@ -1,12 +1,12 @@
 name: Help / Question
-description: Ask a question or get help using Sprout
+description: Ask a question or get help using LearnKit
 title: "[Help]: "
 labels: ["question"]
 body:
   - type: markdown
     attributes:
       value: |
-        Need help with Sprout? Ask your question below. For general questions, please check the [docs site](https://ctrlaltwill.github.io/Sprout/) first.
+        Need help with LearnKit? Ask your question below. For general questions, please check the [docs site](https://ctrlaltwill.github.io/LearnKit/) first.
 
   - type: textarea
     id: question
@@ -29,8 +29,8 @@ body:
   - type: input
     id: plugin-version
     attributes:
-      label: Sprout Version
-      description: What version of Sprout are you using?
+      label: LearnKit Version
+      description: What version of LearnKit are you using?
       placeholder: "e.g., 1.0.3"
     validations:
       required: false

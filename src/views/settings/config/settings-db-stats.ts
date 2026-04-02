@@ -1,3 +1,12 @@
+/**
+ * @file src/views/settings/config/settings-db-stats.ts
+ * @summary Module for settings db stats.
+ *
+ * @exports
+ *  - computeSchedulingStats
+ *  - getCurrentDbStatsFromStoreData
+ */
+
 import { isParentCard } from "../../../platform/core/card-utils";
 import type { CardRecord } from "../../../platform/types/card";
 import type { CardState } from "../../../platform/types/scheduler";

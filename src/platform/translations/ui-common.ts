@@ -1,3 +1,12 @@
+/**
+ * @file src/platform/translations/ui-common.ts
+ * @summary Module for ui common.
+ *
+ * @exports
+ *  - CommonUiText
+ *  - txCommon
+ */
+
 import { t } from "./translator";
 
 type InterfaceLocale = unknown;

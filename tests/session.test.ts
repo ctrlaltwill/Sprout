@@ -1,3 +1,11 @@
+/**
+ * @file tests/session.test.ts
+ * @summary Unit tests for session.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 // tests/session.test.ts
 // ---------------------------------------------------------------------------
 // Tests for src/reviewer/session.ts — the study-session state machine.

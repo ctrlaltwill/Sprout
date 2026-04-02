@@ -1,3 +1,11 @@
+/**
+ * @file tests/sync-engine.test.ts
+ * @summary Unit tests for sync engine.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TFile } from "obsidian";
 import { JsonStore } from "../src/platform/core/store";

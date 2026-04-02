@@ -8,11 +8,11 @@
  *   - getMcqOptionOrder — Returns a (possibly shuffled) permutation of option indices for a given MCQ card
  */
 
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/types/card";
 import type { Session } from "./types";
 
-export function isMcqOptionRandomisationEnabled(plugin: SproutPlugin): boolean {
+export function isMcqOptionRandomisationEnabled(plugin: LearnKitPlugin): boolean {
   return !!plugin.settings.study?.randomizeMcqOptions;
 }
 
@@ -40,7 +40,7 @@ function shuffleInPlace(a: number[]) {
   }
 }
 
-export function getMcqOptionOrder(plugin: SproutPlugin, session: Session, card: CardRecord): number[] {
+export function getMcqOptionOrder(plugin: LearnKitPlugin, session: Session, card: CardRecord): number[] {
   const opts = card?.options || [];
   const n = Array.isArray(opts) ? opts.length : 0;
   const identity = Array.from({ length: n }, (_, i) => i);

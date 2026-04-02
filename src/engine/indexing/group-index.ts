@@ -13,7 +13,7 @@
  */
 
 import type { CardRecord, CardState } from "../../platform/core/store";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 
 /** Normalise a group path like " /a//b/ c / " -> "a/b/c" */
 export function normalizeGroupPath(raw: string): string | null {
@@ -150,13 +150,13 @@ export class GroupIndex {
 }
 
 /** Module-level cache keyed by plugin instance — avoids polluting the plugin type. */
-const _cache = new WeakMap<SproutPlugin, { rev: number; index: GroupIndex }>();
+const _cache = new WeakMap<LearnKitPlugin, { rev: number; index: GroupIndex }>();
 
 /**
  * Plugin-scoped cached index.
  * Rebuilds when store revision changes (store.ts implements getRevision()).
  */
-export function getGroupIndex(plugin: SproutPlugin): GroupIndex {
+export function getGroupIndex(plugin: LearnKitPlugin): GroupIndex {
   const store = plugin.store;
   const rev = store.getRevision();
 
@@ -168,6 +168,6 @@ export function getGroupIndex(plugin: SproutPlugin): GroupIndex {
   return index;
 }
 
-export function invalidateGroupIndex(plugin: SproutPlugin): void {
+export function invalidateGroupIndex(plugin: LearnKitPlugin): void {
   _cache.delete(plugin);
 }

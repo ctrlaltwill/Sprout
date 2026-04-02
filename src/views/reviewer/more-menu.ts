@@ -119,24 +119,24 @@ export function injectMoreMenu(view: SproutReviewerView) {
   root
     .querySelectorAll(
       [
-        'button[data-sprout-action="undo-grade"]',
-        'button[data-sprout-action="bury-card"]',
-        'button[data-sprout-action="suspend-card"]',
-        'button[data-sprout-action="open-note"]',
-        'button[data-sprout-action="edit-card"]',
-        '[data-sprout-action="more-wrap"]',
-        '[data-sprout-popover-id*="more-"]',
-        'button[data-sprout-action="more-toggle"]',
+        'button[data-learnkit-action="undo-grade"]',
+        'button[data-learnkit-action="bury-card"]',
+        'button[data-learnkit-action="suspend-card"]',
+        'button[data-learnkit-action="open-note"]',
+        'button[data-learnkit-action="edit-card"]',
+        '[data-learnkit-action="more-wrap"]',
+        '[data-learnkit-popover-id*="more-"]',
+        'button[data-learnkit-action="more-toggle"]',
       ].join(","),
     )
     .forEach((n) => n.remove());
 
-  const flash = (queryFirst(root, ".sprout-flashcard") as HTMLElement) ?? root;
-  const rows = Array.from(flash.querySelectorAll<HTMLElement>(".sprout-row"));
+  const flash = (queryFirst(root, ".learnkit-flashcard") as HTMLElement) ?? root;
+  const rows = Array.from(flash.querySelectorAll<HTMLElement>(".learnkit-row"));
   if (!rows.length) return;
 
   const rowHasBtn = (row: HTMLElement, label: string) => {
-    const btnLefts = Array.from(row.querySelectorAll(".sprout-btn-left"));
+    const btnLefts = Array.from(row.querySelectorAll(".learnkit-btn-left"));
     return btnLefts.some((x) => (x.textContent || "").trim().toLowerCase() === label.toLowerCase());
   };
 
@@ -165,13 +165,13 @@ export function injectMoreMenu(view: SproutReviewerView) {
 
   // Instead of rendering the menu inside the card row, render the popover at the document body root for correct positioning
   const wrap = document.createElement("div");
-  wrap.className = "sprout bc relative inline-flex overflow-visible";
+  wrap.className = "learnkit relative inline-flex overflow-visible";
   wrap.dataset.sproutAction = "more-wrap";
 
   const moreBtn = document.createElement("button");
   moreBtn.type = "button";
   moreBtn.id = triggerId;
-  moreBtn.className = "bc sprout-btn-toolbar sprout-btn-filter";
+  moreBtn.className = "learnkit-btn-toolbar learnkit-btn-filter";
   moreBtn.dataset.sproutAction = "reviewer-more-trigger";
   moreBtn.setAttribute("aria-haspopup", "menu");
   moreBtn.setAttribute("aria-controls", menuId);
@@ -182,7 +182,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
   moreBtn.textContent = tx("ui.reviewer.more.label", "More");
 
   const kbd = document.createElement("kbd");
-  kbd.className = "bc kbd ml-2";
+  kbd.className = "kbd ml-2";
   kbd.textContent = "M";
   moreBtn.appendChild(kbd);
 
@@ -203,21 +203,21 @@ export function injectMoreMenu(view: SproutReviewerView) {
   // Create the popover and append to document.body for global positioning
   const popover = document.createElement("div");
   popover.id = popoverId;
-  popover.className = "bc sprout";
+  popover.className = "learnkit";
   popover.setAttribute("aria-hidden", "true");
-  popover.classList.add("sprout-popover-overlay");
+  popover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay");
   document.body.appendChild(popover);
 
   const panel = document.createElement("div");
   panel.className =
-    "bc lk-more-panel rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto";
+    "lk-more-panel rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
   menu.setAttribute("role", "menu");
   menu.id = menuId;
   
-  menu.className = "bc flex flex-col";
+  menu.className = "flex flex-col";
   panel.appendChild(menu);
 
   const createMenuItem = (
@@ -231,16 +231,16 @@ export function injectMoreMenu(view: SproutReviewerView) {
     item.tabIndex = disabled ? -1 : 0;
 
     item.className = disabled
-      ? "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm select-none opacity-50 cursor-not-allowed pointer-events-none"
-      : "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+      ? "group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm select-none opacity-50 cursor-not-allowed pointer-events-none"
+      : "group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
 
     const label_span = document.createElement("span");
-    label_span.className = "bc";
+    label_span.className = "";
     label_span.textContent = label;
     item.appendChild(label_span);
 
     const spacer = document.createElement("kbd");
-    spacer.className = "bc kbd ml-auto text-xs text-muted-foreground tracking-widest";
+    spacer.className = "kbd ml-auto text-xs text-muted-foreground tracking-widest";
     spacer.textContent = hotkey;
     item.appendChild(spacer);
 
@@ -282,7 +282,7 @@ export function injectMoreMenu(view: SproutReviewerView) {
   if (showUndoHere) {
     const sep = document.createElement("hr");
     sep.setAttribute("role", "separator");
-    sep.className = "bc h-px bg-border my-2";
+    sep.className = "h-px bg-border my-2";
     menu.appendChild(sep);
 
     const undoItem = createMenuItem(tx("ui.reviewer.more.undo", "Undo"), "U", () => {

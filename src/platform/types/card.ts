@@ -10,18 +10,6 @@
  *   - CardRecord — type for a single persistent flashcard record
  *   - normalizeCardOptions — coerces McqOption[] | string[] | null → string[]
  */
-
-/**
- * Safely coerces an MCQ options field to a flat `string[]`.
- *
- * Handles three scenarios:
- *  1. Already `string[]` (normal store data) — returned as-is.
- *  2. `McqOption[]` objects `{ text, isCorrect }` (parser leak / legacy bug) — extracts `.text`.
- *  3. `null` / `undefined` / non-array — returns `[]`.
- *
- * This is the single authoritative boundary between the parser's rich
- * `McqOption` representation and the store's flat `string[]` contract.
- */
 export function normalizeCardOptions(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((item: unknown) => {

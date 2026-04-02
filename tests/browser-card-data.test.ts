@@ -1,3 +1,11 @@
+/**
+ * @file tests/browser-card-data.test.ts
+ * @summary Unit tests for browser card data.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import { applyValueToCard } from "../src/views/browser/browser-card-data";
 import type { CardRecord } from "../src/platform/core/store";

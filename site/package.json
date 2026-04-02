@@ -17,5 +17,8 @@
     "starlight-theme-bejamas": "^0.1.18",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "yaml": "^2.8.3"
   }
 }

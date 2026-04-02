@@ -1,3 +1,11 @@
+/**
+ * @file tests/scope-filter-query.test.ts
+ * @summary Unit tests for scope filter query.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 
 /**

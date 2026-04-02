@@ -1,3 +1,11 @@
+/**
+ * @file tests/saved-scope-presets.test.ts
+ * @summary Unit tests for saved scope presets.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import {
   parseScopesJson,

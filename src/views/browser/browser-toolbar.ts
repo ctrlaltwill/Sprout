@@ -14,7 +14,7 @@
  */
 
 import { setIcon } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import {
   AOS_CASCADE_STEP,
 } from "../../platform/core/constants";
@@ -37,7 +37,7 @@ import { t } from "../../platform/translations/translator";
 // ── Context / result interfaces ───────────────────────────
 
 export interface ToolbarContext {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   animationsEnabled: boolean;
   internalAosEnabled?: boolean;
 
@@ -275,7 +275,7 @@ export function buildBrowserLayout(
   // Suspend button
   const suspendBtn = document.createElement("button");
   suspendBtn.type = "button";
-  suspendBtn.className = "sprout-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 lk-browser-action-btn lk-browser-action-btn-suspend";
+  suspendBtn.className = "learnkit-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 lk-browser-action-btn lk-browser-action-btn-suspend";
   suspendBtn.disabled = true;
   suspendBtn.setAttribute("aria-label", tx("ui.browser.action.suspend.tooltip", "Suspend or Unsuspend selected cards"));
   suspendBtn.setAttribute("data-tooltip-position", "top");
@@ -289,7 +289,7 @@ export function buildBrowserLayout(
   // Edit button
   const editBtn = document.createElement("button");
   editBtn.type = "button";
-  editBtn.className = "sprout-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 lk-browser-action-btn lk-browser-action-btn-edit";
+  editBtn.className = "learnkit-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 lk-browser-action-btn lk-browser-action-btn-edit";
   editBtn.disabled = true;
   editBtn.setAttribute("aria-label", tx("ui.browser.action.edit.tooltip", "Edit selected cards"));
   editBtn.setAttribute("data-tooltip-position", "top");
@@ -297,7 +297,7 @@ export function buildBrowserLayout(
   const editIcon = document.createElement("span");
   editIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
   setIcon(editIcon, "edit-3");
-  editIcon.classList.add("sprout-icon-scale-80");
+  editIcon.classList.add("learnkit-icon-scale-80", "learnkit-icon-scale-80");
   editBtn.appendChild(editIcon);
   const editText = document.createElement("span");
   editText.textContent = tx("ui.browser.action.edit.label", "Edit");
@@ -312,7 +312,7 @@ export function buildBrowserLayout(
   // Reset filters button
   const resetFiltersBtn = document.createElement("button");
   resetFiltersBtn.type = "button";
-  resetFiltersBtn.className = "sprout-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 lk-browser-action-btn lk-browser-action-btn-reset";
+  resetFiltersBtn.className = "learnkit-btn-toolbar h-9 px-3 text-sm inline-flex items-center gap-2 lk-browser-action-btn lk-browser-action-btn-reset";
   resetFiltersBtn.disabled = true;
   resetFiltersBtn.setAttribute("aria-label", tx("ui.browser.action.reset.tooltip", "Reset filters"));
   resetFiltersBtn.setAttribute("data-tooltip-position", "top");
@@ -338,7 +338,7 @@ export function buildBrowserLayout(
 
   const tableWrap = document.createElement("div");
   tableWrap.className =
-    "bc overflow-auto flex-1 min-h-0 lk-browser-table-wrap";
+    "overflow-auto flex-1 min-h-0 lk-browser-table-wrap";
   tableCard.appendChild(tableWrap);
 
   const table = document.createElement("table");
@@ -361,7 +361,7 @@ export function buildBrowserLayout(
     const c = document.createElement("col");
     c.setAttribute("data-col", k);
     c.className = "lk-browser-col";
-    setCssProps(c, "--sprout-col-width", `${ctx.colWidths[k] || 120}px`);
+    setCssProps(c, "--learnkit-col-width", `${ctx.colWidths[k] || 120}px`);
     colgroup.appendChild(c);
     colEls[k] = c;
   });
@@ -432,7 +432,7 @@ export function buildBrowserLayout(
 
     th.addEventListener("click", (ev) => {
       const target = ev.target as HTMLElement | null;
-      if (target?.closest?.(".sprout-col-resize")) {
+      if (target?.closest?.(".learnkit-col-resize")) {
         ev.preventDefault();
         ev.stopPropagation();
         return;
@@ -496,12 +496,12 @@ export function buildBrowserLayout(
   const clearIcon = document.createElement("span");
   clearIcon.className = "inline-flex items-center justify-center [&_svg]:size-3";
   setIcon(clearIcon, "x");
-  clearIcon.classList.add("sprout-icon-scale-80");
+  clearIcon.classList.add("learnkit-icon-scale-80", "learnkit-icon-scale-80");
   clearSelection.appendChild(clearIcon);
   const clearText = document.createElement("span");
   clearText.textContent = tx("ui.browser.selection.clear", "Clear selection");
   clearSelection.appendChild(clearText);
-  clearSelection.classList.add("sprout-is-hidden");
+  clearSelection.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
   clearSelection.addEventListener("click", (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
@@ -528,7 +528,7 @@ export function buildBrowserLayout(
     label: tx("ui.browser.rows.perPage", "Rows per page"),
     value: String(ctx.pageSize),
     options: ["100", "50", "25", "10", "5"].map((v) => ({ v, label: v })),
-    triggerClassName: "sprout-btn-filter h-7 px-3 text-sm",
+    triggerClassName: "learnkit-btn-filter h-7 px-3 text-sm",
     onChange: (v) => {
       const next = Math.max(1, Math.floor(Number(v) || 5));
       ctx.setPageSize(next);

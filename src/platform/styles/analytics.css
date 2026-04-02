@@ -5,43 +5,43 @@
 
 /* ---- Grid & card margins ---- */
 
-.sprout .sprout-analytics-root .sprout-ana-grid > .card,
-.sprout .sprout-analytics-root .sprout-ana-grid .card,
-.sprout .sprout-analytics-root .card.sprout-ana-card {
+.learnkit .learnkit-analytics-root .learnkit-ana-grid > .card,
+.learnkit .learnkit-analytics-root .learnkit-ana-grid .card,
+.learnkit .learnkit-analytics-root .card.learnkit-ana-card {
   margin: 0;
 }
 
-.sprout .sprout-analytics-root .card {
+.learnkit .learnkit-analytics-root .card {
   transition: background-color .2s;
   border: 1px solid var(--color-base-30);
 
 }
 
 @supports (color:color-mix(in lab, red, red)) {
-  .sprout .sprout-analytics-root .card {
+  .learnkit .learnkit-analytics-root .card {
     background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
   }
 }
 
-.sprout .sprout-analytics-root .card:hover {
+.learnkit .learnkit-analytics-root .card:hover {
   background-color: var(--background);
 }
 
-.sprout .sprout-analytics-root .sprout-ana-grid {
+.learnkit .learnkit-analytics-root .learnkit-ana-grid {
   align-items: stretch;
 }
 
-.sprout .sprout-analytics-root .sprout-ana-grid > div {
+.learnkit .learnkit-analytics-root .learnkit-ana-grid > div {
   display: flex;
 }
 
-.sprout .sprout-analytics-root .sprout-ana-grid > div > .card {
+.learnkit .learnkit-analytics-root .learnkit-ana-grid > div > .card {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-.sprout .sprout-analytics-root {
+.learnkit .learnkit-analytics-root {
   min-height: 0;
   max-height: none;
   margin-top: 0;
@@ -51,72 +51,72 @@
   border-radius: 0;
 }
 
-.sprout .sprout-analytics-title-strip {
+.learnkit .learnkit-analytics-title-strip {
   width: 100%;
   margin: 0 auto;
-  max-width: min(var(--sprout-analytics-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
+  max-width: min(var(--learnkit-analytics-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
   padding: var(--lk-title-strip-padding-desktop);
   box-sizing: border-box;
 }
 
-.sprout .sprout-analytics-content-shell {
+.learnkit .learnkit-analytics-content-shell {
   width: 100%;
   margin: 0 auto;
-  max-width: min(var(--sprout-analytics-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
+  max-width: min(var(--learnkit-analytics-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
   padding: var(--lk-shell-padding-desktop);
 }
 
-.workspace-leaf-content[data-sprout-wide="1"] .sprout-analytics-title-strip,
-.workspace-leaf-content[data-sprout-wide="1"] .sprout-analytics-content-shell {
+.workspace-leaf-content[data-learnkit-wide="1"] .learnkit-analytics-title-strip,
+.workspace-leaf-content[data-learnkit-wide="1"] .learnkit-analytics-content-shell {
   width: calc(100% - var(--lk-shell-gutter-desktop));
   max-width: calc(100% - var(--lk-shell-gutter-desktop));
 }
 
-body.is-phone .sprout .sprout-analytics-root {
+body.is-phone .learnkit .learnkit-analytics-root {
   gap: 8px !important;
 }
 
 /* Use a single column gap rhythm for analytics sections on phones. */
-body.is-phone .sprout .sprout-analytics-content-shell > .w-full.space-y-4 {
+body.is-phone .learnkit .learnkit-analytics-content-shell > .w-full.space-y-4 {
   display: flex;
   flex-direction: column;
   gap: 8px !important;
 }
 
 /* Analytics body wrapper uses `space-y-4`; enforce 8px spacing on phone. */
-body.is-phone .sprout .sprout-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+body.is-phone .learnkit .learnkit-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]) {
   margin-top: 0 !important;
 }
 
 /* Analytics rows commonly use `gap-4`; normalize to 8px on phone. */
-body.is-phone .sprout .sprout-analytics-content-shell :is(.sprout-ana-grid, .grid) {
+body.is-phone .learnkit .learnkit-analytics-content-shell :is(.learnkit-ana-grid, .grid) {
   gap: 8px !important;
 }
 
-body.is-phone .sprout .sprout-analytics-content-shell > * + * {
+body.is-phone .learnkit .learnkit-analytics-content-shell > * + * {
   margin-top: 8px !important;
 }
 
 @media (max-width: 767px) {
-  .sprout .sprout-analytics-root {
+  .learnkit .learnkit-analytics-root {
     gap: 8px !important;
   }
 
-  .sprout .sprout-analytics-content-shell > .w-full.space-y-4 {
+  .learnkit .learnkit-analytics-content-shell > .w-full.space-y-4 {
     display: flex;
     flex-direction: column;
     gap: 8px !important;
   }
 
-  .sprout .sprout-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  .learnkit .learnkit-analytics-content-shell > .w-full.space-y-4 > :not([hidden]) ~ :not([hidden]) {
     margin-top: 0 !important;
   }
 
-  .sprout .sprout-analytics-content-shell :is(.sprout-ana-grid, .grid) {
+  .learnkit .learnkit-analytics-content-shell :is(.learnkit-ana-grid, .grid) {
     gap: 8px !important;
   }
 
-  .sprout .sprout-analytics-title-strip {
+  .learnkit .learnkit-analytics-title-strip {
     max-width: 100%;
     padding-left: var(--lk-shell-padding-mobile);
     padding-right: var(--lk-shell-padding-mobile);
@@ -124,96 +124,96 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
     padding-bottom: 12px;
   }
 
-  .sprout .sprout-analytics-content-shell {
+  .learnkit .learnkit-analytics-content-shell {
     padding: var(--lk-shell-padding-mobile);
     max-width: 100%;
   }
 
 }
 
-.sprout .sprout-analytics-badge {
-  background-color: var(--sprout-badge-bg, transparent);
-  color: var(--sprout-badge-color, inherit);
-  border: var(--sprout-badge-border, none);
+.learnkit .learnkit-analytics-badge {
+  background-color: var(--learnkit-badge-bg, transparent);
+  color: var(--learnkit-badge-color, inherit);
+  border: var(--learnkit-badge-border, none);
 }
 
-.sprout .sprout-analytics-badge.sprout-trend-badge {
+.learnkit .learnkit-analytics-badge.learnkit-trend-badge {
   background-color: var(--theme-accent);
   border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
   color: #fff;
 }
 
-.theme-dark .sprout .sprout-analytics-badge.sprout-trend-badge {
+.theme-dark .learnkit .learnkit-analytics-badge.learnkit-trend-badge {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .14);
   border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .24);
   color: #fff;
 }
 
-.sprout .sprout-analytics-badge.sprout-live-badge-orange {
+.learnkit .learnkit-analytics-badge.learnkit-live-badge-orange {
   background-color: var(--color-orange, #f59e0b);
   border: 1px solid color-mix(in srgb, var(--color-orange, #f59e0b) 78%, black);
   color: #fff;
 }
 
-.theme-dark .sprout .sprout-analytics-badge.sprout-live-badge-orange {
+.theme-dark .learnkit .learnkit-analytics-badge.learnkit-live-badge-orange {
   background-color: color-mix(in srgb, var(--color-orange, #f59e0b) 28%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-orange, #f59e0b) 52%, transparent);
   color: #fff;
 }
 
-.sprout .sprout-analytics-live-pulse {
+.learnkit .learnkit-analytics-live-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.sprout .sprout-analytics-rotatable {
-  transform: translateY(var(--sprout-trend-lift, 0px));
+.learnkit .learnkit-analytics-rotatable {
+  transform: translateY(var(--learnkit-trend-lift, 0px));
 }
 
 
 /* ---- Recharts axis + ticks ---- */
 
-.sprout .sprout-analytics-root .recharts-cartesian-axis-line,
-.sprout .sprout-analytics-root .recharts-cartesian-axis-tick-line {
+.learnkit .learnkit-analytics-root .recharts-cartesian-axis-line,
+.learnkit .learnkit-analytics-root .recharts-cartesian-axis-tick-line {
   stroke: var(--border);
 }
-.sprout .sprout-analytics-root .recharts-cartesian-axis-tick-value {
+.learnkit .learnkit-analytics-root .recharts-cartesian-axis-tick-value {
   fill: var(--text-muted);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
 }
-.sprout .sprout-analytics-root .recharts-label tspan {
+.learnkit .learnkit-analytics-root .recharts-label tspan {
   fill: var(--text-muted);
 }
 
 /* ---- Pie chart center value ---- */
 
-.sprout .sprout-analytics-root .fill-foreground {
+.learnkit .learnkit-analytics-root .fill-foreground {
   fill: #111;
 }
-.theme-dark .sprout .sprout-analytics-root .fill-foreground {
+.theme-dark .learnkit .learnkit-analytics-root .fill-foreground {
   fill: #fff;
 }
 
 /* ---- Info icons ---- */
 
-.sprout .sprout-analytics-root .lucide-info {
+.learnkit .learnkit-analytics-root .lucide-info {
   width: 11.2px;
   height: 11.2px;
 }
 
-.sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info) {
+.learnkit .learnkit-analytics-root [data-tooltip]:has(.lucide-info) {
   cursor: pointer;
   z-index: var(--lk-z-analytics-info);
 }
 
 /* Recharts tooltip: fade in only — no slide-in translation effect */
-.sprout .recharts-tooltip-wrapper {
+.learnkit .recharts-tooltip-wrapper {
   transition-property: opacity !important;
   transition-duration: 120ms !important;
   transition-timing-function: ease !important;
   transition-delay: 0s !important;
   animation: none !important;
 }
-.sprout .recharts-tooltip-wrapper[style*="translate"] {
+.learnkit .recharts-tooltip-wrapper[style*="translate"] {
   /* Let Recharts set the translate for positioning but block the animated transition on it */
   transition-property: opacity !important;
   transition-duration: 120ms !important;
@@ -221,17 +221,17 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
   transition-delay: 0s !important;
 }
 
-.sprout .sprout-analytics-root [data-tooltip]:has(.lucide-info):is(:hover, :focus-visible) {
+.learnkit .learnkit-analytics-root [data-tooltip]:has(.lucide-info):is(:hover, :focus-visible) {
   z-index: var(--lk-z-analytics-info-hover);
 }
 
 /* Keep forgetting curve card height steady even when empty */
-.sprout .sprout-analytics-root .sprout-forgetting-curve-card {
+.learnkit .learnkit-analytics-root .learnkit-forgetting-curve-card {
   min-height: 350px;
 }
 
 /* Add space between chart titles and info icons */
-.sprout .sprout-analytics-root .sprout-ana-card .font-semibold + span {
+.learnkit .learnkit-analytics-root .learnkit-ana-card .font-semibold + span {
   margin-left: 3px;
 }
 
@@ -239,41 +239,41 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 
 /* ---- Filter popover z-index stacking ---- */
 
-.sprout .sprout-ana-card {
+.learnkit .learnkit-ana-card {
   position: relative;
 }
 
-.sprout .sprout-ana-card:has(button[aria-expanded="true"]),
-.sprout .sprout-ana-card[data-popover-open="true"] {
+.learnkit .learnkit-ana-card:has(button[aria-expanded="true"]),
+.learnkit .learnkit-ana-card[data-popover-open="true"] {
   z-index: var(--lk-z-analytics-card-open);
   overflow: visible;
 }
 
 /* Lift the entire row/grid when any filter is open */
-.sprout .sprout-analytics-root :where(.sprout-ana-grid, .grid, .sprout-heatmap-host):has(
-    .sprout-ana-card[data-popover-open="true"]
+.learnkit .learnkit-analytics-root :where(.learnkit-ana-grid, .grid, .learnkit-heatmap-host):has(
+    .learnkit-ana-card[data-popover-open="true"]
   ),
-.sprout .sprout-analytics-root :where(.sprout-ana-grid, .grid, .sprout-heatmap-host):has(
-    .sprout-ana-card:has(button[aria-expanded="true"])
+.learnkit .learnkit-analytics-root :where(.learnkit-ana-grid, .grid, .learnkit-heatmap-host):has(
+    .learnkit-ana-card:has(button[aria-expanded="true"])
   ) {
   position: relative;
   z-index: var(--lk-z-analytics-row-open);
   overflow: visible;
 }
-.sprout .sprout-analytics-root :where(.sprout-ana-grid, .grid, .sprout-heatmap-host)[data-popover-open="true"] {
+.learnkit .learnkit-analytics-root :where(.learnkit-ana-grid, .grid, .learnkit-heatmap-host)[data-popover-open="true"] {
   position: relative;
   z-index: var(--lk-z-analytics-row-open);
   overflow: visible;
 }
-.sprout .sprout-ana-card .dropdown-menu,
-.sprout .sprout-ana-card [data-popover="true"],
-.sprout .sprout-ana-card .bg-popover {
+.learnkit .learnkit-ana-card .dropdown-menu,
+.learnkit .learnkit-ana-card [data-popover="true"],
+.learnkit .learnkit-ana-card .bg-popover {
   z-index: var(--lk-z-analytics-popover);
 }
 
 /* Ensure open filters float above any chart stack */
-.sprout .sprout-analytics-root .sprout-ana-card [aria-hidden="false"],
-.sprout .sprout-analytics-root .sprout-ana-card [data-popover="true"] {
+.learnkit .learnkit-analytics-root .learnkit-ana-card [aria-hidden="false"],
+.learnkit .learnkit-analytics-root .learnkit-ana-card [data-popover="true"] {
   position: absolute;
   z-index: var(--lk-z-analytics-popover);
 }
@@ -281,13 +281,13 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 /* ---- Chart card sizing ---- */
 
 /* Stretch analytics chart cards to match tallest sibling */
-.sprout-analytics-chart-card.sprout-ana-card {
+.learnkit-analytics-chart-card.learnkit-ana-card {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 /* Consistent fixed height for all analytics charts */
-.sprout-analytics-chart {
+.learnkit-analytics-chart {
   height: 250px;
   min-height: 250px;
   max-height: 250px;
@@ -301,39 +301,39 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 
 /* ---- Ana-card min heights ---- */
 
-.sprout .sprout-ana-card .text-sm {
+.learnkit .learnkit-ana-card .text-sm {
     min-height: 22px;
 }
 
-.sprout-ana-card .text-2xl {
+.learnkit-ana-card .text-2xl {
   min-height: 30px;;
 }
 
 /* ---- Analytics tables ---- */
 
-.sprout .sprout-analytics-root .table tbody tr {
-  border-bottom: var(--sprout-border-width) solid var(--sprout-border-color);
+.learnkit .learnkit-analytics-root .table tbody tr {
+  border-bottom: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
-.sprout .sprout-analytics-root .table tbody tr:last-child {
+.learnkit .learnkit-analytics-root .table tbody tr:last-child {
   border-bottom: none;
 }
 
 /* Analytics table pagination: keep number buttons fixed without affecting Prev/Next. */
-.sprout .sprout-analytics-root nav[role="navigation"] button[aria-label^="Page "] {
+.learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "] {
   min-width: 36px;
   max-width: 36px;
 }
 
 /* Active page button is non-interactive and should not show hover treatment. */
-.sprout .sprout-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"] {
+.learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"] {
   cursor: default;
   pointer-events: none;
 }
 
-.sprout .sprout-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:hover,
-.sprout .sprout-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:focus,
-.sprout .sprout-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:focus-visible,
-.sprout .sprout-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:active {
+.learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:hover,
+.learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:focus,
+.learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:focus-visible,
+.learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"]:active {
   transform: none;
 }
 
@@ -341,7 +341,7 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 /* Replaces inline: width/height 10px; borderRadius 3px; background:<color>
    across 7 analytics chart files (~15 usages) */
 
-.sprout .sprout-legend-dot {
+.learnkit .learnkit-legend-dot {
   width: 10px;
   height: 10px;
   border-radius: var(--radius-s);
@@ -350,7 +350,7 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 }
 
 /* Variant for heatmap tooltip dots (smaller, round) */
-.sprout .sprout-legend-dot-sm {
+.learnkit .learnkit-legend-dot-sm {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -359,18 +359,18 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 }
 
 /* Daily stats table: enforce minimum column width */
-.sprout .sprout-analytics-stats-card .sprout-changelog-table th,
-.sprout .sprout-analytics-stats-card .sprout-changelog-table td {
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table th,
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table td {
   min-width: 50px;
 }
 
 /* Daily stats table: match deck row height. */
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr {
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr {
   height: var(--lk-row-height-default, 42px);
 }
 
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody td,
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody .sprout-changelog-cell {
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody td,
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody .learnkit-changelog-cell {
   height: var(--lk-row-height-default, 42px);
   vertical-align: middle;
   padding-top: 0;
@@ -382,36 +382,36 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
   transition: border-color 0.18s ease;
 }
 
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody td:first-child,
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody .sprout-changelog-cell:first-child {
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody td:first-child,
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody .learnkit-changelog-cell:first-child {
   border-left: 1px solid var(--background);
   border-top-left-radius: var(--radius-md);
   border-bottom-left-radius: var(--radius-md);
 }
 
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody td:last-child,
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody .sprout-changelog-cell:last-child {
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody td:last-child,
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody .learnkit-changelog-cell:last-child {
   border-right: 1px solid var(--background);
   border-top-right-radius: var(--radius-md);
   border-bottom-right-radius: var(--radius-md);
 }
 
 /* Analytics table wrapper: padding + border so scroll stays inside */
-.sprout .sprout-analytics-table-wrap {
+.learnkit .learnkit-analytics-table-wrap {
   padding: 8px;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   overflow: auto;
   transition: background-color 0.2s;
   background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
 }
 
-.sprout .sprout-analytics-table-wrap:hover {
+.learnkit .learnkit-analytics-table-wrap:hover {
   background-color: var(--background);
 }
 
 /* Analytics table: keep hover radius on cells; wrapper handles border */
-.sprout .sprout-analytics-root .table {
+.learnkit .learnkit-analytics-root .table {
   border: none;
   border-radius: 0;
   overflow: visible;
@@ -420,7 +420,7 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 }
 
 /* Daily stats table: subtle row hover like deck table */
-.sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr {
+.learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr {
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease;
@@ -428,107 +428,107 @@ body.is-phone .sprout .sprout-analytics-content-shell > * + * {
 }
 
 @media (hover: hover) {
-  .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover {
+  .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover {
     background-color: var(--theme-base-10);
     color: var(--theme-base-95);
   }
 
-  .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td {
+  .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td {
     background-color: var(--theme-base-10);
     border-top-color: var(--theme-base-20) !important;
     border-bottom-color: var(--theme-base-20) !important;
     color: var(--theme-base-95);
   }
 
-  .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td:first-child {
+  .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td:first-child {
     border-left-color: var(--theme-base-20) !important;
   }
 
-  .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td:last-child {
+  .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td:last-child {
     border-right-color: var(--theme-base-20) !important;
   }
 
-  .sprout .sprout-analytics-stats-card .sprout-changelog-table tbody tr:hover td .text-muted-foreground {
+  .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td .text-muted-foreground {
     color: var(--theme-base-95);
   }
 
 }
 
-.sprout .sprout-analytics-root .table tbody tr:hover td:first-child {
+.learnkit .learnkit-analytics-root .table tbody tr:hover td:first-child {
   border-top-left-radius: var(--radius-md);
   border-bottom-left-radius: var(--radius-md);
 }
-.sprout .sprout-analytics-root .table tbody tr:hover td:last-child {
+.learnkit .learnkit-analytics-root .table tbody tr:hover td:last-child {
   border-top-right-radius: var(--radius-md);
   border-bottom-right-radius: var(--radius-md);
 }
 
 /* Daily stats footer controls: mobile-only tidy layout. */
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-bottom {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-bottom {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
   align-items: stretch;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-summary {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-summary {
   width: 100%;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-summary .text-sm {
-  font-size: var(--sprout-font-xs);
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-summary .text-sm {
+  font-size: var(--learnkit-font-xs);
   line-height: 1.35;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-center,
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-actions {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-center,
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-actions {
   width: 100%;
   margin-left: 0;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-center {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-center {
   justify-content: flex-start;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-actions {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-actions {
   justify-content: space-between;
   gap: 8px;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-rows-label {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-rows-label {
   display: none;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-export-btn {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-export-btn {
   min-height: 28px;
   padding: 4px 0;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-pager {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-pager {
   margin-left: auto;
 }
 
-body.is-mobile .sprout .sprout-analytics-stats-card .sprout-analytics-stats-pager-nav {
+body.is-mobile .learnkit .learnkit-analytics-stats-card .learnkit-analytics-stats-pager-nav {
   gap: 4px;
 }
 
-body.is-mobile .sprout .sprout-analytics-title-strip .lk-home-title-description,
-body.is-mobile .sprout .sprout-analytics-title-strip .text-muted-foreground {
+body.is-mobile .learnkit .learnkit-analytics-title-strip .lk-home-title-description,
+body.is-mobile .learnkit .learnkit-analytics-title-strip .text-muted-foreground {
   display: none !important;
 }
 
-body.is-mobile .sprout .sprout-analytics-title-strip > .sprout-analytics-title-row {
+body.is-mobile .learnkit .learnkit-analytics-title-strip > .learnkit-analytics-title-row {
   align-items: center;
   justify-content: center;
 }
 
-body.is-mobile .sprout .sprout-analytics-title-strip .sprout-analytics-title-copy {
+body.is-mobile .learnkit .learnkit-analytics-title-strip .learnkit-analytics-title-copy {
   width: 100%;
   align-items: center;
   text-align: center;
 }
 
-body.is-mobile .sprout .sprout-analytics-title-strip .sprout-analytics-filter-buttons {
+body.is-mobile .learnkit .learnkit-analytics-title-strip .learnkit-analytics-filter-buttons {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -536,7 +536,7 @@ body.is-mobile .sprout .sprout-analytics-title-strip .sprout-analytics-filter-bu
   justify-content: center;
 }
 
-body.is-mobile .sprout .sprout-analytics-title-strip .sprout-analytics-filter-btn {
+body.is-mobile .learnkit .learnkit-analytics-title-strip .learnkit-analytics-filter-btn {
   width: 100%;
   min-width: 0;
   justify-content: center;
@@ -544,70 +544,70 @@ body.is-mobile .sprout .sprout-analytics-title-strip .sprout-analytics-filter-bt
   padding-right: 8px;
 }
 
-body.is-mobile .sprout .sprout-analytics-title-strip .sprout-analytics-filter-icon {
+body.is-mobile .learnkit .learnkit-analytics-title-strip .learnkit-analytics-filter-icon {
   display: none;
 }
 
 /* Mobile analytics card layout: keep all top-level card groups at 8px spacing. */
-body.is-mobile .sprout .sprout-analytics-root {
+body.is-mobile .learnkit .learnkit-analytics-root {
   gap: 8px !important;
 }
 
-body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
+body.is-mobile .learnkit .learnkit-analytics-root > :is(.learnkit-ana-grid, .grid) {
   gap: 8px !important;
 }
 
 
-.sprout .sprout-ana-legend-dot {
-  background: var(--sprout-legend-color, var(--theme-accent));
+.learnkit .learnkit-ana-legend-dot {
+  background: var(--learnkit-legend-color, var(--theme-accent));
 }
 
-.sprout .sprout-ana-legend-dot-square {
+.learnkit .learnkit-ana-legend-dot-square {
   width: 10px;
   height: 10px;
   border-radius: 2px;
 }
 
-.sprout .sprout-ana-legend-line {
+.learnkit .learnkit-ana-legend-line {
   width: 14px;
   height: 2px;
   border-radius: var(--radius-s);
-  background: var(--sprout-legend-color, var(--theme-accent));
+  background: var(--learnkit-legend-color, var(--theme-accent));
   display: inline-block;
 }
 
-.sprout .sprout-ana-legend-line-dashed {
+.learnkit .learnkit-ana-legend-line-dashed {
   background: none;
-  border-top: 2px dashed var(--sprout-legend-color, var(--theme-accent));
+  border-top: 2px dashed var(--learnkit-legend-color, var(--theme-accent));
   height: 0;
 }
 
-.sprout .sprout-ana-popover {
+.learnkit .learnkit-ana-popover {
   position: absolute;
   top: calc(100% + 6px);
   z-index: 1000;
 }
 
-.sprout .sprout-ana-popover-right {
+.learnkit .learnkit-ana-popover-right {
   right: 0;
   left: auto;
 }
 
-.sprout .sprout-ana-popover-left {
+.learnkit .learnkit-ana-popover-left {
   left: 0;
   right: auto;
 }
 
-.sprout .sprout-ana-popover-md {
-  min-width: 280px;
-}
-
-.sprout .sprout-ana-popover-sm {
+.learnkit .learnkit-ana-popover-md {
   min-width: 250px;
 }
 
+.learnkit .learnkit-ana-popover-sm {
+  min-width: 200px;
+}
+
 /* Analytics popovers: glass surface like header/note bars. */
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover) {
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover) {
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
   border: 1px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
@@ -615,7 +615,7 @@ body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
 }
 
 /* Analytics filter triggers should match neutral settings action button styling. */
-.sprout .sprout-ana-card .sprout-btn-filter {
+.learnkit .learnkit-ana-card .learnkit-btn-filter {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -630,97 +630,98 @@ body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-ana-card .sprout-btn-filter:is(:hover, [aria-expanded="true"]) {
+.learnkit .learnkit-ana-card .learnkit-btn-filter:is(:hover, [aria-expanded="true"]) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout .sprout-ana-card .sprout-btn-filter:focus-visible {
+.learnkit .learnkit-ana-card .learnkit-btn-filter:focus-visible {
   background-color: color-mix(in srgb, var(--color-base-45) 17%, transparent 83%) !important;
   border-color: color-mix(in srgb, var(--color-base-70) 28%, transparent 72%) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout .sprout-ana-card .sprout-btn-filter:active {
+.learnkit .learnkit-ana-card .learnkit-btn-filter:active {
   background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
   color: var(--color-base-100) !important;
 }
 
 /* Analytics filter popovers: shared menu hover/active treatment */
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group {
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group {
   border: 1px solid transparent;
 }
 
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group:is(:hover, :focus, :focus-visible, :active),
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitemradio"].group[aria-checked="true"],
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-current="true"],
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-selected="true"] {
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group:is(:hover, :focus, :focus-visible, :active),
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitemradio"].group[aria-checked="true"],
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-current="true"],
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-selected="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"],
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer {
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"],
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background-color: transparent;
   padding-left: 8px;
+  min-height: 37px;
   padding-right: 8px;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"]:is(:hover, :focus, :focus-visible, :active),
-.sprout :is([id^="sprout-"][id$="-filter-popover"], .sprout-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer:is(:hover, :focus, :focus-visible, :active) {
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"]:is(:hover, :focus, :focus-visible, :active),
+.learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer:is(:hover, :focus, :focus-visible, :active) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
-.sprout .sprout-ana-min-320 {
+.learnkit .learnkit-ana-min-320 {
   min-height: 320px;
 }
 
-.sprout .sprout-ana-min-300 {
+.learnkit .learnkit-ana-min-300 {
   min-height: 300px;
 }
 
-.sprout .sprout-ana-min-120 {
+.learnkit .learnkit-ana-min-120 {
   min-height: 120px;
 }
 
-.sprout .sprout-ana-heatmap-tooltip {
+.learnkit .learnkit-ana-heatmap-tooltip {
   position: absolute;
-  left: var(--sprout-ana-x, 0px);
-  top: var(--sprout-ana-y, 0px);
+  left: var(--learnkit-ana-x, 0px);
+  top: var(--learnkit-ana-y, 0px);
   transform: translate(-50%, -100%);
   pointer-events: none;
   white-space: nowrap;
   z-index: 10;
 }
 
-.sprout .sprout-ana-chevron {
+.learnkit .learnkit-ana-chevron {
   display: inline-flex;
   transform: rotate(0deg) scale(0.7);
 }
 
-.sprout .sprout-ana-chevron.is-open {
+.learnkit .learnkit-ana-chevron.is-open {
   transform: rotate(90deg) scale(0.7);
 }
 
-.sprout .sprout-ana-scroll-48 {
+.learnkit .learnkit-ana-scroll-48 {
   height: 48px;
   overflow-y: auto;
 }
 
-.sprout .sprout-ana-pie-wrap {
+.learnkit .learnkit-ana-pie-wrap {
   position: relative;
   min-height: 200px;
 }
 
-.sprout .sprout-ana-empty-center {
+.learnkit .learnkit-ana-empty-center {
   position: absolute;
   inset: 0;
   display: flex;
@@ -730,11 +731,11 @@ body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
   padding: 12px;
 }
 
-.sprout .sprout-ana-min-20 {
+.learnkit .learnkit-ana-min-20 {
   min-height: 20px;
 }
 
-.sprout .sprout-ana-truncate-row {
+.learnkit .learnkit-ana-truncate-row {
   display: block;
   min-width: 0;
   max-width: 100%;
@@ -744,69 +745,69 @@ body.is-mobile .sprout .sprout-analytics-root > :is(.sprout-ana-grid, .grid) {
   white-space: nowrap;
 }
 
-.sprout .sprout-ana-truncate {
+.learnkit .learnkit-ana-truncate {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sprout .sprout-ana-truncate-end {
+.learnkit .learnkit-ana-truncate-end {
   direction: rtl;
   text-align: left;
   unicode-bidi: plaintext;
 }
 
-.sprout .sprout-ana-truncate-start {
+.learnkit .learnkit-ana-truncate-start {
   direction: rtl;
   text-align: left;
   unicode-bidi: plaintext;
 }
 
-.sprout .is-disabled {
+.learnkit .is-disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Phone: fully disable AOS on analytics elements.
    iPad / tablet / desktop retain normal AOS behaviour. */
-body.is-phone .sprout .sprout-analytics-root [data-aos],
-body.is-phone .sprout .sprout-analytics-root [data-aos].aos-init,
-body.is-phone .sprout .sprout-analytics-root [data-aos].aos-animate,
-body.is-phone .sprout .sprout-analytics-chart[data-aos],
-body.is-phone .sprout .sprout-ana-card[data-aos],
-body.is-phone .sprout-analytics-root > div[data-aos] {
+body.is-phone .learnkit .learnkit-analytics-root [data-aos],
+body.is-phone .learnkit .learnkit-analytics-root [data-aos].aos-init,
+body.is-phone .learnkit .learnkit-analytics-root [data-aos].aos-animate,
+body.is-phone .learnkit .learnkit-analytics-chart[data-aos],
+body.is-phone .learnkit .learnkit-ana-card[data-aos],
+body.is-phone .learnkit-analytics-root > div[data-aos] {
   opacity: 1;
   visibility: visible;
   transform: none;
   transition: none;
 }
 
-body.is-phone .sprout .sprout-analytics-badge {
+body.is-phone .learnkit .learnkit-analytics-badge {
   opacity: 1;
 }
 
 @media (max-width: 768px) {
-  .sprout .sprout-analytics-root .sprout-ana-card {
+  .learnkit .learnkit-analytics-root .learnkit-ana-card {
     min-width: 0;
   }
 
-  .sprout .sprout-analytics-chart {
+  .learnkit .learnkit-analytics-chart {
     height: 220px;
     min-height: 220px;
     max-height: 220px;
   }
 
-  .sprout .sprout-ana-chart-legend {
+  .learnkit .learnkit-ana-chart-legend {
     margin-top: 8px;
   }
 
-  .sprout .sprout-ana-heatmap-tooltip {
+  .learnkit .learnkit-ana-heatmap-tooltip {
     transform: translate(-50%, calc(-100% - 6px));
   }
 
-  .sprout .sprout-ana-popover-sm,
-  .sprout .sprout-ana-popover-md {
+  .learnkit .learnkit-ana-popover-sm,
+  .learnkit .learnkit-ana-popover-md {
     min-width: min(280px, calc(100vw - 24px));
   }
 }

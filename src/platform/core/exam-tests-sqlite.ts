@@ -1,5 +1,17 @@
+/**
+ * @file src/platform/core/exam-tests-sqlite.ts
+ * @summary Module for exam tests sqlite.
+ *
+ * @exports
+ *  - SavedExamTestSummary
+ *  - SavedExamTestRecord
+ *  - SavedExamAttemptRecord
+ *  - getExamTestsDbPath
+ *  - ExamTestsSqlite
+ */
+
 import type { Database } from "sql.js";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { getSqlJs } from "../integrations/anki/anki-sql";
 import { getSchedulingDirPath, copyDbToVaultSyncFolder, reconcileFromVaultSync } from "./sqlite-store";
 
@@ -57,7 +69,7 @@ function joinPath(...parts: string[]): string {
     .replace(/\/+/, "/");
 }
 
-export function getExamTestsDbPath(plugin: SproutPlugin): string {
+export function getExamTestsDbPath(plugin: LearnKitPlugin): string {
   return joinPath(getSchedulingDirPath(plugin), EXAMS_DB);
 }
 
@@ -119,11 +131,11 @@ function randomId(prefix: string): string {
 }
 
 export class ExamTestsSqlite {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private db: Database | null = null;
   private opened = false;
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
   }
 

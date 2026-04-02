@@ -1,3 +1,11 @@
+/**
+ * @file tests/browser-helpers.test.ts
+ * @summary Unit tests for browser helpers.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import { buildCardBlockPipeMarkdown } from "../src/views/browser/browser-helpers";
 import type { CardRecord } from "../src/platform/core/store";

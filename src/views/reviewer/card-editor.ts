@@ -9,7 +9,7 @@
  */
 
 import { Modal, Notice, TFile, setIcon, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions } from "../../platform/core/store";
 import { queryFirst } from "../../platform/core/ui";
@@ -175,7 +175,7 @@ function setTaggedSection(
 }
 
 function mkSectionTitle(parent: HTMLElement, text: string) {
-  parent.createEl("label", { text, cls: "bc text-sm font-medium" });
+  parent.createEl("label", { text, cls: "text-sm font-medium" });
 }
 
 const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
@@ -198,8 +198,7 @@ export class CardEditModal extends Modal {
   onOpen() {
     scopeModalToWorkspace(this);
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-edit-modal");
-    this.contentEl.addClass("bc");
+    this.modalEl.addClass("lk-modals", "learnkit-edit-modal");
 
     setModalTitle(this, tx("ui.reviewer.cardEditor.title", "Quick edit flashcard"));
 
@@ -220,7 +219,7 @@ export class CardEditModal extends Modal {
       const input = contentEl.createEl("input");
       input.type = "text";
       input.value = value || "";
-      input.classList.add("bc", "input", "w-full");
+      input.classList.add("input", "w-full");
       return input;
     };
 
@@ -228,7 +227,7 @@ export class CardEditModal extends Modal {
       const ta = contentEl.createEl("textarea");
       ta.value = value || "";
       ta.rows = rows;
-      ta.classList.add("bc", "textarea", "w-full", "sprout-textarea-fixed");
+      ta.classList.add("textarea", "w-full", "learnkit-textarea-fixed", "learnkit-textarea-fixed");
       if (extraClass) ta.classList.add(extraClass);
       ta.addEventListener("keydown", (ev: KeyboardEvent) => {
         handleTabInTextarea(ta, ev);
@@ -246,7 +245,7 @@ export class CardEditModal extends Modal {
     // ---- Title (always first) ----
     mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.title", "Title"));
     const titleEl = mkInput(String((this.card).title || ""));
-    titleEl.classList.add("sprout-edit-field-title");
+    titleEl.classList.add("learnkit-edit-field-title", "learnkit-edit-field-title");
     contentEl.appendChild(attachFlagPreviewOverlay(titleEl));
 
     // ---- Per-type fields ----
@@ -268,14 +267,14 @@ export class CardEditModal extends Modal {
     const addMcqOptionRow = (initialValue = "", makeCorrect = false) => {
       const idx = optionRows.length;
 
-      const row = contentEl.createDiv({ cls: "sprout-edit-mcq-option-row" });
+      const row = contentEl.createDiv({ cls: "learnkit-edit-mcq-option-row learnkit-edit-mcq-option-row" });
 
-      row.createEl("div", { text: tx("ui.reviewer.cardEditor.field.optionN", "Option {index}", { index: idx + 1 }), cls: "sprout-muted sprout-edit-mcq-option-label" });
+      row.createEl("div", { text: tx("ui.reviewer.cardEditor.field.optionN", "Option {index}", { index: idx + 1 }), cls: "learnkit-muted learnkit-muted learnkit-edit-mcq-option-label learnkit-edit-mcq-option-label" });
 
       const input = row.createEl("input");
       input.type = "text";
       input.value = initialValue || "";
-      input.classList.add("sprout-edit-mcq-option-input");
+      input.classList.add("learnkit-edit-mcq-option-input", "learnkit-edit-mcq-option-input");
 
       const radio = row.createEl("input");
       radio.type = "radio";
@@ -372,10 +371,10 @@ export class CardEditModal extends Modal {
 
       mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.stepsCorrectOrder", "Steps (correct order)"));
 
-      const oqHint = contentEl.createDiv({ cls: "bc text-xs text-muted-foreground" });
+      const oqHint = contentEl.createDiv({ cls: "text-xs text-muted-foreground" });
       oqHint.textContent = tx("ui.reviewer.cardEditor.oq.dragHint", "Drag the grip handles to reorder steps. Steps are shuffled during review.");
 
-      const oqListContainer = contentEl.createDiv({ cls: "sprout-oq-editor-list" });
+      const oqListContainer = contentEl.createDiv({ cls: "learnkit-oq-editor-list learnkit-oq-editor-list" });
 
       const oqStepRows: Array<{ row: HTMLElement; input: HTMLInputElement; badge: HTMLElement }> = [];
 
@@ -388,7 +387,7 @@ export class CardEditModal extends Modal {
       const oqUpdateRemove = () => {
         const disable = oqStepRows.length <= 2;
         for (const entry of oqStepRows) {
-          const btn = entry.row.querySelector<HTMLButtonElement>(".sprout-oq-del-btn");
+          const btn = entry.row.querySelector<HTMLButtonElement>(".learnkit-oq-del-btn");
           if (btn) {
             btn.disabled = disable;
             btn.classList.toggle("is-disabled", disable);
@@ -397,12 +396,12 @@ export class CardEditModal extends Modal {
       };
 
       const addOqStepRow = (value: string) => {
-        const row = contentEl.createDiv({ cls: "sprout-edit-mcq-option-row" });
+        const row = contentEl.createDiv({ cls: "learnkit-edit-mcq-option-row learnkit-edit-mcq-option-row" });
         row.draggable = true;
 
         // Grip handle
         const grip = document.createElement("span");
-        grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip";
+        grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab learnkit-oq-grip";
         setIcon(grip, "grip-vertical");
         row.appendChild(grip);
 
@@ -415,10 +414,10 @@ export class CardEditModal extends Modal {
         const input = row.createEl("input");
         input.type = "text";
         input.value = value || "";
-        input.classList.add("sprout-edit-mcq-option-input");
+        input.classList.add("learnkit-edit-mcq-option-input", "learnkit-edit-mcq-option-input");
         input.placeholder = tx("ui.reviewer.cardEditor.field.stepN", "Step {index}", { index: oqStepRows.length + 1 });
 
-        const delBtn = row.createEl("button", { text: tx("ui.reviewer.cardEditor.remove", "−"), cls: "sprout-oq-del-btn" });
+        const delBtn = row.createEl("button", { text: tx("ui.reviewer.cardEditor.remove", "−"), cls: "learnkit-oq-del-btn learnkit-oq-del-btn" });
         delBtn.type = "button";
         delBtn.addEventListener("click", () => {
           if (oqStepRows.length <= 2) return;
@@ -434,10 +433,10 @@ export class CardEditModal extends Modal {
         row.addEventListener("dragstart", (ev) => {
           const idx = oqStepRows.findIndex((e) => e.row === row);
           ev.dataTransfer?.setData("text/plain", String(idx));
-          row.classList.add("sprout-oq-row-dragging");
+          row.classList.add("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
         });
         row.addEventListener("dragend", () => {
-          row.classList.remove("sprout-oq-row-dragging");
+          row.classList.remove("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
         });
         row.addEventListener("dragover", (ev) => {
           ev.preventDefault();
@@ -469,7 +468,7 @@ export class CardEditModal extends Modal {
       oqUpdateRemove();
 
       // Add step button
-      const oqAddRow = contentEl.createDiv({ cls: "sprout-edit-mcq-add-row" });
+      const oqAddRow = contentEl.createDiv({ cls: "learnkit-edit-mcq-add-row learnkit-edit-mcq-add-row" });
       const oqPlusBtn = oqAddRow.createEl("button", { text: "+" });
       oqPlusBtn.type = "button";
       oqPlusBtn.onclick = () => {
@@ -512,7 +511,7 @@ export class CardEditModal extends Modal {
     correctIndex = currentCorrect;
 
     // + button row
-    const addRow = contentEl.createDiv({ cls: "sprout-edit-mcq-add-row" });
+    const addRow = contentEl.createDiv({ cls: "learnkit-edit-mcq-add-row learnkit-edit-mcq-add-row" });
 
     const plusBtn = addRow.createEl("button", { text: tx("ui.reviewer.cardEditor.add", "+") });
     plusBtn.type = "button";
@@ -566,18 +565,18 @@ export class CardEditModal extends Modal {
   ) {
     const { contentEl } = this;
 
-    const footer = contentEl.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer" });
+    const footer = contentEl.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer" });
 
-    const cancel = footer.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-outline-muted inline-flex items-center gap-2 h-9 px-3 text-sm" });
+    const cancel = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-outline-muted learnkit-btn-outline-muted inline-flex items-center gap-2 h-9 px-3 text-sm" });
     cancel.type = "button";
-    const cancelIcon = cancel.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const cancelIcon = cancel.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(cancelIcon, "x");
     cancel.createSpan({ text: tx("ui.common.cancel", "Cancel") });
     cancel.onclick = () => this.close();
 
-    const save = footer.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-primary-action inline-flex items-center gap-2 h-9 px-3 text-sm" });
+    const save = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-primary-action learnkit-btn-primary-action inline-flex items-center gap-2 h-9 px-3 text-sm" });
     save.type = "button";
-    const saveIcon = save.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const saveIcon = save.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(saveIcon, "save");
     save.createSpan({ text: tx("ui.common.save", "Save") });
     save.onclick = async () => {
@@ -614,7 +613,7 @@ export class CardEditModal extends Modal {
 
 
 export async function saveCardEdits(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   card: CardRecord,
   payload: CardEditPayload,
 ): Promise<void> {

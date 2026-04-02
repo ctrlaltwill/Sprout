@@ -5,22 +5,8 @@
  * @exports
  *   - CardCreatorModal — Obsidian Modal subclass for card creation
  */
-
-/**
- * modals/CardCreatorModal.ts
- * ---------------------------------------------------------------------------
- * Modal for adding a new flashcard (Basic, Cloze, or MCQ) to the active note.
- *
- * Supports:
- *  - Type selection (Basic / Cloze / MCQ)
- *  - Image-paste into question/answer/info fields
- *  - IO image paste + launch of IO editor
- *  - Post-save insertion into the current note
- * ---------------------------------------------------------------------------
- */
-
 import { Modal, Notice, MarkdownView, TFile, setIcon, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { log } from "../core/logger";
 import { placePopover, queryFirst, setCssProps } from "../core/ui";
 import type { CardType } from "../card-editor/card-editor";
@@ -61,7 +47,7 @@ type PendingImage = {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export class CardCreatorModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private forcedType?: CardType;
   private pendingImages: Map<string, PendingImage> = new Map();
   private _ioPasteHandler: ((ev: ClipboardEvent) => void) | null = null;
@@ -71,7 +57,7 @@ export class CardCreatorModal extends Modal {
     return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
   }
 
-  constructor(app: App, plugin: SproutPlugin, forcedType?: CardType) {
+  constructor(app: App, plugin: LearnKitPlugin, forcedType?: CardType) {
     super(app);
     this.plugin = plugin;
     this.forcedType = forcedType;
@@ -172,10 +158,10 @@ export class CardCreatorModal extends Modal {
     // positioning CSS (position:absolute, z-index, etc.) is already active.
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
     setCssProps(this.containerEl, "z-index", "2147483000");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-card-creator-modal");
+    this.modalEl.addClass("lk-modals", "learnkit-card-creator-modal");
     setCssProps(this.modalEl, "z-index", "2147483001");
     scopeModalToWorkspace(this);
-    this.contentEl.addClass("bc", "sprout-card-creator-content");
+    this.contentEl.addClass("learnkit-card-creator-content");
 
     // Escape key closes modal
     this.scope.register([], "Escape", () => { this.close(); return false; });
@@ -188,44 +174,44 @@ export class CardCreatorModal extends Modal {
       const titleEl = headerEl.querySelector<HTMLElement>(":scope > .modal-title");
       if (titleEl) titleEl.setText("Add flashcard");
 
-      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .sprout-card-creator-close-btn");
+      const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .learnkit-card-creator-close-btn");
       if (existingCloseBtn) existingCloseBtn.remove();
 
       const closeBtn = headerEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-card-creator-close-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn learnkit-card-creator-close-btn learnkit-card-creator-close-btn",
         attr: { type: "button", "aria-label": "Close" },
       });
       closeBtn.setAttr("data-tooltip-position", "top");
-      const closeIconWrap = closeBtn.createSpan({ cls: "bc inline-flex items-center justify-center" });
+      const closeIconWrap = closeBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(closeIconWrap, "x");
-      closeBtn.createSpan({ cls: "bc", attr: { "data-sprout-label": "true" }, text: "Close" });
+      closeBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: "Close" });
       closeBtn.addEventListener("click", () => this.close());
     }
 
     const legacyCloseBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button");
     if (legacyCloseBtn) legacyCloseBtn.remove();
 
-    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-card-creator-footer");
+    const existingFooter = this.modalEl.querySelector<HTMLElement>(":scope > .learnkit-card-creator-footer");
     if (existingFooter) existingFooter.remove();
 
     const file = this.app.workspace.getActiveFile();
     const path = String(file?.path || "");
 
     const modalRoot = contentEl;
-    modalRoot.classList.add("sprout-card-creator-root");
+    modalRoot.classList.add("learnkit-card-creator-root", "learnkit-card-creator-root");
 
-    const body = modalRoot.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = modalRoot.createDiv({ cls: "flex flex-col gap-4" });
     const common = txCommon(this.plugin.settings?.general?.interfaceLanguage);
 
     // ── Type selector (dropdown + popover menu) ─────────────────────────────
-    const typeField = body.createDiv({ cls: "bc flex flex-col gap-1" });
-    typeField.classList.add("sprout-is-hidden");
+    const typeField = body.createDiv({ cls: "flex flex-col gap-1" });
+    typeField.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
     const typeId = `sprout-type-${Math.floor(Math.random() * 1e9)}`;
 
-    const typeLabel = typeField.createEl("label", { cls: "bc text-sm font-medium", attr: { for: typeId } });
+    const typeLabel = typeField.createEl("label", { cls: "text-sm font-medium", attr: { for: typeId } });
     typeLabel.textContent = this.tx("ui.cardCreator.questionType", "Question type");
 
-    const typeSel = typeField.createEl("select", { cls: "bc w-full", attr: { id: typeId } });
+    const typeSel = typeField.createEl("select", { cls: "w-full", attr: { id: typeId } });
     typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.basic", "Basic"), value: "basic" });
     typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.cloze", "Cloze"), value: "cloze" });
     typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.multipleChoice", "Multiple choice"), value: "mcq" });
@@ -256,42 +242,42 @@ export class CardCreatorModal extends Modal {
 
     // Popover-based type menu (uses inline popover for compatibility)
     // Layout requirement: show the card type selector in the left half of a 1x2 grid, with an empty right column.
-    const typeMenuGrid = body.createDiv({ cls: "bc grid grid-cols-2 gap-4 items-start w-full" });
-    const typeMenuLeft = typeMenuGrid.createDiv({ cls: "bc flex flex-col gap-1 items-start" });
-    typeMenuGrid.createDiv({ cls: "bc" });
+    const typeMenuGrid = body.createDiv({ cls: "grid grid-cols-2 gap-4 items-start w-full" });
+    const typeMenuLeft = typeMenuGrid.createDiv({ cls: "flex flex-col gap-1 items-start" });
+    typeMenuGrid.createDiv({ cls: "" });
 
-    typeMenuLeft.createEl("label", { cls: "bc text-sm font-medium", text: this.tx("ui.cardCreator.type.label", "Type") });
-    const typeMenuWrap = typeMenuLeft.createDiv({ cls: "bc sprout relative inline-flex" });
+    typeMenuLeft.createEl("label", { cls: "text-sm font-medium", text: this.tx("ui.cardCreator.type.label", "Type") });
+    const typeMenuWrap = typeMenuLeft.createDiv({ cls: "learnkit learnkit relative inline-flex" });
     const typeMenuBtn = typeMenuWrap.createEl("button", {
-      cls: "bc sprout-btn-toolbar h-7 px-2 text-sm inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-7 px-2 text-sm inline-flex items-center gap-2",
     });
     typeMenuBtn.setAttribute("aria-haspopup", "menu");
     typeMenuBtn.setAttribute("aria-expanded", "false");
 
     const typeMenuBtnText = document.createElement("span");
-    typeMenuBtnText.className = "bc truncate";
+    typeMenuBtnText.className = "truncate";
     typeMenuBtn.appendChild(typeMenuBtnText);
 
     const typeMenuBtnIcon = document.createElement("span");
-    typeMenuBtnIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3";
+    typeMenuBtnIcon.className = "inline-flex items-center justify-center [&_svg]:size-3";
     setIcon(typeMenuBtnIcon, "chevron-down");
     typeMenuBtn.appendChild(typeMenuBtnIcon);
 
     const typePopover = document.createElement("div");
     const typeSproutWrapper = document.createElement("div");
-    typeSproutWrapper.className = "sprout";
-    typePopover.className = "bc";
+    typeSproutWrapper.className = "learnkit";
+    typePopover.className = "";
     typePopover.setAttribute("aria-hidden", "true");
-    typePopover.classList.add("sprout-popover-overlay", "sprout-card-creator-type-popover");
+    typePopover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay", "learnkit-card-creator-type-popover", "learnkit-card-creator-type-popover");
     typeSproutWrapper.appendChild(typePopover);
 
     const typePanel = document.createElement("div");
-    typePanel.className = "bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-card-creator-type-panel";
+    typePanel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-card-creator-type-panel";
     typePopover.appendChild(typePanel);
 
     const typeMenu = document.createElement("div");
     typeMenu.setAttribute("role", "menu");
-    typeMenu.className = "bc flex flex-col";
+    typeMenu.className = "flex flex-col";
     typePanel.appendChild(typeMenu);
 
     let typeMenuOpen = false;
@@ -306,7 +292,7 @@ export class CardCreatorModal extends Modal {
     updateTypeMenuLabel = () => {
       typeMenuBtnText.textContent = typeLabelFor(currentType);
       const show = isTypeMenuOption(currentType);
-      typeMenuGrid.classList.toggle("sprout-is-hidden", !show);
+      typeMenuGrid.classList.toggle("learnkit-is-hidden", !show);
     };
     updateTypeMenuLabel();
 
@@ -336,19 +322,19 @@ export class CardCreatorModal extends Modal {
         item.setAttribute("aria-checked", opt.value === currentType ? "true" : "false");
         item.tabIndex = 0;
         item.className =
-          "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground sprout-card-creator-type-item";
+          "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground learnkit-card-creator-type-item";
 
         const dotWrap = document.createElement("div");
-        dotWrap.className = "bc size-4 flex items-center justify-center";
+        dotWrap.className = "size-4 flex items-center justify-center";
         item.appendChild(dotWrap);
 
         const dot = document.createElement("div");
-        dot.className = "bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
+        dot.className = "size-2 rounded-full bg-foreground invisible group-aria-checked:visible";
         dot.setAttribute("aria-hidden", "true");
         dotWrap.appendChild(dot);
 
         const txt = document.createElement("span");
-        txt.className = "bc";
+        txt.className = "";
         txt.textContent = opt.label;
         item.appendChild(txt);
 
@@ -413,7 +399,7 @@ export class CardCreatorModal extends Modal {
     });
 
     // ── Card editor area ────────────────────────────────────────────────────
-    const editorContainer = body.createDiv({ cls: "bc flex flex-col gap-3 sprout-card-creator-editor" });
+    const editorContainer = body.createDiv({ cls: "flex flex-col gap-3 learnkit-card-creator-editor learnkit-card-creator-editor" });
 
     const renderCardEditor = () => {
       editorContainer.empty();
@@ -441,19 +427,19 @@ export class CardCreatorModal extends Modal {
 
         const addLocationField = (root: HTMLElement) => {
           const wrapper = document.createElement("div");
-          wrapper.className = "bc flex flex-col gap-1";
+          wrapper.className = "flex flex-col gap-1";
           const label = document.createElement("label");
-          label.className = "bc text-sm font-medium";
+          label.className = "text-sm font-medium";
           label.textContent = this.tx("ui.cardCreator.location", "Location");
           const input = document.createElement("input");
           input.type = "text";
-          input.className = "bc input w-full";
+          input.className = "input w-full";
           input.disabled = true;
           const displayPath = path ? formatLocationPath(path) : "";
           input.value = displayPath;
           input.placeholder = this.tx("ui.cardCreator.location", "Location");
           input.title = displayPath;
-          input.classList.add("sprout-location-input");
+          input.classList.add("learnkit-location-input", "learnkit-location-input");
           wrapper.appendChild(label);
           wrapper.appendChild(input);
 
@@ -494,7 +480,7 @@ export class CardCreatorModal extends Modal {
       } catch (e: unknown) {
         cardEditor = null;
         const msg = `Failed to render card fields (${e instanceof Error ? e.message : String(e)})`;
-        editorContainer.createDiv({ text: msg, cls: "bc text-sm text-destructive" });
+        editorContainer.createDiv({ text: msg, cls: "text-sm text-destructive" });
         new Notice(msg);
       }
     };
@@ -502,29 +488,29 @@ export class CardCreatorModal extends Modal {
     // ── IO image paste zone ─────────────────────────────────────────────────
     let ioImageData: ClipboardImage | null = null;
 
-    const ioWrap = body.createDiv({ cls: "bc fieldset", attr: { role: "group" } });
+    const ioWrap = body.createDiv({ cls: "fieldset", attr: { role: "group" } });
     setVisible(ioWrap, false);
-    ioWrap.createEl("legend", { text: this.tx("ui.cardCreator.type.imageOcclusion", "Image occlusion"), cls: "bc" });
+    ioWrap.createEl("legend", { text: this.tx("ui.cardCreator.type.imageOcclusion", "Image occlusion"), cls: "" });
 
-    const ioPasteZone = ioWrap.createDiv({ cls: "bc flex flex-col gap-3" });
+    const ioPasteZone = ioWrap.createDiv({ cls: "flex flex-col gap-3" });
 
     const ioPastePrompt = ioPasteZone.createDiv({
       text: "Paste an image (Ctrl+V) or drag & drop an image file",
-      cls: "bc text-sm text-muted-foreground p-3 rounded-lg border border-dashed border-muted-foreground text-center",
+      cls: "text-sm text-muted-foreground p-3 rounded-lg border border-dashed border-muted-foreground text-center",
     });
 
-    const ioImagePreview = ioPasteZone.createDiv({ cls: "bc hidden" });
-    ioImagePreview.classList.add("sprout-is-hidden");
+    const ioImagePreview = ioPasteZone.createDiv({ cls: "hidden" });
+    ioImagePreview.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
 
-    const ioImageContainer = ioImagePreview.createDiv({ cls: "bc flex flex-col gap-2" });
-    const ioImgElement = ioImageContainer.createEl("img", { cls: "bc w-full rounded-lg" });
-    ioImgElement.classList.add("sprout-io-preview-image");
+    const ioImageContainer = ioImagePreview.createDiv({ cls: "flex flex-col gap-2" });
+    const ioImgElement = ioImageContainer.createEl("img", { cls: "w-full rounded-lg" });
+    ioImgElement.classList.add("learnkit-io-preview-image", "learnkit-io-preview-image");
 
-    const ioImageInfo = ioImageContainer.createDiv({ cls: "bc text-xs text-muted-foreground" });
-    const ioImageName = ioImageContainer.createDiv({ cls: "bc text-xs font-medium" });
+    const ioImageInfo = ioImageContainer.createDiv({ cls: "text-xs text-muted-foreground" });
+    const ioImageName = ioImageContainer.createDiv({ cls: "text-xs font-medium" });
 
-    const ioActionRow = ioImageContainer.createDiv({ cls: "bc flex gap-2" });
-    const ioClearBtn = ioActionRow.createEl("button", { text: this.tx("ui.cardCreator.action.clear", "Clear"), cls: "bc sprout-btn-toolbar flex-1" });
+    const ioActionRow = ioImageContainer.createDiv({ cls: "flex gap-2" });
+    const ioClearBtn = ioActionRow.createEl("button", { text: this.tx("ui.cardCreator.action.clear", "Clear"), cls: "learnkit-btn-toolbar learnkit-btn-toolbar flex-1" });
     ioClearBtn.type = "button";
 
     ioPasteZone.appendChild(ioPastePrompt);
@@ -545,11 +531,11 @@ export class CardCreatorModal extends Modal {
           sizeKb: (ioImageData.data.byteLength / 1024).toFixed(1),
         });
         ioImageName.textContent = this.tx("ui.cardCreator.io.ready", "Ready to save and edit occlusions");
-        ioImagePreview.classList.remove("sprout-is-hidden");
-        ioPastePrompt.classList.add("sprout-is-hidden");
+        ioImagePreview.classList.remove("learnkit-is-hidden", "learnkit-is-hidden");
+        ioPastePrompt.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
       } else {
-        ioImagePreview.classList.add("sprout-is-hidden");
-        ioPastePrompt.classList.remove("sprout-is-hidden");
+        ioImagePreview.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
+        ioPastePrompt.classList.remove("learnkit-is-hidden", "learnkit-is-hidden");
         ioImgElement.src = "";
       }
     };
@@ -640,10 +626,10 @@ export class CardCreatorModal extends Modal {
     };
 
     // ── Footer buttons ──────────────────────────────────────────────────────
-    const footer = this.modalEl.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer sprout-card-creator-footer" });
+    const footer = this.modalEl.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer learnkit-card-creator-footer learnkit-card-creator-footer" });
 
     const cancelBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { "aria-label": "Cancel" },
     });
     cancelBtn.type = "button";
@@ -652,12 +638,12 @@ export class CardCreatorModal extends Modal {
     cancelBtn.onclick = () => this.close();
 
     const addBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar sprout-btn-accent sprout-card-creator-add-btn h-9 inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent learnkit-card-creator-add-btn learnkit-card-creator-add-btn h-9 inline-flex items-center gap-2",
       attr: { "aria-label": "Add card to the active note" },
     });
     addBtn.type = "button";
     addBtn.setAttr("data-tooltip-position", "top");
-    const addIcon = addBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const addIcon = addBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(addIcon, "plus");
     addBtn.createSpan({ text: this.tx("ui.cardCreator.action.add", "Add") });
     addBtn.onclick = async () => {
@@ -796,12 +782,12 @@ export class CardCreatorModal extends Modal {
 
     this.containerEl.removeClass("lk-modal-container");
     this.containerEl.removeClass("lk-modal-dim");
-    this.modalEl.removeClass("bc", "lk-modals");
-    const footerEl = this.modalEl.querySelector<HTMLElement>(":scope > .sprout-card-creator-footer");
+    this.modalEl.removeClass("lk-modals");
+    const footerEl = this.modalEl.querySelector<HTMLElement>(":scope > .learnkit-card-creator-footer");
     if (footerEl) footerEl.remove();
-    const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header .sprout-card-creator-close-btn");
+    const closeBtn = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header .learnkit-card-creator-close-btn");
     if (closeBtn) closeBtn.remove();
-    this.contentEl.removeClass("bc", "sprout-card-creator-content");
+    this.contentEl.removeClass("learnkit-card-creator-content");
     this.contentEl.empty();
   }
 }

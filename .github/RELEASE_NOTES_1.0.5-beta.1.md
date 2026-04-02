@@ -1,4 +1,4 @@
-# Sprout v1.0.5-beta.1 (Pre-release)
+# LearnKit v1.0.5-beta.1 (Pre-release)
 
 Release date: 2026-02-16
 

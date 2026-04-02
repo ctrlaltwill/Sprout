@@ -1,3 +1,16 @@
+/**
+ * @file src/platform/flags/flag-tokens.ts
+ * @summary Module for flag tokens.
+ *
+ * @exports
+ *  - CircleFlagTokenMatch
+ *  - escapeFlagHtml
+ *  - getCircleFlagTokenMatches
+ *  - stripCircleFlagTokens
+ *  - getCircleFlagUrl
+ *  - getCircleFlagFallbackUrl
+ */
+
 import { requestUrl } from "obsidian";
 
 const FLAG_TOKEN_RE = /\{\{([a-z]{2}(?:-[a-z0-9]{2,3})?)\}\}/gi;
@@ -73,7 +86,7 @@ export function getCircleFlagFallbackUrl(code: string): string {
 function buildFlagImgHtml(code: string): string {
   const safeCode = escapeFlagHtml(code);
   const src = escapeFlagHtml(getCircleFlagUrl(code));
-  return `<img class="sprout-inline-flag" data-sprout-flag-code="${safeCode}" alt="${safeCode}" src="${src}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
+  return `<img class="learnkit-inline-flag" data-learnkit-flag-code="${safeCode}" alt="${safeCode}" src="${src}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
 }
 
 export function replaceCircleFlagTokens(input: string): string {
@@ -193,7 +206,7 @@ async function resolveFlagDataUri(code: string): Promise<string | null> {
 
 function applyFlagSrcToDocument(code: string, src: string) {
   if (typeof document === "undefined") return;
-  const selector = `img[data-sprout-flag-code="${code}"]`;
+  const selector = `img[data-learnkit-flag-code="${code}"]`;
   const images = document.querySelectorAll<HTMLImageElement>(selector);
   images.forEach((img) => {
     img.src = src;
@@ -201,7 +214,7 @@ function applyFlagSrcToDocument(code: string, src: string) {
 }
 
 function parseFlagCodeFromImage(img: HTMLImageElement): string | null {
-  const attrCode = normalizeFlagCode(img.getAttribute("data-sprout-flag-code") || "");
+  const attrCode = normalizeFlagCode(img.getAttribute("data-learnkit-flag-code") || "");
   if (attrCode) return attrCode;
 
   const altCode = normalizeFlagCode(img.getAttribute("alt") || "");
@@ -222,7 +235,7 @@ export function hydrateCircleFlagsInElement(root: ParentNode): void {
     const node = stack.pop();
     if (!node) continue;
 
-    if (node instanceof HTMLImageElement && (node.hasAttribute("data-sprout-flag-code") || node.classList.contains("sprout-inline-flag"))) {
+    if (node instanceof HTMLImageElement && (node.hasAttribute("data-learnkit-flag-code") || node.classList.contains("learnkit-inline-flag"))) {
       images.push(node);
     }
 
@@ -236,8 +249,8 @@ export function hydrateCircleFlagsInElement(root: ParentNode): void {
     const code = parseFlagCodeFromImage(img);
     if (!code) return;
 
-    if (!img.hasAttribute("data-sprout-flag-code")) {
-      img.setAttribute("data-sprout-flag-code", code);
+    if (!img.hasAttribute("data-learnkit-flag-code")) {
+      img.setAttribute("data-learnkit-flag-code", code);
     }
 
     const cached = getCachedFlagDataUri(code);

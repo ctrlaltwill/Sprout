@@ -1,3 +1,11 @@
+/**
+ * @file tests/io-ocr.test.ts
+ * @summary Unit tests for io ocr.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import { __test } from "../src/platform/image-occlusion/io-ocr";
 

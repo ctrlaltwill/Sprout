@@ -3,7 +3,7 @@
  * @summary Shared body-portal popover lifecycle.
  *
  * Consolidates the open/close/position/cleanup pattern used by
- * header.ts (×2 popovers) and sprout-settings-tab.ts (×2 popovers).
+ * header.ts (×2 popovers) and settings-tab.ts (×2 popovers).
  *
  * Usage:
  * ```ts
@@ -45,13 +45,13 @@ export interface BodyPortalPopoverOpts {
   /** Gap between trigger and popover edge in px (default `4`). */
   gap?: number;
 
-  /** Whether to set `--sprout-popover-width` on the overlay (default `true`). */
+  /** Whether to set `--learnkit-popover-width` on the overlay (default `true`). */
   setWidth?: boolean;
 
-  /** Extra CSS classes on the overlay root (e.g. `"sprout-ss-popover"`). */
+  /** Extra CSS classes on the overlay root (e.g. `"learnkit-ss-popover"`). */
   overlayClasses?: string[];
 
-  /** Extra CSS classes on the inner panel (e.g. `"sprout-ss-panel"`). */
+  /** Extra CSS classes on the inner panel (e.g. `"learnkit-ss-panel"`). */
   panelClasses?: string[];
 
   /**
@@ -89,7 +89,7 @@ export interface BodyPortalPopoverHandle {
  *
  * The popover follows an 8-step lifecycle:
  *   1. Close any existing instance (idempotent).
- *   2. Create DOM: `.sprout` wrapper → overlay root → inner panel.
+ *   2. Create DOM: `.learnkit` wrapper → overlay root → inner panel.
  *   3. Build content into the panel.
  *   4. Append wrapper to `document.body`.
  *   5. Mark open state (classes + ARIA).
@@ -122,7 +122,7 @@ export function createBodyPortalPopover(
     trigger.setAttribute("aria-expanded", "false");
 
     if (sproutWrapper) {
-      const overlay = sproutWrapper.querySelector<HTMLElement>(".sprout-popover-overlay");
+      const overlay = sproutWrapper.querySelector<HTMLElement>(".learnkit-popover-overlay");
       if (overlay) {
         overlay.classList.remove("is-open");
         if (ariaHidden) overlay.setAttribute("aria-hidden", "true");
@@ -148,10 +148,10 @@ export function createBodyPortalPopover(
 
     // Step 2: create DOM
     sproutWrapper = document.createElement("div");
-    sproutWrapper.className = "sprout";
+    sproutWrapper.className = "learnkit";
 
     const overlay = document.createElement("div");
-    overlay.classList.add("sprout-popover-overlay", ...overlayClasses);
+    overlay.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay", ...overlayClasses);
     if (ariaHidden) overlay.setAttribute("aria-hidden", "true");
     sproutWrapper.appendChild(overlay);
 

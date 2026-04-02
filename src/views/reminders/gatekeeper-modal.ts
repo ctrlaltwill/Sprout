@@ -1,6 +1,14 @@
+/**
+ * @file src/views/reminders/gatekeeper-modal.ts
+ * @summary Module for gatekeeper modal.
+ *
+ * @exports
+ *  - GatekeeperModal
+ */
+
 import { Modal, setIcon, type App, type Component } from "obsidian";
 import type { CardRecord } from "../../platform/core/store";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import { createOqReorderPreviewController } from "../../platform/core/oq-reorder-preview";
 import { replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
@@ -23,14 +31,14 @@ import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay
 
 type GatekeeperModalArgs = {
   app: App;
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   cards: CardRecord[];
   allowBypass: boolean;
   scope: "workspace" | "current-tab";
 };
 
 export class GatekeeperModal extends Modal {
-  private readonly plugin: SproutPlugin;
+  private readonly plugin: LearnKitPlugin;
   private readonly cards: CardRecord[];
   private readonly allowBypass: boolean;
   private readonly modalScope: "workspace" | "current-tab";
@@ -59,8 +67,8 @@ export class GatekeeperModal extends Modal {
 
   override onOpen(): void {
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-gatekeeper-modal");
-    this.contentEl.addClass("bc", "sprout-gatekeeper-content");
+    this.modalEl.addClass("lk-modals", "learnkit-gatekeeper-modal");
+    this.contentEl.addClass("learnkit-gatekeeper-content");
     setCssProps(this.containerEl, "z-index", "2147483000");
     setCssProps(this.modalEl, "z-index", "2147483001");
     if (this.modalScope === "current-tab") {
@@ -176,7 +184,7 @@ export class GatekeeperModal extends Modal {
     }
 
     // Progress indicator (top-right, like close button position on other modals)
-    const progressEl = headerEl.createDiv({ cls: "bc text-sm text-muted-foreground sprout-gatekeeper-progress" });
+    const progressEl = headerEl.createDiv({ cls: "text-sm text-muted-foreground learnkit-gatekeeper-progress learnkit-gatekeeper-progress" });
     progressEl.setText(`${this.index + 1} of ${this.cards.length}`);
     this._progressEl = progressEl;
 
@@ -184,18 +192,18 @@ export class GatekeeperModal extends Modal {
     this.modalEl.querySelector<HTMLElement>(":scope > .modal-close-button")?.remove();
 
     // Add bypass button into header (replaces old top-row)
-    const existingBypass = headerEl.querySelector<HTMLElement>(".sprout-gatekeeper-bypass-btn");
+    const existingBypass = headerEl.querySelector<HTMLElement>(".learnkit-gatekeeper-bypass-btn");
     if (existingBypass) existingBypass.remove();
 
     if (this.allowBypass) {
       const bypassBtn = headerEl.createEl("button", {
-        cls: "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-gatekeeper-bypass-btn",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-gatekeeper-bypass-btn learnkit-gatekeeper-bypass-btn",
         attr: { type: "button", "aria-label": "Bypass this round" },
       });
       bypassBtn.setAttr("data-tooltip-position", "top");
-      const iconWrap = bypassBtn.createSpan({ cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+      const iconWrap = bypassBtn.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-4" });
       setIcon(iconWrap, "shield-off");
-      bypassBtn.createSpan({ text: "Bypass", cls: "bc", attr: { "data-sprout-label": "true" } });
+      bypassBtn.createSpan({ text: "Bypass", cls: "", attr: { "data-learnkit-label": "true" } });
       bypassBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         this.requestBypass();
@@ -230,7 +238,7 @@ export class GatekeeperModal extends Modal {
     }
 
     // ── Content: study-style card section ──
-    const section = contentEl.createEl("section", { cls: "bc flex flex-col gap-3 sprout-gatekeeper-qa-section" });
+    const section = contentEl.createEl("section", { cls: "flex flex-col gap-3 learnkit-gatekeeper-qa-section learnkit-gatekeeper-qa-section" });
 
     // Question row
     section.appendChild(this.makeLabelRow("Question", card, false));
@@ -243,13 +251,13 @@ export class GatekeeperModal extends Modal {
     }
 
     // ── Footer: review buttons ──
-    const footer = contentEl.createDiv({ cls: "bc flex flex-col items-center gap-3 lk-modal-footer sprout-gatekeeper-footer" });
+    const footer = contentEl.createDiv({ cls: "flex flex-col items-center gap-3 lk-modal-footer learnkit-gatekeeper-footer learnkit-gatekeeper-footer" });
 
     if (!this.reveal) {
-      const mainActionRow = footer.createDiv({ cls: "bc flex items-center justify-center gap-2 w-full" });
+      const mainActionRow = footer.createDiv({ cls: "flex items-center justify-center gap-2 w-full" });
       const revealBtn = this.makeButtonWithKbd(mainActionRow, {
         text: "Reveal answer",
-        cls: "bc sprout-btn-toolbar sprout-btn-filter",
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter",
         kbd: "↵",
       });
       revealBtn.addEventListener("click", () => {
@@ -276,17 +284,17 @@ export class GatekeeperModal extends Modal {
       );
     };
 
-    const gradeRow = footer.createDiv({ cls: fourButtonMode ? "bc grid grid-cols-2 gap-2 w-full" : "bc flex flex-wrap justify-center gap-2 w-full" });
+    const gradeRow = footer.createDiv({ cls: fourButtonMode ? "grid grid-cols-2 gap-2 w-full" : "flex flex-wrap justify-center gap-2 w-full" });
     const grades = fourButtonMode
       ? ([
-          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Grade question as again (1)", cls: "bc btn-destructive sprout-btn-again sprout-grade-btn-with-interval" },
-          { rating: "hard", label: "Hard", subtitle: getSubtitle("hard"), kbd: "2", tooltip: "Grade question as hard (2)", cls: "bc btn sprout-btn-hard sprout-grade-btn-with-interval" },
-          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "3", tooltip: "Grade question as good (3)", cls: "bc btn sprout-btn-good sprout-grade-btn-with-interval" },
-          { rating: "easy", label: "Easy", subtitle: getSubtitle("easy"), kbd: "4", tooltip: "Grade question as easy (4)", cls: "bc btn sprout-btn-easy sprout-grade-btn-with-interval" },
+          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Grade question as again (1)", cls: "btn-destructive learnkit-btn-again learnkit-btn-again learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "hard", label: "Hard", subtitle: getSubtitle("hard"), kbd: "2", tooltip: "Grade question as hard (2)", cls: "btn learnkit-btn-hard learnkit-btn-hard learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "3", tooltip: "Grade question as good (3)", cls: "btn learnkit-btn-good learnkit-btn-good learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "easy", label: "Easy", subtitle: getSubtitle("easy"), kbd: "4", tooltip: "Grade question as easy (4)", cls: "btn learnkit-btn-easy learnkit-btn-easy learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
         ] as const)
       : ([
-          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Grade question as again (1)", cls: "bc btn-destructive sprout-btn-again sprout-grade-btn-with-interval" },
-          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "2", tooltip: "Grade question as good (2)", cls: "bc btn sprout-btn-good sprout-grade-btn-with-interval" },
+          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Grade question as again (1)", cls: "btn-destructive learnkit-btn-again learnkit-btn-again learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "2", tooltip: "Grade question as good (2)", cls: "btn learnkit-btn-good learnkit-btn-good learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
         ] as const);
 
     for (const grade of grades) {
@@ -330,11 +338,11 @@ export class GatekeeperModal extends Modal {
       setCssProps(this.modalEl, "min-height", `${frozen.height}px`);
       setCssProps(this.modalEl, "max-height", `${frozen.height}px`);
     }
-    this.modalEl.addClass("sprout-gatekeeper-warning-mode");
+    this.modalEl.addClass("learnkit-gatekeeper-warning-mode");
   }
 
   private exitWarningMode() {
-    this.modalEl.removeClass("sprout-gatekeeper-warning-mode");
+    this.modalEl.removeClass("learnkit-gatekeeper-warning-mode");
     this._showBypassWarning = false;
     this._frozenModalSize = null;
     setCssProps(this.modalEl, "width", "");
@@ -346,15 +354,15 @@ export class GatekeeperModal extends Modal {
   }
 
   private renderBypassWarning(contentEl: HTMLElement) {
-    const wrap = contentEl.createDiv({ cls: "bc sprout-gatekeeper-warning-wrap" });
-    wrap.createDiv({ cls: "bc sprout-gatekeeper-warning-text", text: "Bypass this round?" });
+    const wrap = contentEl.createDiv({ cls: "learnkit-gatekeeper-warning-wrap learnkit-gatekeeper-warning-wrap" });
+    wrap.createDiv({ cls: "learnkit-gatekeeper-warning-text learnkit-gatekeeper-warning-text", text: "Bypass this round?" });
     wrap.createDiv({
-      cls: "bc text-muted-foreground text-sm sprout-gatekeeper-warning-subtext",
+      cls: "text-muted-foreground text-sm learnkit-gatekeeper-warning-subtext learnkit-gatekeeper-warning-subtext",
       text: "You've got cards due today — continuing may weaken your long-term retention!",
     });
 
-    const actions = wrap.createDiv({ cls: "bc flex items-center justify-center gap-2" });
-    const goBack = actions.createEl("button", { cls: "bc sprout-btn-toolbar h-9 px-3 text-sm", type: "button" });
+    const actions = wrap.createDiv({ cls: "flex items-center justify-center gap-2" });
+    const goBack = actions.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-9 px-3 text-sm", type: "button" });
     goBack.createSpan({ text: "Go back" });
     goBack.removeAttribute("aria-label");
     goBack.removeAttribute("data-tooltip-position");
@@ -363,7 +371,7 @@ export class GatekeeperModal extends Modal {
       this.render();
     });
 
-    const continueBtn = actions.createEl("button", { cls: "bc sprout-gatekeeper-bypass-btn h-9 px-3 text-sm", type: "button" });
+    const continueBtn = actions.createEl("button", { cls: "learnkit-gatekeeper-bypass-btn learnkit-gatekeeper-bypass-btn h-9 px-3 text-sm", type: "button" });
     continueBtn.createSpan({ text: "Continue" });
     continueBtn.removeAttribute("aria-label");
     continueBtn.removeAttribute("data-tooltip-position");
@@ -373,16 +381,16 @@ export class GatekeeperModal extends Modal {
   private makeButtonWithKbd(parent: HTMLElement, args: { text: string; subtitle?: string; cls: string; kbd?: string; tooltip?: string }) {
     const btn = parent.createEl("button", { cls: args.cls, type: "button" });
     if (args.subtitle) {
-      const labelWrap = btn.createSpan({ cls: "bc sprout-grade-btn-label-wrap" });
-      labelWrap.createSpan({ cls: "bc sprout-grade-btn-label", text: args.text });
-      labelWrap.createSpan({ cls: "bc sprout-grade-btn-subtitle", text: args.subtitle });
+      const labelWrap = btn.createSpan({ cls: "learnkit-grade-btn-label-wrap learnkit-grade-btn-label-wrap" });
+      labelWrap.createSpan({ cls: "learnkit-grade-btn-label learnkit-grade-btn-label", text: args.text });
+      labelWrap.createSpan({ cls: "learnkit-grade-btn-subtitle learnkit-grade-btn-subtitle", text: args.subtitle });
     } else {
       btn.createSpan({ text: args.text });
     }
     btn.setAttribute("aria-label", args.tooltip || (args.kbd ? `${args.text} (${args.kbd})` : args.text));
     btn.setAttribute("data-tooltip-position", "top");
     if (args.kbd) {
-      btn.createEl("kbd", { cls: "bc kbd ml-2", text: args.kbd });
+      btn.createEl("kbd", { cls: "kbd ml-2", text: args.kbd });
     }
     return btn;
   }
@@ -485,9 +493,9 @@ export class GatekeeperModal extends Modal {
   /** Build a label row matching the study session style ("Question", "Answer", etc.) */
   private makeLabelRow(text: string, card?: CardRecord, answerSide?: boolean): HTMLElement {
     const row = document.createElement("div");
-    row.className = "bc flex items-center justify-between sprout-label-row";
+    row.className = "flex items-center justify-between learnkit-label-row";
     const label = document.createElement("div");
-    label.className = "bc text-muted-foreground text-sm font-medium";
+    label.className = "text-muted-foreground text-sm font-medium";
     label.textContent = text;
     row.appendChild(label);
     if (card && answerSide !== undefined) {
@@ -504,7 +512,7 @@ export class GatekeeperModal extends Modal {
       const isBackDirection = type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
       const isOldReversed = type === "reversed";
       const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
-      section.appendChild(this.renderMdBlock("bc-q", qText, card));
+      section.appendChild(this.renderMdBlock("learnkit-q", qText, card));
     } else if (type === "cloze" || type === "cloze-child") {
       this.renderClozeCard(section, card);
     } else if (type === "mcq") {
@@ -516,7 +524,7 @@ export class GatekeeperModal extends Modal {
     } else {
       const maybeQuestion = (card as unknown as Record<string, unknown>).q;
       const text = typeof maybeQuestion === "string" ? maybeQuestion : "(No question text)";
-      section.appendChild(this.renderMdBlock("bc-q", text, card));
+      section.appendChild(this.renderMdBlock("learnkit-q", text, card));
     }
   }
 
@@ -529,7 +537,7 @@ export class GatekeeperModal extends Modal {
       const isOldReversed = type === "reversed";
       const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
       section.appendChild(this.makeLabelRow("Answer", card, true));
-      section.appendChild(this.renderMdBlock("bc-a", aText, card));
+      section.appendChild(this.renderMdBlock("learnkit-a", aText, card));
     } else if (type === "io" || type === "io-child") {
       // IO answer is part of the reveal render, handled inside renderIoCard
     } else {
@@ -542,7 +550,7 @@ export class GatekeeperModal extends Modal {
     const infoText = this.extractInfoField(card);
     if (!infoText) return;
     section.appendChild(this.makeLabelRow("Extra information"));
-    section.appendChild(this.renderMdBlock("bc-info", infoText, card));
+    section.appendChild(this.renderMdBlock("learnkit-info", infoText, card));
   }
 
   /** Extract the extra-info field from a card record (mirrors reviewer logic). */
@@ -560,7 +568,7 @@ export class GatekeeperModal extends Modal {
   /** Create a styled markdown block matching the study session pattern. */
   private renderMdBlock(cls: string, text: string, card: CardRecord): HTMLElement {
     const block = document.createElement("div");
-    block.className = `bc ${cls} whitespace-pre-wrap break-words sprout-md-block`;
+    block.className = `bc ${cls} whitespace-pre-wrap break-words learnkit-md-block`;
     this.renderTextBlock(block, text, card);
     return block;
   }
@@ -578,7 +586,7 @@ export class GatekeeperModal extends Modal {
     if (!tts.isSupported) return;
 
     const btn = parent.createEl("button", {
-      cls: "bc btn-icon sprout-tts-replay-btn",
+      cls: "btn-icon learnkit-tts-replay-btn learnkit-tts-replay-btn",
       type: "button",
     });
     btn.setAttribute("aria-label", answerSide ? "Read answer aloud" : "Read question aloud");
@@ -652,7 +660,7 @@ export class GatekeeperModal extends Modal {
 
     if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[") || this.hasMarkdownList(text)) {
       const clozeEl = document.createElement("div");
-      clozeEl.className = "bc sprout-widget-cloze sprout-widget-text w-full whitespace-pre-wrap break-words";
+      clozeEl.className = "learnkit-widget-cloze learnkit-widget-text w-full whitespace-pre-wrap break-words";
       const sourcePath = String(card.sourceNotePath || "");
       const processedText = processClozeForMath(text, this.reveal, targetIndex);
       void this.renderMarkdownInto(clozeEl, processedText, sourcePath);
@@ -669,7 +677,7 @@ export class GatekeeperModal extends Modal {
         clozeBgColor,
         clozeTextColor,
       });
-      clozeEl.className = "bc sprout-widget-cloze sprout-widget-text w-full";
+      clozeEl.className = "learnkit-widget-cloze learnkit-widget-text w-full";
       body.appendChild(clozeEl);
     }
   }
@@ -678,7 +686,7 @@ export class GatekeeperModal extends Modal {
     const stemText = card.stem || "";
     const sourcePath = String(card.sourceNotePath || "");
     const cardId = String(card.id || "");
-    const stemEl = body.createDiv({ cls: "whitespace-pre-wrap break-words sprout-gatekeeper-question-block" });
+    const stemEl = body.createDiv({ cls: "whitespace-pre-wrap break-words learnkit-gatekeeper-question-block learnkit-gatekeeper-question-block" });
     if (stemText.includes("$") || stemText.includes("\\(") || stemText.includes("\\[") || stemText.includes("[[") || this.hasMarkdownList(stemText)) {
       void this.renderMarkdownInto(stemEl, convertInlineDisplayMath(stemText), sourcePath);
     } else {
@@ -694,23 +702,23 @@ export class GatekeeperModal extends Modal {
     }
     const chosenMulti = this._mcqMultiSelection.get(cardId) as Set<number>;
 
-    const optsContainer = body.createDiv({ cls: "bc flex flex-col gap-2 sprout-widget-section" });
+    const optsContainer = body.createDiv({ cls: "flex flex-col gap-2 learnkit-widget-section learnkit-widget-section" });
 
     options.forEach((opt: string, idx: number) => {
       const d = body.ownerDocument.createElement("div");
-      d.className = "bc px-3 py-1 rounded border border-border hover:bg-secondary sprout-widget-text sprout-widget-mcq-option";
+      d.className = "px-3 py-1 rounded border border-border hover:bg-secondary learnkit-widget-text learnkit-widget-mcq-option";
       if (!this.reveal) d.classList.add("cursor-pointer");
 
       const left = body.ownerDocument.createElement("span");
-      left.className = "bc inline-flex items-center gap-2 min-w-0";
+      left.className = "inline-flex items-center gap-2 min-w-0";
 
       const key = body.ownerDocument.createElement("kbd");
-      key.className = "bc kbd";
+      key.className = "kbd";
       key.textContent = String(idx + 1);
       left.appendChild(key);
 
       const textEl = body.ownerDocument.createElement("span");
-      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words sprout-widget-mcq-text";
+      textEl.className = "min-w-0 whitespace-pre-wrap break-words learnkit-widget-mcq-text";
       const optText = typeof opt === "string" ? opt : "";
       if (optText.includes("$") || optText.includes("\\(") || optText.includes("\\[") || optText.includes("[[") || this.hasMarkdownList(optText)) {
         void this.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(optText), sourcePath);
@@ -722,7 +730,7 @@ export class GatekeeperModal extends Modal {
 
       if (!this.reveal) {
         if (isMulti) {
-          if (chosenMulti.has(idx)) d.classList.add("sprout-mcq-selected");
+          if (chosenMulti.has(idx)) d.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
           d.addEventListener("click", () => {
             const current = this._mcqMultiSelection.get(cardId) ?? new Set<number>();
             if (current.has(idx)) current.delete(idx);
@@ -731,7 +739,7 @@ export class GatekeeperModal extends Modal {
             this.render();
           });
         } else {
-          if (chosenSingle === idx) d.classList.add("sprout-mcq-selected");
+          if (chosenSingle === idx) d.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
           d.addEventListener("click", () => {
             this._mcqSingleSelection.set(cardId, idx);
             this.render();
@@ -741,12 +749,12 @@ export class GatekeeperModal extends Modal {
         if (isMulti) {
           const isCorrect = correctSet.has(idx);
           const wasChosen = chosenMulti.has(idx);
-          if (isCorrect) d.classList.add("sprout-mcq-correct-highlight");
-          else if (wasChosen) d.classList.add("sprout-mcq-wrong-highlight");
+          if (isCorrect) d.classList.add("learnkit-mcq-correct-highlight", "learnkit-mcq-correct-highlight");
+          else if (wasChosen) d.classList.add("learnkit-mcq-wrong-highlight", "learnkit-mcq-wrong-highlight");
         } else {
-          if (idx === card.correctIndex) d.classList.add("sprout-mcq-correct-highlight");
+          if (idx === card.correctIndex) d.classList.add("learnkit-mcq-correct-highlight", "learnkit-mcq-correct-highlight");
           if (typeof chosenSingle === "number" && chosenSingle === idx && idx !== card.correctIndex) {
-            d.classList.add("sprout-mcq-wrong-highlight");
+            d.classList.add("learnkit-mcq-wrong-highlight", "learnkit-mcq-wrong-highlight");
           }
         }
       }
@@ -764,7 +772,7 @@ export class GatekeeperModal extends Modal {
   }
 
   private renderOqCard(body: HTMLElement, card: CardRecord) {
-    const qEl = body.createDiv({ cls: "whitespace-pre-wrap break-words sprout-gatekeeper-question-block" });
+    const qEl = body.createDiv({ cls: "whitespace-pre-wrap break-words learnkit-gatekeeper-question-block learnkit-gatekeeper-question-block" });
     this.renderTextBlock(qEl, card.q || "", card);
 
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
@@ -785,7 +793,7 @@ export class GatekeeperModal extends Modal {
     }
 
     if (!this.reveal) {
-      const listWrap = body.createDiv({ cls: "flex flex-col gap-2 sprout-oq-step-list" });
+      const listWrap = body.createDiv({ cls: "flex flex-col gap-2 learnkit-oq-step-list learnkit-oq-step-list" });
       const currentOrder = this._oqOrderMap[cardId].slice();
 
       const previewController = createOqReorderPreviewController(listWrap);
@@ -818,21 +826,21 @@ export class GatekeeperModal extends Modal {
         currentOrder.forEach((origIdx, displayIdx) => {
           const stepText = steps[origIdx] || "";
           const row = body.ownerDocument.createElement("div");
-          row.className = "bc flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 sprout-oq-step-row";
+          row.className = "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 learnkit-oq-step-row";
           row.draggable = true;
 
           const grip = body.ownerDocument.createElement("span");
-          grip.className = "bc sprout-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
+          grip.className = "learnkit-oq-grip inline-flex items-center justify-center text-muted-foreground cursor-grab";
           setIcon(grip, "grip-vertical");
           row.appendChild(grip);
 
           const badge = body.ownerDocument.createElement("kbd");
-          badge.className = "bc kbd";
+          badge.className = "kbd";
           badge.textContent = String(displayIdx + 1);
           row.appendChild(badge);
 
           const textEl = body.ownerDocument.createElement("span");
-          textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-oq-step-text sprout-widget-text";
+          textEl.className = "min-w-0 whitespace-pre-wrap break-words flex-1 learnkit-oq-step-text learnkit-widget-text";
           if (stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[") || stepText.includes("[[") || this.hasMarkdownList(stepText)) {
             void this.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(stepText), sourcePath);
           } else {
@@ -889,8 +897,8 @@ export class GatekeeperModal extends Modal {
       return;
     }
 
-    body.createEl("h3", { text: "Your order", cls: "text-sm font-medium sprout-gatekeeper-section-label" });
-    const answerList = body.createDiv({ cls: "flex flex-col gap-2 sprout-oq-answer-list" });
+    body.createEl("h3", { text: "Your order", cls: "text-sm font-medium learnkit-gatekeeper-section-label learnkit-gatekeeper-section-label" });
+    const answerList = body.createDiv({ cls: "flex flex-col gap-2 learnkit-oq-answer-list learnkit-oq-answer-list" });
     const identity = Array.from({ length: steps.length }, (_, i) => i);
     const userOrder = Array.isArray(this._oqOrderMap[cardId]) && this._oqOrderMap[cardId].length === steps.length
       ? this._oqOrderMap[cardId]
@@ -900,20 +908,20 @@ export class GatekeeperModal extends Modal {
       const stepText = steps[origIdx] || "";
       const wasInCorrectPosition = origIdx === displayIdx;
       const row = body.ownerDocument.createElement("div");
-      row.className = "bc flex items-center gap-2 rounded-lg border px-3 py-1 sprout-oq-answer-row";
+      row.className = "flex items-center gap-2 rounded-lg border px-3 py-1 learnkit-oq-answer-row";
       if (wasInCorrectPosition) {
-        row.classList.add("sprout-oq-correct", "sprout-oq-correct-highlight");
+        row.classList.add("learnkit-oq-correct", "learnkit-oq-correct", "learnkit-oq-correct-highlight", "learnkit-oq-correct-highlight");
       } else {
-        row.classList.add("sprout-oq-wrong", "sprout-oq-wrong-highlight");
+        row.classList.add("learnkit-oq-wrong", "learnkit-oq-wrong", "learnkit-oq-wrong-highlight", "learnkit-oq-wrong-highlight");
       }
 
       const badge = body.ownerDocument.createElement("kbd");
-      badge.className = "bc kbd";
+      badge.className = "kbd";
       badge.textContent = String(origIdx + 1);
       row.appendChild(badge);
 
       const textEl = body.ownerDocument.createElement("span");
-      textEl.className = "bc min-w-0 whitespace-pre-wrap break-words flex-1 sprout-widget-text sprout-oq-step-text";
+      textEl.className = "min-w-0 whitespace-pre-wrap break-words flex-1 learnkit-widget-text learnkit-oq-step-text";
       if (stepText.includes("$") || stepText.includes("\\(") || stepText.includes("\\[") || stepText.includes("[[") || this.hasMarkdownList(stepText)) {
         void this.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(stepText), sourcePath);
       } else {
@@ -926,7 +934,7 @@ export class GatekeeperModal extends Modal {
   }
 
   private renderIoCard(body: HTMLElement, card: CardRecord) {
-    const ioContainer = body.createDiv({ cls: "rounded border border-border bg-muted overflow-auto sprout-widget-io-container" });
+    const ioContainer = body.createDiv({ cls: "rounded border border-border bg-muted overflow-auto learnkit-widget-io-container learnkit-widget-io-container" });
     ioContainer.dataset.sproutIoWidget = "1";
 
     const sourcePath = String(card.sourceNotePath || "");

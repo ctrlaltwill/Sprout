@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/core/open-card-anchor.ts
+ * @summary Module for open card anchor.
+ *
+ * @exports
+ *  - openCardAnchorInNote
+ */
+
 import { type App, MarkdownView, TFile, type WorkspaceLeaf } from "obsidian";
 
 type OpenCardAnchorOptions = {

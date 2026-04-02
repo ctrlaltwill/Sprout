@@ -1,3 +1,14 @@
+/**
+ * @file src/views/settings/config/reading-presets.ts
+ * @summary Module for reading presets.
+ *
+ * @exports
+ *  - ReadingPreviewMacroPresetKey
+ *  - ReadingPreviewMacroPreset
+ *  - PREVIEW_MACRO_PRESETS
+ *  - CUSTOM_CLASSIC_STARTER_CSS
+ */
+
 export type ReadingPreviewMacroPresetKey = "flashcards" | "classic" | "markdown" | "custom";
 
 export type ReadingPreviewMacroPreset = {
@@ -54,28 +65,28 @@ export const PREVIEW_MACRO_PRESETS: Record<ReadingPreviewMacroPresetKey, Reading
   },
 };
 
-export const CUSTOM_CLASSIC_STARTER_CSS = `.sprout-pretty-card.sprout-macro-custom .sprout-custom-body {
+export const CUSTOM_CLASSIC_STARTER_CSS = `.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-body {
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-md);
   padding: 14px;
   background: var(--background-primary);
 }
 
-.sprout-pretty-card.sprout-macro-custom .sprout-custom-section {
+.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-section {
   margin-bottom: 10px;
 }
 
-.sprout-pretty-card.sprout-macro-custom .sprout-custom-label {
+.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-label {
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   color: var(--text-muted);
   font-weight: 600;
 }
 
-.sprout-pretty-card.sprout-macro-custom .sprout-custom-section-answer,
-.sprout-pretty-card.sprout-macro-custom .sprout-custom-section-info,
-.sprout-pretty-card.sprout-macro-custom .sprout-custom-section-groups {
+.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-section-answer,
+.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-section-info,
+.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-section-groups {
   border-top: 1px dashed var(--background-modifier-border);
   padding-top: 8px;
 }`;

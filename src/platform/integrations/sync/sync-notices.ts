@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/integrations/sync/sync-notices.ts
+ * @summary Module for sync notices.
+ *
+ * @exports
+ *  - formatCurrentNoteSyncNotice
+ */
+
 export function formatCurrentNoteSyncNotice(
   pageTitle: string,
   res: { newCount?: number; updatedCount?: number; removed?: number },

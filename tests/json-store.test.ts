@@ -1,3 +1,11 @@
+/**
+ * @file tests/json-store.test.ts
+ * @summary Unit tests for json store.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect, vi } from "vitest";
 import { JsonStore } from "../src/platform/core/store";
 import { State } from "ts-fsrs";

@@ -1,3 +1,11 @@
+/**
+ * @file src/views/reminders/reminder-notice.ts
+ * @summary Module for reminder notice.
+ *
+ * @exports
+ *  - showReminderNotice
+ */
+
 import { Notice } from "obsidian";
 
 type ReminderNoticeArgs = {
@@ -23,7 +31,7 @@ export function showReminderNotice(args: ReminderNoticeArgs): void {
   const noticeEl = (notice as unknown as { noticeEl?: HTMLElement }).noticeEl;
   if (!noticeEl) return;
 
-  noticeEl.addClass("sprout-reminder-clickable");
+  noticeEl.addClass("learnkit-reminder-clickable");
   noticeEl.setAttribute("role", "button");
   noticeEl.setAttribute("tabindex", "0");
 

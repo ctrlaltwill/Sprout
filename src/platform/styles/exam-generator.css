@@ -1,19 +1,19 @@
 /* Exam Generator (beta) — isolated MVP styles */
 
-.workspace-leaf-content.sprout[data-type="sprout-exam-generator"] {
+.workspace-leaf-content.learnkit[data-type$="exam-generator"] {
   background: var(--background-primary) !important;
 }
 
-.sprout .sprout-view-content.sprout-exam-generator-root {
-  max-width: var(--sprout-exam-generator-max-width, 1280px);
+.learnkit .learnkit-view-content.learnkit-exam-generator-root {
+  max-width: var(--learnkit-exam-generator-max-width, 1280px);
   width: 100%;
   margin: 0 auto;
   gap: 12px;
   overflow: visible;
 }
 
-.sprout .sprout-exam-generator-title-strip {
-  max-width: min(var(--sprout-exam-generator-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
+.learnkit .learnkit-exam-generator-title-strip {
+  max-width: min(var(--learnkit-exam-generator-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
   width: 100%;
   margin: 0 auto;
   padding: var(--lk-title-strip-padding-desktop);
@@ -22,63 +22,63 @@
   z-index: 10;
 }
 
-.sprout .sprout-exam-generator-saved-tests-wrap {
+.learnkit .learnkit-exam-generator-saved-tests-wrap {
   position: relative;
 }
 
-.sprout .sprout-exam-generator-saved-tests-btn {
+.learnkit .learnkit-exam-generator-saved-tests-btn {
   min-width: 120px;
 }
 
-.sprout .sprout-exam-generator-saved-tests-btn:disabled {
+.learnkit .learnkit-exam-generator-saved-tests-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.sprout .sprout-exam-generator-saved-tests-chevron {
+.learnkit .learnkit-exam-generator-saved-tests-chevron {
   transition: transform 140ms ease;
 }
 
-.sprout .sprout-exam-generator-saved-tests-chevron.is-open {
+.learnkit .learnkit-exam-generator-saved-tests-chevron.is-open {
   transform: rotate(180deg);
 }
 
-.sprout .sprout-exam-generator-saved-tests-popover {
+.learnkit .learnkit-exam-generator-saved-tests-popover {
   right: 0;
   left: auto;
   width: max-content;
   max-width: min(400px, calc(100vw - 24px));
 }
 
-.sprout .sprout-exam-generator-saved-tests-panel {
+.learnkit .learnkit-exam-generator-saved-tests-panel {
   box-shadow: var(--lk-shadow-popover-md);
   width: max-content;
   max-width: min(400px, calc(100vw - 24px));
 }
 
-.sprout .sprout-exam-generator-saved-tests-search-wrap {
+.learnkit .learnkit-exam-generator-saved-tests-search-wrap {
   min-width: 0;
   padding: 6px 8px;
   justify-content: flex-start;
   height: 36px;
 }
 
-.sprout .sprout-exam-generator-saved-tests-search-wrap.hidden,
-.sprout .sprout-exam-generator-saved-tests-divider.hidden,
-.sprout .sprout-exam-generator-popover-subtitle.hidden {
+.learnkit .learnkit-exam-generator-saved-tests-search-wrap.hidden,
+.learnkit .learnkit-exam-generator-saved-tests-divider.hidden,
+.learnkit .learnkit-exam-generator-popover-subtitle.hidden {
   display: none;
 }
 
-.sprout .sprout-exam-generator-saved-tests-divider {
+.learnkit .learnkit-exam-generator-saved-tests-divider {
   width: 100%;
 }
 
-.sprout .sprout-exam-generator-saved-tests-search {
+.learnkit .learnkit-exam-generator-saved-tests-search {
   min-width: 0;
   text-align: left;
 }
 
-.sprout .sprout-exam-generator-saved-tests-search-icon-right {
+.learnkit .learnkit-exam-generator-saved-tests-search-icon-right {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -87,17 +87,17 @@
   pointer-events: none;
 }
 
-.sprout .sprout-exam-generator-saved-tests-search-icon-right .svg-icon {
+.learnkit .learnkit-exam-generator-saved-tests-search-icon-right .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout .sprout-exam-generator-saved-tests-list {
+.learnkit .learnkit-exam-generator-saved-tests-list {
   width: auto;
   max-width: 100%;
 }
 
-.sprout .sprout-exam-generator-saved-tests-empty-message {
+.learnkit .learnkit-exam-generator-saved-tests-empty-message {
   padding: 1rem !important;
   max-width: 250px;
   margin: 0 auto;
@@ -105,34 +105,34 @@
   font-size: 0.9rem;
 }
 
-.sprout .sprout-exam-generator-saved-tests-empty {
+.learnkit .learnkit-exam-generator-saved-tests-empty {
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.sprout .sprout-exam-generator-saved-tests-empty-title {
+.learnkit .learnkit-exam-generator-saved-tests-empty-title {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-normal);
 }
 
-.sprout .sprout-exam-generator-saved-tests-empty-body {
+.learnkit .learnkit-exam-generator-saved-tests-empty-body {
   font-size: 0.82rem;
   line-height: 1.45;
   color: var(--text-muted);
 }
 
-.sprout .sprout-exam-generator-saved-tests-item {
+.learnkit .learnkit-exam-generator-saved-tests-item {
   min-width: 0;
 }
 
-.sprout .sprout-exam-generator-saved-tests-line {
+.learnkit .learnkit-exam-generator-saved-tests-line {
   min-width: 0;
 }
 
-.sprout .sprout-exam-generator-saved-tests-line-icon {
+.learnkit .learnkit-exam-generator-saved-tests-line-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -140,40 +140,40 @@
   flex: 0 0 auto;
 }
 
-.sprout .sprout-exam-generator-saved-tests-line-icon .svg-icon {
+.learnkit .learnkit-exam-generator-saved-tests-line-icon .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout .sprout-exam-generator-saved-tests-line-text {
+.learnkit .learnkit-exam-generator-saved-tests-line-text {
   min-width: 0;
 }
 
-.sprout .sprout-exam-generator-saved-tests-line-text .sprout-coach-scope-item-label {
+.learnkit .learnkit-exam-generator-saved-tests-line-text .learnkit-coach-scope-item-label {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sprout .sprout-exam-generator-saved-tests-delete .svg-icon {
+.learnkit .learnkit-exam-generator-saved-tests-delete .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-.sprout .sprout-exam-generator-saved-tests-delete[aria-disabled="true"] {
+.learnkit .learnkit-exam-generator-saved-tests-delete[aria-disabled="true"] {
   opacity: 0.35;
   pointer-events: none;
 }
 
-.sprout .sprout-exam-generator-width-probe {
+.learnkit .learnkit-exam-generator-width-probe {
   position: absolute;
   visibility: hidden;
   white-space: nowrap;
   pointer-events: none;
 }
 
-.sprout .sprout-exam-generator-content-shell {
+.learnkit .learnkit-exam-generator-content-shell {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -181,19 +181,19 @@
   overflow: visible;
 }
 
-.sprout .sprout-exam-generator-card {
+.learnkit .learnkit-exam-generator-card {
   display: flex;
   flex-direction: column;
   padding: 1.2rem;
 }
 
-.sprout .sprout-exam-generator-card-loading {
+.learnkit .learnkit-exam-generator-card-loading {
   position: relative;
   overflow: hidden;
   min-height: 260px;
 }
 
-.sprout .sprout-exam-generator-card-loading::before {
+.learnkit .learnkit-exam-generator-card-loading::before {
   content: "";
   position: absolute;
   top: 0;
@@ -203,10 +203,10 @@
   background: var(--theme-accent);
   border-radius: 0 2px 2px 0;
   z-index: 2;
-  animation: sprout-exam-loading-bar 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: learnkit-exam-loading-bar 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-.sprout .sprout-exam-generator-loading-center {
+.learnkit .learnkit-exam-generator-loading-center {
   width: 100%;
   min-height: 224px;
   display: flex;
@@ -217,11 +217,11 @@
   gap: 10px;
 }
 
-.sprout .sprout-exam-generator-loading-center h3 {
+.learnkit .learnkit-exam-generator-loading-center h3 {
   margin: 0;
 }
 
-.sprout .sprout-exam-generator-loading-atom {
+.learnkit .learnkit-exam-generator-loading-atom {
   --loader-size: 46px;
   --loader-dot: 10px;
   --loader-orbit: 18px;
@@ -229,10 +229,10 @@
   width: var(--loader-size);
   height: var(--loader-size);
   margin-bottom: 2px;
-  animation: sprout-exam-loader-spin 2.2s linear infinite;
+  animation: learnkit-exam-loader-spin 2.2s linear infinite;
 }
 
-.sprout .sprout-exam-generator-loading-atom-dot {
+.learnkit .learnkit-exam-generator-loading-atom-dot {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -242,52 +242,52 @@
   transform: translate(-50%, -50%);
 }
 
-.sprout .sprout-exam-generator-loading-atom-dot.is-a {
+.learnkit .learnkit-exam-generator-loading-atom-dot.is-a {
   background: color-mix(in oklab, var(--theme-accent) 82%, white 18%);
-  animation: sprout-exam-loader-orbit-a 1.15s ease-in-out infinite alternate;
+  animation: learnkit-exam-loader-orbit-a 1.15s ease-in-out infinite alternate;
 }
 
-.sprout .sprout-exam-generator-loading-atom-dot.is-b {
+.learnkit .learnkit-exam-generator-loading-atom-dot.is-b {
   background: color-mix(in oklab, var(--theme-accent) 68%, var(--text-normal) 32%);
-  animation: sprout-exam-loader-orbit-b 1.15s ease-in-out infinite alternate;
+  animation: learnkit-exam-loader-orbit-b 1.15s ease-in-out infinite alternate;
 }
 
-.sprout .sprout-exam-generator-loading-atom-dot.is-c {
+.learnkit .learnkit-exam-generator-loading-atom-dot.is-c {
   background: color-mix(in oklab, var(--theme-accent) 60%, var(--background-modifier-border) 40%);
-  animation: sprout-exam-loader-orbit-c 1.15s ease-in-out infinite alternate;
+  animation: learnkit-exam-loader-orbit-c 1.15s ease-in-out infinite alternate;
 }
 
-.sprout .sprout-exam-generator-loading-loader {
-  --sprout-loader-bg: var(--background-primary);
-  --sprout-loading-word-height: 1.55em;
-  --sprout-loading-step: 1.3s;
-  --sprout-loading-swap-ms: 420ms;
+.learnkit .learnkit-exam-generator-loading-loader {
+  --learnkit-loader-bg: var(--background-primary);
+  --learnkit-loading-word-height: 1.55em;
+  --learnkit-loading-step: 1.3s;
+  --learnkit-loading-swap-ms: 420ms;
   color: var(--text-muted);
   font-weight: 500;
   font-size: 1.3rem;
   box-sizing: content-box;
-  height: calc(var(--sprout-loading-word-height) + 0.2rem);
+  height: calc(var(--learnkit-loading-word-height) + 0.2rem);
   padding: 0.5rem 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
   border-radius: 10px;
-  background: var(--sprout-loader-bg);
+  background: var(--learnkit-loader-bg);
 }
 
-.sprout .sprout-exam-generator-loading-word-slot {
-  --sprout-loading-word-count: 1;
-  --sprout-loading-duration: calc(var(--sprout-loading-word-count) * var(--sprout-loading-step));
+.learnkit .learnkit-exam-generator-loading-word-slot {
+  --learnkit-loading-word-count: 1;
+  --learnkit-loading-duration: calc(var(--learnkit-loading-word-count) * var(--learnkit-loading-step));
   position: relative;
   overflow: hidden;
-  height: var(--sprout-loading-word-height);
+  height: var(--learnkit-loading-word-height);
   min-width: calc(8.5ch * 1.2);
   padding-inline: 0.15rem;
   text-align: center;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot::after {
+.learnkit .learnkit-exam-generator-loading-word-slot::after {
   content: "";
   position: absolute;
   top: 0;
@@ -295,85 +295,85 @@
   bottom: -5px;
   left: 0;
   background: linear-gradient(
-    var(--sprout-loader-bg) 10%,
+    var(--learnkit-loader-bg) 10%,
     transparent 30%,
     transparent 70%,
-    var(--sprout-loader-bg) 90%
+    var(--learnkit-loader-bg) 90%
   );
   pointer-events: none;
 }
 
-.sprout .sprout-exam-generator-loading-word-reel {
+.learnkit .learnkit-exam-generator-loading-word-reel {
   position: relative;
   height: 100%;
 }
 
-.sprout .sprout-exam-generator-loading-word {
+.learnkit .learnkit-exam-generator-loading-word {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: var(--sprout-loading-word-height);
+  line-height: var(--learnkit-loading-word-height);
   white-space: nowrap;
   color: color-mix(in oklab, var(--theme-accent) 78%, white 22%);
   opacity: 0;
   transition:
-    transform var(--sprout-loading-swap-ms) cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity var(--sprout-loading-swap-ms) ease;
+    transform var(--learnkit-loading-swap-ms) cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity var(--learnkit-loading-swap-ms) ease;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-resetting .sprout-exam-generator-loading-word {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-resetting .learnkit-exam-generator-loading-word {
   transition: none;
 }
 
-.sprout .sprout-exam-generator-loading-word.current {
+.learnkit .learnkit-exam-generator-loading-word.current {
   opacity: 1;
   transform: translateY(0);
 }
 
-.sprout .sprout-exam-generator-loading-word.next {
+.learnkit .learnkit-exam-generator-loading-word.next {
   opacity: 0;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-first .sprout-exam-generator-loading-word {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-first .learnkit-exam-generator-loading-word {
   justify-content: flex-end;
   color: var(--foreground, var(--text-normal));
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-second .sprout-exam-generator-loading-word {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-second .learnkit-exam-generator-loading-word {
   justify-content: flex-start;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-first .sprout-exam-generator-loading-word.next {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-first .learnkit-exam-generator-loading-word.next {
   transform: translateY(-115%);
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-second .sprout-exam-generator-loading-word.next {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-second .learnkit-exam-generator-loading-word.next {
   transform: translateY(115%);
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-first.is-swapping .sprout-exam-generator-loading-word.current {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-first.is-swapping .learnkit-exam-generator-loading-word.current {
   transform: translateY(115%);
   opacity: 0;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-first.is-swapping .sprout-exam-generator-loading-word.next {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-first.is-swapping .learnkit-exam-generator-loading-word.next {
   transform: translateY(0);
   opacity: 1;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-second.is-swapping .sprout-exam-generator-loading-word.current {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-second.is-swapping .learnkit-exam-generator-loading-word.current {
   transform: translateY(-115%);
   opacity: 0;
 }
 
-.sprout .sprout-exam-generator-loading-word-slot.is-second.is-swapping .sprout-exam-generator-loading-word.next {
+.learnkit .learnkit-exam-generator-loading-word-slot.is-second.is-swapping .learnkit-exam-generator-loading-word.next {
   transform: translateY(0);
   opacity: 1;
 }
 
-@keyframes sprout-exam-loading-bar {
+@keyframes learnkit-exam-loading-bar {
   0% {
     left: -40%;
     width: 40%;
@@ -388,13 +388,13 @@
   }
 }
 
-@keyframes sprout-exam-loader-spin {
+@keyframes learnkit-exam-loader-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes sprout-exam-loader-orbit-a {
+@keyframes learnkit-exam-loader-orbit-a {
   from {
     transform: translate(calc(-50% - var(--loader-orbit)), -50%);
   }
@@ -403,7 +403,7 @@
   }
 }
 
-@keyframes sprout-exam-loader-orbit-b {
+@keyframes learnkit-exam-loader-orbit-b {
   from {
     transform: translate(-50%, calc(-50% - var(--loader-orbit)));
   }
@@ -412,7 +412,7 @@
   }
 }
 
-@keyframes sprout-exam-loader-orbit-c {
+@keyframes learnkit-exam-loader-orbit-c {
   from {
     transform: translate(calc(-50% - 12px), calc(-50% + 12px));
   }
@@ -421,7 +421,7 @@
   }
 }
 
-@keyframes sprout-exam-loading-word-first {
+@keyframes learnkit-exam-loading-word-first {
   0% {
     opacity: 0;
     transform: translateY(-115%);
@@ -444,7 +444,7 @@
   }
 }
 
-@keyframes sprout-exam-loading-word-second {
+@keyframes learnkit-exam-loading-word-second {
   0% {
     opacity: 0;
     transform: translateY(115%);
@@ -468,18 +468,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sprout .sprout-exam-generator-card-loading::before,
-  .sprout .sprout-exam-generator-loading-atom,
-  .sprout .sprout-exam-generator-loading-atom-dot,
-  .sprout .sprout-exam-generator-loading-word {
+  .learnkit .learnkit-exam-generator-card-loading::before,
+  .learnkit .learnkit-exam-generator-loading-atom,
+  .learnkit .learnkit-exam-generator-loading-atom-dot,
+  .learnkit .learnkit-exam-generator-loading-word {
     animation: none !important;
   }
 
-  .sprout .sprout-exam-generator-loading-word-slot {
+  .learnkit .learnkit-exam-generator-loading-word-slot {
     height: auto;
   }
 
-  .sprout .sprout-exam-generator-loading-word {
+  .learnkit .learnkit-exam-generator-loading-word {
     display: none;
     position: static;
     height: auto;
@@ -488,12 +488,12 @@
     transform: none;
   }
 
-  .sprout .sprout-exam-generator-loading-word:first-child {
+  .learnkit .learnkit-exam-generator-loading-word:first-child {
     display: block;
   }
 }
 
-.sprout .sprout-exam-generator-setup-card {
+.learnkit .learnkit-exam-generator-setup-card {
   gap: 1.5rem;
   height: auto;
   min-height: 0;
@@ -502,26 +502,26 @@
   width: 100%;
 }
 
-.sprout .sprout-exam-generator-setup-topline {
+.learnkit .learnkit-exam-generator-setup-topline {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
 
-.sprout .sprout-exam-generator-setup-topline .sprout-coach-stepper {
+.learnkit .learnkit-exam-generator-setup-topline .learnkit-coach-stepper {
   flex: 1;
   min-width: 0;
 }
 
-.sprout .sprout-exam-generator-setup-topline-right {
+.learnkit .learnkit-exam-generator-setup-topline-right {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.sprout .sprout-exam-generator-setup-topline-right .sprout-scope-clear-btn {
+.learnkit .learnkit-exam-generator-setup-topline-right .learnkit-scope-clear-btn {
   min-width: 36px;
   padding-left: 8px;
   padding-right: 8px;
@@ -529,7 +529,7 @@
   overflow: hidden;
 }
 
-.sprout .sprout-exam-generator-setup-topline-right .sprout-scope-clear-btn [data-sprout-label="true"] {
+.learnkit .learnkit-exam-generator-setup-topline-right .learnkit-scope-clear-btn [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -540,18 +540,18 @@
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .sprout-exam-generator-setup-topline-right .sprout-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+.learnkit .learnkit-exam-generator-setup-topline-right .learnkit-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
   max-width: 9rem;
   opacity: 1;
   margin-left: 6px;
   transform: translateX(0);
 }
 
-.sprout .sprout-exam-generator-setup-card h3 {
+.learnkit .learnkit-exam-generator-setup-card h3 {
   margin: 0;
 }
 
-.sprout .sprout-exam-generator-setup-status {
+.learnkit .learnkit-exam-generator-setup-status {
   display: inline-flex;
   align-self: flex-start;
   border: 1px solid var(--background-modifier-border);
@@ -560,7 +560,7 @@
   font-size: 12px;
 }
 
-.sprout .sprout-exam-generator-step {
+.learnkit .learnkit-exam-generator-step {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -570,44 +570,44 @@
   background: color-mix(in oklab, var(--background-primary) 80%, transparent 20%);
 }
 
-.sprout .sprout-exam-generator-step-header h4 {
+.learnkit .learnkit-exam-generator-step-header h4 {
   margin: 0;
   font-size: 0.9rem;
 }
 
-.sprout .sprout-exam-generator-step-header {
+.learnkit .learnkit-exam-generator-step-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.sprout .sprout-exam-generator-source-body {
+.learnkit .learnkit-exam-generator-source-body {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.sprout .sprout-exam-generator-note-list {
+.learnkit .learnkit-exam-generator-note-list {
   max-height: 260px;
   overflow: auto;
   border: 1px solid var(--background-modifier-border);
   border-radius: 10px;
 }
 
-.sprout .sprout-exam-generator-group-picker {
+.learnkit .learnkit-exam-generator-group-picker {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.sprout .sprout-exam-generator-selected-summary {
+.learnkit .learnkit-exam-generator-selected-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.sprout .sprout-exam-generator-tag-box {
+.learnkit .learnkit-exam-generator-tag-box {
   height: auto;
   min-height: 42px;
   max-height: 110px;
@@ -615,12 +615,12 @@
   padding: 6px 8px;
 }
 
-.sprout .sprout-exam-generator-note-chip {
+.learnkit .learnkit-exam-generator-note-chip {
   background: var(--interactive-accent);
   color: #fff;
 }
 
-.sprout .sprout-exam-generator-note-search {
+.learnkit .learnkit-exam-generator-note-search {
   width: 100%;
   min-width: 160px;
   border: 1px solid var(--background-modifier-border);
@@ -630,24 +630,24 @@
   padding: 8px;
 }
 
-.sprout .sprout-exam-generator-note-option {
+.learnkit .learnkit-exam-generator-note-option {
   width: 100%;
   text-align: left;
   border: 0;
   background: transparent;
 }
 
-.sprout .sprout-exam-generator-note-checkbox {
+.learnkit .learnkit-exam-generator-note-checkbox {
   margin-top: 2px;
 }
 
-.sprout .sprout-exam-generator-note-path {
+.learnkit .learnkit-exam-generator-note-path {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sprout .sprout-exam-generator-folder-preview {
+.learnkit .learnkit-exam-generator-folder-preview {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -656,14 +656,14 @@
   padding: 8px;
 }
 
-.sprout .sprout-exam-generator-folder-preview-top {
+.learnkit .learnkit-exam-generator-folder-preview-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.sprout .sprout-exam-generator-folder-preview-list {
+.learnkit .learnkit-exam-generator-folder-preview-list {
   max-height: 180px;
   overflow: auto;
   display: flex;
@@ -671,7 +671,7 @@
   gap: 4px;
 }
 
-.sprout .sprout-exam-generator-note-row {
+.learnkit .learnkit-exam-generator-note-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
@@ -679,40 +679,40 @@
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.sprout .sprout-exam-generator-note-row:last-child {
+.learnkit .learnkit-exam-generator-note-row:last-child {
   border-bottom: 0;
 }
 
-.sprout .sprout-exam-generator-note-title {
+.learnkit .learnkit-exam-generator-note-title {
   font-weight: 600;
 }
 
-.sprout .sprout-exam-generator-options {
+.learnkit .learnkit-exam-generator-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.sprout .sprout-exam-generator-options-single {
+.learnkit .learnkit-exam-generator-options-single {
   grid-template-columns: 1fr;
 }
 
-.sprout .sprout-exam-generator-row {
+.learnkit .learnkit-exam-generator-row {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.sprout .sprout-exam-generator-hidden {
+.learnkit .learnkit-exam-generator-hidden {
   display: none !important;
 }
 
-.sprout .sprout-exam-generator-select-wrap {
+.learnkit .learnkit-exam-generator-select-wrap {
   position: relative;
   width: 100%;
 }
 
-.sprout .sprout-exam-generator-select-trigger {
+.learnkit .learnkit-exam-generator-select-trigger {
   width: 100%;
   justify-content: space-between;
   border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
@@ -724,19 +724,19 @@
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-exam-generator-select-trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
+.learnkit .learnkit-exam-generator-select-trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout .sprout-exam-generator-select-trigger:active {
+.learnkit .learnkit-exam-generator-select-trigger:active {
   background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
   color: var(--color-base-100) !important;
 }
 
-.sprout .sprout-exam-generator-select-popover {
+.learnkit .learnkit-exam-generator-select-popover {
   position: absolute;
   left: 0;
   right: 0;
@@ -744,7 +744,7 @@
   z-index: 2100;
 }
 
-.sprout .sprout-exam-generator-select-panel {
+.learnkit .learnkit-exam-generator-select-panel {
   width: 100%;
   box-sizing: border-box;
   background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
@@ -753,25 +753,25 @@
   backdrop-filter: blur(14px);
 }
 
-.sprout .sprout-exam-generator-select-panel [role="menuitemradio"].group {
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group {
   border: 1px solid transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.sprout .sprout-exam-generator-select-panel [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
-.sprout .sprout-exam-generator-select-panel [role="menuitemradio"].group[aria-checked="true"] {
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group[aria-checked="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
   border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
-.sprout .sprout-exam-generator-label {
+.learnkit .learnkit-exam-generator-label {
   font-size: var(--lk-font-size-2xs);
   color: var(--text-muted);
 }
 
-.sprout .sprout-exam-generator-select,
-.sprout .sprout-exam-generator-textarea {
+.learnkit .learnkit-exam-generator-select,
+.learnkit .learnkit-exam-generator-textarea {
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
@@ -779,25 +779,25 @@
   padding: 8px;
 }
 
-.sprout .sprout-exam-generator-input {
+.learnkit .learnkit-exam-generator-input {
   width: 100%;
   box-sizing: border-box;
 }
 
-.sprout .sprout-exam-generator-input::placeholder {
+.learnkit .learnkit-exam-generator-input::placeholder {
   color: var(--text-muted);
 }
 
-.sprout .sprout-exam-generator-input-wrap {
+.learnkit .learnkit-exam-generator-input-wrap {
   position: relative;
 }
 
-.sprout .sprout-exam-generator-input-wrap .sprout-exam-generator-input {
+.learnkit .learnkit-exam-generator-input-wrap .learnkit-exam-generator-input {
   width: 100%;
   padding-right: 64px;
 }
 
-.sprout .sprout-exam-generator-input-suffix {
+.learnkit .learnkit-exam-generator-input-suffix {
   position: absolute;
   right: 10px;
   top: 50%;
@@ -807,21 +807,21 @@
   pointer-events: none;
 }
 
-.sprout .sprout-exam-generator-options .sprout-exam-generator-select,
-.sprout .sprout-exam-generator-options .sprout-exam-generator-input {
+.learnkit .learnkit-exam-generator-options .learnkit-exam-generator-select,
+.learnkit .learnkit-exam-generator-options .learnkit-exam-generator-input {
   height: 36px;
   min-height: 36px;
   box-sizing: border-box;
 }
 
-.sprout .sprout-exam-generator-textarea {
+.learnkit .learnkit-exam-generator-textarea {
   resize: vertical;
     line-height: 1.5;
     min-height: 160px;
     max-height: 400px;
 }
 
-.sprout .sprout-exam-generator-inline {
+.learnkit .learnkit-exam-generator-inline {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -833,42 +833,42 @@
   padding: 0 5px;
 }
 
-.sprout .sprout-exam-generator-inline input[type="checkbox"] {
+.learnkit .learnkit-exam-generator-inline input[type="checkbox"] {
   margin: 0;
   align-self: center;
 }
 
-.sprout .sprout-exam-generator-inline-wrap {
+.learnkit .learnkit-exam-generator-inline-wrap {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px 18px;
   align-items: center;
 }
 
-.sprout .sprout-exam-generator-inline-wrap label {
+.learnkit .learnkit-exam-generator-inline-wrap label {
   display: inline-flex;
   width: 100%;
   min-height: 28px;
 }
 
-.sprout .sprout-exam-generator-options-row-full {
+.learnkit .learnkit-exam-generator-options-row-full {
   grid-column: 1 / -1;
 }
 
-.sprout .sprout-exam-generator-conditional-rows {
+.learnkit .learnkit-exam-generator-conditional-rows {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.sprout .sprout-exam-generator-conditional-item {
+.learnkit .learnkit-exam-generator-conditional-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.sprout .sprout-exam-generator-custom-instructions {
+.learnkit .learnkit-exam-generator-custom-instructions {
   resize: vertical;
   line-height: 1.5;
   min-height: 72px;
@@ -878,28 +878,28 @@
   font-size: var(--font-ui-small);
 }
 
-.sprout .sprout-exam-generator-actions {
+.learnkit .learnkit-exam-generator-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 
-.sprout .sprout-exam-generator-actions .sprout-exam-generator-actions-advance {
+.learnkit .learnkit-exam-generator-actions .learnkit-exam-generator-actions-advance {
   margin-left: auto;
 }
 
-.sprout .sprout-exam-generator-actions-bottom {
+.learnkit .learnkit-exam-generator-actions-bottom {
   margin-top: 6px;
   padding-top: 10px;
   border-top: 1px solid var(--background-modifier-border);
 }
 
-.sprout .sprout-exam-generator-settings-footer {
+.learnkit .learnkit-exam-generator-settings-footer {
   margin-top: 2rem;
 }
 
-.sprout .sprout-exam-generator-list-header {
+.learnkit .learnkit-exam-generator-list-header {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -907,29 +907,29 @@
   padding: 6px 10px 4px;
 }
 
-.sprout .sprout-exam-generator-list-group {
+.learnkit .learnkit-exam-generator-list-group {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 0 4px 4px;
 }
 
-.sprout .sprout-exam-generator-list-group-pinned {
+.learnkit .learnkit-exam-generator-list-group-pinned {
   padding-top: 2px;
 }
 
-.sprout .sprout-exam-generator-list-divider {
+.learnkit .learnkit-exam-generator-list-divider {
   height: 1px;
   margin: 4px 8px;
   background: var(--background-modifier-border);
 }
 
-.sprout .sprout-exam-generator-note-option-selected {
+.learnkit .learnkit-exam-generator-note-option-selected {
   background: color-mix(in oklab, var(--interactive-accent) 14%, var(--background-primary) 86%);
   border: 1px solid color-mix(in oklab, var(--interactive-accent) 55%, var(--background-modifier-border) 45%);
 }
 
-.sprout .sprout-exam-generator-topline {
+.learnkit .learnkit-exam-generator-topline {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -937,13 +937,13 @@
   color: var(--text-muted);
 }
 
-.sprout .sprout-exam-generator-topline-right {
+.learnkit .learnkit-exam-generator-topline-right {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.sprout .sprout-exam-generator-topline-right .sprout-scope-clear-btn {
+.learnkit .learnkit-exam-generator-topline-right .learnkit-scope-clear-btn {
   min-width: 36px;
   padding-left: 8px;
   padding-right: 8px;
@@ -951,7 +951,7 @@
   overflow: hidden;
 }
 
-.sprout .sprout-exam-generator-topline-right .sprout-scope-clear-btn [data-sprout-label="true"] {
+.learnkit .learnkit-exam-generator-topline-right .learnkit-scope-clear-btn [data-learnkit-label="true"] {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -962,21 +962,21 @@
   transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-.sprout .sprout-exam-generator-topline-right .sprout-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-sprout-label="true"] {
+.learnkit .learnkit-exam-generator-topline-right .learnkit-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
   max-width: 9rem;
   opacity: 1;
   margin-left: 6px;
   transform: translateX(0);
 }
 
-.sprout .sprout-exam-generator-question-prompt,
-.sprout .sprout-exam-generator-card .sprout-mcq-option-text {
+.learnkit .learnkit-exam-generator-question-prompt,
+.learnkit .learnkit-exam-generator-card .learnkit-mcq-option-text {
   -webkit-user-select: text;
   user-select: text;
   margin: 0 0 0 0 !important;
 }
 
-.sprout .sprout-exam-generator-scope-summary {
+.learnkit .learnkit-exam-generator-scope-summary {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -985,19 +985,19 @@
   padding: 10px;
 }
 
-.sprout .sprout-exam-generator-scope-preview {
+.learnkit .learnkit-exam-generator-scope-preview {
   display: flex;
   flex-direction: column;
   gap: 2px;
   margin-top: 2px;
 }
 
-.sprout .sprout-exam-generator-timer {
+.learnkit .learnkit-exam-generator-timer {
   font-variant-numeric: tabular-nums;
 }
 
 /* Auto-submit grace period warning banner */
-.sprout .sprout-exam-autosubmit-warning {
+.learnkit .learnkit-exam-autosubmit-warning {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1010,30 +1010,30 @@
   margin-bottom: 4px;
 }
 
-.sprout .sprout-exam-autosubmit-message {
+.learnkit .learnkit-exam-autosubmit-message {
   font-size: 0.9rem;
   line-height: 1.4;
 }
 
-.sprout .sprout-exam-autosubmit-actions {
+.learnkit .learnkit-exam-autosubmit-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
 /* Title strip timer for exam taking mode */
-.sprout .sprout-exam-generator-title-strip .lk-session-timer-group {
+.learnkit .learnkit-exam-generator-title-strip .lk-session-timer-group {
   flex-shrink: 0;
 }
 
-.sprout .sprout-exam-generator-title-strip .sprout-scope-clear-btn {
+.learnkit .learnkit-exam-generator-title-strip .learnkit-scope-clear-btn {
   min-width: 36px;
   padding-left: 8px;
   padding-right: 8px;
   overflow: hidden;
 }
 
-.sprout .sprout-exam-generator-title-strip .sprout-scope-clear-btn > span:last-child {
+.learnkit .learnkit-exam-generator-title-strip .learnkit-scope-clear-btn > span:last-child {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
@@ -1044,14 +1044,14 @@
   transition: max-width 220ms ease, opacity 160ms ease, margin-left 220ms ease, transform 220ms ease;
 }
 
-.sprout .sprout-exam-generator-title-strip .sprout-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) > span:last-child {
+.learnkit .learnkit-exam-generator-title-strip .learnkit-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) > span:last-child {
   max-width: 9rem;
   opacity: 1;
   margin-left: 2px;
   transform: translateX(0);
 }
 
-.sprout .sprout-exam-generator-option {
+.learnkit .learnkit-exam-generator-option {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
@@ -1061,41 +1061,41 @@
   border-radius: 8px;
 }
 
-.sprout .sprout-exam-generator-results {
+.learnkit .learnkit-exam-generator-results {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.sprout .sprout-exam-generator-results-header {
+.learnkit .learnkit-exam-generator-results-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.sprout .sprout-exam-generator-results-header h3 {
+.learnkit .learnkit-exam-generator-results-header h3 {
   margin: 0;
 }
 
-.sprout .sprout-exam-generator-review-title {
+.learnkit .learnkit-exam-generator-review-title {
   margin: 0;
 }
 
-.sprout .sprout-exam-generator-result-row {
+.learnkit .learnkit-exam-generator-result-row {
   border-bottom: 1px solid var(--color-base-35);
   border-radius: 0;
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
-.sprout .sprout-exam-generator-result-row:last-child {
+.learnkit .learnkit-exam-generator-result-row:last-child {
   border-bottom: 0;
   margin-bottom: 1.5rem;
   padding-bottom: 0;
 }
 
 
-.sprout .sprout-exam-generator-result-header {
+.learnkit .learnkit-exam-generator-result-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1103,7 +1103,7 @@
   margin-bottom: 0.5rem;
 }
 
-.sprout .sprout-exam-generator-result-title {
+.learnkit .learnkit-exam-generator-result-title {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -1111,7 +1111,7 @@
   color: var(--text-normal);
 }
 
-.sprout .sprout-exam-generator-result-score {
+.learnkit .learnkit-exam-generator-result-score {
   margin-left: auto;
   flex-shrink: 0;
   display: inline-flex;
@@ -1121,32 +1121,32 @@
   padding: 5px 8px;
   border-radius: var(--radius-md);
   border: 1px solid var(--background-modifier-border);
-  font-size: var(--sprout-font-3xs);
+  font-size: var(--learnkit-font-3xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-normal);
   background: var(--background-secondary);
 }
 
-.sprout .sprout-exam-generator-result-score.is-strong {
+.learnkit .learnkit-exam-generator-result-score.is-strong {
   color: var(--text-success, #1f7a43);
   border-color: color-mix(in oklab, var(--color-green, #3aa36b) 58%, var(--background-modifier-border) 42%);
   background: color-mix(in oklab, var(--color-green, #3aa36b) 10%, var(--background) 90%);
 }
 
-.sprout .sprout-exam-generator-result-score.is-mid {
+.learnkit .learnkit-exam-generator-result-score.is-mid {
   color: var(--text-warning, #9a6a00);
   border-color: color-mix(in oklab, var(--color-yellow, #d1a42e) 58%, var(--background-modifier-border) 42%);
   background: color-mix(in oklab, var(--color-yellow, #d1a42e) 10%, var(--background) 90%);
 }
 
-.sprout .sprout-exam-generator-result-score.is-weak {
+.learnkit .learnkit-exam-generator-result-score.is-weak {
   color: var(--text-error, #b13c3c);
   border-color: color-mix(in oklab, var(--color-red, #d45a5a) 58%, var(--background-modifier-border) 42%);
   background: color-mix(in oklab, var(--color-red, #d45a5a) 10%, var(--background) 90%);
 }
 
-.sprout .sprout-exam-generator-result-body {
+.learnkit .learnkit-exam-generator-result-body {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1154,26 +1154,26 @@
   width: calc(100% - 80px);
 }
 
-.sprout .sprout-exam-generator-result-prompt {
+.learnkit .learnkit-exam-generator-result-prompt {
   font-size: 0.90rem;
   font-weight: 400;
   line-height: 1.4;
   color: var(--text-muted);
 }
 
-.sprout .sprout-exam-generator-result-detail,
-.sprout .sprout-exam-generator-result-feedback {
+.learnkit .learnkit-exam-generator-result-detail,
+.learnkit .learnkit-exam-generator-result-feedback {
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--text-muted);
 }
 
-.sprout .sprout-exam-generator-result-missed {
+.learnkit .learnkit-exam-generator-result-missed {
   margin-top: 2px;
   padding-top: 8px;
 }
 
-.sprout .sprout-exam-generator-result-missed-label {
+.learnkit .learnkit-exam-generator-result-missed-label {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -1182,63 +1182,63 @@
   margin-bottom: 4px;
 }
 
-.sprout .sprout-exam-generator-result-missed-list {
+.learnkit .learnkit-exam-generator-result-missed-list {
   margin: 0;
   padding-left: 16px;
   display: grid;
   gap: 2px;
 }
 
-.sprout .sprout-exam-generator-result-missed-list li {
+.learnkit .learnkit-exam-generator-result-missed-list li {
   font-size: 0.9rem;
   line-height: 1.45;
   color: var(--text-muted);
 }
 
 @media (max-width: 900px) {
-  .sprout .sprout-exam-generator-title-strip {
+  .learnkit .learnkit-exam-generator-title-strip {
     padding: var(--lk-title-strip-padding-mobile);
   }
 
-  .sprout .sprout-exam-generator-title-strip .sprout-inline-sentence {
+  .learnkit .learnkit-exam-generator-title-strip .learnkit-inline-sentence {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .sprout .sprout-exam-generator-saved-tests-wrap,
-  .sprout .sprout-exam-generator-saved-tests-btn {
+  .learnkit .learnkit-exam-generator-saved-tests-wrap,
+  .learnkit .learnkit-exam-generator-saved-tests-btn {
     width: 100%;
   }
 
-  .sprout .sprout-exam-generator-saved-tests-popover,
-  .sprout .sprout-exam-generator-saved-tests-list {
+  .learnkit .learnkit-exam-generator-saved-tests-popover,
+  .learnkit .learnkit-exam-generator-saved-tests-list {
     width: 100%;
     min-width: 0;
   }
 
-  .sprout .sprout-exam-generator-content-shell {
+  .learnkit .learnkit-exam-generator-content-shell {
     padding: var(--lk-shell-padding-mobile);
   }
 
-  .sprout .sprout-exam-generator-options {
+  .learnkit .learnkit-exam-generator-options {
     grid-template-columns: 1fr;
   }
 
-  .sprout .sprout-exam-generator-inline-wrap {
+  .learnkit .learnkit-exam-generator-inline-wrap {
     grid-template-columns: 1fr;
   }
 
   /* Keep source-step copy consistent with app UI typography on mobile. */
-  .sprout .sprout-exam-generator-source-body,
-  .sprout .sprout-exam-generator-source-body h4,
-  .sprout .sprout-exam-generator-source-body label,
-  .sprout .sprout-exam-generator-source-body .sprout-exam-generator-label,
-  .sprout .sprout-exam-generator-source-body .sprout-exam-generator-select-trigger {
+  .learnkit .learnkit-exam-generator-source-body,
+  .learnkit .learnkit-exam-generator-source-body h4,
+  .learnkit .learnkit-exam-generator-source-body label,
+  .learnkit .learnkit-exam-generator-source-body .learnkit-exam-generator-label,
+  .learnkit .learnkit-exam-generator-source-body .learnkit-exam-generator-select-trigger {
     font-family: var(--font-interface);
   }
 }
 
-body.is-phone .sprout .sprout-exam-generator-title-strip .sprout-inline-sentence {
+body.is-phone .learnkit .learnkit-exam-generator-title-strip .learnkit-inline-sentence {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1246,19 +1246,19 @@ body.is-phone .sprout .sprout-exam-generator-title-strip .sprout-inline-sentence
   gap: 8px;
 }
 
-body.is-phone .sprout .sprout-exam-generator-title-strip .sprout-inline-sentence > :first-child {
+body.is-phone .learnkit .learnkit-exam-generator-title-strip .learnkit-inline-sentence > :first-child {
   width: 100%;
   text-align: center;
   align-items: center;
 }
 
-body.is-phone .sprout .sprout-exam-generator-title-strip .sprout-exam-generator-title-label {
+body.is-phone .learnkit .learnkit-exam-generator-title-strip .learnkit-exam-generator-title-label {
   width: 100%;
   text-align: center;
   justify-content: center;
 }
 
-body.is-phone .sprout .sprout-exam-generator-title-strip .sprout-inline-sentence > :last-child {
+body.is-phone .learnkit .learnkit-exam-generator-title-strip .learnkit-inline-sentence > :last-child {
   width: 100%;
   display: flex;
   justify-content: center;
@@ -1266,17 +1266,17 @@ body.is-phone .sprout .sprout-exam-generator-title-strip .sprout-inline-sentence
 }
 
 /* ---- Attachment area (source stage) ---- */
-.sprout .sprout-exam-generator-attachments {
+.learnkit .learnkit-exam-generator-attachments {
   padding: 12px 0 0;
 }
 
-.sprout .sprout-exam-generator-attachments label {
+.learnkit .learnkit-exam-generator-attachments label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-normal);
 }
 
-.sprout .sprout-exam-generator-attachments .setting-item-description {
+.learnkit .learnkit-exam-generator-attachments .setting-item-description {
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 8px;

@@ -1,3 +1,11 @@
+/**
+ * @file src/views/settings/preview/reading-preview-cards.ts
+ * @summary Module for reading preview cards.
+ *
+ * @exports
+ *  - getReadingPreviewCards
+ */
+
 import type { SproutCard } from "../../reading/reading-helpers";
 
 type Tx = (token: string, fallback: string, vars?: Record<string, string | number>) => string;

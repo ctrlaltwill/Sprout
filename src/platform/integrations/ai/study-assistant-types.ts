@@ -1,3 +1,16 @@
+/**
+ * @file src/platform/integrations/ai/study-assistant-types.ts
+ * @summary Module for study assistant types.
+ *
+ * @exports
+ *  - StudyAssistantProvider
+ *  - StudyAssistantConversationRef
+ *  - StudyAssistantCardType
+ *  - StudyAssistantGeneratorInput
+ *  - StudyAssistantSuggestion
+ *  - StudyAssistantGeneratorResult
+ */
+
 import type { SproutSettings } from "../../types/settings";
 
 export type StudyAssistantProvider = SproutSettings["studyAssistant"]["provider"];

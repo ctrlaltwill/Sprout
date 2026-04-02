@@ -9,7 +9,7 @@
  */
 
 import { Notice, MarkdownView, TFile, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { log } from "../../platform/core/logger";
 import type { CardRecord } from "../../platform/core/store";
 import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
@@ -73,7 +73,7 @@ export async function insertTextAtCursorOrAppend(
 // ── Save IO card ────────────────────────────────────────────────────────────
 
 export interface IoSaveParams {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   app: App;
   editParentId: string | null;
   editImageRef: string | null;

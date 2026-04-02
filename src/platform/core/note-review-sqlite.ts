@@ -1,5 +1,15 @@
+/**
+ * @file src/platform/core/note-review-sqlite.ts
+ * @summary Module for note review sqlite.
+ *
+ * @exports
+ *  - NoteReviewRow
+ *  - getNotesDbPath
+ *  - NoteReviewSqlite
+ */
+
 import type { Database } from "sql.js";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { getSqlJs } from "../integrations/anki/anki-sql";
 import { getSchedulingDirPath, copyDbToVaultSyncFolder, reconcileFromVaultSync } from "./sqlite-store";
 
@@ -35,7 +45,7 @@ function joinPath(...parts: string[]): string {
     .replace(/\/+/g, "/");
 }
 
-export function getNotesDbPath(plugin: SproutPlugin): string {
+export function getNotesDbPath(plugin: LearnKitPlugin): string {
   return joinPath(getSchedulingDirPath(plugin), NOTES_DB);
 }
 
@@ -110,11 +120,11 @@ function runSchema(db: Database): void {
 }
 
 export class NoteReviewSqlite {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private db: Database | null = null;
   private opened = false;
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
   }
 

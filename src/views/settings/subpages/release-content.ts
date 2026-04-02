@@ -1,5 +1,18 @@
+/**
+ * @file src/views/settings/subpages/release-content.ts
+ * @summary Module for release content.
+ *
+ * @exports
+ *  - formatReleaseDate
+ *  - compareSemverDesc
+ *  - normaliseReleaseBodyMarkdown
+ *  - getBundledReleasePages
+ *  - fetchGithubReleasePages
+ *  - readSupportMarkdown
+ */
+
 import { type App, requestUrl } from "obsidian";
-import { RELEASE_NOTES } from "../../../platform/modals/whats-new-modal/release-notes";
+import { RELEASE_NOTES } from "../../../platform/core/release-notes";
 import { getPluginDirCandidates } from "../../../platform/core/identity";
 import type { GithubReleaseApiItem, ReleaseNotesPage } from "./types";
 

@@ -1,6 +1,6 @@
 /**
  * @file src/settings/settings-utils.ts
- * @summary Pure utility functions and regex constants used by SproutSettingsTab for parsing, formatting, vault path handling, and card-block detection. None of these depend on Obsidian UI classes so they are safe to import from anywhere in the codebase.
+ * @summary Pure utility functions and regex constants used by LearnKitSettingsTab for parsing, formatting, vault path handling, and card-block detection. None of these depend on Obsidian UI classes so they are safe to import from anywhere in the codebase.
  *
  * @exports
  *  - ANCHOR_LINE_RE            — regex matching a ^sprout anchor line
@@ -24,7 +24,7 @@
  */
 
 import { type App, TFolder } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import {
   CARD_START_SETTINGS_RE,
   FIELD_LINE_SETTINGS_RE,
@@ -244,7 +244,7 @@ export function fuzzyFolderMatches(allFolders: string[], rawQuery: string, limit
  * Lists all unique source-note paths from the card store.
  * Sorted alphabetically. Used for deck-path autocomplete.
  */
-export function listDeckPaths(plugin: SproutPlugin): string[] {
+export function listDeckPaths(plugin: LearnKitPlugin): string[] {
   const out = new Set<string>();
   const cards = plugin.store.getAllCards?.() ?? [];
   for (const card of cards) {

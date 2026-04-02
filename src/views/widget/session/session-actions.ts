@@ -25,7 +25,7 @@ import { persistEditedCardAndSiblings } from "../../../platform/core/targeted-ca
 import type { UndoFrame, WidgetViewLike, ReviewMeta } from "../core/widget-helpers";
 import type { CardRecord } from "../../../platform/types/card";
 import { getCorrectIndices, isMultiAnswerMcq } from "../../../platform/types/card";
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import { t } from "../../../platform/translations/translator";
 
 const tx = (view: WidgetViewLike, token: string, fallback: string, vars?: Record<string, string | number>) =>
@@ -413,7 +413,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
       return;
     }
 
-    ImageOcclusionCreatorModal.openForParent(view.plugin as unknown as SproutPlugin, parentId, {
+    ImageOcclusionCreatorModal.openForParent(view.plugin as unknown as LearnKitPlugin, parentId, {
       onClose: () => {
         view.render();
       },
@@ -439,7 +439,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
     targetCard = parentCard;
   }
 
-  void openBulkEditModalForCards(view.plugin as unknown as SproutPlugin, [targetCard], async (updatedCards: CardRecord[]) => {
+  void openBulkEditModalForCards(view.plugin as unknown as LearnKitPlugin, [targetCard], async (updatedCards: CardRecord[]) => {
     if (!updatedCards.length) return;
 
     try {
@@ -465,7 +465,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
 
       await view.app.vault.modify(file, lines.join("\n"));
 
-      await persistEditedCardAndSiblings(view.plugin as unknown as SproutPlugin, updatedCard);
+      await persistEditedCardAndSiblings(view.plugin as unknown as LearnKitPlugin, updatedCard);
       new Notice(tx(view, "ui.widget.notice.saved", "Saved changes to flashcard"));
 
       // If we edited a cloze or reversed parent, refresh the current child from the store

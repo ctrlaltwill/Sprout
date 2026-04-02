@@ -4,35 +4,35 @@
    ========================================================================== */
 
 /* ---- Widget font-size tokens (adjust all widget text sizes here) ---- */
-.sprout.sprout-widget {
-  --sprout-widget-font-button:        0.9rem;  /* action buttons (Reveal, Edit, More)  */
-  --sprout-widget-font-study-label:   0.9rem;  /* "Studying …" header title             */
-  --sprout-widget-font-remaining:     0.9rem;  /* "10 Cards Remaining" subtitle         */
-  --sprout-widget-font-card-text:     0.9rem;  /* card body / question / answer text    */
-  --sprout-widget-font-section-title: 0.9rem;  /* section heading inside card body      */
-  --sprout-widget-font-badge:         0.9rem;  /* status badges                         */
-  --sprout-widget-font-info:          0.9rem;  /* dimmed info text                      */
-  --sprout-widget-font-summary-title: 0.9rem;  /* summary-mode title ("Study …")        */
-  --sprout-widget-font-summary-count: 0.9rem;  /* summary-mode "0 Flashcards"           */
-  --sprout-widget-font-teaser-title:  0.9rem;  /* teaser card title                     */
-  --sprout-widget-font-kbd:           0.85rem; /* keyboard shortcut labels              */
+.learnkit.learnkit-widget {
+  --learnkit-widget-font-button:        0.9rem;  /* action buttons (Reveal, Edit, More)  */
+  --learnkit-widget-font-study-label:   0.9rem;  /* "Studying …" header title             */
+  --learnkit-widget-font-remaining:     0.9rem;  /* "10 Cards Remaining" subtitle         */
+  --learnkit-widget-font-card-text:     0.9rem;  /* card body / question / answer text    */
+  --learnkit-widget-font-section-title: 0.9rem;  /* section heading inside card body      */
+  --learnkit-widget-font-badge:         0.9rem;  /* status badges                         */
+  --learnkit-widget-font-info:          0.9rem;  /* dimmed info text                      */
+  --learnkit-widget-font-summary-title: 0.9rem;  /* summary-mode title ("Study …")        */
+  --learnkit-widget-font-summary-count: 0.9rem;  /* summary-mode "0 Flashcards"           */
+  --learnkit-widget-font-teaser-title:  0.9rem;  /* teaser card title                     */
+  --learnkit-widget-font-kbd:           0.85rem; /* keyboard shortcut labels              */
 }
 
 /* Widget popover root should be transparent so rounded menu doesn't bleed */
-.sprout[id^="bc-widget-menu-"][id$="-popover"] {
+.learnkit[id^="learnkit-widget-menu-"][id$="-popover"] {
   background: transparent;
   background-color: transparent;
   box-shadow: none;
 }
 
-.sprout-widget.sprout {
+.learnkit-widget.learnkit {
   background: none;
   background-color: transparent;
-  zoom: var(--sprout-leaf-zoom, 1);
+  zoom: var(--learnkit-leaf-zoom, 1);
 }
 
 /* Layout model: header/top controls fixed, card body adaptive + scrollable, footer pinned near bottom. */
-.sprout.sprout-widget {
+.learnkit.learnkit-widget {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -41,54 +41,54 @@
   box-sizing: border-box;
 }
 
-.sprout.sprout-widget > .sprout-widget-header,
-.sprout.sprout-widget > .sprout-widget-footer,
-.sprout.sprout-widget > .sprout-widget-progress {
+.learnkit.learnkit-widget > .learnkit-widget-header,
+.learnkit.learnkit-widget > .learnkit-widget-footer,
+.learnkit.learnkit-widget > .learnkit-widget-progress {
   flex: 0 0 auto;
 }
 
 /* Widget: remove all box-shadows (cards + buttons + any child) */
-.sprout.sprout-widget,
-.sprout.sprout-widget * {
+.learnkit.learnkit-widget,
+.learnkit.learnkit-widget * {
   box-shadow: none;
 }
 
 /* ---- Widget buttons ---- */
 
-.sprout-widget-hover-darken {
+.learnkit-widget-hover-darken {
   background-color: var(--background);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
   transition: background-color 0.15s, border-color 0.15s;
 }
 
-.sprout-widget-hover-darken:hover,
-.sprout-widget-hover-darken:focus {
+.learnkit-widget-hover-darken:hover,
+.learnkit-widget-hover-darken:focus {
   background-color: var(--color-base-25);
   border-color: var(--color-base-30);
 }
 
-.sprout.sprout-widget button,
-.sprout.sprout-widget button.bc,
-.sprout.sprout-widget .btn,
-.sprout.sprout-widget .sprout-btn-toolbar,
-.sprout.sprout-widget .btn-primary,
-.sprout.sprout-widget .btn-destructive,
-.sprout.sprout-widget .sprout-widget-back-btn,
-.sprout.sprout-widget .sprout-widget-action-btn {
+.learnkit.learnkit-widget button,
+.learnkit.learnkit-widget button.bc,
+.learnkit.learnkit-widget .btn,
+.learnkit.learnkit-widget .learnkit-btn-toolbar,
+.learnkit.learnkit-widget .btn-primary,
+.learnkit.learnkit-widget .btn-destructive,
+.learnkit.learnkit-widget .learnkit-widget-back-btn,
+.learnkit.learnkit-widget .learnkit-widget-action-btn {
   background-color: var(--background);
   color: var(--foreground);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-shadow: none;
   outline: none;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn {
-  font-size: var(--sprout-widget-font-button);
+.learnkit.learnkit-widget .learnkit-widget-action-btn {
+  font-size: var(--learnkit-widget-font-button);
 }
 
 /* Neutral (non-grading) widget controls should match settings action button style. */
-.sprout.sprout-widget :is(.sprout-widget-action-btn, .sprout-btn-toolbar):not(.sprout-btn-again):not(.sprout-btn-hard):not(.sprout-btn-good):not(.sprout-btn-easy) {
+.learnkit.learnkit-widget :is(.learnkit-widget-action-btn, .learnkit-btn-toolbar):not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -102,23 +102,23 @@
   box-shadow: none;
 }
 
-.sprout.sprout-widget :is(.sprout-widget-action-btn, .sprout-btn-toolbar):not(.sprout-btn-again):not(.sprout-btn-hard):not(.sprout-btn-good):not(.sprout-btn-easy):is(:hover, :focus-visible, :active) {
+.learnkit.learnkit-widget :is(.learnkit-widget-action-btn, .learnkit-btn-toolbar):not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy):is(:hover, :focus-visible, :active) {
   background-color: var(--color-base-30) !important;
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
 /* Match study/gatekeeper spacing for label + keycap in widget grading buttons. */
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
   column-gap: 0;
 }
 
-.sprout.sprout-widget kbd,
-.sprout.sprout-widget .kbd {
-  font-size: var(--sprout-widget-font-kbd);
+.learnkit.learnkit-widget kbd,
+.learnkit.learnkit-widget .kbd {
+  font-size: var(--learnkit-widget-font-kbd);
 }
 
-.sprout.sprout-widget .sprout-widget-back-btn {
+.learnkit.learnkit-widget .learnkit-widget-back-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,406 +127,406 @@
   border-radius: var(--radius-md);
 }
 
-.sprout.sprout-widget button:hover,
-.sprout.sprout-widget button.bc:hover,
-.sprout.sprout-widget .btn:hover,
-.sprout.sprout-widget .sprout-btn-toolbar:hover,
-.sprout.sprout-widget .btn-primary:hover,
-.sprout.sprout-widget .btn-destructive:hover,
-.sprout.sprout-widget .sprout-widget-back-btn:hover,
-.sprout.sprout-widget .sprout-widget-action-btn:hover,
-.sprout.sprout-widget button:focus-visible,
-.sprout.sprout-widget button.bc:focus-visible,
-.sprout.sprout-widget .btn:focus-visible,
-.sprout.sprout-widget .sprout-btn-toolbar:focus-visible,
-.sprout.sprout-widget .btn-primary:focus-visible,
-.sprout.sprout-widget .btn-destructive:focus-visible,
-.sprout.sprout-widget .sprout-widget-back-btn:focus-visible,
-.sprout.sprout-widget .sprout-widget-action-btn:focus-visible {
+.learnkit.learnkit-widget button:hover,
+.learnkit.learnkit-widget button.bc:hover,
+.learnkit.learnkit-widget .btn:hover,
+.learnkit.learnkit-widget .learnkit-btn-toolbar:hover,
+.learnkit.learnkit-widget .btn-primary:hover,
+.learnkit.learnkit-widget .btn-destructive:hover,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:hover,
+.learnkit.learnkit-widget button:focus-visible,
+.learnkit.learnkit-widget button.bc:focus-visible,
+.learnkit.learnkit-widget .btn:focus-visible,
+.learnkit.learnkit-widget .learnkit-btn-toolbar:focus-visible,
+.learnkit.learnkit-widget .btn-primary:focus-visible,
+.learnkit.learnkit-widget .btn-destructive:focus-visible,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:focus-visible,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:focus-visible {
   background-color: var(--color-base-25);
   border-color: var(--color-base-30);
   box-shadow: none;
 }
 
-.sprout.sprout-widget button:active,
-.sprout.sprout-widget button.bc:active,
-.sprout.sprout-widget .btn:active,
-.sprout.sprout-widget .sprout-btn-toolbar:active,
-.sprout.sprout-widget .btn-primary:active,
-.sprout.sprout-widget .btn-destructive:active,
-.sprout.sprout-widget .sprout-widget-back-btn:active,
-.sprout.sprout-widget .sprout-widget-action-btn:active,
-.sprout.sprout-widget button:focus,
-.sprout.sprout-widget button.bc:focus,
-.sprout.sprout-widget .btn:focus,
-.sprout.sprout-widget .sprout-btn-toolbar:focus,
-.sprout.sprout-widget .btn-primary:focus,
-.sprout.sprout-widget .btn-destructive:focus,
-.sprout.sprout-widget .sprout-widget-back-btn:focus,
-.sprout.sprout-widget .sprout-widget-action-btn:focus {
+.learnkit.learnkit-widget button:active,
+.learnkit.learnkit-widget button.bc:active,
+.learnkit.learnkit-widget .btn:active,
+.learnkit.learnkit-widget .learnkit-btn-toolbar:active,
+.learnkit.learnkit-widget .btn-primary:active,
+.learnkit.learnkit-widget .btn-destructive:active,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:active,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:active,
+.learnkit.learnkit-widget button:focus,
+.learnkit.learnkit-widget button.bc:focus,
+.learnkit.learnkit-widget .btn:focus,
+.learnkit.learnkit-widget .learnkit-btn-toolbar:focus,
+.learnkit.learnkit-widget .btn-primary:focus,
+.learnkit.learnkit-widget .btn-destructive:focus,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:focus {
   background-color: var(--muted);
   border-color: var(--muted);
   box-shadow: none;
 }
 
 /* Force Sprout custom buttons to override global button rules */
-.sprout :is(button.sprout-card-edit-btn, .sprout-widget button, .sprout-widget .btn, .sprout-widget .sprout-btn-toolbar) {
+.learnkit :is(button.learnkit-card-edit-btn, .learnkit-widget button, .learnkit-widget .btn, .learnkit-widget .learnkit-btn-toolbar) {
   box-shadow: none;
   outline: none;
   background-color: var(--background);
   border-radius: var(--radius-md, var(--radius-md));
 }
 
-.sprout :is(.sprout-widget button, .sprout-widget .btn, .sprout-widget .sprout-btn-toolbar) {
+.learnkit :is(.learnkit-widget button, .learnkit-widget .btn, .learnkit-widget .learnkit-btn-toolbar) {
   background-color: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
 /* Widget grading palette should follow theme-aware button tints */
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
-  --sprout-btn-tint: var(--destructive);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again {
+  --learnkit-btn-tint: var(--destructive);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  --sprout-btn-tint: var(--sprout-hard-bg);
-  --sprout-btn-bg-mix: 24%;
-  --sprout-btn-border-mix: 60%;
-  --sprout-btn-bg-hover-mix: 32%;
-  --sprout-btn-border-hover-mix: 68%;
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  --learnkit-btn-tint: var(--learnkit-hard-bg);
+  --learnkit-btn-bg-mix: 24%;
+  --learnkit-btn-border-mix: 60%;
+  --learnkit-btn-bg-hover-mix: 32%;
+  --learnkit-btn-border-hover-mix: 68%;
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
-  --sprout-btn-tint: var(--sprout-good-bg);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good {
+  --learnkit-btn-tint: var(--learnkit-good-bg);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
-  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy {
+  --learnkit-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  --sprout-btn-bg-mix: 16%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 45%;
-  --sprout-kbd-tint: var(--sprout-btn-tint);
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  --learnkit-btn-bg-mix: 16%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 45%;
+  --learnkit-kbd-tint: var(--learnkit-btn-tint);
 
-  background: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background));
-  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground));
-  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), transparent);
+  background: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix), var(--background));
+  color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix), var(--foreground));
+  border: var(--learnkit-border-width) solid color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-mix), transparent);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-kbd-tint) 50%, transparent);
-  border-color: color-mix(in srgb, var(--sprout-kbd-tint) 48%, transparent);
-  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--sprout-kbd-tint) 12%);
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-kbd-tint) 50%, transparent);
+  border-color: color-mix(in srgb, var(--learnkit-kbd-tint) 48%, transparent);
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--learnkit-kbd-tint) 12%);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background: color-mix(in srgb, var(--sprout-btn-tint) 24%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-btn-tint) 60%, transparent);
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--learnkit-btn-tint) 24%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint) 60%, transparent);
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
-  --sprout-btn-bg-mix: 26%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again {
+  --learnkit-btn-bg-mix: 26%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  --sprout-btn-bg-mix: 54%;
-  --sprout-btn-fg-mix: 64%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  --learnkit-btn-bg-mix: 54%;
+  --learnkit-btn-fg-mix: 64%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
-  --sprout-btn-bg-mix: 48%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good {
+  --learnkit-btn-bg-mix: 48%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
-  --sprout-btn-bg-mix: 42%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 58%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy {
+  --learnkit-btn-bg-mix: 42%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 58%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-kbd-tint) 38%, transparent);
-  border-color: color-mix(in srgb, var(--sprout-kbd-tint) 58%, transparent);
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-kbd-tint) 38%, transparent);
+  border-color: color-mix(in srgb, var(--learnkit-kbd-tint) 58%, transparent);
   color: rgb(255, 255, 255);
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
   filter: brightness(1.08);
 }
-.sprout.sprout-widget .sprout-btn-again {
-  --sprout-widget-btn-tint: var(--destructive);
+.learnkit.learnkit-widget .learnkit-btn-again {
+  --learnkit-widget-btn-tint: var(--destructive);
 }
 
-.sprout.sprout-widget .sprout-btn-hard {
-  --sprout-widget-btn-tint: var(--sprout-hard-bg);
+.learnkit.learnkit-widget .learnkit-btn-hard {
+  --learnkit-widget-btn-tint: var(--learnkit-hard-bg);
 }
 
-.sprout.sprout-widget .sprout-btn-good {
-  --sprout-widget-btn-tint: var(--sprout-good-bg);
+.learnkit.learnkit-widget .learnkit-btn-good {
+  --learnkit-widget-btn-tint: var(--learnkit-good-bg);
 }
 
-.sprout.sprout-widget .sprout-btn-easy {
-  --sprout-widget-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit.learnkit-widget .learnkit-btn-easy {
+  --learnkit-widget-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  background: color-mix(in srgb, var(--sprout-widget-btn-tint) 16%, var(--background));
-  color: color-mix(in srgb, var(--sprout-widget-btn-tint) 72%, var(--foreground));
-  border: var(--sprout-border-width) solid color-mix(in srgb, var(--sprout-widget-btn-tint) 45%, transparent);
+.learnkit.learnkit-widget :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  background: color-mix(in srgb, var(--learnkit-widget-btn-tint) 16%, var(--background));
+  color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 72%, var(--foreground));
+  border: var(--learnkit-border-width) solid color-mix(in srgb, var(--learnkit-widget-btn-tint) 45%, transparent);
 }
 
-.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background: color-mix(in srgb, var(--sprout-widget-btn-tint) 24%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 60%, transparent);
+.learnkit.learnkit-widget :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit.learnkit-widget :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background: color-mix(in srgb, var(--learnkit-widget-btn-tint) 24%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 60%, transparent);
 }
 
-.sprout.sprout-widget :is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
-  background: color-mix(in srgb, var(--sprout-widget-btn-tint) 50%, transparent);
-  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 48%, transparent);
+.learnkit.learnkit-widget :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-widget-btn-tint) 50%, transparent);
+  border-color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 48%, transparent);
 }
 
-/* Ensure rating buttons keep tinted faces even with .sprout-widget-hover-darken */
-.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  background-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 16%, var(--background));
-  color: color-mix(in srgb, var(--sprout-widget-btn-tint) 72%, var(--foreground));
-  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 45%, transparent);
+/* Ensure rating buttons keep tinted faces even with .learnkit-widget-hover-darken */
+.learnkit-widget-action-btn.learnkit-widget-hover-darken:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  background-color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 16%, var(--background));
+  color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 72%, var(--foreground));
+  border-color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 45%, transparent);
 }
 
-.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus,
-.sprout-widget-action-btn.sprout-widget-hover-darken:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 24%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-widget-btn-tint) 60%, transparent);
+.learnkit-widget-action-btn.learnkit-widget-hover-darken:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit-widget-action-btn.learnkit-widget-hover-darken:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus,
+.learnkit-widget-action-btn.learnkit-widget-hover-darken:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background-color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 24%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-widget-btn-tint) 60%, transparent);
 }
 
 /* Explicit per-rating rules to beat neutral widget button reset in all builds */
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again {
   background-color: color-mix(in srgb, var(--destructive) 16%, var(--background));
   color: color-mix(in srgb, var(--destructive) 72%, var(--foreground));
   border-color: color-mix(in srgb, var(--destructive) 45%, transparent);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 22%, var(--background));
-  color: color-mix(in srgb, var(--sprout-hard-bg) 72%, var(--foreground));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 50%, transparent);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 22%, var(--background));
+  color: color-mix(in srgb, var(--learnkit-hard-bg) 72%, var(--foreground));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 50%, transparent);
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 14%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 40%, transparent);
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 14%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 40%, transparent);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
-  background-color: color-mix(in srgb, var(--sprout-good-bg) 16%, var(--background));
-  color: color-mix(in srgb, var(--sprout-good-bg) 72%, var(--foreground));
-  border-color: color-mix(in srgb, var(--sprout-good-bg) 45%, transparent);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good {
+  background-color: color-mix(in srgb, var(--learnkit-good-bg) 16%, var(--background));
+  color: color-mix(in srgb, var(--learnkit-good-bg) 72%, var(--foreground));
+  border-color: color-mix(in srgb, var(--learnkit-good-bg) 45%, transparent);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy {
   background-color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 16%, var(--background));
   color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 72%, var(--foreground));
   border-color: color-mix(in srgb, rgb(var(--interactive-accent-rgb, 138, 92, 245)) 45%, transparent);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again:focus-visible,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus-visible,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus-visible,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus-visible {
-  --sprout-widget-hover-tint: var(--destructive);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again:focus-visible,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:focus-visible,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good:focus-visible,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy:focus-visible {
+  --learnkit-widget-hover-tint: var(--destructive);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus-visible {
-  --sprout-widget-hover-tint: var(--sprout-hard-bg);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:focus-visible {
+  --learnkit-widget-hover-tint: var(--learnkit-hard-bg);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 30%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 60%, transparent);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 30%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 60%, transparent);
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 20%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 52%, transparent);
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 20%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 52%, transparent);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good:focus-visible {
-  --sprout-widget-hover-tint: var(--sprout-good-bg);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good:focus-visible {
+  --learnkit-widget-hover-tint: var(--learnkit-good-bg);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:hover,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus,
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy:focus-visible {
-  --sprout-widget-hover-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy:hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy:focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy:focus-visible {
+  --learnkit-widget-hover-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):is(:hover, :focus, :focus-visible) {
-  background-color: color-mix(in srgb, var(--sprout-widget-hover-tint) 24%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-widget-hover-tint) 60%, transparent);
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--learnkit-widget-hover-tint) 24%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-widget-hover-tint) 60%, transparent);
 }
 
 /* Final Hard tuning: light default uses prior hover intensity; dark default sits between prior default/hover */
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 24%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 60%, transparent);
-  color: color-mix(in srgb, var(--sprout-hard-bg) 72%, var(--foreground));
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 24%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 60%, transparent);
+  color: color-mix(in srgb, var(--learnkit-hard-bg) 72%, var(--foreground));
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 32%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 68%, transparent);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 32%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 68%, transparent);
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 17%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 46%, transparent);
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 17%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 46%, transparent);
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:is(:hover, :focus, :focus-visible) {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 24%, var(--background));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 56%, transparent);
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:is(:hover, :focus, :focus-visible) {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 24%, var(--background));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 56%, transparent);
 }
 
 /* Canonical solid grading surfaces in widget (match study + gatekeeper) */
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
-  --sprout-btn-tint: var(--destructive);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again {
+  --learnkit-btn-tint: var(--destructive);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  --sprout-btn-tint: var(--sprout-hard-bg);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  --learnkit-btn-tint: var(--learnkit-hard-bg);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
-  --sprout-btn-tint: var(--sprout-good-bg);
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good {
+  --learnkit-btn-tint: var(--learnkit-good-bg);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
-  --sprout-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
+.learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy {
+  --learnkit-btn-tint: rgb(var(--interactive-accent-rgb, 138, 92, 245));
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
-  --sprout-btn-bg-mix: 16%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 45%;
-  --sprout-btn-bg-hover-mix: 24%;
-  --sprout-btn-border-hover-mix: 60%;
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  --learnkit-btn-bg-mix: 16%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 45%;
+  --learnkit-btn-bg-hover-mix: 24%;
+  --learnkit-btn-border-hover-mix: 60%;
 
-  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-mix), var(--background-primary));
-  color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-fg-mix), var(--foreground));
-  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-mix), var(--background-primary));
+  background-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix), var(--background-primary));
+  color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix), var(--foreground));
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-mix), var(--background-primary));
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
-  background-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-bg-hover-mix), var(--background-primary));
-  border-color: color-mix(in srgb, var(--sprout-btn-tint) var(--sprout-btn-border-hover-mix), var(--background-primary));
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  background-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-hover-mix), var(--background-primary));
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-border-hover-mix), var(--background-primary));
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-again {
-  --sprout-btn-bg-mix: 26%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 50%;
-  --sprout-btn-bg-hover-mix: 34%;
-  --sprout-btn-border-hover-mix: 58%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-again {
+  --learnkit-btn-bg-mix: 26%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 50%;
+  --learnkit-btn-bg-hover-mix: 34%;
+  --learnkit-btn-border-hover-mix: 58%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  --sprout-btn-bg-mix: 54%;
-  --sprout-btn-fg-mix: 64%;
-  --sprout-btn-border-mix: 58%;
-  --sprout-btn-bg-hover-mix: 62%;
-  --sprout-btn-border-hover-mix: 66%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  --learnkit-btn-bg-mix: 54%;
+  --learnkit-btn-fg-mix: 64%;
+  --learnkit-btn-border-mix: 58%;
+  --learnkit-btn-bg-hover-mix: 62%;
+  --learnkit-btn-border-hover-mix: 66%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-good {
-  --sprout-btn-bg-mix: 48%;
-  --sprout-btn-fg-mix: 72%;
-  --sprout-btn-border-mix: 58%;
-  --sprout-btn-bg-hover-mix: 56%;
-  --sprout-btn-border-hover-mix: 66%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-good {
+  --learnkit-btn-bg-mix: 48%;
+  --learnkit-btn-fg-mix: 72%;
+  --learnkit-btn-border-mix: 58%;
+  --learnkit-btn-bg-hover-mix: 56%;
+  --learnkit-btn-border-hover-mix: 66%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-easy {
-  --sprout-btn-bg-mix: 42%;
-  --sprout-btn-fg-mix: 82%;
-  --sprout-btn-border-mix: 58%;
-  --sprout-btn-bg-hover-mix: 50%;
-  --sprout-btn-border-hover-mix: 66%;
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-easy {
+  --learnkit-btn-bg-mix: 42%;
+  --learnkit-btn-fg-mix: 82%;
+  --learnkit-btn-border-mix: 58%;
+  --learnkit-btn-bg-hover-mix: 50%;
+  --learnkit-btn-border-hover-mix: 66%;
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
   filter: none;
 }
 
 /* Final parity override: force widget dark Hard to match study-session values */
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 54%, var(--background-primary));
-  color: color-mix(in srgb, var(--sprout-hard-bg) 64%, var(--foreground));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 58%, var(--background-primary));
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 54%, var(--background-primary));
+  color: color-mix(in srgb, var(--learnkit-hard-bg) 64%, var(--foreground));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 58%, var(--background-primary));
 }
 
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:hover,
-.theme-dark .sprout.sprout-widget .sprout-widget-action-btn.sprout-btn-hard:focus-visible {
-  background-color: color-mix(in srgb, var(--sprout-hard-bg) 62%, var(--background-primary));
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 66%, var(--background-primary));
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:hover,
+.theme-dark .learnkit.learnkit-widget .learnkit-widget-action-btn.learnkit-btn-hard:focus-visible {
+  background-color: color-mix(in srgb, var(--learnkit-hard-bg) 62%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 66%, var(--background-primary));
 }
 
 /* Keep grading kbd text aligned with button text color in both themes */
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
   color: inherit;
 }
 
 /* Widget grading buttons: use neutral default widget styling (match Edit/More) */
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) {
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
   background-color: var(--background);
   color: var(--foreground);
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):hover,
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus,
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):focus-visible {
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus,
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
   background-color: var(--color-base-25);
   border-color: var(--color-base-30);
   filter: none;
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy):is(:active) {
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):is(:active) {
   background-color: var(--muted);
   border-color: var(--muted);
 }
 
-.sprout.sprout-widget .sprout-widget-action-btn:is(.sprout-btn-again, .sprout-btn-hard, .sprout-btn-good, .sprout-btn-easy) :is(kbd, .kbd) {
+.learnkit.learnkit-widget .learnkit-widget-action-btn:is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
   background: transparent;
-  border-color: var(--sprout-border-color);
+  border-color: var(--learnkit-border-color);
   color: inherit;
 }
 
 /* ---- Widget cloze styling ---- */
 
 /* Widget-only cloze reveal styling */
-.sprout .sprout-widget-cloze .sprout-cloze-revealed {
+.learnkit .learnkit-widget-cloze .learnkit-cloze-revealed {
 margin: 0 1px;
     padding: 2px 5px;
     font-weight: 500;
@@ -537,7 +537,7 @@ margin: 0 1px;
 }
 
 /* Widget-only cloze blanks: fixed width */
-.sprout .sprout-widget-cloze .sprout-cloze-blank {
+.learnkit .learnkit-widget-cloze .learnkit-cloze-blank {
   width: 30px;
 }
 
@@ -545,27 +545,27 @@ margin: 0 1px;
 /* Replaces inline: fontSize:11px; lineHeight:1.75; color:var(--foreground)
    across widget-render-session.ts (~15 usages) */
 
-.sprout .sprout-widget-text {
-  font-size: var(--sprout-widget-font-card-text);
+.learnkit .learnkit-widget-text {
+  font-size: var(--learnkit-widget-font-card-text);
   line-height: 1.75;
   color: var(--foreground);
 }
 
 /* Widget section spacing (replaces applySectionStyles inline helper) */
-.sprout .sprout-widget-section {
+.learnkit .learnkit-widget-section {
   padding: 6px 0;
   margin: 0;
 }
 
 /* Widget divider (replaces makeDivider inline helper) */
-.sprout .sprout-widget-divider {
+.learnkit .learnkit-widget-divider {
   border-top: 1px solid var(--foreground);
   opacity: 0.3;
   margin: 6px 0;
 }
 
 /* Widget card body (replaces body inline styles) */
-.sprout .sprout-widget-card-body {
+.learnkit .learnkit-widget-card-body {
   margin: 10px auto 0 auto;
   gap: 0;
 border-radius: var(--radius-md);
@@ -586,22 +586,22 @@ border: 1px solid var(--theme-base-35);
   -ms-overflow-style: auto;
 }
 
-.sprout .sprout-widget-card-body::-webkit-scrollbar {
+.learnkit .learnkit-widget-card-body::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-.sprout .sprout-widget-card-body::-webkit-scrollbar-thumb {
+.learnkit .learnkit-widget-card-body::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--foreground) 40%, transparent);
   border-radius: var(--radius-md);
 }
 
-.sprout .sprout-widget-card-body::-webkit-scrollbar-track {
+.learnkit .learnkit-widget-card-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
 /* Widget header (replaces header inline styles) */
-.sprout .sprout-widget-header {
+.learnkit .learnkit-widget-header {
   border: none;
   border-radius: 0;
   margin: 0 20px;
@@ -609,7 +609,7 @@ border: 1px solid var(--theme-base-35);
 }
 
 /* Widget footer (replaces footer inline styles) */
-.sprout .sprout-widget-footer {
+.learnkit .learnkit-widget-footer {
   border: none;
   max-width: 90%;
   margin: 16px auto 0;
@@ -619,12 +619,12 @@ border: 1px solid var(--theme-base-35);
   padding: 0;
 }
 
-.sprout .sprout-widget-footer > :not([hidden]) ~ :not([hidden]) {
+.learnkit .learnkit-widget-footer > :not([hidden]) ~ :not([hidden]) {
   margin-top: 0;
 }
 
 /* Widget progress bar (replaces progress bar inline styles) */
-.sprout .sprout-widget-progress {
+.learnkit .learnkit-widget-progress {
   border: none;
   border-radius: 0;
   margin: auto auto 0;
@@ -633,103 +633,103 @@ border: 1px solid var(--theme-base-35);
   width: 80%;
 }
 
-.sprout .sprout-widget-progress-track {
+.learnkit .learnkit-widget-progress-track {
   height: 1.5px;
   background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 /* Widget info block (extra info text, dimmed) */
-.sprout .sprout-widget-info {
-  font-size: var(--sprout-widget-font-info);
+.learnkit .learnkit-widget-info {
+  font-size: var(--learnkit-widget-font-info);
   line-height: 1.75;
   color: var(--foreground);
   opacity: 0.6;
 }
 
 /* Paragraph margin reset — widget text and info blocks */
-.sprout .sprout-widget-text p,
-.sprout .sprout-widget-info p {
+.learnkit .learnkit-widget-text p,
+.learnkit .learnkit-widget-info p {
   margin: 0;
   margin-block-start: 0em;
   margin-block-end: 0em;
 }
 
 /* ---- Lists inside widget / gatekeeper text blocks ---- */
-.sprout .sprout-widget-text :is(ul, ol),
-.sprout .sprout-widget-info :is(ul, ol),
-.sprout .sprout-gatekeeper-body :is(ul, ol) {
+.learnkit .learnkit-widget-text :is(ul, ol),
+.learnkit .learnkit-widget-info :is(ul, ol),
+.learnkit .learnkit-gatekeeper-body :is(ul, ol) {
   margin-top: 0.3rem;
   margin-bottom: 0.3rem;
   padding-inline-start: 1.5em;
   line-height: 1.15;
 }
 
-.sprout .sprout-widget-text ul,
-.sprout .sprout-widget-info ul,
-.sprout .sprout-gatekeeper-body ul {
+.learnkit .learnkit-widget-text ul,
+.learnkit .learnkit-widget-info ul,
+.learnkit .learnkit-gatekeeper-body ul {
   list-style-type: disc;
 }
 
-.sprout .sprout-widget-text ol,
-.sprout .sprout-widget-info ol,
-.sprout .sprout-gatekeeper-body ol {
+.learnkit .learnkit-widget-text ol,
+.learnkit .learnkit-widget-info ol,
+.learnkit .learnkit-gatekeeper-body ol {
   list-style-type: decimal;
 }
 
-.sprout .sprout-widget-text li,
-.sprout .sprout-widget-info li,
-.sprout .sprout-gatekeeper-body li {
+.learnkit .learnkit-widget-text li,
+.learnkit .learnkit-widget-info li,
+.learnkit .learnkit-gatekeeper-body li {
   margin: 0.3rem 0;
   padding: 0;
   line-height: 1.15;
 }
 
-.sprout .sprout-widget-text li > p,
-.sprout .sprout-widget-info li > p,
-.sprout .sprout-gatekeeper-body li > p {
+.learnkit .learnkit-widget-text li > p,
+.learnkit .learnkit-widget-info li > p,
+.learnkit .learnkit-gatekeeper-body li > p {
   margin: 0;
   line-height: inherit;
 }
 
-.sprout .sprout-widget-text li > :is(ul, ol),
-.sprout .sprout-widget-info li > :is(ul, ol),
-.sprout .sprout-gatekeeper-body li > :is(ul, ol) {
+.learnkit .learnkit-widget-text li > :is(ul, ol),
+.learnkit .learnkit-widget-info li > :is(ul, ol),
+.learnkit .learnkit-gatekeeper-body li > :is(ul, ol) {
   margin-top: 0.3rem;
   margin-bottom: 0.3rem;
 }
 
 /* Override markdown wrapper line-height in gatekeeper/widget markdown containers. */
-.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol, li),
-.sprout .sprout-widget-text .whitespace-pre-wrap.break-words :is(ul, ol, li),
-.sprout .sprout-widget-info .whitespace-pre-wrap.break-words :is(ul, ol, li) {
+.learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol, li),
+.learnkit .learnkit-widget-text .whitespace-pre-wrap.break-words :is(ul, ol, li),
+.learnkit .learnkit-widget-info .whitespace-pre-wrap.break-words :is(ul, ol, li) {
   line-height: 1.15;
 }
 
-.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol),
-.sprout .sprout-widget-text .whitespace-pre-wrap.break-words :is(ul, ol),
-.sprout .sprout-widget-info .whitespace-pre-wrap.break-words :is(ul, ol) {
+.learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol),
+.learnkit .learnkit-widget-text .whitespace-pre-wrap.break-words :is(ul, ol),
+.learnkit .learnkit-widget-info .whitespace-pre-wrap.break-words :is(ul, ol) {
   margin-block: 0.3rem;
 }
 
 /* MarkdownRenderer wrappers keep `pre-wrap`, which preserves whitespace text
    nodes between block tags and inflates list spacing. Normalize only rendered
    markdown blocks (identified by data-bc-md-rid), not plain-text wrappers. */
-.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words[data-bc-md-rid],
-.sprout .sprout-widget-text .whitespace-pre-wrap.break-words[data-bc-md-rid],
-.sprout .sprout-widget-info .whitespace-pre-wrap.break-words[data-bc-md-rid] {
+.learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words[data-bc-md-rid],
+.learnkit .learnkit-widget-text .whitespace-pre-wrap.break-words[data-bc-md-rid],
+.learnkit .learnkit-widget-info .whitespace-pre-wrap.break-words[data-bc-md-rid] {
   white-space: normal;
 }
 
-.sprout .sprout-gatekeeper-body .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li),
-.sprout .sprout-widget-text .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li),
-.sprout .sprout-widget-info .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li) {
+.learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li),
+.learnkit .learnkit-widget-text .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li),
+.learnkit .learnkit-widget-info .whitespace-pre-wrap.break-words[data-bc-md-rid] :is(ul, ol, li) {
   white-space: normal;
 }
 
 /* ---- Markdown heading scale inside widget/gatekeeper blocks ---- */
-.sprout .sprout-widget-text :is(h1, h2, h3, h4, h5, h6),
-.sprout .sprout-widget-info :is(h1, h2, h3, h4, h5, h6),
-.sprout .sprout-gatekeeper-body :is(h1, h2, h3, h4, h5, h6) {
+.learnkit .learnkit-widget-text :is(h1, h2, h3, h4, h5, h6),
+.learnkit .learnkit-widget-info :is(h1, h2, h3, h4, h5, h6),
+.learnkit .learnkit-gatekeeper-body :is(h1, h2, h3, h4, h5, h6) {
   margin: 0.3rem 0;
   line-height: 1.35;
   font-weight: 700;
@@ -740,102 +740,102 @@ border: 1px solid var(--theme-base-35);
 }
 
 /* Match paragraph rhythm with heading spacing inside widget/gatekeeper markdown blocks. */
-.sprout .sprout-widget-text .sprout-md-block > p,
-.sprout .sprout-widget-info .sprout-md-block > p,
-.sprout .sprout-gatekeeper-body .sprout-md-block > p {
+.learnkit .learnkit-widget-text .learnkit-md-block > p,
+.learnkit .learnkit-widget-info .learnkit-md-block > p,
+.learnkit .learnkit-gatekeeper-body .learnkit-md-block > p {
   margin: 0.3rem 0;
 }
 
-.sprout .sprout-widget-text h1,
-.sprout .sprout-widget-info h1,
-.sprout .sprout-gatekeeper-body h1 { font-size: 1.2rem; }
+.learnkit .learnkit-widget-text h1,
+.learnkit .learnkit-widget-info h1,
+.learnkit .learnkit-gatekeeper-body h1 { font-size: 1.2rem; }
 
-.sprout .sprout-widget-text h2,
-.sprout .sprout-widget-info h2,
-.sprout .sprout-gatekeeper-body h2 { font-size: 1.15rem; }
+.learnkit .learnkit-widget-text h2,
+.learnkit .learnkit-widget-info h2,
+.learnkit .learnkit-gatekeeper-body h2 { font-size: 1.15rem; }
 
-.sprout .sprout-widget-text h3,
-.sprout .sprout-widget-info h3,
-.sprout .sprout-gatekeeper-body h3 { font-size: 1.1rem; }
+.learnkit .learnkit-widget-text h3,
+.learnkit .learnkit-widget-info h3,
+.learnkit .learnkit-gatekeeper-body h3 { font-size: 1.1rem; }
 
-.sprout .sprout-widget-text h4,
-.sprout .sprout-widget-info h4,
-.sprout .sprout-gatekeeper-body h4 { font-size: 1.05rem; }
+.learnkit .learnkit-widget-text h4,
+.learnkit .learnkit-widget-info h4,
+.learnkit .learnkit-gatekeeper-body h4 { font-size: 1.05rem; }
 
-.sprout .sprout-widget-text h5,
-.sprout .sprout-widget-info h5,
-.sprout .sprout-gatekeeper-body h5 { font-size: 1rem; }
+.learnkit .learnkit-widget-text h5,
+.learnkit .learnkit-widget-info h5,
+.learnkit .learnkit-gatekeeper-body h5 { font-size: 1rem; }
 
-.sprout .sprout-widget-text h6,
-.sprout .sprout-widget-info h6,
-.sprout .sprout-gatekeeper-body h6 { font-size: 0.95rem; }
+.learnkit .learnkit-widget-text h6,
+.learnkit .learnkit-widget-info h6,
+.learnkit .learnkit-gatekeeper-body h6 { font-size: 0.95rem; }
 
 /* Widget header labels wrapper */
-.sprout.sprout-widget .sprout-widget-header-labels {
+.learnkit.learnkit-widget .learnkit-widget-header-labels {
   gap: 8px;
 }
 
 /* Widget studying label (header title line) */
-.sprout.sprout-widget .sprout-widget-study-label {
-  font-size: var(--sprout-widget-font-study-label);
+.learnkit.learnkit-widget .learnkit-widget-study-label {
+  font-size: var(--learnkit-widget-font-study-label);
   color: var(--foreground);
   font-weight: 600;
 }
 
 /* Widget remaining count line */
-.sprout.sprout-widget .sprout-widget-remaining-label {
-  font-size: var(--sprout-widget-font-remaining);
+.learnkit.learnkit-widget .learnkit-widget-remaining-label {
+  font-size: var(--learnkit-widget-font-remaining);
   color: var(--foreground);
   font-weight: 400;
 }
 
 /* Widget IO container */
-.sprout .sprout-widget-io-container {
+.learnkit .learnkit-widget-io-container {
   width: 100%;
   padding: 0;
   margin: 6px 0;
 }
 
 /* MCQ option bottom spacing */
-.sprout .sprout-widget-mcq-option {
+.learnkit .learnkit-widget-mcq-option {
   margin-bottom: 8px;
 }
 
-.sprout .sprout-widget-mcq-option:hover,
-.sprout .sprout-widget-mcq-option:focus-visible {
+.learnkit .learnkit-widget-mcq-option:hover,
+.learnkit .learnkit-widget-mcq-option:focus-visible {
   background-color: var(--background-modifier-hover);
   color: var(--foreground);
 }
 
 /* MCQ option text span */
-.sprout .sprout-widget-mcq-text {
-  font-size: var(--sprout-widget-font-card-text);
+.learnkit .learnkit-widget-mcq-text {
+  font-size: var(--learnkit-widget-font-card-text);
   line-height: 1.75;
   display: block;
 }
 
 /* MCQ multi-line paragraph */
-.sprout .sprout-widget-mcq-line {
-  font-size: var(--sprout-widget-font-card-text);
+.learnkit .learnkit-widget-mcq-line {
+  font-size: var(--learnkit-widget-font-card-text);
   line-height: 1.75;
   margin-bottom: 2px;
 }
 
 /* Widget progress fill — dynamic width via CSS custom property */
-.sprout .sprout-widget-progress-fill {
+.learnkit .learnkit-widget-progress-fill {
   background-color: var(--theme-accent);
-  width: var(--sprout-progress, 0%);
+  width: var(--learnkit-progress, 0%);
 }
 
 /* ---- Widget badges ---- */
 
-.sprout .sprout-widget-badge {
+.learnkit .learnkit-widget-badge {
   border: 1px solid var(--theme-accent);
   color: var(--theme-accent);
   background-color: var(--theme-base-10);
   border-radius: var(--radius-xl);
   padding: 3px 10px;
-  font-size: var(--sprout-widget-font-badge);
+  font-size: var(--learnkit-widget-font-badge);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -844,20 +844,20 @@ border: 1px solid var(--theme-base-35);
 /* ---- Widget summary-mode ---- */
 
 /* Session-complete text colors should be stable across light/dark themes. */
-.sprout .sprout-widget-session-complete-title {
+.learnkit .learnkit-widget-session-complete-title {
   color: var(--foreground);
 }
 
-.sprout .sprout-widget-session-complete-meta {
+.learnkit .learnkit-widget-session-complete-meta {
   color: color-mix(in srgb, var(--foreground) 72%, transparent);
 }
 
-.theme-dark .sprout .sprout-widget-session-complete-meta {
+.theme-dark .learnkit .learnkit-widget-session-complete-meta {
   color: color-mix(in srgb, var(--foreground) 78%, transparent);
 }
 
 /* Summary mode layout: keep teaser centered and content-sized in tall panes. */
-.sprout.sprout-widget .sprout-widget-summary-header {
+.learnkit.learnkit-widget .learnkit-widget-summary-header {
   border: none;
   border-radius: 0;
   margin: 0 20px;
@@ -865,21 +865,21 @@ border: 1px solid var(--theme-base-35);
   flex: 0 0 auto;
 }
 
-.sprout.sprout-widget .sprout-widget-summary-title {
-  font-size: var(--sprout-widget-font-summary-title);
+.learnkit.learnkit-widget .learnkit-widget-summary-title {
+  font-size: var(--learnkit-widget-font-summary-title);
   color: var(--foreground);
   font-weight: 600;
   margin: 0;
 }
 
-.sprout.sprout-widget .sprout-widget-remaining-line {
-  font-size: var(--sprout-widget-font-summary-count);
+.learnkit.learnkit-widget .learnkit-widget-remaining-line {
+  font-size: var(--learnkit-widget-font-summary-count);
   color: var(--foreground);
   font-weight: 400;
   margin: 0;
 }
 
-.sprout.sprout-widget .sprout-widget-teaser {
+.learnkit.learnkit-widget .learnkit-widget-teaser {
   width: 90%;
   margin: 10px auto;
   align-self: center;
@@ -888,7 +888,7 @@ border: 1px solid var(--theme-base-35);
     background: var(--background);
   padding: 20px;
   gap: 10px;
-  font-size: var(--sprout-widget-font-teaser-title);
+  font-size: var(--learnkit-widget-font-teaser-title);
   flex: 0 1 auto;
   min-height: 0;
   height: auto;
@@ -896,7 +896,7 @@ border: 1px solid var(--theme-base-35);
   overflow-y: auto;
 }
 
-.sprout.sprout-widget .sprout-widget-summary-footer {
+.learnkit.learnkit-widget .learnkit-widget-summary-footer {
   border: none;
   border-radius: 0;
   width: 90%;

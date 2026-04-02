@@ -1,3 +1,11 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-voice.ts
+ * @summary Module for assistant popup voice.
+ *
+ * @exports
+ *  - formatVoiceInputError
+ */
+
 type Tx = (token: string, fallback: string, vars?: Record<string, string | number>) => string;
 
 export function formatVoiceInputError(code: string, tx: Tx): string {

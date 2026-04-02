@@ -1,3 +1,11 @@
+/**
+ * @file tests/search-popover-list.test.ts
+ * @summary Unit tests for search popover list.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import { buildScopeSearchPlaceholder } from "../src/views/shared/search-popover-list";
 

@@ -11,7 +11,7 @@ import { setIcon } from "obsidian";
 import { el, queryFirst, setCssProps } from "../../platform/core/ui";
 import { createBodyPortalPopover } from "../../platform/core/popover";
 import { buildDeckTree, type DeckNode } from "../../engine/deck/deck-tree";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { Scope } from "./types";
 import { getGroupIndex, normaliseGroupPath } from "../../engine/indexing/group-index";
 import { log } from "../../platform/core/logger";
@@ -24,7 +24,7 @@ import {
 
 type Args = {
   app: App;
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
 
   container: HTMLElement;
   applyAOS?: boolean;
@@ -72,14 +72,14 @@ function makeIconButton(opts: {
 }) {
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = opts.className || "sprout-btn-toolbar";
+  btn.className = opts.className || "learnkit-btn-toolbar";
   btn.setAttribute("aria-label", opts.title || opts.label);
   btn.setAttribute("data-tooltip-position", "top");
 
   const iconWrap = document.createElement("span");
   iconWrap.className = `inline-flex items-center justify-center${opts.iconClassName ? ` ${opts.iconClassName}` : ""}`;
   setIcon(iconWrap, opts.icon);
-  queryFirst(iconWrap, "svg")?.classList.add("bc", "shrink-0");
+  queryFirst(iconWrap, "svg")?.classList.add("shrink-0");
 
   const text = document.createElement("span");
   text.textContent = opts.label;
@@ -105,18 +105,17 @@ function makeDisclosureChevron(isOpen: boolean, onToggle: () => void, collapseLa
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className =
-    "sprout-deck-disclosure sprout-deck-disclosure-btn inline-flex items-center justify-center text-muted-foreground hover:text-foreground focus-visible:text-foreground";
+    "learnkit-deck-disclosure learnkit-deck-disclosure-btn inline-flex items-center justify-center text-muted-foreground hover:text-foreground focus-visible:text-foreground";
   btn.setAttribute("aria-label", isOpen ? collapseLabel : expandLabel);
   btn.setAttribute("data-tooltip-position", "top");
   btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   btn.dataset.open = isOpen ? "true" : "false";
 
   const iconWrap = document.createElement("span");
-  iconWrap.className = "sprout-deck-expand-icon inline-flex items-center justify-center [&_svg]:size-4";
+  iconWrap.className = "learnkit-deck-expand-icon inline-flex items-center justify-center [&_svg]:size-4";
   const renderIcon = (open: boolean) => {
     iconWrap.replaceChildren();
     setIcon(iconWrap, open ? "minus" : "plus");
-    queryFirst(iconWrap, "svg")?.classList.add("bc");
   };
   renderIcon(isOpen);
   btn.appendChild(iconWrap);
@@ -151,11 +150,11 @@ export function renderDeckMode(args: Args) {
   const vaultName = app?.vault?.getName?.() || "Vault";
 
   const root = document.createElement("div");
-  root.className = "flex flex-col min-h-0 gap-0 sprout-deck-root";
+  root.className = "flex flex-col min-h-0 gap-0 learnkit-deck-root";
 
-  const titleRoot = container.closest(".lk-review-root, .sprout-review-root");
+  const titleRoot = container.closest(".lk-review-root, .learnkit-review-root");
   const titleActionsHost = titleRoot?.querySelector<HTMLElement>(
-    ".lk-review-title-timer-host, .sprout-review-title-timer-host",
+    ".lk-review-title-timer-host, .learnkit-review-title-timer-host",
   );
 
   // Tree early (needed for badges + expand/collapse all)
@@ -169,14 +168,13 @@ export function renderDeckMode(args: Args) {
   };
 
   const topActions = document.createElement("div");
-  topActions.className = "flex flex-row flex-wrap items-center gap-2 sprout-deck-title-actions";
+  topActions.className = "flex flex-row flex-wrap items-center gap-2 learnkit-deck-title-actions";
 
   const studyAllBtn = makeIconButton({
     icon: "arrow-right",
     label: tx("ui.reviewer.deck.studyAll", "Study all"),
     title: tx("ui.reviewer.deck.studyAllTooltip", "Start a vault-wide session"),
-    className:
-      "bc sprout-btn-toolbar sprout-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-deck-study-all-btn",
+    className: "learnkit-btn-toolbar learnkit-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-deck-study-all-btn",
     labelClassName: "",
     iconClassName: "sprout-btn-icon",
     iconAfterLabel: true,
@@ -187,17 +185,17 @@ export function renderDeckMode(args: Args) {
   const gx = getGroupIndex(plugin);
 
   const groupCombo = document.createElement("div");
-  groupCombo.className = "relative w-full md:w-auto sprout-deck-group-combo";
+  groupCombo.className = "relative w-full md:w-auto learnkit-deck-group-combo";
 
   const comboTrigger = document.createElement("button");
   comboTrigger.type = "button";
   comboTrigger.className =
-    "bc sprout-btn-toolbar sprout-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-deck-group-trigger";
+    "learnkit-btn-toolbar learnkit-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn learnkit-deck-group-trigger";
   comboTrigger.setAttribute("aria-haspopup", "listbox");
   comboTrigger.setAttribute("aria-expanded", "false");
 
   const comboIcon = document.createElement("span");
-  comboIcon.className = "sprout-btn-icon inline-flex items-center justify-center [&_svg]:size-3.5";
+  comboIcon.className = "learnkit-btn-icon inline-flex items-center justify-center [&_svg]:size-3.5";
   setIcon(comboIcon, "arrow-right");
 
   const comboLabel = document.createElement("span");
@@ -236,23 +234,23 @@ export function renderDeckMode(args: Args) {
   const groupPopover = createBodyPortalPopover({
     trigger: comboTrigger,
     align: "right",
-    panelClasses: ["sprout-ss-panel", "sprout-header-menu-panel"],
-    overlayClasses: ["sprout-ss-popover"],
+    panelClasses: ["learnkit-ss-panel", "learnkit-header-menu-panel"],
+    overlayClasses: ["learnkit-ss-popover"],
     width: 320,
     buildContent(panel, close) {
       // ── Search input ──
       const searchWrap = document.createElement("div");
-      searchWrap.className = "sprout-ss-search-wrap";
+      searchWrap.className = "learnkit-ss-search-wrap";
       panel.appendChild(searchWrap);
 
       const searchIcon = document.createElement("span");
-      searchIcon.className = "sprout-ss-search-icon";
+      searchIcon.className = "learnkit-ss-search-icon";
       setIcon(searchIcon, "search");
       searchWrap.appendChild(searchIcon);
 
       const searchInput = document.createElement("input");
       searchInput.type = "text";
-      searchInput.className = "sprout-ss-search-input";
+      searchInput.className = "learnkit-ss-search-input";
       searchInput.placeholder = tx("ui.reviewer.deck.searchGroups", "Search groups…");
       searchInput.setAttribute("autocomplete", "off");
       searchInput.setAttribute("autocorrect", "off");
@@ -262,13 +260,13 @@ export function renderDeckMode(args: Args) {
       // ── Options list (hidden until search text is entered) ──
       const listbox = document.createElement("div");
       listbox.setAttribute("role", "listbox");
-      listbox.className = "sprout-ss-listbox";
+      listbox.className = "learnkit-ss-listbox";
       setCssProps(listbox, "display", "none");
       panel.appendChild(listbox);
 
       // ── Empty state ──
       const emptyMsg = document.createElement("div");
-      emptyMsg.className = "sprout-ss-empty";
+      emptyMsg.className = "learnkit-ss-empty";
       emptyMsg.textContent = tx("ui.reviewer.deck.noGroupsFound", "No groups found.");
       setCssProps(emptyMsg, "display", "none");
       panel.appendChild(emptyMsg);
@@ -300,12 +298,12 @@ export function renderDeckMode(args: Args) {
         studyAllItem.setAttribute("role", "option");
         studyAllItem.setAttribute("aria-selected", "false");
         studyAllItem.tabIndex = 0;
-        studyAllItem.className = "sprout-ss-item";
+        studyAllItem.className = "learnkit-ss-item";
 
         const studyAllText = document.createElement("div");
-        studyAllText.className = "sprout-ss-item-text";
+        studyAllText.className = "learnkit-ss-item-text";
         const studyAllLabel = document.createElement("span");
-        studyAllLabel.className = "sprout-ss-item-label";
+        studyAllLabel.className = "learnkit-ss-item-label";
         studyAllLabel.textContent = tx("ui.reviewer.deck.studyAll", "Study all");
         studyAllText.appendChild(studyAllLabel);
         studyAllItem.appendChild(studyAllText);
@@ -326,12 +324,12 @@ export function renderDeckMode(args: Args) {
           item.setAttribute("role", "option");
           item.setAttribute("aria-selected", "false");
           item.tabIndex = 0;
-          item.className = "sprout-ss-item";
+          item.className = "learnkit-ss-item";
 
           const textWrap = document.createElement("div");
-          textWrap.className = "sprout-ss-item-text";
+          textWrap.className = "learnkit-ss-item-text";
           const label = document.createElement("span");
-          label.className = "sprout-ss-item-label";
+          label.className = "learnkit-ss-item-label";
           label.textContent = prettifyGroupLabel(tag);
           textWrap.appendChild(label);
           item.appendChild(textWrap);
@@ -375,7 +373,7 @@ export function renderDeckMode(args: Args) {
       window.requestAnimationFrame(() => searchInput.focus());
     },
     onOpened(panel) {
-      const input = panel.querySelector<HTMLInputElement>(".sprout-ss-search-input");
+      const input = panel.querySelector<HTMLInputElement>(".learnkit-ss-search-input");
       if (input) input.focus();
     },
   });
@@ -400,7 +398,7 @@ export function renderDeckMode(args: Args) {
 
   // ===== Body (table) =====
   const bodyWrap = document.createElement("div");
-  bodyWrap.className = "sprout-deck-body flex-1 min-h-0 overflow-hidden p-0";
+  bodyWrap.className = "learnkit-deck-body flex-1 min-h-0 overflow-hidden p-0";
   applyAos(bodyWrap, 0);
   root.appendChild(bodyWrap);
 
@@ -415,11 +413,11 @@ export function renderDeckMode(args: Args) {
   }
 
   const tableOuter = document.createElement("div");
-  tableOuter.className = "sprout-deck-table-wrap sprout-deck-table-outer w-full overflow-auto rounded-lg border";
+  tableOuter.className = "learnkit-deck-table-wrap learnkit-deck-table-outer w-full overflow-auto rounded-lg border";
   bodyWrap.appendChild(tableOuter);
 
   const table = document.createElement("table");
-  table.className = "sprout-deck-table table w-full";
+  table.className = "learnkit-deck-table table w-full";
   tableOuter.appendChild(table);
 
   const colgroup = document.createElement("colgroup");
@@ -464,13 +462,13 @@ export function renderDeckMode(args: Args) {
       flex.className = "flex items-center gap-2 min-w-0";
 
       const spacer = document.createElement("span");
-      spacer.className = "sprout-deck-spacer";
-      setCssProps(spacer, "--sprout-deck-spacer-size", "28px");
+      spacer.className = "learnkit-deck-spacer";
+      setCssProps(spacer, "--learnkit-deck-spacer-size", "28px");
       flex.appendChild(spacer);
 
       const label = document.createElement("span");
       label.textContent = h.label;
-      label.className = "truncate sprout-deck-header-label";
+      label.className = "truncate learnkit-deck-header-label";
       if (h.tooltip) {
         label.setAttribute("aria-label", h.tooltip);
         label.setAttribute("data-tooltip-position", "top");
@@ -481,7 +479,7 @@ export function renderDeckMode(args: Args) {
     } else {
       const label = document.createElement("span");
       label.textContent = h.label;
-      label.className = "sprout-deck-header-label";
+      label.className = "learnkit-deck-header-label";
       if (h.tooltip) {
         label.setAttribute("aria-label", h.tooltip);
         label.setAttribute("data-tooltip-position", "top");
@@ -507,14 +505,14 @@ export function renderDeckMode(args: Args) {
 
       for (const child of children) {
         const tr = document.createElement("tr");
-        tr.className = "deck-row sprout-deck-row";
+        tr.className = "deck-row learnkit-deck-row";
 
         const tdName = document.createElement("td");
         tdName.className = "";
 
         const nameRow = document.createElement("div");
-        nameRow.className = "flex items-center gap-2 min-w-0 sprout-deck-name-row";
-        setCssProps(nameRow, "--sprout-deck-indent", `${depth * 14}px`);
+        nameRow.className = "flex items-center gap-2 min-w-0 learnkit-deck-name-row";
+        setCssProps(nameRow, "--learnkit-deck-indent", `${depth * 14}px`);
 
         let disclosureChevron = null;
         if (child.type === "folder") {
@@ -539,9 +537,9 @@ export function renderDeckMode(args: Args) {
           disclosureChevron = toggle;
         } else {
           const spacer = document.createElement("span");
-          spacer.className = "sprout-deck-spacer";
+          spacer.className = "learnkit-deck-spacer";
           const toggleWidth = 28;
-          setCssProps(spacer, "--sprout-deck-spacer-size", `${toggleWidth}px`);
+          setCssProps(spacer, "--learnkit-deck-spacer-size", `${toggleWidth}px`);
           nameRow.appendChild(spacer);
         }
 

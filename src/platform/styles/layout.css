@@ -4,21 +4,21 @@
    ========================================================================== */
 
 /* Workspace leaf / view containers: use Obsidian background variable */
-.view-content.sprout,
-.view-content .sprout,
-.view-content:has(.sprout),
-.workspace-leaf.sprout,
-.workspace-leaf .sprout:not(.workspace-leaf-content),
-.workspace-leaf:has(.sprout) {
+.view-content.learnkit,
+.view-content .learnkit,
+.view-content:has(.learnkit),
+.workspace-leaf.learnkit,
+.workspace-leaf .learnkit:not(.workspace-leaf-content),
+.workspace-leaf:has(.learnkit) {
   border-radius: none;
   background-color: rgba(0,0,0,0);
   box-shadow: none;
 }
 
 /* Leaf-content: flex column so header takes natural height and view-content fills the rest */
-.workspace-leaf-content.sprout,
-.workspace-leaf-content .sprout,
-.workspace-leaf-content:has(.sprout) {
+.workspace-leaf-content.learnkit,
+.workspace-leaf-content .learnkit,
+.workspace-leaf-content:has(.learnkit) {
   display: flex;
   flex-direction: column;
   position: relative;
@@ -27,8 +27,8 @@
   box-shadow: none;
 }
 
-/* Keep overlays out of the generic leaf-content `.sprout` flow layout. */
-.workspace-leaf-content .modal-container.lk-modal-container.sprout {
+/* Keep overlays out of the generic leaf-content `.learnkit` flow layout. */
+.workspace-leaf-content .modal-container.lk-modal-container.learnkit {
   position: fixed;
   inset: 0;
   display: flex;
@@ -37,7 +37,7 @@
   width: auto;
 }
 
-.workspace-leaf-content .sprout.sprout-assistant-popup:not(.sprout-assistant-popup-embedded):not(.is-hidden) {
+.workspace-leaf-content .learnkit.learnkit-assistant-popup:not(.learnkit-assistant-popup-embedded):not(.is-hidden) {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -45,14 +45,14 @@
 }
 
 /* Sprout-scoped pinch zoom: only Sprout leaves, never other plugins */
-.workspace-leaf-content.sprout {
-  zoom: var(--sprout-leaf-zoom, 1);
+.workspace-leaf-content.learnkit {
+  zoom: var(--learnkit-leaf-zoom, 1);
 }
 
 /* View-header wrappers: transparent so header card margins are clean */
-.view-header.sprout,
-.view-header .sprout,
-.view-header:has(.sprout) {
+.view-header.learnkit,
+.view-header .learnkit,
+.view-header:has(.learnkit) {
   background: transparent;
   background-color: transparent;
   border-radius: none;
@@ -60,19 +60,19 @@
 }
 
 /* High-level view backgrounds */
-.workspace-leaf-content.sprout[data-type="sprout-analytics"],
-.workspace-leaf-content.sprout[data-type="sprout-home"],
-.workspace-leaf-content.sprout[data-type="sprout-coach"],
-.workspace-leaf-content.sprout[data-type="sprout-browser"],
-.workspace-leaf-content.sprout[data-type="sprout-reviewer"],
-.workspace-leaf-content.sprout[data-type="sprout-settings"],
-.workspace-leaf-content.sprout[data-type="learnkit-note-review"] {
+.workspace-leaf-content.learnkit[data-type="learnkit-analytics"],
+.workspace-leaf-content.learnkit[data-type="learnkit-home"],
+.workspace-leaf-content.learnkit[data-type="learnkit-coach"],
+.workspace-leaf-content.learnkit[data-type="learnkit-browser"],
+.workspace-leaf-content.learnkit[data-type="learnkit-reviewer"],
+.workspace-leaf-content.learnkit[data-type="learnkit-settings"],
+.workspace-leaf-content.learnkit[data-type="learnkit-note-review"] {
   background-color: var(--color-base-00);
 }
 
-.sprout .sprout-view-content,
-.sprout .lk-browser-view,
-.sprout .sprout-analytics-root {
+.learnkit .learnkit-view-content,
+.learnkit .lk-browser-view,
+.learnkit .learnkit-analytics-root {
   background-color: var(--color-base-00);
 }
 
@@ -83,9 +83,9 @@
 
 /* ---- Content sizing & padding ---- */
 
-/* Keep ONLY the top-level sprout-content-view constrained.
+/* Keep ONLY the top-level content-view constrained.
    Block layout so every root shell sizes to its own content. */
-.sprout .sprout-view-content {
+.learnkit .learnkit-view-content {
   position: relative;
   top: 0;
   width: 100%;
@@ -97,7 +97,7 @@
   overflow: hidden auto;
 }
 
-body.is-phone .sprout .sprout-view-content {
+body.is-phone .learnkit .learnkit-view-content {
   /* 40px base + 60px for Obsidian's mobile bottom toolbar (env() is 0 in webview) */
   padding-bottom: 100px;
   /* Let the shell gutter be the only horizontal spacing from the viewport. */
@@ -110,15 +110,15 @@ body.is-phone {
 }
 
 /* Mobile shells: no padding, no background/border — maximise usable space. */
-body.is-phone .sprout :is(
-  .sprout-view-content-shell,
+body.is-phone .learnkit :is(
+  .learnkit-view-content-shell,
   .lk-home-content-shell,
   .lk-review-content-shell,
   .lk-browser-content-shell,
-  .sprout-analytics-content-shell,
-  .sprout-exam-generator-content-shell,
-  .sprout-settings-content-shell,
-  .sprout-note-review-content-shell
+  .learnkit-analytics-content-shell,
+  .learnkit-exam-generator-content-shell,
+  .learnkit-settings-content-shell,
+  .learnkit-note-review-content-shell
 ) {
   padding: 0 !important;
   background: none !important;
@@ -128,90 +128,90 @@ body.is-phone .sprout :is(
 }
 
 /* Mobile card spacing inside shells: keep consistent 8px rhythm. */
-body.is-phone .sprout :is(
-  .sprout-view-content,
-  .sprout-view-content-shell,
+body.is-phone .learnkit :is(
+  .learnkit-view-content,
+  .learnkit-view-content-shell,
   .lk-home-content-shell,
   .lk-review-content-shell,
   .lk-browser-content-shell,
-  .sprout-analytics-content-shell,
-  .sprout-exam-generator-content-shell,
-  .sprout-settings-content-shell,
-  .sprout-note-review-content-shell,
+  .learnkit-analytics-content-shell,
+  .learnkit-exam-generator-content-shell,
+  .learnkit-settings-content-shell,
+  .learnkit-note-review-content-shell,
   .lk-home-root,
   .lk-review-root,
   .lk-browser-view,
-  .sprout-analytics-root,
-  .sprout-exam-generator-root,
-  .sprout-settings-view-root,
-  .sprout-note-review-root
+  .learnkit-analytics-root,
+  .learnkit-exam-generator-root,
+  .learnkit-settings-view-root,
+  .learnkit-note-review-root
 ) {
   gap: 8px !important;
 }
 
-body.is-phone .sprout .sprout-view-content > * + * {
+body.is-phone .learnkit .learnkit-view-content > * + * {
   margin-top: 8px;
 }
 
-body.is-phone .sprout .sprout-view-content {
+body.is-phone .learnkit .learnkit-view-content {
   overflow-y: auto !important;
   overflow-x: hidden !important;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent horizontal scrolling on mobile across all Sprout views */
-body.is-phone .sprout,
-body.is-phone .sprout .sprout-view-content,
-body.is-phone .sprout .lk-home-root,
-body.is-phone .sprout .sprout-analytics-root,
-body.is-phone .sprout .lk-browser-view,
-body.is-phone .workspace-leaf-content:has(.sprout) {
+/* Prevent horizontal scrolling on mobile across all LearnKit views */
+body.is-phone .learnkit,
+body.is-phone .learnkit .learnkit-view-content,
+body.is-phone .learnkit .lk-home-root,
+body.is-phone .learnkit .learnkit-analytics-root,
+body.is-phone .learnkit .lk-browser-view,
+body.is-phone .workspace-leaf-content:has(.learnkit) {
   overflow-x: hidden;
   max-width: 100vw;
 }
 
 /* Keep scrollbar at the edge while preserving content padding.
    Also apply consistent vertical spacing between child shells. */
-sprout .sprout-view-content>* {
+ .learnkit-view-content>* {
   box-sizing: border-box;
   padding: var(--lk-shell-padding-desktop);
 }
 
-.sprout .sprout-view-content > * + * {
+.learnkit .learnkit-view-content > * + * {
   margin-top: 12px;
 }
 
 /* Root container width management */
-.sprout-root[data-sprout-wide="1"] .sprout-view-content {
+.learnkit-root[data-learnkit-wide="1"] .learnkit-view-content {
   max-width: none;
   width: 100%;
 }
 
-.sprout-view-content {
+.learnkit-view-content {
   max-width: 1280px;
   width: 100%;
   margin-left: auto;
   margin-right: auto;
 }
 
-.sprout[data-sprout-wide="1"] .sprout-view-content {
+.learnkit[data-learnkit-wide="1"] .learnkit-view-content {
   max-width: none;
 }
 
 /* Keep shell spacing consistent across non-home top-level view roots. */
-.sprout :is(
-  .sprout-analytics-root,
+.learnkit :is(
+  .learnkit-analytics-root,
   .lk-browser-view,
   .lk-review-root,
-  .sprout-exam-generator-root,
-  .sprout-settings-view-root,
-  .sprout-note-review-root
+  .learnkit-exam-generator-root,
+  .learnkit-settings-view-root,
+  .learnkit-note-review-root
 ) {
   margin: 0 auto;
 }
 
 /* Shared shell style for page content panels. */
-.sprout .sprout-view-content-shell {
+.learnkit .learnkit-view-content-shell {
   width: 100%;
   padding: var(--lk-shell-padding-desktop);
   max-width: min(var(--lk-home-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
@@ -223,22 +223,22 @@ sprout .sprout-view-content>* {
   padding: var(--lk-shell-padding-desktop);
 }
 
-.workspace-leaf-content.sprout[data-sprout-wide="1"] .sprout-view-content-shell,
-.workspace-leaf-content[data-sprout-wide="1"] .sprout-view-content-shell {
+.workspace-leaf-content.learnkit[data-learnkit-wide="1"] .learnkit-view-content-shell,
+.workspace-leaf-content[data-learnkit-wide="1"] .learnkit-view-content-shell {
   width: calc(100% - var(--lk-shell-gutter-desktop));
   max-width: calc(100% - var(--lk-shell-gutter-desktop));
 }
 
 /* Shared title strip rendered between the global header and view content. */
-.sprout .sprout-view-title-strip {
+.learnkit .learnkit-view-title-strip {
   width: 100%;
   margin: 0 auto;
-  max-width: min(var(--sprout-view-strip-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
+  max-width: min(var(--learnkit-view-strip-max-width, 1280px), calc(100% - var(--lk-shell-gutter-desktop)));
   padding: var(--lk-view-title-strip-padding-desktop);
   box-sizing: border-box;
 }
 
-.sprout .sprout-view-title-strip-label {
+.learnkit .learnkit-view-title-strip-label {
   font-size: var(--font-ui-large);
   font-weight: 600;
   line-height: 1.3;
@@ -247,35 +247,35 @@ sprout .sprout-view-content>* {
   padding: 0;
 }
 
-.workspace-leaf-content.sprout[data-sprout-wide="1"] .sprout-view-title-strip,
-.workspace-leaf-content[data-sprout-wide="1"] .sprout-view-title-strip {
+.workspace-leaf-content.learnkit[data-learnkit-wide="1"] .learnkit-view-title-strip,
+.workspace-leaf-content[data-learnkit-wide="1"] .learnkit-view-title-strip {
   width: calc(100% - var(--lk-shell-gutter-desktop));
   max-width: calc(100% - var(--lk-shell-gutter-desktop));
 }
 
-body.is-phone .sprout .sprout-view-title-strip {
+body.is-phone .learnkit .learnkit-view-title-strip {
   max-width: 100%;
   padding-left: var(--lk-shell-padding-mobile);
   padding-right: var(--lk-shell-padding-mobile);
 }
 
-body.is-phone .sprout .sprout-view-content > * {
+body.is-phone .learnkit .learnkit-view-content > * {
   padding: var(--lk-shell-padding-mobile);
 }
 
 /* Force title strips into a two-row mobile layout: row 1 text, row 2 controls. */
-body.is-phone .sprout :is(
-  .sprout-view-title-strip,
+body.is-phone .learnkit :is(
+  .learnkit-view-title-strip,
   .lk-home-title-strip,
-  .sprout-analytics-title-strip,
-  .sprout-exam-generator-title-strip,
-  .sprout-coach-title-strip,
+  .learnkit-analytics-title-strip,
+  .learnkit-exam-generator-title-strip,
+  .learnkit-coach-title-strip,
   .lk-browser-title-strip,
   .lk-review-title-strip,
   .lk-review-title-strip-deck,
-  .sprout-review-title-strip-deck,
-  .sprout-note-review-title-strip,
-  .sprout-settings-title-strip
+  .learnkit-review-title-strip-deck,
+  .learnkit-note-review-title-strip,
+  .learnkit-settings-title-strip
 ) {
   display: flex;
   flex-direction: column;
@@ -285,15 +285,15 @@ body.is-phone .sprout :is(
   gap: 8px;
 }
 
-body.is-phone .sprout :is(
+body.is-phone .learnkit :is(
   .lk-home-title-row,
   .lk-browser-header-row,
   .lk-review-title-row,
-  .sprout-review-title-row,
-  .sprout-note-review-title-row,
-  .sprout-exam-generator-topline,
-  .sprout-exam-generator-setup-topline,
-  .sprout-coach-wizard-topline
+  .learnkit-review-title-row,
+  .learnkit-note-review-title-row,
+  .learnkit-exam-generator-topline,
+  .learnkit-exam-generator-setup-topline,
+  .learnkit-coach-wizard-topline
 ) {
   display: flex;
   width: 100%;
@@ -303,12 +303,12 @@ body.is-phone .sprout :is(
   align-items: center !important;
 }
 
-body.is-phone .sprout :is(
-  .sprout-exam-generator-topline-right,
-  .sprout-exam-generator-setup-topline-right,
-  .sprout-coach-wizard-topline-right,
+body.is-phone .learnkit :is(
+  .learnkit-exam-generator-topline-right,
+  .learnkit-exam-generator-setup-topline-right,
+  .learnkit-coach-wizard-topline-right,
   .lk-review-title-timer-host,
-  .sprout-review-title-timer-host
+  .learnkit-review-title-timer-host
 ) {
   width: 100%;
   justify-content: center !important;
@@ -317,42 +317,42 @@ body.is-phone .sprout :is(
   row-gap: 8px;
 }
 
-body.is-phone .sprout :is(
-  .sprout-view-title-strip,
+body.is-phone .learnkit :is(
+  .learnkit-view-title-strip,
   .lk-home-title-strip,
-  .sprout-analytics-title-strip,
-  .sprout-exam-generator-title-strip,
-  .sprout-coach-title-strip,
+  .learnkit-analytics-title-strip,
+  .learnkit-exam-generator-title-strip,
+  .learnkit-coach-title-strip,
   .lk-browser-title-strip,
   .lk-review-title-strip,
   .lk-review-title-strip-deck,
-  .sprout-review-title-strip-deck,
-  .sprout-note-review-title-strip,
-  .sprout-settings-title-strip
+  .learnkit-review-title-strip-deck,
+  .learnkit-note-review-title-strip,
+  .learnkit-settings-title-strip
 ) :is(
-  .sprout-inline-sentence,
+  .learnkit-inline-sentence,
   .lk-home-title-row,
   .lk-browser-header-row,
   .lk-review-title-row,
-  .sprout-review-title-row,
-  .sprout-note-review-title-row,
-  .sprout-exam-generator-topline,
-  .sprout-exam-generator-setup-topline,
-  .sprout-coach-wizard-topline
+  .learnkit-review-title-row,
+  .learnkit-note-review-title-row,
+  .learnkit-exam-generator-topline,
+  .learnkit-exam-generator-setup-topline,
+  .learnkit-coach-wizard-topline
 ) > :first-child > .text-muted-foreground {
   display: none !important;
 }
 
-body.is-phone .sprout :is(
-  .sprout-view-title-strip-label,
+body.is-phone .learnkit :is(
+  .learnkit-view-title-strip-label,
   .lk-home-title-label,
   .lk-browser-header-title,
   .lk-review-title-label,
-  .sprout-review-title-label,
-  .sprout-note-review-title-label,
-  .sprout-analytics-title-label,
-  .sprout-exam-generator-title-label,
-  .sprout-coach-wizard-title
+  .learnkit-review-title-label,
+  .learnkit-note-review-title-label,
+  .learnkit-analytics-title-label,
+  .learnkit-exam-generator-title-label,
+  .learnkit-coach-wizard-title
 ) {
   width: 100%;
   text-align: center;
@@ -361,13 +361,13 @@ body.is-phone .sprout :is(
   margin-right: auto;
 }
 
-body.is-phone .sprout :is(
-  .sprout-view-title-strip-description,
+body.is-phone .learnkit :is(
+  .learnkit-view-title-strip-description,
   .lk-home-title-description,
   .lk-home-title-subtitle,
   .lk-browser-header-description,
   .lk-review-title-subtitle,
-  .sprout-note-review-title-subtitle,
+  .learnkit-note-review-title-subtitle,
   [class*="title-strip-description"],
   [class*="title-subtitle"],
   [class*="title-description"]
@@ -375,12 +375,12 @@ body.is-phone .sprout :is(
   display: none !important;
 }
 
-body.is-phone .sprout .sprout-settings-view-tab-row {
+body.is-phone .learnkit .learnkit-settings-view-tab-row {
   justify-content: center;
 }
 
 /* Enforce consistent mobile input corner radius across themes. */
-body.is-phone .sprout :is(
+body.is-phone .learnkit :is(
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
   select,
   textarea
@@ -392,49 +392,49 @@ body.is-phone .sprout :is(
 /* ---- Scrollbar management ---- */
 
 /* Hide scrollbars in Sprout while keeping scroll behaviour */
-.sprout * {
+.learnkit * {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.sprout *::-webkit-scrollbar {
+.learnkit *::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
 /* Re-enable visible scrollbars inside modals */
-.sprout .lk-modals,
-.sprout .lk-modals * {
+.learnkit .lk-modals,
+.learnkit .lk-modals * {
   scrollbar-width: auto;
   -ms-overflow-style: auto;
 }
-.sprout .lk-modals::-webkit-scrollbar,
-.sprout .lk-modals *::-webkit-scrollbar {
+.learnkit .lk-modals::-webkit-scrollbar,
+.learnkit .lk-modals *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-.sprout .lk-modals::-webkit-scrollbar-thumb,
-.sprout .lk-modals *::-webkit-scrollbar-thumb {
+.learnkit .lk-modals::-webkit-scrollbar-thumb,
+.learnkit .lk-modals *::-webkit-scrollbar-thumb {
   background: rgba(120, 120, 120, 0.6);
   border-radius: var(--radius-md);
 }
-.sprout .lk-modals::-webkit-scrollbar-track,
-.sprout .lk-modals *::-webkit-scrollbar-track {
+.learnkit .lk-modals::-webkit-scrollbar-track,
+.learnkit .lk-modals *::-webkit-scrollbar-track {
   background: transparent;
 }
 
 /* ---- Global resets ---- */
 
 /* Hide Obsidian's global status bar only when Sprout views are active */
-body.sprout.sprout-hide-status-bar .status-bar {
+body.learnkit.learnkit-hide-status-bar .status-bar {
   display: none;
 }
 
-.sprout-header {
+.learnkit-header {
     border: none;
     border-radius: 0px;
 }
 
-.workspace-leaf-content.sprout {
+.workspace-leaf-content.learnkit {
     border-radius: 0px;
     border: none;
 }
@@ -442,7 +442,7 @@ body.sprout.sprout-hide-status-bar .status-bar {
 /* ---- Fixed-height input ---- */
 /* Replaces inline: height/min-height/max-height 38px across 4+ files */
 
-.sprout .sprout-input-fixed {
+.learnkit .learnkit-input-fixed {
   height: 38px;
   min-height: 38px;
   max-height: 38px;
@@ -457,9 +457,9 @@ body.sprout.sprout-hide-status-bar .status-bar {
  * force all AOS-targeted elements to be fully visible immediately.
  */
 
-body.is-phone .sprout [data-aos],
-body.is-phone .sprout [data-aos].aos-init,
-body.is-phone .sprout [data-aos].aos-animate {
+body.is-phone .learnkit [data-aos],
+body.is-phone .learnkit [data-aos].aos-init,
+body.is-phone .learnkit [data-aos].aos-animate {
   opacity: 1;
   visibility: visible;
   transform: none;

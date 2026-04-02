@@ -1,12 +1,15 @@
 /**
- * Shared identity constants/helpers for LearnKit rebrand compatibility.
+ * @file src/platform/core/identity.ts
+ * @summary Module for identity.
  *
- * Stage 2 behavior:
- * - Read both LearnKit and Sprout card anchors.
- * - Prefer writing LearnKit anchors for newly inserted/generated anchors.
- * - Keep plugin-path lookup tolerant of both plugin IDs.
+ * @exports
+ *  - CURRENT_PLUGIN_ID
+ *  - LEGACY_PLUGIN_ID
+ *  - PRIMARY_CARD_ANCHOR_PREFIX
+ *  - LEGACY_CARD_ANCHOR_PREFIXES
+ *  - CARD_ANCHOR_PREFIX_PATTERN
+ *  - CARD_ANCHOR_LINE_RE
  */
-
 export const CURRENT_PLUGIN_ID = "learnkit";
 export const LEGACY_PLUGIN_ID = "sprout";
 

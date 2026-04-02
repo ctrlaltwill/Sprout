@@ -1,3 +1,11 @@
+/**
+ * @file tests/shared-utils-cloze-math.test.ts
+ * @summary Unit tests for shared utils cloze math.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import { processClozeForMath } from "../src/platform/core/shared-utils";
 
@@ -28,7 +36,7 @@ describe("processClozeForMath", () => {
     const front = processClozeForMath(input, false, null);
     const back = processClozeForMath(input, true, null);
 
-    expect(front).toBe("The identity is <span class=\"bc sprout-cloze-blank hidden-cloze\" style=\"--sprout-cloze-width:30px\"></span>.");
+    expect(front).toBe("The identity is <span class=\"sprout-cloze-blank hidden-cloze\" style=\"--learnkit-cloze-width:30px\"></span>.");
     expect(back).toBe("The identity is **true**.");
   });
 

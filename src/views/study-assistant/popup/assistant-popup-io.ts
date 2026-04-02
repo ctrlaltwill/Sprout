@@ -1,3 +1,11 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-io.ts
+ * @summary Module for assistant popup io.
+ *
+ * @exports
+ *  - toIoPreviewRects
+ */
+
 import type { IoSuggestionRect } from "../types/assistant-popup-types";
 
 export function toIoPreviewRects(value: unknown): IoSuggestionRect[] {

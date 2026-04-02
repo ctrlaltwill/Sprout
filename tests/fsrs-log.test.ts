@@ -1,3 +1,11 @@
+/**
+ * @file tests/fsrs-log.test.ts
+ * @summary Unit tests for fsrs log.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 // tests/fsrs-log.test.ts
 // ---------------------------------------------------------------------------
 // Tests for the FSRS logging module — covers logFsrsIfNeeded and

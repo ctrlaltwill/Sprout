@@ -1,3 +1,11 @@
+/**
+ * @file tests/sync.test.ts
+ * @summary Unit tests for sync.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 // tests/sync.test.ts
 // ---------------------------------------------------------------------------
 // Tests for the sync engine's pure/exported helpers — formatSyncNotice,

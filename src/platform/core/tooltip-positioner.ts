@@ -6,33 +6,12 @@
  * @exports
  *   - TooltipPositioner — class that observes tooltip-bearing elements and adjusts placement
  */
-
-/**
- * Tooltip Positioner
- *
- * Tooltips are primarily positioned with CSS (pseudo-elements).
- *
- * However, header tooltips can be long and would otherwise overflow outside the
- * current workspace leaf when the trigger is near an edge (e.g. split panes).
- *
- * This module adds a small runtime clamp for header tooltips only:
- * - Keeps tooltips inside Sprout workspace leaf-content bounds
- *   (`.workspace-leaf-content.sprout.theme-dark` preferred).
- * - Enforces a 60px horizontal safety margin.
- *
- * Implementation detail:
- * - We measure tooltip text using an offscreen element that matches tooltip CSS.
- * - We then set CSS variables on the target element that shift the tooltip
- *   pseudo-element horizontally (`--sprout-tooltip-shift-x`) and cap its
- *   effective max width (`--sprout-tooltip-max-width`).
- */
-
 export function initTooltipPositioner(): () => void {
   if (typeof document === "undefined") return () => {};
   if (typeof window === "undefined") return () => {};
 
-  const WORKSPACE_DARK_SPROUT_SELECTOR = ".workspace-leaf-content.sprout.theme-dark";
-  const WORKSPACE_SPROUT_SELECTOR = ".workspace-leaf-content.sprout";
+  const WORKSPACE_DARK_LEARNKIT_SELECTOR = ".workspace-leaf-content.learnkit.theme-dark";
+  const WORKSPACE_LEARNKIT_SELECTOR = ".workspace-leaf-content.learnkit";
   const WORKSPACE_SELECTOR = ".workspace-leaf-content";
   const TOOLTIP_SELECTOR = "[aria-label]";
   const MARGIN_PX = 60;
@@ -46,15 +25,15 @@ export function initTooltipPositioner(): () => void {
   const getMeasureEl = (): HTMLDivElement => {
     if (measureEl && measureEl.isConnected) return measureEl;
     const el = document.createElement("div");
-    el.className = "sprout-tooltip-measure";
+    el.className = "learnkit-tooltip-measure";
     document.body.appendChild(el);
     measureEl = el;
     return el;
   };
 
   const clearVars = (el: HTMLElement) => {
-    el.style.removeProperty("--sprout-tooltip-shift-x");
-    el.style.removeProperty("--sprout-tooltip-max-width");
+    el.style.removeProperty("--learnkit-tooltip-shift-x");
+    el.style.removeProperty("--learnkit-tooltip-max-width");
   };
 
   const cancelScheduledClear = (el: HTMLElement) => {
@@ -64,20 +43,20 @@ export function initTooltipPositioner(): () => void {
   };
 
   const restoreOriginalPosition = (el: HTMLElement) => {
-    const orig = el.dataset.sproutTooltipOrigPos;
+    const orig = el.dataset.learnkitTooltipOrigPos;
     if (orig === undefined) return;
 
     // Restore original value (or remove attribute if it was missing)
     if (orig === "") el.removeAttribute("data-tooltip-position");
     else el.setAttribute("data-tooltip-position", orig);
 
-    delete el.dataset.sproutTooltipOrigPos;
+    delete el.dataset.learnkitTooltipOrigPos;
   };
 
   const setEffectivePosition = (el: HTMLElement, pos: string) => {
     // Capture the original position only once per hover/focus lifecycle
-    if (el.dataset.sproutTooltipOrigPos === undefined) {
-      el.dataset.sproutTooltipOrigPos = el.getAttribute("data-tooltip-position") ?? "";
+    if (el.dataset.learnkitTooltipOrigPos === undefined) {
+      el.dataset.learnkitTooltipOrigPos = el.getAttribute("data-tooltip-position") ?? "";
     }
     el.setAttribute("data-tooltip-position", pos);
   };
@@ -105,8 +84,8 @@ export function initTooltipPositioner(): () => void {
     }
 
     const boundsEl =
-      el.closest(WORKSPACE_DARK_SPROUT_SELECTOR)
-      ?? el.closest(WORKSPACE_SPROUT_SELECTOR)
+      el.closest(WORKSPACE_DARK_LEARNKIT_SELECTOR)
+      ?? el.closest(WORKSPACE_LEARNKIT_SELECTOR)
       ?? el.closest(WORKSPACE_SELECTOR);
     const boundsRect = (boundsEl ?? document.documentElement).getBoundingClientRect();
     const boundsWidth = boundsRect.width;
@@ -125,7 +104,7 @@ export function initTooltipPositioner(): () => void {
     }
 
     const capPx = Math.min(300, maxWidthAllowed);
-    el.style.setProperty("--sprout-tooltip-max-width", `${capPx}px`);
+    el.style.setProperty("--learnkit-tooltip-max-width", `${capPx}px`);
 
     // Measure tooltip size at the capped width.
     const measurer = getMeasureEl();
@@ -171,10 +150,10 @@ export function initTooltipPositioner(): () => void {
 
       const clampedLeft = maxLeft < minLeft ? minLeft : clamp(defaultLeft, minLeft, maxLeft);
       const shiftX = clampedLeft - defaultLeft;
-      el.style.setProperty("--sprout-tooltip-shift-x", `${Math.round(shiftX)}px`);
+      el.style.setProperty("--learnkit-tooltip-shift-x", `${Math.round(shiftX)}px`);
     } else {
       // Left/right tooltips: ensure we don't carry over a stale X shift.
-      el.style.removeProperty("--sprout-tooltip-shift-x");
+      el.style.removeProperty("--learnkit-tooltip-shift-x");
     }
   };
 

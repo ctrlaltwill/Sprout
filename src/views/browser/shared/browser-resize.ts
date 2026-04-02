@@ -31,14 +31,14 @@ export function makeResizableTh(
   col: ColKey,
   ctx: ResizeContext,
 ): void {
-  th.classList.add("sprout-col-resize-host");
+  th.classList.add("learnkit-col-resize-host", "learnkit-col-resize-host");
 
   const RESIZE_ZONE_PX = 14;
 
   const handle = document.createElement("div");
-  handle.className = "sprout-col-resize sprout-col-resize-handle";
+  handle.className = "learnkit-col-resize learnkit-col-resize-handle";
   handle.setAttribute("aria-label", "Drag to resize");
-  setCssProps(handle, "--sprout-resize-zone", `${RESIZE_ZONE_PX}px`);
+  setCssProps(handle, "--learnkit-resize-zone", `${RESIZE_ZONE_PX}px`);
 
   th.appendChild(handle);
 
@@ -63,7 +63,7 @@ export function makeResizableTh(
       ctx.colWidths[col] = next;
 
       const colEl = ctx.colEls[col];
-      if (colEl) setCssProps(colEl, "--sprout-col-width", `${next}px`);
+      if (colEl) setCssProps(colEl, "--learnkit-col-width", `${next}px`);
     };
 
     const onUp = () => {

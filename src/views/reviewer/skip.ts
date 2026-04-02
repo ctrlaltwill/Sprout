@@ -9,13 +9,13 @@
  */
 
 import { Modal, setIcon, type App } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { Session } from "./types";
 import type { SproutReviewerView } from "./review-view";
 import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import { t } from "../../platform/translations/translator";
 
-export function isSkipEnabled(plugin: SproutPlugin): boolean {
+export function isSkipEnabled(plugin: LearnKitPlugin): boolean {
   return !!plugin.settings.study?.enableSkipButton;
 }
 
@@ -50,7 +50,7 @@ class ConfirmBuryForTodayModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    const head = contentEl.createDiv({ cls: "sprout-skip-modal-head" });
+    const head = contentEl.createDiv({ cls: "learnkit-skip-modal-head learnkit-skip-modal-head" });
 
     head.createEl("h3", { text: tx("ui.reviewer.skip.modal.title", "Bury for today?") });
 
@@ -71,13 +71,13 @@ class ConfirmBuryForTodayModal extends Modal {
       ),
     );
 
-    const row = contentEl.createDiv({ cls: "sprout-skip-modal-actions" });
+    const row = contentEl.createDiv({ cls: "learnkit-skip-modal-actions learnkit-skip-modal-actions" });
 
     const ignoreBtn = row.createEl("button", { text: tx("ui.reviewer.skip.modal.ignore", "Ignore") });
     ignoreBtn.onclick = () => this.ignore();
 
     const buryBtn = row.createEl("button", { text: tx("ui.reviewer.skip.modal.confirm", "Bury for today") });
-    buryBtn.classList.add("sprout-skip-bury-btn");
+    buryBtn.classList.add("learnkit-skip-bury-btn", "learnkit-skip-bury-btn");
     buryBtn.onclick = () => this.bury();
 
     this.scope.register([], "b", () => {

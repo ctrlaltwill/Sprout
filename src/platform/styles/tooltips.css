@@ -5,20 +5,20 @@
 
 /* ---- Base tooltip ---- */
 
-.sprout [data-tooltip] {
+.learnkit [data-tooltip] {
   position: relative;
   overflow: visible;
 }
 
-.sprout [data-tooltip]::after {
+.learnkit [data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
   padding: 6px 10px;
   border-radius: var(--radius-md);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   font-weight: 400;
   line-height: 1.4;
-  max-width: min(300px, var(--sprout-tooltip-max-width, 300px));
+  max-width: min(300px, var(--learnkit-tooltip-max-width, 300px));
   width: max-content;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -31,49 +31,49 @@
   /* Theme-aware: inverted surface/text — to beat any theme overrides */
   background-color: var(--foreground);
   color: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   -webkit-font-smoothing: antialiased;
 }
 
-.sprout [data-tooltip]:hover::after {
+.learnkit [data-tooltip]:hover::after {
   opacity: 1;
   transition-delay: 0.8s;
 }
 
 /* Lift the hovered element above any parent stacking context (e.g. sticky header) */
-.sprout [data-tooltip]:hover {
+.learnkit [data-tooltip]:hover {
   z-index: 949;
 }
 
-/* Escalate ancestor stacking context within .sprout so the tooltip
+/* Escalate ancestor stacking context within .learnkit so the tooltip
    ::after is never trapped behind sibling layers.
    Exclude scroll containers to prevent glitchy behavior. */
-.sprout *:has([data-tooltip]:hover):not(.lk-browser-table-wrap) {
+.learnkit *:has([data-tooltip]:hover):not(.lk-browser-table-wrap) {
   z-index: 949;
 }
 
 /* Only allow overflow:visible on table cells and rows, not on scroll containers */
-.sprout tr:has([data-tooltip]:hover),
-.sprout td:has([data-tooltip]:hover) {
+.learnkit tr:has([data-tooltip]:hover),
+.learnkit td:has([data-tooltip]:hover) {
   overflow: visible;
 }
 
-.sprout [data-tooltip]::before {
+.learnkit [data-tooltip]::before {
   content: "";
   display: none;
 }
 
 /* ---- Shared tooltip surface (for programmatic tooltips) ---- */
 
-.sprout .sprout-data-tooltip-surface {
+.learnkit .learnkit-data-tooltip-surface {
   padding: 6px 10px;
   border-radius: var(--radius-md);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   font-weight: 400;
   line-height: 1.4;
   background-color: var(--foreground);
   color: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   box-shadow: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -81,23 +81,23 @@
 /* ---- Tooltip positioning classes ---- */
 
 /* Bottom (default) — centred horizontally, just below the parent */
-.sprout [data-tooltip]::after,
-.sprout [data-tooltip-position="bottom"]::after {
+.learnkit [data-tooltip]::after,
+.learnkit [data-tooltip-position="bottom"]::after {
   top: calc(100% + 6px);
   left: 50%;
-  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px)));
+  transform: translateX(calc(-50% + var(--learnkit-tooltip-shift-x, 0px)));
 }
 
 /* Top — centred horizontally, just above the parent */
-.sprout [data-tooltip-position="top"]::after {
+.learnkit [data-tooltip-position="top"]::after {
   bottom: calc(100% + 6px);
   top: auto;
   left: 50%;
-  transform: translateX(calc(-50% + var(--sprout-tooltip-shift-x, 0px)));
+  transform: translateX(calc(-50% + var(--learnkit-tooltip-shift-x, 0px)));
 }
 
 /* Left — centred vertically, just left of the parent */
-.sprout [data-tooltip-position="left"]::after {
+.learnkit [data-tooltip-position="left"]::after {
   right: calc(100% + 6px);
   left: auto;
   top: 50%;
@@ -105,7 +105,7 @@
 }
 
 /* Right — centred vertically, just right of the parent */
-.sprout [data-tooltip-position="right"]::after {
+.learnkit [data-tooltip-position="right"]::after {
   left: calc(100% + 6px);
   top: 50%;
   transform: translateY(-50%);
@@ -113,27 +113,27 @@
 
 /* ---- Dark mode tooltip contrast ---- */
 
-.theme-dark .sprout [data-tooltip]::after {
+.theme-dark .learnkit [data-tooltip]::after {
   background-color: var(--foreground);
   color: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
 }
 
 /* ---- Settings tooltips: allow overflow and ensure visibility ---- */
 
-.sprout-settings .setting-item,
-.sprout-settings .setting-item-control,
-.sprout-settings .setting-item-info {
+.learnkit-settings .setting-item,
+.learnkit-settings .setting-item-control,
+.learnkit-settings .setting-item-info {
   overflow: visible;
 }
 
-.sprout-settings .setting-item {
+.learnkit-settings .setting-item {
   margin-bottom: 0px;
 }
 
 /* ---- Runtime measuring element (used by src/core/tooltip-positioner.ts) ---- */
 
-.sprout-tooltip-measure {
+.learnkit-tooltip-measure {
   position: fixed;
   left: -99999px;
   top: -99999px;
@@ -143,7 +143,7 @@
 
   padding: 6px 10px;
   border-radius: var(--radius-md);
-  font-size: var(--sprout-font-2xs);
+  font-size: var(--learnkit-font-2xs);
   font-weight: 400;
   line-height: 1.4;
   width: max-content;
@@ -153,6 +153,6 @@
 
   background-color: var(--foreground);
   color: var(--background);
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   -webkit-font-smoothing: antialiased;
 }

@@ -1,16 +1,16 @@
 /**
- * @file src/views/study-assistant/sprout-assistant-popup.ts
- * @summary Floating assistant popup that overlays the workspace.
- *          The trigger button is mounted into the active markdown view
- *          content container (bottom-right). Clicking it toggles a chat panel with
- *          a consolidated chat interface for Ask, Review, and Generate flows.
+ * @file src/views/study-assistant/popup/assistant-popup.ts
+ * @summary Module for assistant popup.
+ *
+ * @exports
+ *  - SproutAssistantPopup
  */
 
 import { MarkdownView, Modal, Notice, Platform, Setting, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import { marked } from "marked";
 import { log } from "../../../platform/core/logger";
 import { joinPath } from "../../../platform/integrations/sync/backup";
-import type SproutPlugin from "../../../main";
+import type LearnKitPlugin from "../../../main";
 import { placePopover, replaceChildrenWithHTML, setCssProps } from "../../../platform/core/ui";
 import { mimeFromExt, resolveImageFile } from "../../../platform/image-occlusion/io-helpers";
 import { insertTextAtCursorOrAppend } from "../../../platform/image-occlusion/io-save";
@@ -105,7 +105,7 @@ import { formatAttachmentChipLabel } from "../../shared/attachment-chip-label";
 //  SproutAssistantPopup
 // ---------------------------------------------------------------------------
 export class SproutAssistantPopup {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   activeFile: TFile | null = null;
   private readonly _instanceId = `assistant-popup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -205,7 +205,7 @@ export class SproutAssistantPopup {
   private _openStateByFilePath = new Map<string, boolean>();
   private _onChatLogSynced: ((e: Event) => void) | null = null;
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
   }
 
@@ -659,12 +659,12 @@ export class SproutAssistantPopup {
 
     // Trigger button
     const btn = document.createElement("button");
-    btn.className = "sprout-assistant-trigger";
+    btn.className = "learnkit-assistant-trigger";
     btn.setAttribute("aria-label", "Open sprout companion");
     btn.setAttribute("aria-tooltip", "Open sprout companion");
     btn.setAttribute("title", "Open sprout companion");
     btn.setAttribute("data-tooltip-position", "top");
-    setIcon(btn, "sprout-widget-assistant");
+    setIcon(btn, "learnkit-widget-assistant");
     btn.addEventListener("click", (e) => {
       if (!this._isAssistantEnabled() || this._getAssistantLocation() !== "modal") {
         e.preventDefault();
@@ -755,7 +755,7 @@ export class SproutAssistantPopup {
 
     if (!this.popupEl) {
       const popup = document.createElement("div");
-      popup.className = "sprout sprout-assistant-popup sprout-assistant-popup-embedded";
+      popup.className = "learnkit learnkit-assistant-popup learnkit-assistant-popup-embedded";
       host.appendChild(popup);
       this.popupEl = popup as unknown as HTMLDivElement;
     } else if (this.popupEl.parentElement !== host) {
@@ -1106,11 +1106,11 @@ export class SproutAssistantPopup {
     if (!this.triggerBtn) return;
     this.triggerBtn.empty();
     const isModalOpen = this._isAssistantEnabled() && this._getAssistantLocation() === "modal" && this.isOpen;
-    setIcon(this.triggerBtn, isModalOpen ? "chevron-down" : "sprout-widget-assistant");
+    setIcon(this.triggerBtn, isModalOpen ? "chevron-down" : "learnkit-widget-assistant");
     const pendingTabs = this._getPendingReplyTabCount();
     if (pendingTabs > 0) {
       this.triggerBtn.createSpan({
-        cls: "sprout-assistant-trigger-pending-badge",
+        cls: "learnkit-assistant-trigger-pending-badge learnkit-assistant-trigger-pending-badge",
         text: String(Math.min(3, pendingTabs)),
       });
     }
@@ -1144,7 +1144,7 @@ export class SproutAssistantPopup {
 
   private _applyPresentationState(): void {
     if (this.isEmbeddedMode) {
-      this.popupEl?.addClass("sprout-assistant-popup-embedded");
+      this.popupEl?.addClass("learnkit-assistant-popup-embedded");
       this.popupEl?.removeClass("is-hidden");
       this.isOpen = true;
       this._refreshTriggerIcon();
@@ -1331,9 +1331,9 @@ export class SproutAssistantPopup {
   }
 
   private _renderGenerateMoreButton(parent: HTMLElement, ariaLabel: string): void {
-    const actions = parent.createDiv({ cls: "sprout-assistant-popup-generate-starters" });
+    const actions = parent.createDiv({ cls: "learnkit-assistant-popup-generate-starters learnkit-assistant-popup-generate-starters" });
     const btn = actions.createEl("button", {
-      cls: "sprout-assistant-popup-btn",
+      cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
       text: this._tx("ui.studyAssistant.generator.generateMore", "Generate more"),
     });
     btn.type = "button";
@@ -1388,12 +1388,12 @@ export class SproutAssistantPopup {
 
   private _renderAttachmentChips(parent: HTMLElement): void {
     if (!this._attachedFiles.length) return;
-    const strip = parent.createDiv({ cls: "sprout-assistant-popup-attachments" });
+    const strip = parent.createDiv({ cls: "learnkit-assistant-popup-attachments learnkit-assistant-popup-attachments" });
     for (let i = 0; i < this._attachedFiles.length; i++) {
       const af = this._attachedFiles[i];
-      const chip = strip.createDiv({ cls: "sprout-coach-chip sprout-assistant-popup-attachment-chip" });
-      chip.createSpan({ text: formatAttachmentChipLabel(af.name, af.extension), cls: "sprout-assistant-popup-attachment-name" });
-      const removeBtn = chip.createEl("button", { cls: "sprout-coach-chip-remove sprout-assistant-popup-attachment-remove" });
+      const chip = strip.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip learnkit-assistant-popup-attachment-chip learnkit-assistant-popup-attachment-chip" });
+      chip.createSpan({ text: formatAttachmentChipLabel(af.name, af.extension), cls: "learnkit-assistant-popup-attachment-name learnkit-assistant-popup-attachment-name" });
+      const removeBtn = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove learnkit-assistant-popup-attachment-remove learnkit-assistant-popup-attachment-remove" });
       removeBtn.type = "button";
       removeBtn.setAttribute("aria-label", "Remove");
       setIcon(removeBtn, "x");
@@ -1419,10 +1419,10 @@ export class SproutAssistantPopup {
   }
 
   private _renderAssistantWelcomeActions(parent: HTMLElement): void {
-    const starters = parent.createDiv({ cls: "sprout-assistant-popup-review-starters" });
+    const starters = parent.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters" });
 
     const reviewBtn = starters.createEl("button", {
-      cls: "sprout-assistant-popup-btn",
+      cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
       text: this._tx("ui.studyAssistant.review.reviewNote", "Review note"),
     });
     reviewBtn.type = "button";
@@ -1433,7 +1433,7 @@ export class SproutAssistantPopup {
     });
 
     const generateBtn = starters.createEl("button", {
-      cls: "sprout-assistant-popup-btn",
+      cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
       text: this._tx("ui.studyAssistant.generator.generate", "Generate flashcards"),
     });
     generateBtn.type = "button";
@@ -1446,9 +1446,9 @@ export class SproutAssistantPopup {
   }
 
   private _renderSwitchToGenerateButton(parent: HTMLElement): void {
-    const actions = parent.createDiv({ cls: "sprout-assistant-popup-review-starters sprout-assistant-popup-message-actions" });
+    const actions = parent.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-message-actions learnkit-assistant-popup-message-actions" });
     const btn = actions.createEl("button", {
-      cls: "sprout-assistant-popup-btn sprout-assistant-popup-switch-generate-btn",
+      cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-switch-generate-btn learnkit-assistant-popup-switch-generate-btn",
       text: this._tx("ui.studyAssistant.chat.switchToGenerate", "Switch to Generate Tab"),
     });
     btn.type = "button";
@@ -1463,9 +1463,9 @@ export class SproutAssistantPopup {
   }
 
   private _renderSwitchToAskButton(parent: HTMLElement): void {
-    const actions = parent.createDiv({ cls: "sprout-assistant-popup-review-starters sprout-assistant-popup-message-actions" });
+    const actions = parent.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-message-actions learnkit-assistant-popup-message-actions" });
     const btn = actions.createEl("button", {
-      cls: "sprout-assistant-popup-btn sprout-assistant-popup-switch-ask-btn",
+      cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-switch-ask-btn learnkit-assistant-popup-switch-ask-btn",
       text: this._tx("ui.studyAssistant.chat.switchToAsk", "Switch to Ask Tab"),
     });
     btn.type = "button";
@@ -1683,7 +1683,7 @@ export class SproutAssistantPopup {
 
   private _buildTriggerHotzone(): HTMLDivElement {
     const zone = document.createElement("div");
-    zone.className = "sprout-assistant-trigger-hotzone";
+    zone.className = "learnkit-assistant-trigger-hotzone";
     zone.setAttribute("aria-hidden", "true");
     // Hover detection is handled via host-level pointermove (see _attachHostProximityHover)
     // so the hotzone div is purely a visual placeholder with pointer-events: none in CSS.
@@ -2169,7 +2169,7 @@ export class SproutAssistantPopup {
   }
 
   private _applyVoiceMeterLevel(level: number): void {
-    const bars = this.popupEl?.querySelectorAll(".sprout-assistant-popup-voice-meter-bar");
+    const bars = this.popupEl?.querySelectorAll(".learnkit-assistant-popup-voice-meter-bar");
     if (!bars?.length) return;
     const now = performance.now() / 220;
     const multipliers = [0.65, 0.92, 1.12, 0.84];
@@ -2215,7 +2215,7 @@ export class SproutAssistantPopup {
   /** Keep the Ask textarea in sync while dictation is streaming interim text. */
   private _setLiveAssistantDraft(value: string): void {
     this.chatDraft = value;
-    const input = this.popupEl?.querySelector(".sprout-assistant-popup-input") as HTMLTextAreaElement | null;
+    const input = this.popupEl?.querySelector(".learnkit-assistant-popup-input") as HTMLTextAreaElement | null;
     if (!input) return;
     input.value = value;
     setCssProps(input, "height", "auto");
@@ -2235,11 +2235,11 @@ export class SproutAssistantPopup {
       if (input.disabled) return;
       const target = event.target as HTMLElement | null;
       if (!target) return;
-      if (target.closest(".sprout-assistant-popup-send")) return;
-      const isInputTarget = target === input || !!target.closest(".sprout-assistant-popup-input");
+      if (target.closest(".learnkit-assistant-popup-send")) return;
+      const isInputTarget = target === input || !!target.closest(".learnkit-assistant-popup-input");
       const isComposerTarget = target === composer
         || target === shell
-        || !!target.closest(".sprout-assistant-popup-composer-shell");
+        || !!target.closest(".learnkit-assistant-popup-composer-shell");
       if (!isInputTarget && !isComposerTarget) return;
       requestAnimationFrame(() => input.focus());
     });
@@ -2348,16 +2348,16 @@ export class SproutAssistantPopup {
   private _syncActiveReplyAudioControlUI(): void {
     if (this._activeTtsMessageIndex == null) return;
     const row = this.popupEl?.querySelector(
-      `.sprout-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"]`,
+      `.learnkit-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"]`,
     );
     if (!row) return;
-    const audioBar = row.querySelector(".sprout-assistant-reply-audio");
+    const audioBar = row.querySelector(".learnkit-assistant-reply-audio");
     if (!audioBar) return;
 
     audioBar.addClass("is-active");
     audioBar.toggleClass("is-paused", this._ttsPaused);
 
-    const btn = audioBar.querySelector<HTMLElement>(".sprout-assistant-reply-audio-btn");
+    const btn = audioBar.querySelector<HTMLElement>(".learnkit-assistant-reply-audio-btn");
     if (!btn) return;
     const isPlaying = !this._ttsPaused;
     btn.setAttribute("aria-label", isPlaying ? "Pause reply audio" : "Play reply audio");
@@ -2403,14 +2403,14 @@ export class SproutAssistantPopup {
   private _collapseActiveReplyAudioControl(): void {
     if (this._activeTtsMessageIndex == null) return;
     const row = this.popupEl?.querySelector(
-      `.sprout-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"]`,
+      `.learnkit-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"]`,
     );
     if (!row) return;
-    const audioBar = row.querySelector(".sprout-assistant-reply-audio");
+    const audioBar = row.querySelector(".learnkit-assistant-reply-audio");
     if (!audioBar) return;
     audioBar.removeClass("is-active");
     audioBar.removeClass("is-paused");
-    const btn = audioBar.querySelector<HTMLElement>(".sprout-assistant-reply-audio-btn");
+    const btn = audioBar.querySelector<HTMLElement>(".learnkit-assistant-reply-audio-btn");
     if (btn) this._setReplyAudioButtonIcon(btn, false);
   }
 
@@ -2418,10 +2418,10 @@ export class SproutAssistantPopup {
   private _startReplyAudioFinishTransition(): void {
     if (this._activeTtsMessageIndex == null) return;
     const row = this.popupEl?.querySelector(
-      `.sprout-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"]`,
+      `.learnkit-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"]`,
     ) as HTMLElement | null;
     if (!row) return;
-    const audioBar = row.querySelector(".sprout-assistant-reply-audio");
+    const audioBar = row.querySelector(".learnkit-assistant-reply-audio");
     if (!audioBar) return;
 
     this._teardownTtsFinishInteraction();
@@ -2433,7 +2433,7 @@ export class SproutAssistantPopup {
     audioBar.addClass("is-finishing");
     audioBar.removeClass("is-active");
     audioBar.removeClass("is-paused");
-    const btn = audioBar.querySelector<HTMLElement>(".sprout-assistant-reply-audio-btn");
+    const btn = audioBar.querySelector<HTMLElement>(".learnkit-assistant-reply-audio-btn");
     if (btn) this._setReplyAudioButtonIcon(btn, false);
 
     const releaseFinishClass = () => {
@@ -2494,7 +2494,7 @@ export class SproutAssistantPopup {
     }
     if (this._activeTtsMessageIndex == null) return;
     const bars = this.popupEl?.querySelectorAll(
-      `.sprout-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"] .sprout-assistant-reply-audio-wave-bar`,
+      `.learnkit-assistant-popup-message-row[data-msg-idx="${this._activeTtsMessageIndex}"] .learnkit-assistant-reply-audio-wave-bar`,
     );
     if (!bars?.length) return;
 
@@ -2516,8 +2516,8 @@ export class SproutAssistantPopup {
   /** Render solid play/pause icon for the assistant reply audio button. */
   private _setReplyAudioButtonIcon(btn: HTMLElement, isPlaying: boolean): void {
     const iconSvg = isPlaying
-      ? '<svg viewBox="0 0 320 512" xmlns="http://www.w3.org/2000/svg" class="sprout-assistant-reply-audio-solid-icon is-pause" aria-hidden="true"><path fill="currentColor" d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"></path></svg>'
-      : '<svg viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg" class="sprout-assistant-reply-audio-solid-icon is-play" aria-hidden="true"><path fill="currentColor" d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"></path></svg>';
+      ? '<svg viewBox="0 0 320 512" xmlns="http://www.w3.org/2000/svg" class="learnkit-assistant-reply-audio-solid-icon is-pause" aria-hidden="true"><path fill="currentColor" d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"></path></svg>'
+      : '<svg viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg" class="learnkit-assistant-reply-audio-solid-icon is-play" aria-hidden="true"><path fill="currentColor" d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"></path></svg>';
     replaceChildrenWithHTML(btn, iconSvg);
   }
 
@@ -2971,16 +2971,16 @@ export class SproutAssistantPopup {
     const src = this.resolveIoPreviewSrc(ioSrc);
     if (!src) return;
 
-    const preview = parent.createDiv({ cls: "sprout-assistant-popup-io-preview" });
+    const preview = parent.createDiv({ cls: "learnkit-assistant-popup-io-preview learnkit-assistant-popup-io-preview" });
     const img = preview.createEl("img", {
-      cls: "sprout-assistant-popup-io-preview-image",
+      cls: "learnkit-assistant-popup-io-preview-image learnkit-assistant-popup-io-preview-image",
       attr: { src, alt: this._tx("ui.studyAssistant.generator.ioPreviewAlt", "Image occlusion preview") },
     });
 
-    const overlay = preview.createDiv({ cls: "sprout-assistant-popup-io-preview-overlay" });
+    const overlay = preview.createDiv({ cls: "learnkit-assistant-popup-io-preview-overlay learnkit-assistant-popup-io-preview-overlay" });
     const rects = toIoPreviewRects(ioRectsRaw);
     for (const rect of rects) {
-      const box = overlay.createDiv({ cls: "sprout-assistant-popup-io-preview-rect" });
+      const box = overlay.createDiv({ cls: "learnkit-assistant-popup-io-preview-rect learnkit-assistant-popup-io-preview-rect" });
       const shape = String(rect.shape || "rect").toLowerCase();
       if (shape === "circle") box.addClass("is-circle");
       setCssProps(box, "left", `${Math.max(0, Math.min(1, Number(rect.x))) * 100}%`);
@@ -2991,7 +2991,7 @@ export class SproutAssistantPopup {
 
     if (rects.length) {
       preview.createDiv({
-        cls: "sprout-assistant-popup-io-preview-meta",
+        cls: "learnkit-assistant-popup-io-preview-meta learnkit-assistant-popup-io-preview-meta",
         text: this._tx("ui.studyAssistant.generator.ioMaskCount", "{count} mask(s)", { count: rects.length }),
       });
     }
@@ -3935,17 +3935,17 @@ export class SproutAssistantPopup {
   }
 
   private renderDifficultyStars(parent: HTMLElement, difficulty: number): void {
-    const stars = parent.createDiv({ cls: "sprout-assistant-popup-suggestion-stars" });
+    const stars = parent.createDiv({ cls: "learnkit-assistant-popup-suggestion-stars learnkit-assistant-popup-suggestion-stars" });
     const level = Math.max(1, Math.min(3, Math.round(Number(difficulty) || 1)));
     for (let i = 1; i <= 3; i++) {
-      const star = stars.createSpan({ cls: "sprout-assistant-popup-suggestion-star", text: "★" });
+      const star = stars.createSpan({ cls: "learnkit-assistant-popup-suggestion-star learnkit-assistant-popup-suggestion-star", text: "★" });
       if (i <= level) star.addClass("is-active");
     }
   }
 
   private renderSuggestionSummary(parent: HTMLElement, suggestion: StudyAssistantSuggestion): void {
     const data = parseSuggestionRows(suggestion);
-    const summary = parent.createDiv({ cls: "sprout-assistant-popup-suggestion-summary" });
+    const summary = parent.createDiv({ cls: "learnkit-assistant-popup-suggestion-summary learnkit-assistant-popup-suggestion-summary" });
 
     if (suggestion.type === "basic" || suggestion.type === "reversed") {
       this.appendSuggestionText(summary, data.question, "sprout-assistant-popup-suggestion-question");
@@ -3954,7 +3954,7 @@ export class SproutAssistantPopup {
       this.appendSuggestionText(summary, data.question, "sprout-assistant-popup-suggestion-question");
       if (data.options.length) {
         const correct = new Set(data.correctOptionIndexes);
-        const ul = summary.createEl("ul", { cls: "sprout-assistant-popup-suggestion-list" });
+        const ul = summary.createEl("ul", { cls: "learnkit-assistant-popup-suggestion-list learnkit-assistant-popup-suggestion-list" });
         data.options.forEach((opt, idx) => {
           const li = ul.createEl("li");
           if (correct.has(idx)) li.createEl("strong", { text: opt });
@@ -3964,7 +3964,7 @@ export class SproutAssistantPopup {
     } else if (suggestion.type === "oq") {
       this.appendSuggestionText(summary, data.question, "sprout-assistant-popup-suggestion-question");
       if (data.steps.length) {
-        const ol = summary.createEl("ol", { cls: "sprout-assistant-popup-suggestion-list" });
+        const ol = summary.createEl("ol", { cls: "learnkit-assistant-popup-suggestion-list learnkit-assistant-popup-suggestion-list" });
         for (const step of data.steps) ol.createEl("li", { text: step });
       }
     } else if (suggestion.type === "cloze") {
@@ -3985,7 +3985,7 @@ export class SproutAssistantPopup {
   private ensurePopup(): void {
     if (this.popupEl) return;
     const popup = document.createElement("div");
-    popup.className = "sprout sprout-assistant-popup is-hidden";
+    popup.className = "learnkit learnkit-assistant-popup is-hidden";
     this._attachToBestHost(popup);
     this.popupEl = popup as unknown as HTMLDivElement;
     this._applyPresentationState();
@@ -4025,7 +4025,7 @@ export class SproutAssistantPopup {
   // ---------------------------------------------------------------------------
 
   private _buildModeButton(parent: HTMLElement, mode: AssistantMode, label: string, icon: string): void {
-    const btn = parent.createEl("button", { cls: "sprout-assistant-popup-mode-btn" });
+    const btn = parent.createEl("button", { cls: "learnkit-assistant-popup-mode-btn learnkit-assistant-popup-mode-btn" });
     btn.type = "button";
     btn.setAttribute("aria-label", label);
     btn.setAttribute("data-tooltip-position", "top");
@@ -4033,7 +4033,7 @@ export class SproutAssistantPopup {
     setIcon(btn, icon);
     btn.createSpan({ text: label });
     if (this._hasPendingReplyForMode(mode)) {
-      btn.createSpan({ cls: "sprout-assistant-popup-mode-btn-pending-badge", text: "1" });
+      btn.createSpan({ cls: "learnkit-assistant-popup-mode-btn-pending-badge learnkit-assistant-popup-mode-btn-pending-badge", text: "1" });
     }
     btn.addEventListener("click", () => {
       this.reviewDepthMenuOpen = false;
@@ -4057,13 +4057,13 @@ export class SproutAssistantPopup {
     this._teardownHeaderMenuPortal();
 
     const root = this.popupEl;
-    const preservedAssistantScrollTop = (root.querySelector(".sprout-assistant-popup-chat-wrap"))?.scrollTop ?? null;
+    const preservedAssistantScrollTop = (root.querySelector(".learnkit-assistant-popup-chat-wrap"))?.scrollTop ?? null;
     root.empty();
 
     // ---- Header ----
-    const header = root.createDiv({ cls: "sprout-assistant-popup-header" });
+    const header = root.createDiv({ cls: "learnkit-assistant-popup-header learnkit-assistant-popup-header" });
     const mobileSidebarBtn = header.createEl("button", {
-      cls: "clickable-icon sprout-assistant-popup-mobile-sidebar-btn",
+      cls: "clickable-icon learnkit-assistant-popup-mobile-sidebar-btn learnkit-assistant-popup-mobile-sidebar-btn",
     });
     mobileSidebarBtn.type = "button";
     mobileSidebarBtn.setAttribute("aria-label", "Toggle sidebar");
@@ -4076,23 +4076,23 @@ export class SproutAssistantPopup {
       this._toggleNativeLeftSidebar();
     });
 
-    const headerLeft = header.createDiv({ cls: "sprout-assistant-popup-header-left" });
-    headerLeft.createDiv({ cls: "sprout-assistant-popup-header-title", text: "Companion" });
+    const headerLeft = header.createDiv({ cls: "learnkit-assistant-popup-header-left learnkit-assistant-popup-header-left" });
+    headerLeft.createDiv({ cls: "learnkit-assistant-popup-header-title learnkit-assistant-popup-header-title", text: "Companion" });
 
     const noteName = this.getActiveNoteDisplayName();
     if (noteName) {
-      headerLeft.createDiv({ cls: "sprout-assistant-popup-header-note", text: noteName });
+      headerLeft.createDiv({ cls: "learnkit-assistant-popup-header-note learnkit-assistant-popup-header-note", text: noteName });
     }
 
-    const centerBrand = header.createDiv({ cls: "sprout-assistant-popup-header-center-brand" });
-    const centerBrandIcon = centerBrand.createSpan({ cls: "sprout-assistant-popup-header-center-brand-icon" });
+    const centerBrand = header.createDiv({ cls: "learnkit-assistant-popup-header-center-brand learnkit-assistant-popup-header-center-brand" });
+    const centerBrandIcon = centerBrand.createSpan({ cls: "learnkit-assistant-popup-header-center-brand-icon learnkit-assistant-popup-header-center-brand-icon" });
     centerBrandIcon.setAttribute("aria-hidden", "true");
-    setIcon(centerBrandIcon, "sprout-brand-horizontal");
+    setIcon(centerBrandIcon, "learnkit-brand-horizontal");
 
-    const headerActions = header.createDiv({ cls: "sprout-assistant-popup-header-actions" });
-    const menuWrap = headerActions.createDiv({ cls: "sprout-assistant-popup-header-menu" });
+    const headerActions = header.createDiv({ cls: "learnkit-assistant-popup-header-actions learnkit-assistant-popup-header-actions" });
+    const menuWrap = headerActions.createDiv({ cls: "learnkit-assistant-popup-header-menu learnkit-assistant-popup-header-menu" });
 
-    const menuBtn = menuWrap.createEl("button", { cls: "sprout-assistant-popup-overflow" });
+    const menuBtn = menuWrap.createEl("button", { cls: "learnkit-assistant-popup-overflow learnkit-assistant-popup-overflow" });
     const isMobileHeaderNav = document.body.classList.contains("is-mobile");
     const menuActionsLabel = isMobileHeaderNav
       ? this._tx("ui.common.navigationMenu", "Navigation menu")
@@ -4112,9 +4112,9 @@ export class SproutAssistantPopup {
     });
 
     const menuPortalRoot = document.createElement("div");
-    menuPortalRoot.className = "sprout";
+    menuPortalRoot.className = "learnkit";
     const menuPopover = document.createElement("div");
-    menuPopover.className = "sprout-assistant-popup-header-popover sprout-popover-overlay dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel";
+    menuPopover.className = "learnkit-assistant-popup-header-popover learnkit-popover-overlay dropdown-menu min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-header-menu-panel";
     menuPortalRoot.appendChild(menuPopover);
     this._headerMenuPortalRoot = menuPortalRoot;
     this._headerMenuPopoverEl = menuPopover;
@@ -4124,12 +4124,12 @@ export class SproutAssistantPopup {
     if (this._headerMenuOpen) {
       document.body.appendChild(menuPortalRoot);
     }
-    const menuList = menuPopover.createDiv({ cls: "sprout-assistant-popup-header-menu-list" });
+    const menuList = menuPopover.createDiv({ cls: "learnkit-assistant-popup-header-menu-list learnkit-assistant-popup-header-menu-list" });
 
-    const openHome = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item is-mobile-nav-item group" });
+    const openHome = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item is-mobile-nav-item group" });
     openHome.setAttribute("role", "menuitem");
     openHome.setAttribute("tabindex", "0");
-    const openHomeIcon = openHome.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const openHomeIcon = openHome.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openHomeIcon.setAttribute("aria-hidden", "true");
     setIcon(openHomeIcon, "house");
     openHome.createSpan({ text: this._tx("ui.common.home", "Home") });
@@ -4144,10 +4144,10 @@ export class SproutAssistantPopup {
       this._navigateFromHeaderMenu("home");
     });
 
-    const openFlashcards = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item is-mobile-nav-item group" });
+    const openFlashcards = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item is-mobile-nav-item group" });
     openFlashcards.setAttribute("role", "menuitem");
     openFlashcards.setAttribute("tabindex", "0");
-    const openFlashcardsIcon = openFlashcards.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const openFlashcardsIcon = openFlashcards.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openFlashcardsIcon.setAttribute("aria-hidden", "true");
     setIcon(openFlashcardsIcon, "layers");
     openFlashcards.createSpan({ text: this._tx("ui.common.studyFlashcards", "Study flashcards") });
@@ -4162,10 +4162,10 @@ export class SproutAssistantPopup {
       this._navigateFromHeaderMenu("flashcards");
     });
 
-    const openSettingsNav = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item is-mobile-nav-item group" });
+    const openSettingsNav = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item is-mobile-nav-item group" });
     openSettingsNav.setAttribute("role", "menuitem");
     openSettingsNav.setAttribute("tabindex", "0");
-    const openSettingsNavIcon = openSettingsNav.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const openSettingsNavIcon = openSettingsNav.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openSettingsNavIcon.setAttribute("aria-hidden", "true");
     setIcon(openSettingsNavIcon, "settings");
     openSettingsNav.createSpan({ text: this._tx("ui.common.settings", "Settings") });
@@ -4180,12 +4180,12 @@ export class SproutAssistantPopup {
       this._navigateFromHeaderMenu("settings");
     });
 
-    menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-divider is-mobile-nav-divider" });
+    menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-divider learnkit-assistant-popup-header-menu-divider is-mobile-nav-divider" });
 
-    const openGuide = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
+    const openGuide = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item group" });
     openGuide.setAttribute("role", "menuitem");
     openGuide.setAttribute("tabindex", "0");
-    const openGuideIcon = openGuide.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const openGuideIcon = openGuide.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openGuideIcon.setAttribute("aria-hidden", "true");
     setIcon(openGuideIcon, "book-open");
     openGuide.createSpan({ text: this._tx("ui.studyAssistant.chat.openGuide", "Companion guide") });
@@ -4204,10 +4204,10 @@ export class SproutAssistantPopup {
       void this.plugin.openSettingsTab(false, "guide");
     });
 
-    const openSettings = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
+    const openSettings = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item group" });
     openSettings.setAttribute("role", "menuitem");
     openSettings.setAttribute("tabindex", "0");
-    const openSettingsIcon = openSettings.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const openSettingsIcon = openSettings.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     openSettingsIcon.setAttribute("aria-hidden", "true");
     setIcon(openSettingsIcon, "settings");
     openSettings.createSpan({ text: this._tx("ui.studyAssistant.chat.openSettings", "Companion settings") });
@@ -4229,11 +4229,11 @@ export class SproutAssistantPopup {
     // Voice chat toggle (only shown when speech recognition is available)
     if (this._speechRecognitionSupported) {
       const voiceEnabled = !!this.plugin.settings.studyAssistant.voiceChat;
-      const voiceToggle = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
+      const voiceToggle = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item group" });
       voiceToggle.setAttribute("role", "menuitemcheckbox");
       voiceToggle.setAttribute("aria-checked", voiceEnabled ? "true" : "false");
       voiceToggle.setAttribute("tabindex", "0");
-      const voiceIcon = voiceToggle.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+      const voiceIcon = voiceToggle.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
       voiceIcon.setAttribute("aria-hidden", "true");
       setIcon(voiceIcon, voiceEnabled ? "volume-2" : "volume-x");
       voiceToggle.createSpan({
@@ -4269,13 +4269,13 @@ export class SproutAssistantPopup {
       });
     }
 
-    const menuDivider = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-divider" });
+    const menuDivider = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-divider learnkit-assistant-popup-header-menu-divider" });
     menuDivider.setAttribute("role", "separator");
 
-    const resetCurrent = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
+    const resetCurrent = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item group" });
     resetCurrent.setAttribute("role", "menuitem");
     resetCurrent.setAttribute("tabindex", "0");
-    const resetCurrentIcon = resetCurrent.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const resetCurrentIcon = resetCurrent.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     resetCurrentIcon.setAttribute("aria-hidden", "true");
     setIcon(resetCurrentIcon, "history");
     resetCurrent.createSpan({ text: this._tx("ui.studyAssistant.chat.resetCurrent", "Reset this conversation") });
@@ -4292,10 +4292,10 @@ export class SproutAssistantPopup {
       void this._resetCurrentModeConversation();
     });
 
-    const clearAll = menuList.createDiv({ cls: "sprout-assistant-popup-header-menu-item group" });
+    const clearAll = menuList.createDiv({ cls: "learnkit-assistant-popup-header-menu-item learnkit-assistant-popup-header-menu-item group" });
     clearAll.setAttribute("role", "menuitem");
     clearAll.setAttribute("tabindex", "0");
-    const clearAllIcon = clearAll.createSpan({ cls: "sprout-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
+    const clearAllIcon = clearAll.createSpan({ cls: "learnkit-assistant-popup-header-menu-icon learnkit-assistant-popup-header-menu-icon inline-flex items-center justify-center text-muted-foreground" });
     clearAllIcon.setAttribute("aria-hidden", "true");
     setIcon(clearAllIcon, "trash");
     clearAll.createSpan({ text: this._tx("ui.studyAssistant.chat.deleteAllConversations", "Delete all conversations") });
@@ -4348,7 +4348,7 @@ export class SproutAssistantPopup {
     }
 
     if (!this.isEmbeddedMode) {
-      const closeBtn = headerActions.createEl("button", { cls: "sprout-assistant-popup-close" });
+      const closeBtn = headerActions.createEl("button", { cls: "learnkit-assistant-popup-close learnkit-assistant-popup-close" });
       closeBtn.type = "button";
       closeBtn.setAttribute("aria-label", "Close");
       closeBtn.setAttribute("data-tooltip-position", "top");
@@ -4375,7 +4375,7 @@ export class SproutAssistantPopup {
     }
 
     // ---- Content ----
-    const content = root.createDiv({ cls: "sprout-assistant-popup-content" });
+    const content = root.createDiv({ cls: "learnkit-assistant-popup-content learnkit-assistant-popup-content" });
     this.renderAssistantMode(content, preservedAssistantScrollTop);
 
     this._schedulePopupHeightSync();
@@ -4386,14 +4386,14 @@ export class SproutAssistantPopup {
   // ---------------------------------------------------------------------------
 
   private renderAssistantMode(parent: HTMLElement, preservedScrollTop: number | null = null): void {
-    const chatWrap = parent.createDiv({ cls: "sprout-assistant-popup-chat-wrap" });
+    const chatWrap = parent.createDiv({ cls: "learnkit-assistant-popup-chat-wrap learnkit-assistant-popup-chat-wrap" });
     const userInitial = this.getUserAvatarInitial();
 
     const messages = this.chatMessages;
     // Keep the intro message visible for the full thread, not only before the first reply.
-    const welcomeRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
+    const welcomeRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
     this.createAssistantAvatar(welcomeRow);
-    const welcomeBubble = welcomeRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
+    const welcomeBubble = welcomeRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
     this.renderMarkdownMessage(
       welcomeBubble,
       [
@@ -4421,7 +4421,7 @@ export class SproutAssistantPopup {
     for (let i = 0; i < messages.length; i += 1) {
       const msg = messages[i];
       const row = chatWrap.createDiv({
-        cls: `sprout-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}`,
+        cls: `learnkit-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}`,
       });
       row.setAttr("data-msg-idx", String(i));
       row.setAttr("data-msg-role", msg.role);
@@ -4430,17 +4430,17 @@ export class SproutAssistantPopup {
       }
 
       const bubble = row.createDiv({
-        cls: `sprout-assistant-popup-message-bubble ${msg.role === "user" ? "is-user" : "is-assistant"}`,
+        cls: `learnkit-assistant-popup-message-bubble ${msg.role === "user" ? "is-user" : "is-assistant"}`,
       });
 
-      const bubbleContent = bubble.createDiv({ cls: "sprout-assistant-popup-message-content" });
+      const bubbleContent = bubble.createDiv({ cls: "learnkit-assistant-popup-message-content learnkit-assistant-popup-message-content" });
 
       if (msg.role === "assistant" && this.plugin.settings.studyAssistant.voiceChat) {
         const isActiveTts = this._isTtsSpeaking && this._activeTtsMessageIndex === i;
         const audioBar = bubble.createDiv({
-          cls: `sprout-assistant-reply-audio${isActiveTts ? " is-active" : ""}${this._ttsPaused ? " is-paused" : ""}`,
+          cls: `learnkit-assistant-reply-audio${isActiveTts ? " is-active" : ""}${this._ttsPaused ? " is-paused" : ""}`,
         });
-        const audioBtn = audioBar.createEl("button", { cls: "sprout-assistant-reply-audio-btn", type: "button" });
+        const audioBtn = audioBar.createEl("button", { cls: "learnkit-assistant-reply-audio-btn learnkit-assistant-reply-audio-btn", type: "button" });
         audioBtn.setAttribute("aria-label", isActiveTts && !this._ttsPaused ? "Pause reply audio" : "Play reply audio");
         audioBtn.setAttribute("data-tooltip-position", "top");
         this._setReplyAudioButtonIcon(audioBtn, isActiveTts && !this._ttsPaused);
@@ -4450,9 +4450,9 @@ export class SproutAssistantPopup {
           this._toggleReplyAudio(msg.text, i);
         });
 
-        const wave = audioBar.createDiv({ cls: "sprout-assistant-reply-audio-wave" });
+        const wave = audioBar.createDiv({ cls: "learnkit-assistant-reply-audio-wave learnkit-assistant-reply-audio-wave" });
         for (let j = 0; j < 5; j += 1) {
-          wave.createSpan({ cls: "sprout-assistant-reply-audio-wave-bar" });
+          wave.createSpan({ cls: "learnkit-assistant-reply-audio-wave-bar learnkit-assistant-reply-audio-wave-bar" });
         }
 
         // Keep controls at the top of assistant replies.
@@ -4462,10 +4462,10 @@ export class SproutAssistantPopup {
       this.renderMarkdownMessage(bubbleContent, msg.text);
 
       if (msg.role === "user" && msg.attachmentNames?.length) {
-        const attachIndicator = bubble.createDiv({ cls: "sprout-assistant-popup-msg-attachments" });
+        const attachIndicator = bubble.createDiv({ cls: "learnkit-assistant-popup-msg-attachments learnkit-assistant-popup-msg-attachments" });
         for (const name of msg.attachmentNames) {
-          const tag = attachIndicator.createDiv({ cls: "sprout-assistant-popup-msg-attachment-tag" });
-          const tagIcon = tag.createSpan({ cls: "sprout-assistant-popup-msg-attachment-icon" });
+          const tag = attachIndicator.createDiv({ cls: "learnkit-assistant-popup-msg-attachment-tag learnkit-assistant-popup-msg-attachment-tag" });
+          const tagIcon = tag.createSpan({ cls: "learnkit-assistant-popup-msg-attachment-icon learnkit-assistant-popup-msg-attachment-icon" });
           setIcon(tagIcon, "paperclip");
           tag.createSpan({ text: name });
         }
@@ -4477,7 +4477,7 @@ export class SproutAssistantPopup {
 
       const suggestionBatch = msg.role === "assistant" ? this._getSuggestionBatchForAssistantIndex(i, "assistant") : null;
       if (suggestionBatch?.suggestions.length) {
-        const list = bubble.createDiv({ cls: "sprout-assistant-popup-generated-cards" });
+        const list = bubble.createDiv({ cls: "learnkit-assistant-popup-generated-cards learnkit-assistant-popup-generated-cards" });
         suggestionBatch.suggestions.forEach((suggestion, idx) => {
           const key = `${i}-${idx}-${suggestion.type}`;
           const isBusy = this.insertingSuggestionKey === key;
@@ -4492,23 +4492,23 @@ export class SproutAssistantPopup {
           };
           const typeLabel = typeLabelMap[suggestion.type] ?? String(suggestion.type || "");
 
-          const item = list.createDiv({ cls: "sprout-assistant-popup-generated-card" });
+          const item = list.createDiv({ cls: "learnkit-assistant-popup-generated-card learnkit-assistant-popup-generated-card" });
           const isNoteBased = suggestion.sourceOrigin !== "external";
           if (isNoteBased) {
             item.addClass("is-clickable");
             item.addEventListener("click", (evt) => {
               const target = evt.target instanceof HTMLElement ? evt.target : null;
-              if (target?.closest(".sprout-assistant-popup-insert-btn")) return;
+              if (target?.closest(".learnkit-assistant-popup-insert-btn")) return;
               void this.focusSuggestionSource(suggestion);
             });
           }
-          const header = item.createDiv({ cls: "sprout-assistant-popup-generated-card-header" });
-          header.createEl("span", { cls: "sprout-assistant-popup-generated-card-type", text: typeLabel });
+          const header = item.createDiv({ cls: "learnkit-assistant-popup-generated-card-header learnkit-assistant-popup-generated-card-header" });
+          header.createEl("span", { cls: "learnkit-assistant-popup-generated-card-type learnkit-assistant-popup-generated-card-type", text: typeLabel });
           this.renderDifficultyStars(header, suggestion.difficulty);
 
           this.renderSuggestionSummary(item, suggestion);
 
-          const insertBtn = item.createEl("button", { cls: "sprout-assistant-popup-insert-btn" });
+          const insertBtn = item.createEl("button", { cls: "learnkit-assistant-popup-insert-btn learnkit-assistant-popup-insert-btn" });
           insertBtn.type = "button";
           insertBtn.disabled = disableInsert;
           insertBtn.setAttr("data-tooltip-position", "top");
@@ -4522,9 +4522,9 @@ export class SproutAssistantPopup {
 
       // Render "Open test" button for test-generation replies
       if (msg.role === "assistant" && msg.savedTestId) {
-        const testActions = chatWrap.createDiv({ cls: "sprout-assistant-popup-review-starters" });
+        const testActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters" });
         const openTestBtn = testActions.createEl("button", {
-          cls: "sprout-assistant-popup-btn",
+          cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
           text: this._tx("ui.studyAssistant.test.open", "Open test"),
         });
         openTestBtn.type = "button";
@@ -4543,10 +4543,10 @@ export class SproutAssistantPopup {
     }
 
     if (this._isAssistantBusy()) {
-      const typingRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
+      const typingRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
       this.createAssistantAvatar(typingRow);
-      const typingBubble = typingRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
-      typingBubble.createDiv({ cls: "sprout-assistant-popup-typing" });
+      const typingBubble = typingRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
+      typingBubble.createDiv({ cls: "learnkit-assistant-popup-typing learnkit-assistant-popup-typing" });
     }
 
     const surfacedError = this.chatError || this.reviewError || this.generatorError;
@@ -4559,11 +4559,11 @@ export class SproutAssistantPopup {
     }
 
     // ---- Composer ----
-    const composer = parent.createDiv({ cls: "sprout-assistant-popup-composer" });
+    const composer = parent.createDiv({ cls: "learnkit-assistant-popup-composer learnkit-assistant-popup-composer" });
     this._renderAttachmentChips(composer);
-    const shell = composer.createDiv({ cls: "sprout-assistant-popup-composer-shell" });
+    const shell = composer.createDiv({ cls: "learnkit-assistant-popup-composer-shell learnkit-assistant-popup-composer-shell" });
 
-    const attachBtn = shell.createEl("button", { cls: "sprout-assistant-popup-attach-btn" });
+    const attachBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-attach-btn learnkit-assistant-popup-attach-btn" });
     attachBtn.type = "button";
     attachBtn.disabled = this._isAssistantBusy();
     attachBtn.setAttribute("aria-label", this._tx("ui.studyAssistant.chat.attachFile", "Attach file"));
@@ -4571,7 +4571,7 @@ export class SproutAssistantPopup {
     setIcon(attachBtn, "paperclip");
     attachBtn.addEventListener("click", () => void this._openAttachmentPicker());
 
-    const input = shell.createEl("textarea", { cls: "sprout-assistant-popup-input" });
+    const input = shell.createEl("textarea", { cls: "learnkit-assistant-popup-input learnkit-assistant-popup-input" });
     input.rows = 1;
     input.value = this.chatDraft;
     input.placeholder = this._tx("ui.studyAssistant.chat.askPlaceholder", "Ask LearnKit Companion");
@@ -4589,7 +4589,7 @@ export class SproutAssistantPopup {
       }
     });
 
-    const sendBtn = shell.createEl("button", { cls: "sprout-assistant-popup-send" });
+    const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
     sendBtn.disabled = this._isAssistantBusy();
     sendBtn.setAttribute("aria-label", "Send");
@@ -4609,13 +4609,13 @@ export class SproutAssistantPopup {
   // ---------------------------------------------------------------------------
 
   private renderReviewMode(parent: HTMLElement): void {
-    const chatWrap = parent.createDiv({ cls: "sprout-assistant-popup-chat-wrap" });
+    const chatWrap = parent.createDiv({ cls: "learnkit-assistant-popup-chat-wrap learnkit-assistant-popup-chat-wrap" });
     const userInitial = this.getUserAvatarInitial();
 
     if (!this.reviewMessages.length) {
-      const welcomeRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
+      const welcomeRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
       this.createAssistantAvatar(welcomeRow);
-      const welcomeBubble = welcomeRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
+      const welcomeBubble = welcomeRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
       const reviewNoteName = this.getActiveNoteDisplayName() || this._tx("ui.studyAssistant.chat.currentNoteFallback", "this note");
       this.renderMarkdownMessage(
         welcomeBubble,
@@ -4626,26 +4626,26 @@ export class SproutAssistantPopup {
         ),
       );
 
-      const starters = chatWrap.createDiv({ cls: "sprout-assistant-popup-review-starters" });
-      const quickBtn = starters.createEl("button", { cls: "sprout-assistant-popup-btn", text: this._tx("ui.studyAssistant.review.depth.quickReview", "Quick review") });
+      const starters = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters" });
+      const quickBtn = starters.createEl("button", { cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn", text: this._tx("ui.studyAssistant.review.depth.quickReview", "Quick review") });
       quickBtn.type = "button";
       quickBtn.disabled = this.isReviewingNote;
       quickBtn.addEventListener("click", () => void this.sendReviewMessage(this._tx("ui.studyAssistant.review.depth.quickReview", "Quick review"), "quick"));
 
-      const comprehensiveBtn = starters.createEl("button", { cls: "sprout-assistant-popup-btn", text: this._tx("ui.studyAssistant.review.depth.comprehensiveReview", "Comprehensive review") });
+      const comprehensiveBtn = starters.createEl("button", { cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn", text: this._tx("ui.studyAssistant.review.depth.comprehensiveReview", "Comprehensive review") });
       comprehensiveBtn.type = "button";
       comprehensiveBtn.disabled = this.isReviewingNote;
       comprehensiveBtn.addEventListener("click", () => void this.sendReviewMessage(this._tx("ui.studyAssistant.review.depth.comprehensiveReview", "Comprehensive review"), "comprehensive"));
     } else {
       for (let i = 0; i < this.reviewMessages.length; i += 1) {
         const msg = this.reviewMessages[i];
-        const row = chatWrap.createDiv({ cls: `sprout-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}` });
+        const row = chatWrap.createDiv({ cls: `learnkit-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}` });
         row.setAttr("data-msg-idx", String(i));
         row.setAttr("data-msg-role", msg.role);
         if (msg.role === "assistant") {
           this.createAssistantAvatar(row);
         }
-        const bubble = row.createDiv({ cls: `sprout-assistant-popup-message-bubble ${msg.role === "user" ? "is-user" : "is-assistant"}` });
+        const bubble = row.createDiv({ cls: `learnkit-assistant-popup-message-bubble ${msg.role === "user" ? "is-user" : "is-assistant"}` });
         this.renderMarkdownMessage(bubble, msg.text);
         if (msg.role === "user" && userInitial) {
           this.createUserAvatar(row, userInitial);
@@ -4658,18 +4658,18 @@ export class SproutAssistantPopup {
     }
 
     if (this.isReviewingNote) {
-      const typingRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
+      const typingRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
       this.createAssistantAvatar(typingRow);
-      const typingBubble = typingRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
-      typingBubble.createDiv({ cls: "sprout-assistant-popup-typing" });
+      const typingBubble = typingRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
+      typingBubble.createDiv({ cls: "learnkit-assistant-popup-typing learnkit-assistant-popup-typing" });
     }
 
     if (this.reviewError) this.renderAssistantErrorBubble(chatWrap, this.reviewError);
     this.anchorToNewestAssistantMessage(chatWrap, this.reviewMessages, "review", this.isReviewingNote);
 
-    const composer = parent.createDiv({ cls: "sprout-assistant-popup-composer" });
-    const shell = composer.createDiv({ cls: "sprout-assistant-popup-composer-shell" });
-    const input = shell.createEl("textarea", { cls: "sprout-assistant-popup-input" });
+    const composer = parent.createDiv({ cls: "learnkit-assistant-popup-composer learnkit-assistant-popup-composer" });
+    const shell = composer.createDiv({ cls: "learnkit-assistant-popup-composer-shell learnkit-assistant-popup-composer-shell" });
+    const input = shell.createEl("textarea", { cls: "learnkit-assistant-popup-input learnkit-assistant-popup-input" });
     input.rows = 1;
     input.value = this.reviewDraft;
     input.placeholder = this._tx("ui.studyAssistant.review.askPlaceholder", "Ask a follow-up about this review...");
@@ -4689,7 +4689,7 @@ export class SproutAssistantPopup {
       }
     });
 
-    const sendBtn = shell.createEl("button", { cls: "sprout-assistant-popup-send" });
+    const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
     sendBtn.disabled = this.isReviewingNote;
     sendBtn.setAttribute("aria-label", this._tx("ui.studyAssistant.chat.send", "Send"));
@@ -4706,29 +4706,29 @@ export class SproutAssistantPopup {
   }
 
   private createAssistantAvatar(parent: HTMLElement): HTMLDivElement {
-    const avatar = parent.createDiv({ cls: "sprout-assistant-popup-message-avatar is-assistant" });
-    setIcon(avatar, "sprout-widget-assistant");
+    const avatar = parent.createDiv({ cls: "learnkit-assistant-popup-message-avatar learnkit-assistant-popup-message-avatar is-assistant" });
+    setIcon(avatar, "learnkit-widget-assistant");
     avatar.setAttribute("aria-hidden", "true");
     return avatar;
   }
 
   private createWarningAvatar(parent: HTMLElement): HTMLDivElement {
-    const avatar = parent.createDiv({ cls: "sprout-assistant-popup-message-avatar is-assistant is-error" });
+    const avatar = parent.createDiv({ cls: "learnkit-assistant-popup-message-avatar learnkit-assistant-popup-message-avatar is-assistant is-error" });
     setIcon(avatar, "triangle-alert");
     avatar.setAttribute("aria-hidden", "true");
     return avatar;
   }
 
   private renderAssistantErrorBubble(parent: HTMLElement, text: string): void {
-    const row = parent.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant is-error" });
+    const row = parent.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant is-error" });
     this.createWarningAvatar(row);
-    const bubble = row.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant is-error" });
-    bubble.createEl("p", { cls: "sprout-assistant-popup-error", text });
+    const bubble = row.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant is-error" });
+    bubble.createEl("p", { cls: "learnkit-assistant-popup-error learnkit-assistant-popup-error", text });
   }
 
   private createUserAvatar(parent: HTMLElement, initial: string): HTMLDivElement {
     const avatar = parent.createDiv({
-      cls: "sprout-assistant-popup-message-avatar is-user",
+      cls: "learnkit-assistant-popup-message-avatar learnkit-assistant-popup-message-avatar is-user",
       text: initial,
     });
     avatar.setAttribute("aria-hidden", "true");
@@ -4747,7 +4747,7 @@ export class SproutAssistantPopup {
   // ---------------------------------------------------------------------------
 
   private renderGenerateMode(parent: HTMLElement): void {
-    const chatWrap = parent.createDiv({ cls: "sprout-assistant-popup-chat-wrap" });
+    const chatWrap = parent.createDiv({ cls: "learnkit-assistant-popup-chat-wrap learnkit-assistant-popup-chat-wrap" });
     const userInitial = this.getUserAvatarInitial();
     const activeNoteName = this.getActiveNoteDisplayName();
     const generateTooltip = activeNoteName
@@ -4756,9 +4756,9 @@ export class SproutAssistantPopup {
     const hasGenerationActivity = this.generateMessages.length > 0 || this.isGenerating || this.generateSuggestionBatches.length > 0 || !!this.generatorError;
 
     if (!hasGenerationActivity) {
-      const welcomeRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
+      const welcomeRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
       this.createAssistantAvatar(welcomeRow);
-      const welcomeBubble = welcomeRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
+      const welcomeBubble = welcomeRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
       this.renderMarkdownMessage(
         welcomeBubble,
         this._tx(
@@ -4768,9 +4768,9 @@ export class SproutAssistantPopup {
         ),
       );
 
-      const starters = chatWrap.createDiv({ cls: "sprout-assistant-popup-generate-starters" });
+      const starters = chatWrap.createDiv({ cls: "learnkit-assistant-popup-generate-starters learnkit-assistant-popup-generate-starters" });
       const generateBtn = starters.createEl("button", {
-        cls: "sprout-assistant-popup-btn",
+        cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
         text: this._tx("ui.studyAssistant.generator.generate", "Generate flashcards"),
       });
       generateBtn.type = "button";
@@ -4785,11 +4785,11 @@ export class SproutAssistantPopup {
     } else {
       for (let i = 0; i < this.generateMessages.length; i += 1) {
         const msg = this.generateMessages[i];
-        const row = chatWrap.createDiv({ cls: `sprout-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}` });
+        const row = chatWrap.createDiv({ cls: `learnkit-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}` });
         row.setAttr("data-msg-idx", String(i));
         row.setAttr("data-msg-role", msg.role);
         if (msg.role === "assistant") this.createAssistantAvatar(row);
-        const bubble = row.createDiv({ cls: `sprout-assistant-popup-message-bubble ${msg.role === "user" ? "is-user" : "is-assistant"}` });
+        const bubble = row.createDiv({ cls: `learnkit-assistant-popup-message-bubble ${msg.role === "user" ? "is-user" : "is-assistant"}` });
         this.renderMarkdownMessage(bubble, msg.text);
         if (msg.role === "user" && userInitial) this.createUserAvatar(row, userInitial);
 
@@ -4803,7 +4803,7 @@ export class SproutAssistantPopup {
 
         const suggestionBatch = msg.role === "assistant" ? this._getSuggestionBatchForAssistantIndex(i, "generate") : null;
         if (suggestionBatch?.suggestions.length) {
-          const list = bubble.createDiv({ cls: "sprout-assistant-popup-generated-cards" });
+          const list = bubble.createDiv({ cls: "learnkit-assistant-popup-generated-cards learnkit-assistant-popup-generated-cards" });
           suggestionBatch.suggestions.forEach((suggestion, idx) => {
             const key = `${i}-${idx}-${suggestion.type}`;
             const isBusy = this.insertingSuggestionKey === key;
@@ -4818,23 +4818,23 @@ export class SproutAssistantPopup {
             };
             const typeLabel = typeLabelMap[suggestion.type] ?? String(suggestion.type || "");
 
-            const item = list.createDiv({ cls: "sprout-assistant-popup-generated-card" });
+            const item = list.createDiv({ cls: "learnkit-assistant-popup-generated-card learnkit-assistant-popup-generated-card" });
             const isNoteBased = suggestion.sourceOrigin !== "external";
             if (isNoteBased) {
               item.addClass("is-clickable");
               item.addEventListener("click", (evt) => {
                 const target = evt.target instanceof HTMLElement ? evt.target : null;
-                if (target?.closest(".sprout-assistant-popup-insert-btn")) return;
+                if (target?.closest(".learnkit-assistant-popup-insert-btn")) return;
                 void this.focusSuggestionSource(suggestion);
               });
             }
-            const header = item.createDiv({ cls: "sprout-assistant-popup-generated-card-header" });
-            header.createEl("span", { cls: "sprout-assistant-popup-generated-card-type", text: typeLabel });
+            const header = item.createDiv({ cls: "learnkit-assistant-popup-generated-card-header learnkit-assistant-popup-generated-card-header" });
+            header.createEl("span", { cls: "learnkit-assistant-popup-generated-card-type learnkit-assistant-popup-generated-card-type", text: typeLabel });
             this.renderDifficultyStars(header, suggestion.difficulty);
 
             this.renderSuggestionSummary(item, suggestion);
 
-            const insertBtn = item.createEl("button", { cls: "sprout-assistant-popup-insert-btn" });
+            const insertBtn = item.createEl("button", { cls: "learnkit-assistant-popup-insert-btn learnkit-assistant-popup-insert-btn" });
             insertBtn.type = "button";
             insertBtn.disabled = disableInsert;
             insertBtn.setAttr("data-tooltip-position", "top");
@@ -4848,19 +4848,19 @@ export class SproutAssistantPopup {
       }
 
       if (this.isGenerating) {
-        const typingRow = chatWrap.createDiv({ cls: "sprout-assistant-popup-message-row is-assistant" });
+        const typingRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
         this.createAssistantAvatar(typingRow);
-        const typingBubble = typingRow.createDiv({ cls: "sprout-assistant-popup-message-bubble is-assistant" });
-        typingBubble.createDiv({ cls: "sprout-assistant-popup-typing" });
+        const typingBubble = typingRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
+        typingBubble.createDiv({ cls: "learnkit-assistant-popup-typing learnkit-assistant-popup-typing" });
       }
     }
 
     if (this.generatorError) this.renderAssistantErrorBubble(chatWrap, this.generatorError);
     this.anchorToNewestAssistantMessage(chatWrap, this.generateMessages, "generate", this.isGenerating);
 
-    const composer = parent.createDiv({ cls: "sprout-assistant-popup-composer" });
-    const shell = composer.createDiv({ cls: "sprout-assistant-popup-composer-shell" });
-    const input = shell.createEl("textarea", { cls: "sprout-assistant-popup-input" });
+    const composer = parent.createDiv({ cls: "learnkit-assistant-popup-composer learnkit-assistant-popup-composer" });
+    const shell = composer.createDiv({ cls: "learnkit-assistant-popup-composer-shell learnkit-assistant-popup-composer-shell" });
+    const input = shell.createEl("textarea", { cls: "learnkit-assistant-popup-input learnkit-assistant-popup-input" });
     input.rows = 1;
     input.value = this.generateDraft;
     input.placeholder = this._tx("ui.studyAssistant.generator.askPlaceholder", "Generate flashcards for this note...");
@@ -4877,7 +4877,7 @@ export class SproutAssistantPopup {
       }
     });
 
-    const sendBtn = shell.createEl("button", { cls: "sprout-assistant-popup-send" });
+    const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
     sendBtn.disabled = this.isGenerating;
     sendBtn.setAttribute("aria-label", this._tx("ui.studyAssistant.chat.send", "Send"));
@@ -4926,7 +4926,7 @@ export class SproutAssistantPopup {
     this._lastAnchoredResponseKeyByMode[mode] = key;
 
     const target = chatWrap.querySelector<HTMLElement>(
-      `.sprout-assistant-popup-message-row[data-msg-idx="${lastAssistantIdx}"][data-msg-role="assistant"]`,
+      `.learnkit-assistant-popup-message-row[data-msg-idx="${lastAssistantIdx}"][data-msg-role="assistant"]`,
     );
     if (!target) {
       if (fallbackToBottom) {
@@ -4975,27 +4975,26 @@ class AttachmentPickerModal extends Modal {
   }
 
   onOpen(): void {
-    this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "sprout-attachment-picker");
-    this.contentEl.addClass("bc");
+    this.containerEl.addClass("learnkit");
+    this.modalEl.addClass("learnkit-attachment-picker");
 
     // ---- "Choose from computer" button ----
     const systemBtn = this.contentEl.createEl("button", {
-      cls: "bc sprout-attachment-picker-system-btn",
+      cls: "learnkit-attachment-picker-system-btn learnkit-attachment-picker-system-btn",
       text: "Choose from local files",
     });
-    setIcon(systemBtn.createSpan({ cls: "sprout-attachment-picker-system-icon" }), "hard-drive");
+    setIcon(systemBtn.createSpan({ cls: "learnkit-attachment-picker-system-icon learnkit-attachment-picker-system-icon" }), "hard-drive");
     systemBtn.addEventListener("click", () => this._pickSystemFile());
 
     // ---- Divider ----
-    this.contentEl.createEl("div", { cls: "sprout-attachment-picker-divider", text: "Or choose from vault" });
+    this.contentEl.createEl("div", { cls: "learnkit-attachment-picker-divider learnkit-attachment-picker-divider", text: "Or choose from vault" });
 
     const search = this.contentEl.createEl("input", {
-      cls: "bc input w-full sprout-attachment-picker-search",
+      cls: "input w-full learnkit-attachment-picker-search learnkit-attachment-picker-search",
       attr: { type: "text", placeholder: "Search vault files..." },
     });
 
-    this._listEl = this.contentEl.createDiv({ cls: "sprout-attachment-picker-list" });
+    this._listEl = this.contentEl.createDiv({ cls: "learnkit-attachment-picker-list learnkit-attachment-picker-list" });
     this._renderList();
 
     search.addEventListener("input", () => {
@@ -5051,7 +5050,7 @@ class AttachmentPickerModal extends Modal {
     const max = 100;
     const shown = this._filteredFiles.slice(0, max);
     for (const file of shown) {
-      const item = this._listEl.createDiv({ cls: "sprout-attachment-picker-item" });
+      const item = this._listEl.createDiv({ cls: "learnkit-attachment-picker-item learnkit-attachment-picker-item" });
       item.createSpan({ text: file.path });
       item.addEventListener("click", () => {
         this._onPick(file);
@@ -5060,13 +5059,13 @@ class AttachmentPickerModal extends Modal {
     }
     if (this._filteredFiles.length > max) {
       this._listEl.createDiv({
-        cls: "sprout-attachment-picker-overflow",
+        cls: "learnkit-attachment-picker-overflow learnkit-attachment-picker-overflow",
         text: `… and ${this._filteredFiles.length - max} more`,
       });
     }
     if (!shown.length) {
       this._listEl.createDiv({
-        cls: "sprout-attachment-picker-empty",
+        cls: "learnkit-attachment-picker-empty learnkit-attachment-picker-empty",
         text: "No matching files",
       });
     }

@@ -1,3 +1,13 @@
+/**
+ * @file src/platform/integrations/ai/study-assistant-provider.ts
+ * @summary Module for study assistant provider.
+ *
+ * @exports
+ *  - requestStudyAssistantCompletionDetailed
+ *  - requestStudyAssistantCompletion
+ *  - deleteStudyAssistantConversation
+ */
+
 import { requestUrl } from "obsidian";
 import type { SproutSettings } from "../../types/settings";
 import type { StudyAssistantProvider } from "./study-assistant-types";

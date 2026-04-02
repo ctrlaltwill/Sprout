@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/plugin/core-methods.ts
+ * @summary Module for core methods.
+ *
+ * @exports
+ *  - installCorePluginMethods
+ */
+
 import {
   Notice,
   TFile,
@@ -7,8 +15,6 @@ import {
   type ItemView,
   type WorkspaceLeaf,
 } from "obsidian";
-import { createRoot } from "react-dom/client";
-import React from "react";
 
 import { LearnKitPluginBase } from "./plugin-base";
 import type { FlashcardType } from "../core/utils";
@@ -39,8 +45,6 @@ import {
   startMarkdownModeWatcher,
   type ReadingRefreshState,
 } from "../../views/reading/reading-refresh-runtime";
-import { checkForVersionUpgrade } from "../core/version-manager";
-import { WhatsNewModal } from "../modals/whats-new-modal";
 
 export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase): void {
   Object.assign(pluginClass.prototype, {
@@ -140,7 +144,7 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       const hide = viewType
         ? this._hideStatusBarViewTypes.has(viewType)
         : this._isActiveHiddenViewType();
-      document.body.classList.toggle("sprout-hide-status-bar", hide);
+      document.body.classList.toggle("learnkit-hide-status-bar", hide);
     },
 
     _migrateSettingsInPlace(this: LearnKitPluginBase): void {
@@ -155,21 +159,21 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       const raw = String(this.settings?.general?.themeAccentOverride ?? "").trim();
       const isHex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw);
       if (isHex) {
-        document.body.style.setProperty("--sprout-theme-accent-override", raw);
+        document.body.style.setProperty("--learnkit-theme-accent-override", raw);
         return;
       }
-      document.body.style.removeProperty("--sprout-theme-accent-override");
+      document.body.style.removeProperty("--learnkit-theme-accent-override");
     },
 
     _applySproutThemePreset(this: LearnKitPluginBase): void {
       const preset = String(this.settings?.general?.themePreset ?? "glass").trim() || "glass";
-      document.body.setAttribute("data-sprout-theme-preset", preset);
+      document.body.setAttribute("data-learnkit-theme-preset", preset);
     },
 
     _applySproutZoom(this: LearnKitPluginBase, value: number): void {
       const next = clamp(Number(value || 1), 0.8, 1.8);
       this._sproutZoomValue = next;
-      document.body.style.setProperty("--sprout-leaf-zoom", next.toFixed(3));
+      document.body.style.setProperty("--learnkit-leaf-zoom", next.toFixed(3));
     },
 
     _queueSproutZoomSave(this: LearnKitPluginBase): void {
@@ -195,7 +199,7 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
           if (target.closest(".modal-container, .menu, .popover, .suggestion-container")) return;
 
           const sproutEl = target.closest<HTMLElement>(
-            ".workspace-leaf-content.sprout, .sprout-widget.sprout",
+            ".workspace-leaf-content.learnkit, .learnkit-widget.learnkit",
           );
           if (!sproutEl) return;
 
@@ -239,47 +243,6 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         }
       }
       this._ribbonEls = [];
-    },
-
-    _checkAndShowWhatsNewModal(this: LearnKitPluginBase): void {
-      try {
-        const currentVersion = this.manifest.version;
-        const { shouldShow, version } = checkForVersionUpgrade(currentVersion);
-
-        if (shouldShow && version) {
-          this._showWhatsNewModal(version);
-        }
-      } catch (e) {
-        log.swallow("check version upgrade", e);
-      }
-    },
-
-    _showWhatsNewModal(this: LearnKitPluginBase, version: string): void {
-      this._closeWhatsNewModal();
-
-      const container = document.body.createDiv();
-      this._whatsNewModalContainer = container;
-
-      const root = createRoot(container);
-      this._whatsNewModalRoot = root;
-
-      const modalElement = React.createElement(WhatsNewModal, {
-        version,
-        onClose: () => this._closeWhatsNewModal(),
-      });
-
-      root.render(modalElement);
-    },
-
-    _closeWhatsNewModal(this: LearnKitPluginBase): void {
-      if (this._whatsNewModalRoot) {
-        this._whatsNewModalRoot.unmount();
-        this._whatsNewModalRoot = null;
-      }
-      if (this._whatsNewModalContainer) {
-        this._whatsNewModalContainer.remove();
-        this._whatsNewModalContainer = null;
-      }
     },
 
     _getActiveMarkdownFile(this: LearnKitPluginBase): TFile | null {

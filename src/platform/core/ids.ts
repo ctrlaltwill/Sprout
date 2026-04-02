@@ -2,7 +2,7 @@
  * @file src/core/ids.ts
  * @summary Unique ID generator for Sprout flashcards. Produces random 9-digit numeric
  * strings and checks them against an existing set to guarantee uniqueness. Used during
- * sync to assign stable ^sprout-XXXXXXXXX anchors to new cards.
+ * sync to assign stable ^learnkit-XXXXXXXXX anchors to new cards.
  *
  * @exports
  *   - generateUniqueId — generate a unique 9-digit numeric ID string not present in the given set

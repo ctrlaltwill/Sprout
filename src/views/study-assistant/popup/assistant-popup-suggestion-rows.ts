@@ -1,3 +1,16 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-suggestion-rows.ts
+ * @summary Module for assistant popup suggestion rows.
+ *
+ * @exports
+ *  - GeneratorOutputOptions
+ *  - ParsedSuggestionRows
+ *  - parseSuggestionRows
+ *  - normalizeOptionalGeneratorRows
+ *  - buildSuggestionMarkdownLines
+ *  - rewriteIoNoteRows
+ */
+
 import { pushDelimitedField } from "../../../platform/core/delimiter";
 import type { StudyAssistantSuggestion } from "../../../platform/integrations/ai/study-assistant-types";
 import { trimLine, trimList } from "./assistant-popup-text";

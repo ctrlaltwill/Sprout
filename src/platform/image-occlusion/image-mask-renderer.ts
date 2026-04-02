@@ -9,7 +9,7 @@
 import { type App, Modal, Notice, Platform, TFile, setIcon } from "obsidian";
 import interact from "interactjs";
 
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import type { IOParentDef, StoredIORect, IOMaskMode } from "./image-occlusion-types";
 import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints, type RectPx } from "./image-geometry";
@@ -31,7 +31,7 @@ import {
 import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 
 export class ImageOcclusionEditorModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private parentId: string;
 
   private afterClose?: () => void;
@@ -99,14 +99,14 @@ export class ImageOcclusionEditorModal extends Modal {
   // sizing constraint (viewport height = fitted image height, capped)
   private readonly MAX_CANVAS_H = 600;
 
-  constructor(app: App, plugin: SproutPlugin, parentId: string, opts?: IoEditorOpenOpts) {
+  constructor(app: App, plugin: LearnKitPlugin, parentId: string, opts?: IoEditorOpenOpts) {
     super(app);
     this.plugin = plugin;
     this.parentId = String(parentId);
     this.afterClose = opts?.onClose;
   }
 
-  static openForParent(plugin: SproutPlugin, parentId: string, opts?: IoEditorOpenOpts) {
+  static openForParent(plugin: LearnKitPlugin, parentId: string, opts?: IoEditorOpenOpts) {
     const m = new ImageOcclusionEditorModal(plugin.app, plugin, parentId, opts);
     m.open();
     return m;
@@ -114,8 +114,8 @@ export class ImageOcclusionEditorModal extends Modal {
 
   onOpen() {
     scopeModalToWorkspace(this);
-    this.modalEl.addClass("lk-modals", "sprout-io-modal");
-    this.containerEl.addClass("sprout-io-editor-modal");
+    this.modalEl.addClass("lk-modals", "learnkit-io-modal");
+    this.containerEl.addClass("learnkit-io-editor-modal");
 
     if (Platform.isMobileApp) {
       new Notice("Image occlusion editor is desktop-only");
@@ -195,7 +195,7 @@ export class ImageOcclusionEditorModal extends Modal {
       // no-op
     }
 
-    this.modalEl.removeClass("sprout-io-modal");
+    this.modalEl.removeClass("learnkit-io-modal");
     this.contentEl.empty();
 
     try {
@@ -210,8 +210,8 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const setActive = (btn: HTMLButtonElement, active: boolean) => {
       btn.classList.toggle("btn", active);
-      btn.classList.toggle("sprout-btn-toolbar", !active);
-      btn.classList.toggle("sprout-is-active", active);
+      btn.classList.toggle("learnkit-btn-toolbar", !active);
+      btn.classList.toggle("learnkit-is-active", active);
     };
 
     setActive(this.btnOcclusion, mode === "occlusion");
@@ -239,7 +239,7 @@ export class ImageOcclusionEditorModal extends Modal {
     s = Math.max(0.05, Math.min(8, s));
 
     const vh = Math.max(1, Math.round(this.stageH * s));
-    setCssProps(this.viewportEl, "--sprout-io-viewport-h", `${vh}px`);
+    setCssProps(this.viewportEl, "--learnkit-io-viewport-h", `${vh}px`);
 
     const fittedW = this.stageW * s;
     const tx = Math.round((vw - fittedW) / 2);
@@ -277,24 +277,24 @@ export class ImageOcclusionEditorModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    const root = contentEl.createDiv({ cls: "bc sprout-io-root" });
+    const root = contentEl.createDiv({ cls: "learnkit-io-root learnkit-io-root" });
 
     // -------------------------
     // Top toolbar
     // -------------------------
     const toolbar = root.createDiv({
-      cls: "bc sprout-io-toolbar rounded-xl border border-border bg-background shadow-sm px-3 py-2",
+      cls: "learnkit-io-toolbar learnkit-io-toolbar rounded-xl border border-border bg-background shadow-sm px-3 py-2",
     });
 
     this.btnOcclusion = toolbar.createEl("button", {
-      cls: "bc btn",
+      cls: "btn",
       attr: { type: "button" },
       text: "Draw occlusion",
     });
     this.btnOcclusion.onclick = () => this.setTool("occlusion");
 
     this.btnTransform = toolbar.createEl("button", {
-      cls: "bc sprout-btn-toolbar",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar",
       attr: { type: "button" },
       text: "Move image",
     });
@@ -302,7 +302,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     // Input + info tooltip
     this.groupInput = toolbar.createEl("input", {
-      cls: "bc input flex-1 min-w-[260px]",
+      cls: "input flex-1 min-w-[260px]",
     });
     this.groupInput.type = "text";
     this.groupInput.placeholder = "Choose a shape to change its group";
@@ -326,7 +326,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     // Basecoat-style tooltip via aria + title (works even if tooltip JS isn't loaded)
     const groupInfo = toolbar.createEl("button", {
-      cls: "bc btn-icon-ghost",
+      cls: "btn-icon-ghost",
       attr: {
         type: "button",
         "aria-label": "What does the group field do?",
@@ -335,22 +335,22 @@ export class ImageOcclusionEditorModal extends Modal {
       },
     });
     {
-      const ico = groupInfo.createSpan({ cls: "bc sprout-io-ico" });
+      const ico = groupInfo.createSpan({ cls: "learnkit-io-ico learnkit-io-ico" });
       setIcon(ico, "info");
     }
 
     this.btnDelete = toolbar.createEl("button", {
-      cls: "bc btn-icon-ghost",
+      cls: "btn-icon-ghost",
       attr: { type: "button", "aria-label": "Delete selected occlusion" },
     });
     {
-      const ico = this.btnDelete.createSpan({ cls: "bc sprout-io-ico" });
+      const ico = this.btnDelete.createSpan({ cls: "learnkit-io-ico learnkit-io-ico" });
       setIcon(ico, "trash-2");
     }
     this.btnDelete.onclick = () => this.deleteSelected();
 
     this.btnReset = toolbar.createEl("button", {
-      cls: "bc sprout-btn-toolbar",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar",
       attr: { type: "button" },
       text: "Reset",
     });
@@ -360,67 +360,67 @@ export class ImageOcclusionEditorModal extends Modal {
     // Viewport
     // -------------------------
     this.viewportEl = root.createDiv({
-      cls: "bc sprout-io-viewport rounded-xl border border-border bg-background shadow-sm",
+      cls: "learnkit-io-viewport learnkit-io-viewport rounded-xl border border-border bg-background shadow-sm",
     });
     this.viewportEl.tabIndex = 0;
 
-    this.stageEl = this.viewportEl.createDiv({ cls: "bc sprout-io-stage" });
+    this.stageEl = this.viewportEl.createDiv({ cls: "learnkit-io-stage learnkit-io-stage" });
 
-    this.imgEl = this.stageEl.createEl("img", { cls: "bc sprout-io-img" });
+    this.imgEl = this.stageEl.createEl("img", { cls: "learnkit-io-img learnkit-io-img" });
     this.imgEl.alt = "Card image";
     this.imgEl.draggable = false;
 
-    this.overlayEl = this.stageEl.createDiv({ cls: "bc sprout-io-overlay" });
+    this.overlayEl = this.stageEl.createDiv({ cls: "learnkit-io-overlay learnkit-io-overlay" });
 
     // In-canvas controls: + / - / Fit
     const canvasControls = this.viewportEl.createDiv({
-      cls: "bc sprout-io-canvas-controls rounded-xl border border-border bg-background shadow-sm px-2 py-1",
+      cls: "learnkit-io-canvas-controls learnkit-io-canvas-controls rounded-xl border border-border bg-background shadow-sm px-2 py-1",
     });
 
     this.btnZoomIn = canvasControls.createEl("button", {
-      cls: "bc btn-icon-outline",
+      cls: "btn-icon-outline",
       attr: { type: "button", "aria-label": "Zoom in" },
     });
     {
-      const ico = this.btnZoomIn.createSpan({ cls: "bc sprout-io-ico" });
+      const ico = this.btnZoomIn.createSpan({ cls: "learnkit-io-ico learnkit-io-ico" });
       setIcon(ico, "plus");
     }
     this.btnZoomIn.onclick = () => this.doZoom(1.2);
 
     this.btnZoomOut = canvasControls.createEl("button", {
-      cls: "bc btn-icon-outline",
+      cls: "btn-icon-outline",
       attr: { type: "button", "aria-label": "Zoom out" },
     });
     {
-      const ico = this.btnZoomOut.createSpan({ cls: "bc sprout-io-ico" });
+      const ico = this.btnZoomOut.createSpan({ cls: "learnkit-io-ico learnkit-io-ico" });
       setIcon(ico, "minus");
     }
     this.btnZoomOut.onclick = () => this.doZoom(1 / 1.2);
 
     this.btnFit = canvasControls.createEl("button", {
-      cls: "bc btn-icon-outline",
+      cls: "btn-icon-outline",
       attr: { type: "button", "aria-label": "Fit" },
     });
     {
-      const ico = this.btnFit.createSpan({ cls: "bc sprout-io-ico" });
+      const ico = this.btnFit.createSpan({ cls: "learnkit-io-ico learnkit-io-ico" });
       setIcon(ico, "maximize-2");
     }
     this.btnFit.onclick = () => this.fitAndSizeViewport();
 
     this.zoomPctEl = canvasControls.createDiv({
-      cls: "bc text-xs text-muted-foreground w-12 text-right",
+      cls: "text-xs text-muted-foreground w-12 text-right",
       text: "100%",
     });
 
     // -------------------------
     // Footer (bottom-right)
     // -------------------------
-    const footer = root.createDiv({ cls: "bc sprout-io-footer flex flex-col items-end gap-3" });
+    const footer = root.createDiv({ cls: "learnkit-io-footer learnkit-io-footer flex flex-col items-end gap-3" });
 
     // Mask mode picker row
-    const modeRow = footer.createDiv({ cls: "bc flex flex-col gap-1 items-start w-full" });
+    const modeRow = footer.createDiv({ cls: "flex flex-col gap-1 items-start w-full" });
     modeRow.createEl("label", {
-      cls: "bc text-sm font-medium",
+      cls: "text-sm font-medium",
       text: "Type",
     });
 
@@ -430,30 +430,30 @@ export class ImageOcclusionEditorModal extends Modal {
     ];
     this.selectedMaskMode = this.initialMaskMode;
 
-    const dropRoot = modeRow.createDiv({ cls: "bc sprout relative inline-flex" });
+    const dropRoot = modeRow.createDiv({ cls: "learnkit learnkit relative inline-flex" });
     const trigger = dropRoot.createEl("button", {
-      cls: "bc sprout-btn-toolbar h-7 px-2 text-sm inline-flex items-center gap-2",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-7 px-2 text-sm inline-flex items-center gap-2",
       attr: { type: "button", "aria-haspopup": "menu", "aria-expanded": "false" },
     });
     const triggerLabel = trigger.createEl("span", {
-      cls: "bc truncate",
+      cls: "truncate",
       text: modeOptions.find((o) => o.value === this.selectedMaskMode)?.label ?? "Basic",
     });
-    const chevronWrap = trigger.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-3" });
+    const chevronWrap = trigger.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-3" });
     setIcon(chevronWrap, "chevron-down");
 
-    const modeMenu = dropRoot.createDiv({ cls: "bc sprout-io-mode-menu" });
+    const modeMenu = dropRoot.createDiv({ cls: "learnkit-io-mode-menu learnkit-io-mode-menu" });
     modeMenu.classList.add("hidden");
 
     for (const opt of modeOptions) {
-      const item = modeMenu.createDiv({ cls: "bc sprout-io-mode-menu-item", text: opt.label });
+      const item = modeMenu.createDiv({ cls: "learnkit-io-mode-menu-item learnkit-io-mode-menu-item", text: opt.label });
       if (opt.value === this.selectedMaskMode) item.classList.add("is-selected");
       item.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         this.selectedMaskMode = opt.value;
         triggerLabel.textContent = opt.label;
-        modeMenu.querySelectorAll(".sprout-io-mode-menu-item").forEach((el) => el.classList.remove("is-selected"));
+        modeMenu.querySelectorAll(".learnkit-io-mode-menu-item").forEach((el) => el.classList.remove("is-selected"));
         item.classList.add("is-selected");
         modeMenu.classList.add("hidden");
         trigger.setAttribute("aria-expanded", "false");
@@ -479,10 +479,10 @@ export class ImageOcclusionEditorModal extends Modal {
     };
 
     // Button row
-    const buttonRow = footer.createDiv({ cls: "bc flex items-center gap-2" });
+    const buttonRow = footer.createDiv({ cls: "flex items-center gap-2" });
 
     this.btnSave = buttonRow.createEl("button", {
-      cls: "bc btn",
+      cls: "btn",
       attr: { type: "button" },
       text: "Save",
     });
@@ -518,8 +518,8 @@ export class ImageOcclusionEditorModal extends Modal {
     this.stageW = Math.max(1, this.imgEl.naturalWidth || 1);
     this.stageH = Math.max(1, this.imgEl.naturalHeight || 1);
 
-    setCssProps(this.stageEl, "--sprout-io-stage-w", `${this.stageW}px`);
-    setCssProps(this.stageEl, "--sprout-io-stage-h", `${this.stageH}px`);
+    setCssProps(this.stageEl, "--learnkit-io-stage-w", `${this.stageW}px`);
+    setCssProps(this.stageEl, "--learnkit-io-stage-h", `${this.stageH}px`);
 
     requestAnimationFrame(() => {
       this.fitAndSizeViewport();
@@ -593,7 +593,7 @@ export class ImageOcclusionEditorModal extends Modal {
       if (e.button !== 0) return;
 
       const target = e.target as HTMLElement | null;
-      const onRect = !!target?.closest?.(".sprout-io-rect");
+      const onRect = !!target?.closest?.(".learnkit-io-rect");
 
       const canPan = (this.spaceDown || this.handToggle) && !onRect;
       if (!canPan) return;
@@ -608,7 +608,7 @@ export class ImageOcclusionEditorModal extends Modal {
       const target = e.target as HTMLElement | null;
 
       if (this.spaceDown || this.handToggle) return;
-      if (target?.closest?.(".sprout-io-rect")) return;
+      if (target?.closest?.(".learnkit-io-rect")) return;
 
       this.clearSelection();
 
@@ -617,7 +617,7 @@ export class ImageOcclusionEditorModal extends Modal {
       this.drawStart = p;
 
       this.previewEl = document.createElement("div");
-      this.previewEl.className = "bc sprout-io-preview";
+      this.previewEl.className = "learnkit-io-preview";
       this.overlayEl.appendChild(this.previewEl);
 
       e.preventDefault();
@@ -639,10 +639,10 @@ export class ImageOcclusionEditorModal extends Modal {
         const minStage = 8 / (this.t.scale || 1);
         const clamped = clampRectPx(r, this.stageW, this.stageH, minStage);
 
-        setCssProps(this.previewEl, "--sprout-io-left", `${clamped.x}px`);
-        setCssProps(this.previewEl, "--sprout-io-top", `${clamped.y}px`);
-        setCssProps(this.previewEl, "--sprout-io-width", `${clamped.w}px`);
-        setCssProps(this.previewEl, "--sprout-io-height", `${clamped.h}px`);
+        setCssProps(this.previewEl, "--learnkit-io-left", `${clamped.x}px`);
+        setCssProps(this.previewEl, "--learnkit-io-top", `${clamped.y}px`);
+        setCssProps(this.previewEl, "--learnkit-io-width", `${clamped.w}px`);
+        setCssProps(this.previewEl, "--learnkit-io-height", `${clamped.h}px`);
       }
     };
 
@@ -683,14 +683,14 @@ export class ImageOcclusionEditorModal extends Modal {
 
     this.overlayEl.addEventListener("click", (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target?.closest?.(".sprout-io-rect")) return;
+      if (target?.closest?.(".learnkit-io-rect")) return;
       this.clearSelection();
     });
   }
 
   private syncCursor() {
     const pan = this.spaceDown || this.handToggle;
-    this.viewportEl.toggleClass("sprout-io-pan", pan);
+    this.viewportEl.toggleClass("learnkit-io-pan", pan);
   }
 
   private clearSelection() {
@@ -699,7 +699,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.groupInput.disabled = true;
     this.groupInput.placeholder = "Choose a shape to change its group";
 
-    for (const el of Array.from(this.overlayEl.querySelectorAll(".sprout-io-rect"))) {
+    for (const el of Array.from(this.overlayEl.querySelectorAll(".learnkit-io-rect"))) {
       el.classList.remove("selected");
     }
   }
@@ -707,7 +707,7 @@ export class ImageOcclusionEditorModal extends Modal {
   private selectRect(rectId: string) {
     this.selectedRectId = rectId;
 
-    for (const el of Array.from(this.overlayEl.querySelectorAll(".sprout-io-rect"))) {
+    for (const el of Array.from(this.overlayEl.querySelectorAll(".learnkit-io-rect"))) {
       const id = (el as HTMLElement).dataset.rectId;
       el.classList.toggle("selected", id === rectId);
     }
@@ -731,7 +731,7 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const el = queryFirst(
       this.overlayEl,
-      `.sprout-io-rect[data-rect-id="${CSS.escape(id)}"]`,
+      `.learnkit-io-rect[data-rect-id="${CSS.escape(id)}"]`,
     );
     el?.remove();
 
@@ -769,18 +769,18 @@ export class ImageOcclusionEditorModal extends Modal {
   }
 
   private updateRectLabel(rectId: string) {
-    const el = queryFirst(this.overlayEl, `.sprout-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
+    const el = queryFirst(this.overlayEl, `.learnkit-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
     if (!(el instanceof HTMLElement)) return;
 
     const r = this.rects.find((x) => x.rectId === rectId);
     if (!r) return;
 
-    const label = queryFirst(el, ".sprout-io-rect-label");
+    const label = queryFirst(el, ".learnkit-io-rect-label");
     if (label) (label as HTMLElement).textContent = String(r.groupKey ?? "");
   }
 
   private updateRectElement(rectId: string) {
-    const el = queryFirst(this.overlayEl, `.sprout-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
+    const el = queryFirst(this.overlayEl, `.learnkit-io-rect[data-rect-id="${CSS.escape(rectId)}"]`);
     if (!(el instanceof HTMLElement)) return;
 
     const r = this.rects.find((x) => x.rectId === rectId);
@@ -788,10 +788,10 @@ export class ImageOcclusionEditorModal extends Modal {
 
     const px = normToPxRect(r, this.stageW, this.stageH);
 
-    setCssProps(el, "--sprout-io-left", `${px.x}px`);
-    setCssProps(el, "--sprout-io-top", `${px.y}px`);
-    setCssProps(el, "--sprout-io-width", `${px.w}px`);
-    setCssProps(el, "--sprout-io-height", `${px.h}px`);
+    setCssProps(el, "--learnkit-io-left", `${px.x}px`);
+    setCssProps(el, "--learnkit-io-top", `${px.y}px`);
+    setCssProps(el, "--learnkit-io-width", `${px.w}px`);
+    setCssProps(el, "--learnkit-io-height", `${px.h}px`);
 
     this.updateRectLabel(rectId);
   }
@@ -810,15 +810,15 @@ export class ImageOcclusionEditorModal extends Modal {
 
     for (const r of this.rects) {
       const px = normToPxRect(r, this.stageW, this.stageH);
-      const el = this.overlayEl.createDiv({ cls: "bc sprout-io-rect" });
+      const el = this.overlayEl.createDiv({ cls: "learnkit-io-rect learnkit-io-rect" });
       el.dataset.rectId = r.rectId;
 
-      setCssProps(el, "--sprout-io-left", `${px.x}px`);
-      setCssProps(el, "--sprout-io-top", `${px.y}px`);
-      setCssProps(el, "--sprout-io-width", `${px.w}px`);
-      setCssProps(el, "--sprout-io-height", `${px.h}px`);
+      setCssProps(el, "--learnkit-io-left", `${px.x}px`);
+      setCssProps(el, "--learnkit-io-top", `${px.y}px`);
+      setCssProps(el, "--learnkit-io-width", `${px.w}px`);
+      setCssProps(el, "--learnkit-io-height", `${px.h}px`);
 
-      const label = el.createDiv({ cls: "bc sprout-io-rect-label", text: String(r.groupKey ?? "") });
+      const label = el.createDiv({ cls: "learnkit-io-rect-label learnkit-io-rect-label", text: String(r.groupKey ?? "") });
 
       el.addEventListener("mousedown", (e) => {
         e.preventDefault();

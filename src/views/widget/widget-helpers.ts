@@ -1,3 +1,16 @@
+/**
+ * @file src/views/widget/widget-helpers.ts
+ * @summary Module for widget helpers.
+ *
+ * @exports
+ *  - cardHasIoChildKey
+ *  - filterReviewableCards
+ *  - getWidgetMcqDisplayOrder
+ *  - ioChildKeyFromId
+ *  - isClozeLike
+ *  - isClozeParentCard
+ */
+
 export type {
   ReviewMeta,
   Session,

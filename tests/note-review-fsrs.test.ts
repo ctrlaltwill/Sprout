@@ -1,3 +1,11 @@
+/**
+ * @file tests/note-review-fsrs.test.ts
+ * @summary Unit tests for note review fsrs.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, expect, it } from "vitest";
 import { State } from "ts-fsrs";
 import { defaultFsrsNoteRow, gradeNoteFsrsPass } from "../src/engine/note-review/fsrs";

@@ -1,3 +1,13 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-text.ts
+ * @summary Module for assistant popup text.
+ *
+ * @exports
+ *  - trimLine
+ *  - trimList
+ *  - formatInsertBlock
+ */
+
 import { safeText } from "./assistant-popup-helpers";
 
 export function trimLine(value: unknown): string {

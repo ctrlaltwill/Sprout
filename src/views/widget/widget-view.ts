@@ -16,7 +16,7 @@ import { processCircleFlagsInMarkdown, hydrateCircleFlagsInElement } from "../..
 import type { Scope } from "../reviewer/types";
 import * as IO from "../../platform/image-occlusion/image-occlusion-index";
 import { renderImageOcclusionReviewInto } from "../../platform/image-occlusion/image-occlusion-review-render";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 
 import type { Session, UndoFrame, ReviewMeta } from "./core/widget-helpers";
 import type { CardRecord } from "../../platform/types/card";
@@ -44,7 +44,7 @@ import { t } from "../../platform/translations/translator";
 /* ================================================================== */
 
 export class SproutWidgetView extends ItemView {
-  plugin: SproutPlugin;
+  plugin: LearnKitPlugin;
   activeFile: TFile | null = null;
 
   mode: "summary" | "session" = "summary";
@@ -69,7 +69,7 @@ export class SproutWidgetView extends ItemView {
 
   private _keysBound = false;
 
-  constructor(leaf: WorkspaceLeaf, plugin: SproutPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
     this.plugin = plugin;
     // Expose instance globally for readingView integration
@@ -89,7 +89,7 @@ export class SproutWidgetView extends ItemView {
   }
 
   getIcon() {
-    return "sprout-widget-study";
+    return "learnkit-widget-study";
   }
 
   async onOpen() {
@@ -541,18 +541,18 @@ export class SproutWidgetView extends ItemView {
         }
         // Multi-answer: shake + tooltip on empty submit
         if (isMultiAnswerMcq(card) && this._mcqMultiSelected.size === 0) {
-          const submitBtnEl = this.containerEl.querySelector<HTMLButtonElement>(".sprout-mcq-submit-btn");
+          const submitBtnEl = this.containerEl.querySelector<HTMLButtonElement>(".learnkit-mcq-submit-btn");
           if (submitBtnEl) {
-            submitBtnEl.classList.add("sprout-mcq-submit-shake");
+            submitBtnEl.classList.add("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
             submitBtnEl.addEventListener("animationend", () => {
-              submitBtnEl.classList.remove("sprout-mcq-submit-shake");
+              submitBtnEl.classList.remove("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
             }, { once: true });
             if (submitBtnEl.dataset.emptyAttempt === "1") {
               submitBtnEl.setAttribute("aria-label", "Choose at least one answer to proceed");
               submitBtnEl.setAttribute("data-tooltip-position", "top");
-              submitBtnEl.classList.add("sprout-mcq-submit-tooltip-visible");
+              submitBtnEl.classList.add("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
               setTimeout(() => {
-                submitBtnEl.classList.remove("sprout-mcq-submit-tooltip-visible");
+                submitBtnEl.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
               }, 2500);
             }
             submitBtnEl.dataset.emptyAttempt = String(Number(submitBtnEl.dataset.emptyAttempt || "0") + 1);
@@ -648,7 +648,7 @@ export class SproutWidgetView extends ItemView {
   render() {
     const root = this.containerEl;
     root.empty();
-    root.removeClass("sprout");
+    root.removeClass("learnkit");
 
     if (this.mode === "session") renderWidgetSession(this, root);
     else renderWidgetSummary(this, root);

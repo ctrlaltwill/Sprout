@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/plugin/data-sync-methods.ts
+ * @summary Module for data sync methods.
+ *
+ * @exports
+ *  - installDataSyncMethods
+ */
+
 import { Notice, TFile, requestUrl } from "obsidian";
 import { LearnKitPluginBase } from "./plugin-base";
 import { DEFAULT_SETTINGS } from "../core/constants";
@@ -8,7 +16,6 @@ import {
   hasAnyApiKey,
   persistApiKeysToDedicatedFile,
 } from "../core/settings-storage";
-import { getVersionTrackingData } from "../core/version-manager";
 import { SqliteStore } from "../core/sqlite-store";
 import { NoteReviewSqlite } from "../core/note-review-sqlite";
 import { resetCardScheduling, type CardState } from "../../engine/scheduler/scheduler";
@@ -124,7 +131,7 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
 
         root.settings = syncSettings;
         delete root.store;
-        root.versionTracking = getVersionTrackingData();
+  delete root.versionTracking;
 
         await this.saveData(root);
         await this.store.persist();
@@ -182,7 +189,7 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
 
         root.settings = syncSettings;
         root.store = this.store.data;
-        root.versionTracking = getVersionTrackingData();
+        delete root.versionTracking;
 
         if (canStat) {
           const mtimeBeforeWrite = await safeStatMtime(adapter, dataPath);
@@ -214,7 +221,7 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       }
       root.settings = syncSettings;
       root.store = this.store.data;
-      root.versionTracking = getVersionTrackingData();
+      delete root.versionTracking;
       await this.saveData(root);
     },
 

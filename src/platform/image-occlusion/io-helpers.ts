@@ -17,7 +17,7 @@
  */
 
 import { type App, TFile } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { generateUniqueId } from "../../platform/core/ids";
 import { createCardAnchorGlobalRe } from "../../platform/core/identity";
 import { formatPipeField } from "../../platform/modals/modal-utils";
@@ -115,7 +115,7 @@ export function collectAnchorIdsFromText(text: string): Set<string> {
  * Generate a new unique Sprout card ID that doesn't collide with any
  * existing IDs in the store or in the note's anchor references.
  */
-export async function reserveNewBcId(plugin: SproutPlugin, file: TFile): Promise<string> {
+export async function reserveNewBcId(plugin: LearnKitPlugin, file: TFile): Promise<string> {
   const store = plugin.store;
   const used = new Set<string>();
 

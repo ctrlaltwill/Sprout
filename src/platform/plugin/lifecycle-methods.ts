@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/plugin/lifecycle-methods.ts
+ * @summary Module for lifecycle methods.
+ *
+ * @exports
+ *  - installLifecycleMethods
+ */
+
 import { Notice, TAbstractFile, TFile, Platform, type WorkspaceLeaf } from "obsidian";
 import { LearnKitPluginBase } from "./plugin-base";
 
@@ -12,6 +20,16 @@ import {
   VIEW_TYPE_SETTINGS,
   VIEW_TYPE_EXAM_GENERATOR,
   VIEW_TYPE_COACH,
+  LEGACY_VIEW_TYPE_REVIEWER,
+  LEGACY_VIEW_TYPE_WIDGET,
+  LEGACY_VIEW_TYPE_STUDY_ASSISTANT,
+  LEGACY_VIEW_TYPE_BROWSER,
+  LEGACY_VIEW_TYPE_ANALYTICS,
+  LEGACY_VIEW_TYPE_HOME,
+  LEGACY_VIEW_TYPE_SETTINGS,
+  LEGACY_VIEW_TYPE_EXAM_GENERATOR,
+  LEGACY_VIEW_TYPE_COACH,
+  LEGACY_TO_CURRENT_VIEW_TYPES,
   BRAND,
   DEFAULT_SETTINGS,
   deepMerge,
@@ -34,8 +52,8 @@ import { SproutStudyAssistantView } from "../../views/study-assistant/view/study
 import { SproutCardBrowserView } from "../../views/browser/card-browser-view";
 import { SproutAnalyticsView } from "../../views/analytics/analytics-view";
 import { SproutHomeView } from "../../views/home/home-view";
-import { SproutSettingsTab } from "../../views/settings/settings-tab";
-import { SproutSettingsView } from "../../views/settings/view/settings-view";
+import { LearnKitSettingsTab } from "../../views/settings/settings-tab";
+import { LearnKitSettingsView } from "../../views/settings/view/settings-view";
 import { SproutNoteReviewView } from "../../views/note-review/view/note-review-view";
 import { SproutExamGeneratorView } from "../../views/exam-generator/exam-generator-view";
 import { SproutCoachView } from "../../views/coach";
@@ -44,7 +62,6 @@ import { syncQuestionBank } from "../integrations/sync/sync-engine";
 import { CardCreatorModal } from "../modals/card-creator-modal";
 import { ParseErrorModal } from "../modals/parse-error-modal";
 import { setDelimiter } from "../core/delimiter";
-import { loadVersionTracking } from "../core/version-manager";
 import {
   initialiseDedicatedApiKeyStorage,
   migrateLegacyConfigFiles,
@@ -130,8 +147,8 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
           SproutCardBrowserView,
           SproutAnalyticsView,
           SproutHomeView,
-          SproutSettingsView,
-          SproutSettingsTab,
+          LearnKitSettingsView,
+          LearnKitSettingsTab,
           syncQuestionBank,
           CardCreatorModal,
           ParseErrorModal,
@@ -190,8 +207,6 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
         this._reminderEngine = new ReminderEngine(this);
         this._registerReminderDevConsoleCommands();
 
-        loadVersionTracking(rootObj);
-
         if (!(this.store instanceof SqliteStore) && !this.store.loadedFromDisk && isPlainObject(root)) {
           log.warn(
             "data.json existed but contained no .store - initial save will be guarded by assessPersistSafety.",
@@ -207,14 +222,25 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
         this.registerView(VIEW_TYPE_BROWSER, (leaf: WorkspaceLeaf) => new SproutCardBrowserView(leaf, this));
         this.registerView(VIEW_TYPE_ANALYTICS, (leaf: WorkspaceLeaf) => new SproutAnalyticsView(leaf, this));
         this.registerView(VIEW_TYPE_HOME, (leaf: WorkspaceLeaf) => new SproutHomeView(leaf, this));
-        this.registerView(VIEW_TYPE_SETTINGS, (leaf: WorkspaceLeaf) => new SproutSettingsView(leaf, this));
+        this.registerView(VIEW_TYPE_SETTINGS, (leaf: WorkspaceLeaf) => new LearnKitSettingsView(leaf, this));
         this.registerView(VIEW_TYPE_EXAM_GENERATOR, (leaf: WorkspaceLeaf) => new SproutExamGeneratorView(leaf, this));
         this.registerView(VIEW_TYPE_COACH, (leaf: WorkspaceLeaf) => new SproutCoachView(leaf, this));
+
+        // Legacy view-type aliases keep existing workspace tabs functional after renaming IDs.
+        this.registerView(LEGACY_VIEW_TYPE_REVIEWER, (leaf: WorkspaceLeaf) => new SproutReviewerView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_WIDGET, (leaf: WorkspaceLeaf) => new SproutWidgetView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_STUDY_ASSISTANT, (leaf: WorkspaceLeaf) => new SproutStudyAssistantView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_BROWSER, (leaf: WorkspaceLeaf) => new SproutCardBrowserView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_ANALYTICS, (leaf: WorkspaceLeaf) => new SproutAnalyticsView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_HOME, (leaf: WorkspaceLeaf) => new SproutHomeView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_SETTINGS, (leaf: WorkspaceLeaf) => new LearnKitSettingsView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_EXAM_GENERATOR, (leaf: WorkspaceLeaf) => new SproutExamGeneratorView(leaf, this));
+        this.registerView(LEGACY_VIEW_TYPE_COACH, (leaf: WorkspaceLeaf) => new SproutCoachView(leaf, this));
 
         this._coachDb = new CoachPlanSqlite(this);
         await this._coachDb.open();
 
-        this.addSettingTab(new SproutSettingsTab(this.app, this));
+        this.addSettingTab(new LearnKitSettingsTab(this.app, this));
 
         this._registerCommands();
 
@@ -253,8 +279,22 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
         );
 
         this.app.workspace.onLayoutReady(() => {
+          void (async () => {
+            // Migrate open leaves to canonical LearnKit view IDs so future lookups use one namespace.
+            for (const [legacyType, currentType] of Object.entries(LEGACY_TO_CURRENT_VIEW_TYPES)) {
+              const leaves = this.app.workspace.getLeavesOfType(legacyType);
+              for (const leaf of leaves) {
+                try {
+                  const state = leaf.getViewState();
+                  await leaf.setViewState({ ...state, type: currentType, active: state.active });
+                } catch (e) {
+                  log.swallow(`migrate legacy view type ${legacyType} -> ${currentType}`, e);
+                }
+              }
+            }
+          })();
+
           this._updateStatusBarVisibility(null);
-          this._checkAndShowWhatsNewModal();
 
           this._assistantPopup = new SproutAssistantPopup(this);
           this._assistantPopup.mount();
@@ -290,10 +330,10 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
 
       this._bc = null;
       this._destroyRibbonIcons();
-      document.body.classList.remove("sprout-hide-status-bar");
+      document.body.classList.remove("learnkit-hide-status-bar", "learnkit-hide-status-bar");
       document.body.classList.remove("is-phone");
-      document.body.style.removeProperty("--sprout-theme-accent-override");
-      document.body.style.removeProperty("--sprout-leaf-zoom");
+      document.body.style.removeProperty("--learnkit-theme-accent-override");
+      document.body.style.removeProperty("--learnkit-leaf-zoom");
       if (this._sproutZoomSaveTimer != null) {
         window.clearTimeout(this._sproutZoomSaveTimer);
         this._sproutZoomSaveTimer = null;
@@ -312,8 +352,6 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
       this._unregisterReminderDevConsoleCommands();
       this._reminderEngine?.stop();
       this._reminderEngine = null;
-
-      this._closeWhatsNewModal();
 
       teardownReadingView();
 

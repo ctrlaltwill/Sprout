@@ -50,3 +50,26 @@ Open an issue and include:
 - token key(s)
 - current text vs proposed text
 - context or screenshot (if useful)
+
+## Code file header standard
+
+All TypeScript and TSX files in `src/` and `tests/` must start with a JSDoc header using this template:
+
+```ts
+/**
+ * @file path/from/repo/root.ts
+ * @summary One or two sentences describing the module purpose and responsibility.
+ *
+ * @exports
+ *  - NamedExportOne
+ *  - NamedExportTwo
+ */
+```
+
+Rules:
+
+- Keep `@file` as the workspace-relative path.
+- Keep `@summary` concise and outcome-focused.
+- List only named exports that are part of the module API.
+- If a module has no named exports, use:
+   - `(no named exports in this module)`

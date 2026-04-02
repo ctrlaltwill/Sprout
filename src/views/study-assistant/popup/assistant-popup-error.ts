@@ -1,3 +1,14 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-error.ts
+ * @summary Module for assistant popup error.
+ *
+ * @exports
+ *  - AssistantErrorContext
+ *  - assistantConsoleErrorDetails
+ *  - logAssistantRequestError
+ *  - formatAssistantError
+ */
+
 import { log } from "../../../platform/core/logger";
 import { safeText } from "./assistant-popup-helpers";
 import { formatProviderLabel } from "./assistant-popup-provider";

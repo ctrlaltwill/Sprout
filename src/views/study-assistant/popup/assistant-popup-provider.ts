@@ -1,3 +1,11 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-provider.ts
+ * @summary Module for assistant popup provider.
+ *
+ * @exports
+ *  - formatProviderLabel
+ */
+
 export function formatProviderLabel(
   raw: string,
   txUnknown: () => string,

@@ -1,4 +1,17 @@
-import type SproutPlugin from "../../main";
+/**
+ * @file src/platform/core/sqlite-store.ts
+ * @summary Module for sqlite store.
+ *
+ * @exports
+ *  - reconcileAllDbsFromVaultSync
+ *  - copyAllDbsToVaultSyncFolder
+ *  - copyDbToVaultSyncFolder
+ *  - reconcileFromVaultSync
+ *  - getSchedulingDirPath
+ *  - getFlashcardsDbPath
+ */
+
+import type LearnKitPlugin from "../../main";
 import type { Database } from "sql.js";
 import { defaultStore, JsonStore } from "./store";
 import { getSqlJs } from "../integrations/anki/anki-sql";
@@ -17,7 +30,7 @@ const ALL_DB_FILES = ["flashcards.db", "notes.db", "coach.db", "tests.db"] as co
  * Obsidian Sync delivered while the plugin was not running.
  */
 export async function reconcileAllDbsFromVaultSync(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
 ): Promise<void> {
   const vs = plugin.settings?.storage?.vaultSync;
   if (!vs?.enabled || !vs.folderPath) return;
@@ -40,7 +53,7 @@ export async function reconcileAllDbsFromVaultSync(
  * yet still appear in the sync folder.
  */
 export async function copyAllDbsToVaultSyncFolder(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
 ): Promise<void> {
   const vs = plugin.settings?.storage?.vaultSync;
   if (!vs?.enabled || !vs.folderPath) return;
@@ -76,7 +89,7 @@ export async function copyAllDbsToVaultSyncFolder(
  * when the user has enabled vault sync storage.
  */
 export async function copyDbToVaultSyncFolder(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   dbFileName: string,
   bytes: Uint8Array,
 ): Promise<void> {
@@ -107,7 +120,7 @@ export async function copyDbToVaultSyncFolder(
  * most recent data (e.g. synced from another device via Obsidian Sync).
  */
 export async function reconcileFromVaultSync(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   dbFileName: string,
   pluginDbPath: string,
 ): Promise<void> {
@@ -169,19 +182,19 @@ function joinPath(...parts: string[]): string {
     .replace(/\/+/g, "/");
 }
 
-function getPluginBaseDir(plugin: SproutPlugin): string {
+function getPluginBaseDir(plugin: LearnKitPlugin): string {
   return joinPath(plugin.app.vault.configDir, "plugins", plugin.manifest.id);
 }
 
-export function getSchedulingDirPath(plugin: SproutPlugin): string {
+export function getSchedulingDirPath(plugin: LearnKitPlugin): string {
   return joinPath(getPluginBaseDir(plugin), SCHEDULING_DIR);
 }
 
-export function getFlashcardsDbPath(plugin: SproutPlugin): string {
+export function getFlashcardsDbPath(plugin: LearnKitPlugin): string {
   return joinPath(getSchedulingDirPath(plugin), FLASHCARDS_DB);
 }
 
-export async function isSqliteDatabasePresent(plugin: SproutPlugin): Promise<boolean> {
+export async function isSqliteDatabasePresent(plugin: LearnKitPlugin): Promise<boolean> {
   const adapter = plugin.app?.vault?.adapter;
   if (!adapter?.exists) return false;
   try {

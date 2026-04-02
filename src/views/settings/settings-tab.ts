@@ -3,7 +3,7 @@
  * @summary The Obsidian PluginSettingTab for Sprout. Renders the entire Settings panel including user details, general options, image-occlusion settings, card attachments, study/reviewer tweaks, widget options, FSRS scheduling presets, indexing, backups, quarantine list, and the danger zone (delete-all / reset). Confirmation dialogs are in confirm-modals.ts and pure helpers in settings-utils.ts.
  *
  * @exports
- *  - SproutSettingsTab — Obsidian PluginSettingTab subclass that renders and manages all Sprout plugin settings
+ *  - LearnKitSettingsTab — Obsidian PluginSettingTab subclass that renders and manages all LearnKit plugin settings
  */
 
 import {
@@ -15,7 +15,7 @@ import {
   setIcon,
   requestUrl,
 } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { SproutSettings } from "../../platform/types/settings";
 import { log } from "../../platform/core/logger";
 import { placePopover, setCssProps } from "../../platform/core/ui";
@@ -84,11 +84,11 @@ import {
 import { copyAllDbsToVaultSyncFolder } from "../../platform/core/sqlite-store";
 
 // ────────────────────────────────────────────
-// SproutSettingsTab
+// LearnKitSettingsTab
 // ────────────────────────────────────────────
 
-export class SproutSettingsTab extends PluginSettingTab {
-  plugin: SproutPlugin;
+export class LearnKitSettingsTab extends PluginSettingTab {
+  plugin: LearnKitPlugin;
   private _audioAdvancedOptionsExpanded = false;
   private _readingCustomCssSaveTimer: number | null = null;
   private _openRouterModelsCache: OpenRouterModel[] | null = null;
@@ -159,7 +159,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     this._restoreScrollPosition(scrollContainer, previousTop);
   }
 
-  constructor(app: App, plugin: SproutPlugin) {
+  constructor(app: App, plugin: LearnKitPlugin) {
     super(app, plugin);
     this.plugin = plugin;
     this._noticeLines = createSettingsNoticeLines((token, fallback, vars) => this._tx(token, fallback, vars));
@@ -254,9 +254,9 @@ export class SproutSettingsTab extends PluginSettingTab {
       const btnCreate = createControl.createEl("button", { text: this._tx("ui.settings.backups.createBackup.button", "Create manual backup") });
 
       const tableItem = wrapper.createDiv({ cls: "setting-item" });
-      const tableControl = tableItem.createDiv({ cls: "setting-item-control sprout-settings-backup-control" });
+      const tableControl = tableItem.createDiv({ cls: "setting-item-control learnkit-settings-backup-control learnkit-settings-backup-control" });
 
-      const tableWrap = tableControl.createDiv({ cls: "sprout-settings-table-wrap" });
+      const tableWrap = tableControl.createDiv({ cls: "learnkit-settings-table-wrap learnkit-settings-table-wrap" });
       let backupPageIndex = 0;
       let backupRowsPerPage = 10;
       const backupRowsPerPageOptions = BACKUP_ROWS_PER_PAGE_OPTIONS;
@@ -264,7 +264,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       /** Show a placeholder message inside the table wrapper. */
       const renderEmpty = (msg: string) => {
         tableWrap.empty();
-        tableWrap.createDiv({ text: msg, cls: "sprout-settings-text-muted" });
+        tableWrap.createDiv({ text: msg, cls: "learnkit-settings-text-muted learnkit-settings-text-muted" });
       };
 
       const current = getCurrentDbStatsFromStoreData(this.plugin.store.data, Date.now());
@@ -342,7 +342,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const pageRows = filtered.slice(startRow, endRow);
 
         const table = tableWrap.createEl("table", {
-          cls: "table w-full text-sm sprout-backup-table",
+          cls: "table w-full text-sm learnkit-backup-table learnkit-backup-table",
         });
 
         /* ── header ── */
@@ -355,29 +355,29 @@ export class SproutSettingsTab extends PluginSettingTab {
           this._tx("ui.settings.backups.table.header.integrity", "Integrity"),
           this._tx("ui.settings.backups.table.header.actions", "Actions"),
         ]) {
-          headRow.createEl("th", { cls: "font-medium sprout-backup-cell", text: label });
+          headRow.createEl("th", { cls: "font-medium learnkit-backup-cell learnkit-backup-cell", text: label });
         }
 
         const tbody = table.createEl("tbody");
 
         /* ── "current data" row ── */
-        const currentTr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 sprout-backup-row--current" });
-        currentTr.createEl("td", { cls: "sprout-backup-cell sprout-backup-cell--label", text: this._tx("ui.settings.backups.table.currentData", "Current data") });
-        currentTr.createEl("td", { cls: "sprout-backup-cell", text: this._tx("ui.settings.backups.table.now", "Now") });
-        currentTr.createEl("td", { cls: "sprout-backup-cell", text: summaryLabel(current) });
-        currentTr.createEl("td", { cls: "sprout-backup-cell", text: this._tx("ui.settings.backups.table.na", "—") });
-        currentTr.createEl("td", { cls: "sprout-backup-cell", text: this._tx("ui.settings.backups.table.na", "—") });
+        const currentTr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 learnkit-backup-row--current learnkit-backup-row--current" });
+        currentTr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell learnkit-backup-cell--label learnkit-backup-cell--label", text: this._tx("ui.settings.backups.table.currentData", "Current data") });
+        currentTr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell", text: this._tx("ui.settings.backups.table.now", "Now") });
+        currentTr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell", text: summaryLabel(current) });
+        currentTr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell", text: this._tx("ui.settings.backups.table.na", "—") });
+        currentTr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell", text: this._tx("ui.settings.backups.table.na", "—") });
 
         /* ── backup rows ── */
         for (const r of pageRows) {
           const s = r.stats;
-          const tr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 last:border-0 sprout-backup-row--list" });
+          const tr = tbody.createEl("tr", { cls: "align-top border-b border-border/50 last:border-0 learnkit-backup-row--list learnkit-backup-row--list" });
 
-          tr.createEl("td", { cls: "sprout-backup-cell sprout-backup-cell--label", text: describeBackup(s.name) });
-          tr.createEl("td", { cls: "sprout-backup-cell", text: formatBackupDate(s.mtime) });
+          tr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell learnkit-backup-cell--label learnkit-backup-cell--label", text: describeBackup(s.name) });
+          tr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell", text: formatBackupDate(s.mtime) });
 
           tr.createEl("td", {
-            cls: `sprout-backup-cell${s.states > 0 ? " sprout-backup-cell--active" : ""}`,
+            cls: `learnkit-backup-cell${s.states > 0 ? " learnkit-backup-cell--active" : ""}`,
             text: summaryLabel(s),
           });
 
@@ -387,14 +387,14 @@ export class SproutSettingsTab extends PluginSettingTab {
               ? this._tx("ui.settings.backups.integrity.legacy", "Legacy")
               : this._tx("ui.settings.backups.integrity.invalid", "Invalid");
           tr.createEl("td", {
-            cls: `sprout-backup-cell${r.integrity === "invalid" ? " sprout-settings-text-muted" : ""}`,
+            cls: `learnkit-backup-cell${r.integrity === "invalid" ? " learnkit-settings-text-muted" : ""}`,
             text: integrityLabel,
           });
 
-          const actionsTd = tr.createEl("td", { cls: "sprout-backup-cell sprout-backup-actions" });
+          const actionsTd = tr.createEl("td", { cls: "learnkit-backup-cell learnkit-backup-cell learnkit-backup-actions learnkit-backup-actions" });
 
           /* Restore button */
-          const btnRestore = actionsTd.createEl("button", { cls: "sprout-settings-icon-btn" });
+          const btnRestore = actionsTd.createEl("button", { cls: "learnkit-settings-icon-btn learnkit-settings-icon-btn" });
           btnRestore.setAttribute(
             "aria-label",
             r.integrity === "invalid"
@@ -414,7 +414,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           };
 
           /* Delete button */
-          const btnDelete = actionsTd.createEl("button", { cls: "sprout-settings-icon-btn sprout-settings-icon-btn--danger" });
+          const btnDelete = actionsTd.createEl("button", { cls: "learnkit-settings-icon-btn learnkit-settings-icon-btn learnkit-settings-icon-btn--danger learnkit-settings-icon-btn--danger" });
           btnDelete.setAttribute("aria-label", this._tx("ui.settings.backups.actions.delete.tooltip", "Delete this scheduling data backup."));
           setIcon(btnDelete, "trash-2");
           btnDelete.onclick = () => {
@@ -425,16 +425,16 @@ export class SproutSettingsTab extends PluginSettingTab {
         }
 
         const pager = tableWrap.createDiv({ cls: "setting-item-control" });
-        pager.classList.add("sprout-backup-actions");
+        pager.classList.add("learnkit-backup-actions", "learnkit-backup-actions");
 
-        const summary = pager.createEl("span", { cls: "sprout-settings-text-muted" });
+        const summary = pager.createEl("span", { cls: "learnkit-settings-text-muted learnkit-settings-text-muted" });
         summary.textContent = this._tx("ui.settings.backups.pager.showingRange", "Showing {start}-{end} of {total} backups", {
           start: startRow + 1,
           end: endRow,
           total: totalRows,
         });
 
-        const rowsLabel = pager.createEl("span", { cls: "sprout-settings-text-muted" });
+        const rowsLabel = pager.createEl("span", { cls: "learnkit-settings-text-muted learnkit-settings-text-muted" });
         rowsLabel.textContent = this._tx("ui.settings.backups.pager.rowsPerPage", "Rows per page");
 
         const rowsSelect = pager.createEl("select", { cls: "dropdown" });
@@ -451,7 +451,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           renderTable(rows);
         };
 
-        const btnPrev = pager.createEl("button", { text: this._tx("ui.settings.backups.pager.prev", "Prev"), cls: "sprout-settings-icon-btn" });
+        const btnPrev = pager.createEl("button", { text: this._tx("ui.settings.backups.pager.prev", "Prev"), cls: "learnkit-settings-icon-btn learnkit-settings-icon-btn" });
         btnPrev.setAttribute("aria-label", this._tx("ui.settings.backups.pager.prevTooltip", "Previous backup page"));
         btnPrev.setAttribute("data-tooltip-position", "top");
         if (backupPageIndex <= 0) btnPrev.setAttribute("disabled", "true");
@@ -461,13 +461,13 @@ export class SproutSettingsTab extends PluginSettingTab {
           renderTable(rows);
         };
 
-        const pageLabel = pager.createEl("span", { cls: "sprout-settings-text-muted" });
+        const pageLabel = pager.createEl("span", { cls: "learnkit-settings-text-muted learnkit-settings-text-muted" });
         pageLabel.textContent = this._tx("ui.settings.backups.pager.pageXofY", "Page {page} / {total}", {
           page: backupPageIndex + 1,
           total: totalPages,
         });
 
-        const btnNext = pager.createEl("button", { text: this._tx("ui.settings.backups.pager.next", "Next"), cls: "sprout-settings-icon-btn" });
+        const btnNext = pager.createEl("button", { text: this._tx("ui.settings.backups.pager.next", "Next"), cls: "learnkit-settings-icon-btn learnkit-settings-icon-btn" });
         btnNext.setAttribute("aria-label", this._tx("ui.settings.backups.pager.nextTooltip", "Next backup page"));
         btnNext.setAttribute("data-tooltip-position", "top");
         if (backupPageIndex >= totalPages - 1) btnNext.setAttribute("disabled", "true");
@@ -651,7 +651,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     // Remove any orphaned body-portal popovers created by
     // _addSimpleSelect / _addSearchablePopover.
     document.body
-      .querySelectorAll(":scope > .sprout > .sprout-popover-overlay")
+      .querySelectorAll(":scope > .learnkit > .learnkit-popover-overlay")
       .forEach((el) => el.parentElement?.remove());
   }
 
@@ -667,8 +667,8 @@ export class SproutSettingsTab extends PluginSettingTab {
     // the Sprout workspace view), show a redirect message instead of the
     // full settings UI.
     if (!this.onRequestRerender) {
-      const wrapper = containerEl.createDiv({ cls: "sprout-settings-wrapper sprout-settings" });
-      new Setting(wrapper).setName(this._tx("ui.settings.sections.sprout", "Learn" + "Kit")).setHeading();
+      const wrapper = containerEl.createDiv({ cls: "learnkit-settings-wrapper learnkit-settings-wrapper learnkit-settings learnkit-settings" });
+      new Setting(wrapper).setName(this._tx("ui.settings.sections.learnkit", "Learn" + "Kit")).setHeading();
       const desc = wrapper.createDiv({ cls: "setting-item" });
       const info = desc.createDiv({ cls: "setting-item-info" });
       info.createDiv({
@@ -692,7 +692,7 @@ export class SproutSettingsTab extends PluginSettingTab {
     }
 
     // Create a wrapper for all settings (everything should render inside this)
-    const wrapper = containerEl.createDiv({ cls: "sprout-settings-wrapper sprout-settings" });
+    const wrapper = containerEl.createDiv({ cls: "learnkit-settings-wrapper learnkit-settings-wrapper learnkit-settings learnkit-settings" });
 
     // ── General ──
     this.renderAppearanceSection(wrapper);
@@ -819,7 +819,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         picker.onChange(async (value) => {
           const next = String(value ?? "").trim();
           this.plugin.settings.general.themeAccentOverride = next;
-          document.body.style.setProperty("--sprout-theme-accent-override", next);
+          document.body.style.setProperty("--learnkit-theme-accent-override", next);
           await this.plugin.saveAll();
         });
       })
@@ -829,7 +829,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           .setTooltip(this._tx("ui.settings.appearance.themeAccent.reset", "Reset to inherited theme accent"))
           .onClick(async () => {
             this.plugin.settings.general.themeAccentOverride = "";
-            document.body.style.removeProperty("--sprout-theme-accent-override");
+            document.body.style.removeProperty("--learnkit-theme-accent-override");
             setAccentPickerValue?.(resolveThemeAccentHex());
             await this.plugin.saveAll();
           });
@@ -920,7 +920,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           .setButtonText(t(currentLocale, "settings.general.translationHelp.cta", "Contribute translations"))
           .setCta()
           .onClick(() => {
-            window.open(SproutSettingsTab.TRANSLATIONS_GUIDE_URL, "_blank", "noopener,noreferrer");
+            window.open(LearnKitSettingsTab.TRANSLATIONS_GUIDE_URL, "_blank", "noopener,noreferrer");
           }),
       );
 
@@ -966,7 +966,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         });
       });
 
-    const audioDetailsContainer = wrapper.createDiv({ cls: "sprout-audio-details" });
+    const audioDetailsContainer = wrapper.createDiv({ cls: "learnkit-audio-details learnkit-audio-details" });
     audioDetailsContainer.hidden = !audio.enabled;
 
     {
@@ -1119,7 +1119,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
 
       {
-        const advancedItem = detailsWrapper.createDiv({ cls: "setting-item sprout-settings-advanced-row" });
+        const advancedItem = detailsWrapper.createDiv({ cls: "setting-item learnkit-settings-advanced-row learnkit-settings-advanced-row" });
         const advancedInfo = advancedItem.createDiv({ cls: "setting-item-info" });
         advancedInfo.createDiv({
           cls: "setting-item-name",
@@ -1137,7 +1137,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         const advancedControl = advancedItem.createDiv({ cls: "setting-item-control" });
         const advancedToggle = advancedControl.createEl("button", {
-          cls: "bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-action-btn sprout-settings-advanced-toggle",
+          cls: "inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-settings-action-btn learnkit-settings-action-btn learnkit-settings-advanced-toggle learnkit-settings-advanced-toggle",
         });
         advancedToggle.type = "button";
         advancedToggle.setAttribute(
@@ -1154,11 +1154,11 @@ export class SproutSettingsTab extends PluginSettingTab {
             ? this._tx("ui.settings.audio.advanced.hide", "Hide advanced options")
             : this._tx("ui.settings.audio.advanced.show", "Show advanced options"),
         });
-        const advancedChevron = advancedToggle.createSpan({ cls: "sprout-settings-advanced-chevron" });
+        const advancedChevron = advancedToggle.createSpan({ cls: "learnkit-settings-advanced-chevron learnkit-settings-advanced-chevron" });
         setIcon(advancedChevron, "chevron-down");
         advancedChevron.classList.toggle("is-expanded", this._audioAdvancedOptionsExpanded);
 
-        const advancedContent = detailsWrapper.createDiv({ cls: "sprout-settings-advanced-content" });
+        const advancedContent = detailsWrapper.createDiv({ cls: "learnkit-settings-advanced-content learnkit-settings-advanced-content" });
         advancedContent.hidden = !this._audioAdvancedOptionsExpanded;
 
         for (const group of getScriptLanguageGroups()) {
@@ -2064,7 +2064,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     const setSettingVisible = (setting: Setting | null, visible: boolean): void => {
       if (!setting) return;
-      setting.settingEl.toggleClass("sprout-settings-conditional-hidden", !visible);
+      setting.settingEl.toggleClass("learnkit-settings-conditional-hidden", !visible);
     };
 
     const refreshRemindersVisibility = (): void => {
@@ -2586,11 +2586,11 @@ export class SproutSettingsTab extends PluginSettingTab {
           if (!validOptionIds.has(id)) excludeSet.delete(id);
         }
 
-        setting.controlEl.addClass("sprout-note-review-scope-control");
-        const controlHost = setting.controlEl.createDiv({ cls: "sprout-note-review-scope-editor" });
-        const includeHost = controlHost.createDiv({ cls: "sprout-note-review-scope-block" });
-        const excludeHost = controlHost.createDiv({ cls: "sprout-note-review-scope-block" });
-        const summaryEl = controlHost.createDiv({ cls: "sprout-note-review-scope-summary text-xs text-muted-foreground" });
+        setting.controlEl.addClass("learnkit-note-review-scope-control");
+        const controlHost = setting.controlEl.createDiv({ cls: "learnkit-note-review-scope-editor learnkit-note-review-scope-editor" });
+        const includeHost = controlHost.createDiv({ cls: "learnkit-note-review-scope-block learnkit-note-review-scope-block" });
+        const excludeHost = controlHost.createDiv({ cls: "learnkit-note-review-scope-block learnkit-note-review-scope-block" });
+        const summaryEl = controlHost.createDiv({ cls: "learnkit-note-review-scope-summary learnkit-note-review-scope-summary text-xs text-muted-foreground" });
 
         const persistScopeQuery = async (): Promise<void> => {
           const includeTokens = Array.from(includeSet)
@@ -2668,23 +2668,23 @@ export class SproutSettingsTab extends PluginSettingTab {
           includeFolderNotesChip: boolean,
         ): { render: () => void } => {
           host.empty();
-          const titleEl = host.createDiv({ cls: "sprout-coach-field-label", text: title });
+          const titleEl = host.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: title });
 
-          const searchWrap = host.createDiv({ cls: "sprout-coach-search-wrap" });
-          const searchIcon = searchWrap.createSpan({ cls: "sprout-coach-search-icon" });
+          const searchWrap = host.createDiv({ cls: "learnkit-coach-search-wrap learnkit-coach-search-wrap" });
+          const searchIcon = searchWrap.createSpan({ cls: "learnkit-coach-search-icon learnkit-coach-search-icon" });
           setIcon(searchIcon, "search");
           const search = searchWrap.createEl("input", {
-            cls: "bc input h-9",
+            cls: "input h-9",
             attr: { type: "search", placeholder: "Search..." },
           });
 
-          const popover = searchWrap.createDiv({ cls: "sprout-coach-scope-popover dropdown-menu hidden" });
-          const list = popover.createDiv({ cls: "sprout-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-header-menu-panel" });
+          const popover = searchWrap.createDiv({ cls: "learnkit-coach-scope-popover learnkit-coach-scope-popover dropdown-menu hidden" });
+          const list = popover.createDiv({ cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel" });
           list.setAttr("role", "menu");
           list.setAttr("aria-label", `${title} matches`);
 
-          const selectedWrap = host.createDiv({ cls: "sprout-coach-selected-wrap" });
-          const chips = selectedWrap.createDiv({ cls: "sprout-coach-selected-chips" });
+          const selectedWrap = host.createDiv({ cls: "learnkit-coach-selected-wrap learnkit-coach-selected-wrap" });
+          const chips = selectedWrap.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips" });
 
           let query = "";
 
@@ -2714,9 +2714,9 @@ export class SproutSettingsTab extends PluginSettingTab {
             for (const id of uniqueResolvedIds) {
               const option = optionById.get(id);
               if (!option) continue;
-              const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+              const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
               chip.createSpan({ text: option.label });
-              const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+              const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
               remove.type = "button";
               remove.setAttr("aria-label", "Remove");
               setIcon(remove, "x");
@@ -2730,9 +2730,9 @@ export class SproutSettingsTab extends PluginSettingTab {
             }
 
             if (includeFolderNotesChip && noteCfg.avoidFolderNotes !== false) {
-              const chip = chips.createDiv({ cls: "sprout-coach-chip" });
+              const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
               chip.createSpan({ text: `Folder Notes (${folderNoteCount})` });
-              const remove = chip.createEl("button", { cls: "sprout-coach-chip-remove" });
+              const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
               remove.type = "button";
               remove.setAttr("aria-label", "Remove");
               setIcon(remove, "x");
@@ -2850,7 +2850,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       });
     });
 
-    const dynamicHost = wrapper.createDiv({ cls: "sprout-note-review-settings-host" });
+    const dynamicHost = wrapper.createDiv({ cls: "learnkit-note-review-settings-host learnkit-note-review-settings-host" });
 
     const renderAlgorithmFields = () => {
       dynamicHost.empty();
@@ -4101,7 +4101,7 @@ export class SproutSettingsTab extends PluginSettingTab {
             // Update UI to reflect active state
             optimiseSetting.setDesc(optimiseDesc());
             b.setButtonText(this._tx("ui.settings.optimisation.optimise.buttonRerun", "Re-optimise…"));
-            if (clearBtn) clearBtn.classList.remove("sprout-settings-conditional-hidden");
+            if (clearBtn) clearBtn.classList.remove("learnkit-settings-conditional-hidden", "learnkit-settings-conditional-hidden");
 
             new Notice(
               this._tx(
@@ -4131,7 +4131,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           // Update UI to reflect cleared state
           optimiseSetting.setDesc(optimiseDesc());
           if (optimiseBtn) optimiseBtn.textContent = this._tx("ui.settings.optimisation.optimise.button", "Optimise…");
-          clearBtn!.classList.add("sprout-settings-conditional-hidden");
+          clearBtn!.classList.add("learnkit-settings-conditional-hidden", "learnkit-settings-conditional-hidden");
 
           new Notice(
             this._tx(
@@ -4141,7 +4141,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           );
         });
       // Hide if no weights are active
-      clearBtn.classList.toggle("sprout-settings-conditional-hidden", !hasWeights());
+      clearBtn.classList.toggle("learnkit-settings-conditional-hidden", !hasWeights());
     });
   }
 
@@ -4164,7 +4164,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         const inputEl = t.inputEl;
 
-        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "sprout-folder-suggest" }) ?? null;
+        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "learnkit-folder-suggest learnkit-folder-suggest" }) ?? null;
 
         // Lazy list element: only exists when shown
         let listEl: HTMLDivElement | null = null;
@@ -4176,7 +4176,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const ensureListEl = () => {
           if (!suggestWrap) return null;
           if (!listEl) {
-            listEl = suggestWrap.createDiv({ cls: "sprout-folder-suggest-list" });
+            listEl = suggestWrap.createDiv({ cls: "learnkit-folder-suggest-list learnkit-folder-suggest-list" });
           }
           return listEl;
         };
@@ -4232,7 +4232,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           for (let i = 0; i < items.length; i++) {
             const p = items[i];
 
-            const btn = el.createEl("button", { cls: "sprout-folder-suggest-item", text: p });
+            const btn = el.createEl("button", { cls: "learnkit-folder-suggest-item learnkit-folder-suggest-item", text: p });
             btn.type = "button";
 
             // mousedown => selection before blur
@@ -4262,7 +4262,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
           if (!listEl) return;
 
-          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".sprout-folder-suggest-item"));
+          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".learnkit-folder-suggest-item"));
           if (!items.length) return;
 
           if (e.key === "ArrowDown") {
@@ -4336,7 +4336,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         const inputEl = t.inputEl;
 
-        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "sprout-folder-suggest" }) ?? null;
+        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "learnkit-folder-suggest learnkit-folder-suggest" }) ?? null;
 
         // Lazy list element: only exists when shown
         let listEl: HTMLDivElement | null = null;
@@ -4348,7 +4348,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const ensureListEl = () => {
           if (!suggestWrap) return null;
           if (!listEl) {
-            listEl = suggestWrap.createDiv({ cls: "sprout-folder-suggest-list" });
+            listEl = suggestWrap.createDiv({ cls: "learnkit-folder-suggest-list learnkit-folder-suggest-list" });
           }
           return listEl;
         };
@@ -4404,7 +4404,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           for (let i = 0; i < items.length; i++) {
             const p = items[i];
 
-            const btn = el.createEl("button", { cls: "sprout-folder-suggest-item", text: p });
+            const btn = el.createEl("button", { cls: "learnkit-folder-suggest-item learnkit-folder-suggest-item", text: p });
             btn.type = "button";
 
             // mousedown => selection before blur
@@ -4434,7 +4434,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
           if (!listEl) return;
 
-          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".sprout-folder-suggest-item"));
+          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".learnkit-folder-suggest-item"));
           if (!items.length) return;
 
           if (e.key === "ArrowDown") {
@@ -4527,7 +4527,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         const inputEl = t.inputEl;
 
-        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "sprout-folder-suggest" }) ?? null;
+        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "learnkit-folder-suggest learnkit-folder-suggest" }) ?? null;
 
         let listEl: HTMLDivElement | null = null;
         let activeIdx = -1;
@@ -4537,7 +4537,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         const ensureListEl = () => {
           if (!suggestWrap) return null;
           if (!listEl) {
-            listEl = suggestWrap.createDiv({ cls: "sprout-folder-suggest-list" });
+            listEl = suggestWrap.createDiv({ cls: "learnkit-folder-suggest-list learnkit-folder-suggest-list" });
           }
           return listEl;
         };
@@ -4576,7 +4576,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           activeIdx = -1;
           for (let i = 0; i < items.length; i++) {
             const p = items[i];
-            const btn = el.createEl("button", { cls: "sprout-folder-suggest-item", text: p });
+            const btn = el.createEl("button", { cls: "learnkit-folder-suggest-item learnkit-folder-suggest-item", text: p });
             btn.type = "button";
             btn.addEventListener("mousedown", (e) => {
               e.preventDefault();
@@ -4598,7 +4598,7 @@ export class SproutSettingsTab extends PluginSettingTab {
 
         inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
           if (!listEl) return;
-          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".sprout-folder-suggest-item"));
+          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".learnkit-folder-suggest-item"));
           if (!items.length) return;
 
           if (e.key === "ArrowDown") {
@@ -4828,11 +4828,11 @@ export class SproutSettingsTab extends PluginSettingTab {
     const buttonEls = Array.from(root.querySelectorAll<HTMLButtonElement>("button"));
     for (const button of buttonEls) {
       if (
-        button.classList.contains("sprout-settings-icon-btn") ||
-        button.classList.contains("sprout-ss-trigger") ||
-        button.classList.contains("sprout-folder-suggest-item") ||
-        button.classList.contains("sprout-settings-advanced-toggle") ||
-        button.classList.contains("sprout-coach-chip-remove")
+        button.classList.contains("learnkit-settings-icon-btn") ||
+        button.classList.contains("learnkit-ss-trigger") ||
+        button.classList.contains("learnkit-folder-suggest-item") ||
+        button.classList.contains("learnkit-settings-advanced-toggle") ||
+        button.classList.contains("learnkit-coach-chip-remove")
       ) {
         continue;
       }
@@ -4840,13 +4840,13 @@ export class SproutSettingsTab extends PluginSettingTab {
 
       button.type = "button";
       button.classList.remove("mod-cta", "mod-warning");
-      button.classList.add("bc", "inline-flex", "items-center", "gap-2", "h-9", "px-3", "text-sm", "sprout-settings-action-btn");
+      button.classList.add("inline-flex", "items-center", "gap-2", "h-9", "px-3", "text-sm", "learnkit-settings-action-btn", "learnkit-settings-action-btn");
     }
   }
 
   private _appendSettingWarning(setting: Setting, text: string) {
-    const warn = setting.descEl.createDiv({ cls: "sprout-ss-warning" });
-    const warnIcon = warn.createSpan({ cls: "sprout-ss-warning-icon" });
+    const warn = setting.descEl.createDiv({ cls: "learnkit-ss-warning learnkit-ss-warning" });
+    const warnIcon = warn.createSpan({ cls: "learnkit-ss-warning-icon learnkit-ss-warning-icon" });
     setIcon(warnIcon, "alert-triangle");
     warn.createSpan({ text });
   }
@@ -4866,16 +4866,16 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ── Trigger button ──
     const trigger = document.createElement("button");
     trigger.type = "button";
-    trigger.className = "sprout-ss-trigger bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-action-btn";
+    trigger.className = "learnkit-ss-trigger inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-settings-action-btn";
     trigger.setAttribute("aria-haspopup", "listbox");
     trigger.setAttribute("aria-expanded", "false");
 
     const trigLabel = document.createElement("span");
-    trigLabel.className = "sprout-ss-trigger-label";
+    trigLabel.className = "learnkit-ss-trigger-label";
     trigger.appendChild(trigLabel);
 
     const chevron = document.createElement("span");
-    chevron.className = "sprout-ss-trigger-chevron";
+    chevron.className = "learnkit-ss-trigger-chevron";
     setIcon(chevron, "chevron-down");
     trigger.appendChild(chevron);
 
@@ -4887,21 +4887,21 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     // ── Body-portal popover ──
     const sproutWrapper = document.createElement("div");
-    sproutWrapper.className = "sprout";
+    sproutWrapper.className = "learnkit";
     const popover = document.createElement("div");
     popover.id = `${id}-popover`;
     popover.setAttribute("aria-hidden", "true");
-    popover.classList.add("sprout-popover-overlay", "sprout-ss-popover");
+    popover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay", "learnkit-ss-popover", "learnkit-ss-popover");
 
     const panel = document.createElement("div");
-    panel.className = "sprout-ss-panel sprout-header-menu-panel";
+    panel.className = "learnkit-ss-panel learnkit-header-menu-panel";
     popover.appendChild(panel);
     sproutWrapper.appendChild(popover);
 
     // ── Options list ──
     const listbox = document.createElement("div");
     listbox.setAttribute("role", "listbox");
-    listbox.className = "sprout-ss-listbox";
+    listbox.className = "learnkit-ss-listbox";
     panel.appendChild(listbox);
 
     type ItemEntry = { value: string; el: HTMLElement };
@@ -4921,22 +4921,22 @@ export class SproutSettingsTab extends PluginSettingTab {
         item.setAttribute("role", "option");
         item.setAttribute("aria-selected", opt.value === current ? "true" : "false");
         item.tabIndex = 0;
-        item.className = "sprout-ss-item";
+        item.className = "learnkit-ss-item";
 
         const dotWrap = document.createElement("div");
-        dotWrap.className = "sprout-ss-dot-wrap";
+        dotWrap.className = "learnkit-ss-dot-wrap";
         item.appendChild(dotWrap);
 
         const dot = document.createElement("div");
-        dot.className = "sprout-ss-dot";
+        dot.className = "learnkit-ss-dot";
         if (opt.value === current) dot.classList.add("is-selected");
         dotWrap.appendChild(dot);
 
         const textWrap = document.createElement("div");
-        textWrap.className = "sprout-ss-item-text";
+        textWrap.className = "learnkit-ss-item-text";
 
         const txt = document.createElement("span");
-        txt.className = "sprout-ss-item-label";
+        txt.className = "learnkit-ss-item-label";
         txt.textContent = opt.label;
         textWrap.appendChild(txt);
 
@@ -4947,7 +4947,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           trigLabel.textContent = labelFor(current);
           for (const it of items) {
             it.el.setAttribute("aria-selected", it.value === current ? "true" : "false");
-            const d = it.el.querySelector(".sprout-ss-dot");
+            const d = it.el.querySelector(".learnkit-ss-dot");
             if (d) d.classList.toggle("is-selected", it.value === current);
           }
           args.onChange(current);
@@ -4980,7 +4980,7 @@ export class SproutSettingsTab extends PluginSettingTab {
         // Insert separator after the specified index
         if (args.separatorAfterIndex != null && items.length - 1 === args.separatorAfterIndex) {
           const sep = document.createElement("div");
-          sep.className = "sprout-ss-separator";
+          sep.className = "learnkit-ss-separator";
           sep.setAttribute("role", "separator");
           listbox.appendChild(sep);
         }
@@ -5096,16 +5096,16 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ── Trigger button ──
     const trigger = document.createElement("button");
     trigger.type = "button";
-    trigger.className = "sprout-ss-trigger bc inline-flex items-center gap-2 h-9 px-3 text-sm sprout-settings-action-btn";
+    trigger.className = "learnkit-ss-trigger inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-settings-action-btn";
     trigger.setAttribute("aria-haspopup", "listbox");
     trigger.setAttribute("aria-expanded", "false");
 
     const trigLabel = document.createElement("span");
-    trigLabel.className = "sprout-ss-trigger-label";
+    trigLabel.className = "learnkit-ss-trigger-label";
     trigger.appendChild(trigLabel);
 
     const chevron = document.createElement("span");
-    chevron.className = "sprout-ss-trigger-chevron";
+    chevron.className = "learnkit-ss-trigger-chevron";
     setIcon(chevron, "chevron-down");
     trigger.appendChild(chevron);
 
@@ -5115,7 +5115,7 @@ export class SproutSettingsTab extends PluginSettingTab {
       target.replaceChildren();
       if (flagCode) {
         const img = document.createElement("img");
-        img.className = "sprout-inline-flag";
+        img.className = "learnkit-inline-flag";
         img.alt = flagCode;
         img.src = getCircleFlagUrl(flagCode);
         img.addEventListener(
@@ -5142,14 +5142,14 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     // ── Body-portal popover ──
     const sproutWrapper = document.createElement("div");
-    sproutWrapper.className = "sprout";
+    sproutWrapper.className = "learnkit";
     const popover = document.createElement("div");
     popover.id = `${id}-popover`;
     popover.setAttribute("aria-hidden", "true");
-    popover.classList.add("sprout-popover-overlay", "sprout-ss-popover");
+    popover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay", "learnkit-ss-popover", "learnkit-ss-popover");
 
     const panel = document.createElement("div");
-    panel.className = "sprout-ss-panel sprout-header-menu-panel";
+    panel.className = "learnkit-ss-panel learnkit-header-menu-panel";
     popover.appendChild(panel);
     sproutWrapper.appendChild(popover);
 
@@ -5159,17 +5159,17 @@ export class SproutSettingsTab extends PluginSettingTab {
 
     if (showSearch) {
       const searchWrap = document.createElement("div");
-      searchWrap.className = "sprout-ss-search-wrap";
+      searchWrap.className = "learnkit-ss-search-wrap";
       panel.appendChild(searchWrap);
 
       const searchIcon = document.createElement("span");
-      searchIcon.className = "sprout-ss-search-icon";
+      searchIcon.className = "learnkit-ss-search-icon";
       setIcon(searchIcon, "search");
       searchWrap.appendChild(searchIcon);
 
       searchInput = document.createElement("input");
       searchInput.type = "text";
-      searchInput.className = "sprout-ss-search-input";
+      searchInput.className = "learnkit-ss-search-input";
       searchInput.placeholder = this._tx("ui.settings.searchableSelect.searchPlaceholder", "Search...");
       searchInput.setAttribute("autocomplete", "off");
       searchInput.setAttribute("spellcheck", "false");
@@ -5179,12 +5179,12 @@ export class SproutSettingsTab extends PluginSettingTab {
     // ── Options list ──
     const listbox = document.createElement("div");
     listbox.setAttribute("role", "listbox");
-    listbox.className = "sprout-ss-listbox";
+    listbox.className = "learnkit-ss-listbox";
     panel.appendChild(listbox);
 
     // ── Empty state ──
     const emptyMsg = document.createElement("div");
-    emptyMsg.className = "sprout-ss-empty";
+    emptyMsg.className = "learnkit-ss-empty";
     emptyMsg.textContent = this._tx("ui.settings.searchableSelect.empty", "No results");
     emptyMsg.hidden = true;
     panel.appendChild(emptyMsg);
@@ -5210,11 +5210,11 @@ export class SproutSettingsTab extends PluginSettingTab {
         const sectionKey = String(opt.section || "").trim();
         if (sectionKey && sectionKey !== previousSection) {
           const separatorEl = listbox.children.length
-            ? listbox.createDiv({ cls: "sprout-ss-separator" })
+            ? listbox.createDiv({ cls: "learnkit-ss-separator learnkit-ss-separator" })
             : null;
           if (separatorEl) separatorEl.setAttribute("role", "separator");
 
-          const titleEl = listbox.createDiv({ cls: "sprout-ss-section-title", text: sectionKey });
+          const titleEl = listbox.createDiv({ cls: "learnkit-ss-section-title learnkit-ss-section-title", text: sectionKey });
           sections.set(sectionKey, { titleEl, separatorEl, visibleCount: 0 });
           previousSection = sectionKey;
         }
@@ -5223,22 +5223,22 @@ export class SproutSettingsTab extends PluginSettingTab {
         item.setAttribute("role", "option");
         item.setAttribute("aria-selected", opt.value === current ? "true" : "false");
         item.tabIndex = 0;
-        item.className = "sprout-ss-item";
+        item.className = "learnkit-ss-item";
 
         const dotWrap = document.createElement("div");
-        dotWrap.className = "sprout-ss-dot-wrap";
+        dotWrap.className = "learnkit-ss-dot-wrap";
         item.appendChild(dotWrap);
 
         const dot = document.createElement("div");
-        dot.className = "sprout-ss-dot";
+        dot.className = "learnkit-ss-dot";
         if (opt.value === current) dot.classList.add("is-selected");
         dotWrap.appendChild(dot);
 
         const textWrap = document.createElement("div");
-        textWrap.className = "sprout-ss-item-text";
+        textWrap.className = "learnkit-ss-item-text";
 
         const txt = document.createElement("span");
-        txt.className = "sprout-ss-item-label";
+        txt.className = "learnkit-ss-item-label";
         renderLabel(txt, opt.label, opt.flagCode);
         textWrap.appendChild(txt);
 
@@ -5249,7 +5249,7 @@ export class SproutSettingsTab extends PluginSettingTab {
           renderLabel(trigLabel, opt.label, opt.flagCode);
           for (const it of items) {
             it.el.setAttribute("aria-selected", it.value === current ? "true" : "false");
-            const d = it.el.querySelector(".sprout-ss-dot");
+            const d = it.el.querySelector(".learnkit-ss-dot");
             if (d) d.classList.toggle("is-selected", it.value === current);
           }
           args.onChange(current);

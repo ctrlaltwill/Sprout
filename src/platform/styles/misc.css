@@ -5,180 +5,180 @@
 
 /* ---- GitHub Stars ---- */
 
-.sprout .sprout-github-stars {
+.learnkit .learnkit-github-stars {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   font-weight: 600;
   border-radius: var(--radius-md);
   background: #111;
   color: #fff;
   transition: background 0.18s;
 }
-.sprout .sprout-github-stars:hover {
+.learnkit .learnkit-github-stars:hover {
   background: #222;
   text-decoration: none;
   font-weight: 600;
   width: fit-content;
 }
 
-.sprout .sprout-github-stars-icon,
-.sprout .sprout-github-stars-star {
+.learnkit .learnkit-github-stars-icon,
+.learnkit .learnkit-github-stars-star {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.sprout .sprout-github-stars-icon svg {
+.learnkit .learnkit-github-stars-icon svg {
   width: 16px;
   height: 16px;
 }
 
-.sprout .sprout-github-stars-star svg {
+.learnkit .learnkit-github-stars-star svg {
   width: 18px;
   height: 18px;
   color: #f4b400;
   transition: filter 0.18s;
 }
 
-.sprout .sprout-github-stars-value {
+.learnkit .learnkit-github-stars-value {
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 /* Force GitHub star to use accent color for fill */
-.sprout .sprout-github-stars-star svg {
+.learnkit .learnkit-github-stars-star svg {
   fill: var(--theme-accent);
   color: var(--theme-accent);
 }
 /* Spin the GitHub star on hover */
-.sprout .sprout-github-stars:hover .sprout-github-stars-star {
+.learnkit .learnkit-github-stars:hover .learnkit-github-stars-star {
   transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1);
   transform: rotate(360deg);
 }
 
 /* Dark theme GitHub stars */
-.theme-dark .sprout .sprout-github-stars {
+.theme-dark .learnkit .learnkit-github-stars {
   background: #f4b400;
   color: #111111;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   transition: background 0.18s;
 }
-.theme-dark .sprout .sprout-github-stars:hover {
+.theme-dark .learnkit .learnkit-github-stars:hover {
   background: #e2a800;
 }
-.theme-dark .sprout .sprout-github-stars-star svg {
+.theme-dark .learnkit .learnkit-github-stars-star svg {
   color: #ffffff;
   fill: #ffffff;
   transition: filter 0.18s;
 }
-.theme-dark .sprout .sprout-github-stars-icon svg {
+.theme-dark .learnkit .learnkit-github-stars-icon svg {
   color: #ffffff;
 }
-.theme-dark .sprout .sprout-github-stars-value {
+.theme-dark .learnkit .learnkit-github-stars-value {
   color: #111111;
 }
 
 /* ---- Buy Me a Coffee ---- */
 
-.sprout .sprout-bmc {
+.learnkit .learnkit-bmc {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-  font-size: var(--sprout-font-xs);
+  font-size: var(--learnkit-font-xs);
   font-weight: 600;
   border-radius: var(--radius-md);
   background: #f4b400;
   color: #111;
   transition: background 0.18s;
 }
-.sprout .sprout-bmc:hover {
+.learnkit .learnkit-bmc:hover {
   background: #e2a800;
   text-decoration: none;
   font-weight: 600;
   width: fit-content;
 }
 
-.sprout .sprout-bmc-icon {
+.learnkit .learnkit-bmc-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.sprout .sprout-bmc-icon svg {
+.learnkit .learnkit-bmc-icon svg {
   width: 16px;
   height: 16px;
 }
 
 /* Rotate the coffee icon on hover */
-.sprout .sprout-bmc:hover .sprout-bmc-icon {
+.learnkit .learnkit-bmc:hover .learnkit-bmc-icon {
   transition: transform 0.3s cubic-bezier(0.4,0.2,0.2,1);
   transform: rotate(-30deg);
 }
 
 /* ---- Utility: cursors/opacity ---- */
 
-.sprout :is(.alert, .alert-destructive) > h2,
-.sprout :is(.alert, .alert-destructive) > h3,
-.sprout :is(.alert, .alert-destructive) > h4,
-.sprout :is(.alert, .alert-destructive) > h5,
-.sprout :is(.alert, .alert-destructive) > h6,
-.sprout :is(.alert, .alert-destructive) > strong,
-.sprout :is(.alert, .alert-destructive) > [data-title] {
+.learnkit :is(.alert, .alert-destructive) > h2,
+.learnkit :is(.alert, .alert-destructive) > h3,
+.learnkit :is(.alert, .alert-destructive) > h4,
+.learnkit :is(.alert, .alert-destructive) > h5,
+.learnkit :is(.alert, .alert-destructive) > h6,
+.learnkit :is(.alert, .alert-destructive) > strong,
+.learnkit :is(.alert, .alert-destructive) > [data-title] {
   line-clamp: 1;
 }
 
-.sprout .sprout-cursor-grab {
+.learnkit .learnkit-cursor-grab {
   cursor: grab;
 }
 
-.sprout .sprout-cursor-grabbing {
+.learnkit .learnkit-cursor-grabbing {
   cursor: grabbing;
 }
 
-.sprout .sprout-cursor-crosshair {
+.learnkit .learnkit-cursor-crosshair {
   cursor: crosshair;
 }
 
-.sprout .sprout-cursor-move {
+.learnkit .learnkit-cursor-move {
   cursor: move;
 }
 
-.sprout .sprout-cursor-nwse-resize {
+.learnkit .learnkit-cursor-nwse-resize {
   cursor: nwse-resize;
 }
 
-.sprout .sprout-cursor-nesw-resize {
+.learnkit .learnkit-cursor-nesw-resize {
   cursor: nesw-resize;
 }
 
-.sprout .sprout-display-flex {
+.learnkit .learnkit-display-flex {
   display: flex;
 }
 
-.sprout .sprout-opacity-35 {
+.learnkit .learnkit-opacity-35 {
   opacity: 0.35;
 }
 
-.sprout .sprout-pointer-none {
+.learnkit .learnkit-pointer-none {
   pointer-events: none;
 }
 
-.sprout .sprout-hidden-important {
+.learnkit .learnkit-hidden-important {
   display: none;
 }
 
-.sprout .bg-transparent {
+.learnkit .bg-transparent {
   background: transparent;
 }
 
 /* ---- Global keyboard keycap shape ---- */
 
-.sprout kbd,
-.sprout .kbd {
+.learnkit kbd,
+.learnkit .kbd {
   padding: 0px 8px;
   border-radius: 6px;
 }
@@ -186,89 +186,89 @@
 /* ---- Mobile phones: hide keyboard hint badges ---- */
 
 @media (max-width: 767px) and (hover: none) and (pointer: coarse) {
-  .sprout kbd,
-  .sprout .kbd {
+  .learnkit kbd,
+  .learnkit .kbd {
     display: none;
   }
 }
 
 /* ---- Utility: rotation/animations ---- */
 
-.sprout .sprout-rotate {
-  transform: rotate(var(--sprout-rotate, 0deg));
+.learnkit .learnkit-rotate {
+  transform: rotate(var(--learnkit-rotate, 0deg));
 }
 
-.sprout .sprout-star-spin {
+.learnkit .learnkit-star-spin {
   transition: transform 0.3s cubic-bezier(.4,2,.6,1);
 }
 
-.sprout .sprout-star-spin.is-fast {
+.learnkit .learnkit-star-spin.is-fast {
   transition: transform 0.15s cubic-bezier(.4,2,.6,1);
 }
 
-.sprout .sprout-bmc-rotate {
+.learnkit .learnkit-bmc-rotate {
   transition: transform 0.4s cubic-bezier(.4,2,.6,1);
 }
 
 /* ---- Utility: inline flex ---- */
 
-.sprout .sprout-inline-flex {
+.learnkit .learnkit-inline-flex {
   display: inline-flex;
 }
 
-.sprout .sprout-items-center {
+.learnkit .learnkit-items-center {
   align-items: center;
 }
 
-.sprout span.truncate {
+.learnkit span.truncate {
   overflow: hidden;
 }
 
-.sprout .sprout-gap-8 {
+.learnkit .learnkit-gap-8 {
   gap: 8px;
 }
 
-.sprout .sprout-stage-transform {
-  transform: var(--sprout-stage-transform, none);
+.learnkit .learnkit-stage-transform {
+  transform: var(--learnkit-stage-transform, none);
 }
 
 /* ---- Markdown code block spacing ---- */
 
-.sprout .markdown-rendered pre,
-.sprout .sprout-guide-body pre {
+.learnkit .markdown-rendered pre,
+.learnkit .learnkit-guide-body pre {
   margin-block-start: 1em;
   margin-block-end: 1em;
 }
 
 /* ---- Image Occlusion review ---- */
 
-.sprout .sprout-io-container {
+.learnkit .learnkit-io-container {
   position: relative;
   display: inline-block;
   max-width: 100%;
 }
 
-.sprout .sprout-io-container--clip {
+.learnkit .learnkit-io-container--clip {
   overflow: hidden;
 }
 
-.sprout .sprout-io-host-card {
+.learnkit .learnkit-io-host-card {
   position: relative;
   display: inline-block;
   border-radius: var(--radius-s);
   overflow: hidden;
-  border: var(--sprout-border-width) solid var(--sprout-border-color);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background-secondary);
   max-width: 100%;
 }
 
-.sprout .sprout-io-image {
+.learnkit .learnkit-io-image {
   display: block;
   max-width: 100%;
   height: auto;
 }
 
-.sprout .sprout-io-image-zoomed {
+.learnkit .learnkit-io-image-zoomed {
   max-width: 98vw;
   max-height: 96vh;
   cursor: zoom-out;
@@ -279,50 +279,50 @@
   height: auto;
 }
 
-.sprout .sprout-io-image-inline {
+.learnkit .learnkit-io-image-inline {
   max-height: 350px;
   cursor: zoom-in;
 }
 
-.sprout .sprout-io-image-widget {
+.learnkit .learnkit-io-image-widget {
   border: none;
   outline: none;
   box-shadow: none;
 }
 
-.sprout .sprout-io-zoom-in {
+.learnkit .learnkit-io-zoom-in {
   cursor: zoom-in;
 }
 
-.sprout .sprout-io-zoom-out {
+.learnkit .learnkit-io-zoom-out {
   cursor: zoom-out;
 }
 
-.sprout .sprout-io-overlay {
+.learnkit .learnkit-io-overlay {
   position: absolute;
-  left: var(--sprout-io-left, 0);
-  top: var(--sprout-io-top, 0);
-  width: var(--sprout-io-width, 0);
-  height: var(--sprout-io-height, 0);
-  max-width: var(--sprout-io-max-width, none);
-  max-height: var(--sprout-io-max-height, none);
-  border-radius: var(--sprout-io-radius, 0);
+  left: var(--learnkit-io-left, 0);
+  top: var(--learnkit-io-top, 0);
+  width: var(--learnkit-io-width, 0);
+  height: var(--learnkit-io-height, 0);
+  max-width: var(--learnkit-io-max-width, none);
+  max-height: var(--learnkit-io-max-height, none);
+  border-radius: var(--learnkit-io-radius, 0);
   overflow: hidden;
   pointer-events: none;
   z-index: 2;
 }
 
-.sprout .sprout-io-mask {
+.learnkit .learnkit-io-mask {
   position: absolute;
-  left: var(--sprout-io-x, 0);
-  top: var(--sprout-io-y, 0);
-  width: var(--sprout-io-w, 0);
-  height: var(--sprout-io-h, 0);
+  left: var(--learnkit-io-x, 0);
+  top: var(--learnkit-io-y, 0);
+  width: var(--learnkit-io-w, 0);
+  height: var(--learnkit-io-h, 0);
   pointer-events: none;
   z-index: 1;
 }
 
-.sprout .sprout-io-mask-target {
+.learnkit .learnkit-io-mask-target {
   background: var(--color-base-70);
   border: 1px solid var(--color-base-100);
   display: flex;
@@ -330,64 +330,64 @@
   justify-content: center;
 }
 
-.sprout .sprout-io-mask-other {
+.learnkit .learnkit-io-mask-other {
   background: var(--color-base-20);
   border: 1px solid var(--color-base-35);
 }
 
-.sprout .sprout-io-mask-hidden {
+.learnkit .learnkit-io-mask-hidden {
   background: var(--background)00;
   border: none;
 }
 
-.sprout .sprout-io-mask-circle {
+.learnkit .learnkit-io-mask-circle {
   border-radius: 50%;
 }
 
-.sprout .sprout-io-mask-rect {
+.learnkit .learnkit-io-mask-rect {
   border-radius: 3px;
 }
 
-.sprout .sprout-io-mask-hint {
+.learnkit .learnkit-io-mask-hint {
   color: var(--color-base-100);
   font-weight: 600;
   line-height: 1;
-  font-size: var(--sprout-io-hint-size, var(--sprout-font-2xs));
+  font-size: var(--learnkit-io-hint-size, var(--learnkit-font-2xs));
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 /* SVG icons rendered by setIcon inside the hint span */
-.sprout .sprout-io-mask-hint .svg-icon {
-  width: var(--sprout-io-hint-size, 12px);
-  height: var(--sprout-io-hint-size, 12px);
+.learnkit .learnkit-io-mask-hint .svg-icon {
+  width: var(--learnkit-io-hint-size, 12px);
+  height: var(--learnkit-io-hint-size, 12px);
   stroke: var(--color-base-100);
 }
 
-.theme-dark .sprout .sprout-bmc {
+.theme-dark .learnkit .learnkit-bmc {
   color: #111214;
   background: #ffffff;
   transition: background 0.18s;
   box-shadow: 0 2px 8px #0000002e;
 }
-.theme-dark .sprout .sprout-bmc:hover {
+.theme-dark .learnkit .learnkit-bmc:hover {
   background: #f2f2f2;
 }
-.theme-dark .sprout .sprout-bmc:active {
+.theme-dark .learnkit .learnkit-bmc:active {
   background: #e6e6e6;
 }
-.theme-dark .sprout .sprout-bmc-icon svg {
+.theme-dark .learnkit .learnkit-bmc-icon svg {
   color: #111214;
 }
 
 /* ---- Badges ---- */
 
-.sprout .badge {
+.learnkit .badge {
     background-color: var(--theme-accent);
 }
 
-.sprout .badge.group {
+.learnkit .badge.group {
     font-family: var(--font-interface);
     border: 1px solid var(--theme-base-35);
     border-radius: var(--radius-md);
@@ -396,72 +396,72 @@
     min-height: 26px;
     max-height: 26px;
     color: var(--theme-base-95);
-    font-size: var(--sprout-font-2xs);
+    font-size: var(--learnkit-font-2xs);
     align-items: center;
     gap: 3px;
     padding: 5px 8px;
     font-weight: 500;
 }
 
-.sprout .sprout-badge-success {
+.learnkit .learnkit-badge-success {
   background-color: oklch(0.8 0.1 142);
   color: oklch(0.2 0 0);
 }
 
-.sprout .sprout-badge-info {
+.learnkit .learnkit-badge-info {
   background-color: var(--theme-accent);
   color: oklch(0.985 0 0);
 }
 
-.sprout .sprout-badge-default {
+.learnkit .learnkit-badge-default {
   background-color: var(--secondary);
   color: #111;
 }
 
 /* ---- Checkboxes / radio ---- */
 
-.sprout input[type="checkbox"] {
-  --sprout-checkbox-accent: var(--interactive-accent, var(--theme-accent));
+.learnkit input[type="checkbox"] {
+  --learnkit-checkbox-accent: var(--interactive-accent, var(--theme-accent));
   appearance: none;
   border-radius: 4px;
-  background-color: color-mix(in srgb, var(--sprout-checkbox-accent) 10%, var(--background-primary, var(--background)));
-  border: 1px solid color-mix(in srgb, var(--sprout-checkbox-accent) 38%, var(--background-modifier-border));
+  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 10%, var(--background-primary, var(--background)));
+  border: 1px solid color-mix(in srgb, var(--learnkit-checkbox-accent) 38%, var(--background-modifier-border));
   transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.sprout input[type="checkbox"]:hover,
-.sprout input[type="checkbox"]:focus {
-  background-color: color-mix(in srgb, var(--sprout-checkbox-accent) 18%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--sprout-checkbox-accent) 54%, var(--background-modifier-border));
+.learnkit input[type="checkbox"]:hover,
+.learnkit input[type="checkbox"]:focus {
+  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 18%, var(--background-primary, var(--background)));
+  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 54%, var(--background-modifier-border));
 }
 
-.sprout input[type="checkbox"]:active {
-  background-color: color-mix(in srgb, var(--sprout-checkbox-accent) 28%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--sprout-checkbox-accent) 68%, var(--background-modifier-border));
+.learnkit input[type="checkbox"]:active {
+  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 28%, var(--background-primary, var(--background)));
+  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 68%, var(--background-modifier-border));
 }
 
-.sprout input[type="checkbox"]:focus-visible {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sprout-checkbox-accent) 35%, transparent);
+.learnkit input[type="checkbox"]:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--learnkit-checkbox-accent) 35%, transparent);
 }
 
-.sprout input[type="checkbox"]:checked {
-  background-color: color-mix(in srgb, var(--sprout-checkbox-accent) 82%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--sprout-checkbox-accent) 88%, var(--background-modifier-border));
+.learnkit input[type="checkbox"]:checked {
+  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 82%, var(--background-primary, var(--background)));
+  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 88%, var(--background-modifier-border));
 }
 
-.sprout input[type="checkbox"]:checked:hover,
-.sprout input[type="checkbox"]:checked:focus {
-  background-color: color-mix(in srgb, var(--sprout-checkbox-accent) 90%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--sprout-checkbox-accent) 94%, var(--background-modifier-border));
+.learnkit input[type="checkbox"]:checked:hover,
+.learnkit input[type="checkbox"]:checked:focus {
+  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 90%, var(--background-primary, var(--background)));
+  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 94%, var(--background-modifier-border));
 }
 
-.sprout input[type="checkbox"]:checked:active {
-  background-color: color-mix(in srgb, var(--sprout-checkbox-accent) 96%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--sprout-checkbox-accent) 98%, var(--background-modifier-border));
+.learnkit input[type="checkbox"]:checked:active {
+  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 96%, var(--background-primary, var(--background)));
+  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 98%, var(--background-modifier-border));
 }
 
-.sprout input[type="radio"]:checked:after,
-.sprout input[type="checkbox"]:checked:after {
+.learnkit input[type="radio"]:checked:after,
+.learnkit input[type="checkbox"]:checked:after {
   content: '';
   display: block;
   position: absolute;
@@ -477,40 +477,40 @@
   background-color: var(--text-on-accent, #fff);
 }
 
-.sprout input[type="checkbox"]:checked:hover::after {
+.learnkit input[type="checkbox"]:checked:hover::after {
   background-color: var(--text-on-accent, #fff);
 }
 
-.sprout input[type="checkbox"]:checked:active::after {
+.learnkit input[type="checkbox"]:checked:active::after {
   background-color: var(--text-on-accent, #fff);
 }
 
 /* ---- Inline sorting icon hover ---- */
 
-.sprout .inline-flex.text-muted-foreground.cursor-pointer {
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer {
   transition: color 0.15s, fill 0.15s;
 }
-.sprout .inline-flex.text-muted-foreground.cursor-pointer:hover,
-.sprout .inline-flex.text-muted-foreground.cursor-pointer:focus,
-.sprout .inline-flex.text-muted-foreground.cursor-pointer:active {
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer:hover,
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer:focus,
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer:active {
   color: var(--foreground);
 }
-.sprout .inline-flex.text-muted-foreground.cursor-pointer:hover .svg-icon,
-.sprout .inline-flex.text-muted-foreground.cursor-pointer:focus .svg-icon,
-.sprout .inline-flex.text-muted-foreground.cursor-pointer:active .svg-icon {
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer:hover .svg-icon,
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer:focus .svg-icon,
+.learnkit .inline-flex.text-muted-foreground.cursor-pointer:active .svg-icon {
   stroke: var(--foreground);
   color: var(--foreground);
 }
 
 /* ---- Tickbox inner dot ---- */
 
-.sprout .tickbox > span {
+.learnkit .tickbox > span {
   background-color: var(--foreground);
 }
 
 /* ---- Selection highlight ---- */
 
-:where(.sprout) ::selection {
+:where(.learnkit) ::selection {
     background-color: var(--theme-base-15);
     color: var(--color-base-95);
 
@@ -518,18 +518,18 @@
 
 /* ---- MathJax: remove block margins inside Sprout cards/widgets ---- */
 
-.sprout .lk-session-card mjx-container[jax="CHTML"][display="true"],
-.sprout.sprout-widget mjx-container[jax="CHTML"][display="true"],
-.sprout .sprout-widget mjx-container[jax="CHTML"][display="true"],
-.sprout .sprout-widget-card-body mjx-container[jax="CHTML"][display="true"] {
+.learnkit .lk-session-card mjx-container[jax="CHTML"][display="true"],
+.learnkit.learnkit-widget mjx-container[jax="CHTML"][display="true"],
+.learnkit .learnkit-widget mjx-container[jax="CHTML"][display="true"],
+.learnkit .learnkit-widget-card-body mjx-container[jax="CHTML"][display="true"] {
   margin: 0;
 }
 
-.sprout .sprout-pretty-card mjx-container[jax="CHTML"][display="true"],
-.sprout .sprout-pretty-card mjx-container[jax="CHTML"],
-.sprout .sprout-pretty-card mjx-math[display="true"],
-.sprout .sprout-pretty-card .MathJax,
-.sprout .sprout-pretty-card .MJX-TEX {
+.learnkit .learnkit-pretty-card mjx-container[jax="CHTML"][display="true"],
+.learnkit .learnkit-pretty-card mjx-container[jax="CHTML"],
+.learnkit .learnkit-pretty-card mjx-math[display="true"],
+.learnkit .learnkit-pretty-card .MathJax,
+.learnkit .learnkit-pretty-card .MJX-TEX {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -540,12 +540,12 @@
    .math.math-block.is-loaded which clashes with card/widget/gatekeeper layout.
    Reset those properties so Sprout cards look consistent regardless of theme. */
 
-.sprout .lk-session-card .math.math-block.is-loaded,
-.sprout.sprout-widget .math.math-block.is-loaded,
-.sprout .sprout-widget .math.math-block.is-loaded,
-.sprout .sprout-widget-card-body .math.math-block.is-loaded,
-.sprout .sprout-gatekeeper-modal .math.math-block.is-loaded,
-.sprout .sprout-pretty-card .math.math-block.is-loaded {
+.learnkit .lk-session-card .math.math-block.is-loaded,
+.learnkit.learnkit-widget .math.math-block.is-loaded,
+.learnkit .learnkit-widget .math.math-block.is-loaded,
+.learnkit .learnkit-widget-card-body .math.math-block.is-loaded,
+.learnkit .learnkit-gatekeeper-modal .math.math-block.is-loaded,
+.learnkit .learnkit-pretty-card .math.math-block.is-loaded {
   background-color: transparent;
   background: transparent;
   border-radius: 0;
@@ -557,33 +557,33 @@
 }
 
 /* ---- Inline math: slight left margin so LaTeX doesn't touch preceding text ---- */
-.sprout .lk-session-card .math.is-loaded,
-.sprout.sprout-widget .math.is-loaded,
-.sprout .sprout-widget .math.is-loaded,
-.sprout .sprout-widget-card-body .math.is-loaded,
-.sprout .sprout-gatekeeper-modal .math.is-loaded,
-.sprout .sprout-pretty-card .math.is-loaded {
+.learnkit .lk-session-card .math.is-loaded,
+.learnkit.learnkit-widget .math.is-loaded,
+.learnkit .learnkit-widget .math.is-loaded,
+.learnkit .learnkit-widget-card-body .math.is-loaded,
+.learnkit .learnkit-gatekeeper-modal .math.is-loaded,
+.learnkit .learnkit-pretty-card .math.is-loaded {
   margin-left: 0.15em;
 }
 
 /* Also reset the inner MathJax container inside math blocks */
-.sprout .lk-session-card .math.math-block.is-loaded mjx-container,
-.sprout.sprout-widget .math.math-block.is-loaded mjx-container,
-.sprout .sprout-widget .math.math-block.is-loaded mjx-container,
-.sprout .sprout-widget-card-body .math.math-block.is-loaded mjx-container,
-.sprout .sprout-gatekeeper-modal .math.math-block.is-loaded mjx-container,
-.sprout .sprout-pretty-card .math.math-block.is-loaded mjx-container {
+.learnkit .lk-session-card .math.math-block.is-loaded mjx-container,
+.learnkit.learnkit-widget .math.math-block.is-loaded mjx-container,
+.learnkit .learnkit-widget .math.math-block.is-loaded mjx-container,
+.learnkit .learnkit-widget-card-body .math.math-block.is-loaded mjx-container,
+.learnkit .learnkit-gatekeeper-modal .math.math-block.is-loaded mjx-container,
+.learnkit .learnkit-pretty-card .math.math-block.is-loaded mjx-container {
   margin: 0;
   padding: 0;
 }
 
 /* Inline math: remove any theme-added background/padding */
-.sprout .lk-session-card .math.math-inline.is-loaded,
-.sprout.sprout-widget .math.math-inline.is-loaded,
-.sprout .sprout-widget .math.math-inline.is-loaded,
-.sprout .sprout-widget-card-body .math.math-inline.is-loaded,
-.sprout .sprout-gatekeeper-modal .math.math-inline.is-loaded,
-.sprout .sprout-pretty-card .math.math-inline.is-loaded {
+.learnkit .lk-session-card .math.math-inline.is-loaded,
+.learnkit.learnkit-widget .math.math-inline.is-loaded,
+.learnkit .learnkit-widget .math.math-inline.is-loaded,
+.learnkit .learnkit-widget-card-body .math.math-inline.is-loaded,
+.learnkit .learnkit-gatekeeper-modal .math.math-inline.is-loaded,
+.learnkit .learnkit-pretty-card .math.math-inline.is-loaded {
   background-color: transparent;
   background: transparent;
   border-radius: 0;
@@ -594,46 +594,46 @@
 
 /* ---- Background helper ---- */
 
-.sprout .bg-background {
+.learnkit .bg-background {
     background-color: var(--background);
 }
 
-.sprout .bg-border {
+.learnkit .bg-border {
   background-color: var(--border);
   height: 0.5px;
 }
 
 /* ---- Info text styling ---- */
 
-.sprout .sprout-info {
+.learnkit .learnkit-info {
     color: var(--text-color);
     opacity: 0.9;
-    font-size: var(--sprout-font-2xs);
+    font-size: var(--learnkit-font-2xs);
     line-height: 1.9;
 }
 
-.sprout .sprout-info br {
+.learnkit .learnkit-info br {
   margin-bottom: 0.5em;
 }
 
 
 /* ---- Global input and textarea focus styles ---- */
 
-.sprout input:not(.lk-home-name-input):not(.sprout-ss-search-input):not(.sprout-search-naked):focus,
-.sprout textarea:not(.sprout-assistant-popup-input):focus,
-.sprout .input:focus,
-.sprout .textarea:focus,
-.sprout input[type="text"]:not(.lk-home-name-input):not(.sprout-ss-search-input):not(.sprout-search-naked):focus,
-.sprout input[type="search"]:not(.sprout-ss-search-input):not(.sprout-search-naked):focus,
-.sprout input[type="number"]:focus,
-.sprout select:focus {
+.learnkit input:not(.lk-home-name-input):not(.learnkit-ss-search-input):not(.learnkit-search-naked):focus,
+.learnkit textarea:not(.learnkit-assistant-popup-input):focus,
+.learnkit .input:focus,
+.learnkit .textarea:focus,
+.learnkit input[type="text"]:not(.lk-home-name-input):not(.learnkit-ss-search-input):not(.learnkit-search-naked):focus,
+.learnkit input[type="search"]:not(.learnkit-ss-search-input):not(.learnkit-search-naked):focus,
+.learnkit input[type="number"]:focus,
+.learnkit select:focus {
   border: 1.5px solid var(--theme-accent);
   box-shadow: none;
   outline: none;
 }
 
 /* Ensure Obsidian/LearnKit input focus rings never leak into Sprout surfaces */
-.sprout :is(
+.learnkit :is(
   textarea,
   .multi-select-container,
   input.metadata-input-text,
@@ -664,52 +664,52 @@
 
 
 /* Keep browser editable textareas styled in comfortable/non-compact density. */
-.sprout [data-lk-browser-density='comfortable'] :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea),
-.sprout [data-lk-browser-root='1']:not([data-lk-browser-density='compact']) :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea) {
+.learnkit [data-lk-browser-density='comfortable'] :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea),
+.learnkit [data-lk-browser-root='1']:not([data-lk-browser-density='compact']) :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea) {
   border: 1px solid var(--theme-accent) !important;
   border-radius: var(--radius-md) !important;
   font-size: 0.75rem !important;
 }
 
 /* Typed cloze inputs override the global accent focus above */
-.sprout .sprout-cloze-typed-input {
+.learnkit .learnkit-cloze-typed-input {
   border-width: 1px;
 }
 /* No state, focused → theme accent */
-.sprout .sprout-cloze-typed-input:focus {
+.learnkit .learnkit-cloze-typed-input:focus {
   border-color: var(--interactive-accent, #7c9dff);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent, #7c9dff) 20%, transparent);
 }
 /* Unfocused state borders (muted) */
-.sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial {
-  border-color: color-mix(in srgb, var(--sprout-hard-bg) 55%, var(--sprout-border-color));
+.learnkit .learnkit-cloze-typed-input.learnkit-cloze-typed--partial {
+  border-color: color-mix(in srgb, var(--learnkit-hard-bg) 55%, var(--learnkit-border-color));
 }
-.sprout .sprout-cloze-typed-input.sprout-cloze-typed--correct {
-  border-color: color-mix(in srgb, var(--sprout-good-bg) 55%, var(--sprout-border-color));
+.learnkit .learnkit-cloze-typed-input.learnkit-cloze-typed--correct {
+  border-color: color-mix(in srgb, var(--learnkit-good-bg) 55%, var(--learnkit-border-color));
 }
-.sprout .sprout-cloze-typed-input.sprout-cloze-typed--wrong {
-  border-color: color-mix(in srgb, var(--sprout-again-bg) 55%, var(--sprout-border-color));
+.learnkit .learnkit-cloze-typed-input.learnkit-cloze-typed--wrong {
+  border-color: color-mix(in srgb, var(--learnkit-again-bg) 55%, var(--learnkit-border-color));
 }
 /* Focused state borders (full colour + glow) */
-.sprout .sprout-cloze-typed-input.sprout-cloze-typed--partial:focus {
-  border-color: var(--sprout-hard-bg) !important;
+.learnkit .learnkit-cloze-typed-input.learnkit-cloze-typed--partial:focus {
+  border-color: var(--learnkit-hard-bg) !important;
 }
-.sprout .sprout-cloze-typed-input.sprout-cloze-typed--correct:focus {
-  border-color: var(--sprout-good-bg) !important;
+.learnkit .learnkit-cloze-typed-input.learnkit-cloze-typed--correct:focus {
+  border-color: var(--learnkit-good-bg) !important;
 }
-.sprout .sprout-cloze-typed-input.sprout-cloze-typed--wrong:focus {
-  border-color: var(--sprout-again-bg) !important;
+.learnkit .learnkit-cloze-typed-input.learnkit-cloze-typed--wrong:focus {
+  border-color: var(--learnkit-again-bg) !important;
 }
 
-.sprout .rounded-lg {
+.learnkit .rounded-lg {
     border-radius: var(--radius-md) !important;
 }
 
-.sprout h1,
-.sprout h2,
-.sprout h3,
-.sprout h4,
-.sprout h5,
-.sprout h6 {
+.learnkit h1,
+.learnkit h2,
+.learnkit h3,
+.learnkit h4,
+.learnkit h5,
+.learnkit h6 {
   letter-spacing: -0.02em;
 }

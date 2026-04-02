@@ -69,7 +69,7 @@ type HeatCell = {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
+      className={`svg-icon learnkit-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -122,9 +122,9 @@ function usePopoverPlacement(
     const place = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.classList.add("sprout-ana-popover", "sprout-ana-popover-sm");
-      popover.classList.toggle("sprout-ana-popover-right", align === "right");
-      popover.classList.toggle("sprout-ana-popover-left", align !== "right");
+      popover.classList.add("learnkit-ana-popover", "learnkit-ana-popover", "learnkit-ana-popover-sm", "learnkit-ana-popover-sm");
+      popover.classList.toggle("learnkit-ana-popover-right", align === "right");
+      popover.classList.toggle("learnkit-ana-popover-left", align !== "right");
     };
     place();
     window.addEventListener("resize", place);
@@ -388,27 +388,27 @@ export function ReviewCalendarHeatmap(props: {
   }, []);
 
   return (
-    <div className={"bc card sprout-ana-card sprout-ana-min-320 p-4 flex flex-col gap-3"}>
-      <div className={"bc flex items-start justify-between gap-2"}>
-        <div className={"bc"}>
-          <div className={"bc flex items-center gap-1"}>
-            <div className={"bc font-semibold lk-home-section-title"}>Study heatmap</div>
+    <div className={"card learnkit-ana-card learnkit-ana-min-320 p-4 flex flex-col gap-3"}>
+      <div className={"flex items-start justify-between gap-2"}>
+        <div className="">
+          <div className={"flex items-center gap-1"}>
+            <div className={"font-semibold lk-home-section-title"}>Study heatmap</div>
             <InfoIcon text="Calendar view of daily review counts. Darker squares mean more reviews." />
           </div>
-          <div className={"bc text-xs text-muted-foreground"}>Reviews per day</div>
+          <div className={"text-xs text-muted-foreground"}>Reviews per day</div>
         </div>
-        <div ref={dropdownWrapRef} className={"bc relative inline-flex"}>
+        <div ref={dropdownWrapRef} className={"relative inline-flex"}>
           <button
-            id="sprout-heatmap-filter-trigger"
+            id="learnkit-heatmap-filter-trigger"
             type="button"
-            className={"bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2"}
+            className={"learnkit-btn-toolbar learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2"}
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
-            aria-controls="sprout-heatmap-filter-listbox"
+            aria-controls="learnkit-heatmap-filter-listbox"
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
-              className={"bc svg-icon lucide-filter"}
+              className={"svg-icon lucide-filter"}
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -421,20 +421,20 @@ export function ReviewCalendarHeatmap(props: {
             >
               <polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3" />
             </svg>
-            <span className={"bc"}>Filter</span>
+            <span className="">Filter</span>
           </button>
 
           {open ? (
             <div
-              id="sprout-heatmap-filter-popover"
+              id="learnkit-heatmap-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className={"bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm"}
+              className={"rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm"}
             >
-              <div className={"bc p-1"}>
+              <div className={"p-1"}>
                 <div
                   className={
-                    "bc flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
+                    "flex items-center justify-between text-sm text-muted-foreground px-2 py-1 cursor-pointer outline-none focus-visible:shadow-outline"
                   }
                   role="button"
                   tabIndex={0}
@@ -442,12 +442,12 @@ export function ReviewCalendarHeatmap(props: {
                   onClick={toggleDurationOpen}
                   onKeyDown={onDurationKey}
                 >
-                  <span className={"bc"}>Duration</span>
+                  <span className="">Duration</span>
                   <ChevronIcon open={durationOpen} />
                 </div>
 
                 {durationOpen ? (
-                  <div role="menu" aria-orientation="vertical" className={"bc flex flex-col"}>
+                  <div role="menu" aria-orientation="vertical" className={"flex flex-col"}>
                     {durationOptions.map((opt) => {
                       const selected = durationDays === opt;
                       const label = opt === 0 ? "Year to date" : `${opt} days`;
@@ -458,7 +458,7 @@ export function ReviewCalendarHeatmap(props: {
                           aria-checked={selected ? "true" : "false"}
                           tabIndex={0}
                           className={
-                            "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                            "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           }
                           onClick={() => setDurationDays(opt)}
                           onKeyDown={(event) => {
@@ -468,22 +468,22 @@ export function ReviewCalendarHeatmap(props: {
                             }
                           }}
                         >
-                          <div className={"bc size-4 flex items-center justify-center"}>
+                          <div className={"size-4 flex items-center justify-center"}>
                             <div
-                              className={"bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible"}
+                              className={"size-2 rounded-full bg-foreground invisible group-aria-checked:visible"}
                               aria-hidden="true"
                             />
                           </div>
-                          <span className={"bc"}>{label}</span>
+                          <span className="">{label}</span>
                         </div>
                       );
                     })}
                   </div>
                 ) : null}
 
-                <div className={"bc h-px bg-border my-1"} role="separator" />
+                <div className={"h-px bg-border my-1"} role="separator" />
 
-                <div className={"bc text-sm text-muted-foreground cursor-pointer px-2"} onClick={resetFilters}>
+                <div className={"text-sm text-muted-foreground cursor-pointer px-2"} onClick={resetFilters}>
                   Reset filters
                 </div>
               </div>
@@ -492,9 +492,9 @@ export function ReviewCalendarHeatmap(props: {
         </div>
       </div>
 
-      <div ref={chartWrapRef} className={"bc relative flex flex-1 items-center sprout-ana-min-120"}>
-        <div className={"bc w-full overflow-x-auto overflow-y-hidden"}>
-          <svg className={"bc block mx-auto"} width={gridWidth} height={gridHeight} viewBox={`0 0 ${gridWidth} ${gridHeight}`}>
+      <div ref={chartWrapRef} className={"relative flex flex-1 items-center learnkit-ana-min-120"}>
+        <div className={"w-full overflow-x-auto overflow-y-hidden"}>
+          <svg className={"block mx-auto"} width={gridWidth} height={gridHeight} viewBox={`0 0 ${gridWidth} ${gridHeight}`}>
           {cells.map((cell, idx) => {
             let col = Math.floor(idx / 7);
             let row = idx % 7;
@@ -546,32 +546,32 @@ export function ReviewCalendarHeatmap(props: {
 
         {hovered ? (
           <div
-            className={"bc sprout-data-tooltip-surface sprout-ana-heatmap-tooltip"}
+            className={"learnkit-data-tooltip-surface learnkit-ana-heatmap-tooltip"}
             style={{
-              "--sprout-ana-x": `${hovered.x}px`,
-              "--sprout-ana-y": `${hovered.y}px`,
+              "--learnkit-ana-x": `${hovered.x}px`,
+              "--learnkit-ana-y": `${hovered.y}px`,
             } as React.CSSProperties}
           >
-            <div className={"bc text-sm font-medium text-background"}>{hovered.cell.dateLabel}</div>
-            <div className={"bc text-background"}>Reviews: {hovered.cell.count}</div>
-            <div className={"bc text-background"}>
+            <div className={"text-sm font-medium text-background"}>{hovered.cell.dateLabel}</div>
+            <div className={"text-background"}>Reviews: {hovered.cell.count}</div>
+            <div className={"text-background"}>
               Time: {Math.max(1, Math.ceil(hovered.cell.totalMs / 60000))} min
             </div>
           </div>
         ) : null}
       </div>
 
-      <div className={"bc flex items-center gap-2 text-xs text-muted-foreground"}>
-        <span className={"bc"}>Less</span>
-        <div className={"bc inline-flex items-center gap-1"}>
+      <div className={"flex items-center gap-2 text-xs text-muted-foreground"}>
+        <span className="">Less</span>
+        <div className={"inline-flex items-center gap-1"}>
           {palette.slice(1).map((color, idx) => (
             <span
               key={`${color}-${idx}`}
-              className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": color })}`}
+              className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": color })}`}
             />
           ))}
         </div>
-        <span className={"bc"}>More</span>
+        <span className="">More</span>
       </div>
     </div>
   );

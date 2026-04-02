@@ -99,16 +99,16 @@ export class SproutMarkdownHelper {
     const imgs = Array.from(containerEl.querySelectorAll("img"));
 
     for (const img of imgs) {
-      if (img.hasAttribute("data-sprout-flag-code")) {
-        img.classList.remove("sprout-zoomable");
+      if (img.hasAttribute("data-learnkit-flag-code")) {
+        img.classList.remove("learnkit-zoomable", "learnkit-zoomable");
         if (img.dataset) delete img.dataset.bcZoomBound;
         continue;
       }
       if (img.dataset?.bcZoomBound === "1") continue;
       img.dataset.bcZoomBound = "1";
 
-      img.classList.add("sprout-zoomable");
-      setCssProps(img, "--sprout-md-image-max-h", `${this.maxHeightPx}px`);
+      img.classList.add("learnkit-zoomable", "learnkit-zoomable");
+      setCssProps(img, "--learnkit-md-image-max-h", `${this.maxHeightPx}px`);
 
       try {
         img.loading = "lazy";
@@ -129,17 +129,17 @@ export class SproutMarkdownHelper {
   private normalizeInlineFlagImages(containerEl: HTMLElement) {
     const figures = Array.from(containerEl.querySelectorAll("figure"));
     for (const figure of figures) {
-      const img = figure.querySelector<HTMLImageElement>("img[data-sprout-flag-code]");
+      const img = figure.querySelector<HTMLImageElement>("img[data-learnkit-flag-code]");
       if (!img) continue;
       figure.querySelector("figcaption")?.remove();
       figure.replaceWith(img);
     }
 
-    const flags = Array.from(containerEl.querySelectorAll<HTMLImageElement>("img[data-sprout-flag-code]"));
+    const flags = Array.from(containerEl.querySelectorAll<HTMLImageElement>("img[data-learnkit-flag-code]"));
     for (const img of flags) {
-      img.classList.remove("sprout-zoomable");
+      img.classList.remove("learnkit-zoomable", "learnkit-zoomable");
       img.removeAttribute("data-bc-zoom-bound");
-      img.style.removeProperty("--sprout-md-image-max-h");
+      img.style.removeProperty("--learnkit-md-image-max-h");
     }
   }
 

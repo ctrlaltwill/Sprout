@@ -1,3 +1,11 @@
+/**
+ * @file src/platform/integrations/ai/study-assistant-hidden-prompts.ts
+ * @summary Module for study assistant hidden prompts.
+ *
+ * @exports
+ *  - buildStudyAssistantHiddenPrompt
+ */
+
 type HiddenMode = "ask" | "review" | "flashcard";
 
 const BASE_HIDDEN_RULES = [

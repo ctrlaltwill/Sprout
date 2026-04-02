@@ -1,6 +1,10 @@
 /**
- * @file src/imageocclusion/io-mask-icon.ts
- * @summary Shared resolver for image-occlusion mask hint content.
+ * @file src/platform/image-occlusion/io-mask-icon.ts
+ * @summary Module for io mask icon.
+ *
+ * @exports
+ *  - IoMaskHint
+ *  - resolveIoMaskHint
  */
 
 export type IoMaskHint =

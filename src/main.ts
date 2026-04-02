@@ -1,3 +1,12 @@
+/**
+ * @file src/main.ts
+ * @summary Plugin entry point that wires lifecycle, startup registration, and teardown.
+ *
+ * @exports
+ *  - LearnKitPlugin
+ *  - SproutPlugin
+ */
+
 // This file is small on purpose. The chaos now lives in organized modules. Have fun exploring!
 
 import "basecoat-css/all";

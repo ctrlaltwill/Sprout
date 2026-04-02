@@ -7,8 +7,6 @@
  *   - BasecoatApi    — shape of the global basecoat runtime
  *   - getBasecoatApi — returns the global Basecoat API or null if unavailable
  */
-
-/** Shape of the Basecoat UI runtime API expected on `window.basecoat`. */
 export type BasecoatApi = {
   register?: (group: string, selector: string, init: (el: Element) => void) => void;
   init?: (group: string) => void;

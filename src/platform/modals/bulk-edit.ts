@@ -13,7 +13,7 @@
 
 import { Modal, Notice, setIcon, type App } from "obsidian";
 
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../core/store";
 import { normalizeCardOptions, getCorrectIndices } from "../core/store";
 import {
@@ -40,7 +40,7 @@ import { handleTabInTextarea } from "../card-editor/card-editor";
 type GroupPickerFieldFactory = (
   initialValue: string,
   cardsCount: number,
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
 ) => { element: HTMLElement; hiddenInput: HTMLInputElement };
 
 const CLOZE_TOOLTIP =
@@ -106,12 +106,12 @@ function getSharedEditableFieldValue(cards: CardRecord[], field: EditableField):
  * Supports basic, reversed, cloze, MCQ, and OQ cards. IO cards are excluded.
  */
 export class BulkEditCardModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   private cards: CardRecord[];
   private onSaveCallback: (updatedCards: CardRecord[]) => Promise<void>;
   private closeCleanup: Array<() => void> = [];
 
-  constructor(app: App, plugin: SproutPlugin, cards: CardRecord[], onSave: (updatedCards: CardRecord[]) => Promise<void>) {
+  constructor(app: App, plugin: LearnKitPlugin, cards: CardRecord[], onSave: (updatedCards: CardRecord[]) => Promise<void>) {
     super(app);
     this.plugin = plugin;
     this.cards = cards.filter((c) => !["io", "io-child"].includes(String(c.type || "")));
@@ -130,10 +130,10 @@ export class BulkEditCardModal extends Modal {
     // positioning CSS (position:absolute, z-index, etc.) is already active.
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
     setCssProps(this.containerEl, "z-index", "2147483000");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-bulk-edit-panel");
+    this.modalEl.addClass("lk-modals", "learnkit-bulk-edit-panel");
     setCssProps(this.modalEl, "z-index", "2147483001");
     scopeModalToWorkspace(this);
-    this.contentEl.addClass("bc", "sprout-bulk-edit-content");
+    this.contentEl.addClass("learnkit-bulk-edit-content");
 
     // Escape key closes modal
     this.scope.register([], "Escape", () => { this.close(); return false; });
@@ -147,17 +147,17 @@ export class BulkEditCardModal extends Modal {
     if (headerEl) {
       const close = document.createElement("button");
       close.type = "button";
-      close.className = "bc sprout-btn-toolbar sprout-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 sprout-scope-clear-btn sprout-card-creator-close-btn sprout-bulk-edit-close-btn";
+      close.className = "learnkit-btn-toolbar learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-card-creator-close-btn learnkit-bulk-edit-close-btn";
       close.setAttribute("aria-label", "Close");
       close.setAttribute("data-tooltip-position", "top");
 
       const closeIcon = document.createElement("span");
-      closeIcon.className = "bc inline-flex items-center justify-center";
+      closeIcon.className = "inline-flex items-center justify-center";
       setIcon(closeIcon, "x");
 
       const closeLabel = document.createElement("span");
-      closeLabel.className = "bc";
-      closeLabel.setAttribute("data-sprout-label", "true");
+      closeLabel.className = "";
+      closeLabel.setAttribute("data-learnkit-label", "true");
       closeLabel.textContent = "Close";
 
       close.appendChild(closeIcon);
@@ -178,7 +178,7 @@ export class BulkEditCardModal extends Modal {
 
   // ── Form body ─────────────────────────────────────────────────────────────
   const form = document.createElement("div");
-  form.className = "bc flex flex-col gap-4";
+  form.className = "flex flex-col gap-4";
 
   const normalizedTypes = cards.map((c) => String(c?.type ?? "").toLowerCase());
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
@@ -196,12 +196,12 @@ export class BulkEditCardModal extends Modal {
     maxControlHeight = Number.POSITIVE_INFINITY,
   ): HTMLElement => {
     const wrap = document.createElement("div");
-    wrap.className = `bc sprout-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-wrap--multiline" : ""}`;
+    wrap.className = `bc learnkit-flag-editor-wrap${control instanceof HTMLTextAreaElement ? " learnkit-flag-editor-wrap--multiline" : ""}`;
 
     const overlay = document.createElement("div");
-    overlay.className = `bc sprout-flag-editor-overlay${control instanceof HTMLTextAreaElement ? " sprout-flag-editor-overlay--multiline" : ""}`;
+    overlay.className = `bc learnkit-flag-editor-overlay${control instanceof HTMLTextAreaElement ? " learnkit-flag-editor-overlay--multiline" : ""}`;
 
-    control.classList.add("sprout-flag-editor-control");
+    control.classList.add("learnkit-flag-editor-control", "learnkit-flag-editor-control");
 
     if (control instanceof HTMLTextAreaElement) {
       // Start compact and allow user-resize up to max height.
@@ -241,9 +241,9 @@ export class BulkEditCardModal extends Modal {
         : rawPreviewHeight;
       if (previewHeight === lastPreviewHeight) return;
       lastPreviewHeight = previewHeight;
-      wrap.style.setProperty("--sprout-flag-preview-height", `${previewHeight}px`);
+      wrap.style.setProperty("--learnkit-flag-preview-height", `${previewHeight}px`);
       if (Number.isFinite(maxControlHeight)) {
-        wrap.style.setProperty("--sprout-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
+        wrap.style.setProperty("--learnkit-flag-preview-max-height", `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`);
       }
       applyControlHeight(previewHeight);
     };
@@ -289,16 +289,16 @@ export class BulkEditCardModal extends Modal {
     });
 
     control.addEventListener("focus", () => {
-      wrap.classList.add("sprout-flag-editor--focused");
+      wrap.classList.add("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
       syncPreviewHeight();
     });
     control.addEventListener("blur", () => {
-      wrap.classList.remove("sprout-flag-editor--focused");
+      wrap.classList.remove("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
       renderOverlay();
     });
     control.addEventListener("input", () => {
       syncPreviewHeight();
-      if (!wrap.classList.contains("sprout-flag-editor--focused")) renderOverlay();
+      if (!wrap.classList.contains("learnkit-flag-editor--focused")) renderOverlay();
     });
 
     if (control instanceof HTMLTextAreaElement) {
@@ -335,10 +335,10 @@ export class BulkEditCardModal extends Modal {
     maxControlHeight = 80,
   ): HTMLElement => {
     const wrap = document.createElement("div");
-    wrap.className = "bc sprout-single-edit-markdown-field";
+    wrap.className = "learnkit-single-edit-markdown-field";
 
     const preview = document.createElement("div");
-    preview.className = "bc sprout-single-edit-markdown-preview markdown-rendered";
+    preview.className = "learnkit-single-edit-markdown-preview markdown-rendered";
     setCssProps(preview, {
       "min-height": `${minControlHeight}px`,
       height: `${minControlHeight}px`,
@@ -386,7 +386,7 @@ export class BulkEditCardModal extends Modal {
         height: `${targetHeight}px`,
         "max-height": `${Math.max(minControlHeight, Math.floor(maxControlHeight))}px`,
       });
-      setCssProps(wrap, "--sprout-single-edit-height", `${targetHeight}px`);
+      setCssProps(wrap, "--learnkit-single-edit-height", `${targetHeight}px`);
     };
 
     const syncFieldHeights = () => {
@@ -521,15 +521,15 @@ export class BulkEditCardModal extends Modal {
   /** Creates a label + textarea pair for an editable field. */
   const createEditableTextareaField = (label: string, field: "title" | "question" | "answer" | "info") => {
     const wrapper = document.createElement("div");
-    wrapper.className = "bc flex flex-col gap-1 sprout-card-meta-field";
+    wrapper.className = "flex flex-col gap-1 learnkit-card-meta-field";
 
     const labelEl = document.createElement("label");
-    labelEl.className = "bc text-sm font-medium";
+    labelEl.className = "text-sm font-medium";
     labelEl.textContent = label;
     if (field === "question" && isClozeOnly) {
-      labelEl.className = "bc text-sm font-medium inline-flex items-center gap-1";
+      labelEl.className = "text-sm font-medium inline-flex items-center gap-1";
       const infoIcon = document.createElement("span");
-      infoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+      infoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
       infoIcon.setAttribute("aria-label", CLOZE_TOOLTIP);
       infoIcon.setAttribute("data-tooltip-position", "top");
       setIcon(infoIcon, "info");
@@ -538,7 +538,7 @@ export class BulkEditCardModal extends Modal {
     wrapper.appendChild(labelEl);
 
     const textarea = document.createElement("textarea");
-    textarea.className = "bc w-full sprout-textarea-fixed";
+    textarea.className = "w-full learnkit-textarea-fixed";
     textarea.rows = 3;
     textarea.value = getSharedEditableFieldValue(cards, field);
     setCssProps(textarea, {
@@ -568,10 +568,10 @@ export class BulkEditCardModal extends Modal {
   /** Creates a label + disabled input pair for a read-only field. */
   const createReadonlyField = (label: string, value: string, inputClass = "") => {
     const wrapper = document.createElement("div");
-    wrapper.className = "bc flex flex-col gap-1";
+    wrapper.className = "flex flex-col gap-1";
 
     const labelEl = document.createElement("label");
-    labelEl.className = "bc text-sm font-medium";
+    labelEl.className = "text-sm font-medium";
     labelEl.textContent = label;
     wrapper.appendChild(labelEl);
 
@@ -587,7 +587,7 @@ export class BulkEditCardModal extends Modal {
 
   // ── Top metadata grid (read-only) ───────────────────────────────────────
   const topGrid = document.createElement("div");
-  topGrid.className = "bc grid grid-cols-1 gap-3 md:grid-cols-2 sprout-card-meta-grid";
+  topGrid.className = "grid grid-cols-1 gap-3 md:grid-cols-2 learnkit-card-meta-grid";
 
   const card0 = cards[0];
   const state0 = plugin.store.getState(card0.id);
@@ -600,10 +600,10 @@ export class BulkEditCardModal extends Modal {
 
   if (isBasicOrReversed) {
     const typeWrapper = document.createElement("div");
-    typeWrapper.className = "bc flex flex-col gap-1 sprout-card-meta-field";
+    typeWrapper.className = "flex flex-col gap-1 learnkit-card-meta-field";
 
     const typeLabelEl = document.createElement("label");
-    typeLabelEl.className = "bc text-sm font-medium";
+    typeLabelEl.className = "text-sm font-medium";
     typeLabelEl.textContent = "Type";
     typeWrapper.appendChild(typeLabelEl);
 
@@ -618,7 +618,7 @@ export class BulkEditCardModal extends Modal {
         fullWidth: false,
         buttonSize: "sm",
         buttonJustify: "start",
-        buttonClassName: "cursor-pointer sprout-card-meta-type-btn",
+        buttonClassName: "cursor-pointer learnkit-card-meta-type-btn",
       },
     );
     typeDropdown.onChange((value) => { selectedType = value; });
@@ -654,13 +654,13 @@ export class BulkEditCardModal extends Modal {
     const correctIdxSet = new Set(getCorrectIndices(mcqCard));
 
     mcqSection = document.createElement("div");
-    mcqSection.className = "bc flex flex-col gap-2";
+    mcqSection.className = "flex flex-col gap-2";
 
     const mcqLabel = document.createElement("label");
-    mcqLabel.className = "bc text-sm font-medium inline-flex items-center gap-1";
+    mcqLabel.className = "text-sm font-medium inline-flex items-center gap-1";
     mcqLabel.textContent = "Answers and options";
     const mcqInfoIcon = document.createElement("span");
-    mcqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+    mcqInfoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
     mcqInfoIcon.setAttribute("aria-label", MCQ_TOOLTIP);
     mcqInfoIcon.setAttribute("data-tooltip-position", "top");
     setIcon(mcqInfoIcon, "info");
@@ -668,7 +668,7 @@ export class BulkEditCardModal extends Modal {
     mcqSection.appendChild(mcqLabel);
 
     const optionsContainer = document.createElement("div");
-    optionsContainer.className = "bc flex flex-col gap-2";
+    optionsContainer.className = "flex flex-col gap-2";
     mcqSection.appendChild(optionsContainer);
 
     const updateRemoveButtons = () => {
@@ -682,18 +682,18 @@ export class BulkEditCardModal extends Modal {
 
     const addOptionRow = (value: string, isCorrect: boolean) => {
       const row = document.createElement("div");
-      row.className = "bc flex items-center gap-2 sprout-edit-mcq-option-row";
+      row.className = "flex items-center gap-2 learnkit-edit-mcq-option-row";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = isCorrect;
-      checkbox.className = "bc sprout-mcq-correct-checkbox";
+      checkbox.className = "learnkit-mcq-correct-checkbox";
       checkbox.setAttribute("aria-label", "Mark as correct answer");
       checkbox.setAttribute("data-tooltip-position", "top");
       row.appendChild(checkbox);
 
       const input = document.createElement("textarea");
-      input.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+      input.className = "textarea flex-1 text-sm learnkit-input-fixed learnkit-textarea-fixed";
       input.rows = 1;
       input.placeholder = "Enter an answer option";
       input.value = value;
@@ -709,11 +709,11 @@ export class BulkEditCardModal extends Modal {
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "bc inline-flex items-center justify-center h-9 w-9 p-0 sprout-remove-btn-ghost";
+      removeBtn.className = "inline-flex items-center justify-center h-9 w-9 p-0 learnkit-remove-btn-ghost";
       removeBtn.setAttribute("aria-label", "Remove option");
       removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
-      xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+      xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
       setIcon(xIcon, "x");
       removeBtn.appendChild(xIcon);
       removeBtn.addEventListener("click", (ev) => {
@@ -746,7 +746,7 @@ export class BulkEditCardModal extends Modal {
 
     // "Add another option" input
     const addInput = document.createElement("textarea");
-    addInput.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+    addInput.className = "textarea flex-1 text-sm learnkit-input-fixed learnkit-textarea-fixed";
     addInput.rows = 1;
     addInput.placeholder = "Add another option (press enter)";
     addInput.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -768,7 +768,7 @@ export class BulkEditCardModal extends Modal {
       addInput.value = "";
     });
     const addInputWrap = document.createElement("div");
-    addInputWrap.className = "bc flex items-center gap-2 sprout-mcq-add-row";
+    addInputWrap.className = "flex items-center gap-2 learnkit-mcq-add-row";
     addInputWrap.appendChild(attachFlagPreviewOverlay(addInput, 36, 36));
     mcqSection.appendChild(addInputWrap);
 
@@ -783,14 +783,14 @@ export class BulkEditCardModal extends Modal {
     const initialSteps = Array.isArray(oqCard.oqSteps) ? [...oqCard.oqSteps] : ["" , ""];
 
     const oqSection = document.createElement("div");
-    oqSection.className = "bc flex flex-col gap-2";
+    oqSection.className = "flex flex-col gap-2";
 
     const oqLabel = document.createElement("label");
-    oqLabel.className = "bc text-sm font-medium inline-flex items-center gap-1";
+    oqLabel.className = "text-sm font-medium inline-flex items-center gap-1";
     oqLabel.textContent = "Steps (correct order)";
-    oqLabel.appendChild(Object.assign(document.createElement("span"), { className: "bc text-destructive", textContent: "*" }));
+    oqLabel.appendChild(Object.assign(document.createElement("span"), { className: "text-destructive", textContent: "*" }));
     const oqInfoIcon = document.createElement("span");
-    oqInfoIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-info-icon-elevated";
+    oqInfoIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-info-icon-elevated";
     oqInfoIcon.setAttribute("aria-label", OQ_TOOLTIP);
     oqInfoIcon.setAttribute("data-tooltip-position", "top");
     setIcon(oqInfoIcon, "info");
@@ -798,12 +798,12 @@ export class BulkEditCardModal extends Modal {
     oqSection.appendChild(oqLabel);
 
     const oqHint = document.createElement("div");
-    oqHint.className = "bc text-xs text-muted-foreground";
+    oqHint.className = "text-xs text-muted-foreground";
     oqHint.textContent = "Enter the steps in their correct order. Drag the grip handles to reorder. Steps are shuffled during review.";
     oqSection.appendChild(oqHint);
 
     oqListContainer = document.createElement("div");
-    oqListContainer.className = "bc flex flex-col gap-2 sprout-oq-editor-list";
+    oqListContainer.className = "flex flex-col gap-2 learnkit-oq-editor-list";
     oqSection.appendChild(oqListContainer);
 
     const renumberOq = () => {
@@ -815,7 +815,7 @@ export class BulkEditCardModal extends Modal {
     const updateOqRemoveButtons = () => {
       const disable = oqStepRows.length <= 2;
       for (const entry of oqStepRows) {
-        const delBtn = entry.row.querySelector<HTMLButtonElement>(".sprout-oq-del-btn");
+        const delBtn = entry.row.querySelector<HTMLButtonElement>(".learnkit-oq-del-btn");
         if (delBtn) {
           delBtn.disabled = disable;
           delBtn.setAttribute("aria-disabled", disable ? "true" : "false");
@@ -828,25 +828,25 @@ export class BulkEditCardModal extends Modal {
       const idx = oqStepRows.length;
 
       const row = document.createElement("div");
-      row.className = "bc flex items-center gap-2 sprout-oq-editor-row";
+      row.className = "flex items-center gap-2 learnkit-oq-editor-row";
       row.draggable = false;
 
       // Drag grip
       const grip = document.createElement("span");
-      grip.className = "bc inline-flex items-center justify-center text-muted-foreground cursor-grab sprout-oq-grip";
+      grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab learnkit-oq-grip";
       grip.draggable = true;
       setIcon(grip, "grip-vertical");
       row.appendChild(grip);
 
       // Number badge
       const badge = document.createElement("span");
-      badge.className = "bc inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0";
+      badge.className = "inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 h-9 leading-none shrink-0";
       badge.textContent = String(idx + 1);
       row.appendChild(badge);
 
       // Text input
       const input = document.createElement("textarea");
-      input.className = "bc textarea flex-1 text-sm sprout-oq-step-input";
+      input.className = "textarea flex-1 text-sm learnkit-oq-step-input";
       input.rows = 1;
       input.placeholder = `Step ${idx + 1}`;
       input.value = value;
@@ -868,11 +868,11 @@ export class BulkEditCardModal extends Modal {
       // Delete button
       const delBtn = document.createElement("button");
       delBtn.type = "button";
-      delBtn.className = "bc inline-flex items-center justify-center p-0 sprout-remove-btn-ghost sprout-oq-del-btn";
+      delBtn.className = "inline-flex items-center justify-center p-0 learnkit-remove-btn-ghost learnkit-oq-del-btn";
       delBtn.setAttribute("aria-label", "Remove step");
       delBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
-      xIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+      xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
       setIcon(xIcon, "x");
       delBtn.appendChild(xIcon);
       delBtn.addEventListener("click", (ev) => {
@@ -891,10 +891,10 @@ export class BulkEditCardModal extends Modal {
       // HTML5 DnD for reordering
       row.addEventListener("dragstart", (ev) => {
         ev.dataTransfer?.setData("text/plain", String(oqStepRows.findIndex((e) => e.row === row)));
-        row.classList.add("sprout-oq-row-dragging");
+        row.classList.add("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
       });
       row.addEventListener("dragend", () => {
-        row.classList.remove("sprout-oq-row-dragging");
+        row.classList.remove("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
       });
       row.addEventListener("dragover", (ev) => {
         ev.preventDefault();
@@ -926,9 +926,9 @@ export class BulkEditCardModal extends Modal {
 
     // "Add step" input
     const addOqRow = document.createElement("div");
-    addOqRow.className = "bc flex items-center gap-2 sprout-oq-add-row";
+    addOqRow.className = "flex items-center gap-2 learnkit-oq-add-row";
     const addOqInput = document.createElement("textarea");
-    addOqInput.className = "bc textarea flex-1 text-sm sprout-input-fixed sprout-textarea-fixed";
+    addOqInput.className = "textarea flex-1 text-sm learnkit-input-fixed learnkit-textarea-fixed";
     addOqInput.rows = 1;
     addOqInput.placeholder = "Add another step (press enter)";
     addOqInput.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -964,10 +964,10 @@ export class BulkEditCardModal extends Modal {
 
   // ── Groups field (Basecoat tag picker) ────────────────────────────────────
   const groupsWrapper = document.createElement("div");
-  groupsWrapper.className = "bc flex flex-col gap-1";
+  groupsWrapper.className = "flex flex-col gap-1";
 
   const groupsLabel = document.createElement("label");
-  groupsLabel.className = "bc text-sm font-medium";
+  groupsLabel.className = "text-sm font-medium";
   groupsLabel.textContent = "Groups";
   groupsWrapper.appendChild(groupsLabel);
 
@@ -986,20 +986,20 @@ export class BulkEditCardModal extends Modal {
 
   // ── Footer buttons ────────────────────────────────────────────────────────
   const footer = document.createElement("div");
-  footer.className = "bc flex items-center justify-end gap-4 lk-modal-footer sprout-card-creator-footer";
+  footer.className = "flex items-center justify-end gap-4 lk-modal-footer learnkit-card-creator-footer";
 
   const cancel = document.createElement("button");
   cancel.type = "button";
-  cancel.className = "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm";
+  cancel.className = "learnkit-btn-toolbar learnkit-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm";
   const cancelText = document.createElement("span");
   cancelText.textContent = "Cancel";
   cancel.appendChild(cancelText);
 
   const save = document.createElement("button");
   save.type = "button";
-  save.className = "bc sprout-btn-toolbar sprout-btn-accent sprout-bulk-edit-save-btn inline-flex items-center gap-2 h-9 px-3 text-sm";
+  save.className = "learnkit-btn-toolbar learnkit-btn-accent learnkit-bulk-edit-save-btn inline-flex items-center gap-2 h-9 px-3 text-sm";
   const saveIcon = document.createElement("span");
-  saveIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-4";
+  saveIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
   setIcon(saveIcon, "check");
   const saveText = document.createElement("span");
   saveText.textContent = "Save";
@@ -1153,7 +1153,7 @@ export class BulkEditCardModal extends Modal {
  * Drop-in replacement for the old function-based overlay.
  */
 export function openBulkEditModalForCards(
-  plugin: SproutPlugin,
+  plugin: LearnKitPlugin,
   cards: CardRecord[],
   onSave: (updatedCards: CardRecord[]) => Promise<void>,
 ) {

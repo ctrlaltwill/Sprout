@@ -89,7 +89,7 @@ type AxisDatum = Datum & {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`svg-icon sprout-ana-chevron${open ? " is-open" : ""}`}
+      className={`svg-icon learnkit-ana-chevron${open ? " is-open" : ""}`}
       xmlns="http://www.w3.org/2000/svg"
       width="11"
       height="11"
@@ -190,8 +190,8 @@ function usePopoverPlacement(
     const place = () => {
       const popover = popoverRef.current;
       if (!popover) return;
-      popover.classList.remove("sprout-ana-popover-left");
-      popover.classList.add("sprout-ana-popover", "sprout-ana-popover-right");
+      popover.classList.remove("learnkit-ana-popover-left", "learnkit-ana-popover-left");
+      popover.classList.add("learnkit-ana-popover", "learnkit-ana-popover", "learnkit-ana-popover-right", "learnkit-ana-popover-right");
     };
     place();
     window.addEventListener("resize", place, true);
@@ -282,7 +282,7 @@ function TooltipContent(props: { active?: boolean; payload?: Array<{ payload?: u
   const datum = props.payload[0]?.payload as Datum | undefined;
   if (!datum) return null;
   return (
-    <div className="sprout-data-tooltip-surface">
+    <div className="learnkit-data-tooltip-surface">
       <div className="text-sm font-medium text-background">{datum.date}</div>
       <div className="text-background">Again: {datum.again}</div>
       <div className="text-background">Hard: {datum.hard}</div>
@@ -501,7 +501,7 @@ export function StackedReviewButtonsChart(props: {
   const yTicks = React.useMemo(() => buildYAxisTicks(yMax), [yMax]);
 
   return (
-    <div className="card sprout-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
+    <div className="card learnkit-ana-card h-full overflow-visible p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
         <div className="flex items-center gap-1">
@@ -513,11 +513,11 @@ export function StackedReviewButtonsChart(props: {
         <div ref={wrapRef} className="relative inline-flex">
           <button
             type="button"
-            id="sprout-answer-buttons-filter-trigger"
-            className="sprout-btn-toolbar sprout-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
+            id="learnkit-answer-buttons-filter-trigger"
+            className="learnkit-btn-toolbar learnkit-btn-filter h-7 px-2 text-sm inline-flex items-center gap-2"
             aria-haspopup="listbox"
             aria-expanded={open ? "true" : "false"}
-            aria-controls="sprout-answer-buttons-filter-listbox"
+            aria-controls="learnkit-answer-buttons-filter-listbox"
             onClick={() => setOpen((prev) => !prev)}
           >
             <svg
@@ -538,10 +538,10 @@ export function StackedReviewButtonsChart(props: {
           </button>
           {open ? (
             <div
-              id="sprout-answer-buttons-filter-popover"
+              id="learnkit-answer-buttons-filter-popover"
               aria-hidden="false"
               ref={popoverRef}
-              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col sprout-ana-popover sprout-ana-popover-sm"
+              className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-0 flex flex-col learnkit-ana-popover learnkit-ana-popover-sm"
             >
               <div className="p-1">
                 <div
@@ -601,7 +601,7 @@ export function StackedReviewButtonsChart(props: {
                 {cardTypeOpen ? (
                   <div
                     role="menu"
-                    id="sprout-answer-buttons-filter-listbox"
+                    id="learnkit-answer-buttons-filter-listbox"
                     aria-orientation="vertical"
                     data-tooltip="Answer buttons filter"
                     className="flex flex-col"
@@ -640,7 +640,7 @@ export function StackedReviewButtonsChart(props: {
                   <input
                     type="text"
                     placeholder="Search decks"
-                    className="input w-full text-sm sprout-filter-search-input"
+                    className="input w-full text-sm learnkit-filter-search-input"
                     value={deckQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -683,7 +683,7 @@ export function StackedReviewButtonsChart(props: {
                   <input
                     type="text"
                     placeholder="Search groups"
-                    className="input w-full text-sm sprout-filter-search-input"
+                    className="input w-full text-sm learnkit-filter-search-input"
                     value={groupQuery}
                     onChange={(event) => {
                       const next = event.currentTarget.value;
@@ -730,7 +730,7 @@ export function StackedReviewButtonsChart(props: {
         </div>
       </div>
 
-      <div className="w-full flex-1 sprout-analytics-chart">
+      <div className="w-full flex-1 learnkit-analytics-chart">
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={data} margin={{ top: 12, right: 12, bottom: 12, left: 8 }}>
             <XAxis
@@ -783,30 +783,30 @@ export function StackedReviewButtonsChart(props: {
         </ResponsiveContainer>
       </div>
 
-      <div className="bc flex flex-wrap gap-3 text-xs text-muted-foreground sprout-ana-chart-legend">
-        <div className="bc inline-flex items-center gap-2">
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground learnkit-ana-chart-legend">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.again })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": COLORS.again })}`}
           />
-          <span className="bc">Again</span>
+          <span className="">Again</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.hard })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": COLORS.hard })}`}
           />
-          <span className="bc">Hard</span>
+          <span className="">Hard</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.good })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": COLORS.good })}`}
           />
-          <span className="bc">Good</span>
+          <span className="">Good</span>
         </div>
-        <div className="bc inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span
-            className={`bc inline-block sprout-ana-legend-dot sprout-ana-legend-dot-square ${cssClassForProps({ "--sprout-legend-color": COLORS.easy })}`}
+            className={`inline-block learnkit-ana-legend-dot learnkit-ana-legend-dot-square ${cssClassForProps({ "--learnkit-legend-color": COLORS.easy })}`}
           />
-          <span className="bc">Easy</span>
+          <span className="">Easy</span>
         </div>
       </div>
     </div>

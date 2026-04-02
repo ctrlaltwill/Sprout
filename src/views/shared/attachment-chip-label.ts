@@ -1,3 +1,11 @@
+/**
+ * @file src/views/shared/attachment-chip-label.ts
+ * @summary Module for attachment chip label.
+ *
+ * @exports
+ *  - formatAttachmentChipLabel
+ */
+
 export function formatAttachmentChipLabel(fileName: string, extension?: string): string {
   const ext = String(extension || fileName.split(".").pop() || "")
     .trim()

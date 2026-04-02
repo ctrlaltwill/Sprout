@@ -24,7 +24,7 @@ import { placePopover } from "../../../platform/core/ui";
  * on mouseleave/blur.
  */
 export function applyWidgetHoverDarken(btn: HTMLButtonElement) {
-  btn.classList.add("sprout-widget-hover-darken");
+  btn.classList.add("learnkit-widget-hover-darken", "learnkit-widget-hover-darken");
 }
 
 /* ------------------------------------------------------------------ */
@@ -92,14 +92,14 @@ export function makeTextButton(opts: {
   if (opts.subtitle) {
     btn.classList.add("inline-flex", "items-center", "justify-center", "text-center");
     const labelWrap = document.createElement("span");
-    labelWrap.className = "bc inline-flex flex-col items-center justify-center gap-0.5 leading-[1.05]";
+    labelWrap.className = "inline-flex flex-col items-center justify-center gap-0.5 leading-[1.05]";
 
     const labelLine = document.createElement("span");
-    labelLine.className = "bc sprout-grade-btn-label";
+    labelLine.className = "learnkit-grade-btn-label";
     labelLine.textContent = opts.label;
 
     const subtitleLine = document.createElement("span");
-    subtitleLine.className = "bc text-[0.78em] opacity-90 font-medium";
+    subtitleLine.className = "text-[0.78em] opacity-90 font-medium";
     subtitleLine.textContent = opts.subtitle;
 
     labelWrap.appendChild(labelLine);
@@ -113,7 +113,7 @@ export function makeTextButton(opts: {
 
   if (opts.kbd) {
     const kbd = document.createElement("kbd");
-    kbd.className = "bc kbd ml-2";
+    kbd.className = "kbd ml-2";
     kbd.textContent = opts.kbd;
     btn.appendChild(kbd);
   }
@@ -133,7 +133,7 @@ export function makeTextButton(opts: {
 
 /** Adds the shared `sprout-widget-action-btn` class to a button. */
 export function applyWidgetActionButtonStyles(btn: HTMLButtonElement) {
-  btn.classList.add("sprout-widget-action-btn");
+  btn.classList.add("learnkit-widget-action-btn", "learnkit-widget-action-btn");
 }
 
 /* ------------------------------------------------------------------ */
@@ -157,7 +157,7 @@ export function attachWidgetMoreMenu(opts: {
   openStudy?: () => void;
   openNote?: () => void;
 }): { toggle: () => void; close: () => void; isOpen: () => boolean } {
-  const id = `bc-widget-menu-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `learnkit-widget-menu-${Math.random().toString(36).slice(2, 8)}`;
   const trigger = opts.trigger;
   trigger.id = `${id}-trigger`;
   trigger.setAttribute("aria-haspopup", "menu");
@@ -166,16 +166,16 @@ export function attachWidgetMoreMenu(opts: {
 
   const popover = document.createElement("div");
   popover.id = `${id}-popover`;
-  popover.className = "bc sprout";
+  popover.className = "learnkit";
   popover.setAttribute("aria-hidden", "true");
-  popover.classList.add("sprout-popover-overlay");
+  popover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay");
 
   const panel = document.createElement("div");
-  panel.className = "bc sprout rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto";
+  panel.className = "learnkit rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 pointer-events-auto";
   popover.appendChild(panel);
 
   const menu = document.createElement("div");
-  menu.className = "bc sprout flex flex-col";
+  menu.className = "learnkit flex flex-col";
   menu.setAttribute("role", "menu");
   menu.id = `${id}-menu`;
   panel.appendChild(menu);
@@ -183,22 +183,22 @@ export function attachWidgetMoreMenu(opts: {
   const addItem = (label: string, hotkey: string | null, onClick: () => void, disabled = false) => {
     const item = document.createElement("div");
     item.className =
-      "bc group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+      "group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
     if (disabled) {
-      item.classList.add("sprout-menu-item--disabled");
+      item.classList.add("learnkit-menu-item--disabled", "learnkit-menu-item--disabled");
       item.setAttribute("aria-disabled", "true");
     }
 
     const labelSpan = document.createElement("span");
-    labelSpan.className = "bc";
+    labelSpan.className = "";
     labelSpan.textContent = label;
     item.appendChild(labelSpan);
 
     if (hotkey) {
       const key = document.createElement("kbd");
-      key.className = "bc kbd ml-auto text-xs text-muted-foreground tracking-widest";
+      key.className = "kbd ml-auto text-xs text-muted-foreground tracking-widest";
       key.textContent = hotkey;
       item.appendChild(key);
     }

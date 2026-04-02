@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug or issue with Sprout
+description: Report a bug or issue with LearnKit
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -23,7 +23,7 @@ body:
       label: Steps to Reproduce
       description: How can we reproduce this issue?
       placeholder: |
-        1. Open Sprout reviewer
+        1. Open LearnKit reviewer
         2. Click on '...'
         3. See error
     validations:
@@ -41,8 +41,8 @@ body:
   - type: input
     id: plugin-version
     attributes:
-      label: Sprout Version
-      description: What version of Sprout are you using?
+      label: LearnKit Version
+      description: What version of LearnKit are you using?
       placeholder: "e.g., 1.0.3"
     validations:
       required: true

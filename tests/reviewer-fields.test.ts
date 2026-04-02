@@ -1,3 +1,11 @@
+/**
+ * @file tests/reviewer-fields.test.ts
+ * @summary Unit tests for reviewer fields.test behavior.
+ *
+ * @exports
+ *  - (no named exports in this module)
+ */
+
 import { describe, it, expect } from "vitest";
 import {
   escapePipes,

@@ -1,3 +1,11 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-validation.ts
+ * @summary Module for assistant popup validation.
+ *
+ * @exports
+ *  - validateGeneratedCardBlock
+ */
+
 import { parseCardsFromText } from "../../../engine/parser/parser";
 import type { StudyAssistantSuggestion } from "../../../platform/integrations/ai/study-assistant-types";
 

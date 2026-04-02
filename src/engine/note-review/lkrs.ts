@@ -1,3 +1,16 @@
+/**
+ * @file src/engine/note-review/lkrs.ts
+ * @summary Module for lkrs.
+ *
+ * @exports
+ *  - LkrsSettings
+ *  - LkrsNoteState
+ *  - computeLkrsLoadFactor
+ *  - scaleLkrsIntervalDays
+ *  - initialLkrsDueTime
+ *  - reviewWithLkrs
+ */
+
 import { MS_DAY } from "../../platform/core/constants";
 
 export type LkrsSettings = {

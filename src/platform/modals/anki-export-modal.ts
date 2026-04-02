@@ -9,7 +9,7 @@
  */
 
 import { Modal, Notice, setIcon } from "obsidian";
-import type SproutPlugin from "../../main";
+import type LearnKitPlugin from "../../main";
 import { log } from "../core/logger";
 import { exportToApkg, type ExportOptions } from "../../platform/integrations/anki/anki-export";
 import { setModalTitle, createThemedDropdown, scopeModalToWorkspace } from "./modal-utils";
@@ -51,7 +51,7 @@ function formatGroupDisplay(path: string): string {
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export class AnkiExportModal extends Modal {
-  private plugin: SproutPlugin;
+  private plugin: LearnKitPlugin;
   /** Cleanup functions for body-portal popovers. */
   private disposers: Array<() => void> = [];
 
@@ -59,7 +59,7 @@ export class AnkiExportModal extends Modal {
     return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
   }
 
-  constructor(plugin: SproutPlugin) {
+  constructor(plugin: LearnKitPlugin) {
     super(plugin.app);
     this.plugin = plugin;
   }
@@ -70,9 +70,8 @@ export class AnkiExportModal extends Modal {
     scopeModalToWorkspace(this);
     this.containerEl.addClass("lk-modal-container");
     this.containerEl.addClass("lk-modal-dim");
-    this.containerEl.addClass("sprout");
-    this.modalEl.addClass("bc", "lk-modals", "sprout-anki-export-modal");
-    this.contentEl.addClass("bc");
+    this.containerEl.addClass("learnkit");
+    this.modalEl.addClass("lk-modals", "learnkit-anki-export-modal");
 
     // Escape key closes modal
     this.scope.register([], "Escape", () => { this.close(); return false; });
@@ -88,9 +87,8 @@ export class AnkiExportModal extends Modal {
     this.disposers = [];
     this.containerEl.removeClass("lk-modal-container");
     this.containerEl.removeClass("lk-modal-dim");
-    this.containerEl.removeClass("sprout");
-    this.modalEl.removeClass("bc", "lk-modals", "sprout-anki-export-modal");
-    this.contentEl.removeClass("bc");
+    this.containerEl.removeClass("learnkit");
+    this.modalEl.removeClass("lk-modals", "learnkit-anki-export-modal");
     this.contentEl.empty();
   }
 
@@ -98,19 +96,19 @@ export class AnkiExportModal extends Modal {
 
   /** Label + control row. */
   private mkField(parent: HTMLElement, label: string, hint?: string) {
-    const wrapper = parent.createDiv({ cls: "bc flex flex-col gap-1" });
-    const lbl = wrapper.createEl("label", { cls: "bc text-sm font-medium", text: label });
+    const wrapper = parent.createDiv({ cls: "flex flex-col gap-1" });
+    const lbl = wrapper.createEl("label", { cls: "text-sm font-medium", text: label });
     if (hint) lbl.setAttribute("aria-label", hint);
     return wrapper;
   }
 
   /** Checkbox row with label and description. */
   private mkToggleRow(parent: HTMLElement, label: string, description: string, defaultChecked: boolean): HTMLInputElement {
-    const row = parent.createDiv({ cls: "bc flex items-center justify-between gap-3 py-1" });
-    const info = row.createDiv({ cls: "bc flex flex-col gap-0.5" });
-    info.createDiv({ text: label, cls: "bc text-sm font-medium" });
-    info.createDiv({ text: description, cls: "bc text-xs text-muted-foreground" });
-    const toggle = row.createEl("input", { type: "checkbox", cls: "bc" });
+    const row = parent.createDiv({ cls: "flex items-center justify-between gap-3 py-1" });
+    const info = row.createDiv({ cls: "flex flex-col gap-0.5" });
+    info.createDiv({ text: label, cls: "text-sm font-medium" });
+    info.createDiv({ text: description, cls: "text-xs text-muted-foreground" });
+    const toggle = row.createEl("input", { type: "checkbox", cls: "" });
     toggle.checked = defaultChecked;
     return toggle;
   }
@@ -137,26 +135,26 @@ export class AnkiExportModal extends Modal {
     let selectedDeck = "";
 
     const container = document.createElement("div");
-    container.className = "bc relative sprout-deck-picker";
+    container.className = "relative learnkit-deck-picker";
 
     const input = document.createElement("input");
     input.type = "text";
-    input.className = "bc input w-full";
+    input.className = "input w-full";
     input.placeholder = "Search decks…";
     container.appendChild(input);
 
     // Popover
     const popover = document.createElement("div");
-    popover.className = "sprout-popover-dropdown";
+    popover.className = "learnkit-popover-dropdown";
     popover.setAttribute("aria-hidden", "true");
     container.appendChild(popover);
 
     const panel = document.createElement("div");
-    panel.className = "bc rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
+    panel.className = "rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col learnkit-pointer-auto";
     popover.appendChild(panel);
 
     const list = document.createElement("div");
-    list.className = "bc flex flex-col max-h-60 overflow-auto p-1";
+    list.className = "flex flex-col max-h-60 overflow-auto p-1";
     panel.appendChild(list);
 
     const renderList = () => {
@@ -166,7 +164,7 @@ export class AnkiExportModal extends Modal {
 
       if (filtered.length === 0) {
         const empty = document.createElement("div");
-        empty.className = "bc px-2 py-2 text-sm text-muted-foreground";
+        empty.className = "px-2 py-2 text-sm text-muted-foreground";
         empty.textContent = this.tx("ui.anki.export.noDecksFound", "No decks found");
         list.appendChild(empty);
         return;
@@ -178,7 +176,7 @@ export class AnkiExportModal extends Modal {
         row.setAttribute("aria-checked", deck.path === selectedDeck ? "true" : "false");
         row.tabIndex = 0;
         row.className =
-          "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground justify-between";
+          "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground justify-between";
 
         const txt = document.createElement("span");
         txt.textContent = deck.label;
@@ -186,12 +184,12 @@ export class AnkiExportModal extends Modal {
 
         if (deck.path === selectedDeck) {
           const check = document.createElement("span");
-          check.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+          check.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
           setIcon(check, "check");
           row.appendChild(check);
         } else {
           const spacer = document.createElement("span");
-          spacer.className = "bc inline-flex items-center justify-center [&_svg]:size-3 opacity-0";
+          spacer.className = "inline-flex items-center justify-center [&_svg]:size-3 opacity-0";
           setIcon(spacer, "check");
           row.appendChild(spacer);
         }
@@ -252,61 +250,61 @@ export class AnkiExportModal extends Modal {
     let selected: string[] = [];
 
     const container = document.createElement("div");
-    container.className = "bc relative sprout-group-picker";
+    container.className = "relative learnkit-group-picker";
 
     const tagBox = document.createElement("div");
-    tagBox.className = "bc textarea w-full sprout-tag-box sprout-export-tag-box";
+    tagBox.className = "textarea w-full learnkit-tag-box learnkit-export-tag-box";
     container.appendChild(tagBox);
 
     // Popover
     const popover = document.createElement("div");
-    popover.className = "sprout-popover-dropdown";
+    popover.className = "learnkit-popover-dropdown";
     popover.setAttribute("aria-hidden", "true");
     container.appendChild(popover);
 
     const panel = document.createElement("div");
-    panel.className = "bc rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col sprout-pointer-auto";
+    panel.className = "rounded-md border border-border bg-popover text-popover-foreground p-0 flex flex-col learnkit-pointer-auto";
     popover.appendChild(panel);
 
     const searchWrap = document.createElement("div");
-    searchWrap.className = "bc flex items-center gap-1 border-b border-border pl-1 pr-0 w-full lk-browser-search-wrap min-h-[38px]";
+    searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 w-full lk-browser-search-wrap min-h-[38px]";
     panel.appendChild(searchWrap);
 
     const searchIcon = document.createElement("span");
-    searchIcon.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground sprout-search-icon";
+    searchIcon.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground learnkit-search-icon";
     searchIcon.setAttribute("aria-hidden", "true");
     setIcon(searchIcon, "search");
     searchWrap.appendChild(searchIcon);
 
     const search = document.createElement("input");
     search.type = "text";
-    search.className = "bc bg-transparent text-sm flex-1 h-9 min-w-0 w-full sprout-search-naked";
+    search.className = "bg-transparent text-sm flex-1 h-9 min-w-0 w-full learnkit-search-naked";
     search.placeholder = "Search groups";
     searchWrap.appendChild(search);
 
     const listEl = document.createElement("div");
-    listEl.className = "bc flex flex-col max-h-60 overflow-auto p-1";
+    listEl.className = "flex flex-col max-h-60 overflow-auto p-1";
     panel.appendChild(listEl);
 
     const renderBadges = () => {
       clearNode(tagBox);
       if (!selected.length) {
         const placeholder = document.createElement("span");
-        placeholder.className = "bc badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-placeholder";
+        placeholder.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-placeholder";
         placeholder.textContent = this.tx("ui.anki.export.noGroupsSelected", "No groups selected");
         tagBox.appendChild(placeholder);
         return;
       }
       for (const tag of selected) {
         const badge = document.createElement("span");
-        badge.className = "bc badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 sprout-badge-inline lk-browser-tag-badge";
+        badge.className = "badge inline-flex items-center gap-1 px-2 py-0.5 text-xs whitespace-nowrap group h-6 learnkit-badge-inline lk-browser-tag-badge";
 
         const txt = document.createElement("span");
         txt.textContent = formatGroupDisplay(tag);
         badge.appendChild(txt);
 
         const removeBtn = document.createElement("span");
-        removeBtn.className = "bc ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white";
+        removeBtn.className = "ml-0 inline-flex items-center justify-center [&_svg]:size-[0.6rem] opacity-100 cursor-pointer text-white";
         setIcon(removeBtn, "x");
         removeBtn.addEventListener("pointerdown", (ev) => { ev.preventDefault(); ev.stopPropagation(); });
         removeBtn.addEventListener("click", (ev) => {
@@ -337,7 +335,7 @@ export class AnkiExportModal extends Modal {
 
       if (options.length === 0) {
         const empty = document.createElement("div");
-        empty.className = "bc px-2 py-2 text-sm text-muted-foreground";
+        empty.className = "px-2 py-2 text-sm text-muted-foreground";
         empty.textContent = this.tx("ui.anki.export.noGroupsFound", "No groups found");
         listEl.appendChild(empty);
         return;
@@ -349,7 +347,7 @@ export class AnkiExportModal extends Modal {
         row.setAttribute("aria-checked", selected.includes(opt) ? "true" : "false");
         row.tabIndex = 0;
         row.className =
-          "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground justify-between";
+          "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground justify-between";
 
         const text = document.createElement("span");
         text.textContent = formatGroupDisplay(opt);
@@ -357,12 +355,12 @@ export class AnkiExportModal extends Modal {
 
         if (selected.includes(opt)) {
           const check = document.createElement("span");
-          check.className = "bc inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
+          check.className = "inline-flex items-center justify-center [&_svg]:size-3 text-muted-foreground";
           setIcon(check, "check");
           row.appendChild(check);
         } else {
           const spacer = document.createElement("span");
-          spacer.className = "bc inline-flex items-center justify-center [&_svg]:size-3 opacity-0";
+          spacer.className = "inline-flex items-center justify-center [&_svg]:size-3 opacity-0";
           setIcon(spacer, "check");
           row.appendChild(spacer);
         }
@@ -409,9 +407,9 @@ export class AnkiExportModal extends Modal {
   private renderExportForm(root: HTMLElement) {
     const common = txCommon(this.plugin.settings?.general?.interfaceLanguage);
     root.empty();
-    root.removeClass("sprout-export-result");
+    root.removeClass("learnkit-export-result");
 
-    const body = root.createDiv({ cls: "bc flex flex-col gap-4" });
+    const body = root.createDiv({ cls: "flex flex-col gap-4" });
 
     // ── Scope ─────────────────────────────────────────────────────────────────
     const scopeField = this.mkField(body, "Scope", "Which cards to include in the export");
@@ -425,18 +423,18 @@ export class AnkiExportModal extends Modal {
 
     // Deck picker (shown when scope = deck)
     const deckField = this.mkField(body, "Deck");
-    deckField.classList.add("sprout-is-hidden");
+    deckField.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
     const deckPicker = this.buildDeckPicker();
     deckField.appendChild(deckPicker.element);
 
     // Group picker (shown when scope = group)
     const groupField = this.mkField(body, "Groups");
-    groupField.classList.add("sprout-is-hidden");
+    groupField.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
     const groupPicker = this.buildGroupPicker(() => updateCount());
     groupField.appendChild(groupPicker.element);
 
     // Card count display
-    const countRow = body.createDiv({ cls: "bc text-sm text-muted-foreground" });
+    const countRow = body.createDiv({ cls: "text-sm text-muted-foreground" });
 
     const updateCount = () => {
       const allCards = this.plugin.store.getAllCards();
@@ -484,8 +482,8 @@ export class AnkiExportModal extends Modal {
     };
 
     scopeDropdown.onChange((val) => {
-      deckField.classList.toggle("sprout-is-hidden", val !== "deck");
-      groupField.classList.toggle("sprout-is-hidden", val !== "group");
+      deckField.classList.toggle("learnkit-is-hidden", val !== "deck");
+      groupField.classList.toggle("learnkit-is-hidden", val !== "group");
       updateCount();
     });
 
@@ -508,48 +506,48 @@ export class AnkiExportModal extends Modal {
 
     // ── Default deck name ─────────────────────────────────────────────────────
     const defaultDeckField = this.mkField(body, "Default deck name", "Anki deck name for cards without a Sprout group");
-    const deckNameInput = defaultDeckField.createEl("input", { type: "text", cls: "bc input w-full", value: "Sprout Export" });
+    const deckNameInput = defaultDeckField.createEl("input", { type: "text", cls: "input w-full", value: "LearnKit Export" });
 
     // ── Toggles grid ──────────────────────────────────────────────────────────
-    const togglesSection = body.createDiv({ cls: "bc flex flex-col gap-1 rounded-lg p-3" });
+    const togglesSection = body.createDiv({ cls: "flex flex-col gap-1 rounded-lg p-3" });
     const schedToggle = this.mkToggleRow(togglesSection, "Include scheduling data", "Export FSRS state so cards arrive in Anki with progress intact", true);
     const revlogToggle = this.mkToggleRow(togglesSection, "Include review history", "Export review log entries for Anki statistics", true);
     const mediaToggle = this.mkToggleRow(togglesSection, "Include media files", "Bundle referenced images into the .apkg", true);
 
     // ── FSRS info callout ──────────────────────────────────────────────────────
     const fsrsNote = body.createDiv({
-      cls: "bc rounded-lg p-3 text-sm sprout-danger-callout",
+      cls: "rounded-lg p-3 text-sm learnkit-danger-callout learnkit-danger-callout",
       attr: { style: "background: var(--background-modifier-message) !important;" },
     });
     fsrsNote.createDiv({
       text: "💡 Enable FSRS in Anki after import",
-      cls: "bc font-medium mb-1",
+      cls: "font-medium mb-1",
     });
     fsrsNote.createDiv({
       text:
         "Your FSRS parameters and desired retention are included in the export, " +
         "but Anki requires you to enable FSRS once globally. After importing, go to " +
         "Deck Options → FSRS and toggle it on. Your scheduling data will be preserved.",
-      cls: "bc text-muted-foreground",
+      cls: "text-muted-foreground",
     });
 
     // ── Footer ────────────────────────────────────────────────────────────────
-    const footer = root.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer" });
+    const footer = root.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer" });
 
     const cancelBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Cancel export" },
     });
-    const cancelIcon = cancelBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const cancelIcon = cancelBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(cancelIcon, "x");
     cancelBtn.createSpan({ text: common.cancel });
     cancelBtn.onclick = () => this.close();
 
     const exportBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Export cards to .apkg file" },
     });
-    const exportIcon = exportBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const exportIcon = exportBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(exportIcon, "download");
     exportBtn.createSpan({ text: this.tx("ui.anki.export.action.export", "Export") });
 
@@ -567,7 +565,7 @@ export class AnkiExportModal extends Modal {
         includeScheduling: schedToggle.checked,
         includeRevlog: revlogToggle.checked,
         mcqStrategy: mcqDropdown.getValue() as ExportOptions["mcqStrategy"],
-        defaultDeckName: deckNameInput.value.trim() || "Sprout Export",
+        defaultDeckName: deckNameInput.value.trim() || "LearnKit Export",
         includeMedia: mediaToggle.checked,
       };
 
@@ -592,7 +590,7 @@ export class AnkiExportModal extends Modal {
     stats: { notesExported: number; cardsExported: number; revlogEntries: number; mediaFiles: number; mcqConverted: number; mcqSkipped: number; ioSkipped: number },
   ) {
     root.empty();
-    root.addClass("sprout-export-result");
+    root.addClass("learnkit-export-result");
 
     // Update Obsidian modal header for result
     setModalTitle(this, "Export complete");
@@ -603,10 +601,10 @@ export class AnkiExportModal extends Modal {
     ) as ArrayBuffer;
 
     // ── Stats ───────────────────────────────────────────────────────────────
-    const body = root.createDiv({ cls: "bc flex flex-col gap-1" });
+    const body = root.createDiv({ cls: "flex flex-col gap-1" });
 
     const addRow = (label: string, value: number | string) => {
-      const row = body.createDiv({ cls: "bc flex justify-between text-sm py-1" });
+      const row = body.createDiv({ cls: "flex justify-between text-sm py-1" });
       row.createSpan({ text: label });
       row.createEl("strong", { text: String(value) });
     };
@@ -620,13 +618,13 @@ export class AnkiExportModal extends Modal {
     if (stats.mediaFiles > 0) addRow("Media files", stats.mediaFiles);
 
     // ── Footer ──────────────────────────────────────────────────────────────
-    const footer = root.createDiv({ cls: "bc flex items-center justify-end gap-4 lk-modal-footer" });
+    const footer = root.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer" });
 
     const downloadBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Download .apkg file to your computer" },
     });
-    const dlIcon = downloadBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const dlIcon = downloadBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(dlIcon, "download");
     downloadBtn.createSpan({ text: this.tx("ui.anki.export.action.download", "Download") });
     downloadBtn.onclick = () => {
@@ -635,7 +633,7 @@ export class AnkiExportModal extends Modal {
       const a = document.createElement("a");
       const timestamp = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `Sprout-Export-${timestamp}.apkg`;
+      a.download = `LearnKit-Export-${timestamp}.apkg`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -644,15 +642,15 @@ export class AnkiExportModal extends Modal {
     };
 
     const saveBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Save .apkg file into your vault" },
     });
-    const saveIcon = saveBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const saveIcon = saveBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(saveIcon, "save");
     saveBtn.createSpan({ text: this.tx("ui.anki.export.action.saveToVault", "Save to vault") });
     saveBtn.onclick = async () => {
       const timestamp = new Date().toISOString().slice(0, 10);
-      const fileName = `Sprout-Export-${timestamp}.apkg`;
+      const fileName = `LearnKit-Export-${timestamp}.apkg`;
       try {
         const createBinary = this.app.vault.createBinary?.bind(this.app.vault);
         if (!createBinary) {
@@ -670,10 +668,10 @@ export class AnkiExportModal extends Modal {
     };
 
     const doneBtn = footer.createEl("button", {
-      cls: "bc sprout-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
       attr: { type: "button", "aria-label": "Close this dialog" },
     });
-    const doneIcon = doneBtn.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+    const doneIcon = doneBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(doneIcon, "check");
     doneBtn.createSpan({ text: this.tx("ui.anki.export.action.done", "Done") });
     doneBtn.onclick = () => this.close();

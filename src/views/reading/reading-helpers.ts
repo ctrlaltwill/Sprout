@@ -199,7 +199,7 @@ export function processMarkdownFeatures(text: string): string {
   // Must come BEFORE [[link]] handling to avoid partial matches
   result = result.replace(/!\[\[([^\]|]+?)(?:\|([^\]]*?))?\]\]/g, (_match: string, target: string, alt?: string) => {
     const altText = alt || target.split('/').pop() || target;
-    return `<img class="sprout-reading-embed-img" data-embed-path="${escapeHtml(target.trim())}" alt="${escapeHtml(altText)}" />`;
+    return `<img class="learnkit-reading-embed-img" data-embed-path="${escapeHtml(target.trim())}" alt="${escapeHtml(altText)}" />`;
   });
 
   // Convert wiki links [[Page]] or [[Page|Display]] to HTML links
@@ -686,25 +686,25 @@ export function buildClozeSectionHTML(clozeContent: string): string {
   for (const cm of clozeMatches) {
     if (cm.index > lastIndex) {
       const nonCloze = clozeContent.slice(lastIndex, cm.index) || '';
-      processedHtml += `<span class="sprout-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
+      processedHtml += `<span class="learnkit-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
     }
     const answer = cm.content;
     if (answer && answer.trim().length > 0) {
-      processedHtml += `<span class="sprout-reading-view-cloze"><span class="sprout-cloze-text">${processMarkdownFeatures(answer)}</span></span>`;
+      processedHtml += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${processMarkdownFeatures(answer)}</span></span>`;
     } else {
-      processedHtml += `<span class="sprout-cloze-blank"></span>`;
+      processedHtml += `<span class="learnkit-cloze-blank"></span>`;
     }
     lastIndex = cm.index + cm.fullMatch.length;
   }
   if (lastIndex < clozeContent.length) {
     const nonCloze = clozeContent.slice(lastIndex) || '';
-    processedHtml += `<span class="sprout-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
+    processedHtml += `<span class="learnkit-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
   }
 
   return `
-    <div class="sprout-card-section sprout-section-question sprout-section-cloze">
-      <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content sprout-p-spacing-none">${processedHtml}</div>
+    <div class="learnkit-card-section learnkit-section-question learnkit-section-cloze">
+      <div class="learnkit-section-label">Question</div>
+      <div class="learnkit-section-content learnkit-p-spacing-none">${processedHtml}</div>
     </div>
   `;
 }
@@ -744,21 +744,21 @@ export function buildMCQSectionHTML(question: string, options: string[], answers
   const optionsHTML = allOptions.map((opt, idx) => {
     const letter = String.fromCharCode(65 + idx);
     const isAnswer = answerIdxs.has(idx);
-    return `<div class="sprout-option">
-      <span class="sprout-option-bullet">${letter}.</span>
+    return `<div class="learnkit-option">
+      <span class="learnkit-option-bullet">${letter}.</span>
       ${isAnswer
-        ? `<span class="sprout-reading-view-cloze"><span class="sprout-cloze-text">${processMarkdownFeatures(opt)}</span></span>`
-        : `<span class="sprout-option-text">${processMarkdownFeatures(opt)}</span>`}
+        ? `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${processMarkdownFeatures(opt)}</span></span>`
+        : `<span class="learnkit-option-text">${processMarkdownFeatures(opt)}</span>`}
     </div>`;
   }).join('');
 
   // Collapsible options section only
-  const optionsSection = buildCollapsibleSectionHTML('Options', `.sprout-options-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-options-list">${optionsHTML}</div>`, undefined, 'sprout-section-options');
+  const optionsSection = buildCollapsibleSectionHTML('Options', `.learnkit-options-${Math.random().toString(36).slice(2,8)}`, `<div class="learnkit-options-list">${optionsHTML}</div>`, undefined, 'learnkit-section-options');
 
   return `
-    <div class="sprout-card-section sprout-section-question">
-      <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none">${processMarkdownFeatures(question)}</div>
+    <div class="learnkit-card-section learnkit-section-question">
+      <div class="learnkit-section-label">Question</div>
+      <div class="learnkit-section-content learnkit-text-muted learnkit-p-spacing-none">${processMarkdownFeatures(question)}</div>
     </div>
     ${optionsSection}
   `;
@@ -768,24 +768,24 @@ export function buildOQSectionHTML(question: string, steps: string[]): string {
   const aId = `sprout-oq-${Math.random().toString(36).slice(2,8)}`;
 
   const stepsHTML = steps.map((step, idx) => {
-    return `<div class="sprout-oq-answer-row">
-      <span class="sprout-option-bullet">${idx + 1}.</span>
-      <span class="sprout-option-text">${processMarkdownFeatures(step)}</span>
+    return `<div class="learnkit-oq-answer-row">
+      <span class="learnkit-option-bullet">${idx + 1}.</span>
+      <span class="learnkit-option-text">${processMarkdownFeatures(step)}</span>
     </div>`;
   }).join('');
 
   const answerSection = buildCollapsibleSectionHTML(
     'Sequence',
     `.${aId}`,
-    `<div class="sprout-oq-answer-list">${stepsHTML}</div>`,
+    `<div class="learnkit-oq-answer-list">${stepsHTML}</div>`,
     undefined,
     'sprout-section-answer'
   );
 
   return `
-    <div class="sprout-card-section sprout-section-question">
-      <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none">${processMarkdownFeatures(question)}</div>
+    <div class="learnkit-card-section learnkit-section-question">
+      <div class="learnkit-section-label">Question</div>
+      <div class="learnkit-section-content learnkit-text-muted learnkit-p-spacing-none">${processMarkdownFeatures(question)}</div>
     </div>
     ${answerSection}
   `;
@@ -796,12 +796,12 @@ export function buildBasicSectionHTML(question?: string, answer?: string): strin
   const aId = `sprout-a-${Math.random().toString(36).slice(2,8)}`;
   
   const q = question ? `
-    <div class="sprout-card-section sprout-section-question">
-      <div class="sprout-section-label">Question</div>
-      <div class="sprout-section-content sprout-text-muted sprout-p-spacing-none" id="${qId}"></div>
+    <div class="learnkit-card-section learnkit-section-question">
+      <div class="learnkit-section-label">Question</div>
+      <div class="learnkit-section-content learnkit-text-muted learnkit-p-spacing-none" id="${qId}"></div>
     </div>` : '';
 
-  const a = answer ? buildCollapsibleSectionHTML('Answer', `.sprout-answer-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-answer sprout-p-spacing-none" id="${aId}"></div>`, aId, 'sprout-section-answer') : '';
+  const a = answer ? buildCollapsibleSectionHTML('Answer', `.learnkit-answer-${Math.random().toString(36).slice(2,8)}`, `<div class="learnkit-answer learnkit-p-spacing-none" id="${aId}"></div>`, aId, 'learnkit-section-answer') : '';
 
   return q + a;
 }
@@ -812,16 +812,16 @@ export function buildIOSectionHTML(_ioContent: string): string {
 
   const answerSection = buildCollapsibleSectionHTML(
     'Answer (full image)',
-    `.sprout-io-answer-${Math.random().toString(36).slice(2,8)}`,
-    `<div class="sprout-io-answer-wrap sprout-p-spacing-none" id="${ioAnswerId}"></div>`,
+    `.learnkit-io-answer-${Math.random().toString(36).slice(2,8)}`,
+    `<div class="learnkit-io-answer-wrap learnkit-p-spacing-none" id="${ioAnswerId}"></div>`,
     ioAnswerId,
     'sprout-section-answer',
   );
 
   return `
-    <div class="sprout-card-section sprout-section-io">
-      <div class="sprout-section-label">Image Occlusion</div>
-      <div class="sprout-section-content sprout-p-spacing-none" id="${ioQuestionId}"></div>
+    <div class="learnkit-card-section learnkit-section-io">
+      <div class="learnkit-section-label">Image Occlusion</div>
+      <div class="learnkit-section-content learnkit-p-spacing-none" id="${ioQuestionId}"></div>
     </div>
     ${answerSection}
   `;
@@ -829,7 +829,7 @@ export function buildIOSectionHTML(_ioContent: string): string {
 
 export function buildInfoSectionHTML(_infoContent: string): string {
   const iId = `sprout-i-${Math.random().toString(36).slice(2,8)}`;
-  return buildCollapsibleSectionHTML('Extra Information', `.sprout-info-${Math.random().toString(36).slice(2,8)}`, `<div class="sprout-info sprout-p-spacing-none" id="${iId}"></div>`, iId, 'sprout-section-info');
+  return buildCollapsibleSectionHTML('Extra Information', `.learnkit-info-${Math.random().toString(36).slice(2,8)}`, `<div class="learnkit-info learnkit-p-spacing-none" id="${iId}"></div>`, iId, 'learnkit-section-info');
 }
 
 export function buildCollapsibleSectionHTML(label: string, targetSelector: string, innerHtml: string, _markdownId?: string, sectionClass = '') {
@@ -837,17 +837,17 @@ export function buildCollapsibleSectionHTML(label: string, targetSelector: strin
   const contentId = targetSelector.startsWith('.') ? targetSelector.slice(1) : targetSelector.replace('#','');
 
   // inline Lucide chevron-down SVG; collapsed => rotated right, expanded => down
-  const chevronSvg = `<!--lucide:chevron-down--><svg class="sprout-toggle-chevron sprout-toggle-chevron-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>`;
+  const chevronSvg = `<!--lucide:chevron-down--><svg class="learnkit-toggle-chevron learnkit-toggle-chevron-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>`;
 
   return `
-    <div class="sprout-card-section ${escapeHtml(sectionClass).trim()}">
-      <div class="sprout-section-label">
+    <div class="learnkit-card-section ${escapeHtml(sectionClass).trim()}">
+      <div class="learnkit-section-label">
         <span>${escapeHtml(label)}</span>
-        <button class="sprout-toggle-btn sprout-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" aria-label="Toggle ${escapeHtml(label)}" data-tooltip-position="top">
+        <button class="learnkit-toggle-btn learnkit-toggle-btn-compact" data-target=".${contentId}" aria-expanded="false" aria-label="Toggle ${escapeHtml(label)}" data-tooltip-position="top">
           ${chevronSvg}
         </button>
       </div>
-      <div class="${contentId} sprout-collapsible collapsed sprout-p-spacing-none">${innerHtml}</div>
+      <div class="${contentId} learnkit-collapsible collapsed learnkit-p-spacing-none">${innerHtml}</div>
     </div>
   `;
 }
@@ -939,7 +939,7 @@ export function createMarkdownElement(data: ParsedMarkdownElement): HTMLElement 
   if (data.type === 'header' && data.level) {
     const wrapper = document.createElement('div');
     wrapper.className = `el-h${data.level}`;
-    wrapper.setAttribute('data-sprout-extracted', 'true');
+    wrapper.setAttribute('data-learnkit-extracted', 'true');
     
     const header = document.createElement(`h${data.level}`);
     header.setAttribute('data-heading', data.content);
@@ -953,7 +953,7 @@ export function createMarkdownElement(data: ParsedMarkdownElement): HTMLElement 
   if (data.type === 'ordered-list' && data.items) {
     const wrapper = document.createElement('div');
     wrapper.className = 'el-ol';
-    wrapper.setAttribute('data-sprout-extracted', 'true');
+    wrapper.setAttribute('data-learnkit-extracted', 'true');
     
     const ol = document.createElement('ol');
     ol.className = 'has-list-bullet';
@@ -997,7 +997,7 @@ export function createMarkdownElement(data: ParsedMarkdownElement): HTMLElement 
   if (data.type === 'unordered-list' && data.items) {
     const wrapper = document.createElement('div');
     wrapper.className = 'el-ul';
-    wrapper.setAttribute('data-sprout-extracted', 'true');
+    wrapper.setAttribute('data-learnkit-extracted', 'true');
     
     const ul = document.createElement('ul');
     ul.className = 'has-list-bullet';
@@ -1022,7 +1022,7 @@ export function createMarkdownElement(data: ParsedMarkdownElement): HTMLElement 
   if (data.type === 'paragraph') {
     const wrapper = document.createElement('div');
     wrapper.className = 'el-p';
-    wrapper.setAttribute('data-sprout-extracted', 'true');
+    wrapper.setAttribute('data-learnkit-extracted', 'true');
     
     const p = document.createElement('p');
     p.setAttribute('dir', 'auto');

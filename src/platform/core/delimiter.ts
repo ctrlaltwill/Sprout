@@ -219,7 +219,7 @@ function _rebuildRegexes() {
   // parser.ts — title outside card: ^T\s*<d>\s*(.*)$
   _TITLE_OUTSIDE_DELIM_RE = new RegExp(`^T\\s*${d}\\s*(.*)$`);
 
-  // parser.ts — any header/anchor: ^(?:\^sprout-\d{9}|(?:RQ|Q|MCQ|CQ|IO|OQ|T|A|O|I|G|C|\d{1,2})\s*<d>)\s*
+  // parser.ts — any header/anchor: ^(?:.learnkit-\d{9}|(?:RQ|Q|MCQ|CQ|IO|OQ|T|A|O|I|G|C|\d{1,2})\s*<d>)\s*
   _ANY_HEADER_DELIM_RE = new RegExp(
     `^(?:\\^${ANCHOR_PREFIX_PATTERN}-\\d{9}|(?:RQ|Q|MCQ|CQ|IO|OQ|T|A|O|I|G|C|\\d{1,2})\\s*${d})\\s*`,
   );

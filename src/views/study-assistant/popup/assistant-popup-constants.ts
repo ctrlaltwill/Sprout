@@ -1,3 +1,14 @@
+/**
+ * @file src/views/study-assistant/popup/assistant-popup-constants.ts
+ * @summary Module for assistant popup constants.
+ *
+ * @exports
+ *  - ASSISTANT_MODES
+ *  - ASSISTANT_REVIEW_DEPTHS
+ *  - isAssistantReviewDepth
+ *  - CHAT_LOG_SYNC_EVENT_NAME
+ */
+
 import type { AssistantMode } from "../types/assistant-popup-types";
 import type { StudyAssistantReviewDepth } from "../../../platform/integrations/ai/study-assistant-types";
 

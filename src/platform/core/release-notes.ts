@@ -1,11 +1,12 @@
 /**
- * @file src/modals/whats-new-modal/release-notes.ts
- * @summary Release notes content for each version of LearnKit.
- * 
- * Add a new entry here for each release to display in the What's New modal.
- * Content supports markdown formatting.
- * 
- * @exports RELEASE_NOTES - Map of version strings to release note content
+ * @file src/platform/core/release-notes.ts
+ * @summary Module for release notes.
+ *
+ * @exports
+ *  - ReleaseNote
+ *  - RELEASE_NOTES
+ *  - getReleaseNotes
+ *  - hasReleaseNotes
  */
 
 export interface ReleaseNote {
@@ -15,15 +16,6 @@ export interface ReleaseNote {
   releaseDate?: string;
 }
 
-/**
- * Release notes for each version.
- * Format: version -> content (markdown supported)
- * 
- * To add a new release:
- * 1. Copy release notes from GitHub releases
- * 2. Add a new entry with the version number as the key
- * 3. The modal will automatically show for users upgrading to that version
- */
 export const RELEASE_NOTES: Record<string, ReleaseNote> = {
   "1.2.5": {
     version: "1.2.5",
@@ -276,16 +268,10 @@ Version 1.0.5 is a major feature release introducing new card types, reading vie
   },
 };
 
-/**
- * Get release notes for a specific version
- */
 export function getReleaseNotes(version: string): ReleaseNote | null {
   return RELEASE_NOTES[version] || null;
 }
 
-/**
- * Check if release notes exist for a version
- */
 export function hasReleaseNotes(version: string): boolean {
   return version in RELEASE_NOTES;
 }

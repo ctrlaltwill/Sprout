@@ -63,12 +63,12 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
   const toolbar = parent.createDiv();
   toolbar.removeAttribute("class");
   toolbar.setAttr("role", "toolbar");
-  toolbar.classList.add("sprout-io-toolbar");
+  toolbar.classList.add("learnkit-io-toolbar", "learnkit-io-toolbar");
   toolbar.dataset.sproutToolbar = "1";
 
-  const toolbarGroup = toolbar.createDiv({ cls: "bc sprout-io-toolbar-group" });
+  const toolbarGroup = toolbar.createDiv({ cls: "learnkit-io-toolbar-group learnkit-io-toolbar-group" });
 
-  const createSep = () => toolbarGroup.createDiv({ cls: "bc sprout-io-toolbar-sep" });
+  const createSep = () => toolbarGroup.createDiv({ cls: "learnkit-io-toolbar-sep learnkit-io-toolbar-sep" });
 
   const createIconBtn = (
     iconParent: HTMLElement,
@@ -77,20 +77,20 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
     onClick: () => void,
     opts: { disabled?: boolean; label?: string; hotkeyHint?: string } = {},
   ): HTMLButtonElement => {
-    const btn = iconParent.createEl("button", { cls: "bc sprout-io-btn" });
+    const btn = iconParent.createEl("button", { cls: "learnkit-io-btn learnkit-io-btn" });
     btn.type = "button";
     btn.setAttribute("aria-label", tooltip);
 
-    const iconWrapper = btn.createEl("span", { cls: "bc inline-flex items-center justify-center" });
+    const iconWrapper = btn.createEl("span", { cls: "inline-flex items-center justify-center" });
     setIcon(iconWrapper, iconName);
 
     if (opts.label) {
-      btn.classList.add("sprout-io-btn-text");
-      btn.createSpan({ cls: "bc sprout-io-btn-label", text: opts.label });
+      btn.classList.add("learnkit-io-btn-text", "learnkit-io-btn-text");
+      btn.createSpan({ cls: "learnkit-io-btn-label learnkit-io-btn-label", text: opts.label });
     }
     if (opts.hotkeyHint) {
-      const hintWrap = btn.createSpan({ cls: "bc sprout-io-btn-hotkeys" });
-      hintWrap.createEl("kbd", { cls: "bc kbd", text: opts.hotkeyHint.trim() });
+      const hintWrap = btn.createSpan({ cls: "learnkit-io-btn-hotkeys learnkit-io-btn-hotkeys" });
+      hintWrap.createEl("kbd", { cls: "kbd", text: opts.hotkeyHint.trim() });
     }
 
     btn.addEventListener("click", (ev) => {
@@ -113,7 +113,7 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
   const fileInput = document.createElement("input");
   fileInput.type = "file";
   fileInput.accept = "image/*";
-  fileInput.classList.add("sprout-io-file-input");
+  fileInput.classList.add("learnkit-io-file-input", "learnkit-io-file-input");
   toolbar.appendChild(fileInput);
 
   createIconBtn(toolbarGroup, "upload", "Insert from file", () => fileInput.click());
@@ -197,21 +197,21 @@ export function buildCanvasContainer(
 ): CanvasContainerRefs {
   const pasteShortcut = getPlatformShortcut("V");
 
-  const canvasContainer = parent.createDiv({ cls: "bc rounded-lg border border-border bg-background" });
-  canvasContainer.classList.add("sprout-io-canvas", "sprout-io-canvas-container");
-  setCssProps(canvasContainer, "--sprout-io-canvas-height", defaults.height);
-  setCssProps(canvasContainer, "--sprout-io-canvas-min-height", defaults.minHeight);
-  setCssProps(canvasContainer, "--sprout-io-canvas-max-height", defaults.maxHeight);
+  const canvasContainer = parent.createDiv({ cls: "rounded-lg border border-border bg-background" });
+  canvasContainer.classList.add("learnkit-io-canvas", "learnkit-io-canvas", "learnkit-io-canvas-container", "learnkit-io-canvas-container");
+  setCssProps(canvasContainer, "--learnkit-io-canvas-height", defaults.height);
+  setCssProps(canvasContainer, "--learnkit-io-canvas-min-height", defaults.minHeight);
+  setCssProps(canvasContainer, "--learnkit-io-canvas-max-height", defaults.maxHeight);
 
   // Placeholder (shown when no image loaded)
   const placeholder = canvasContainer.createDiv({
-    cls: "bc flex items-center justify-center text-muted-foreground text-sm",
+    cls: "flex items-center justify-center text-muted-foreground text-sm",
   });
-  placeholder.classList.add("sprout-io-canvas-placeholder");
+  placeholder.classList.add("learnkit-io-canvas-placeholder", "learnkit-io-canvas-placeholder");
   placeholder.createSpan({ text: "Insert from file or paste an image" });
   if (pasteShortcut) {
-    const kbdWrap = placeholder.createSpan({ cls: "bc inline-flex items-center gap-1 ml-1" });
-    kbdWrap.createEl("kbd", { cls: "bc kbd", text: pasteShortcut });
+    const kbdWrap = placeholder.createSpan({ cls: "inline-flex items-center gap-1 ml-1" });
+    kbdWrap.createEl("kbd", { cls: "kbd", text: pasteShortcut });
   }
   placeholder.addEventListener("click", (e) => {
     e.preventDefault();
@@ -220,15 +220,15 @@ export function buildCanvasContainer(
   });
 
   // Viewport (scrollable canvas area)
-  const viewportEl = canvasContainer.createDiv({ cls: "bc" });
-  viewportEl.classList.add("sprout-io-viewport");
+  const viewportEl = canvasContainer.createDiv({ cls: "" });
+  viewportEl.classList.add("learnkit-io-viewport", "learnkit-io-viewport");
 
-  const stageEl = viewportEl.createDiv({ cls: "bc sprout-io-stage" });
+  const stageEl = viewportEl.createDiv({ cls: "learnkit-io-stage learnkit-io-stage" });
 
-  const imgEl = stageEl.createEl("img", { cls: "bc sprout-io-stage-image" });
+  const imgEl = stageEl.createEl("img", { cls: "learnkit-io-stage-image learnkit-io-stage-image" });
   imgEl.draggable = false;
 
-  const overlayEl = stageEl.createDiv({ cls: "bc sprout-io-stage-overlay" });
+  const overlayEl = stageEl.createDiv({ cls: "learnkit-io-stage-overlay learnkit-io-stage-overlay" });
 
   // Clicking empty canvas area opens file picker when no image loaded
   canvasContainer.addEventListener("click", (e) => {
@@ -256,8 +256,8 @@ export interface FooterCallbacks {
 
 /** Build the modal footer with Cancel button, mask-mode picker, and Save button. */
 export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMode: "solo" | "all" = "solo"): FooterRefs {
-  const footer = parent.createDiv({ cls: "bc flex items-center justify-end gap-4" });
-  footer.classList.add("sprout-io-footer", "lk-modal-footer");
+  const footer = parent.createDiv({ cls: "flex items-center justify-end gap-4" });
+  footer.classList.add("learnkit-io-footer", "learnkit-io-footer", "lk-modal-footer");
 
   let selectedMode: "solo" | "all" = defaultMode;
   const options: { value: "solo" | "all"; label: string }[] = [
@@ -266,41 +266,41 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
   ];
 
   // Mode picker row
-  const modeRow = footer.createDiv({ cls: "bc flex flex-col gap-1 items-start w-full" });
+  const modeRow = footer.createDiv({ cls: "flex flex-col gap-1 items-start w-full" });
   modeRow.createEl("label", {
-    cls: "bc text-sm font-medium inline-flex items-center gap-1",
+    cls: "text-sm font-medium inline-flex items-center gap-1",
     text: "Mask behavior",
   });
   modeRow.createDiv({
-    cls: "bc text-xs text-muted-foreground",
+    cls: "text-xs text-muted-foreground",
     text: "Hide group hides only masks the by group when studying, other masks will not be present. Hide all hides every group when studying. Reveal settings are available in the plugin settings.",
   });
 
   // Button-style dropdown (matches other modal dropdowns)
-  const dropRoot = modeRow.createDiv({ cls: "bc sprout relative inline-flex" });
+  const dropRoot = modeRow.createDiv({ cls: "learnkit learnkit relative inline-flex" });
   const trigger = dropRoot.createEl("button", {
-    cls: "bc sprout-btn-toolbar h-7 px-2 text-sm inline-flex items-center gap-2 sprout-io-mode-trigger",
+    cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-7 px-2 text-sm inline-flex items-center gap-2 learnkit-io-mode-trigger learnkit-io-mode-trigger",
     attr: { type: "button", "aria-haspopup": "menu", "aria-expanded": "false" },
   });
-  const triggerLabel = trigger.createEl("span", { cls: "bc", text: options.find((o) => o.value === selectedMode)?.label ?? "Hide group" });
+  const triggerLabel = trigger.createEl("span", { cls: "", text: options.find((o) => o.value === selectedMode)?.label ?? "Hide group" });
   trigger.setAttribute("aria-label", triggerLabel.textContent || "Hide group");
-  const chevronWrap = trigger.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-3" });
+  const chevronWrap = trigger.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-3" });
   setIcon(chevronWrap, "chevron-down");
 
   const popover = document.createElement("div");
   const sproutWrapper = document.createElement("div");
-  sproutWrapper.className = "sprout";
-  popover.className = "bc";
+  sproutWrapper.className = "learnkit";
+  popover.className = "";
   popover.setAttribute("aria-hidden", "true");
-  popover.classList.add("sprout-popover-overlay", "sprout-card-creator-type-popover");
+  popover.classList.add("learnkit-popover-overlay", "learnkit-popover-overlay", "learnkit-card-creator-type-popover", "learnkit-card-creator-type-popover");
   sproutWrapper.appendChild(popover);
 
   const panel = document.createElement("div");
-  panel.className = "bc rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 sprout-pointer-auto sprout-card-creator-type-panel";
+  panel.className = "rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-card-creator-type-panel";
   popover.appendChild(panel);
 
   const menuList = document.createElement("div");
-  menuList.className = "bc flex flex-col";
+  menuList.className = "flex flex-col";
   menuList.setAttribute("role", "menu");
   panel.appendChild(menuList);
 
@@ -355,15 +355,15 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
 
   for (const opt of options) {
     const item = menuList.createEl("div", {
-      cls: "bc group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground sprout-card-creator-type-item",
+      cls: "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground learnkit-card-creator-type-item learnkit-card-creator-type-item",
       text: "",
     });
     item.setAttribute("role", "menuitemradio");
     item.setAttribute("aria-checked", opt.value === selectedMode ? "true" : "false");
     item.tabIndex = 0;
-    const dotWrap = item.createEl("div", { cls: "bc size-4 flex items-center justify-center" });
-    dotWrap.createEl("div", { cls: "bc size-2 rounded-full bg-foreground invisible group-aria-checked:visible", attr: { "aria-hidden": "true" } });
-    item.createEl("span", { cls: "bc", text: opt.label });
+    const dotWrap = item.createEl("div", { cls: "size-4 flex items-center justify-center" });
+    dotWrap.createEl("div", { cls: "size-2 rounded-full bg-foreground invisible group-aria-checked:visible", attr: { "aria-hidden": "true" } });
+    item.createEl("span", { cls: "", text: opt.label });
 
     const choose = (ev?: Event) => {
       if (ev) {
@@ -422,9 +422,9 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
   window.addEventListener("resize", onWindowResize);
 
   // Button row
-  const buttonRow = footer.createDiv({ cls: "bc flex items-center justify-end gap-4" });
+  const buttonRow = footer.createDiv({ cls: "flex items-center justify-end gap-4" });
 
-  const cancelBtn = buttonRow.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm" });
+  const cancelBtn = buttonRow.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter inline-flex items-center gap-2 h-9 px-3 text-sm" });
   cancelBtn.type = "button";
   cancelBtn.createSpan({ text: "Cancel" });
   cancelBtn.onclick = () => {
@@ -432,7 +432,7 @@ export function buildFooter(parent: HTMLElement, cb: FooterCallbacks, defaultMod
     cb.onCancel();
   };
 
-  const saveBtn = buttonRow.createEl("button", { cls: "bc sprout-btn-toolbar sprout-btn-accent sprout-io-save-btn h-9 inline-flex items-center gap-2" });
+  const saveBtn = buttonRow.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent learnkit-io-save-btn learnkit-io-save-btn h-9 inline-flex items-center gap-2" });
   saveBtn.type = "button";
   saveBtn.createSpan({ text: "Save" });
   saveBtn.onclick = () => {
@@ -449,29 +449,29 @@ export function buildImageLimitDialog(
   parent: HTMLElement,
   onDelete: () => void,
 ): HTMLDialogElement {
-  const dialog = parent.createEl("dialog", { cls: "bc dialog" });
-  const dlgInner = dialog.createDiv({ cls: "bc flex flex-col gap-3" });
-  const dlgHeader = dlgInner.createDiv({ cls: "bc" });
-  dlgHeader.createEl("h2", { cls: "bc text-lg font-semibold", text: "Image already loaded" });
+  const dialog = parent.createEl("dialog", { cls: "dialog" });
+  const dlgInner = dialog.createDiv({ cls: "flex flex-col gap-3" });
+  const dlgHeader = dlgInner.createDiv({ cls: "" });
+  dlgHeader.createEl("h2", { cls: "text-lg font-semibold", text: "Image already loaded" });
   dlgHeader.createEl("p", {
-    cls: "bc text-sm text-muted-foreground",
+    cls: "text-sm text-muted-foreground",
     text: "Only one image per card. Remove the current image before adding another.",
   });
-  const dlgFooter = dlgInner.createDiv({ cls: "bc flex justify-end gap-2" });
+  const dlgFooter = dlgInner.createDiv({ cls: "flex justify-end gap-2" });
   const dlgCancel = dlgFooter.createEl("button", {
-    cls: "bc btn inline-flex items-center justify-center px-3 h-9 text-sm",
+    cls: "btn inline-flex items-center justify-center px-3 h-9 text-sm",
     attr: { type: "button" },
     text: "Cancel",
   });
-  dlgCancel.classList.add("sprout-io-dlg-cancel");
+  dlgCancel.classList.add("learnkit-io-dlg-cancel", "learnkit-io-dlg-cancel");
   dlgCancel.onclick = () => dialog.close();
 
   const dlgDelete = dlgFooter.createEl("button", {
-    cls: "bc sprout-btn-toolbar inline-flex items-center justify-center px-3 h-9 text-sm",
+    cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center justify-center px-3 h-9 text-sm",
     attr: { type: "button" },
     text: "Delete image",
   });
-  dlgDelete.classList.add("sprout-io-dlg-delete");
+  dlgDelete.classList.add("learnkit-io-dlg-delete", "learnkit-io-dlg-delete");
   dlgDelete.onclick = () => onDelete();
 
   return dialog;
@@ -480,14 +480,14 @@ export function buildImageLimitDialog(
 // ── Header ──────────────────────────────────────────────────────────────────
 
 export function buildHeader(parent: HTMLElement, title: string, onClose: () => void): HTMLElement {
-  const headerRow = parent.createDiv({ cls: "bc flex items-center justify-between gap-3" });
-  headerRow.createDiv({ text: title, cls: "bc text-lg font-semibold" });
+  const headerRow = parent.createDiv({ cls: "flex items-center justify-between gap-3" });
+  headerRow.createDiv({ text: title, cls: "text-lg font-semibold" });
   const headerClose = headerRow.createEl("button", {
-    cls: "bc inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",
+    cls: "inline-flex items-center justify-center h-9 w-9 text-muted-foreground hover:text-foreground focus-visible:text-foreground",
     attr: { type: "button", "aria-label": "Close" },
   });
-  headerClose.classList.add("sprout-io-close-btn");
-  const headerCloseIcon = headerClose.createEl("span", { cls: "bc inline-flex items-center justify-center [&_svg]:size-4" });
+  headerClose.classList.add("learnkit-io-close-btn", "learnkit-io-close-btn");
+  const headerCloseIcon = headerClose.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
   setIcon(headerCloseIcon, "x");
   headerClose.onclick = () => onClose();
   return headerRow;
