@@ -11,7 +11,7 @@ import { Plugin, type Editor, type MarkdownView, type TFile, type WorkspaceLeaf 
 
 import { DEFAULT_SETTINGS, type LearnKitSettings } from "../core/constants";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-object-type
 export type Constructor<T = {}> = new (...args: any[]) => T;
 import type { IStore } from "../core/store-interface";
 import type { FlashcardType } from "../core/utils";
@@ -22,6 +22,7 @@ import type { SproutAssistantPopup } from "../../views/study-assistant/popup/ass
 import type { CoachPlanSqlite } from "../core/coach-plan-sqlite";
 import type { CardState } from "../../engine/scheduler/scheduler";
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class LearnKitPluginBase extends Plugin {
   declare settings: LearnKitSettings;
   declare store: IStore;
@@ -53,6 +54,7 @@ export class LearnKitPluginBase extends Plugin {
  * ReminderRibbon → Lifecycle). Declaration-merged with the class so that
  * cross-mixin `this` references resolve correctly.
  */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface LearnKitPluginBase {
   // -- Core methods --
   _addCommand(id: string, name: string, callback: () => void | Promise<void>): void;

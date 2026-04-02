@@ -3715,6 +3715,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         throw new Error(`HTTP ${res.status}`);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const rawJson = res.json && typeof res.json === "object" ? res.json : {};
       const root = rawJson as { data?: unknown };
       const rawModels = Array.isArray(root?.data) ? root.data : [];
