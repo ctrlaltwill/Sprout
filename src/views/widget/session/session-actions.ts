@@ -83,7 +83,8 @@ export async function gradeCurrentRating(
   // Compute time-to-answer before grading
   const msToAnswer = computeMsToAnswer(view, now, id);
 
-  view._undo = {
+  const UNDO_MAX = 3;
+  view._undoStack.push({
     sessionStamp: view._sessionStamp,
     id,
     cardType: String(card.type || "unknown"),
@@ -95,7 +96,9 @@ export async function gradeCurrentRating(
     reviewLogLenBefore,
     analyticsLenBefore,
     prevState: deepClone(st),
-  } as UndoFrame;
+  } as UndoFrame);
+  if (view._undoStack.length > UNDO_MAX)
+    view._undoStack.splice(0, view._undoStack.length - UNDO_MAX);
 
   const { nextState, prevDue, nextDue } = gradeFromRating(st, rating, now, view.plugin.settings);
 
@@ -130,7 +133,7 @@ export async function gradeCurrentRating(
 export function canUndo(view: WidgetViewLike): boolean {
   if (view.mode !== "session" || !view.session) return false;
   if (view.session.mode === "practice") return false;
-  const u = view._undo;
+  const u = view._undoStack[view._undoStack.length - 1];
   if (!u) return false;
   if (u.sessionStamp !== view._sessionStamp) return false;
   return !!view.session.graded?.[u.id];
@@ -138,20 +141,20 @@ export function canUndo(view: WidgetViewLike): boolean {
 
 export async function undoLastGrade(view: WidgetViewLike): Promise<void> {
   if (view.mode !== "session" || !view.session) return;
-  const u = view._undo;
+  const u = view._undoStack[view._undoStack.length - 1];
   if (!u) return;
   if (u.sessionStamp !== view._sessionStamp) {
-    view._undo = null;
+    view._undoStack.length = 0;
     view.render();
     return;
   }
   if (!view.session.graded?.[u.id]) {
-    view._undo = null;
+    view._undoStack.length = 0;
     view.render();
     return;
   }
 
-  view._undo = null;
+  view._undoStack.pop();
   const store = view.plugin.store;
 
   try {

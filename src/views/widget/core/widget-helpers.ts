@@ -97,6 +97,126 @@ export function filterReviewableCards(cards: CardRecord[]): CardRecord[] {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Queue-merge logic (extracted from onCardsSynced for testability)   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Pure function that merges a rebuilt session queue with the in-progress
+ * session state, preserving the completed prefix and current card.
+ */
+export function mergeQueueOnSync(
+  previousQueue: CardRecord[],
+  previousIndex: number,
+  rebuiltQueue: CardRecord[],
+): { queue: CardRecord[]; index: number } {
+  const safeQueue = Array.isArray(previousQueue) ? previousQueue : [];
+  const safeIndex = Math.max(0, Math.min(previousIndex, safeQueue.length));
+  const completedPrefix = safeQueue.slice(0, safeIndex);
+  const currentCard = safeQueue[safeIndex] ?? null;
+
+  const completedIds = new Set(completedPrefix.map((card) => String(card?.id ?? "")));
+  const currentId = String(currentCard?.id ?? "");
+  const upcoming = (rebuiltQueue || []).filter((card) => {
+    const id = String(card?.id ?? "");
+    if (!id) return true;
+    if (completedIds.has(id)) return false;
+    if (currentCard && id === currentId) return false;
+    return true;
+  });
+
+  const mergedQueue = currentCard
+    ? [...completedPrefix, currentCard, ...upcoming]
+    : [...completedPrefix, ...upcoming];
+
+  return {
+    queue: mergedQueue,
+    index: Math.min(safeIndex, mergedQueue.length),
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Key-action resolver (extracted from handleKey for testability)     */
+/* ------------------------------------------------------------------ */
+
+export type WidgetKeyAction =
+  | "start-session"
+  | "start-practice"
+  | "edit"
+  | "more-menu"
+  | "bury"
+  | "study-view"
+  | "suspend"
+  | "undo"
+  | "flip"
+  | "next"
+  | "grade-again"
+  | "grade-hard"
+  | "grade-good"
+  | "grade-easy"
+  | null;
+
+export type WidgetKeyContext = {
+  key: string;
+  isCtrl: boolean;
+  mode: "summary" | "session";
+  hasSession: boolean;
+  hasCard: boolean;
+  isPractice: boolean;
+  isGraded: boolean;
+  showingAnswer: boolean;
+  cardType: string;
+};
+
+/**
+ * Pure function that maps a key press + widget state to a semantic action.
+ * Returns `null` when the key should be ignored.
+ */
+export function resolveWidgetKeyAction(ctx: WidgetKeyContext): WidgetKeyAction {
+  const { key, isCtrl, mode, hasSession, hasCard, isPractice, isGraded, showingAnswer, cardType } = ctx;
+
+  if (mode === "summary") {
+    if (key === "enter" && !isCtrl) return "start-session";
+    return null;
+  }
+
+  if (mode !== "session" || !hasSession || !hasCard) return null;
+
+  if (key === "e" && !isCtrl) return "edit";
+  if (key === "m" && !isCtrl) return "more-menu";
+  if (key === "b" && !isCtrl) return isPractice ? null : "bury";
+  if (key === "t" && !isCtrl) return "study-view";
+  if (key === "s" && !isCtrl) return isPractice ? null : "suspend";
+  if (key === "u" && !isCtrl) return isPractice ? null : "undo";
+
+  const isFlip = key === "enter" || key === " " || key === "arrowright";
+  const isBasicLike =
+    cardType === "basic" || cardType === "reversed" || cardType === "reversed-child" ||
+    cardType === "cloze" || cardType === "cloze-child" ||
+    cardType === "io" || cardType === "io-child";
+
+  if (isFlip && isBasicLike) {
+    if (!showingAnswer) return "flip";
+    return "next";
+  }
+
+  if (isFlip && (cardType === "mcq" || cardType === "oq")) {
+    if (isGraded) return "next";
+    return null; // MCQ/OQ have their own submit logic
+  }
+
+  if (isFlip) return "next";
+
+  const ratingKeys: Record<string, WidgetKeyAction> = {
+    "1": "grade-again", "2": "grade-hard", "3": "grade-good", "4": "grade-easy",
+  };
+  if (ratingKeys[key] && !isPractice && isBasicLike && showingAnswer && !isGraded) {
+    return ratingKeys[key];
+  }
+
+  return null;
+}
+
+/* ------------------------------------------------------------------ */
 /*  MCQ option order helpers                                          */
 /* ------------------------------------------------------------------ */
 
@@ -192,7 +312,7 @@ export interface WidgetViewLike {
 
   /** @internal */ _timer: number | null;
   /** @internal */ _timing: { cardId: string; startedAt: number } | null;
-  /** @internal */ _undo: UndoFrame | null;
+  /** @internal */ _undoStack: UndoFrame[];
   /** @internal */ _sessionStamp: number;
   /** @internal */ _moreMenuToggle: (() => void) | null;
   _typedClozeAnswers: Map<number, string>;

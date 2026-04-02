@@ -3715,7 +3715,8 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         throw new Error(`HTTP ${res.status}`);
       }
 
-      const root = res.json as { data?: unknown };
+      const rawJson = res.json && typeof res.json === "object" ? res.json : {};
+      const root = rawJson as { data?: unknown };
       const rawModels = Array.isArray(root?.data) ? root.data : [];
       const parsed: OpenRouterModel[] = [];
 

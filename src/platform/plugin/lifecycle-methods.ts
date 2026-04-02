@@ -3,11 +3,11 @@
  * @summary Module for lifecycle methods.
  *
  * @exports
- *  - installLifecycleMethods
+ *  - WithLifecycleMethods
  */
 
 import { Notice, TAbstractFile, TFile, Platform, type WorkspaceLeaf } from "obsidian";
-import { LearnKitPluginBase } from "./plugin-base";
+import { LearnKitPluginBase, type Constructor } from "./plugin-base";
 
 import {
   VIEW_TYPE_REVIEWER,
@@ -69,9 +69,9 @@ import {
 import { ReminderEngine } from "../../views/reminders/reminder-engine";
 import { ensurePluginRuntimeState } from "./runtime-state";
 
-export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase): void {
-  Object.assign(pluginClass.prototype, {
-    _registerCommands(this: LearnKitPluginBase): void {
+export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
+  return class WithLifecycleMethods extends Base {
+    _registerCommands(): void {
       this._addCommand("sync-flashcards-current-note", "Sync flashcards from current note", async () => this._runSyncCurrentNote());
       this._addCommand("sync-flashcards", "Sync all flashcards from the vault", async () => this._runSync());
       this._addCommand("open", "Open home", async () => this.openHomeTab());
@@ -116,9 +116,9 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
         const { AnkiExportModal } = await import("../modals/anki-export-modal");
         new AnkiExportModal(this).open();
       });
-    },
+    }
 
-    async onload(this: LearnKitPluginBase): Promise<void> {
+    async onload(): Promise<void> {
       ensurePluginRuntimeState(this);
       try {
         this._initBasecoatRuntime();
@@ -312,9 +312,9 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
         log.error("failed to load", e);
         new Notice(this._tx("ui.main.notice.loadFailed", "LearnKit - failed to load"));
       }
-    },
+    }
 
-    onunload(this: LearnKitPluginBase): void {
+    onunload(): void {
       const pending = this._saving ?? Promise.resolve();
       void pending
         .then(() => this._doSave())
@@ -363,6 +363,6 @@ export function installLifecycleMethods(pluginClass: typeof LearnKitPluginBase):
       this._assistantPopup = null;
 
       this._stopBasecoatRuntime();
-    },
-  });
+    }
+  };
 }

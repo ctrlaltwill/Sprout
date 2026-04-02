@@ -3,11 +3,11 @@
  * @summary Module for navigation methods.
  *
  * @exports
- *  - installNavigationMethods
+ *  - WithNavigationMethods
  */
 
 import { Notice, type WorkspaceLeaf } from "obsidian";
-import { LearnKitPluginBase } from "./plugin-base";
+import { LearnKitPluginBase, type Constructor } from "./plugin-base";
 import type { Scope } from "../../views/reviewer/types";
 import type { LearnKitSettingsView } from "../../views/settings/view/settings-view";
 import {
@@ -25,15 +25,15 @@ import {
 import { CoachPlanSqlite, type CoachScopeType } from "../core/coach-plan-sqlite";
 import { log } from "../core/logger";
 
-export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase): void {
-  Object.assign(pluginClass.prototype, {
-    async openReviewerTab(this: LearnKitPluginBase, forceNew: boolean = false): Promise<void> {
+export function WithNavigationMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
+  return class WithNavigationMethods extends Base {
+    async openReviewerTab(forceNew: boolean = false): Promise<void> {
       const leaf = await this._openSingleTabView(VIEW_TYPE_REVIEWER, forceNew);
       const view = leaf.view as { setReturnToCoach?: (enabled: boolean) => void } | undefined;
       view?.setReturnToCoach?.(false);
-    },
+    }
 
-    async openNoteReviewTab(this: LearnKitPluginBase, forceNew: boolean = false): Promise<void> {
+    async openNoteReviewTab(forceNew: boolean = false): Promise<void> {
       const leaf = await this._openSingleTabView(VIEW_TYPE_NOTE_REVIEW, forceNew);
       const view = leaf.view as {
         setReturnToCoach?: (enabled: boolean) => void;
@@ -43,9 +43,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       view?.setReturnToCoach?.(false);
       view?.setCoachScope?.(null);
       view?.setIgnoreDailyReviewLimit?.(false);
-    },
+    }
 
-    async openHomeTab(this: LearnKitPluginBase, forceNew: boolean = false): Promise<void> {
+    async openHomeTab(forceNew: boolean = false): Promise<void> {
       if (!forceNew) {
         const existing = this._ensureSingleLeafOfType(VIEW_TYPE_HOME);
         if (existing) {
@@ -66,17 +66,17 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
         log.swallow("move leaf after active tab", e);
       }
       void ws.revealLeaf(leaf);
-    },
+    }
 
-    async openBrowserTab(this: LearnKitPluginBase, forceNew: boolean = false): Promise<void> {
+    async openBrowserTab(forceNew: boolean = false): Promise<void> {
       await this._openSingleTabView(VIEW_TYPE_BROWSER, forceNew);
-    },
+    }
 
-    async openAnalyticsTab(this: LearnKitPluginBase, forceNew: boolean = false): Promise<void> {
+    async openAnalyticsTab(forceNew: boolean = false): Promise<void> {
       await this._openSingleTabView(VIEW_TYPE_ANALYTICS, forceNew);
-    },
+    }
 
-    async openSettingsTab(this: LearnKitPluginBase, forceNew: boolean = false, targetTab?: string): Promise<void> {
+    async openSettingsTab(forceNew: boolean = false, targetTab?: string): Promise<void> {
       const resolvedTargetTab = targetTab ?? "settings";
 
       if (!forceNew) {
@@ -101,19 +101,19 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
           view.navigateToTab(resolvedTargetTab, { reanimateEntrance: true });
         }
       }, 50);
-    },
+    }
 
-    async openExamGeneratorTab(this: LearnKitPluginBase, forceNew: boolean = false): Promise<void> {
+    async openExamGeneratorTab(forceNew: boolean = false): Promise<void> {
       await this._openSingleTabView(VIEW_TYPE_EXAM_GENERATOR, forceNew);
-    },
+    }
 
-    async openExamGeneratorTest(this: LearnKitPluginBase, testId: string): Promise<void> {
+    async openExamGeneratorTest(testId: string): Promise<void> {
       const leaf = await this._openSingleTabView(VIEW_TYPE_EXAM_GENERATOR, false);
       const view = leaf.view as { loadSavedTestById?: (id: string) => void } | undefined;
       view?.loadSavedTestById?.(testId);
-    },
+    }
 
-    async openExamGeneratorScope(this: LearnKitPluginBase, scope: Scope): Promise<void> {
+    async openExamGeneratorScope(scope: Scope): Promise<void> {
       const leaf = await this._openSingleTabView(VIEW_TYPE_EXAM_GENERATOR, false);
       const view = leaf.view as {
         setCoachScope?: (s: Scope | null) => void;
@@ -126,9 +126,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
         return;
       }
       view?.setCoachScope?.(scope);
-    },
+    }
 
-    async openExamGeneratorScopes(this: LearnKitPluginBase, scopes: Scope[], targetLeaf?: WorkspaceLeaf): Promise<void> {
+    async openExamGeneratorScopes(scopes: Scope[], targetLeaf?: WorkspaceLeaf): Promise<void> {
       const normalized = Array.isArray(scopes)
         ? scopes.filter((scope): scope is Scope => !!scope)
         : [];
@@ -154,10 +154,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       }
 
       view?.setCoachScope?.(normalized[0] ?? null);
-    },
+    }
 
     async openCoachTab(
-      this: LearnKitPluginBase,
       forceNew: boolean = false,
       options?: { suppressEntranceAos?: boolean; refresh?: boolean },
       targetLeaf?: WorkspaceLeaf,
@@ -179,9 +178,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       if (options?.refresh !== false) {
         view?.onRefresh?.();
       }
-    },
+    }
 
-    async openReviewerScope(this: LearnKitPluginBase, scope: Scope): Promise<void> {
+    async openReviewerScope(scope: Scope): Promise<void> {
       const leaf = await this._openSingleTabView(VIEW_TYPE_REVIEWER, false);
       const view = leaf.view as {
         setReturnToCoach?: (enabled: boolean) => void;
@@ -192,10 +191,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       } | undefined;
       view?.setReturnToCoach?.(false);
       view?.openSessionFromScope?.(scope);
-    },
+    }
 
     async openReviewerScopeWithOptions(
-      this: LearnKitPluginBase,
       scope: Scope,
       options: {
         ignoreDailyReviewLimit?: boolean;
@@ -234,14 +232,13 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       view?.setSuppressEntranceAosOnce?.(true);
       view?.setReturnToCoach?.(true);
       view?.openSessionFromScope?.(scope, options);
-    },
+    }
 
-    async openNoteReviewScope(this: LearnKitPluginBase, scope: Scope): Promise<void> {
+    async openNoteReviewScope(scope: Scope): Promise<void> {
       return this.openNoteReviewScopeWithOptions(scope, {});
-    },
+    }
 
     async openNoteReviewScopeWithOptions(
-      this: LearnKitPluginBase,
       scope: Scope,
       options: {
         targetCount?: number;
@@ -303,10 +300,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       }
       view?.setCoachScope?.(scope);
       view?.setIgnoreDailyReviewLimit?.(true);
-    },
+    }
 
     async recordCoachProgressForScope(
-      this: LearnKitPluginBase,
       scope: Scope,
       kind: "flashcard" | "note",
       by = 1,
@@ -321,9 +317,9 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       const scopeKey = scope.type === "vault" ? "" : String(scope.key || "");
       this._coachDb.incrementProgress(dayUtc, scope.type as CoachScopeType, scopeKey, kind, by);
       await this._coachDb.persist();
-    },
+    }
 
-    openPluginSettingsInObsidian(this: LearnKitPluginBase): void {
+    openPluginSettingsInObsidian(): void {
       const settings = this.app.setting;
       if (!settings) {
         new Notice(this._tx("ui.main.notice.obsidianSettingsUnavailable", "Obsidian settings are unavailable."));
@@ -339,18 +335,18 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
       } catch (e) {
         log.warn("failed to open plugin settings tab", e);
       }
-    },
+    }
 
-    async openWidgetSafe(this: LearnKitPluginBase): Promise<void> {
+    async openWidgetSafe(): Promise<void> {
       try {
         await this.openWidget();
       } catch (e) {
         log.error("failed to open widget", e);
         new Notice(this._tx("ui.main.notice.widgetOpenFailed", "LearnKit - failed to open widget"));
       }
-    },
+    }
 
-    async openWidget(this: LearnKitPluginBase): Promise<void> {
+    async openWidget(): Promise<void> {
       const ws = this.app.workspace;
       let leaf: WorkspaceLeaf | null = ws.getRightLeaf(false);
 
@@ -366,18 +362,18 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
 
       await leaf.setViewState({ type: VIEW_TYPE_WIDGET, active: true, state: {} });
       void ws.revealLeaf(leaf);
-    },
+    }
 
-    async openAssistantWidgetSafe(this: LearnKitPluginBase): Promise<void> {
+    async openAssistantWidgetSafe(): Promise<void> {
       try {
         await this.openAssistantWidget();
       } catch (e) {
         log.error("failed to open companion widget", e);
         new Notice(this._tx("ui.main.notice.assistantWidgetOpenFailed", "LearnKit - failed to open companion widget"));
       }
-    },
+    }
 
-    async openAssistantWidget(this: LearnKitPluginBase): Promise<void> {
+    async openAssistantWidget(): Promise<void> {
       const ws = this.app.workspace;
       let leaf: WorkspaceLeaf | null = ws.getRightLeaf(false);
 
@@ -393,6 +389,6 @@ export function installNavigationMethods(pluginClass: typeof LearnKitPluginBase)
 
       await leaf.setViewState({ type: VIEW_TYPE_STUDY_ASSISTANT, active: true, state: {} });
       void ws.revealLeaf(leaf);
-    },
-  });
+    }
+  };
 }

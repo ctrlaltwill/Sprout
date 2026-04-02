@@ -21,7 +21,7 @@ import type LearnKitPlugin from "../../main";
 import type { Session, UndoFrame, ReviewMeta } from "./core/widget-helpers";
 import type { CardRecord } from "../../platform/types/card";
 import { isMultiAnswerMcq } from "../../platform/types/card";
-import { filterReviewableCards, getWidgetMcqDisplayOrder, isClozeLike } from "./core/widget-helpers";
+import { filterReviewableCards, getWidgetMcqDisplayOrder, isClozeLike, mergeQueueOnSync } from "./core/widget-helpers";
 import { getCardsInActiveScope, getFolderNoteInfo, folderNotesAsDecksEnabled } from "./scope/scope-helpers";
 import {
   gradeCurrentRating as _gradeCurrentRating,
@@ -53,7 +53,7 @@ export class SproutWidgetView extends ItemView {
   showAnswer = false;
   /** @internal */ _timer: number | null = null;
   /** @internal */ _timing: { cardId: string; startedAt: number } | null = null;
-  /** @internal */ _undo: UndoFrame | null = null;
+  /** @internal */ _undoStack: UndoFrame[] = [];
   /** @internal */ _sessionStamp = 0;
   /** @internal */ _moreMenuToggle: (() => void) | null = null;
   private _mdHelper: SproutMarkdownHelper | null = null;
@@ -126,33 +126,19 @@ export class SproutWidgetView extends ItemView {
     const previousSession = this.session;
     const previousQueue = Array.isArray(previousSession.queue) ? previousSession.queue : [];
     const previousIndex = Math.max(0, Math.min(previousSession.index, previousQueue.length));
-    const completedPrefix = previousQueue.slice(0, previousIndex);
-    const currentCard = previousQueue[previousIndex] ?? null;
 
     const rebuilt = previousSession.mode === "practice"
       ? this.buildPracticeSessionForActiveNote()
       : this.buildSessionForActiveNote();
     if (!rebuilt) return;
 
-    const completedIds = new Set(completedPrefix.map((card) => String(card?.id ?? "")));
-    const currentId = String(currentCard?.id ?? "");
-    const upcoming = (rebuilt.queue || []).filter((card) => {
-      const id = String(card?.id ?? "");
-      if (!id) return true;
-      if (completedIds.has(id)) return false;
-      if (currentCard && id === currentId) return false;
-      return true;
-    });
+    const merged = mergeQueueOnSync(previousQueue, previousIndex, rebuilt.queue || []);
 
-    const mergedQueue = currentCard
-      ? [...completedPrefix, currentCard, ...upcoming]
-      : [...completedPrefix, ...upcoming];
-
-    previousSession.queue = mergedQueue;
-    previousSession.index = Math.min(previousIndex, mergedQueue.length);
+    previousSession.queue = merged.queue;
+    previousSession.index = merged.index;
     if (previousSession.stats) {
-      previousSession.stats.total = mergedQueue.length;
-      previousSession.stats.done = Math.min(previousSession.stats.done, mergedQueue.length);
+      previousSession.stats.total = merged.queue.length;
+      previousSession.stats.done = Math.min(previousSession.stats.done, merged.queue.length);
     }
   }
 
@@ -243,6 +229,7 @@ export class SproutWidgetView extends ItemView {
         await this.nextCard();
       })();
     }, sec * 1000);
+    this.registerInterval(this._timer);
   }
 
   /* ---------------------------------------------------------------- */
@@ -374,7 +361,7 @@ export class SproutWidgetView extends ItemView {
     this.session = this.buildSessionForActiveNote();
     this.mode = "session";
     this.showAnswer = false;
-    this._undo = null;
+    this._undoStack.length = 0;
     this._lastTtsKey = "";
     this._sessionStamp = Date.now();
     this.render();
@@ -385,7 +372,7 @@ export class SproutWidgetView extends ItemView {
     this.session = this.buildPracticeSessionForActiveNote();
     this.mode = "session";
     this.showAnswer = false;
-    this._undo = null;
+    this._undoStack.length = 0;
     this._lastTtsKey = "";
     this._sessionStamp = Date.now();
     this.render();
@@ -396,7 +383,7 @@ export class SproutWidgetView extends ItemView {
     this.mode = "summary";
     this.session = null;
     this.showAnswer = false;
-    this._undo = null;
+    this._undoStack.length = 0;
     this._lastTtsKey = "";
     this._moreMenuToggle = null;
     this.render();
@@ -659,7 +646,7 @@ export class SproutWidgetView extends ItemView {
     this._mdHelper = null;
     this._timing = null;
     this.session = null;
-    this._undo = null;
+    this._undoStack.length = 0;
     this._moreMenuToggle = null;
 
     // Remove global reference set in constructor

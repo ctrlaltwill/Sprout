@@ -120,7 +120,8 @@ export class SproutReviewerView extends ItemView {
   private _countdownInterval: number | null = null;
 
   private _sessionStamp = 0;
-  private _undo: UndoFrame | null = null;
+  private _undoStack: UndoFrame[] = [];
+  private static readonly UNDO_MAX = 3;
   private _firstSessionRender = true;
   private _firstDeckRender = true;
 
@@ -144,6 +145,15 @@ export class SproutReviewerView extends ItemView {
 
   private readonly _imgMaxHeightPx = 200;
   private _md: SproutMarkdownHelper | null = null;
+
+  /** Restore keyboard focus after render() rebuilds the DOM. */
+  private _restoreFocus() {
+    const first = this.contentEl.querySelector<HTMLElement>(
+      'button:not([disabled]), [tabindex="0"]',
+    );
+    if (first) first.focus();
+    else this.containerEl.focus();
+  }
 
   // Add shared header instance
   private _header: SproutHeader | null = null;
@@ -499,7 +509,7 @@ export class SproutReviewerView extends ItemView {
   // -----------------------------
 
   private clearUndo() {
-    this._undo = null;
+    this._undoStack.length = 0;
   }
 
   private getSessionStamp(): number {
@@ -508,7 +518,7 @@ export class SproutReviewerView extends ItemView {
 
   canUndo(): boolean {
     if (this.mode !== "session" || !this.session) return false;
-    const u = this._undo;
+    const u = this._undoStack[this._undoStack.length - 1];
     if (!u) return false;
     if (this.getSessionStamp() !== u.sessionStamp) return false;
     return !!this.session.graded?.[u.id];
@@ -517,7 +527,7 @@ export class SproutReviewerView extends ItemView {
   async undoLastGrade(): Promise<void> {
     if (this.mode !== "session" || !this.session) return;
 
-    const u = this._undo;
+    const u = this._undoStack[this._undoStack.length - 1];
     if (!u) return;
 
     if (this.getSessionStamp() !== u.sessionStamp) {
@@ -532,7 +542,7 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    this._undo = null;
+    this._undoStack.pop();
 
     const store = this.plugin.store;
 
@@ -901,6 +911,7 @@ export class SproutReviewerView extends ItemView {
 
     update();
     this._countdownInterval = window.setInterval(update, 1000);
+    this.registerInterval(this._countdownInterval);
   }
 
   private armTimer() {
@@ -915,6 +926,7 @@ export class SproutReviewerView extends ItemView {
       this._timer = null;
       this.onAutoAdvance();
     }, sec * 1000);
+    this.registerInterval(this._timer);
   }
 
   private onAutoAdvance() {
@@ -1072,7 +1084,7 @@ export class SproutReviewerView extends ItemView {
     const msToAnswer = this.computeMsToAnswer(now, id);
 
     if (this.isPracticeSession()) {
-      this._undo = {
+      this._undoStack.push({
         sessionStamp: stamp,
         id,
         cardType: String(card.type || "unknown"),
@@ -1090,7 +1102,9 @@ export class SproutReviewerView extends ItemView {
         analyticsLenBefore,
 
         prevState: null,
-      };
+      });
+      if (this._undoStack.length > SproutReviewerView.UNDO_MAX)
+        this._undoStack.splice(0, this._undoStack.length - SproutReviewerView.UNDO_MAX);
 
       // persist analytics for practice
       try {
@@ -1122,7 +1136,7 @@ export class SproutReviewerView extends ItemView {
     const st = this.plugin.store.getState(id);
     if (!st) return;
 
-    this._undo = {
+    this._undoStack.push({
       sessionStamp: stamp,
       id,
       cardType: String(card.type || "unknown"),
@@ -1140,7 +1154,9 @@ export class SproutReviewerView extends ItemView {
       analyticsLenBefore,
 
       prevState: deepClone(st),
-    };
+    });
+    if (this._undoStack.length > SproutReviewerView.UNDO_MAX)
+      this._undoStack.splice(0, this._undoStack.length - SproutReviewerView.UNDO_MAX);
 
     try {
       const { nextState, prevDue, nextDue, metrics } = gradeFromRating(
@@ -2041,11 +2057,12 @@ export class SproutReviewerView extends ItemView {
         this._firstDeckRender = false;
       }
 
+      this._restoreFocus();
       return;
     }
 
     // ---- Session mode ----
-    if (!this.session) return;
+    if (!this.session) { this._restoreFocus(); return; }
 
     const activeCard = this.currentCard();
     if (activeCard) this.noteCardPresented(activeCard);
@@ -2230,5 +2247,7 @@ export class SproutReviewerView extends ItemView {
       this._firstSessionRender = false;
       this.armTimer();
     }
+
+    this._restoreFocus();
   }
 }

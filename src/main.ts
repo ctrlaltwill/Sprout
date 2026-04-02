@@ -12,21 +12,25 @@
 import "basecoat-css/all";
 
 import { LearnKitPluginBase } from "./platform/plugin/plugin-base";
-import { installCorePluginMethods } from "./platform/plugin/core-methods";
-import { installDataSyncMethods } from "./platform/plugin/data-sync-methods";
-import { installNavigationMethods } from "./platform/plugin/navigation-methods";
-import { installReminderAndRibbonMethods } from "./platform/plugin/reminder-ribbon-methods";
-import { installLifecycleMethods } from "./platform/plugin/lifecycle-methods";
+import { WithCoreMethods } from "./platform/plugin/core-methods";
+import { WithDataSyncMethods } from "./platform/plugin/data-sync-methods";
+import { WithNavigationMethods } from "./platform/plugin/navigation-methods";
+import { WithReminderAndRibbonMethods } from "./platform/plugin/reminder-ribbon-methods";
+import { WithLifecycleMethods } from "./platform/plugin/lifecycle-methods";
 
-export class LearnKitPlugin extends LearnKitPluginBase {}
+const _Composed = WithLifecycleMethods(
+  WithReminderAndRibbonMethods(
+    WithNavigationMethods(
+      WithDataSyncMethods(
+        WithCoreMethods(LearnKitPluginBase),
+      ),
+    ),
+  ),
+);
+
+export class LearnKitPlugin extends _Composed {}
 export { LearnKitPlugin as SproutPlugin };
 export default LearnKitPlugin;
-
-installCorePluginMethods(LearnKitPlugin);
-installDataSyncMethods(LearnKitPlugin);
-installNavigationMethods(LearnKitPlugin);
-installReminderAndRibbonMethods(LearnKitPlugin);
-installLifecycleMethods(LearnKitPlugin);
 
 // If you want to help clean this up and keep the dev caffeinated, head here:
 // https://buymeacoffee.com/williamguy

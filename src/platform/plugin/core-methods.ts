@@ -3,7 +3,7 @@
  * @summary Module for core methods.
  *
  * @exports
- *  - installCorePluginMethods
+ *  - WithCoreMethods
  */
 
 import {
@@ -16,7 +16,7 @@ import {
   type WorkspaceLeaf,
 } from "obsidian";
 
-import { LearnKitPluginBase } from "./plugin-base";
+import { LearnKitPluginBase, type Constructor } from "./plugin-base";
 import type { FlashcardType } from "../core/utils";
 import { clamp } from "../core/utils";
 import { log } from "../core/logger";
@@ -46,17 +46,17 @@ import {
   type ReadingRefreshState,
 } from "../../views/reading/reading-refresh-runtime";
 
-export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase): void {
-  Object.assign(pluginClass.prototype, {
-    _addCommand(this: LearnKitPluginBase, id: string, name: string, callback: () => void | Promise<void>) {
+export function WithCoreMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
+  return class WithCoreMethods extends Base {
+    _addCommand(id: string, name: string, callback: () => void | Promise<void>) {
       this.addCommand({ id, name, callback });
-    },
+    }
 
-    _tx(this: LearnKitPluginBase, token: string, fallback: string, vars?: Record<string, string | number>) {
+    _tx(token: string, fallback: string, vars?: Record<string, string | number>) {
       return t(this.settings?.general?.interfaceLanguage, token, fallback, vars);
-    },
+    }
 
-    refreshAssistantPopupFromSettings(this: LearnKitPluginBase): void {
+    refreshAssistantPopupFromSettings(): void {
       const activeFile = this.app.workspace.getActiveFile();
       if (this.settings?.studyAssistant?.enabled) {
         this._assistantPopup?.mount();
@@ -66,9 +66,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       if (!this.settings?.studyAssistant?.enabled) {
         this._closeAllAssistantWidgetInstances();
       }
-    },
+    }
 
-    _closeAllAssistantWidgetInstances(this: LearnKitPluginBase): void {
+    _closeAllAssistantWidgetInstances(): void {
       this.app.workspace
         .getLeavesOfType(VIEW_TYPE_STUDY_ASSISTANT)
         .forEach((leaf: WorkspaceLeaf) => {
@@ -78,9 +78,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
             log.swallow("close assistant widget leaf", e);
           }
         });
-    },
+    }
 
-    async _openSingleTabView(this: LearnKitPluginBase, viewType: string, forceNew = false): Promise<WorkspaceLeaf> {
+    async _openSingleTabView(viewType: string, forceNew = false): Promise<WorkspaceLeaf> {
       if (!forceNew) {
         const existing = this._ensureSingleLeafOfType(viewType);
         if (existing) {
@@ -93,9 +93,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       await leaf.setViewState({ type: viewType, active: true });
       void this.app.workspace.revealLeaf(leaf);
       return leaf;
-    },
+    }
 
-    _initBasecoatRuntime(this: LearnKitPluginBase): void {
+    _initBasecoatRuntime(): void {
       const bc = getBasecoatApi();
       if (!bc) {
         log.warn("Basecoat API not found on window.basecoat (dropdowns may not work).");
@@ -119,9 +119,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       } catch (e) {
         log.warn("Basecoat init failed", e);
       }
-    },
+    }
 
-    _stopBasecoatRuntime(this: LearnKitPluginBase): void {
+    _stopBasecoatRuntime(): void {
       if (!this._basecoatStarted) return;
       try {
         const bc = getBasecoatApi();
@@ -130,32 +130,32 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         log.swallow("stop basecoat runtime", e);
       }
       this._basecoatStarted = false;
-    },
+    }
 
-    _isActiveHiddenViewType(this: LearnKitPluginBase): boolean {
+    _isActiveHiddenViewType(): boolean {
       const ws = this.app.workspace;
       const activeLeaf = ws?.getMostRecentLeaf?.() ?? null;
       const viewType = activeLeaf?.view?.getViewType?.();
       return viewType ? this._hideStatusBarViewTypes.has(viewType) : false;
-    },
+    }
 
-    _updateStatusBarVisibility(this: LearnKitPluginBase, leaf: WorkspaceLeaf | null): void {
+    _updateStatusBarVisibility(leaf: WorkspaceLeaf | null): void {
       const viewType = leaf?.view?.getViewType?.();
       const hide = viewType
         ? this._hideStatusBarViewTypes.has(viewType)
         : this._isActiveHiddenViewType();
       document.body.classList.toggle("learnkit-hide-status-bar", hide);
-    },
+    }
 
-    _migrateSettingsInPlace(this: LearnKitPluginBase): void {
+    _migrateSettingsInPlace(): void {
       migrateSettingsInPlace(this.settings as Record<string, unknown>);
-    },
+    }
 
-    _normaliseSettingsInPlace(this: LearnKitPluginBase): void {
+    _normaliseSettingsInPlace(): void {
       normaliseSettingsInPlace(this.settings);
-    },
+    }
 
-    _applySproutThemeAccentOverride(this: LearnKitPluginBase): void {
+    _applySproutThemeAccentOverride(): void {
       const raw = String(this.settings?.general?.themeAccentOverride ?? "").trim();
       const isHex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw);
       if (isHex) {
@@ -163,28 +163,28 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         return;
       }
       document.body.style.removeProperty("--learnkit-theme-accent-override");
-    },
+    }
 
-    _applySproutThemePreset(this: LearnKitPluginBase): void {
+    _applySproutThemePreset(): void {
       const preset = String(this.settings?.general?.themePreset ?? "glass").trim() || "glass";
       document.body.setAttribute("data-learnkit-theme-preset", preset);
-    },
+    }
 
-    _applySproutZoom(this: LearnKitPluginBase, value: number): void {
+    _applySproutZoom(value: number): void {
       const next = clamp(Number(value || 1), 0.8, 1.8);
       this._sproutZoomValue = next;
       document.body.style.setProperty("--learnkit-leaf-zoom", next.toFixed(3));
-    },
+    }
 
-    _queueSproutZoomSave(this: LearnKitPluginBase): void {
+    _queueSproutZoomSave(): void {
       if (this._sproutZoomSaveTimer != null) window.clearTimeout(this._sproutZoomSaveTimer);
       this._sproutZoomSaveTimer = window.setTimeout(() => {
         this._sproutZoomSaveTimer = null;
         void this.saveAll();
       }, 250);
-    },
+    }
 
-    _registerSproutPinchZoom(this: LearnKitPluginBase): void {
+    _registerSproutPinchZoom(): void {
       this._applySproutZoom(this.settings.general.workspaceContentZoom ?? 1);
 
       this.registerDomEvent(
@@ -216,9 +216,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         },
         { capture: true, passive: false },
       );
-    },
+    }
 
-    _ensureSingleLeafOfType(this: LearnKitPluginBase, viewType: string): WorkspaceLeaf | null {
+    _ensureSingleLeafOfType(viewType: string): WorkspaceLeaf | null {
       const leaves = this.app.workspace.getLeavesOfType(viewType);
       if (!leaves.length) return null;
 
@@ -232,9 +232,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       }
 
       return keep;
-    },
+    }
 
-    _destroyRibbonIcons(this: LearnKitPluginBase): void {
+    _destroyRibbonIcons(): void {
       for (const el of this._ribbonEls) {
         try {
           el.remove();
@@ -243,27 +243,27 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         }
       }
       this._ribbonEls = [];
-    },
+    }
 
-    _getActiveMarkdownFile(this: LearnKitPluginBase): TFile | null {
+    _getActiveMarkdownFile(): TFile | null {
       const f = this.app.workspace.getActiveFile();
       return f instanceof TFile ? f : null;
-    },
+    }
 
-    _ensureEditingNoteEditor(this: LearnKitPluginBase): { view: MarkdownView; editor: Editor } | null {
+    _ensureEditingNoteEditor(): { view: MarkdownView; editor: Editor } | null {
       const view = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!view) return null;
       if (view.getMode() !== "source") return null;
       const editor = view.editor;
       if (!editor) return null;
       return { view, editor };
-    },
+    }
 
-    _applyClozeShortcutToEditor(this: LearnKitPluginBase, editor: Editor, clozeIndex = 1): void {
+    _applyClozeShortcutToEditor(editor: Editor, clozeIndex = 1): void {
       applyClozeShortcutToEditor(editor, clozeIndex);
-    },
+    }
 
-    _registerMarkdownSourceClozeShortcuts(this: LearnKitPluginBase): void {
+    _registerMarkdownSourceClozeShortcuts(): void {
       registerMarkdownSourceClozeShortcuts({
         app: this.app,
         registerDomEvent: (type, callback, options) => {
@@ -273,9 +273,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
           this._applyClozeShortcutToEditor(editor, clozeIndex);
         },
       });
-    },
+    }
 
-    openAddFlashcardModal(this: LearnKitPluginBase, forcedType?: FlashcardType): void {
+    openAddFlashcardModal(forcedType?: FlashcardType): void {
       const ok = this._ensureEditingNoteEditor();
       if (!ok) {
         new Notice(this._tx("ui.main.notice.mustEditNote", "Must be editing a note to add a flashcard"));
@@ -287,9 +287,9 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
       } else {
         new CardCreatorModal(this.app, this, forcedType).open();
       }
-    },
+    }
 
-    _registerEditorContextMenu(this: LearnKitPluginBase): void {
+    _registerEditorContextMenu(): void {
       registerEditorContextMenu({
         app: this.app,
         registerEvent: this.registerEvent.bind(this),
@@ -298,17 +298,17 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
           this.openAddFlashcardModal(forcedType);
         },
       });
-    },
+    }
 
-    async syncBank(this: LearnKitPluginBase): Promise<void> {
+    async syncBank(): Promise<void> {
       await this._runSync();
-    },
+    }
 
-    refreshAllViews(this: LearnKitPluginBase): void {
+    refreshAllViews(): void {
       this._refreshOpenViews();
-    },
+    }
 
-    notifyWidgetCardsSynced(this: LearnKitPluginBase): void {
+    notifyWidgetCardsSynced(): void {
       this.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET).forEach((leaf: WorkspaceLeaf) => {
         const view = leaf.view as ItemView & { onCardsSynced?(): void; onRefresh?(): void };
         if (typeof view.onCardsSynced === "function") {
@@ -317,13 +317,13 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         }
         view.onRefresh?.();
       });
-    },
+    }
 
-    async refreshReadingViewMarkdownLeaves(this: LearnKitPluginBase): Promise<void> {
+    async refreshReadingViewMarkdownLeaves(): Promise<void> {
       await refreshReadingViewMarkdownLeaves(this.app);
-    },
+    }
 
-    _scheduleReadingViewRefresh(this: LearnKitPluginBase, delayMs = 90): void {
+    _scheduleReadingViewRefresh(delayMs = 90): void {
       const state: ReadingRefreshState = {
         readingViewRefreshTimer: this._readingViewRefreshTimer,
         readingModeWatcherInterval: this._readingModeWatcherInterval,
@@ -338,24 +338,23 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         },
       });
       this._readingViewRefreshTimer = state.readingViewRefreshTimer;
-    },
+    }
 
-    _isMainWorkspaceMarkdownLeaf(this: LearnKitPluginBase, leaf: WorkspaceLeaf): boolean {
+    _isMainWorkspaceMarkdownLeaf(leaf: WorkspaceLeaf): boolean {
       return isMainWorkspaceMarkdownLeaf(leaf);
-    },
+    }
 
-    _computeContentSignature(this: LearnKitPluginBase, text: string): string {
+    _computeContentSignature(text: string): string {
       return computeContentSignature(text);
-    },
+    }
 
     async _getMarkdownLeafSource(
-      this: LearnKitPluginBase,
       leaf: WorkspaceLeaf,
     ): Promise<{ sourceContent: string; sourcePath: string }> {
       return getMarkdownLeafSource(this.app, leaf);
-    },
+    }
 
-    _startMarkdownModeWatcher(this: LearnKitPluginBase): void {
+    _startMarkdownModeWatcher(): void {
       const state: ReadingRefreshState = {
         readingViewRefreshTimer: this._readingViewRefreshTimer,
         readingModeWatcherInterval: this._readingModeWatcherInterval,
@@ -371,19 +370,19 @@ export function installCorePluginMethods(pluginClass: typeof LearnKitPluginBase)
         },
       });
       this._readingModeWatcherInterval = state.readingModeWatcherInterval;
-    },
+    }
 
-    _refreshOpenViews(this: LearnKitPluginBase): void {
+    _refreshOpenViews(): void {
       for (const type of this._refreshableViewTypes) {
         this.app.workspace.getLeavesOfType(type).forEach((leaf: WorkspaceLeaf) => {
           const view = leaf.view as ItemView & { onRefresh?(): void };
           view.onRefresh?.();
         });
       }
-    },
+    }
 
-    _initButtonTooltipDefaults(this: LearnKitPluginBase): void {
+    _initButtonTooltipDefaults(): void {
       this.register(initButtonTooltipDefaults());
-    },
-  });
+    }
+  };
 }

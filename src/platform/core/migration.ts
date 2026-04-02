@@ -82,7 +82,7 @@ export async function migrateJsonToSqlite(
     delete root.store;
     await plugin.saveData(root);
 
-    new Notice("Sprout upgraded scheduling storage to sqlite.");
+    new Notice("LearnKit upgraded scheduling storage to sqlite.");
     log.info(`Migrated scheduling store to SQLite at ${getSchedulingDirPath(plugin)}`);
     return true;
   } catch (e) {

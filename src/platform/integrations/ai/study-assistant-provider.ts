@@ -93,6 +93,36 @@ function parseJsonFromUnknown(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
+const POISONED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function sanitizeJsonResponse(value: unknown, depth = 0): unknown {
+  if (depth > 20) return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeJsonResponse(item, depth + 1));
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>)) {
+      if (POISONED_KEYS.has(key)) continue;
+      out[key] = sanitizeJsonResponse((value as Record<string, unknown>)[key], depth + 1);
+    }
+    return out;
+  }
+  return value;
+}
+
+function assertOpenAiLikeResponseShape(json: Record<string, unknown>): void {
+  if (!Array.isArray(json.choices)) {
+    throw new Error("Invalid response from provider: missing 'choices' array.");
+  }
+}
+
+function assertAnthropicResponseShape(json: Record<string, unknown>): void {
+  if (!Array.isArray(json.content)) {
+    throw new Error("Invalid response from Anthropic: missing 'content' array.");
+  }
+}
+
 function shouldOmitTemperature(provider: StudyAssistantProvider, model: string): boolean {
   if (provider !== "openai") return false;
   const m = String(model || "").trim().toLowerCase();
@@ -479,8 +509,10 @@ export async function requestStudyAssistantCompletionDetailed(params: {
       });
     }
 
-    const json = parseJsonFromUnknown(res.json);
-    const text = json ? extractTextFromAnthropicResponse(json) : "";
+    const json = parseJsonFromUnknown(sanitizeJsonResponse(res.json));
+    if (!json) throw new Error("Anthropic response was not a valid object.");
+    assertAnthropicResponseShape(json);
+    const text = extractTextFromAnthropicResponse(json);
     if (!text) throw new Error("Anthropic response did not include text content.");
     const resolvedConversationId = extractConversationIdFromResponse(json);
     if (resolvedConversationId && typeof onConversationResolved === "function") {
@@ -582,8 +614,10 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     assertOkOrThrow(res);
   }
 
-  const json = parseJsonFromUnknown(res.json);
-  const text = json ? extractTextFromOpenAiLikeResponse(json) : "";
+  const json = parseJsonFromUnknown(sanitizeJsonResponse(res.json));
+  if (!json) throw new Error(`${settings.provider} response was not a valid object.`);
+  assertOpenAiLikeResponseShape(json);
+  const text = extractTextFromOpenAiLikeResponse(json);
   if (!text) throw new Error(`${settings.provider} response did not include text content.`);
   const resolvedConversationId = extractConversationIdFromResponse(json);
   if (resolvedConversationId && typeof onConversationResolved === "function") {

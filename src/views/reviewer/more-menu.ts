@@ -266,7 +266,8 @@ export function injectMoreMenu(view: SproutReviewerView) {
   };
 
   // --- Undo (only show on the *following* card)
-  const undoFrame = (view as unknown as { _undo?: { id?: string } | null })._undo ?? null;
+  const undoStack = (view as unknown as { _undoStack?: { id?: string }[] })._undoStack;
+  const undoFrame = undoStack?.length ? undoStack[undoStack.length - 1] : null;
   const canUndoNow = typeof view.canUndo === "function" ? view.canUndo() : false;
 
   const showUndoHere = !!canUndoNow && !!undoFrame && String(undoFrame.id ?? "") !== String(id);

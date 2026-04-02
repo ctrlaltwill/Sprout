@@ -3,11 +3,11 @@
  * @summary Module for data sync methods.
  *
  * @exports
- *  - installDataSyncMethods
+ *  - WithDataSyncMethods
  */
 
 import { Notice, TFile, requestUrl } from "obsidian";
-import { LearnKitPluginBase } from "./plugin-base";
+import { LearnKitPluginBase, type Constructor } from "./plugin-base";
 import { DEFAULT_SETTINGS } from "../core/constants";
 import { log } from "../core/logger";
 import { clonePlain, isPlainObject } from "../core/utils";
@@ -24,9 +24,9 @@ import { formatSyncNotice, syncOneFile, syncQuestionBank } from "../integrations
 import { ParseErrorModal } from "../modals/parse-error-modal";
 import { formatCurrentNoteSyncNotice } from "../integrations/sync/sync-notices";
 
-export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): void {
-  Object.assign(pluginClass.prototype, {
-    async _runSync(this: LearnKitPluginBase): Promise<void> {
+export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
+  return class WithDataSyncMethods extends Base {
+    async _runSync(): Promise<void> {
       const res = await syncQuestionBank(this);
 
       const notice = formatSyncNotice("Sync complete", res, { includeDeleted: true });
@@ -44,17 +44,16 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
         new ParseErrorModal(this.app, this, res.quarantinedIds).open();
       }
       this.notifyWidgetCardsSynced();
-    },
+    }
 
     _formatCurrentNoteSyncNotice(
-      this: LearnKitPluginBase,
       pageTitle: string,
       res: { newCount?: number; updatedCount?: number; removed?: number },
     ): string {
       return formatCurrentNoteSyncNotice(pageTitle, res);
-    },
+    }
 
-    async _runSyncCurrentNote(this: LearnKitPluginBase): Promise<void> {
+    async _runSyncCurrentNote(): Promise<void> {
       const file = this._getActiveMarkdownFile();
       if (!(file instanceof TFile)) {
         new Notice("No note is open");
@@ -69,9 +68,9 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       }
 
       this.notifyWidgetCardsSynced();
-    },
+    }
 
-    async saveAll(this: LearnKitPluginBase): Promise<void> {
+    async saveAll(): Promise<void> {
       this._applySproutThemePreset();
       this._applySproutThemeAccentOverride();
       while (this._saving) await this._saving;
@@ -81,32 +80,32 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       } finally {
         this._saving = null;
       }
-    },
+    }
 
-    _getDataJsonPath(this: LearnKitPluginBase): string | null {
+    _getDataJsonPath(): string | null {
       const configDir = this.app?.vault?.configDir;
       const pluginId = this.manifest?.id;
       if (!configDir || !pluginId) return null;
       return joinPath(configDir, "plugins", pluginId, "data.json");
-    },
+    }
 
-    _getConfigDirPath(this: LearnKitPluginBase): string | null {
+    _getConfigDirPath(): string | null {
       const configDir = this.app?.vault?.configDir;
       const pluginId = this.manifest?.id;
       if (!configDir || !pluginId) return null;
       return joinPath(configDir, "plugins", pluginId, "configuration");
-    },
+    }
 
-    _getConfigFilePath(this: LearnKitPluginBase, filename: string): string | null {
+    _getConfigFilePath(filename: string): string | null {
       const dir = this._getConfigDirPath();
       return dir ? joinPath(dir, filename) : null;
-    },
+    }
 
-    _getApiKeysFilePath(this: LearnKitPluginBase): string | null {
+    _getApiKeysFilePath(): string | null {
       return this._getConfigFilePath("api-keys.json");
-    },
+    }
 
-    async _doSave(this: LearnKitPluginBase): Promise<void> {
+    async _doSave(): Promise<void> {
       if (this.store instanceof SqliteStore) {
         const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
 
@@ -223,9 +222,9 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       root.store = this.store.data;
       delete root.versionTracking;
       await this.saveData(root);
-    },
+    }
 
-    async refreshGithubStars(this: LearnKitPluginBase, force = false): Promise<void> {
+    async refreshGithubStars(force = false): Promise<void> {
       const s = this.settings;
       s.general ??= { ...DEFAULT_SETTINGS.general };
       s.general.githubStars ??= { count: null, fetchedAt: null };
@@ -253,16 +252,16 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       } catch {
         // offline or rate-limited; keep last known value
       }
-    },
+    }
 
-    async resetSettingsToDefaults(this: LearnKitPluginBase): Promise<void> {
+    async resetSettingsToDefaults(): Promise<void> {
       this.settings = clonePlain(DEFAULT_SETTINGS);
       this._normaliseSettingsInPlace();
       await this.saveAll();
       this._refreshOpenViews();
-    },
+    }
 
-    _isCardStateLike(this: LearnKitPluginBase, v: unknown): v is CardState {
+    _isCardStateLike(v: unknown): v is CardState {
       if (!v || typeof v !== "object") return false;
       const o = v as Record<string, unknown>;
 
@@ -283,9 +282,9 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
         typeof o.learningStepIndex === "number";
 
       return numsOk;
-    },
+    }
 
-    async resetAllCardScheduling(this: LearnKitPluginBase): Promise<void> {
+    async resetAllCardScheduling(): Promise<void> {
       const now = Date.now();
       let cardTotal = 0;
 
@@ -309,9 +308,9 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
           noteCount: noteTotal,
         }),
       );
-    },
+    }
 
-    async _clearAllNoteSchedulingState(this: LearnKitPluginBase): Promise<number> {
+    async _clearAllNoteSchedulingState(): Promise<number> {
       const db = new NoteReviewSqlite(this);
       let total = 0;
 
@@ -324,16 +323,16 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       }
 
       return total;
-    },
+    }
 
-    async resetAllNoteScheduling(this: LearnKitPluginBase): Promise<void> {
+    async resetAllNoteScheduling(): Promise<void> {
       const total = await this._clearAllNoteSchedulingState();
 
       this._refreshOpenViews();
       new Notice(this._tx("ui.main.notice.resetNoteScheduling", "Reset scheduling for {count} notes.", { count: total }));
-    },
+    }
 
-    async resetAllAnalyticsData(this: LearnKitPluginBase): Promise<void> {
+    async resetAllAnalyticsData(): Promise<void> {
       if (this.store.data.analytics) {
         this.store.data.analytics.events = [];
         this.store.data.analytics.seq = 0;
@@ -347,6 +346,6 @@ export function installDataSyncMethods(pluginClass: typeof LearnKitPluginBase): 
       this._refreshOpenViews();
 
       new Notice(this._tx("ui.main.notice.analyticsCleared", "Analytics data cleared."));
-    },
-  });
+    }
+  };
 }

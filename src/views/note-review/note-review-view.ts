@@ -421,6 +421,14 @@ export class SproutNoteReviewView extends ItemView {
     let queue = dueIds.map((id) => byPath.get(id)).filter((f): f is TFile => !!f);
     const actualDueCount = queue.length;
 
+    // For fillFromFuture / coach includeNotDue: exclude notes already reviewed
+    // today so they don't reappear after the session ends or the app restarts.
+    const startOfTodayUtc = this._startOfTomorrowUtc(now) - 24 * 60 * 60 * 1000;
+    const isReviewedToday = (path: string): boolean => {
+      const st = this._notesDb?.getNoteState(path);
+      return st != null && st.last_review_time != null && st.last_review_time >= startOfTodayUtc;
+    };
+
     if (this._coachScope && this._coachTargetCount != null) {
       const targetCount = this._coachTargetCount;
 
@@ -429,7 +437,7 @@ export class SproutNoteReviewView extends ItemView {
       } else {
         if (this._coachIncludeNotDue && queue.length < targetCount) {
           const queuedPaths = new Set(queue.map((f) => f.path));
-          const remaining = filtered.filter((f) => !queuedPaths.has(f.path));
+          const remaining = filtered.filter((f) => !queuedPaths.has(f.path) && !isReviewedToday(f.path));
           remaining.sort((a, b) => {
             const aDue = this._notesDb?.getNoteState(a.path)?.next_review_time ?? Number.MAX_SAFE_INTEGER;
             const bDue = this._notesDb?.getNoteState(b.path)?.next_review_time ?? Number.MAX_SAFE_INTEGER;
@@ -441,7 +449,7 @@ export class SproutNoteReviewView extends ItemView {
       }
     } else if (cfg?.fillFromFutureWhenUnderLimit !== false && queue.length < dueLimit) {
       const queuedPaths = new Set(queue.map((f) => f.path));
-      const remaining = filtered.filter((f) => !queuedPaths.has(f.path));
+      const remaining = filtered.filter((f) => !queuedPaths.has(f.path) && !isReviewedToday(f.path));
       remaining.sort((a, b) => {
         const aDue = this._notesDb?.getNoteState(a.path)?.next_review_time ?? Number.MAX_SAFE_INTEGER;
         const bDue = this._notesDb?.getNoteState(b.path)?.next_review_time ?? Number.MAX_SAFE_INTEGER;
@@ -896,6 +904,15 @@ export class SproutNoteReviewView extends ItemView {
         if (this._practiceMode || this._coachNoScheduling) return;
         evt.preventDefault();
         void this._suspendCurrentNote();
+        return;
+      }
+
+      // Practice / no-scheduling: Enter continues, grading keys are no-ops
+      if (this._practiceMode || this._coachNoScheduling) {
+        if (key === "enter") {
+          evt.preventDefault();
+          this._advanceNoSchedulingQueue();
+        }
         return;
       }
 
@@ -1465,7 +1482,21 @@ export class SproutNoteReviewView extends ItemView {
     });
 
     const buttonGroup = controls.createDiv({ cls: "learnkit-note-review-dock-buttons learnkit-note-review-dock-buttons" });
-    if (algorithm === "fsrs") {
+    if (this._practiceMode || this._coachNoScheduling) {
+      // Practice / no-scheduling mode: single Next button (matches flashcard practice)
+      const nextBtn = buttonGroup.createEl("button");
+      nextBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-filter");
+      nextBtn.setAttr("type", "button");
+      nextBtn.textContent = "Next";
+      const nextKey = nextBtn.createEl("kbd", { text: "↵" });
+      nextKey.classList.add("kbd", "ml-2");
+      nextBtn.disabled = !current;
+      nextBtn.setAttr("aria-label", "Next");
+      nextBtn.setAttr("data-tooltip-position", "top");
+      nextBtn.addEventListener("click", () => {
+        this._advanceNoSchedulingQueue();
+      });
+    } else if (algorithm === "fsrs") {
       const againBtn = buttonGroup.createEl("button");
       againBtn.classList.add("btn-destructive", "learnkit-btn-again", "learnkit-btn-again");
       againBtn.createSpan({ text: "Deferred" });
