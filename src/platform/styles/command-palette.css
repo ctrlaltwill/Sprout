@@ -15,10 +15,6 @@
 
 /* ── Overlay & panel ─────────────────────────────────────────────────────── */
 
-.learnkit-cmd-palette-overlay {
-  /* z-index handled by the body-portal pattern */
-}
-
 .learnkit-cmd-palette {
   width: 320px;
   max-height: 420px;
