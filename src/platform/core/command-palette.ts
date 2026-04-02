@@ -127,12 +127,6 @@ export class LearnKitCommandPalette {
   // ── Build ──
 
   private buildPalette(panel: HTMLElement, close: () => void): void {
-    panel.style.width = "320px";
-    panel.style.maxHeight = "420px";
-    panel.style.display = "flex";
-    panel.style.flexDirection = "column";
-    panel.style.overflow = "hidden";
-
     let mode: PaletteMode = "root";
     let pendingCommandId: string | null = null;
     let query = "";
@@ -229,7 +223,7 @@ export class LearnKitCommandPalette {
       if (matchingPinned.length > 0) {
         const heading = document.createElement("div");
         heading.className = "learnkit-cmd-group-heading px-2 py-1.5 text-xs font-medium text-muted-foreground";
-        heading.textContent = "Pinned Decks";
+        heading.textContent = "Pinned decks";
         heading.setAttribute("role", "presentation");
         listWrap.appendChild(heading);
       }
@@ -646,19 +640,21 @@ export class LearnKitCommandPalette {
 
   private studyScope(scope: Scope): void {
     const leaf = this.deps.leaf;
-    leaf.setViewState({ type: "learnkit-reviewer", active: true }).then(() => {
-      this.deps.app.workspace.revealLeaf(leaf);
+    void (async () => {
+      await leaf.setViewState({ type: "learnkit-reviewer", active: true });
+      void this.deps.app.workspace.revealLeaf(leaf);
       const view = leaf.view as { setScope?: (s: Scope) => void } | undefined;
       if (view && typeof view.setScope === "function") {
         view.setScope(scope);
       }
-    });
+    })();
   }
 
   private reviewScope(scope: Scope): void {
     const leaf = this.deps.leaf;
-    leaf.setViewState({ type: "learnkit-note-review", active: true }).then(() => {
-      this.deps.app.workspace.revealLeaf(leaf);
+    void (async () => {
+      await leaf.setViewState({ type: "learnkit-note-review", active: true });
+      void this.deps.app.workspace.revealLeaf(leaf);
       const view = leaf.view as {
         setCoachScope?: (s: Scope | null) => void;
         setReturnToCoach?: (enabled: boolean) => void;
@@ -667,21 +663,23 @@ export class LearnKitCommandPalette {
         view.setReturnToCoach?.(false);
         view.setCoachScope?.(scope);
       }
-    });
+    })();
   }
 
   private reviewDueNow(): void {
     const leaf = this.deps.leaf;
-    leaf.setViewState({ type: "learnkit-reviewer", active: true }).then(() => {
-      this.deps.app.workspace.revealLeaf(leaf);
-    });
+    void (async () => {
+      await leaf.setViewState({ type: "learnkit-reviewer", active: true });
+      void this.deps.app.workspace.revealLeaf(leaf);
+    })();
   }
 
   private resumeLastSession(): void {
     // Open the reviewer — it will auto-resume the last scope if available
     const leaf = this.deps.leaf;
-    leaf.setViewState({ type: "learnkit-reviewer", active: true }).then(() => {
-      this.deps.app.workspace.revealLeaf(leaf);
-    });
+    void (async () => {
+      await leaf.setViewState({ type: "learnkit-reviewer", active: true });
+      void this.deps.app.workspace.revealLeaf(leaf);
+    })();
   }
 }
