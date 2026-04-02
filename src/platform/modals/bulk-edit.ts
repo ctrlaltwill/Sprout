@@ -128,7 +128,7 @@ export class BulkEditCardModal extends Modal {
     // Apply all CSS classes and z-index BEFORE scoping to workspace.
     // scopeModalToWorkspace forces a repaint, which only works if the
     // positioning CSS (position:absolute, z-index, etc.) is already active.
-    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
+    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
     setCssProps(this.containerEl, "z-index", "2147483000");
     this.modalEl.addClass("lk-modals", "learnkit-bulk-edit-panel");
     setCssProps(this.modalEl, "z-index", "2147483001");

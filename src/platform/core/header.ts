@@ -17,6 +17,9 @@ import { App, ItemView, Notice, WorkspaceLeaf, setIcon } from "obsidian";
 import { log } from "./logger";
 import { placePopover, queryFirst, setCssProps } from "./ui";
 import { clearNode } from "./shared-utils";
+import { KeyboardShortcutsModal } from "../modals/keyboard-shortcuts-modal";
+import { LearnKitCommandPalette } from "./command-palette";
+import type LearnKitPlugin from "../../main";
 
 export type SproutHeaderPage = "home" | "cards" | "notes" | "exam" | "coach" | "analytics" | "library" | "settings";
 
@@ -31,6 +34,7 @@ export type SproutHeaderMenuItem = {
 type Deps = {
   app: App;
   leaf: WorkspaceLeaf;
+  plugin?: LearnKitPlugin;
 
   // the view container (ItemView.containerEl)
   containerEl: HTMLElement;
@@ -71,6 +75,9 @@ export class SproutHeader {
   private syncBtnIconEl: HTMLElement | null = null;
   private themeObserver: MutationObserver | null = null;
   // Theme button and mode removed; now syncs with Obsidian
+
+  private cmdPalette: LearnKitCommandPalette | null = null;
+  private cmdPaletteBtnEl: HTMLButtonElement | null = null;
 
   constructor(deps: Deps) {
     this.deps = deps;
@@ -324,6 +331,8 @@ export class SproutHeader {
   }
 
   dispose() {
+    this.cmdPalette?.dispose();
+    this.cmdPalette = null;
     this.closeTopNavPopover();
     this.closeMorePopover();
     try {
@@ -757,7 +766,56 @@ export class SproutHeader {
     });
 
     this.closeTopNavPopover();
+
+    // Command palette trigger — hidden for now, keeping wiring intact
+    // this.installCommandPaletteButton(navHost, navRoot);
   }
+
+  // ---------------------------
+  // Command Palette trigger
+  // ---------------------------
+
+  private installCommandPaletteButton(navHost: HTMLElement, beforeEl: HTMLElement) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "learnkit-btn-toolbar learnkit-cmd-palette-trigger inline-flex items-center justify-center";
+    btn.setAttribute("aria-label", "Command palette");
+    btn.setAttribute("data-tooltip-position", "bottom");
+    btn.setAttribute("aria-haspopup", "dialog");
+    btn.setAttribute("aria-expanded", "false");
+
+    const ic = document.createElement("span");
+    ic.className = "inline-flex items-center justify-center [&_svg]:size-4";
+    ic.setAttribute("aria-hidden", "true");
+    setIcon(ic, "command");
+    btn.appendChild(ic);
+
+    navHost.insertBefore(btn, beforeEl);
+
+    this.cmdPaletteBtnEl = btn;
+
+    // Lazily create the palette instance
+    if (!this.cmdPalette && this.deps.plugin) {
+      this.cmdPalette = new LearnKitCommandPalette({
+        app: this.deps.app,
+        leaf: this.deps.leaf,
+        plugin: this.deps.plugin,
+        trigger: btn,
+        navigate: (page: string) => this.navigate(page as SproutHeaderPage),
+        runSync: () => this.deps.runSync(),
+      });
+    } else if (this.cmdPalette) {
+      // Re-point trigger if header was rebuilt
+      (this.cmdPalette as unknown as { deps: { trigger: HTMLElement } }).deps.trigger = btn;
+    }
+
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      this.cmdPalette?.toggle();
+    });
+  }
+
 
   // ---------------------------
   // “More” popover (custom)
@@ -1114,6 +1172,9 @@ export class SproutHeader {
       { type: "section", label: "Support" },
       { label: "Get Support", icon: "life-buoy", onActivate: openSupport },
       { label: "GitHub Repository", icon: "github", onActivate: openGithubRepository },
+      { label: "Keyboard Shortcuts", icon: "keyboard", onActivate: () => {
+        if (this.deps.plugin) new KeyboardShortcutsModal(this.deps.app, this.deps.plugin).open();
+      } },
       { type: "separator", label: "" },
       { label: "Close tab", icon: "x", onActivate: closeTab },
     ];
@@ -1148,6 +1209,7 @@ export function createViewHeader(opts: {
   return new SproutHeader({
     app: opts.view.app,
     leaf,
+    plugin: opts.plugin as LearnKitPlugin,
     containerEl: opts.view.containerEl,
     getIsWide: () => opts.plugin.isWideMode,
     toggleWide: () => {

@@ -9,7 +9,7 @@
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
 > [!IMPORTANT]
-> **1.2.6 is the current release.** If you are updating from a version before 1.2.3, review the [1.2.3 migration notes](release/1.2.3/RELEASE_NOTES.md#important-plugin-id-migration) first because the plugin ID changed in that release.
+> **1.2.7 is the current release.** If you are updating from a version before 1.2.3, review the [1.2.3 migration notes](release/1.2.3/RELEASE_NOTES.md#important-plugin-id-migration) first because the plugin ID changed in that release.
 
 LearnKit helps you remember what you write. It brings flashcards, note review, tests, and AI-assisted study tools into Obsidian, so your vault becomes a place to learn, not just store information.
 
@@ -17,11 +17,11 @@ Flashcards are where LearnKit started, but the goal was always bigger: to turn y
 
 ## Why LearnKit
 
-Most note apps help you capture information. LearnKit helps you study it. Instead of splitting your workflow across notes, flashcards, and external tools, LearnKit keeps review in the same vault you already use.
+Most note apps help you capture information. LearnKit helps you study it. Instead of splitting your workflow across notes, flashcards, and different applications, LearnKit keeps review in the same vault you already use.
 
 ## Start learning from your vault
 
-LearnKit is easiest to understand once you use it. Install it, create a flashcard, run a review, or generate a test to see how it fits your workflow.
+LearnKit is easiest to understand once you use it. Install it, create a flashcard, run a review, or generate a test to see how it fits your study workflow.
 
 - [Install with BRAT](https://github.com/TfTHacker/obsidian42-brat)
 - [Explore documentation](https://ctrlaltwill.github.io/LearnKit/)
@@ -86,15 +86,15 @@ Turn notes into study-ready material without leaving Obsidian.
 
 If you are deciding whether LearnKit fits your workflow, start here.
 
+- **Can I use LearnKit with my existing notes?** Yes. LearnKit is designed to work with the notes you already have in Obsidian, so you can turn existing material into flashcards, reviews, and tests instead of starting from scratch.
+- **Does it work with Anki?** Yes. LearnKit supports Anki import and export for decks, media, and scheduling-related data where supported. Image Occlusion flashcards are currently skipped on import and are not exported.
+- **Does it work on mobile?** Yes. LearnKit is not desktop-only, though some workflows may feel better on larger screens. Check the docs for current platform notes and limitations.
+- **What is planned for Companion?** Custom skills and note editing are planned for future updates.
 - **Do I need AI to use LearnKit?** No. AI is an optional layer in LearnKit, not a requirement. You can use the main study workflow without connecting any model provider.
 - **Is LearnKit free?** Yes. LearnKit itself is free and open source. Companion does not add a subscription layer, but external model providers may charge depending on the API you use.
 - **How does Companion work?** Companion uses your own API key, so there are no subscriptions or markups from LearnKit. It works with providers including Google, OpenRouter, Anthropic, OpenAI, and Perplexity.
 - **Can Companion access my whole vault by default?** No. Companion only receives the note content you send in a given workflow, such as asking about a note, generating flashcards, or generating a test. Depending on the feature and your settings, that can also include extra context such as note attachments or linked notes for context.
 - **Do all AI models support every Companion feature?** No. Free models are a good way to get started, but capability varies by model. Premium models generally perform better for more demanding tasks such as working with attachments.
-- **Can I use LearnKit with my existing notes?** Yes. LearnKit is designed to work with the notes you already have in Obsidian, so you can turn existing material into flashcards, reviews, and tests instead of starting from scratch.
-- **Does it work with Anki?** Yes. LearnKit supports Anki import and export for decks, media, and scheduling-related data where supported. Image Occlusion flashcards are currently skipped on import and are not exported.
-- **Does it work on mobile?** Yes. LearnKit is not desktop-only, though some workflows may feel better on larger screens. Check the docs for current platform notes and limitations.
-- **What is planned for Companion?** Custom skills and note editing are planned for future updates.
 
 ## License & Credits
 

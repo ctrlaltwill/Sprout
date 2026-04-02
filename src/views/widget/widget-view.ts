@@ -95,17 +95,54 @@ export class SproutWidgetView extends ItemView {
   async onOpen() {
     this.activeFile = this.app.workspace.getActiveFile();
 
-    // Keyboard shortcuts only when this view has focus
+    // Keep the container focusable so keyboard events work from anywhere in the leaf.
     this.containerEl.tabIndex = 0;
-    this.containerEl.addEventListener("mousedown", () => this.containerEl.focus());
+    const focusSelf = (ev?: Event) => {
+      const t = ev?.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable ||
+          t.closest("input, textarea, select, [contenteditable]"))
+      )
+        return;
+      this.containerEl.focus();
+    };
+    this.containerEl.addEventListener("mousedown", focusSelf);
+    this.containerEl.addEventListener("click", focusSelf);
+    queueMicrotask(() => focusSelf());
 
     if (!this._keysBound) {
       this._keysBound = true;
+      // Listen on the container (natural focus path) …
       this.containerEl.addEventListener("keydown", (ev) => this.handleKey(ev));
+      // … and on window capture so shortcuts still work when focus lingers
+      // on child elements (rendered markdown, images, etc.).
+      window.addEventListener(
+        "keydown",
+        (ev) => {
+          if (!this.isWidgetLeafActive()) return;
+          this.handleKey(ev);
+        },
+        { capture: true },
+      );
     }
 
     this.render();
     await Promise.resolve();
+  }
+
+  /** Returns true when this widget's leaf is the visible sidebar leaf. */
+  private isWidgetLeafActive(): boolean {
+    // The widget container must be connected and visible.
+    if (!this.containerEl?.isConnected) return false;
+    if (this.containerEl.offsetParent === null) return false;
+    // Make sure focus is within the widget's leaf (avoids stealing keys from
+    // the main editing area or other sidebar panels).
+    const active = document.activeElement;
+    return !!active && this.containerEl.contains(active);
   }
 
   onRefresh() {

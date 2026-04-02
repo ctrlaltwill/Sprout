@@ -1,0 +1,125 @@
+/* ============================================================================
+   COMMAND PALETTE — Raycast-style palette triggered from header.
+   ========================================================================== */
+
+/* ── Trigger button ──────────────────────────────────────────────────────── */
+
+.learnkit .learnkit-cmd-palette-trigger {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+/* ── Overlay & panel ─────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette-overlay {
+  /* z-index handled by the body-portal pattern */
+}
+
+.learnkit-cmd-palette {
+  width: 320px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-interface);
+}
+
+/* ── Search input ────────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette .learnkit-cmd-input {
+  flex: 1;
+  background: transparent;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  border: none;
+  outline: none;
+  padding: 0.625rem 0;
+  height: 2.5rem;
+}
+
+.learnkit-cmd-palette .learnkit-cmd-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── List ────────────────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette .learnkit-cmd-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px;
+  overscroll-behavior: contain;
+}
+
+/* ── Group headings ──────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette .learnkit-cmd-group-heading {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* ── Items ───────────────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette .learnkit-cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius);
+  padding: 0.375rem 0.5rem;
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  color: var(--text-normal);
+  transition: background-color 80ms ease;
+}
+
+.learnkit-cmd-palette .learnkit-cmd-item:hover,
+.learnkit-cmd-palette .learnkit-cmd-item.is-active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.learnkit-cmd-palette .learnkit-cmd-item.is-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.learnkit-cmd-palette .learnkit-cmd-item.is-active .text-muted-foreground {
+  color: var(--text-on-accent);
+  opacity: 0.8;
+}
+
+/* ── Back item ───────────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette .learnkit-cmd-back {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.learnkit-cmd-palette .learnkit-cmd-back:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.learnkit-cmd-palette .learnkit-cmd-empty {
+  padding: 1.5rem 0;
+  text-align: center;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+/* ── Mobile tweaks ───────────────────────────────────────────────────────── */
+
+body.is-mobile .learnkit-cmd-palette {
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(420px, 60vh);
+}

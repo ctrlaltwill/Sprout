@@ -3278,7 +3278,7 @@ class ExamAttachmentPickerModal extends Modal {
   }
 
   onOpen(): void {
-    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout", "mod-dim");
+    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit", "mod-dim");
     this.modalEl.addClass("lk-modals", "learnkit-attachment-picker");
     scopeModalToWorkspace(this);
 
@@ -3365,7 +3365,7 @@ class ExamAttachmentPickerModal extends Modal {
   }
 
   onClose(): void {
-    this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "sprout", "mod-dim");
+    this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "learnkit", "mod-dim");
     this.modalEl.removeClass("lk-modals", "learnkit-attachment-picker");
     const footerEl = this.modalEl.querySelector<HTMLElement>(":scope > .learnkit-attachment-picker-footer");
     if (footerEl) footerEl.remove();

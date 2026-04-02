@@ -18,6 +18,9 @@
 /* 4. Header — brand link, reveal animation */
 @import "./header.css";
 
+/* 4a. Command Palette — Raycast-style palette popover */
+@import "./command-palette.css";
+
 /* 5. Deck — disclosure chevrons, group-select popover, expand icons */
 @import "./deck.css";
 

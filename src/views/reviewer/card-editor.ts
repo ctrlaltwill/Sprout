@@ -197,7 +197,7 @@ export class CardEditModal extends Modal {
 
   onOpen() {
     scopeModalToWorkspace(this);
-    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
+    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
     this.modalEl.addClass("lk-modals", "learnkit-edit-modal");
 
     setModalTitle(this, tx("ui.reviewer.cardEditor.title", "Quick edit flashcard"));

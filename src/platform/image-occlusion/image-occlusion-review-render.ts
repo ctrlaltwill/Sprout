@@ -244,7 +244,7 @@ export function renderImageOcclusionReviewInto(args: {
     const modal = new (class extends Modal {
       onOpen() {
         scopeModalToWorkspace(this);
-        this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
+        this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
         this.modalEl.addClass("lk-modals", "learnkit-zoom-overlay");
         queryFirst(this.modalEl, ".modal-header")?.remove();
         queryFirst(this.modalEl, ".modal-close-button")?.remove();
@@ -338,7 +338,7 @@ export function renderImageOcclusionReviewInto(args: {
       onClose() {
         this.contentEl.empty();
         this.modalEl.removeClass("lk-modals", "learnkit-zoom-overlay");
-        this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "sprout");
+        this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "learnkit");
       }
     })(app);
 

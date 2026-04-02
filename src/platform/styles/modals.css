@@ -76,7 +76,7 @@
 
 .learnkit .lk-modals.modal {
     border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
-    width: min(720px, 100%);
+    width: min(500px, 100%);
     background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
     -webkit-backdrop-filter: blur(16px) saturate(125%);
     backdrop-filter: blur(16px) saturate(125%);
@@ -2604,4 +2604,108 @@ z-index: 11;
   font-size: var(--learnkit-font-2xs);
   font-weight: 700;
   color: var(--foreground);
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Keyboard shortcuts modal + tooltip                                  */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.learnkit .learnkit-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: 0 1px 0 var(--border);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--foreground);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.learnkit .learnkit-kbd-sm {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  font-size: 0.6875rem;
+}
+
+.learnkit .learnkit-shortcuts-col .learnkit-kbd {
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.learnkit .learnkit-shortcuts-modal > .modal-header .modal-title {
+  padding-left: 10px;
+}
+
+.learnkit .learnkit-shortcuts-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 0rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.learnkit .learnkit-shortcuts-col {
+  min-width: 0;
+}
+
+.learnkit .learnkit-shortcuts-col .lk-home-section-title {
+  padding-left: 10px;
+}
+
+.learnkit .learnkit-shortcuts-col .learnkit-analytics-table-wrap {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.learnkit .learnkit-shortcuts-col .learnkit-analytics-table-wrap:hover {
+  background: none;
+}
+
+.learnkit .learnkit-shortcuts-col .learnkit-changelog-table tbody tr {
+  transition: background-color 0.18s ease, color 0.18s ease;
+  border-radius: var(--radius-md);
+}
+
+@media (hover: hover) {
+  .learnkit .learnkit-shortcuts-col .learnkit-changelog-table tbody tr:hover {
+    background-color: var(--theme-base-10);
+    color: var(--theme-base-95);
+  }
+
+  .learnkit .learnkit-shortcuts-col .learnkit-changelog-table tbody tr:hover td {
+    background-color: var(--theme-base-10);
+    color: var(--theme-base-95);
+  }
+
+  .learnkit .learnkit-shortcuts-col .learnkit-changelog-table tbody tr:hover td:first-child {
+    border-top-left-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
+  }
+
+  .learnkit .learnkit-shortcuts-col .learnkit-changelog-table tbody tr:hover td:last-child {
+    border-top-right-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+  }
+
+  .learnkit .learnkit-shortcuts-col .learnkit-changelog-table tbody tr:hover .learnkit-kbd {
+    background-color: var(--theme-base-20);
+    border-color: var(--theme-base-30);
+    box-shadow: 0 1px 0 var(--theme-base-30);
+    color: var(--theme-base-95);
+  }
+}
+
+.learnkit .learnkit-shortcuts-popover {
+  pointer-events: auto;
 }

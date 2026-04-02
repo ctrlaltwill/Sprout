@@ -27,7 +27,7 @@ export class LaunchNoticeModal extends Modal {
       t(this.plugin.settings?.general?.interfaceLanguage, token, fallback);
 
     setModalTitle(this, tx("ui.launchNotice.title", "LearnKit 1.1.0"));
-    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
+    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
     setCssProps(this.containerEl, "z-index", "2147483000");
     this.modalEl.addClass("lk-modals", "learnkit-bulk-edit-panel");
     setCssProps(this.modalEl, "z-index", "2147483001");
@@ -165,7 +165,7 @@ export class LaunchNoticeModal extends Modal {
   }
 
   override onClose(): void {
-    this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "sprout");
+    this.containerEl.removeClass("lk-modal-container", "lk-modal-dim", "learnkit");
     this.modalEl.removeClass("lk-modals", "learnkit-bulk-edit-panel");
     this.contentEl.removeClass("learnkit-bulk-edit-content");
     this.contentEl.empty();

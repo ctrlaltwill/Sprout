@@ -11,8 +11,7 @@ import { Plugin, type Editor, type MarkdownView, type TFile, type WorkspaceLeaf 
 
 import { DEFAULT_SETTINGS, type LearnKitSettings } from "../core/constants";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-object-type
-export type Constructor<T = {}> = new (...args: any[]) => T;
+export type Constructor<T = NonNullable<unknown>> = new (...args: unknown[]) => T;
 import type { IStore } from "../core/store-interface";
 import type { FlashcardType } from "../core/utils";
 import type { BasecoatApi } from "../core/basecoat";
@@ -22,7 +21,6 @@ import type { SproutAssistantPopup } from "../../views/study-assistant/popup/ass
 import type { CoachPlanSqlite } from "../core/coach-plan-sqlite";
 import type { CardState } from "../../engine/scheduler/scheduler";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class LearnKitPluginBase extends Plugin {
   declare settings: LearnKitSettings;
   declare store: IStore;
@@ -47,91 +45,83 @@ export class LearnKitPluginBase extends Plugin {
   declare _markdownLeafContentSnapshot: WeakMap<WorkspaceLeaf, string>;
   declare _reminderDevConsoleCommandNames: readonly string[];
   declare _refreshableViewTypes: string[];
-}
 
-/**
- * Method stubs provided by the mixin chain (Core → DataSync → Navigation →
- * ReminderRibbon → Lifecycle). Declaration-merged with the class so that
- * cross-mixin `this` references resolve correctly.
- */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface LearnKitPluginBase {
-  // -- Core methods --
-  _addCommand(id: string, name: string, callback: () => void | Promise<void>): void;
-  _tx(token: string, fallback: string, vars?: Record<string, string | number>): string;
-  refreshAssistantPopupFromSettings(): void;
-  _closeAllAssistantWidgetInstances(): void;
-  _openSingleTabView(viewType: string, forceNew?: boolean): Promise<WorkspaceLeaf>;
-  _initBasecoatRuntime(): void;
-  _stopBasecoatRuntime(): void;
-  _isActiveHiddenViewType(): boolean;
-  _updateStatusBarVisibility(leaf: WorkspaceLeaf | null): void;
-  _migrateSettingsInPlace(): void;
-  _normaliseSettingsInPlace(): void;
-  _applySproutThemeAccentOverride(): void;
-  _applySproutThemePreset(): void;
-  _applySproutZoom(value: number): void;
-  _queueSproutZoomSave(): void;
-  _registerSproutPinchZoom(): void;
-  _ensureSingleLeafOfType(viewType: string): WorkspaceLeaf | null;
-  _destroyRibbonIcons(): void;
-  _getActiveMarkdownFile(): TFile | null;
-  _ensureEditingNoteEditor(): { view: MarkdownView; editor: Editor } | null;
-  _applyClozeShortcutToEditor(editor: Editor, clozeIndex?: number): void;
-  _registerMarkdownSourceClozeShortcuts(): void;
-  openAddFlashcardModal(forcedType?: FlashcardType): void;
-  _registerEditorContextMenu(): void;
-  syncBank(): Promise<void>;
-  refreshAllViews(): void;
-  notifyWidgetCardsSynced(): void;
-  refreshReadingViewMarkdownLeaves(): Promise<void>;
-  _scheduleReadingViewRefresh(delayMs?: number): void;
-  _isMainWorkspaceMarkdownLeaf(leaf: WorkspaceLeaf): boolean;
-  _computeContentSignature(text: string): string;
-  _getMarkdownLeafSource(leaf: WorkspaceLeaf): Promise<{ sourceContent: string; sourcePath: string }>;
-  _startMarkdownModeWatcher(): void;
-  _refreshOpenViews(): void;
-  _initButtonTooltipDefaults(): void;
+  // -- Core methods (provided by mixin chain) --
+  declare _addCommand: (id: string, name: string, callback: () => void | Promise<void>) => void;
+  declare _tx: (token: string, fallback: string, vars?: Record<string, string | number>) => string;
+  declare refreshAssistantPopupFromSettings: () => void;
+  declare _closeAllAssistantWidgetInstances: () => void;
+  declare _openSingleTabView: (viewType: string, forceNew?: boolean) => Promise<WorkspaceLeaf>;
+  declare _initBasecoatRuntime: () => void;
+  declare _stopBasecoatRuntime: () => void;
+  declare _isActiveHiddenViewType: () => boolean;
+  declare _updateStatusBarVisibility: (leaf: WorkspaceLeaf | null) => void;
+  declare _migrateSettingsInPlace: () => void;
+  declare _normaliseSettingsInPlace: () => void;
+  declare _applySproutThemeAccentOverride: () => void;
+  declare _applySproutThemePreset: () => void;
+  declare _applySproutZoom: (value: number) => void;
+  declare _queueSproutZoomSave: () => void;
+  declare _registerSproutPinchZoom: () => void;
+  declare _ensureSingleLeafOfType: (viewType: string) => WorkspaceLeaf | null;
+  declare _destroyRibbonIcons: () => void;
+  declare _getActiveMarkdownFile: () => TFile | null;
+  declare _ensureEditingNoteEditor: () => { view: MarkdownView; editor: Editor } | null;
+  declare _applyClozeShortcutToEditor: (editor: Editor, clozeIndex?: number) => void;
+  declare _registerMarkdownSourceClozeShortcuts: () => void;
+  declare openAddFlashcardModal: (forcedType?: FlashcardType) => void;
+  declare _registerEditorContextMenu: () => void;
+  declare syncBank: () => Promise<void>;
+  declare refreshAllViews: () => void;
+  declare notifyWidgetCardsSynced: () => void;
+  declare refreshReadingViewMarkdownLeaves: () => Promise<void>;
+  declare _scheduleReadingViewRefresh: (delayMs?: number) => void;
+  declare _isMainWorkspaceMarkdownLeaf: (leaf: WorkspaceLeaf) => boolean;
+  declare _computeContentSignature: (text: string) => string;
+  declare _getMarkdownLeafSource: (leaf: WorkspaceLeaf) => Promise<{ sourceContent: string; sourcePath: string }>;
+  declare _startMarkdownModeWatcher: () => void;
+  declare _refreshOpenViews: () => void;
+  declare _initButtonTooltipDefaults: () => void;
 
   // -- Data-sync methods --
-  _runSync(): Promise<void>;
-  _formatCurrentNoteSyncNotice(
+  declare _runSync: () => Promise<void>;
+  declare _formatCurrentNoteSyncNotice: (
     pageTitle: string,
     res: { newCount?: number; updatedCount?: number; removed?: number },
-  ): string;
-  _runSyncCurrentNote(): Promise<void>;
-  saveAll(): Promise<void>;
-  _getDataJsonPath(): string | null;
-  _getConfigDirPath(): string | null;
-  _getConfigFilePath(filename: string): string | null;
-  _getApiKeysFilePath(): string | null;
-  _doSave(): Promise<void>;
-  refreshGithubStars(force?: boolean): Promise<void>;
-  resetSettingsToDefaults(): Promise<void>;
-  _isCardStateLike(v: unknown): v is CardState;
-  resetAllCardScheduling(): Promise<void>;
-  _clearAllNoteSchedulingState(): Promise<number>;
-  resetAllNoteScheduling(): Promise<void>;
-  resetAllAnalyticsData(): Promise<void>;
+  ) => string;
+  declare _runSyncCurrentNote: () => Promise<void>;
+  declare saveAll: () => Promise<void>;
+  declare _getDataJsonPath: () => string | null;
+  declare _getConfigDirPath: () => string | null;
+  declare _getConfigFilePath: (filename: string) => string | null;
+  declare _getApiKeysFilePath: () => string | null;
+  declare _doSave: () => Promise<void>;
+  declare refreshGithubStars: (force?: boolean) => Promise<void>;
+  declare resetSettingsToDefaults: () => Promise<void>;
+  declare _isCardStateLike: (v: unknown) => v is CardState;
+  declare resetAllCardScheduling: () => Promise<void>;
+  declare _clearAllNoteSchedulingState: () => Promise<number>;
+  declare resetAllNoteScheduling: () => Promise<void>;
+  declare resetAllAnalyticsData: () => Promise<void>;
 
   // -- Navigation methods --
-  openReviewerTab(forceNew?: boolean): Promise<void>;
-  openNoteReviewTab(forceNew?: boolean): Promise<void>;
-  openHomeTab(forceNew?: boolean): Promise<void>;
-  openBrowserTab(forceNew?: boolean): Promise<void>;
-  openAnalyticsTab(forceNew?: boolean): Promise<void>;
-  openSettingsTab(forceNew?: boolean, targetTab?: string): Promise<void>;
-  openExamGeneratorTab(forceNew?: boolean): Promise<void>;
-  openExamGeneratorTest(testId: string): Promise<void>;
-  openExamGeneratorScope(scope: Scope): Promise<void>;
-  openExamGeneratorScopes(scopes: Scope[], targetLeaf?: WorkspaceLeaf): Promise<void>;
-  openCoachTab(
+  declare openReviewerTab: (forceNew?: boolean) => Promise<void>;
+  declare openNoteReviewTab: (forceNew?: boolean) => Promise<void>;
+  declare openHomeTab: (forceNew?: boolean) => Promise<void>;
+  declare openBrowserTab: (forceNew?: boolean) => Promise<void>;
+  declare openAnalyticsTab: (forceNew?: boolean) => Promise<void>;
+  declare openSettingsTab: (forceNew?: boolean, targetTab?: string) => Promise<void>;
+  declare openExamGeneratorTab: (forceNew?: boolean) => Promise<void>;
+  declare openExamGeneratorTest: (testId: string) => Promise<void>;
+  declare openExamGeneratorScope: (scope: Scope) => Promise<void>;
+  declare openExamGeneratorScopes: (scopes: Scope[], targetLeaf?: WorkspaceLeaf) => Promise<void>;
+  declare openCoachTab: (
     forceNew?: boolean,
     options?: { suppressEntranceAos?: boolean; refresh?: boolean },
     targetLeaf?: WorkspaceLeaf,
-  ): Promise<void>;
-  openReviewerScope(scope: Scope): Promise<void>;
-  openReviewerScopeWithOptions(
+  ) => Promise<void>;
+  declare openReviewerScope: (scope: Scope) => Promise<void>;
+  declare openReviewerScopeWithOptions: (
     scope: Scope,
     options: {
       ignoreDailyReviewLimit?: boolean;
@@ -143,9 +133,9 @@ export interface LearnKitPluginBase {
       trackCoachProgress?: boolean;
     },
     targetLeaf?: WorkspaceLeaf,
-  ): Promise<void>;
-  openNoteReviewScope(scope: Scope): Promise<void>;
-  openNoteReviewScopeWithOptions(
+  ) => Promise<void>;
+  declare openNoteReviewScope: (scope: Scope) => Promise<void>;
+  declare openNoteReviewScopeWithOptions: (
     scope: Scope,
     options: {
       targetCount?: number;
@@ -154,25 +144,25 @@ export interface LearnKitPluginBase {
       trackCoachProgress?: boolean;
     },
     targetLeaf?: WorkspaceLeaf,
-  ): Promise<void>;
-  recordCoachProgressForScope(scope: Scope, kind: "flashcard" | "note", by?: number): Promise<void>;
-  openPluginSettingsInObsidian(): void;
-  openWidgetSafe(): Promise<void>;
-  openWidget(): Promise<void>;
-  openAssistantWidgetSafe(): Promise<void>;
-  openAssistantWidget(): Promise<void>;
+  ) => Promise<void>;
+  declare recordCoachProgressForScope: (scope: Scope, kind: "flashcard" | "note", by?: number) => Promise<void>;
+  declare openPluginSettingsInObsidian: () => void;
+  declare openWidgetSafe: () => Promise<void>;
+  declare openWidget: () => Promise<void>;
+  declare openAssistantWidgetSafe: () => Promise<void>;
+  declare openAssistantWidget: () => Promise<void>;
 
   // -- Reminder & ribbon methods --
-  refreshReminderEngine(): void;
-  _registerReminderDevConsoleCommands(): void;
-  _unregisterReminderDevConsoleCommands(): void;
-  _registerRibbonIcons(): void;
-  _registerBrandIcons(): void;
+  declare refreshReminderEngine: () => void;
+  declare _registerReminderDevConsoleCommands: () => void;
+  declare _unregisterReminderDevConsoleCommands: () => void;
+  declare _registerRibbonIcons: () => void;
+  declare _registerBrandIcons: () => void;
 
   // -- Lifecycle methods --
-  _registerCommands(): void;
-  onload(): Promise<void>;
-  onunload(): void;
+  declare _registerCommands: () => void;
+  declare onload: () => Promise<void>;
+  declare onunload: () => void;
 }
 
 // Backwards-compatible alias retained for Phase 1 rename safety.

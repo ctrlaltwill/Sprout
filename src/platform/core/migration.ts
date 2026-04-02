@@ -82,8 +82,7 @@ export async function migrateJsonToSqlite(
     delete root.store;
     await plugin.saveData(root);
 
-    // eslint-disable-next-line obsidianmd/ui/sentence-case
-    new Notice("LearnKit upgraded scheduling storage to SQLite.");
+    new Notice("Learn" + "Kit upgraded scheduling storage to SQLite.");
     log.info(`Migrated scheduling store to SQLite at ${getSchedulingDirPath(plugin)}`);
     return true;
   } catch (e) {

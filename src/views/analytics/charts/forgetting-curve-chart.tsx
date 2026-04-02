@@ -11,7 +11,7 @@
  */
 
 import * as React from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { generatorParameters, forgetting_curve } from "ts-fsrs";
 import type { CardRecord, CardState, ReviewLogEntry } from "../../../platform/core/store";
 import type { ReviewResult } from "../../../platform/types/review";
@@ -496,6 +496,10 @@ export function ForgettingCurveChart(props: {
     [props.nowMs, baseStart],
   );
   const maxDays = React.useMemo(() => elapsedDays * 2, [elapsedDays]);
+  const todayDay = React.useMemo(
+    () => Math.round((props.nowMs - baseStart) / MS_DAY),
+    [props.nowMs, baseStart],
+  );
 
   const data = React.useMemo(() => {
     if (!curves.length) return [] as DataRow[];
@@ -774,6 +778,14 @@ export function ForgettingCurveChart(props: {
                 tickLine={{ stroke: "var(--border)" }}
               />
               <Tooltip content={<CardCurveTooltip baseStart={baseStart} />} />
+              {todayDay / maxDays > 0.1 && (
+                <ReferenceLine
+                  x={todayDay}
+                  stroke="var(--border)"
+                  strokeDasharray="4 4"
+                  label={{ value: "Today", position: "top", fill: "var(--text-muted)", fontSize: 11 }}
+                />
+              )}
               {curves.map((curve) => (
                 <Line
                   key={curve.id}

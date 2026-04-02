@@ -289,7 +289,7 @@ body:not(.is-phone) .workspace-leaf-content.mod-fade .learnkit .view-header.lear
 /* Keep header actions icon-first; text labels slide in on hover/focus. */
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar {
   --learnkit-header-btn-collapsed-width: 36px;
-  --learnkit-header-btn-expanded-width: 92px;
+  --learnkit-header-btn-expanded-width: 102px;
   gap: 0;
   width: var(--learnkit-header-btn-collapsed-width);
   min-width: var(--learnkit-header-btn-collapsed-width);
@@ -327,7 +327,7 @@ body:not(.is-phone) .workspace-leaf-content.mod-fade .learnkit .view-header.lear
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-visible [data-learnkit-label="true"],
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-within [data-learnkit-label="true"],
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-expanded="true"] [data-learnkit-label="true"] {
-  max-width: 76px;
+  max-width: 100px;
   opacity: 1;
   margin-left: 8px;
   transform: translateX(0);

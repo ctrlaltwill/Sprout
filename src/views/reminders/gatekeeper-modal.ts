@@ -66,7 +66,7 @@ export class GatekeeperModal extends Modal {
   }
 
   override onOpen(): void {
-    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "sprout");
+    this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
     this.modalEl.addClass("lk-modals", "learnkit-gatekeeper-modal");
     this.contentEl.addClass("learnkit-gatekeeper-content");
     setCssProps(this.containerEl, "z-index", "2147483000");
