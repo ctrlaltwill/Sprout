@@ -355,7 +355,10 @@ function toFsrsCard(s: CardState, nowMs: number): FsrsCard {
   }
 
   let difficulty = 5;
-  if (Number.isFinite(s.difficulty)) {
+  if (state === State.New) {
+    // ts-fsrs 5.3+ uses {d:0, s:0} as the new-card sentinel.
+    difficulty = 0;
+  } else if (Number.isFinite(s.difficulty)) {
     const original = Number(s.difficulty);
     difficulty = clamp(original, 1, 10);
     if (original !== difficulty) {
@@ -370,7 +373,7 @@ function toFsrsCard(s: CardState, nowMs: number): FsrsCard {
         ? Math.max(0.1, Number(s.stabilityDays))
         : state === State.Review && scheduled_days > 0
           ? Math.max(0.1, scheduled_days)
-          : 0;
+          : 0.1;
 
   const elapsed_days =
     last_review && state !== State.New
