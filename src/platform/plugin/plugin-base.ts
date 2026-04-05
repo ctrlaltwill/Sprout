@@ -8,11 +8,10 @@
  */
 
 import { Plugin, type Editor, type MarkdownView, type TFile, type WorkspaceLeaf } from "obsidian";
-import type { MixinConstructor } from "../../../types/mixin-constructor";
 
 import { DEFAULT_SETTINGS, type LearnKitSettings } from "../core/constants";
 
-export type Constructor<T = NonNullable<unknown>> = MixinConstructor<T>;
+export type Constructor<T = NonNullable<unknown>> = new (...args: unknown[]) => T;
 import type { IStore } from "../core/store-interface";
 import type { FlashcardType } from "../core/utils";
 import type { BasecoatApi } from "../core/basecoat";

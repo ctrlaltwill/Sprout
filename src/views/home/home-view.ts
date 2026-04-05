@@ -532,11 +532,17 @@ export class SproutHomeView extends ItemView {
 
     const openStudyForScope = async (scope: Scope) => {
       try {
-        await this.plugin.openReviewerTab();
-        const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER)[0];
-        const view = leaf?.view as { openSession?(scope: unknown): void } | undefined;
+        const leaf = this.leaf;
+        await leaf.setViewState({ type: VIEW_TYPE_REVIEWER, active: true });
+        void this.app.workspace.revealLeaf(leaf);
+        const view = leaf.view as {
+          openSession?(scope: Scope): void;
+          openSessionFromScope?(scope: Scope): void;
+        } | undefined;
         if (view && typeof view.openSession === "function") {
           view.openSession(scope);
+        } else if (view && typeof view.openSessionFromScope === "function") {
+          view.openSessionFromScope(scope);
         } else {
           new Notice(tx("ui.home.notice.studyViewNotReady", "Study view not ready yet. Try again."));
         }
