@@ -315,7 +315,7 @@ export interface WidgetViewLike {
   /** @internal */ _undoStack: UndoFrame[];
   /** @internal */ _sessionStamp: number;
   /** @internal */ _moreMenuToggle: (() => void) | null;
-  _typedClozeAnswers: Map<number, string>;
+  _typedClozeAnswers: Map<string, string>;
   _typedClozeCardId: string;
   _mcqMultiSelected: Set<number>;
   _mcqMultiCardId: string;

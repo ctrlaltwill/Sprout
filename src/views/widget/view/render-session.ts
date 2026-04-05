@@ -344,8 +344,8 @@ function renderClozeCard(
       clozeBgColor,
       clozeTextColor,
       typedAnswers: view._typedClozeAnswers,
-      onTypedInput: (clozeIndex: number, value: string) => {
-        view._typedClozeAnswers.set(clozeIndex, value);
+      onTypedInput: (answerKey: string, _clozeIndex: number, value: string) => {
+        view._typedClozeAnswers.set(answerKey, value);
       },
       onTypedSubmit: () => {
         if (!view.showAnswer) {

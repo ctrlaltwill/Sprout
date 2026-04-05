@@ -22,11 +22,11 @@ import {
 
 export function WithReminderAndRibbonMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
   return class WithReminderAndRibbonMethods extends Base {
-    refreshReminderEngine(): void {
+    refreshReminderEngine = (): void => {
       this._reminderEngine?.refresh();
-    }
+    };
 
-    _registerReminderDevConsoleCommands(): void {
+    _registerReminderDevConsoleCommands = (): void => {
       if (typeof window === "undefined") return;
 
       const target = window as unknown as Record<string, unknown>;
@@ -48,9 +48,9 @@ export function WithReminderAndRibbonMethods<T extends Constructor<LearnKitPlugi
         return ok ? "gatekeeper popup opened" : "gatekeeper popup not opened";
       };
       target.sproutReminderGatekeeper = target.learnKitReminderGatekeeper;
-    }
+    };
 
-    _unregisterReminderDevConsoleCommands(): void {
+    _unregisterReminderDevConsoleCommands = (): void => {
       if (typeof window === "undefined") return;
       const target = window as unknown as Record<string, unknown>;
       for (const name of this._reminderDevConsoleCommandNames) {
@@ -59,9 +59,9 @@ export function WithReminderAndRibbonMethods<T extends Constructor<LearnKitPlugi
       delete target.learnKitReminderLaunch;
       delete target.learnKitReminderRoutine;
       delete target.learnKitReminderGatekeeper;
-    }
+    };
 
-    _registerRibbonIcons(): void {
+    _registerRibbonIcons = (): void => {
       this._destroyRibbonIcons();
 
       const add = (icon: string, title: string, onClick: (ev: MouseEvent) => void) => {
@@ -75,13 +75,13 @@ export function WithReminderAndRibbonMethods<T extends Constructor<LearnKitPlugi
         const forceNew = ev.metaKey || ev.ctrlKey;
         void this.openHomeTab(forceNew);
       });
-    }
+    };
 
-    _registerBrandIcons(): void {
+    _registerBrandIcons = (): void => {
       addIcon(LEARNKIT_BRAND_ICON_KEY, LEARNKIT_RIBBON_BRAND_ICON);
       addIcon(LEARNKIT_BRAND_HORIZONTAL_ICON_KEY, LEARNKIT_HORIZONTAL_BRAND_ICON);
       addIcon(LEARNKIT_WIDGET_STUDY_ICON_KEY, LEARNKIT_STUDY_WIDGET_ICON);
       addIcon(LEARNKIT_WIDGET_ASSISTANT_ICON_KEY, LEARNKIT_ASSISTANT_WIDGET_ICON);
-    }
+    };
   };
 }

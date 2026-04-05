@@ -1549,12 +1549,12 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
     }
     
     // Stop if we hit another sprout card (already processed)
-    if (classes.includes('sprout-pretty-card') || classes.includes('sprout-reading-card-run') || next.hasAttribute('data-learnkit-processed')) {
+    if (classes.includes('learnkit-pretty-card') || classes.includes('learnkit-reading-card-run') || next.hasAttribute('data-learnkit-processed')) {
       break;
     }
     
     // Stop if we hit an anchor for the NEXT card (unprocessed .el-p with card anchor)
-    if (classes.includes('el-p') && !classes.includes('sprout-pretty-card')) {
+    if (classes.includes('el-p') && !classes.includes('learnkit-pretty-card')) {
       const txt = extractRawTextFromParagraph(next as HTMLElement);
       const cleanTxt = clean(txt);
       if (ANCHOR_RE.test(cleanTxt) && !hasCardAnchorForId(cleanTxt, String(cardEl.dataset.sproutId || ""))) {
@@ -2161,7 +2161,7 @@ function renderSanitizedPlainFieldValue(
   const parsedList = parseListLines(value);
   if (parsedList) {
     return {
-      html: renderListLinesHtml(parsedList, (item) => renderSanitizedPlainTextWithCloze(item, style), 'sprout-markdown-plain-list'),
+      html: renderListLinesHtml(parsedList, (item) => renderSanitizedPlainTextWithCloze(item, style), 'learnkit-markdown-plain-list'),
       isBlock: true,
     };
   }
@@ -2183,7 +2183,7 @@ function renderSanitizedPlainFieldValue(
           renderListLinesHtml(
             parsed,
             (item) => renderSanitizedPlainTextWithCloze(item, style),
-            'sprout-markdown-plain-list',
+            'learnkit-markdown-plain-list',
           ),
         );
         return;
@@ -2255,7 +2255,7 @@ function renderFlashcardTextWithListSupport(value: string): string {
 
   const parsedList = parseListLines(source);
   if (parsedList) {
-    return renderListLinesHtml(parsedList, (item) => renderMarkdownLineWithClozeSpans(item), 'sprout-flashcard-list');
+    return renderListLinesHtml(parsedList, (item) => renderMarkdownLineWithClozeSpans(item), 'learnkit-flashcard-list');
   }
 
   // Support mixed markdown blocks (headings + lists + paragraphs) in flashcard
@@ -2268,7 +2268,7 @@ function renderFlashcardTextWithListSupport(value: string): string {
     if (!blockLines.length) return;
     const parsed = parseListLines(blockLines.join('\n'));
     if (parsed) {
-      parts.push(renderListLinesHtml(parsed, (item) => renderMarkdownLineWithClozeSpans(item), 'sprout-flashcard-list'));
+      parts.push(renderListLinesHtml(parsed, (item) => renderMarkdownLineWithClozeSpans(item), 'learnkit-flashcard-list'));
     } else {
       // Defensive fallback: render raw lines with breaks if parsing fails.
       for (let k = 0; k < blockLines.length; k++) {
@@ -2476,7 +2476,7 @@ function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
   if (source.includes('$') || source.includes('\\(') || source.includes('\\[')) {
     const reveal = mode === 'back';
     return processMarkdownFeatures(
-      processClozeForMath(source, reveal, null, { blankClassName: 'sprout-flashcard-blank' }),
+      processClozeForMath(source, reveal, null, { blankClassName: 'learnkit-flashcard-blank' }),
     );
   }
 
@@ -2602,11 +2602,11 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
   }
 
   const frontBodyClass = card.type === 'cloze'
-    ? 'sprout-flashcard-body sprout-flashcard-body-cloze'
-    : 'sprout-flashcard-body';
+    ? 'learnkit-flashcard-body learnkit-flashcard-body-cloze'
+    : 'learnkit-flashcard-body';
   const backBodyClass = card.type === 'cloze'
-    ? 'sprout-flashcard-body sprout-flashcard-body-cloze'
-    : 'sprout-flashcard-body';
+    ? 'learnkit-flashcard-body learnkit-flashcard-body-cloze'
+    : 'learnkit-flashcard-body';
 
   return `
     <div class="learnkit-flashcard-question">${actionsFor('front')}<div class="${frontBodyClass}">${front}</div></div>
@@ -2857,7 +2857,7 @@ function enhanceCardElement(
     'learnkit-reading-card', 'learnkit-reading-card',
     'learnkit-reading-view-wrapper', 'learnkit-reading-view-wrapper',
     'accent',
-    `sprout-macro-${macroPreset}`,
+    `learnkit-macro-${macroPreset}`,
   );
 
   el.dataset.sproutId = card.anchorId;

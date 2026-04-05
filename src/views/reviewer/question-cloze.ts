@@ -21,15 +21,19 @@ export type ClozeRenderOptions = {
   /** Custom text colour for standard-mode revealed cloze (empty = auto-contrast). */
   clozeTextColor?: string;
   /**
-   * Map of cloze-index → user-typed string. Shared between front and back renders so
-   * the back can read what the user typed on the front. Keyed by cloze index (number).
+    * Map of cloze occurrence key (for example "1#2") → user-typed string.
+    * Shared between front and back renders so the back can read what the user typed.
    */
-  typedAnswers?: Map<number, string>;
+  typedAnswers?: Map<string, string>;
   /** Callback fired whenever a typed input value changes. */
-  onTypedInput?: (clozeIndex: number, value: string) => void;
+  onTypedInput?: (answerKey: string, clozeIndex: number, value: string) => void;
   /** Callback fired when a typed input receives Enter key. */
   onTypedSubmit?: () => void;
 };
+
+function makeTypedAnswerKey(clozeIndex: number, occurrence: number): string {
+  return `${clozeIndex}#${occurrence}`;
+}
 
 /**
  * Strips inline-markdown markers to produce plain text for comparison.
@@ -52,7 +56,7 @@ export function renderClozeFront(
   opts?: ClozeRenderOptions,
 ): HTMLElement {
   const mode = opts?.mode ?? "standard";
-  const typedAnswers = opts?.typedAnswers ?? new Map<number, string>();
+  const typedAnswers = opts?.typedAnswers ?? new Map<string, string>();
 
   const container = el("div", "");
   container.className = "whitespace-pre-wrap break-words";
@@ -65,6 +69,7 @@ export function renderClozeFront(
   container.appendChild(p);
 
   const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
+  const clozeOccurrences = new Map<number, number>();
   let last = 0;
   let m: RegExpExecArray | null;
 
@@ -115,6 +120,9 @@ export function renderClozeFront(
     const idx = Number(m[1]);
     const ans = m[2] ?? "";
     const plainAns = stripInlineMarkdown(ans);
+    const occurrence = (clozeOccurrences.get(idx) ?? 0) + 1;
+    clozeOccurrences.set(idx, occurrence);
+    const answerKey = makeTypedAnswerKey(idx, occurrence);
     const isTarget = typeof targetIndex === "number" ? idx === targetIndex : true;
 
     if (!isTarget) {
@@ -125,7 +133,7 @@ export function renderClozeFront(
 
       if (mode === "typed") {
         // Typed mode back: compare what was typed to the expected answer
-        const typed = (typedAnswers.get(idx) ?? "").trim();
+        const typed = (typedAnswers.get(answerKey) ?? "").trim();
         const isCorrect = typed.toLowerCase() === plainAns.toLowerCase();
 
         if (isCorrect) {
@@ -202,7 +210,7 @@ export function renderClozeFront(
         setCssProps(input, "width", `${Math.max(60, Math.ceil(textW) + 68)}px`);
 
         // Restore any previously typed value
-        const prev = typedAnswers.get(idx);
+        const prev = typedAnswers.get(answerKey);
         if (prev) {
           input.value = prev;
           updateTypedInputState(input, prev, plainAns);
@@ -211,8 +219,8 @@ export function renderClozeFront(
         // Live validation as user types
         input.addEventListener("input", () => {
           const v = input.value;
-          typedAnswers.set(idx, v);
-          opts?.onTypedInput?.(idx, v);
+          typedAnswers.set(answerKey, v);
+          opts?.onTypedInput?.(answerKey, idx, v);
           updateTypedInputState(input, v, plainAns);
         });
 

@@ -779,7 +779,7 @@ export function buildOQSectionHTML(question: string, steps: string[]): string {
     `.${aId}`,
     `<div class="learnkit-oq-answer-list">${stepsHTML}</div>`,
     undefined,
-    'sprout-section-answer'
+    'learnkit-section-answer'
   );
 
   return `
@@ -815,7 +815,7 @@ export function buildIOSectionHTML(_ioContent: string): string {
     `.learnkit-io-answer-${Math.random().toString(36).slice(2,8)}`,
     `<div class="learnkit-io-answer-wrap learnkit-p-spacing-none" id="${ioAnswerId}"></div>`,
     ioAnswerId,
-    'sprout-section-answer',
+    'learnkit-section-answer',
   );
 
   return `

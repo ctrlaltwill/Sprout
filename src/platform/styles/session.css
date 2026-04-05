@@ -468,10 +468,26 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   font-weight: 400;
 }
 
-/* Answer styling: black, slightly larger */
-.lk-session-card .learnkit-a {
+.learnkit .lk-session-card {
+  --lk-session-body-font-size: 1rem;
+  --lk-session-choice-font-size: 0.9rem;
+}
+
+/* Keep session field body text consistent across Question/Answer/Extra info. */
+.learnkit .lk-session-card :is(.learnkit-q, .learnkit-a, .learnkit-info, .learnkit-md-block) {
+  font-size: var(--lk-session-body-font-size);
+  line-height: 1.75;
+}
+
+/* OQ/MCQ choice copy uses a slightly smaller, consistent size on front and back. */
+.learnkit .lk-session-card :is(.learnkit-mcq-option-text, .learnkit-mcq-option-line, .learnkit-oq-step-text) {
+  font-size: var(--lk-session-choice-font-size) !important;
+  line-height: 1.75;
+}
+
+/* Answer styling: keep semantic color while sharing body size above. */
+.learnkit .lk-session-card .learnkit-a {
   color: var(--learnkit-easy-bg);
-  font-size: var(--learnkit-font-sm-plus); /* text-md equivalent */
 }
 
 
@@ -493,10 +509,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   color: oklch(0.2 0 0);
 }
 
-/* Extra information: match answer font size */
-.lk-session-card .learnkit-info {
-  font-size: var(--learnkit-font-sm-plus); /* align with .learnkit-a */
-}
+/* Extra information size is controlled by the shared session body rule above. */
 
 /* ---- Lists inside reviewer session cards ---- */
 .lk-session-card :is(ul, ol) {
@@ -821,13 +834,17 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
     border-color: var(--color-base-35) !important;
 }
 
-.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:hover,
-.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:active,
-.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:focus,
-.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:focus-within {
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:hover {
     background-color: var(--color-base-30) !important;
       color: var(--color-base-100) !important;
     border-color: var(--color-base-40) !important;}
+
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:is(:focus, :focus-within, :focus-visible, :active) {
+  background-color: var(--color-base-20) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-35) !important;
+  box-shadow: none !important;
+}
 
 .learnkit .learnkit-mcq-options .learnkit-btn-toolbar > .inline-flex {
   display: flex;
@@ -880,7 +897,6 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit-mcq-option-text {
   line-height: 1.75;
   display: block;
-  font-size: var(--learnkit-font-xs);
 }
 
 .learnkit-mcq-option-line {
@@ -1021,7 +1037,6 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   white-space: pre-wrap;
   overflow-wrap: break-word;
   flex: 1;
-  font-size: var(--learnkit-font-xs);
   line-height: 1.75;
 }
 
@@ -1447,7 +1462,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .learnkit-cloze-typed-input {
   font-family: inherit;
-  font-size: var(--learnkit-font-xs);
+  font-size: var(--lk-session-body-font-size, 1rem);
   font-weight: 500;
   line-height: 1.5;
   padding: 2px 8px;
@@ -1760,9 +1775,15 @@ body.is-phone .learnkit .lk-session-card > section {
 
 /* Bump session card content text to match note-review body size on mobile */
 body.is-phone .learnkit .lk-session-card .learnkit-md-block,
-body.is-phone .learnkit .lk-session-card .learnkit-oq-step-text,
+body.is-phone .learnkit .lk-session-card .learnkit-q,
+body.is-phone .learnkit .lk-session-card .learnkit-a,
+body.is-phone .learnkit .lk-session-card .learnkit-info,
 body.is-phone .learnkit .lk-session-card .learnkit-label-row {
-  font-size: var(--learnkit-font-sm);
+  font-size: 1rem;
+}
+
+body.is-phone .learnkit .lk-session-card :is(.learnkit-mcq-option-text, .learnkit-mcq-option-line, .learnkit-oq-step-text) {
+  font-size: 0.9rem !important;
 }
 
 body.is-phone .learnkit .lk-session-card .lk-review-edit-icon-btn,

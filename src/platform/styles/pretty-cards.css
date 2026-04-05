@@ -159,6 +159,8 @@ mjx-container[jax="CHTML"][display="true"] {
 .markdown-preview-section.learnkit-layout-masonry > .learnkit-reading-card-run {
   column-width: 280px;
   column-gap: 16px;
+  margin-top: 1.5rem;
+    margin-bottom: 2.5rem;
 }
 
 /* Vertical gap between cards matches the horizontal column-gap.
@@ -337,9 +339,7 @@ mjx-container[jax="CHTML"][display="true"] {
   transform-style: preserve-3d;
 }
 
-.learnkit-pretty-card.learnkit-macro-flashcards.learnkit-flashcard-flipped {
-  background: var(--color-base-25);
-}
+
 
 .learnkit-pretty-card.learnkit-macro-flashcards .learnkit-card-header {
   margin-bottom: 0;
@@ -599,7 +599,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 /* ---- Cloze pills ---- */
 
-.learnkit-pretty-card.learnkit-macro-classic.accent .learnkit-cloze {
+.learnkit-pretty-card.learnkit-macro-classic.accent .learnkit-cloze:not(.learnkit-md-block) {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
   border-radius: var(--radius-md);
   margin: 0 0px;
@@ -607,7 +607,7 @@ mjx-container[jax="CHTML"][display="true"] {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
-.learnkit-pretty-card.learnkit-macro-classic.theme .learnkit-cloze {
+.learnkit-pretty-card.learnkit-macro-classic.theme .learnkit-cloze:not(.learnkit-md-block) {
   background-color: var(--alt-accent-color);
   border-radius: var(--radius-md);
   margin: 0 0px;
@@ -625,7 +625,7 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 /* Generic cloze styling */
-.learnkit-cloze {
+.learnkit-cloze:not(.learnkit-md-block) {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
     border-radius: var(--radius-md);
     margin: 0 0px;
@@ -723,7 +723,7 @@ mjx-container[jax="CHTML"][display="true"] {
 /* ---- Reading view cloze ---- */
 
 .learnkit-reading-view-cloze {
-  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .12);
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .15);
   border-radius: var(--radius-md);
   margin: 0 0px;
   padding: 1px 4px;
@@ -1448,7 +1448,7 @@ padding: 0px !important;
   color: var(--learnkit-rv-accent);
 }
 
-.learnkit-pretty-card.learnkit-custom-colours .learnkit-cloze {
+.learnkit-pretty-card.learnkit-custom-colours .learnkit-cloze:not(.learnkit-md-block) {
   background-color: color-mix(in srgb, var(--learnkit-rv-accent) 12%, transparent);
 }
 

@@ -165,8 +165,8 @@ export class SproutReviewerView extends ItemView {
   private _titleTimerHostEl: HTMLElement | null = null;
   private _suppressEntranceAosOnce = false;
 
-  // Typed cloze state: stores what the user typed for each cloze index on the current card
-  private _typedClozeAnswers = new Map<number, string>();
+  // Typed cloze state: stores what the user typed for each cloze occurrence on the current card
+  private _typedClozeAnswers = new Map<string, string>();
   private _typedClozeCardId = "";
 
   // TTS: track what we've already spoken to avoid duplicate reads
@@ -2151,8 +2151,8 @@ export class SproutReviewerView extends ItemView {
           clozeBgColor: clozeSettings?.clozeBgColor || "",
           clozeTextColor: clozeSettings?.clozeTextColor || "",
           typedAnswers: this._typedClozeAnswers,
-          onTypedInput: (idx, val) => {
-            this._typedClozeAnswers.set(idx, val);
+          onTypedInput: (answerKey, _idx, val) => {
+            this._typedClozeAnswers.set(answerKey, val);
           },
           onTypedSubmit: () => {
             if (!this.showAnswer) {

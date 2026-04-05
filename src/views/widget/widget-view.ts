@@ -58,8 +58,8 @@ export class SproutWidgetView extends ItemView {
   /** @internal */ _moreMenuToggle: (() => void) | null = null;
   private _mdHelper: SproutMarkdownHelper | null = null;
 
-  /** Stores user-typed cloze answers by cloze index for typed-mode cloze cards. */
-  _typedClozeAnswers = new Map<number, string>();
+  /** Stores user-typed cloze answers by cloze occurrence key for typed-mode cloze cards. */
+  _typedClozeAnswers = new Map<string, string>();
   /** Tracks the current card ID to reset typed answers when card changes. */
   _typedClozeCardId = "";
   /** Tracks multi-answer MCQ selections. */

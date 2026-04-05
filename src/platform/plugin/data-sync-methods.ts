@@ -26,7 +26,7 @@ import { formatCurrentNoteSyncNotice } from "../integrations/sync/sync-notices";
 
 export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
   return class WithDataSyncMethods extends Base {
-    async _runSync(): Promise<void> {
+    _runSync = async (): Promise<void> => {
       const res = await syncQuestionBank(this);
 
       const notice = formatSyncNotice("Sync complete", res, { includeDeleted: true });
@@ -44,16 +44,16 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
         new ParseErrorModal(this.app, this, res.quarantinedIds).open();
       }
       this.notifyWidgetCardsSynced();
-    }
+    };
 
-    _formatCurrentNoteSyncNotice(
+    _formatCurrentNoteSyncNotice = (
       pageTitle: string,
       res: { newCount?: number; updatedCount?: number; removed?: number },
-    ): string {
+    ): string => {
       return formatCurrentNoteSyncNotice(pageTitle, res);
-    }
+    };
 
-    async _runSyncCurrentNote(): Promise<void> {
+    _runSyncCurrentNote = async (): Promise<void> => {
       const file = this._getActiveMarkdownFile();
       if (!(file instanceof TFile)) {
         new Notice("No note is open");
@@ -68,9 +68,9 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       }
 
       this.notifyWidgetCardsSynced();
-    }
+    };
 
-    async saveAll(): Promise<void> {
+    saveAll = async (): Promise<void> => {
       this._applySproutThemePreset();
       this._applySproutThemeAccentOverride();
       while (this._saving) await this._saving;
@@ -80,32 +80,32 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       } finally {
         this._saving = null;
       }
-    }
+    };
 
-    _getDataJsonPath(): string | null {
+    _getDataJsonPath = (): string | null => {
       const configDir = this.app?.vault?.configDir;
       const pluginId = this.manifest?.id;
       if (!configDir || !pluginId) return null;
       return joinPath(configDir, "plugins", pluginId, "data.json");
-    }
+    };
 
-    _getConfigDirPath(): string | null {
+    _getConfigDirPath = (): string | null => {
       const configDir = this.app?.vault?.configDir;
       const pluginId = this.manifest?.id;
       if (!configDir || !pluginId) return null;
       return joinPath(configDir, "plugins", pluginId, "configuration");
-    }
+    };
 
-    _getConfigFilePath(filename: string): string | null {
+    _getConfigFilePath = (filename: string): string | null => {
       const dir = this._getConfigDirPath();
       return dir ? joinPath(dir, filename) : null;
-    }
+    };
 
-    _getApiKeysFilePath(): string | null {
+    _getApiKeysFilePath = (): string | null => {
       return this._getConfigFilePath("api-keys.json");
-    }
+    };
 
-    async _doSave(): Promise<void> {
+    _doSave = async (): Promise<void> => {
       if (this.store instanceof SqliteStore) {
         const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
 
@@ -222,9 +222,9 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       root.store = this.store.data;
       delete root.versionTracking;
       await this.saveData(root);
-    }
+    };
 
-    async refreshGithubStars(force = false): Promise<void> {
+    refreshGithubStars = async (force = false): Promise<void> => {
       const s = this.settings;
       s.general ??= { ...DEFAULT_SETTINGS.general };
       s.general.githubStars ??= { count: null, fetchedAt: null };
@@ -252,16 +252,16 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       } catch {
         // offline or rate-limited; keep last known value
       }
-    }
+    };
 
-    async resetSettingsToDefaults(): Promise<void> {
+    resetSettingsToDefaults = async (): Promise<void> => {
       this.settings = clonePlain(DEFAULT_SETTINGS);
       this._normaliseSettingsInPlace();
       await this.saveAll();
       this._refreshOpenViews();
-    }
+    };
 
-    _isCardStateLike(v: unknown): v is CardState {
+    _isCardStateLike = (v: unknown): v is CardState => {
       if (!v || typeof v !== "object") return false;
       const o = v as Record<string, unknown>;
 
@@ -282,9 +282,9 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
         typeof o.learningStepIndex === "number";
 
       return numsOk;
-    }
+    };
 
-    async resetAllCardScheduling(): Promise<void> {
+    resetAllCardScheduling = async (): Promise<void> => {
       const now = Date.now();
       let cardTotal = 0;
 
@@ -308,9 +308,9 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
           noteCount: noteTotal,
         }),
       );
-    }
+    };
 
-    async _clearAllNoteSchedulingState(): Promise<number> {
+    _clearAllNoteSchedulingState = async (): Promise<number> => {
       const db = new NoteReviewSqlite(this);
       let total = 0;
 
@@ -323,16 +323,16 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       }
 
       return total;
-    }
+    };
 
-    async resetAllNoteScheduling(): Promise<void> {
+    resetAllNoteScheduling = async (): Promise<void> => {
       const total = await this._clearAllNoteSchedulingState();
 
       this._refreshOpenViews();
       new Notice(this._tx("ui.main.notice.resetNoteScheduling", "Reset scheduling for {count} notes.", { count: total }));
-    }
+    };
 
-    async resetAllAnalyticsData(): Promise<void> {
+    resetAllAnalyticsData = async (): Promise<void> => {
       if (this.store.data.analytics) {
         this.store.data.analytics.events = [];
         this.store.data.analytics.seq = 0;
@@ -346,6 +346,6 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       this._refreshOpenViews();
 
       new Notice(this._tx("ui.main.notice.analyticsCleared", "Analytics data cleared."));
-    }
+    };
   };
 }

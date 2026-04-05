@@ -68,6 +68,14 @@
 /* ---- Header / greeting ---- */
 
 .lk-home-name-input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  min-width: 1ch;
   width: min(100%, var(--lk-home-name-width, auto));
 }
 
@@ -230,6 +238,9 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 }
 
 .learnkit .learnkit-deck-search-dropdown [role="menuitem"].learnkit-deck-search-item {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
   border-radius: var(--radius-md);
   outline: none;
 }
