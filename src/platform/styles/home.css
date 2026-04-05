@@ -290,12 +290,13 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 .learnkit .lk-home-root .learnkit-deck-row,
 .learnkit .lk-home-root .learnkit-deck-row.bg-background {
   background-color: transparent;
+  border: var(--color-base-30) 1px solid;
 }
 
 .learnkit .lk-home-root .learnkit-deck-row:hover,
 .learnkit .lk-home-root .learnkit-deck-row.bg-background:hover {
   background-color: var(--theme-base-10);
-  border-color: var(--theme-base-20);
+  border-color: var(--color-base-30);
   color: var(--theme-base-95);
 }
 
