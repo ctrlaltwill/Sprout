@@ -1416,7 +1416,7 @@ margin: 0.1rem 0 0;
 .learnkit .learnkit-coach-scope-item.is-selected {
   background-color: var(--color-base-30);
   color: var(--text-normal);
-  border-color: var(--color-base-40);
+  border-color: transparent;
 }
 
 .learnkit .learnkit-coach-scope-item.is-selected:hover,
@@ -1425,7 +1425,7 @@ margin: 0.1rem 0 0;
 .learnkit .learnkit-coach-scope-item.is-selected.is-active {
   background-color: var(--color-base-30);
   color: var(--text-normal);
-  border-color: var(--color-base-40);
+  border-color: transparent;
 }
 
 .learnkit .learnkit-coach-scope-empty {

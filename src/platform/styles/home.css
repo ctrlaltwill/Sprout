@@ -40,7 +40,7 @@
   margin: 0;
   background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
   transition: background-color 0.2s ease;
-  border: var(--color-base-30) 1px solid;
+  border: var(--color-base-30) 0.5px solid;
 }
 
 .learnkit .lk-home-root .card:hover {
@@ -176,7 +176,7 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) [role=menuitem].group[aria-current=true],
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) [role=menuitem].group[aria-selected=true] {
   background-color: var(--color-base-20);
-  border: 1px solid var(--color-base-35);
+  border-color: transparent !important;
 }
 
 .learnkit .learnkit-dropdown-shadow {
@@ -290,13 +290,13 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 .learnkit .lk-home-root .learnkit-deck-row,
 .learnkit .lk-home-root .learnkit-deck-row.bg-background {
   background-color: transparent;
-  border: var(--color-base-30) 1px solid;
+  border: var(--color-base-30) 0.5px solid;
 }
 
 .learnkit .lk-home-root .learnkit-deck-row:hover,
 .learnkit .lk-home-root .learnkit-deck-row.bg-background:hover {
   background-color: var(--theme-base-10);
-  border-color: var(--color-base-30);
+  border-color: var(--theme-base-05);
   color: var(--theme-base-95);
 }
 
@@ -367,7 +367,7 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
   min-height: 22px;
   max-height: 22px;
   padding: 5px 8px;
-  border: 1px solid var(--theme-base-35);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   background-color: var(--theme-base-15);
   color: var(--theme-base-95);
@@ -402,7 +402,7 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 
 .learnkit-live-badge.learnkit-trend-badge {
   background-color: var(--theme-accent);
-  border-color: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
+  border-color: transparent;
   color: #fff;
 }
 

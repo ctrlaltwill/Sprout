@@ -1195,6 +1195,22 @@
   color: var(--text-muted);
 }
 
+/* Coach wizard: keep all action/filter/list buttons borderless in every state. */
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item),
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):hover,
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):focus,
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):focus-visible,
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):focus-within,
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):active,
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[aria-expanded="true"],
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[aria-checked="true"],
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):disabled,
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[disabled],
+.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[aria-disabled="true"] {
+  border: 1px solid transparent !important;
+  border-color: transparent !important;
+}
+
 @media (max-width: 900px) {
   .learnkit .learnkit-exam-generator-title-strip {
     padding: var(--lk-title-strip-padding-mobile);

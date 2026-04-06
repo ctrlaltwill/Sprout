@@ -31,7 +31,7 @@
 
 .learnkit .lk-review-root[data-lk-review-mode="session"] :is(.learnkit-session-card, .lk-session-card, .lk-session-card.card) {
   background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
-  border: var(--color-base-30) 1px solid;
+  border: var(--color-base-30) 0.5px solid;
   border-radius: var(--radius-lg);
   box-shadow: none;
   transition: background-color 0.2s ease;
@@ -142,7 +142,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   align-self: flex-start;
   justify-self: flex-start;
   flex-basis: auto;
-  border: var(--color-base-30) 1px solid;
+  border: var(--color-base-30) 0.5px solid;
 
 }
 
@@ -610,7 +610,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit-session-card,
 .lk-session-card {
   position: relative;
-  border: var(--color-base-30) 1px solid;
+  border: var(--color-base-30) 0.5px solid;
 
 }
 

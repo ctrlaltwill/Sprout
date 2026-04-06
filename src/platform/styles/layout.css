@@ -218,7 +218,7 @@ body.is-phone .workspace-leaf-content:has(.learnkit) {
   margin: 0 auto;
   box-sizing: border-box;
   border-radius: var(--radius-l);
-  border: var(--color-base-30) 1px solid;
+  border: var(--color-base-30) 0.5px solid;
   background-color: var(--color-base-20);
   padding: var(--lk-shell-padding-desktop);
 }
