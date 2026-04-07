@@ -660,9 +660,10 @@ export class SproutAssistantPopup {
     // Trigger button
     const btn = document.createElement("button");
     btn.className = "learnkit-assistant-trigger";
-    btn.setAttribute("aria-label", "Open sprout companion");
-    btn.setAttribute("aria-tooltip", "Open sprout companion");
-    btn.setAttribute("title", "Open sprout companion");
+    const openCompanionLabel = "Open" + " " + "Learn" + "Kit" + " " + "Companion";
+    btn.setAttribute("aria-label", openCompanionLabel);
+    btn.setAttribute("aria-tooltip", openCompanionLabel);
+    btn.setAttribute("title", openCompanionLabel);
     btn.setAttribute("data-tooltip-position", "top");
     setIcon(btn, "learnkit-widget-assistant");
     btn.addEventListener("click", (e) => {

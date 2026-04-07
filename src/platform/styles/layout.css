@@ -41,7 +41,7 @@
   position: absolute;
   display: flex;
   flex-direction: column;
-  width: 400px;
+  width: 380px;
 }
 
 /* Sprout-scoped pinch zoom: only Sprout leaves, never other plugins */

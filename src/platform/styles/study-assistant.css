@@ -393,20 +393,21 @@
   border-radius: 50%;
   background: var(--interactive-accent, #7c9dff);
   color: var(--text-on-accent, #fff);
-  border: none;
+  border: 1px solid var(--color-base-40);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   z-index: var(--layer-popover, 50);
   transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   padding: 0;
+  box-shadow: none !important;
 }
 
 .learnkit-assistant-trigger:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--shadow-s);
+  border-color: var(--color-base-40);
 }
 
 .learnkit-assistant-trigger:active {
@@ -450,7 +451,6 @@
 .learnkit-assistant-trigger:hover .svg-icon.learnkit-widget-assistant,
 .learnkit-assistant-trigger:focus-visible .svg-icon.learnkit-widget-assistant,
 .learnkit-assistant-trigger.is-open .svg-icon.learnkit-widget-assistant {
-  transform: translateY(-2px) scale(1.18);
   filter: brightness(1.18);
   transition-delay: 0ms, 0ms;
 }
@@ -594,7 +594,7 @@
   background: var(--color-base-00) !important;
   -webkit-backdrop-filter: blur(16px) saturate(125%);
   backdrop-filter: blur(16px) saturate(125%);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-s);
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header,
@@ -658,9 +658,9 @@
 /* Widget-only: preserve emphasized user bubble styling. */
 .learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-message-bubble.is-user {
   box-shadow: none;
-  background: color-mix(in oklab, var(--theme-accent) 20%, var(--background));
-  color: var(--theme-base-95);
-  border: 1px solid var(--theme-base-95);
+  background: var(--background-secondary, #f5f5f5);
+  color: var(--text-muted);
+  border: 1px solid var(--color-base-40);
 }
 
 /* Widget-only: make header action buttons match teaser card surface. */
@@ -747,8 +747,8 @@
   max-width: 36px !important;
   max-height: 36px !important;
   border-radius: var(--radius-md);
-  border: var(--color-base-40) 1px solid !important;
-  background: transparent;
+  border: none !important;
+  background: var(--background-primary, #fff);
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
@@ -807,8 +807,8 @@
   max-width: 36px !important;
   max-height: 36px !important;
   border-radius: var(--radius-md);
-  border: var(--color-base-40) 1px solid !important;
-  background: var(--background);
+  border: none !important;
+  background: var(--background-primary, #fff);
   color: var(--foreground);
   cursor: pointer;
   display: inline-flex;
@@ -820,7 +820,7 @@
   box-shadow: none;
   overflow: hidden;
   white-space: nowrap;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .learnkit-assistant-popup-overflow > [aria-hidden="true"] {
@@ -858,7 +858,12 @@
 
 .learnkit-assistant-popup-overflow:focus-visible,
 .learnkit-assistant-popup-overflow:active {
-  border-color: var(--color-base-40);
+  border-color: transparent;
+}
+
+.learnkit-assistant-popup-close:is(:hover, :focus-visible, :focus-within, :active),
+.learnkit-assistant-popup-overflow:is(:hover, :focus-visible, :focus-within, :active, [aria-expanded="true"]) {
+  border: none !important;
 }
 
 .learnkit-assistant-popup-overflow .svg-icon {
@@ -1079,6 +1084,22 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+}
+
+.learnkit-assistant-popup-content::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.learnkit-assistant-popup-content::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--color-base-00), transparent);
 }
 
 /* ---- Chat wrap (scrollable message area) ---- */
@@ -1158,9 +1179,9 @@
 }
 
 .learnkit-assistant-popup-message-bubble.is-user {
-  background: var(--theme-base-20);
-  color: var(--theme-base-95);
-  border: 1px solid var(--theme-base-95);
+  background: var(--background-secondary, #f5f5f5);
+  color: var(--text-muted);
+  border: 1px solid var(--color-base-40);
   border-top-right-radius: 1px;
 }
 
@@ -1245,7 +1266,7 @@
   td,
   hr
 ) {
-  margin: 0 0 0.5em;
+  margin: 0 0 0.5em !important;
   padding: 0;
   border: 0;
 }
@@ -1342,15 +1363,27 @@
 
 /* ---- Composer (Ask mode input) ---- */
 .learnkit-assistant-popup-composer {
+  position: relative;
   padding: 10px 14px 14px;
   border-top: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
   flex: 0 0 auto;
 }
 
+.learnkit-assistant-popup-composer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 1px);
+  height: 16px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--color-base-00));
+}
+
 .learnkit-assistant-popup-composer-shell {
   position: relative;
   border: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
-  border-radius: 14px;
+  border-radius: 999px;
   padding: 5px 0px;
   background: var(--background-primary, #fff);
   display: flex;
@@ -1368,13 +1401,14 @@
   min-height: 36px;
   max-height: 120px;
   font-size: 0.9rem;
-  line-height: 1.45;
+  line-height: 1.5;
+  box-sizing: border-box;
   resize: none;
   background: transparent;
   border: none;
   outline: none;
   box-shadow: none;
-  padding: 8px 44px 8px 14px;
+  padding: 8px 44px 6px 14px;
   color: var(--text-normal);
   font-family: inherit;
 }
@@ -1423,10 +1457,13 @@
 }
 
 /* Guard against global button reset rules in Sprout core styles. */
-.learnkit .learnkit-assistant-popup-send {
+.learnkit .learnkit-assistant-popup-send,
+.learnkit .learnkit-assistant-popup-attach-btn {
   width: 36px !important;
   height: 36px !important;
   min-height: 36px !important;
+  border-radius: 999px;
+  border-width: 0.5px !important;
   padding: 0 !important;
   line-height: 0;
 }
@@ -1615,8 +1652,8 @@
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-message-bubble.is-user {
-  background: color-mix(in srgb, var(--theme-accent) 16%, transparent 84%);
-  border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--theme-base-95) 72%);
+  background: var(--background-secondary, #f5f5f5);
+  border-color: var(--color-base-40);
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-composer-shell {
@@ -1626,7 +1663,7 @@
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-composer-shell:focus-within {
   background: color-mix(in srgb, var(--color-base-00) 34%, transparent 66%) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, var(--interactive-accent, #6a8dff)) 34%, var(--color-base-70) 66%) !important;
+  border-color: var(--color-base-40) !important;
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-input {
@@ -1634,8 +1671,6 @@
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
-  .learnkit-assistant-popup-overflow,
-  .learnkit-assistant-popup-close,
   .learnkit-assistant-popup-btn,
   .learnkit-assistant-popup-insert-btn
 ) {
@@ -1646,8 +1681,6 @@
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
-  .learnkit-assistant-popup-overflow,
-  .learnkit-assistant-popup-close,
   .learnkit-assistant-popup-btn,
   .learnkit-assistant-popup-insert-btn
 ):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) {
@@ -1657,14 +1690,31 @@
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
-  .learnkit-assistant-popup-overflow,
-  .learnkit-assistant-popup-close,
   .learnkit-assistant-popup-btn,
   .learnkit-assistant-popup-insert-btn
 ):active {
   background: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   color: var(--color-base-100) !important;
   border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
+}
+
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
+  .learnkit-assistant-popup-overflow,
+  .learnkit-assistant-popup-close
+) {
+  border-radius: var(--radius-md) !important;
+  background: var(--background-primary, #fff) !important;
+  color: var(--text-normal);
+  border: none !important;
+}
+
+.learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
+  .learnkit-assistant-popup-overflow,
+  .learnkit-assistant-popup-close
+):is(:hover, :focus-visible, :focus-within, [aria-expanded="true"], :active) {
+  background: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  color: var(--color-base-100) !important;
+  border: none !important;
 }
 
 /* ---- Attachment picker modal ---- */

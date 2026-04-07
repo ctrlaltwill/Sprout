@@ -74,9 +74,11 @@
 .learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group {
   color: var(--text-color);
-  margin: 1px 0;
-  min-height: 36px;
   outline: none;
+  min-height: 32px;
+  margin: 1px 0;
+  height: 32px;
+  max-height: 32px;
 }
 
 /* Hover / focus / active */
