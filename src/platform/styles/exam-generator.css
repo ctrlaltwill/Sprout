@@ -259,7 +259,6 @@
 }
 
 .learnkit .learnkit-exam-generator-loading-loader {
-  --learnkit-loader-bg: var(--background-primary);
   --learnkit-loading-word-height: 1.55em;
   --learnkit-loading-step: 1.3s;
   --learnkit-loading-swap-ms: 420ms;
@@ -716,7 +715,7 @@
 .learnkit .learnkit-exam-generator-select-trigger {
   width: 100%;
   justify-content: space-between;
-  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
   box-shadow: none;
