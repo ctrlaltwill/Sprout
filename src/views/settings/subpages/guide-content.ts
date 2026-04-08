@@ -256,7 +256,7 @@ export async function loadGuidePages(app: App, pluginDir?: string): Promise<Guid
   for (const fileName of PREFERRED_GUIDE_FILES) {
     try {
       const res = await requestUrl({
-        url: `https://raw.githubusercontent.com/ctrlaltwill/LearnKit/main/site/docs/${encodeURIComponent(fileName)}`,
+        url: `https://raw.githubusercontent.com/ctrlaltwill/LearnKit/main/site/src/content/docs/${encodeURIComponent(fileName)}`,
         method: "GET",
       });
       if (res.status !== 200 || !res.text) continue;
@@ -277,7 +277,7 @@ export async function loadGuidePages(app: App, pluginDir?: string): Promise<Guid
   const pagesFromPluginDir: GuidePage[] = [];
   if (pluginDir) {
     for (const fileName of PREFERRED_GUIDE_FILES) {
-      const relPath = `site/docs/${fileName}`;
+      const relPath = `site/src/content/docs/${fileName}`;
       try {
         const markdown = await app.vault.adapter.read(`${pluginDir}/${relPath}`);
         const key = fileName.replace(/\.md$/i, "");
@@ -295,7 +295,7 @@ export async function loadGuidePages(app: App, pluginDir?: string): Promise<Guid
 
   if (pagesFromPluginDir.length) return pagesFromPluginDir;
 
-  const files = app.vault.getMarkdownFiles().filter((f) => f.path.startsWith("site/docs/"));
+  const files = app.vault.getMarkdownFiles().filter((f) => f.path.startsWith("site/src/content/docs/"));
   if (!files.length) {
     return [{
       key: "guide-unavailable",

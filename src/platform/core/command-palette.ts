@@ -602,7 +602,7 @@ export class LearnKitCommandPalette {
       group: "Anki",
       onActivate: () => {
         close();
-        this.deps.app.commands?.executeCommandById?.("sprout:import-anki");
+        this.deps.app.commands?.executeCommandById?.("learnkit:import-anki");
       },
     });
 
@@ -613,7 +613,7 @@ export class LearnKitCommandPalette {
       group: "Anki",
       onActivate: () => {
         close();
-        this.deps.app.commands?.executeCommandById?.("sprout:export-anki");
+        this.deps.app.commands?.executeCommandById?.("learnkit:export-anki");
       },
     });
 

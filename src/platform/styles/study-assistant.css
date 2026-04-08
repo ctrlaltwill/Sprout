@@ -373,6 +373,22 @@
   font-size: 0.85rem;
 }
 
+.learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1) :is([role=menuitem], [role=menuitemradio]).group {
+  margin: 0;
+}
+
+.learnkit :where(.dropdown-menu > .min-w-56, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1) {
+  background-color: var(--bg-popover, var(--color-popover, var(--color-background)));
+  color: var(--text-color);
+  border-color: var(--border-color, var(--border-border, var(--border)));
+  padding: 4px 6px;
+}
+
+.learnkit .bg-border {
+  border-bottom: 0.5px solid var(--border);
+  height: 0;
+}
+
 
 /* ============================================================================
    Floating Assistant Popup
@@ -393,7 +409,7 @@
   border-radius: 50%;
   background: var(--interactive-accent, #7c9dff);
   color: var(--text-on-accent, #fff);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -496,7 +512,7 @@
   line-height: 16px;
   text-align: center;
   padding: 0 4px;
-  border: 1px solid var(--background-primary, #fff);
+  border: 0.5px solid var(--background-primary, #fff);
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
 }
@@ -561,7 +577,7 @@
   min-height: 400px;
   max-height: min(700px, 60vh);
   border-radius: 16px;
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   background: var(--background-primary, #fff);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
   z-index: var(--layer-popover, 50);
@@ -590,7 +606,7 @@
 
 /* Modal Companion only: glass panel treatment (do not affect embedded/sidebar mode). */
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) {
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 18%, transparent 82%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 18%, transparent 82%);
   background: var(--color-base-00) !important;
   -webkit-backdrop-filter: blur(16px) saturate(125%);
   backdrop-filter: blur(16px) saturate(125%);
@@ -652,7 +668,7 @@
 .learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-message-bubble.is-assistant {
   background: var(--background);
   box-shadow: none;
-  border: var(--color-base-40) 1px solid;
+  border: var(--color-base-40) 0.5px solid;
 }
 
 /* Widget-only: preserve emphasized user bubble styling. */
@@ -660,7 +676,7 @@
   box-shadow: none;
   background: var(--background-secondary, #f5f5f5);
   color: var(--text-muted);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
 }
 
 /* Widget-only: make header action buttons match teaser card surface. */
@@ -668,7 +684,7 @@
 .learnkit-assistant-popup.learnkit-assistant-popup-embedded .learnkit-assistant-popup-close {
   background: var(--background) !important;
   box-shadow: none;
-  border: var(--color-base-40) 1px solid !important;
+  border: var(--color-base-40) 0.5px solid !important;
 }
 
 /* Widget tab icons should follow the active theme icon color. */
@@ -710,7 +726,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--color-base-40, rgba(0, 0, 0, 0.08));
+  border-bottom: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.08));
   flex: 0 0 auto;
   overflow: visible;
 }
@@ -880,10 +896,10 @@
   width: var(--learnkit-popover-width, auto);
   min-width: 224px;
   z-index: var(--lk-z-popover-overlay);
-  border: 1px solid var(--color-base-35) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   border-radius: var(--radius-md);
   padding: 4px;
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
   color: var(--text-normal);
   box-shadow: var(--shadow-s, 0 10px 28px rgba(0, 0, 0, 0.18));
   -webkit-backdrop-filter: blur(14px);
@@ -912,7 +928,7 @@
   min-height: 32px;
   padding: 6px 8px;
   border-radius: 8px;
-  border: 1px solid transparent !important;
+  border: 0.5px solid transparent !important;
   cursor: pointer;
   user-select: none;
   outline: none;
@@ -998,7 +1014,7 @@
   display: flex;
   gap: 12px;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
+  border-bottom: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
   flex: 0 0 auto;
 }
 
@@ -1072,7 +1088,7 @@
   line-height: 16px;
   text-align: center;
   padding: 0 4px;
-  border: 1px solid var(--background-primary, #fff);
+  border: 0.5px solid var(--background-primary, #fff);
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
 }
@@ -1141,7 +1157,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1181,7 +1197,7 @@
 .learnkit-assistant-popup-message-bubble.is-user {
   background: var(--background-secondary, #f5f5f5);
   color: var(--text-muted);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-top-right-radius: 1px;
 }
 
@@ -1191,7 +1207,7 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 0.2rem 0 0.6rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.15);
 }
 
 .learnkit-assistant-popup-msg-attachment-tag {
@@ -1225,7 +1241,7 @@
 .learnkit-assistant-popup-message-bubble.is-assistant {
   border-top-left-radius: 1px;
   background: var(--background-secondary, #f5f5f5);
-  border: 1px solid var(--color-base-40, rgba(0, 0, 0, 0.06));
+  border: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.06));
   color: var(--text-normal);
 }
 
@@ -1365,7 +1381,7 @@
 .learnkit-assistant-popup-composer {
   position: relative;
   padding: 10px 14px 14px;
-  border-top: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
+  border-top: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
   flex: 0 0 auto;
 }
 
@@ -1382,7 +1398,7 @@
 
 .learnkit-assistant-popup-composer-shell {
   position: relative;
-  border: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
+  border: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
   border-radius: 999px;
   padding: 5px 0px;
   background: var(--background-primary, #fff);
@@ -1445,7 +1461,7 @@
   max-width: 36px !important;
   max-height: 36px !important;
   border-radius: var(--radius-md);
-  border: var(--color-base-40) 1px solid !important;
+  border: var(--color-base-40) 0.5px solid !important;
   background: transparent !important;
   color: var(--text-muted);
   cursor: pointer;
@@ -1515,7 +1531,7 @@
   max-width: 36px !important;
   max-height: 36px !important;
   border-radius: var(--radius-md);
-  border: var(--color-base-40) 1px solid !important;
+  border: var(--color-base-40) 0.5px solid !important;
   background: transparent !important;
   color: var(--text-muted);
   cursor: pointer;
@@ -1647,7 +1663,7 @@
 
 /* Modal Companion: subtle transparent internals (single outer glass panel remains the primary effect). */
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-message-bubble.is-assistant {
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
   border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
@@ -1677,7 +1693,7 @@
   border-radius: var(--radius-md) !important;
   background: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) :is(
@@ -1737,7 +1753,7 @@
 }
 
 .learnkit-attachment-picker-footer {
-  border-top: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.08));
+  border-top: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.08));
   padding-top: 10px;
 }
 
@@ -1753,29 +1769,31 @@
 }
 
 .learnkit-attachment-picker .learnkit-attachment-picker-close-btn {
-  min-width: 36px;
-  padding-left: 8px;
-  padding-right: 8px;
-  gap: 0;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+  gap: 0 !important;
   overflow: hidden;
+  justify-content: center;
 }
 
 .learnkit-attachment-picker .learnkit-attachment-picker-close-btn [data-learnkit-label="true"] {
-  display: inline-block;
+  display: none !important;
   overflow: hidden;
   white-space: nowrap;
-  max-width: 0;
-  opacity: 0;
-  margin-left: 0;
-  transform: translateX(-4px);
-  transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  max-width: 0 !important;
+  opacity: 0 !important;
+  margin-left: 0 !important;
+  transform: none !important;
+  transition: none !important;
 }
 
 .learnkit-attachment-picker .learnkit-attachment-picker-close-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
-  max-width: 7rem;
-  opacity: 1;
-  margin-left: 6px;
-  transform: translateX(0);
+  display: none !important;
 }
 
 .learnkit-attachment-picker-search {
@@ -1787,7 +1805,7 @@
   max-height: 320px;
   overflow-y: auto;
   padding: 0.5rem;
-    border: 1px solid var(--color-base-40);
+    border: 0.5px solid var(--color-base-40);
     border-radius: var(--radius-md);
 }
 
@@ -1797,7 +1815,7 @@
   align-items: center;
   padding: 6px 10px;
   border-radius: var(--radius-s, 4px);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   cursor: pointer;
   font-size: 0.9rem;
   color: var(--text-normal);
@@ -1818,7 +1836,7 @@
 
 .learnkit-attachment-picker-item.is-selected {
   background: color-mix(in oklab, var(--interactive-accent) 14%, var(--background-primary) 86%);
-  border: 1px solid color-mix(in oklab, var(--interactive-accent) 55%, var(--background-modifier-border) 45%);
+  border: 0.5px solid color-mix(in oklab, var(--interactive-accent) 55%, var(--background-modifier-border) 45%);
 }
 
 .learnkit-attachment-picker-item.is-selected:is(:hover, :focus, :focus-visible) {
@@ -1868,7 +1886,7 @@
   flex-wrap: nowrap;
   gap: 8px;
   padding: 10px 12px 10px;
-  border-bottom: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
+  border-bottom: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
   width: 100%;
   flex: 0 0 auto;
 }
@@ -1891,7 +1909,7 @@
   font-size: 0.85rem;
   background: var(--background-primary, #fff);
   color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
+  border: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
   padding: 0 10px;
 }
 
@@ -2016,7 +2034,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   padding: 5px 12px;
-  border: var(--color-base-40) 1px solid;
+  border: var(--color-base-40) 0.5px solid;
   background: var(--background);
   color: var(--foreground);
   box-shadow: none;
@@ -2122,7 +2140,7 @@
   --learnkit-assistant-insert-safe-area: calc(
     var(--learnkit-assistant-insert-btn-size) + var(--learnkit-assistant-insert-btn-offset) + 4px
   );
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: var(--radius-sm);
   background: transparent;
   padding: 8px 10px 10px;
@@ -2179,7 +2197,7 @@
   width: var(--learnkit-assistant-insert-btn-size);
   height: var(--learnkit-assistant-insert-btn-size);
   border-radius: 50%;
-  border: 1px solid var(--color-base-40, rgba(0, 0, 0, 0.12));
+  border: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.12));
   background: var(--background-primary, #fff);
   color: var(--text-muted);
   cursor: pointer;
@@ -2222,7 +2240,7 @@
   display: flex;
   gap: 8px;
   padding: 10px 16px 10px;
-  border-bottom: 1px solid var(--color-base-40, rgba(0, 0, 0, 0.06));
+  border-bottom: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.06));
   flex: 0 0 auto;
 }
 
@@ -2252,7 +2270,7 @@
 .learnkit-assistant-popup-suggestion-card {
   align-self: center;
   width: min(92%, 34rem);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: 14px;
   padding: 10px 12px;
   background: var(--background-secondary, #f5f5f5);
@@ -2321,7 +2339,7 @@
 
 .learnkit-assistant-popup-suggestion-divider {
   border: 0;
-  border-top: 1px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 85%, transparent);
+  border-top: 0.5px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 85%, transparent);
   margin: 2px 0;
 }
 
@@ -2341,7 +2359,7 @@
 .learnkit-assistant-popup-io-preview,
 .learnkit .learnkit-study-assistant-io-preview {
   margin-top: 0.45rem;
-  border: 1px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 90%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 90%, transparent);
   border-radius: 10px;
   overflow: hidden;
   background: var(--background-primary, #fff);
@@ -2371,7 +2389,7 @@
 .learnkit-assistant-popup-io-preview-rect,
 .learnkit .learnkit-study-assistant-io-preview-rect {
   position: absolute;
-  border: 1px solid color-mix(in srgb, var(--interactive-accent, #7c9dff) 75%, #ffffff);
+  border: 0.5px solid color-mix(in srgb, var(--interactive-accent, #7c9dff) 75%, #ffffff);
   background: color-mix(in srgb, var(--interactive-accent, #7c9dff) 34%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent, #7c9dff) 20%, transparent);
 }
@@ -2386,7 +2404,7 @@
   padding: 0.3rem 0.45rem;
   font-size: 0.74rem;
   color: var(--text-muted);
-  border-top: 1px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 75%, transparent);
+  border-top: 0.5px solid color-mix(in srgb, var(--background-modifier-border, rgba(0, 0, 0, 0.12)) 75%, transparent);
   background: color-mix(in srgb, var(--background-secondary, #f5f5f5) 58%, var(--background-primary, #fff));
 }
 
@@ -2401,7 +2419,7 @@
   border-radius: var(--radius-sm);
   display: flex;
   background: var(--color-base-25);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   max-height: 0;
   opacity: 0;
   overflow: hidden;

@@ -89,7 +89,7 @@
   position: relative;
   top: 0;
   width: 100%;
-  padding: 80px 20px;
+  padding: 60px 20px 10px;
   margin: 0 auto;
 
   display: block;
@@ -218,9 +218,8 @@ body.is-phone .workspace-leaf-content:has(.learnkit) {
   margin: 0 auto;
   box-sizing: border-box;
   border-radius: var(--radius-l);
-  border: var(--color-base-30) 0.5px solid;
-  background-color: var(--color-base-20);
-  padding: var(--lk-shell-padding-desktop);
+  border: transparent;
+  background-color: transparent;
 }
 
 .workspace-leaf-content.learnkit[data-learnkit-wide="1"] .learnkit-view-content-shell,

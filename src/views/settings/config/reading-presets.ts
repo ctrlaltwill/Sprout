@@ -66,7 +66,7 @@ export const PREVIEW_MACRO_PRESETS: Record<ReadingPreviewMacroPresetKey, Reading
 };
 
 export const CUSTOM_CLASSIC_STARTER_CSS = `.learnkit-pretty-card.learnkit-macro-custom .learnkit-custom-body {
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: var(--radius-md);
   padding: 14px;
   background: var(--background-primary);

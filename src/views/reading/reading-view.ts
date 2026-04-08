@@ -2318,6 +2318,13 @@ function renderFlashcardTextWithListSupport(value: string): string {
 
 function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeStyle?: CleanMarkdownClozeStyle): string {
   const lines: string[] = [];
+  const encodeMdSourceAttr = (text: string): string => escapeHtml(encodeURIComponent(String(text ?? '')));
+  const shouldRenderMdSource = (text: string): boolean => {
+    const value = String(text ?? '');
+    if (!value) return false;
+    if (/\{\{c\d+::/i.test(value)) return false;
+    return /\\\(|\\\[|\$\$|(^|[^\\])\$(?!\$)/.test(value);
+  };
   type MarkdownQuestionLabelType = SproutCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child';
   const questionLabelByType: Partial<Record<MarkdownQuestionLabelType, string>> = {
     basic: 'Basic Question',
@@ -2336,18 +2343,19 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     const v = String(value ?? '').trim();
     if (!v) return;
     const renderedField = renderSanitizedPlainFieldValue(v, clozeStyle);
+    const sourceAttr = shouldRenderMdSource(v) ? ` data-learnkit-md-source="${encodeMdSourceAttr(v)}"` : '';
     if (renderedField.isBlock) {
       if (showLabels) {
-        lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-label">${escapeHtml(label)}:</div><div class="learnkit-markdown-plain-block">${renderedField.html}</div></div>`);
+        lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-label">${escapeHtml(label)}:</div><div class="learnkit-markdown-plain-block"${sourceAttr}>${renderedField.html}</div></div>`);
       } else {
-        lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-plain-block">${renderedField.html}</div></div>`);
+        lines.push(`<div class="learnkit-markdown-line learnkit-markdown-line-block"><div class="learnkit-markdown-plain-block"${sourceAttr}>${renderedField.html}</div></div>`);
       }
       return;
     }
     if (showLabels) {
-      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-label">${escapeHtml(label)}:</span> <span class="learnkit-markdown-plain-inline">${renderedField.html}</span></div>`);
+      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-label">${escapeHtml(label)}:</span> <span class="learnkit-markdown-plain-inline"${sourceAttr}>${renderedField.html}</span></div>`);
     } else {
-      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-plain-inline">${renderedField.html}</span></div>`);
+      lines.push(`<div class="learnkit-markdown-line"><span class="learnkit-markdown-plain-inline"${sourceAttr}>${renderedField.html}</span></div>`);
     }
   };
 
@@ -2504,6 +2512,13 @@ function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
 
 function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerButton: boolean; includeEditButton: boolean }): string {
   const idSeed = Math.random().toString(36).slice(2, 8);
+  const encodeMdSourceAttr = (text: string): string => escapeHtml(encodeURIComponent(String(text ?? '')));
+  const mdSourceAttr = (text: string): string => {
+    const value = String(text ?? '');
+    if (!value) return '';
+    if (!/\\\(|\\\[|\$\$|(^|[^\\])\$(?!\$)/.test(value)) return '';
+    return ` data-learnkit-md-source="${encodeMdSourceAttr(value)}"`;
+  };
   let front = '';
   let back = '';
   const allowSpeakerForCardType = card.type === 'basic' || card.type === 'reversed' || card.type === 'cloze';
@@ -2566,9 +2581,9 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
       [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
     }
 
-    const questionHtml = `<div class="learnkit-flashcard-question-text">${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
+    const questionHtml = `<div class="learnkit-flashcard-question-text"${mdSourceAttr(q)}>${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
     const optionsListHtml = allOptions.length
-      ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => `<li>${renderMarkdownLineWithClozeSpans(String(opt))}</li>`).join('')}</ul>`
+      ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => `<li><span${mdSourceAttr(opt)}>${renderMarkdownLineWithClozeSpans(String(opt))}</span></li>`).join('')}</ul>`
       : '';
     // Back: same question + same randomised list with correct answer(s) bolded.
     // Wrap the entire <li> content (including any LaTeX) in <strong> for correct answers.
@@ -2576,7 +2591,9 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
       ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => {
           const rendered = renderMarkdownLineWithClozeSpans(String(opt));
           const isCorrect = answersLower.has(opt.toLowerCase());
-          return isCorrect ? `<li><strong>${rendered}</strong></li>` : `<li>${rendered}</li>`;
+          return isCorrect
+            ? `<li><strong><span${mdSourceAttr(opt)}>${rendered}</span></strong></li>`
+            : `<li><span${mdSourceAttr(opt)}>${rendered}</span></li>`;
         }).join('')}</ul>`
       : '';
 
@@ -2591,14 +2608,14 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
       const j = Math.floor(Math.random() * (i + 1));
       [shuffledSteps[i], shuffledSteps[j]] = [shuffledSteps[j], shuffledSteps[i]];
     }
-    const oqQuestionHtml = `<div class="learnkit-flashcard-question-text">${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
-    front = `${oqQuestionHtml}${shuffledSteps.length ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${shuffledSteps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ul>` : ''}`;
-    back = `${oqQuestionHtml}<ol class="learnkit-flashcard-sequence-list">${steps.map((s) => `<li>${renderMarkdownLineWithClozeSpans(s)}</li>`).join('')}</ol>`;
+    const oqQuestionHtml = `<div class="learnkit-flashcard-question-text"${mdSourceAttr(q)}>${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
+    front = `${oqQuestionHtml}${shuffledSteps.length ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${shuffledSteps.map((s) => `<li><span${mdSourceAttr(s)}>${renderMarkdownLineWithClozeSpans(s)}</span></li>`).join('')}</ul>` : ''}`;
+    back = `${oqQuestionHtml}<ol class="learnkit-flashcard-sequence-list">${steps.map((s) => `<li><span${mdSourceAttr(s)}>${renderMarkdownLineWithClozeSpans(s)}</span></li>`).join('')}</ol>`;
   } else {
     const q = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
     const a = toTextField(card.fields.A);
-    front = `<div>${renderFlashcardTextWithListSupport(q)}</div>`;
-    back = `<div>${renderFlashcardTextWithListSupport(a)}</div>`;
+    front = `<div${mdSourceAttr(q)}>${renderFlashcardTextWithListSupport(q)}</div>`;
+    back = `<div${mdSourceAttr(a)}>${renderFlashcardTextWithListSupport(a)}</div>`;
   }
 
   const frontBodyClass = card.type === 'cloze'
@@ -3299,6 +3316,38 @@ async function renderMdInElements(el: HTMLElement, card: SproutCard) {
         } catch {
           iEl.textContent = iText;
         }
+      }
+    }
+
+    // Render any pre-marked markdown containers used by reading-view
+    // flashcard and markdown macros (including inline math delimiters).
+    const mdTargets = Array.from(el.querySelectorAll<HTMLElement>('[data-learnkit-md-source]'));
+    for (const target of mdTargets) {
+      if (target.closest('[id^="sprout-q-"]') || target.closest('[id^="sprout-a-"]') || target.closest('[id^="sprout-i-"]')) {
+        continue;
+      }
+
+      const encodedSource = target.getAttribute('data-learnkit-md-source');
+      if (!encodedSource) continue;
+
+      let markdownSource = '';
+      try {
+        markdownSource = decodeURIComponent(encodedSource);
+      } catch {
+        markdownSource = encodedSource;
+      }
+      if (!markdownSource) continue;
+
+      // Snapshot fallback nodes before clearing; MarkdownRenderer
+      // *appends* children so leaving old content would double the output.
+      const fallbackNodes = Array.from(target.childNodes).map((node) => node.cloneNode(true));
+      try {
+        target.replaceChildren();
+        await MarkdownRenderer.render(app, markdownSource, target, sourcePath, component);
+        resolveUnloadedEmbeds(target, app, sourcePath);
+      } catch {
+        // Restore pre-rendered fallback content on markdown render failures.
+        target.replaceChildren(...fallbackNodes);
       }
     }
   } finally {

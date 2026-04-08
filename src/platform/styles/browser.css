@@ -12,9 +12,9 @@
 /* Browser table should align with other content */
 .learnkit .lk-browser-card {
   margin: 0;
-  border: 1px solid var(--color-base-30);
+  border: 0.5px solid var(--color-base-35);
   border-radius: var(--radius-md);
-  background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
+  background-color: var(--color-base-05);
   transition: background-color 0.2s ease;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .learnkit [data-lk-browser-density="compact"] .lk-browser-cell {
-  border-right: 1px solid var(--color-base-35);
+  border-right: 0.5px solid var(--color-base-30);
 }
 
 .learnkit [data-lk-browser-density="compact"] .lk-browser-cell:last-child {
@@ -165,7 +165,7 @@
 }
 
 .learnkit [data-lk-browser-density="compact"] .lk-browser-cell:focus-within {
-  outline: 1px solid color-mix(in oklab, var(--theme-accent) 50%, var(--color-base-35));
+  outline: 0.5px solid color-mix(in oklab, var(--theme-accent) 50%, var(--color-base-35));
   outline-offset: -1px;
   background: color-mix(in oklab, var(--theme-accent) 8%, var(--color-base-00));
 }
@@ -373,7 +373,7 @@
 .learnkit [data-lk-browser-density="comfortable"] textarea.lk-browser-textarea,
 .learnkit [data-lk-browser-density="comfortable"] textarea.lk-browser-textarea--editable,
 .learnkit [data-lk-browser-density="comfortable"] textarea.lk-browser-flag-textarea {
-  border: 1px solid var(--theme-accent) !important;
+  border: 0.5px solid var(--theme-accent) !important;
   border-radius: var(--radius-md) !important;
   font-size: 0.75rem !important;
 }
@@ -462,15 +462,16 @@
   color: var(--text-normal);
   cursor: text;
   z-index: 1;
+  font-size: 0.9rem;
 }
 
 .learnkit .lk-browser-flag-overlay--multiline {
   overflow: auto;
   white-space: pre-wrap;
-  border: 1px solid var(--color-base-40) !important;
+  border: 0.5px solid var(--color-base-40) !important;
   overflow-wrap: anywhere;
   word-break: break-word;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1.4;
 }
 
@@ -680,11 +681,15 @@
   height: 36px;
   box-sizing: border-box;
   align-self: stretch;
-  background: var(--background) !important;
+  background: var(--color-base-05) !important;
   border: none !important;
   border-radius: var(--radius-md) !important;
   color: var(--text-normal);
   box-shadow: none !important;
+}
+
+.learnkit .lk-browser-search-input:is(:hover, :focus, :focus-visible, :active) {
+  background: var(--color-base-05) !important;
 }
 
 .learnkit .lk-browser-search-input::placeholder {
@@ -800,8 +805,8 @@
 .learnkit .learnkit-sticky-th {
   top: var(--learnkit-sticky-top, 0px);
     z-index: 20;
-    background-color: var(--color-base-00) !important;
-    border-bottom: 1px solid var(--color-base-60) !important;
+    background-color: var(--color-base-05) !important;
+    border-bottom: 0.5px solid var(--color-base-35) !important;
     box-shadow: 0 1px 0 var(--lk-browser-border-soft);
     vertical-align: middle;
     background-clip: padding-box;
@@ -847,7 +852,7 @@
   width: var(--learnkit-io-width, 0);
   height: var(--learnkit-io-height, 0);
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 0.5px solid rgba(0, 0, 0, 0.25);
   border-radius: var(--radius-md, var(--radius-md));
   pointer-events: none;
   z-index: 1;
@@ -916,6 +921,18 @@
 .learnkit .lk-browser-view .table tbody tr:hover {
   background-color: var(--lk-browser-row-hover);
 }
+
+/* Selected browser rows (via row checkbox) */
+.learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked),
+.learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked) td {
+  background: var(--theme-base-35);
+}
+
+.learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked):hover,
+.learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked):hover td {
+  background: var(--theme-base-35);
+}
+
 .learnkit .lk-browser-view .table tbody tr:hover,
 .learnkit .lk-browser-view .table tbody tr:hover td {
   border-color: var(--lk-browser-row-hover-border);
@@ -927,28 +944,30 @@
 .learnkit .lk-browser-view nav[role="navigation"] .btn,
 .learnkit .lk-browser-view nav[role="navigation"] .learnkit-btn-toolbar,
 .learnkit .lk-browser-view [data-tooltip="Rows per page"] {
-  height: 32px;
-  min-height: 32px;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   font-size: var(--font-ui-small);
 }
 
 /* Keep numeric pagination buttons exactly square across all states. */
 .learnkit .lk-browser-view nav[role="navigation"] button[aria-label^="Page "] {
-  width: 36px !important;
-  min-width: 36px !important;
-  max-width: 36px !important;
-  height: 37px !important;
-  min-height: 37px !important;
-  max-height: 37px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
   aspect-ratio: 1 / 1;
-  flex: 0 0 36px !important;
+  flex: 0 0 32px !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  background-color: transparent;
   transform: none !important;
 }
 
@@ -956,12 +975,12 @@
 .learnkit .lk-browser-view nav[role="navigation"] button[aria-label^="Page "]:focus-visible,
 .learnkit .lk-browser-view nav[role="navigation"] button[aria-label^="Page "]:active,
 .learnkit .lk-browser-view nav[role="navigation"] button[aria-label^="Page "][aria-current="page"] {
-  width: 36px !important;
-  min-width: 36px !important;
-  max-width: 36px !important;
-  height: 37px !important;
-  min-height: 37px !important;
-  max-height: 37px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   padding: 0 !important;
   margin: 0 !important;
   transform: none !important;
@@ -1006,8 +1025,8 @@ font-size: var(--learnkit-font-xs);
 }
 
 .learnkit .lk-browser-view .table tbody td {
-  background-color: var(--color-base-00);
-  border-bottom: 1px solid var(--color-base-35);
+  background-color: var(--color-base-05);
+  border-bottom: 0.5px solid var(--color-base-35);
 }
 
 /* Checkbox column cells are emitted with utility classes that set `display:flex`.
@@ -1225,7 +1244,7 @@ font-size: var(--learnkit-font-xs);
 /* Comfortable browser cell chrome (and default non-compact fallback). */
 .learnkit [data-lk-browser-density="comfortable"] :is(.lk-browser-tag-box, .lk-browser-oq-cell, .lk-browser-io-box, .lk-browser-mcq-cell),
 .learnkit [data-lk-browser-root="1"]:not([data-lk-browser-density="compact"]) :is(.lk-browser-tag-box, .lk-browser-oq-cell, .lk-browser-io-box, .lk-browser-mcq-cell) {
-  border: 1px solid var(--color-base-40) !important;
+  border: 0.5px solid var(--color-base-40) !important;
   border-radius: var(--radius-md) !important;
   font-size: 0.75rem !important;
 }
@@ -1386,7 +1405,7 @@ body.is-phone .learnkit .lk-browser-title-strip > .learnkit-inline-sentence > .l
 }
 
 .theme-dark .learnkit .lk-browser-search-input {
-  border-color: var(--color-base-30) !important;
+  border-color: var(--color-base-35) !important;
 }
 
 body.is-mobile .learnkit .lk-browser-density-btn {
@@ -1480,7 +1499,7 @@ body.is-mobile .learnkit .lk-browser-controls-row :is(
   min-height: 28px !important;
   padding: 0 8px !important;
   border-radius: var(--radius-md) !important;
-  border: 1px solid var(--color-base-35) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   background: color-mix(in oklab, var(--background) 85%, transparent 15%) !important;
   color: var(--text-normal) !important;
   font-size: var(--learnkit-font-xs) !important;
@@ -1497,8 +1516,8 @@ body.is-mobile .learnkit .lk-browser-controls-row .lk-browser-filter-columns-wra
 
 body.is-mobile .learnkit .lk-browser-view .table thead th,
 body.is-mobile .learnkit .lk-browser-view .learnkit-sticky-th {
-  background-color: var(--color-base-00) !important;
-  border-bottom: 1px solid var(--color-base-60) !important;
+  background-color: var(--color-base-05) !important;
+  border-bottom: 0.5px solid var(--color-base-35) !important;
   background-clip: padding-box;
   color: var(--text-normal) !important;
 }

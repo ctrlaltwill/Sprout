@@ -175,12 +175,19 @@
   background: transparent;
 }
 
+.learnkit input {
+  border-width: 0.5px !important;
+}
+
 /* ---- Global keyboard keycap shape ---- */
 
 .learnkit kbd,
 .learnkit .kbd {
-  padding: 0px 8px;
+  box-shadow: none !important;
   border-radius: 6px;
+  background-color: var(--color-base-40);
+  padding: 0 8px;
+  border: none;
 }
 
 /* ---- Mobile phones: hide keyboard hint badges ---- */
@@ -324,7 +331,7 @@
 
 .learnkit .learnkit-io-mask-target {
   background: var(--color-base-70);
-  border: 1px solid var(--color-base-100);
+  border: 0.5px solid var(--color-base-100);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -332,7 +339,7 @@
 
 .learnkit .learnkit-io-mask-other {
   background: var(--color-base-20);
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
 }
 
 .learnkit .learnkit-io-mask-hidden {
@@ -389,7 +396,7 @@
 
 .learnkit .badge.group {
     font-family: var(--font-interface);
-    border: 1px solid var(--theme-base-35);
+    border: 0.5px solid var(--theme-base-35);
     border-radius: var(--radius-md);
     background-color: var(--theme-base-15);
     height: 22px;
@@ -416,73 +423,6 @@
 .learnkit .learnkit-badge-default {
   background-color: var(--secondary);
   color: #111;
-}
-
-/* ---- Checkboxes / radio ---- */
-
-.learnkit input[type="checkbox"] {
-  --learnkit-checkbox-accent: var(--interactive-accent, var(--theme-accent));
-  appearance: none;
-  border-radius: 4px;
-  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 10%, var(--background-primary, var(--background)));
-  border: 1px solid color-mix(in srgb, var(--learnkit-checkbox-accent) 38%, var(--background-modifier-border));
-  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
-}
-
-.learnkit input[type="checkbox"]:hover,
-.learnkit input[type="checkbox"]:focus {
-  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 18%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 54%, var(--background-modifier-border));
-}
-
-.learnkit input[type="checkbox"]:active {
-  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 28%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 68%, var(--background-modifier-border));
-}
-
-.learnkit input[type="checkbox"]:focus-visible {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--learnkit-checkbox-accent) 35%, transparent);
-}
-
-.learnkit input[type="checkbox"]:checked {
-  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 82%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 88%, var(--background-modifier-border));
-}
-
-.learnkit input[type="checkbox"]:checked:hover,
-.learnkit input[type="checkbox"]:checked:focus {
-  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 90%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 94%, var(--background-modifier-border));
-}
-
-.learnkit input[type="checkbox"]:checked:active {
-  background-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 96%, var(--background-primary, var(--background)));
-  border-color: color-mix(in srgb, var(--learnkit-checkbox-accent) 98%, var(--background-modifier-border));
-}
-
-.learnkit input[type="radio"]:checked:after,
-.learnkit input[type="checkbox"]:checked:after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 16px;
-  height: 16px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
-  mask-repeat: no-repeat;
-  mask-position: center;
-  background-color: var(--text-on-accent, #fff);
-}
-
-.learnkit input[type="checkbox"]:checked:hover::after {
-  background-color: var(--text-on-accent, #fff);
-}
-
-.learnkit input[type="checkbox"]:checked:active::after {
-  background-color: var(--text-on-accent, #fff);
 }
 
 /* ---- Inline sorting icon hover ---- */
@@ -627,7 +567,7 @@
 .learnkit input[type="search"]:not(.learnkit-ss-search-input):not(.learnkit-search-naked):focus,
 .learnkit input[type="number"]:focus,
 .learnkit select:focus {
-  border: 1.5px solid var(--theme-accent);
+  border: 0.5px solid var(--color-base-70);
   box-shadow: none;
   outline: none;
 }
@@ -666,9 +606,9 @@
 /* Keep browser editable textareas styled in comfortable/non-compact density. */
 .learnkit [data-lk-browser-density='comfortable'] :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea),
 .learnkit [data-lk-browser-root='1']:not([data-lk-browser-density='compact']) :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea) {
-  border: 1px solid var(--theme-accent) !important;
+  border: 0.5px solid var(--theme-accent) !important;
   border-radius: var(--radius-md) !important;
-  font-size: 0.75rem !important;
+  font-size: 0.8rem !important;
 }
 
 /* Typed cloze inputs override the global accent focus above */

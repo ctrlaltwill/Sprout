@@ -1155,8 +1155,8 @@ export class SproutHeader {
     const importFromAnkiLabel = `Import from ${ankiNoun}`;
     const exportToAnkiLabel = `Export to ${ankiNoun}`;
 
-    const openAnkiImport = () => runCommand("sprout:import-anki", importFromAnkiLabel);
-    const openAnkiExport = () => runCommand("sprout:export-anki", exportToAnkiLabel);
+    const openAnkiImport = () => runCommand("learnkit:import-anki", importFromAnkiLabel);
+    const openAnkiExport = () => runCommand("learnkit:export-anki", exportToAnkiLabel);
     const openSupport = () => {
       window.open("https://github.com/ctrlaltwill/Sprout/issues", "_blank", "noopener,noreferrer");
     };

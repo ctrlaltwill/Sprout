@@ -30,7 +30,7 @@
 }
 
 .learnkit .lk-review-root[data-lk-review-mode="session"] :is(.learnkit-session-card, .lk-session-card, .lk-session-card.card) {
-  background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
+  background-color: var(--color-base-05);
   border: var(--color-base-30) 0.5px solid;
   border-radius: var(--radius-lg);
   box-shadow: none;
@@ -287,9 +287,9 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   margin: 1.2rem 1.2rem 0rem 1.2rem;
   padding: 1.2rem;
   min-height: 40px;
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-35);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--background) 74%, transparent);
+  background: color-mix(in srgb, var(--color-base-05) 74%, transparent);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -364,9 +364,9 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   position: static;
   margin: 0.6rem 1.2rem 1.2rem;
   padding: 1.2rem;
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-35);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--background) 74%, transparent);
+  background: color-mix(in srgb, var(--color-base-05) 74%, transparent);
   box-shadow: none;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -375,6 +375,27 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit .lk-session-card > footer.learnkit-session-study-dock :is(button, [id^="learnkit-menu-"]) {
   position: relative;
   z-index: 81;
+}
+
+.learnkit .lk-session-card > footer.learnkit-session-study-dock :is(
+  .learnkit-btn-toolbar,
+  .learnkit-btn-filter,
+  [id^="learnkit-menu-"] > button
+) {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.learnkit .lk-session-card > footer.learnkit-session-study-dock :is(
+  .learnkit-btn-toolbar,
+  .learnkit-btn-filter,
+  [id^="learnkit-menu-"] > button
+):is(:hover, :focus, :focus-visible, :focus-within, :active, [aria-expanded="true"]) {
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none;
 }
 
 .learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-left,
@@ -420,6 +441,15 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-grade-group > :is(button, .btn) {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* Restore subtle borders on session grading buttons. */
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-grade-group > :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) {
+  border: 0.5px solid color-mix(in srgb, var(--learnkit-btn-tint, var(--color-base-50)) 34%, transparent) !important;
+}
+
+.learnkit .lk-session-card > footer.learnkit-session-study-dock .learnkit-session-study-dock-grade-group > :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):is(:hover, :focus-visible, :active):not(:disabled) {
+  border-color: color-mix(in srgb, var(--learnkit-btn-tint, var(--color-base-50)) 48%, transparent) !important;
 }
 
 /* Allow text selection in header + Q/A, but keep footer controls non-selectable */
@@ -580,7 +610,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit-cloze-revealed {
   margin: 0 1px;
     padding: 2px 5px;
-    border: 1px solid var(--theme-base-35);
+    border: 0.5px solid var(--theme-base-35);
     border-radius: var(--radius-md);
     background-color: var(--theme-base-15);
     color: var(--theme-base-95);
@@ -589,7 +619,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 
 .learnkit .hidden-cloze {
-  border-bottom: 1px solid var(--foreground);
+  border-bottom: 0.5px solid var(--foreground);
   display: inline-block;
   min-height: 1em;
   margin-left: 0;
@@ -663,8 +693,8 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .learnkit .learnkit-session-more-popover {
   min-width: 230px;
-  border: 1px solid var(--color-base-35) !important;
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
+  border: 0.5px solid var(--color-base-35) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
@@ -678,9 +708,11 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   font-size: var(--learnkit-font-sm);
   text-align: left;
   border-radius: var(--radius-s, var(--radius-md));
-  border: 1px solid transparent !important;
+  border: 0.5px solid transparent !important;
   background: transparent !important;
   padding: 6px 8px;
+  margin: 1px 0 !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .learnkit .learnkit-session-more-item:hover:not(:disabled),
@@ -689,13 +721,18 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit .learnkit-session-more-item[aria-current="true"],
 .learnkit .learnkit-session-more-item[aria-selected="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   color: var(--color-base-100, var(--text-normal)) !important;
 }
 
 .learnkit .learnkit-session-more-item :is(kbd, .kbd) {
   margin-left: auto;
   opacity: 0.85;
+  background-color: var(--color-base-25);
+}
+
+.learnkit .learnkit-session-more-item:is(:hover, :focus, :focus-visible, :active) :is(kbd, .kbd) {
+  color: inherit !important;
 }
 
 .learnkit-menu-item--disabled {
@@ -835,7 +872,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 }
 
 .learnkit .learnkit-mcq-options .learnkit-btn-toolbar:hover {
-    background-color: var(--color-base-30) !important;
+    background-color: var(--color-base-35) !important;
       color: var(--color-base-100) !important;
     border-color: var(--color-base-40) !important;}
 
@@ -986,7 +1023,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   text-align: left;
   gap: 8px;
   border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--color-base-35) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   background-color: var(--color-base-20) !important;
   color: var(--color-base-100) !important;
   padding: 4px 12px;
@@ -1004,7 +1041,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit-oq-step-row:focus,
 .learnkit-oq-step-row:focus-within,
 .learnkit-oq-step-row:active {
-  background-color: var(--color-base-30) !important;
+  background-color: var(--color-base-35) !important;
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
@@ -1154,7 +1191,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   height: 36px;
   padding: 0 12px;
   border-radius: var(--radius-s, 4px);
-  border: 1px solid var(--color-base-35) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   background-color: var(--color-base-20);
   color: var(--text-normal) !important;
   box-shadow: none;
@@ -1393,7 +1430,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
   background-color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-bg-mix), var(--background-primary));
   color: color-mix(in srgb, var(--learnkit-btn-tint) var(--learnkit-btn-fg-mix), var(--foreground));
-  border: 1px solid color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-border-mix), transparent);
+  border: 0.5px solid color-mix(in srgb, var(--learnkit-kbd-tint) var(--learnkit-kbd-border-mix), transparent);
 }
 
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal) :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
@@ -1444,6 +1481,23 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   color: rgb(255, 255, 255);
 }
 
+/* Borderless grading controls (study session + gatekeeper) */
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal)
+  :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy),
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal)
+  :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):hover,
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal)
+  :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy):focus-visible {
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal)
+  :is(.learnkit-btn-again, .learnkit-btn-hard, .learnkit-btn-good, .learnkit-btn-easy) :is(kbd, .kbd) {
+  border: none !important;
+  border-color: transparent !important;
+}
+
 /* ---- AOS animation fallback ---- */
 
 .learnkit-aos-fallback {
@@ -1481,6 +1535,11 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 /* Compact padding in widget sidebar */
 .learnkit-widget .learnkit-cloze-typed-input {
   padding: 2px 4px;
+}
+
+.learnkit .learnkit-cloze-typed-input {
+  border-width: 0.5px;
+  border-color: var(--color-base-35);
 }
 
 .learnkit-cloze-typed-input:hover {
@@ -1603,7 +1662,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   line-height: 1.5;
   padding: 2px 8px 2px 8px;
   margin: 0 2px 0 4px;
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: var(--radius-s);
   box-sizing: border-box;
   vertical-align: baseline;
@@ -1623,13 +1682,13 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit-cloze-typed-correct {
   background-color: color-mix(in srgb, var(--learnkit-good-bg) 10%, transparent);
   color: var(--learnkit-good-bg);
-  border: 1px solid var(--learnkit-good-bg);
+  border: 0.5px solid var(--learnkit-good-bg);
 }
 
 .learnkit-cloze-typed-wrong {
   background-color: color-mix(in srgb, var(--learnkit-again-bg) 10%, transparent);
   color: var(--learnkit-again-bg);
-  border: 1px solid var(--learnkit-again-bg);
+  border: 0.5px solid var(--learnkit-again-bg);
   text-decoration: line-through;
 }
 
@@ -1856,7 +1915,7 @@ body.is-phone .learnkit .lk-session-card .learnkit-session-study-dock-buttons .t
   justify-content: center;
   min-height: 36px;
   border-radius: var(--radius-md, var(--radius-md));
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   background: var(--color-base-20);
   color: var(--text-normal);
   padding: 0 12px;

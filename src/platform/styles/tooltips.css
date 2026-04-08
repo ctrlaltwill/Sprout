@@ -87,14 +87,6 @@
   transform: translateX(calc(-50% + var(--learnkit-tooltip-shift-x, 0px)));
 }
 
-/* Top — centred horizontally, just above the parent */
-.learnkit [data-tooltip-position="top"]::after {
-  bottom: calc(100% + 6px);
-  top: auto;
-  left: 50%;
-  transform: translateX(calc(-50% + var(--learnkit-tooltip-shift-x, 0px)));
-}
-
 /* Left — centred vertically, just left of the parent */
 .learnkit [data-tooltip-position="left"]::after {
   right: calc(100% + 6px);

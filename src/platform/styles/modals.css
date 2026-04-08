@@ -75,25 +75,30 @@
 /* ---- Panel ---- */
 
 .learnkit .lk-modals.modal {
-    border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
-    width: min(500px, 100%);
-    background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
-    -webkit-backdrop-filter: blur(16px) saturate(125%);
-    backdrop-filter: blur(16px) saturate(125%);
-    border-radius: var(--radius-lg);
-  max-width: min(1080px, 95%);
-    max-height: min(80vh);
-    padding: 1.2rem 0;
-    overflow: hidden;
-    outline: none;
-    height: auto;
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  backdrop-filter: blur(16px) saturate(125%);
+  border-radius: var(--radius-lg);
+  outline: none;
+  max-width: min(550px, 95%) !important;
+  height: auto;
+  max-height: 80vh;
+  padding: 1.2rem 0;
+  border: 0.5px solid var(--color-base-35);
+  background: var(--color-base-05);
+  overflow: hidden;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.learnkit .shadow-lg {
+  --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, #0000001a), 0 4px 6px -4px var(--tw-shadow-color, #0000001a);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
 }
 
 .learnkit .modal-container .modal {
   border-radius: var(--radius-lg);
-    border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
-    background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
+    border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
+    background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
     -webkit-backdrop-filter: blur(16px) saturate(125%);
     backdrop-filter: blur(16px) saturate(125%);
     max-width: min(1080px, 95%);
@@ -177,8 +182,8 @@
   textarea.textarea,
   .textarea
 ) {
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
   color: var(--text-normal);
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   backdrop-filter: blur(10px) saturate(120%);
@@ -201,7 +206,7 @@
   .learnkit-export-tag-box,
   .learnkit-card-meta-type-btn
 ) {
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
   border-color: color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   backdrop-filter: blur(10px) saturate(120%);
@@ -210,7 +215,7 @@
 .learnkit .lk-modals.modal .learnkit-btn-toolbar {
   max-height: 36px !important;
   background-color: var(--color-base-20);
-    border: 1px solid var(--color-base-35);
+    border: 0.5px solid var(--color-base-30);
 }
 
 /* Standard modal shell buttons: lock compact spacing regardless of theme defaults. */
@@ -251,9 +256,48 @@
   transform: translateX(0);
 }
 
+/* Modal close buttons: fixed icon-only 32x32, no hover expansion. */
+.learnkit .lk-modals.modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-bulk-edit-close-btn,
+  .learnkit-attachment-picker-close-btn
+) {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden;
+  justify-content: center;
+}
+
+.learnkit .lk-modals.modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-bulk-edit-close-btn,
+  .learnkit-attachment-picker-close-btn
+) [data-learnkit-label="true"] {
+  display: none !important;
+  max-width: 0 !important;
+  opacity: 0 !important;
+  margin-left: 0 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.learnkit .lk-modals.modal :is(
+  .learnkit-card-creator-close-btn,
+  .learnkit-bulk-edit-close-btn,
+  .learnkit-attachment-picker-close-btn
+):is(:hover, :focus, :focus-visible, :focus-within, :active, [aria-expanded="true"]) [data-learnkit-label="true"] {
+  display: none !important;
+}
+
 .learnkit .learnkit-card-creator-type-popover .learnkit-card-creator-type-panel {
   background: var(--color-base-00);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: var(--radius-md);
   box-shadow: none;
   padding: 4px 6px;
@@ -269,7 +313,7 @@
 .learnkit .learnkit-card-creator-type-popover .learnkit-card-creator-type-item {
   min-height: 28px;
   padding: 4px 8px;
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-normal);
@@ -494,13 +538,14 @@
 /* Input and textarea focus styles */
 .learnkit .lk-modals.modal .input:focus,
 .learnkit .lk-modals.modal select.input:focus,
-.learnkit .lk-modals.modal input[type="text"].input:focus,
+.learnkit .lk-modals.modal input[type=text].input:focus,
 .learnkit .lk-modals.modal textarea.textarea:focus,
 .learnkit .lk-modals.modal .textarea:focus {
-  border: 1.5px solid var(--theme-accent);
-  background: color-mix(in srgb, var(--color-base-00) 48%, transparent 52%);
-  box-shadow: none;
-  outline: none;
+  border: 0.5px solid var(--color-base-70);
+}
+
+.learnkit-flag-editor-wrap {
+  font-size: 0.9rem;
 }
 
 /* MCQ answer section label spacing */
@@ -540,7 +585,7 @@
 .learnkit .lk-modals .learnkit-popover-dropdown .bg-popover,
 .learnkit .lk-modals .learnkit-popover-dropdown-below .bg-popover {
   background-color: var(--background-primary, var(--background, #fff));
-  border: 1px solid var(--learnkit-border-color);
+  border: 0.5px solid var(--learnkit-border-color);
   border-radius: var(--radius-md);
   color: var(--text-normal, var(--foreground, #111));
   box-shadow: var(--lk-shadow-popover-subtle);
@@ -594,8 +639,8 @@
   overflow: auto;
   padding: 20px;
   border-radius: var(--radius-l);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
   -webkit-backdrop-filter: blur(16px) saturate(125%);
   backdrop-filter: blur(16px) saturate(125%);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12);
@@ -875,7 +920,7 @@ width: min(720px, 100%);
 ) {
   background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
 }
 
 .learnkit .learnkit-card-creator-modal :is(
@@ -912,8 +957,8 @@ width: min(720px, 100%);
   text-align: left;
   opacity: 1;
   color: var(--text-muted);
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
   cursor: default;
 }
 
@@ -934,14 +979,14 @@ width: min(720px, 100%);
   border-radius: var(--radius-md);
   box-shadow: none !important;
   color: var(--text-muted);
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
   justify-content: space-between;
   width: 100%;
 }
 
 .learnkit :is(.learnkit-btn-primary-action, .learnkit-card-creator-add-btn, .learnkit-bulk-edit-save-btn, .learnkit-io-save-btn) {
-  border: 1px solid var(--theme-black-95) !important;
+  border: 0.5px solid var(--theme-black-95) !important;
   border-radius: 8px;
   background: var(--theme-base-95) !important;
   color: #fff !important;
@@ -1096,9 +1141,9 @@ body.is-mobile .learnkit .learnkit-cloze-mobile-actions {
 .learnkit .learnkit-bulk-edit-panel .learnkit-single-edit-markdown-field {
   position: relative;
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%) !important;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   backdrop-filter: blur(10px) saturate(120%);
   overflow: hidden;
@@ -1203,8 +1248,8 @@ body.is-mobile .learnkit .learnkit-cloze-mobile-actions {
   column-gap: 6px;
   row-gap: 2px;
   align-content: flex-start;
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 20%, transparent 80%);
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   backdrop-filter: blur(10px) saturate(120%);
   box-shadow: none;
@@ -1268,7 +1313,7 @@ body.is-mobile .learnkit .learnkit-edit-modal {
   max-height: min(80vh, 720px);
   overflow: hidden;
   padding: 1.2rem;
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: var(--radius-lg);
   background: var(--color-base-00);
   box-shadow: var(--lk-shadow-modal);
@@ -1363,7 +1408,7 @@ body.is-mobile .learnkit .learnkit-edit-modal {
   border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   border-radius: var(--radius-md, var(--radius-md));
   background-color: var(--color-base-10) !important;
-    border: 1px solid var(--color-base-40) !important;
+    border: 0.5px solid var(--color-base-40) !important;
 }
 
 .learnkit .learnkit-io-canvas-placeholder {
@@ -1473,7 +1518,7 @@ body.is-mobile .learnkit .learnkit-edit-modal {
 .learnkit .learnkit-io-dlg-cancel {
   background-color: #000;
   color: #fff;
-  border: 1px solid #000;
+  border: 0.5px solid #000;
 }
 
 .learnkit .learnkit-io-dlg-delete {
@@ -1640,7 +1685,7 @@ z-index: 11;
   width: var(--learnkit-io-corner-size, 10px);
   height: var(--learnkit-io-corner-size, 10px);
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 0.5px solid rgba(255, 255, 255, 0.7);
   border-radius: var(--radius-s);
   pointer-events: auto;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
@@ -1694,7 +1739,7 @@ z-index: 11;
   margin-left: auto;
 
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background: transparent;
   width: 34px;
   height: 34px;
@@ -1710,7 +1755,7 @@ z-index: 11;
   top: 12px;
   right: 12px;
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background: transparent;
   width: 34px;
   height: 34px;
@@ -1749,7 +1794,7 @@ z-index: 11;
   flex-shrink: 0;
   margin-left: auto;
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background: transparent;
   width: 34px;
   height: 34px;
@@ -1768,7 +1813,7 @@ z-index: 11;
   flex-shrink: 0;
   margin-left: auto;
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background: transparent;
   width: 34px;
   height: 34px;
@@ -1786,7 +1831,7 @@ z-index: 11;
   flex-shrink: 0;
   margin-left: auto;
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background: transparent;
   width: 34px;
   height: 34px;
@@ -1963,7 +2008,7 @@ z-index: 11;
 }
 
 .learnkit .learnkit-zoom-surface.learnkit-io-container.learnkit-io-container--clip {
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -2006,7 +2051,7 @@ z-index: 11;
   z-index: 5;
   min-width: 30px;
   max-height: 30px !important;
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   background: color-mix(in srgb, var(--background) 80%, transparent);
   box-shadow: none;
   outline: none;
@@ -2450,7 +2495,7 @@ z-index: 11;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   background: transparent;
   color: var(--foreground);
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
@@ -2618,7 +2663,7 @@ z-index: 11;
   height: 1.5rem;
   padding: 0 0.35rem;
   border-radius: 0.25rem;
-  border: 1px solid var(--border);
+  border: 0.5px solid var(--border);
   background: var(--background);
   box-shadow: 0 1px 0 var(--border);
   font-family: inherit;

@@ -827,15 +827,6 @@ export class LearnKitSettingsView extends ItemView {
         nav.className = "learnkit-guide-nav";
         layout.insertBefore(nav, content);
 
-        const dotsRail = document.createElement("div");
-        dotsRail.className = "learnkit-guide-dots-rail";
-        dotsRail.hidden = true;
-        const isMobile = document.body.classList.contains("is-mobile");
-        if (isMobile) {
-          dotsRail.classList.add("is-hidden-on-mobile");
-        }
-        content.appendChild(dotsRail);
-
         const footer = document.createElement("div");
         footer.className = "learnkit-guide-footer";
         layout.appendChild(footer);
@@ -1068,135 +1059,6 @@ export class LearnKitSettingsView extends ItemView {
             this._enhanceAboutPage(body);
           }
 
-          const headingEls = Array.from(body.querySelectorAll<HTMLElement>("h1, h2"));
-
-          dotsRail.empty();
-          dotsRail.hidden = headingEls.length < 2;
-
-          if (headingEls.length >= 2) {
-            const headingTopOffset = 16;
-            const edgeEpsilon = 1;
-
-            const getMaxScrollTop = () => Math.max(0, inner.scrollHeight - inner.clientHeight);
-
-            const getTargetScrollTop = (heading: HTMLElement) => {
-              const maxScrollTop = getMaxScrollTop();
-              return Math.min(maxScrollTop, Math.max(0, heading.offsetTop - headingTopOffset));
-            };
-
-            const dotBtns = headingEls.map((heading) => {
-              const dot = document.createElement("span");
-              dot.className = "learnkit-guide-dot";
-              dot.setAttribute("role", "button");
-              dot.tabIndex = 0;
-
-              const jumpToHeading = () => {
-                const top = getTargetScrollTop(heading);
-                inner.scrollTo({ top, behavior: "smooth" });
-              };
-
-              dot.addEventListener("click", jumpToHeading);
-              dot.addEventListener("keydown", (ev) => {
-                if (ev.key !== "Enter" && ev.key !== " ") return;
-                ev.preventDefault();
-                jumpToHeading();
-              });
-
-              dotsRail.appendChild(dot);
-              return dot;
-            });
-
-            let renderedActiveIdx = -1;
-            let pendingActiveIdx = 0;
-            let stepTimer: number | null = null;
-
-            const setRenderedActiveIdx = (idx: number) => {
-              renderedActiveIdx = idx;
-              dotBtns.forEach((dot, dotIdx) => dot.classList.toggle("is-active", dotIdx === idx));
-            };
-
-            const clearStepTimer = () => {
-              if (stepTimer !== null) {
-                window.clearTimeout(stepTimer);
-                stepTimer = null;
-              }
-            };
-
-            const setActiveDotWithSteps = (nextIdx: number) => {
-              pendingActiveIdx = nextIdx;
-
-              if (renderedActiveIdx < 0) {
-                setRenderedActiveIdx(nextIdx);
-                return;
-              }
-
-              const distance = Math.abs(pendingActiveIdx - renderedActiveIdx);
-              if (distance <= 1) {
-                clearStepTimer();
-                setRenderedActiveIdx(pendingActiveIdx);
-                return;
-              }
-
-              if (stepTimer !== null) return;
-
-              const stepOnce = () => {
-                if (renderedActiveIdx === pendingActiveIdx) {
-                  stepTimer = null;
-                  return;
-                }
-
-                const step = pendingActiveIdx > renderedActiveIdx ? 1 : -1;
-                setRenderedActiveIdx(renderedActiveIdx + step);
-
-                if (renderedActiveIdx === pendingActiveIdx) {
-                  stepTimer = null;
-                  return;
-                }
-
-                stepTimer = window.setTimeout(stepOnce, 55);
-              };
-
-              stepTimer = window.setTimeout(stepOnce, 55);
-            };
-
-            const updateActiveDot = () => {
-              const max = getMaxScrollTop();
-              dotsRail.hidden = max <= 0;
-              const scrollTop = inner.scrollTop;
-              let activeIdx = 0;
-              const bottomBlendWindow = Math.max(140, headingTopOffset * 2);
-
-              if (scrollTop <= edgeEpsilon) {
-                activeIdx = 0;
-              } else {
-                const markerTop = scrollTop + headingTopOffset;
-                const markerBottom = scrollTop + inner.clientHeight - headingTopOffset;
-                const distanceFromBottom = max - scrollTop;
-                const bottomBlend =
-                  max > 0
-                    ? Math.max(0, Math.min(1, (bottomBlendWindow - distanceFromBottom) / bottomBlendWindow))
-                    : 0;
-                const marker = markerTop + (markerBottom - markerTop) * bottomBlend;
-
-                for (let i = 0; i < headingEls.length; i++) {
-                  const headingTop = headingEls[i].offsetTop;
-                  if (headingTop <= marker) activeIdx = i;
-                  else break;
-                }
-              }
-
-              setActiveDotWithSteps(activeIdx);
-
-              const progress = max > 0 ? inner.scrollTop / max : 0;
-              setCssProps(content, "--learnkit-guide-scroll-progress", progress.toFixed(4));
-            };
-
-            inner.addEventListener("scroll", updateActiveDot, { passive: true });
-            const onResize = () => updateActiveDot();
-            this._trackWindowListener("resize", onResize, { passive: true });
-            window.requestAnimationFrame(updateActiveDot);
-          }
-
           footer.empty();
           const idx = pages.findIndex((p) => p.key === selected.key);
           const prevPage = idx > 0 ? pages[idx - 1] : null;
@@ -1322,15 +1184,6 @@ export class LearnKitSettingsView extends ItemView {
     contentInner.className = "learnkit-guide-content-inner learnkit-guide-content-inner--snap";
     content.appendChild(contentInner);
 
-    const dotsRail = document.createElement("div");
-    dotsRail.className = "learnkit-guide-dots-rail";
-    dotsRail.hidden = true;
-    const isMobile = document.body.classList.contains("is-mobile");
-    if (isMobile) {
-      dotsRail.classList.add("is-hidden-on-mobile");
-    }
-    content.appendChild(dotsRail);
-
     const footer = document.createElement("div");
     footer.className = "learnkit-guide-footer";
     footer.hidden = true;
@@ -1349,7 +1202,7 @@ export class LearnKitSettingsView extends ItemView {
         this._activeReleasePage = active.key;
 
         this._renderReleaseNotesNav(nav, pages);
-        await this._renderReleaseNotesContent(content, contentInner, dotsRail, footer, pages, active);
+        await this._renderReleaseNotesContent(contentInner, footer, pages, active);
 
         layout.classList.remove("is-loading");
         navFrame.hidden = false;
@@ -1400,17 +1253,13 @@ export class LearnKitSettingsView extends ItemView {
   }
 
   private async _renderReleaseNotesContent(
-    content: HTMLElement,
     contentInner: HTMLElement,
-    dotsRail: HTMLElement,
     footer: HTMLElement,
     pages: ReleaseNotesPage[],
     active: ReleaseNotesPage,
   ) {
     contentInner.empty();
     footer.empty();
-    dotsRail.empty();
-    dotsRail.hidden = true;
 
     const body = document.createElement("div");
     body.className = "learnkit-guide-body markdown-rendered";
@@ -1441,135 +1290,6 @@ export class LearnKitSettingsView extends ItemView {
     /* ── About page: enhance with rich layout ── */
     if (active.key === "about-sprout") {
       this._enhanceAboutPage(body);
-    }
-
-    const headingEls = Array.from(body.querySelectorAll<HTMLElement>("h1, h2, h3"));
-
-    dotsRail.empty();
-    dotsRail.hidden = headingEls.length < 2;
-
-    if (headingEls.length >= 2) {
-      const headingTopOffset = 16;
-      const edgeEpsilon = 1;
-
-      const getMaxScrollTop = () => Math.max(0, contentInner.scrollHeight - contentInner.clientHeight);
-
-      const getTargetScrollTop = (heading: HTMLElement) => {
-        const maxScrollTop = getMaxScrollTop();
-        return Math.min(maxScrollTop, Math.max(0, heading.offsetTop - headingTopOffset));
-      };
-
-      const dotBtns = headingEls.map((heading) => {
-        const dot = document.createElement("span");
-        dot.className = "learnkit-guide-dot";
-        dot.setAttribute("role", "button");
-        dot.tabIndex = 0;
-
-        const jumpToHeading = () => {
-          const top = getTargetScrollTop(heading);
-          contentInner.scrollTo({ top, behavior: "smooth" });
-        };
-
-        dot.addEventListener("click", jumpToHeading);
-        dot.addEventListener("keydown", (ev) => {
-          if (ev.key !== "Enter" && ev.key !== " ") return;
-          ev.preventDefault();
-          jumpToHeading();
-        });
-
-        dotsRail.appendChild(dot);
-        return dot;
-      });
-
-      let renderedActiveIdx = -1;
-      let pendingActiveIdx = 0;
-      let stepTimer: number | null = null;
-
-      const setRenderedActiveIdx = (idx: number) => {
-        renderedActiveIdx = idx;
-        dotBtns.forEach((dot, dotIdx) => dot.classList.toggle("is-active", dotIdx === idx));
-      };
-
-      const clearStepTimer = () => {
-        if (stepTimer !== null) {
-          window.clearTimeout(stepTimer);
-          stepTimer = null;
-        }
-      };
-
-      const setActiveDotWithSteps = (nextIdx: number) => {
-        pendingActiveIdx = nextIdx;
-
-        if (renderedActiveIdx < 0) {
-          setRenderedActiveIdx(nextIdx);
-          return;
-        }
-
-        const distance = Math.abs(pendingActiveIdx - renderedActiveIdx);
-        if (distance <= 1) {
-          clearStepTimer();
-          setRenderedActiveIdx(pendingActiveIdx);
-          return;
-        }
-
-        if (stepTimer !== null) return;
-
-        const stepOnce = () => {
-          if (renderedActiveIdx === pendingActiveIdx) {
-            stepTimer = null;
-            return;
-          }
-
-          const step = pendingActiveIdx > renderedActiveIdx ? 1 : -1;
-          setRenderedActiveIdx(renderedActiveIdx + step);
-
-          if (renderedActiveIdx === pendingActiveIdx) {
-            stepTimer = null;
-            return;
-          }
-
-          stepTimer = window.setTimeout(stepOnce, 55);
-        };
-
-        stepTimer = window.setTimeout(stepOnce, 55);
-      };
-
-      const updateActiveDot = () => {
-        const max = getMaxScrollTop();
-        dotsRail.hidden = max <= 0;
-        const scrollTop = contentInner.scrollTop;
-        let activeIdx = 0;
-        const bottomBlendWindow = Math.max(140, headingTopOffset * 2);
-
-        if (scrollTop <= edgeEpsilon) {
-          activeIdx = 0;
-        } else {
-          const markerTop = scrollTop + headingTopOffset;
-          const markerBottom = scrollTop + contentInner.clientHeight - headingTopOffset;
-          const distanceFromBottom = max - scrollTop;
-          const bottomBlend =
-            max > 0
-              ? Math.max(0, Math.min(1, (bottomBlendWindow - distanceFromBottom) / bottomBlendWindow))
-              : 0;
-          const marker = markerTop + (markerBottom - markerTop) * bottomBlend;
-
-          for (let i = 0; i < headingEls.length; i++) {
-            const headingTop = headingEls[i].offsetTop;
-            if (headingTop <= marker) activeIdx = i;
-            else break;
-          }
-        }
-
-        setActiveDotWithSteps(activeIdx);
-
-        const progress = max > 0 ? contentInner.scrollTop / max : 0;
-        setCssProps(content, "--learnkit-guide-scroll-progress", progress.toFixed(4));
-      };
-
-      contentInner.addEventListener("scroll", updateActiveDot, { passive: true });
-      const onResize = () => updateActiveDot();
-      this._trackWindowListener("resize", onResize, { passive: true });
-      window.requestAnimationFrame(updateActiveDot);
     }
 
     const idx = pages.findIndex((p) => p.key === active.key);
@@ -1909,12 +1629,14 @@ export class LearnKitSettingsView extends ItemView {
       }
 
       if (shareLink) {
+        const shareProductName = "Learn" + "Kit";
+        const shareCta = "Share " + shareProductName;
         const shareBtn = this._createAboutBtn(
           "sprout-about-btn--share",
           "share-2",
           "",
-          "Share Sprout",
-          "Share Sprout",
+          shareCta,
+          shareCta,
         ) as HTMLAnchorElement;
         shareBtn.href = "#";
         shareBtn.target = "";
@@ -1926,10 +1648,10 @@ export class LearnKitSettingsView extends ItemView {
           shareBtn.addEventListener("click", (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
-            const text = `Check out Sprout — a spaced-repetition flashcard plugin for Obsidian! 🌱\nhttps://github.com/ctrlaltwill/Sprout`;
+            const text = `Check out ${shareProductName} - a spaced-repetition flashcard plugin for Obsidian!\nhttps://github.com/ctrlaltwill/Sprout`;
             if (typeof navigator.clipboard?.writeText !== "function") return;
             void navigator.clipboard.writeText(text).then(() => {
-              const origLabel = shareLabel.textContent ?? "Share Sprout";
+              const origLabel = shareLabel.textContent ?? shareCta;
               shareLabel.textContent = tx("ui.settings.about.share.copied", "Copied!");
               setIcon(shareIcon, "check");
               shareBtn.classList.add("is-copied");

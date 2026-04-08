@@ -377,9 +377,8 @@ body.is-mobile .learnkit .learnkit-deck-expand-buttons .learnkit-btn-toolbar {
 .learnkit .learnkit-deck-table-wrap {
   padding: 20px !important;
   transition: background-color .2s;
-  background-color: color-mix(in oklab, var(--background) 80%, transparent 20%) !important;
-  border: var(--color-base-30) 1px solid !important;
-  border-radius: var(--radius-l) !important;
+  border: var(--color-base-35) .5px solid !important;
+  background-color: var(--color-base-05) !important;
 }
 
 body.is-phone .learnkit .learnkit-deck-table-wrap {
@@ -406,19 +405,19 @@ body.is-phone .learnkit .learnkit-deck-table-wrap {
 
 /* Deck rows: keep a hidden baseline border so hover border-color can render. */
 .learnkit .learnkit-deck-table tbody td {
-  border-top: 1px solid var(--background);
-  border-bottom: 1px solid var(--background);
+  border-top: 0.5px solid var(--background);
+  border-bottom: 0.5px solid var(--background);
   border-left: 0;
   border-right: 0;
   transition: border-color 0.18s ease;
 }
 
 .learnkit .learnkit-deck-table tbody td:first-child {
-  border-left: 1px solid var(--background);
+  border-left: 0.5px solid var(--background);
 }
 
 .learnkit .learnkit-deck-table tbody td:last-child {
-  border-right: 1px solid var(--background);
+  border-right: 0.5px solid var(--background);
 }
 
 .learnkit .learnkit-deck-table tbody tr:hover td:first-child {
@@ -429,4 +428,26 @@ body.is-phone .learnkit .learnkit-deck-table-wrap {
 .learnkit .learnkit-deck-table tbody tr:hover td:last-child {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+@media (hover: hover) {
+  .learnkit .learnkit-deck-table tbody tr:hover {
+    background-color: var(--theme-base-10) !important;
+    color: var(--theme-base-95) !important;
+  }
+
+  .learnkit .learnkit-deck-table tbody tr:hover td {
+    background-color: var(--theme-base-10) !important;
+    border-top-color: var(--theme-base-35) !important;
+    border-bottom-color: var(--theme-base-35) !important;
+    color: var(--theme-base-95) !important;
+  }
+
+  .learnkit .learnkit-deck-table tbody tr:hover td:first-child {
+    border-left-color: var(--theme-base-35) !important;
+  }
+
+  .learnkit .learnkit-deck-table tbody tr:hover td:last-child {
+    border-right-color: var(--theme-base-35) !important;
+  }
 }

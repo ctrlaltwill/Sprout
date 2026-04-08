@@ -13,14 +13,9 @@
 
 .learnkit .learnkit-analytics-root .card {
   transition: background-color .2s;
-  border: 1px solid var(--color-base-30);
+  border: 0.5px solid var(--color-base-30);
+  background-color: var(--color-base-05);
 
-}
-
-@supports (color:color-mix(in lab, red, red)) {
-  .learnkit .learnkit-analytics-root .card {
-    background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
-  }
 }
 
 .learnkit .learnkit-analytics-root .card:hover {
@@ -139,25 +134,25 @@ body.is-phone .learnkit .learnkit-analytics-content-shell > * + * {
 
 .learnkit .learnkit-analytics-badge.learnkit-trend-badge {
   background-color: var(--theme-accent);
-  border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
   color: #fff;
 }
 
 .theme-dark .learnkit .learnkit-analytics-badge.learnkit-trend-badge {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .14);
-  border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .24);
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .24);
   color: #fff;
 }
 
 .learnkit .learnkit-analytics-badge.learnkit-live-badge-orange {
   background-color: var(--color-orange, #f59e0b);
-  border: 1px solid color-mix(in srgb, var(--color-orange, #f59e0b) 78%, black);
+  border: 0.5px solid color-mix(in srgb, var(--color-orange, #f59e0b) 78%, black);
   color: #fff;
 }
 
 .theme-dark .learnkit .learnkit-analytics-badge.learnkit-live-badge-orange {
   background-color: color-mix(in srgb, var(--color-orange, #f59e0b) 28%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-orange, #f59e0b) 52%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--color-orange, #f59e0b) 52%, transparent);
   color: #fff;
 }
 
@@ -324,6 +319,18 @@ body.is-phone .learnkit .learnkit-analytics-content-shell > * + * {
   max-width: 36px;
 }
 
+.learnkit .learnkit-analytics-root button[aria-label="Rows per page"] {
+  width: auto !important;
+  min-width: fit-content !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 32px !important;
+  max-height: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  box-sizing: border-box !important;
+}
+
 /* Active page button is non-interactive and should not show hover treatment. */
 .learnkit .learnkit-analytics-root nav[role="navigation"] button[aria-label^="Page "][aria-current="page"] {
   cursor: default;
@@ -375,8 +382,8 @@ body.is-phone .learnkit .learnkit-analytics-content-shell > * + * {
   vertical-align: middle;
   padding-top: 0;
   padding-bottom: 0;
-  border-top: 1px solid var(--background);
-  border-bottom: 1px solid var(--background);
+  border-top: 0.5px solid var(--background);
+  border-bottom: 0.5px solid var(--background);
   border-left: 0;
   border-right: 0;
   transition: border-color 0.18s ease;
@@ -384,14 +391,14 @@ body.is-phone .learnkit .learnkit-analytics-content-shell > * + * {
 
 .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody td:first-child,
 .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody .learnkit-changelog-cell:first-child {
-  border-left: 1px solid var(--background);
+  border-left: 0.5px solid var(--background);
   border-top-left-radius: var(--radius-md);
   border-bottom-left-radius: var(--radius-md);
 }
 
 .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody td:last-child,
 .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody .learnkit-changelog-cell:last-child {
-  border-right: 1px solid var(--background);
+  border-right: 0.5px solid var(--background);
   border-top-right-radius: var(--radius-md);
   border-bottom-right-radius: var(--radius-md);
 }
@@ -435,17 +442,17 @@ body.is-phone .learnkit .learnkit-analytics-content-shell > * + * {
 
   .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td {
     background-color: var(--theme-base-10);
-    border-top-color: var(--theme-base-20) !important;
-    border-bottom-color: var(--theme-base-20) !important;
+    border-top-color: var(--theme-base-35) !important;
+    border-bottom-color: var(--theme-base-35) !important;
     color: var(--theme-base-95);
   }
 
   .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td:first-child {
-    border-left-color: var(--theme-base-20) !important;
+    border-left-color: var(--theme-base-35) !important;
   }
 
   .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td:last-child {
-    border-right-color: var(--theme-base-20) !important;
+    border-right-color: var(--theme-base-35) !important;
   }
 
   .learnkit .learnkit-analytics-stats-card .learnkit-changelog-table tbody tr:hover td .text-muted-foreground {
@@ -608,8 +615,8 @@ body.is-mobile .learnkit .learnkit-analytics-root > :is(.learnkit-ana-grid, .gri
 
 /* Analytics popovers: glass surface like header/note bars. */
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover) {
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
-  border: 1px solid var(--color-base-35) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
@@ -623,7 +630,7 @@ body.is-mobile .learnkit .learnkit-analytics-root > :is(.learnkit-ana-grid, .gri
   height: 36px;
   padding: 0 12px;
   border-radius: var(--radius-s, 4px);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  border: 0.5px var(--color-base-40) solid !important;
   background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
   box-shadow: none;
@@ -632,25 +639,40 @@ body.is-mobile .learnkit .learnkit-analytics-root > :is(.learnkit-ana-grid, .gri
 
 .learnkit .learnkit-ana-card .learnkit-btn-filter:is(:hover, [aria-expanded="true"]) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
-  border-color: color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
 .learnkit .learnkit-ana-card .learnkit-btn-filter:focus-visible {
   background-color: color-mix(in srgb, var(--color-base-45) 17%, transparent 83%) !important;
-  border-color: color-mix(in srgb, var(--color-base-70) 28%, transparent 72%) !important;
+  border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
 
 .learnkit .learnkit-ana-card .learnkit-btn-filter:active {
   background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
-  border-color: color-mix(in srgb, var(--color-base-75) 30%, transparent 70%) !important;
+  border-color: var(--color-base-40) !important;
+  color: var(--color-base-100) !important;
+}
+
+/* Heatmap filter trigger: match borderless note-review action styling. */
+.learnkit #learnkit-heatmap-filter-trigger.learnkit-btn-filter {
+  border: 0.5px var(--color-base-40) solid !important;
+  box-shadow: none !important;
+  background-color: var(--color-base-20) !important;
+  color: var(--text-normal) !important;
+  transition: border-color .12s, background-color .12s, color .12s;
+}
+
+.learnkit #learnkit-heatmap-filter-trigger.learnkit-btn-filter:is(:hover, :focus-visible, :focus-within, :active, [aria-expanded="true"]) {
+  border-color: var(--color-base-40) !important;
+  background-color: var(--color-base-25) !important;
   color: var(--color-base-100) !important;
 }
 
 /* Analytics filter popovers: shared menu hover/active treatment */
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group {
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
 }
 
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) :is([role="menuitem"], [role="menuitemradio"]).group:is(:hover, :focus, :focus-visible, :active),
@@ -659,16 +681,16 @@ body.is-mobile .learnkit .learnkit-analytics-root > :is(.learnkit-ana-grid, .gri
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="menuitem"].group[aria-selected="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) [role="button"],
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer {
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: var(--radius-md);
   background-color: transparent;
   padding-left: 8px;
-  min-height: 37px;
+  min-height: 32px;
   padding-right: 8px;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
@@ -677,7 +699,7 @@ body.is-mobile .learnkit .learnkit-analytics-root > :is(.learnkit-ana-grid, .gri
 .learnkit :is([id^="learnkit-"][id$="-filter-popover"], .learnkit-ana-popover[role="listbox"][aria-label$="filters"]) .text-sm.text-muted-foreground.cursor-pointer:is(:hover, :focus, :focus-visible, :active) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 .learnkit .learnkit-ana-min-320 {

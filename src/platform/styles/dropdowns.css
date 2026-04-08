@@ -79,6 +79,7 @@
   margin: 1px 0;
   height: 32px;
   max-height: 32px;
+  border: 0.5px solid transparent;
 }
 
 /* Hover / focus / active */
@@ -90,12 +91,14 @@
   :is([role="menuitem"], [role="menuitemradio"]).group:focus-visible {
   background-color: var(--color-background);
   color: var(--text-color);
+  border-color: var(--color-base-35);
 }
 
 .learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
   :is([role="menuitem"], [role="menuitemradio"]).group:active {
   background-color: var(--color-background);
   color: var(--text-color);
+  border-color: var(--color-base-35);
 }
 
 /* Selected / current states */
@@ -107,6 +110,7 @@
   [role="menuitem"].group[aria-selected="true"] {
   background-color: var(--color-background);
   color: var(--text-color);
+  border-color: var(--color-base-35);
 }
 
 /* Radio dot matches text color */
@@ -181,14 +185,14 @@
 
 /* Browser radio dropdown popovers: match analytics filter popover surface + states. */
 .learnkit .learnkit-dd-popover .learnkit-dd-panel {
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
-  border: 1px solid var(--color-base-35) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
 .learnkit .learnkit-dd-popover [role="menuitemradio"].group {
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background-color: transparent;
 }
 
@@ -196,7 +200,7 @@
 .learnkit .learnkit-dd-popover [role="menuitemradio"].group[aria-checked="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 /* Sprout-scoped zoom for portalled popovers / dropdowns */
@@ -224,7 +228,7 @@
   padding: 8px;
   margin: 1px 0;
   border-radius: var(--radius-md, 8px);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   cursor: pointer;
   font-size: var(--font-ui-small);
   color: var(--text-normal);
@@ -263,6 +267,8 @@
 
 /* "Reset filters" (clickable text row) */
 .learnkit :where(.bc.p-1, .p-1) .text-sm.text-muted-foreground.cursor-pointer {
+  display: flex;
+  align-items: center;
   color: var(--text-color);
   border-radius: var(--radius-md);
   padding-top: 6px;
@@ -287,7 +293,15 @@
 /* Header nav popover panel: transparent glass surface. */
 .learnkit .learnkit-header-menu-panel,
 .learnkit-header-menu-panel {
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
+  border: var(--color-base-35) 0.5px solid;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+/* Keep reviewer/note-review More menus on the same panel surface as header dropdowns. */
+.learnkit :is(.learnkit-session-more-popover, .learnkit-note-review-more-popover).learnkit-header-menu-panel {
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
   border: 0.5px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -296,21 +310,21 @@
 /* Keep header menu items visually soft: transparent base border + transparent hover fill. */
 .learnkit .learnkit-header-menu-panel .group,
 .learnkit-header-menu-panel .group {
-  border: 1px solid transparent !important;
+  border: 0.5px solid transparent !important;
   background-color: transparent !important;
 }
 
 .learnkit .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
 .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
   .learnkit .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active),
   .learnkit-header-menu-panel .group:is(:hover, :focus, :focus-visible, :active) {
     background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
-    border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+    border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
   }
 }
 

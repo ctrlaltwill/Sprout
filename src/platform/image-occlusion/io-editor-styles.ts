@@ -15,7 +15,7 @@ export const IO_EDITOR_STYLES = `
     padding: 6px;
     border-radius: 6px;
     background: var(--background);
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
     box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
     width: fit-content;
     max-width: 100%;
@@ -27,7 +27,7 @@ export const IO_EDITOR_STYLES = `
     gap: 4px;
     padding: 4px;
     border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
     background: var(--background-secondary);
   }
 
@@ -44,7 +44,7 @@ export const IO_EDITOR_STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid transparent;
+    border: 0.5px solid transparent;
     background: transparent;
     color: var(--foreground);
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
@@ -102,7 +102,7 @@ export const IO_EDITOR_STYLES = `
     gap: 6px;
     padding: 3px 6px;
     border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
     background: var(--background);
   }
 
@@ -116,7 +116,7 @@ export const IO_EDITOR_STYLES = `
     font-size: 12px;
     padding: 2px 6px;
     border-radius: 7px;
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
     background: var(--background);
     color: var(--foreground);
   }
@@ -135,7 +135,7 @@ export const IO_EDITOR_STYLES = `
     height: 26px;
     padding: 2px;
     border-radius: 7px;
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
     background: var(--background);
     cursor: pointer;
   }
@@ -157,7 +157,7 @@ export const IO_EDITOR_STYLES = `
     width: 70px;
     height: 12px;
     border-radius: 999px;
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 60%, transparent);
   }
 
@@ -178,7 +178,7 @@ export const IO_EDITOR_STYLES = `
     width: 70px;
     height: 12px;
     border-radius: 999px;
-    border: 1px solid var(--background-modifier-border);
+    border: 0.5px solid var(--background-modifier-border);
   }
 
   .learnkit-io-zoom-slider::-moz-range-thumb {

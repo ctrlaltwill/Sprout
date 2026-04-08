@@ -365,9 +365,9 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
   const lines = sourceContent.split('\n');
   let anchorLineIndex = -1;
   
-  // Find the line with ^sprout-{anchorId}
+  // Find the line with ^learnkit-{anchorId} or ^sprout-{anchorId}
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(`^sprout-${anchorId}`)) {
+    if (lines[i].includes(`^learnkit-${anchorId}`) || lines[i].includes(`^sprout-${anchorId}`)) {
       anchorLineIndex = i;
       break;
     }

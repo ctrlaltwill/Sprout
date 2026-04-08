@@ -4,12 +4,12 @@
    ========================================================================== */
 
 .learnkit .card {
-  background-color: var(--color-base-00);
+  background-color: var(--color-base-05);
   box-shadow: none;
   margin: 0;
   padding: 1.2rem;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-base-30);
+  border: 0.5px solid var(--color-base-35);
 }
 
 /* Small card variant: removes p-4 and applies compact padding */
@@ -107,63 +107,6 @@ body.is-phone .small-card {
   gap: 8px;
 }
 
-.learnkit .learnkit-mcq-correct-checkbox {
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  border: 2px solid var(--interactive-accent);
-  background-color: transparent;
-  position: relative;
-  transition: background-color 0.15s, border-color 0.15s;
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:checked {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:checked::after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
-  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-position: center;
-  background-color: var(--text-on-accent, #fff);
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:hover {
-  border-color: var(--interactive-accent-hover, var(--interactive-accent));
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:focus-visible {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: 2px;
-}
-
-/* Dark theme: ensure unchecked border is visible */
-.theme-dark .learnkit .learnkit-mcq-correct-checkbox {
-  border-color: var(--interactive-accent);
-}
-
-.theme-dark .learnkit .learnkit-mcq-correct-checkbox:checked {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
 .learnkit .learnkit-edit-mcq-option-label {
   min-width: 70px;
 }
@@ -243,7 +186,7 @@ body.is-phone .small-card {
   font-family: var(--font-monospace);
   font-size: 0.85rem;
   line-height: 1.6;
-  border: var(--color-base-40) 1px solid;
+  border: var(--color-base-40) 0.5px solid;
   tab-size: 2;
   -moz-tab-size: 2;
 }
@@ -380,7 +323,7 @@ body.is-phone .small-card {
   position: relative;
   width: 100%;
   min-height: var(--learnkit-flag-preview-height, auto);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: var(--radius-md);
   background: var(--background-modifier-form-field);
   overflow: hidden;
@@ -404,7 +347,7 @@ body.is-phone .small-card {
   box-sizing: border-box;
   background: transparent;
   color: var(--text-normal);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
   border-radius: inherit;
   padding: 6px 8px;
 }
@@ -613,7 +556,7 @@ body.is-phone .small-card {
   padding: 1.2rem;
   text-align: left;
   overflow: visible;
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--background-primary) 85%, var(--background-secondary));
   color: var(--text-normal);
@@ -722,7 +665,7 @@ body.is-phone .small-card {
   min-height: 22px;
   padding: 4px 8px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   font-size: var(--learnkit-font-2xs);
   font-weight: 500;
   letter-spacing: -0.01rem;
@@ -770,7 +713,7 @@ body.is-phone .small-card {
   justify-content: center;
   gap: 0;
   background: transparent;
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   box-shadow: none;
   color: var(--text-faint);
   opacity: 0;
@@ -853,7 +796,7 @@ body.is-phone .small-card {
 }
 
 .learnkit .learnkit-coach-switcher-plan-card.is-create .learnkit-coach-switcher-slot-label {
-  color: var(--interactive-accent);
+  color: var(--text-faint);
 }
 
 .learnkit .learnkit-coach-switcher-create-title {
@@ -916,7 +859,7 @@ body.is-phone .small-card {
   align-items: center;
   justify-content: center;
   color: var(--interactive-accent);
-  border: 1px solid color-mix(in srgb, var(--interactive-accent) 36%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--interactive-accent) 36%, transparent);
   background: color-mix(in srgb, var(--interactive-accent) 11%, transparent);
 }
 
@@ -1264,7 +1207,7 @@ margin: 0.1rem 0 0;
   gap: 0;
   max-height: 400px;
   overflow: auto;
-  border: 1px solid var(--border);
+  border: 0.5px solid var(--border);
   border-radius: var(--radius-md);
   padding: 6px;
   background: var(--popover);
@@ -1278,7 +1221,7 @@ margin: 0.1rem 0 0;
 
 .learnkit .learnkit-coach-scope-list.learnkit-header-menu-panel .learnkit-coach-scope-row {
   margin: 0;
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   background: transparent !important;
 }
 
@@ -1295,12 +1238,12 @@ margin: 0.1rem 0 0;
 }
 
 .learnkit .learnkit-coach-scope-list.learnkit-header-menu-panel .learnkit-scope-preset-apply {
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: inherit;
 }
 
 .learnkit .learnkit-coach-scope-list.learnkit-header-menu-panel .learnkit-scope-preset-remove {
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: var(--radius-s, var(--radius-md));
 }
 
@@ -1321,8 +1264,8 @@ margin: 0.1rem 0 0;
 
 .learnkit .learnkit-coach-scope-separator {
   height: 1px;
-  margin: 4px 8px;
-  background: var(--learnkit-border-color);
+  margin: 4px 0;
+  background: var(--border);
 }
 
 .learnkit .learnkit-coach-scope-item {
@@ -1331,7 +1274,7 @@ margin: 0.1rem 0 0;
   gap: 8px;
   padding: 6px 8px;
   height: 32px;
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: var(--radius-s);
   background: transparent;
   color: var(--text-normal);
@@ -1489,7 +1432,7 @@ margin: 0.1rem 0 0;
   margin: 2px 0;
     height: 36px;
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
@@ -1502,7 +1445,7 @@ margin: 0.1rem 0 0;
 
 .learnkit .learnkit-coach-scope-row.is-selected,
 .learnkit .learnkit-coach-scope-row[aria-selected="true"] {
-  background: var(--color-base-30) !important;
+  background: var(--color-base-35) !important;
   border-color: var(--color-base-40) !important;
 }
 
@@ -1654,7 +1597,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   gap: 6px;
   padding: 4px 8px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--theme-base-35);
+  border: 0.5px solid var(--theme-base-35);
   background: var(--theme-base-15);
   color: var(--theme-base-95);
   font-size: var(--learnkit-font-2xs);
@@ -1720,7 +1663,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
 }
 
 .learnkit .learnkit-coach-intensity-btn {
-  border: 1px solid var(--color-base-25);
+  border: 0.5px solid var(--color-base-25);
   border-radius: var(--radius-md);
   background: var(--color-base-10);
   color: var(--text-normal);
@@ -1747,9 +1690,9 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
 
 .learnkit .learnkit-coach-intensity-btn.is-active:hover,
 .learnkit .learnkit-coach-intensity-btn.is-active:focus-visible {
-  border-color: var(--theme-black-85);
-  background: var(--theme-black-95);
-  color: #fff;
+  border: 0.5px solid var(--theme-base-45) !important;
+  color: var(--theme-base-95) !important;
+  background-color: var(--theme-base-25) !important;
 }
 
 .learnkit .learnkit-coach-intensity-header {
@@ -1810,7 +1753,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   min-height: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-base-25);
+  border: 0.5px solid var(--color-base-25);
   background: var(--color-base-10);
 }
 
@@ -1825,7 +1768,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
 }
 
 .learnkit .learnkit-coach-summary {
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   border-radius: var(--radius-md);
   padding: 10px;
   display: flex;
@@ -1852,7 +1795,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
 }
 
 .learnkit .learnkit-coach-summary-meta {
-  border-top: 1px solid var(--color-base-30);
+  border-top: 0.5px solid var(--color-base-30);
   padding-top: 8px;
   display: flex;
   flex-direction: column;
@@ -1905,7 +1848,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   background: color-mix(in srgb, var(--background-secondary) 72%, transparent);
   color: var(--text-muted);
   padding: 3px 10px;
@@ -1996,7 +1939,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   align-items: center;
   padding: 6px 10px;
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   transition: background-color 160ms ease, border-color 160ms ease;
 }
 
@@ -2238,7 +2181,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--interactive-accent) 36%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--interactive-accent) 36%, transparent);
   background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
   color: var(--interactive-accent);
   display: inline-flex;
@@ -2282,7 +2225,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   height: 84px;
   border-radius: 999px;
   background: var(--background);
-  border: 1px solid var(--color-base-30);
+  border: 0.5px solid var(--color-base-30);
   display: inline-flex;
   align-items: baseline;
   justify-content: center;
@@ -2348,7 +2291,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   height: 120px;
   width: 100%;
   border-radius: var(--radius-s);
-  border: 1px solid var(--color-base-30);
+  border: 0.5px solid var(--color-base-30);
   background: color-mix(in srgb, var(--background-secondary) 72%, transparent);
   position: relative;
   display: flex;
@@ -2416,7 +2359,7 @@ body.is-mobile .learnkit .learnkit-coach-scope-actions-grid {
   gap: 6px;
   min-height: 22px;
   border-radius: var(--radius-md, 8px);
-  border: 1px solid color-mix(in srgb, var(--theme-accent, var(--interactive-accent)) 34%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--theme-accent, var(--interactive-accent)) 34%, transparent);
   padding: 4px 8px;
   font-size: var(--learnkit-font-3xs);
   line-height: 1;

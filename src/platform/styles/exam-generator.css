@@ -9,7 +9,8 @@
   width: 100%;
   margin: 0 auto;
   gap: 12px;
-  overflow: visible;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .learnkit .learnkit-exam-generator-title-strip {
@@ -554,7 +555,7 @@
 .learnkit .learnkit-exam-generator-setup-status {
   display: inline-flex;
   align-self: flex-start;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 12px;
@@ -564,7 +565,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 12px;
   padding: 12px;
   background: color-mix(in oklab, var(--background-primary) 80%, transparent 20%);
@@ -590,7 +591,7 @@
 .learnkit .learnkit-exam-generator-note-list {
   max-height: 260px;
   overflow: auto;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 10px;
 }
 
@@ -623,7 +624,7 @@
 .learnkit .learnkit-exam-generator-note-search {
   width: 100%;
   min-width: 160px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
   color: var(--text-normal);
@@ -676,7 +677,7 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
   padding: 10px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 0.5px solid var(--background-modifier-border);
 }
 
 .learnkit .learnkit-exam-generator-note-row:last-child {
@@ -715,7 +716,7 @@
 .learnkit .learnkit-exam-generator-select-trigger {
   width: 100%;
   justify-content: space-between;
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 14%, transparent 86%) !important;
   background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
   box-shadow: none;
@@ -747,14 +748,14 @@
 .learnkit .learnkit-exam-generator-select-panel {
   width: 100%;
   box-sizing: border-box;
-  background: color-mix(in srgb, var(--color-base-00) 85%, transparent 15%) !important;
-  border: 1px solid var(--color-base-35) !important;
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
 .learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group {
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
@@ -762,7 +763,7 @@
 .learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group[aria-checked="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
-  border: 1px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
 }
 
 .learnkit .learnkit-exam-generator-label {
@@ -772,7 +773,7 @@
 
 .learnkit .learnkit-exam-generator-select,
 .learnkit .learnkit-exam-generator-textarea {
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
   color: var(--text-normal);
@@ -892,7 +893,7 @@
 .learnkit .learnkit-exam-generator-actions-bottom {
   margin-top: 6px;
   padding-top: 10px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 0.5px solid var(--background-modifier-border);
 }
 
 .learnkit .learnkit-exam-generator-settings-footer {
@@ -926,7 +927,7 @@
 
 .learnkit .learnkit-exam-generator-note-option-selected {
   background: color-mix(in oklab, var(--interactive-accent) 14%, var(--background-primary) 86%);
-  border: 1px solid color-mix(in oklab, var(--interactive-accent) 55%, var(--background-modifier-border) 45%);
+  border: 0.5px solid color-mix(in oklab, var(--interactive-accent) 55%, var(--background-modifier-border) 45%);
 }
 
 .learnkit .learnkit-exam-generator-topline {
@@ -980,7 +981,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
   padding: 10px;
 }
@@ -1057,7 +1058,7 @@
   align-items: start;
   gap: 8px;
   padding: 8px;
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   border-radius: 8px;
 }
 
@@ -1065,6 +1066,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: min(70vh, calc(100dvh - 260px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .learnkit .learnkit-exam-generator-results-header {
@@ -1082,7 +1086,7 @@
 }
 
 .learnkit .learnkit-exam-generator-result-row {
-  border-bottom: 1px solid var(--color-base-35);
+  border-bottom: 0.5px solid var(--color-base-30);
   border-radius: 0;
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
@@ -1120,7 +1124,7 @@
   min-width: 48px;
   padding: 5px 8px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--background-modifier-border);
+  border: 0.5px solid var(--background-modifier-border);
   font-size: var(--learnkit-font-3xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1193,22 +1197,6 @@
   font-size: 0.9rem;
   line-height: 1.45;
   color: var(--text-muted);
-}
-
-/* Coach wizard: keep all action/filter/list buttons borderless in every state. */
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item),
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):hover,
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):focus,
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):focus-visible,
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):focus-within,
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):active,
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[aria-expanded="true"],
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[aria-checked="true"],
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item):disabled,
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[disabled],
-.learnkit :is(.learnkit-coach-wizard-page, .learnkit-exam-generator-root) :is(.learnkit-btn-toolbar, .learnkit-coach-scope-item)[aria-disabled="true"] {
-  border: 1px solid transparent !important;
-  border-color: transparent !important;
 }
 
 @media (max-width: 900px) {

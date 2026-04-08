@@ -38,13 +38,13 @@
 /* Home: remove Obsidian card margins inside home layout */
 .learnkit .lk-home-root .card {
   margin: 0;
-  background-color: color-mix(in oklab, var(--background) 80%, transparent 20%);
-  transition: background-color 0.2s ease;
-  border: var(--color-base-30) 0.5px solid;
+  border: var(--color-base-35) 0.5px solid;
+  transition: background-color .2s;
+  background-color: var(--color-base-05);
 }
 
 .learnkit .lk-home-root .card:hover {
-  background-color: var(--background);
+  background-color: var(--color-base-10);
 }
 
 .workspace-leaf-content[data-learnkit-wide="1"] .lk-home-root {
@@ -70,6 +70,11 @@
 .lk-home-name-input {
   appearance: none;
   background: transparent;
+  color: inherit;
+  caret-color: currentColor;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -77,6 +82,11 @@
   padding: 0;
   min-width: 1ch;
   width: min(100%, var(--lk-home-name-width, auto));
+}
+
+.lk-home-name-input::placeholder {
+  color: inherit;
+  opacity: 1;
 }
 
 .lk-home-name-input:focus,
@@ -106,7 +116,7 @@
 .learnkit .lk-home-quick-study-btn,
 .learnkit .learnkit-btn-accent {
   margin-left: auto;
-  border: 1px solid var(--theme-black-95) !important;
+  border: 0.5px solid var(--theme-black-95) !important;
   border-radius: 8px;
   background: var(--theme-base-95) !important;
   color: #fff !important;
@@ -120,7 +130,7 @@
 
 .learnkit .lk-home-quick-study-btn:hover,
 .learnkit .learnkit-btn-accent:hover {
-    border: 1px solid var(--theme-black-85) !important;
+    border: 0.5px solid var(--theme-black-85) !important;
   border-radius: 8px;
   background: var(--theme-black-95) !important; 
   color: #fff !important;
@@ -132,7 +142,7 @@
 .learnkit .lk-home-quick-study-btn:active,
 .learnkit .learnkit-btn-accent:focus-visible,
 .learnkit .learnkit-btn-accent:active {
-      border: 1px solid var(--theme-black-75) !important;
+      border: 0.5px solid var(--theme-black-75) !important;
         background: var(--theme-black-85) !important; 
         color: #fff !important;
   transform: translateY(0);
@@ -165,7 +175,8 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 /* ---- Dropdown interactions ---- */
 
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) :is([role=menuitem],[role=menuitemradio]).group {
-  border: 1px solid var(--color-base-00);
+  border: 0.5px solid var(--color-base-00);
+  margin: 1px 0 !important;
 }
 
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) :is([role=menuitem],[role=menuitemradio]).group:hover,
@@ -175,8 +186,12 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) [role=menuitemradio].group[aria-checked=true],
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) [role=menuitem].group[aria-current=true],
 .learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1) [role=menuitem].group[aria-selected=true] {
-  background-color: var(--color-base-20);
-  border-color: transparent !important;
+  border-color: var(--color-base-35);
+}
+
+.learnkit :where(.dropdown-menu,.bc.p-1,.p-1,.rounded-md.border.border-border.bg-popover.text-popover-foreground.p-1)
+  :is([role=menuitem],[role=menuitemradio]).group :is(kbd, .kbd) {
+  background-color: var(--color-base-25);
 }
 
 .learnkit .learnkit-dropdown-shadow {
@@ -289,15 +304,33 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 
 .learnkit .lk-home-root .learnkit-deck-row,
 .learnkit .lk-home-root .learnkit-deck-row.bg-background {
-  background-color: transparent;
-  border: var(--color-base-30) 0.5px solid;
+  border: var(--color-base-35) 0.5px solid;
+  background-color: var(--color-base-10);
 }
 
 .learnkit .lk-home-root .learnkit-deck-row:hover,
 .learnkit .lk-home-root .learnkit-deck-row.bg-background:hover {
   background-color: var(--theme-base-10);
-  border-color: var(--theme-base-05);
+  border-color: var(--theme-base-35);
   color: var(--theme-base-95);
+}
+
+.learnkit .lk-home-root .learnkit-deck-row:hover td,
+.learnkit .lk-home-root .learnkit-deck-row.bg-background:hover td {
+  background-color: var(--theme-base-10);
+  border-top: 0.5px solid var(--theme-base-35);
+  border-bottom: 0.5px solid var(--theme-base-35);
+  color: var(--theme-base-95);
+}
+
+.learnkit .lk-home-root .learnkit-deck-row:hover td:first-child,
+.learnkit .lk-home-root .learnkit-deck-row.bg-background:hover td:first-child {
+  border-left: 0.5px solid var(--theme-base-35);
+}
+
+.learnkit .lk-home-root .learnkit-deck-row:hover td:last-child,
+.learnkit .lk-home-root .learnkit-deck-row.bg-background:hover td:last-child {
+  border-right: 0.5px solid var(--theme-base-35);
 }
 
 .learnkit-deck-row:hover .learnkit-text-truncate-rtl {
@@ -312,6 +345,12 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 .learnkit-deck-row:hover .learnkit-deck-remove-btn,
 .learnkit-deck-row:hover .learnkit-drag-handle svg,
 .learnkit-deck-row:hover .learnkit-deck-remove-btn svg {
+  color: var(--theme-base-95);
+  stroke: currentColor;
+}
+
+.learnkit .lk-home-root .learnkit-deck-row:hover .svg-icon,
+.learnkit .lk-home-root .learnkit-deck-row.bg-background:hover .svg-icon {
   color: var(--theme-base-95);
   stroke: currentColor;
 }
@@ -367,7 +406,7 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
   min-height: 22px;
   max-height: 22px;
   padding: 5px 8px;
-  border: 1px solid transparent;
+  border: 0.5px solid var(--theme-base-35);
   border-radius: var(--radius-md);
   background-color: var(--theme-base-15);
   color: var(--theme-base-95);
@@ -409,14 +448,14 @@ body.is-phone .learnkit .lk-home-title-strip .lk-home-quick-study-btn {
 .learnkit-live-badge-orange,
 .learnkit-live-badge-dark {
   background-color: var(--theme-accent);
-  border: 1px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) * 0.85));
   color: #fff;
 }
 
 .theme-dark .learnkit-live-badge-dark,
 .theme-dark .learnkit-live-badge-orange {
   background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.14);
-  border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.24);
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.24);
 }
 
 .learnkit-live-indicator {
@@ -560,7 +599,7 @@ body.is-phone .learnkit .learnkit-greeting-suffix {
 body.is-phone .learnkit .lk-home-deck-section {
   background-color: var(--background);
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-base-35) !important;
+  border: 0.5px solid var(--color-base-35) !important;
   border-color: var(--color-base-35) !important;
   box-shadow: none;
   padding: var(--lk-shell-padding-mobile);

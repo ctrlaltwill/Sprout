@@ -64,7 +64,7 @@
   --learnkit-header-surface-bg: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%);
     border-radius: var(--radius-md);
   background: var(--learnkit-header-surface-bg);
-  border: 1px solid var(--color-base-35);
+  border: 0.5px solid var(--color-base-30);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
     height: auto;
@@ -281,7 +281,7 @@ a.learnkit-header-center-brand-link:hover {
   background-color: transparent;
   color: var(--text-normal);
   font-size: var(--learnkit-font-xs);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
   border-radius: var(--radius-md);
   box-shadow: none;
   transition: all 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
@@ -291,13 +291,12 @@ a.learnkit-header-center-brand-link:hover {
 .learnkit .learnkit-header .lk-more-wrap .btn-icon-outline.learnkit-btn-toolbar {
   background-color: transparent;
   color: var(--text-normal);
-  border: 1px solid transparent;
+  border: 0.5px solid transparent;
 }
 
-/* Keep header actions icon-first; text labels slide in on hover/focus. */
+/* Keep header actions icon-only (no hover expansion). */
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar {
   --learnkit-header-btn-collapsed-width: 36px;
-  --learnkit-header-btn-expanded-width: 102px;
   gap: 0;
   width: var(--learnkit-header-btn-collapsed-width);
   min-width: var(--learnkit-header-btn-collapsed-width);
@@ -305,64 +304,34 @@ a.learnkit-header-center-brand-link:hover {
   padding-left: 8px;
   padding-right: 8px;
   overflow: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease, width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), min-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), max-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"],
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"]:hover,
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"]:focus-visible,
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"]:focus-within,
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"][aria-expanded="true"],
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"]:active {
-  border-color: transparent !important;
-}
-
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[data-learnkit-expand-collapse="true"] {
-  --learnkit-header-btn-expanded-width: 102px;
-}
-
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[data-learnkit-sync="true"] {
-  --learnkit-header-btn-expanded-width: 80px;
-}
-
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-haspopup="menu"] {
-  --learnkit-header-btn-expanded-width: 86px;
+  border-color: var(--color-base-35) !important;
 }
 
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar [data-learnkit-label="true"] {
-  display: inline-block;
-  overflow: hidden;
-  white-space: nowrap;
-  max-width: 0;
-  opacity: 0;
-  margin-left: 0;
-  transform: translateX(-4px);
-  transition: max-width 660ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 540ms ease, margin-left 660ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 660ms cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:hover [data-learnkit-label="true"],
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-visible [data-learnkit-label="true"],
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-within [data-learnkit-label="true"],
-.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-expanded="true"] [data-learnkit-label="true"] {
-  max-width: 100px;
-  opacity: 1;
-  margin-left: 8px;
-  transform: translateX(0);
+  display: none !important;
 }
 
 .learnkit-attachment-picker {
   border-radius: var(--radius-lg);
   background: var(--background);
-  border: 1px solid var(--color-base-40);
+  border: 0.5px solid var(--color-base-40);
 }
 
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:hover,
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-visible,
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:focus-within,
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar[aria-expanded="true"] {
-  width: var(--learnkit-header-btn-expanded-width);
-  min-width: var(--learnkit-header-btn-expanded-width);
-  max-width: var(--learnkit-header-btn-expanded-width);
+  width: var(--learnkit-header-btn-collapsed-width);
+  min-width: var(--learnkit-header-btn-collapsed-width);
+  max-width: var(--learnkit-header-btn-collapsed-width);
 }
 
 .learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar.learnkit-is-hidden [data-learnkit-label="true"] {
@@ -371,37 +340,41 @@ a.learnkit-header-center-brand-link:hover {
 
 @supports (color:color-mix(in lab, red, red)) {
   .learnkit .learnkit-header .learnkit-btn-toolbar:hover {
-    background-color: color-mix(in srgb, var(--color-base-40) 20%, transparent 75%) !important;
+    background-color: color-mix(in srgb, var(--color-base-35) 20%, transparent 75%) !important;
     color: var(--color-base-100) !important;
-    border: 1px solid color-mix(in srgb, var(--color-base-70) 0%, transparent 75%) !important;
+    border-color: var(--color-base-35) !important;
   }
 }
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-expanded="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
   color: var(--color-base-100) !important;
-  border-color: transparent !important;
+  border-color: var(--color-base-35) !important;
 }
 .learnkit .learnkit-header .learnkit-btn-toolbar:focus-visible {
   background-color: color-mix(in srgb, var(--color-base-45) 17%, transparent 83%) !important;
   color: var(--color-base-100) !important;
-  border-color: transparent !important;
+  border-color: var(--color-base-35) !important;
 }
 .learnkit .learnkit-header .learnkit-btn-toolbar:active {
   background-color: color-mix(in srgb, var(--color-base-50) 19%, transparent 81%) !important;
   color: var(--color-base-100) !important;
-  border-color: transparent !important;
+  border-color: var(--color-base-35) !important;
 }
 
-/* Keep topnav trigger borderless across all interaction states. */
-.learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"],
+/* Keep topnav trigger on transparent base border; show border only on interaction. */
+.learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"] {
+  border: 0.5px solid transparent;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"]:hover,
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"]:focus,
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"]:focus-visible,
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"]:focus-within,
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"]:active,
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"][aria-expanded="true"] {
-  border: 1px solid transparent !important;
-  border-color: transparent !important;
+  border-color: var(--color-base-35) !important;
   outline: none !important;
   box-shadow: none !important;
 }
@@ -414,7 +387,7 @@ body.is-phone .learnkit .learnkit-header-wrap {
 
 body.is-phone .learnkit .view-header.learnkit-header {
   padding: 12px;
-  border: 1px solid var(--color-base-30);
+  border: 0.5px solid var(--color-base-30);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--background) 74%, transparent);
   -webkit-backdrop-filter: blur(10px);

@@ -90,13 +90,9 @@ function getPropertyDisplayKey(option: SearchPopoverOption): string {
   return label || "Property";
 }
 
-function pluralizeLabel(input: string): string {
+function formatPropertyKeyLabel(input: string): string {
   const label = String(input || "").trim();
-  if (!label) return "Properties";
-  if (/ies$/i.test(label) || /s$/i.test(label)) return label;
-  if (/(x|z|ch|sh)$/i.test(label)) return `${label}es`;
-  if (/y$/i.test(label)) return `${label.slice(0, -1)}ies`;
-  return `${label}s`;
+  return label || "Property";
 }
 
 function iconForType(type: SearchPopoverOption["type"]): string {
@@ -253,12 +249,12 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
         item.type = "button";
         item.setAttr("role", "menuitemcheckbox");
         item.setAttr("aria-checked", selected ? "true" : "false");
-        item.setAttr("aria-label", pluralizeLabel(group.display));
+        item.setAttr("aria-label", formatPropertyKeyLabel(group.display));
         const iconWrap = item.createSpan({ cls: "learnkit-coach-scope-item-icon learnkit-coach-scope-item-icon" });
         renderScopeItemIcon(iconWrap, "property");
         const dotWrap = item.createSpan({ cls: "learnkit-coach-scope-item-dot-wrap learnkit-coach-scope-item-dot-wrap" });
         dotWrap.createSpan({ cls: `learnkit-coach-scope-item-dot${selected ? " is-selected" : ""}` });
-        item.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: pluralizeLabel(group.display) });
+        item.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: formatPropertyKeyLabel(group.display) });
         if (selected) item.classList.add("is-selected");
         item.addEventListener("mousedown", (evt) => evt.preventDefault());
         item.addEventListener("click", () => {
@@ -288,7 +284,7 @@ export function mountSearchPopoverList(args: SearchPopoverListArgs): SearchPopov
       .slice(0, 2)
       .map((key) => {
         const match = allPropertyOptions.find((option) => getPropertyDisplayKey(option).toLowerCase() === key);
-        return pluralizeLabel(match ? getPropertyDisplayKey(match) : key).toLowerCase();
+        return formatPropertyKeyLabel(match ? getPropertyDisplayKey(match) : key).toLowerCase();
       });
 
     if (selectedPropertyKeys.length > 2) propertyNames.push("properties");
