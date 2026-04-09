@@ -392,10 +392,6 @@ export class SproutHeader {
     this.widthBtnEl.setAttribute("aria-label", "Expand / collapse page");
     this.widthBtnEl.setAttribute("data-tooltip-position", "bottom");
 
-    const text = isWide ? "Collapse" : "Expand";
-    const textNode = queryFirst(this.widthBtnEl, "[data-learnkit-label]");
-    if (textNode) textNode.textContent = text;
-
     if (this.widthBtnIconEl) {
       clearChildren(this.widthBtnIconEl);
       setIcon(this.widthBtnIconEl, isWide ? "minimize-2" : "maximize-2");
@@ -1058,10 +1054,6 @@ export class SproutHeader {
     widthIcon.setAttribute("aria-hidden", "true");
     widthBtn.appendChild(widthIcon);
 
-    const widthLabel = document.createElement("span");
-    widthLabel.setAttribute("data-learnkit-label", "true");
-    widthBtn.appendChild(widthLabel);
-
     actionsHost.appendChild(widthBtn);
 
     this.widthBtnEl = widthBtn;
@@ -1101,11 +1093,6 @@ export class SproutHeader {
     syncIcon.setAttribute("aria-hidden", "true");
     syncBtn.appendChild(syncIcon);
 
-    const syncLabel = document.createElement("span");
-    syncLabel.setAttribute("data-learnkit-label", "true");
-    syncLabel.textContent = "Sync";
-    syncBtn.appendChild(syncLabel);
-
     actionsHost.appendChild(syncBtn);
     this.syncBtnIconEl = syncIcon;
 
@@ -1132,11 +1119,6 @@ export class SproutHeader {
     moreIcon.setAttribute("aria-hidden", "true");
     setIcon(moreIcon, "more-vertical");
     moreBtn.appendChild(moreIcon);
-
-    const moreLabel = document.createElement("span");
-    moreLabel.setAttribute("data-learnkit-label", "true");
-    moreLabel.textContent = "Tools";
-    moreBtn.appendChild(moreLabel);
 
     this.moreTriggerEl = moreBtn;
 

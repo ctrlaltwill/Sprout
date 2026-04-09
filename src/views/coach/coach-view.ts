@@ -821,7 +821,6 @@ export class SproutCoachView extends ItemView {
       });
       const iconWrap = backToCoachBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(iconWrap, "x");
-      backToCoachBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: backToCoachLabel });
       backToCoachBtn.addEventListener("click", () => {
         this._resetWizardDraft();
         void this._render();

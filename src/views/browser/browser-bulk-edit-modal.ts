@@ -113,13 +113,7 @@ export class BulkEditModal extends Modal {
       closeIcon.className = "inline-flex items-center justify-center";
       setIcon(closeIcon, "x");
 
-      const closeLabel = document.createElement("span");
-      closeLabel.className = "";
-      closeLabel.setAttribute("data-learnkit-label", "true");
-      closeLabel.textContent = tx("ui.common.close", "Close");
-
       close.appendChild(closeIcon);
-      close.appendChild(closeLabel);
       close.addEventListener("click", () => this.close());
       headerEl.appendChild(close);
     }

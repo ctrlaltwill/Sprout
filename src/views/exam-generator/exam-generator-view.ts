@@ -1013,7 +1013,6 @@ export class SproutExamGeneratorView extends ItemView {
       });
       const iconWrap = backToCoachBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(iconWrap, "x");
-      backToCoachBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: backToCoachLabel });
       backToCoachBtn.addEventListener("click", () => {
         void this.plugin.openCoachTab(false, { suppressEntranceAos: true, refresh: false }, this.leaf);
       });
@@ -2735,11 +2734,6 @@ export class SproutExamGeneratorView extends ItemView {
     quitBtn.setAttr("data-tooltip-position", "top");
     const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(quitIconWrap, "x");
-    quitBtn.createSpan({
-      cls: "",
-      attr: { "data-learnkit-label": "true" },
-      text: this._coachScopePrefilled ? "Back to Coach" : "Quit test",
-    });
     quitBtn.addEventListener("click", () => {
       if (this._coachScopePrefilled) {
         void this.plugin.openCoachTab(false, { suppressEntranceAos: true, refresh: false }, this.leaf);
@@ -3407,7 +3401,6 @@ class ExamAttachmentPickerModal extends Modal {
       closeBtn.setAttr("data-tooltip-position", "top");
       const closeIconWrap = closeBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(closeIconWrap, "x");
-      closeBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: "Close" });
       closeBtn.addEventListener("click", () => this.close());
     }
 

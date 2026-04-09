@@ -183,7 +183,6 @@ export class ImageOcclusionCreatorModal extends Modal {
       closeBtn.setAttr("data-tooltip-position", "top");
       const closeIconWrap = closeBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(closeIconWrap, "x");
-      closeBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: "Close" });
       closeBtn.addEventListener("click", () => this.close());
     }
 

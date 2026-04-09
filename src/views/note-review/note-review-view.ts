@@ -564,11 +564,6 @@ export class SproutNoteReviewView extends ItemView {
     quitBtn.setAttr("data-tooltip-position", "top");
     const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(quitIconWrap, "x");
-    quitBtn.createSpan({
-      cls: "",
-      attr: { "data-learnkit-label": "true" },
-      text: isCoachSession ? backToCoachLabel : exitToHomeLabel,
-    });
     quitBtn.addEventListener("click", () => {
       void this._quitToHome();
     });
@@ -1437,11 +1432,6 @@ export class SproutNoteReviewView extends ItemView {
       quitBtn.setAttr("data-tooltip-position", "top");
       const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(quitIconWrap, "x");
-      if (coachShellMode) {
-        quitBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: backToCoachLabel });
-      } else {
-        quitBtn.createSpan({ cls: "", attr: { "data-learnkit-label": "true" }, text: exitToHomeLabel });
-      }
       quitBtn.addEventListener("click", () => {
         void this._quitToHome();
       });

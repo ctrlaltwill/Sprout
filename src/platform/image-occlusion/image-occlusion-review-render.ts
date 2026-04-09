@@ -321,12 +321,6 @@ export function renderImageOcclusionReviewInto(args: {
         setIcon(closeIcon, "x");
         closeBtn.appendChild(closeIcon);
 
-        const closeLabel = document.createElement("span");
-        closeLabel.className = "";
-        closeLabel.setAttribute("data-learnkit-label", "true");
-        closeLabel.textContent = "Close";
-        closeBtn.appendChild(closeLabel);
-
         closeBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
