@@ -321,8 +321,9 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 }
 
 .learnkit .lk-session-card section.learnkit-session-practice-prompt {
-  margin: 1.2rem auto;
   width: min(450px, 90%);
+  margin: 1.2rem auto;
+  padding-top: 0.6rem;
 }
 
 .learnkit .lk-session-card section .learnkit-session-practice-prompt-subtext {

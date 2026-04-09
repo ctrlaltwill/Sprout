@@ -71,6 +71,7 @@ type Args = {
   // practice empty-state (optional)
   practiceMode?: boolean;
   canStartPractice?: boolean;
+  hasCardsInScope?: boolean;
   startPractice?: () => void;
   coachSessionMode?: boolean;
   coachEmptyTitle?: string;
@@ -1009,6 +1010,7 @@ export function renderSessionMode(args: Args) {
   const canUndo = !!args.canUndo && typeof args.undoLast === "function";
   const hasStartPractice = typeof args.startPractice === "function";
   const canStartPractice = !practiceMode && (!!args.canStartPractice || hasStartPractice);
+  const hasCardsInScope = args.hasCardsInScope !== false;
   
   const card = args.currentCard();
   const id = card ? String(card.id) : "";
@@ -1076,7 +1078,9 @@ export function renderSessionMode(args: Args) {
     titleWrap.className = "learnkit-session-topbar-title learnkit-question-title";
     titleWrap.textContent = practiceMode
       ? tx("ui.reviewer.session.practiceComplete", "Practice complete")
-      : tx("ui.reviewer.session.noCardsDue", "No cards are due");
+      : hasCardsInScope
+        ? tx("ui.reviewer.session.noCardsDue", "No cards are due")
+        : tx("ui.reviewer.session.noCardsInScope", "No cards exist in this deck");
     header.appendChild(titleWrap);
 
     // Section: Practice session message (centered, no alert wrapper)
@@ -1093,13 +1097,17 @@ export function renderSessionMode(args: Args) {
     } else {
       const d1 = document.createElement("div");
       d1.className = "text-base text-center";
-      d1.textContent = tx("ui.reviewer.session.askStartPractice", "Would you like to start a practice session?");
-      const d2 = document.createElement("div");
-      d2.className = "text-sm text-center learnkit-session-practice-prompt-subtext";
-      d2.textContent =
-        "Practice session reviews all cards in this deck, including ones that are not due. It does not affect scheduling. You cannot bury or suspend cards while in this mode";
+      d1.textContent = hasCardsInScope
+        ? tx("ui.reviewer.session.askStartPractice", "Would you like to start a practice session?")
+        : tx("ui.reviewer.session.noCardsInScopeHint", "Add a card in this deck to start reviewing.");
       section.appendChild(d1);
-      section.appendChild(d2);
+      if (hasCardsInScope) {
+        const d2 = document.createElement("div");
+        d2.className = "text-sm text-center learnkit-session-practice-prompt-subtext";
+        d2.textContent =
+          "Practice session reviews all cards in this deck, including ones that are not due. It does not affect scheduling. You cannot bury or suspend cards while in this mode";
+        section.appendChild(d2);
+      }
     }
     wrap.appendChild(section);
 
@@ -1127,7 +1135,7 @@ export function renderSessionMode(args: Args) {
       kbd: isPhoneMobile ? undefined : "Q",
     });
 
-    const canShowPracticeStart = hasStartPractice && (canStartPractice || practiceMode);
+    const canShowPracticeStart = hasCardsInScope && hasStartPractice && (canStartPractice || practiceMode);
     if (canShowPracticeStart) {
       const startBtn = makeTextButton({
         label: tx("ui.reviewer.session.startPractice", "Start Practice"),

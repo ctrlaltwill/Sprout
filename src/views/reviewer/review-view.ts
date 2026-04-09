@@ -58,6 +58,7 @@ import { getTtsService } from "../../platform/integrations/tts/tts-service";
 import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay-policy";
 import { openCardAnchorInNote } from "../../platform/core/open-card-anchor";
 import { t } from "../../platform/translations/translator";
+import { isParentCard } from "../../platform/core/card-utils";
 
 import type { CardState } from "../../platform/core/store";
 
@@ -644,6 +645,31 @@ export class SproutReviewerView extends ItemView {
     });
 
     return out;
+  }
+
+  private hasCardsInScope(scope: Scope): boolean {
+    const cards = this.plugin.store.getAllCards();
+
+    for (const card of cards) {
+      if (isParentCard(card)) continue;
+
+      if (scope.type === "group") {
+        const groups = Array.isArray(card.groups) ? card.groups : [];
+        if (!groups.some((g) => String(g || "") === scope.key)) continue;
+      } else {
+        const path = String(card.sourceNotePath || "").trim();
+        if (!path) continue;
+        if (!matchesScope(scope, path)) continue;
+
+        // Ignore stale card records whose source note no longer exists.
+        const sourceFile = this.app.vault.getAbstractFileByPath(path);
+        if (!(sourceFile instanceof TFile)) continue;
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   private canStartPractice(scope: Scope): boolean {
@@ -2074,6 +2100,7 @@ export class SproutReviewerView extends ItemView {
 
     const practiceMode = this.isPracticeSession();
     const canStartPractice = !this._isCoachSession && !practiceMode && !activeCard && this.canStartPractice(this.session.scope);
+    const hasCardsInScope = !this._isCoachSession && !practiceMode && !activeCard && this.hasCardsInScope(this.session.scope);
 
     renderSessionMode({
       container: sessionColumn ?? contentHost,
@@ -2130,6 +2157,7 @@ export class SproutReviewerView extends ItemView {
 
       practiceMode,
       canStartPractice,
+      hasCardsInScope,
       startPractice: () => this.startPracticeFromCurrentScope(),
       coachSessionMode: this._isCoachSession,
       coachEmptyTitle: this.tx(

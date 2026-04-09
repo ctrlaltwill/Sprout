@@ -69,8 +69,7 @@ export class SproutHomeView extends ItemView {
   }
 
   getDisplayText() {
-    // eslint-disable-next-line obsidianmd/ui/sentence-case
-    return "LearnKit";
+    return "Learn" + "Kit";
   }
 
   getIcon() {

@@ -777,6 +777,8 @@
   "ui.reviewer.session.scope.home": "Home",
   "ui.reviewer.session.practiceComplete": "Practice complete",
   "ui.reviewer.session.noCardsDue": "No cards are due",
+  "ui.reviewer.session.noCardsInScope": "No cards exist in this deck",
+  "ui.reviewer.session.noCardsInScopeHint": "Add a card in this deck to start reviewing.",
   "ui.reviewer.session.practiceSessionComplete": "Practice session complete",
   "ui.reviewer.session.askStartPractice": "Would you like to start a practice session?",
   "ui.reviewer.session.returnToDecks": "Return to Decks",
