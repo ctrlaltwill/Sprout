@@ -115,7 +115,7 @@
 
 /* Radio dot matches text color */
 .learnkit :where(.dropdown-menu, .bc.p-1, .p-1, .rounded-lg.border.border-border.bg-popover.text-popover-foreground.p-1)
-  [role="menuitemradio"].group .bg-foreground {
+  [role="menuitemradio"].group[aria-checked="true"] .bg-foreground {
   background-color: currentColor;
 }
 

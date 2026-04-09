@@ -69,7 +69,8 @@ export class SproutHomeView extends ItemView {
   }
 
   getDisplayText() {
-    return t(this.plugin.settings?.general?.interfaceLanguage, "ui.view.home.title", "Home");
+    // eslint-disable-next-line obsidianmd/ui/sentence-case
+    return "LearnKit";
   }
 
   getIcon() {
@@ -78,6 +79,13 @@ export class SproutHomeView extends ItemView {
 
   async onOpen() {
     this.render();
+    // Patch tab header with two spans to avoid sentence-case CSS rule
+    const tabTitleEl = (this.leaf as unknown as Record<string, HTMLElement>).tabHeaderInnerTitleEl;
+    if (tabTitleEl) {
+      tabTitleEl.empty();
+      tabTitleEl.createSpan({ text: "Learn" });
+      tabTitleEl.createSpan({ text: "Kit" });
+    }
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.general?.enableAnimations ?? true) {
       // Delay init to ensure DOM is fully rendered
@@ -237,10 +245,11 @@ export class SproutHomeView extends ItemView {
     titleFrame.left.classList.add("lk-home-title-copy");
     titleFrame.right.classList.add("lk-home-title-actions");
     headingEl.classList.add("lk-home-title-label");
-    const isMobileTitle = document.body.classList.contains("is-mobile");
     const titleLearn = tx("ui.view.home.mobileBrand.learn", "Learn");
     const titleKit = tx("ui.view.home.mobileBrand.kit", "Kit");
-    headingEl.textContent = isMobileTitle ? `${titleLearn}${titleKit}` : tx("ui.view.home.title", "Home");
+    headingEl.empty();
+    headingEl.createSpan({ text: titleLearn });
+    headingEl.createSpan({ text: titleKit });
     const subtitleRow = titleFrame.subtitle;
     subtitleRow.classList.add("lk-home-title-subtitle");
 

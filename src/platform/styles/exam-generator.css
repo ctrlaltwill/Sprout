@@ -753,16 +753,52 @@
   backdrop-filter: blur(14px);
 }
 
-.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group {
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group,
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemcheckbox"].group {
   border: 0.5px solid transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  margin: 1px 0;
+  height: 32px;
 }
 
 .learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group:is(:hover, :focus, :focus-visible, :active),
-.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group[aria-checked="true"] {
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"].group[aria-checked="true"],
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemcheckbox"].group:is(:hover, :focus, :focus-visible, :active),
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemcheckbox"].group[aria-checked="true"] {
   background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%);
   color: var(--text-color);
   border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%);
+}
+
+.learnkit .learnkit-exam-generator-select-item-dot-wrap {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.learnkit .learnkit-exam-generator-select-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 80ms ease;
+}
+
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemradio"][aria-checked="true"] .learnkit-exam-generator-select-item-dot,
+.learnkit .learnkit-exam-generator-select-panel [role="menuitemcheckbox"][aria-checked="true"] .learnkit-exam-generator-select-item-dot {
+  background: currentColor;
+}
+
+.learnkit .learnkit-exam-generator-select-item-label {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .learnkit .learnkit-exam-generator-label {

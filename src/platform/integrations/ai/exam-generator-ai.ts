@@ -5,6 +5,7 @@
  * @exports
  *  - generateExamQuestions
  *  - gradeSaqAnswer
+ *  - suggestTestName
  */
 
 import { requestStudyAssistantCompletion } from "./study-assistant-provider";
@@ -194,10 +195,27 @@ function normaliseQuestion(candidate: unknown, index: number, fallbackPath: stri
   if (type === "mcq") {
     const options = asStringArray(row.options).slice(0, 6);
     if (options.length < 2) return null;
+    const explanation = asText(row.explanation).trim();
+
+    // Multi-select MCQ: correctIndices is an array of correct option indices
+    const rawIndices = Array.isArray(row.correctIndices) ? row.correctIndices : null;
+    if (rawIndices && rawIndices.length > 1) {
+      const correctIndices = rawIndices
+        .map((v: unknown) => Number(v))
+        .filter((v: number) => Number.isFinite(v) && v >= 0 && v < options.length)
+        .map((v: number) => Math.floor(v));
+      const unique = [...new Set(correctIndices)];
+      if (unique.length > 1 && unique.length < options.length) {
+        return { id, type, prompt, sourcePath, options, correctIndices: unique, explanation };
+      }
+    }
+
+    // Single-select MCQ (default)
     const idx = Number(row.correctIndex);
     const correctIndex = Number.isFinite(idx) ? Math.max(0, Math.min(options.length - 1, Math.floor(idx))) : 0;
-    const explanation = asText(row.explanation).trim();
-    return { id, type, prompt, sourcePath, options, correctIndex, explanation };
+    // Strip misleading "Select all that apply" prefix when question fell back to single-select
+    const cleanedPrompt = prompt.replace(/^select\s+all\s+that\s+apply\s*[:\-–—]?\s*/i, "").trim() || prompt;
+    return { id, type, prompt: cleanedPrompt, sourcePath, options, correctIndex, explanation };
   }
 
   const markingGuide = asStringArray(row.markingGuide).slice(0, 8);
@@ -210,20 +228,28 @@ function normaliseQuestion(candidate: unknown, index: number, fallbackPath: stri
   };
 }
 
+function allowedQuestionTypesForRequest(requestedType: "mcq" | "saq" | "mixed"): Set<"mcq" | "saq"> {
+  if (requestedType === "mixed") return new Set(["mcq", "saq"]);
+  return new Set([requestedType]);
+}
+
 function normaliseGeneratedQuestions(
   payload: unknown,
   questionCount: number,
   fallbackPath: string,
+  requestedType: "mcq" | "saq" | "mixed",
 ): GeneratedExamQuestion[] {
   const obj = toRecord(payload);
   if (!obj || !Array.isArray(obj.questions)) return [];
 
   const out: GeneratedExamQuestion[] = [];
   const seen = new Set<string>();
+  const allowedTypes = allowedQuestionTypesForRequest(requestedType);
 
   for (let i = 0; i < obj.questions.length; i += 1) {
     const q = normaliseQuestion(obj.questions[i], i, fallbackPath);
     if (!q) continue;
+    if (!allowedTypes.has(q.type)) continue;
     const uniqueId = seen.has(q.id) ? `${q.id}-${i + 1}` : q.id;
     seen.add(uniqueId);
     out.push({ ...q, id: uniqueId });
@@ -291,38 +317,66 @@ async function requestExamChunk(params: {
     attachedFileDataUrls,
   } = params;
 
-  const userPrompt = JSON.stringify(
-    {
-      request: {
-        difficulty,
-        questionType: requestedType,
-        questionCount,
+  const maxAttempts = 2;
+  let lastError: string | null = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const userPrompt = JSON.stringify(
+      {
+        request: {
+          difficulty,
+          questionType: requestedType,
+          questionCount,
+        },
+        strictRequirements: {
+          exactQuestionCount: questionCount,
+          allowedQuestionTypes: requestedType === "mixed" ? ["mcq", "saq"] : [requestedType],
+          rejectMismatchedTypeOutput: true,
+          rejectPartialOutput: true,
+        },
+        ...(attempt > 0
+          ? {
+            retry: {
+              attempt: attempt + 1,
+              reason: lastError || "Previous output was invalid.",
+              instruction: "Regenerate from scratch and return fully valid JSON that satisfies all strictRequirements.",
+            },
+          }
+          : {}),
+        notes,
       },
-      notes,
-    },
-    null,
-    2,
-  );
+      null,
+      2,
+    );
 
-  const raw = await requestStudyAssistantCompletion({
-    settings,
-    systemPrompt,
-    userPrompt,
-    attachedFileDataUrls,
-    mode: "json",
-  });
+    const raw = await requestStudyAssistantCompletion({
+      settings,
+      systemPrompt,
+      userPrompt,
+      attachedFileDataUrls,
+      mode: "json",
+    });
 
-  let parsed: unknown;
-  try {
-    parsed = parseJson<unknown>(raw);
-  } catch {
-    return [];
+    let parsed: unknown;
+    try {
+      parsed = parseJson<unknown>(raw);
+    } catch {
+      lastError = "Invalid JSON response.";
+      continue;
+    }
+
+    const normalized = normaliseGeneratedQuestions(parsed, questionCount, fallbackPath, requestedType);
+    if (normalized.length >= questionCount) {
+      return normalized.map((q, idx) => ({
+        ...q,
+        id: `${idPrefix}-${idx + 1}`,
+      }));
+    }
+
+    lastError = `Returned ${normalized.length}/${questionCount} valid questions after filtering.`;
   }
 
-  return normaliseGeneratedQuestions(parsed, questionCount, fallbackPath).map((q, idx) => ({
-    ...q,
-    id: `${idPrefix}-${idx + 1}`,
-  }));
+  return [];
 }
 
 export async function generateExamQuestions(params: {
@@ -408,11 +462,16 @@ export async function generateExamQuestions(params: {
       ]
       : []),
     "Return valid JSON only with this schema:",
-    "{\"questions\":[{\"id\":\"q1\",\"type\":\"mcq|saq\",\"prompt\":\"...\",\"sourcePath\":\"...\",\"options\":[\"...\"],\"correctIndex\":0,\"explanation\":\"...\",\"markingGuide\":[\"...\"]}]}",
+    "{\"questions\":[{\"id\":\"q1\",\"type\":\"mcq|saq\",\"prompt\":\"...\",\"sourcePath\":\"...\",\"options\":[\"...\"],\"correctIndex\":0,\"correctIndices\":[0,2],\"explanation\":\"...\",\"markingGuide\":[\"...\"]}]}",
     "Rules:",
-    "- MCQ must have 4 options when possible, with one correctIndex.",
+    `- Return exactly ${config.questionCount} questions (no more, no fewer).`,
+    `- Requested question mode is "${requestedType}". ${requestedType === "mixed" ? "Mixed mode: include only mcq or saq types." : `Every question MUST have type "${requestedType}".`}`,
+    "- MCQ must have 4 options when possible.",
+    '- Most MCQs should be single-select with one correctIndex. Around 20-30% of MCQs should be multi-select ("Select all that apply") using correctIndices (an array of 2+ correct option indices). Multi-select prompts must include "Select all that apply" in the prompt text.',
+    "- For single-select MCQs, include correctIndex (a single number). For multi-select MCQs, include correctIndices (an array of numbers) instead.",
     "- SAQ must include concise markingGuide bullets.",
     "- Keep prompts clear and exam-like.",
+    "- Any question with a mismatched type is invalid and must not be returned.",
   ].join("\n");
 
   const fallbackPath = notesForGeneration[0]?.path || "";
@@ -455,8 +514,24 @@ export async function generateExamQuestions(params: {
     questions = dedupeQuestions(allChunkQuestions, config.questionCount);
   }
 
-  if (questions.length === 0) {
-    throw new Error("Exam generator could not create valid questions.");
+  if (questions.length < config.questionCount) {
+    const remaining = config.questionCount - questions.length;
+    const topUp = await requestExamChunk({
+      settings,
+      systemPrompt,
+      notes: notesForGeneration,
+      difficulty: config.difficulty,
+      requestedType,
+      questionCount: remaining,
+      fallbackPath,
+      idPrefix: "topup",
+      attachedFileDataUrls,
+    });
+    questions = dedupeQuestions([...questions, ...topUp], config.questionCount);
+  }
+
+  if (questions.length < config.questionCount) {
+    throw new Error(`Exam generator could not create the requested ${config.questionCount} valid ${requestedType.toUpperCase()} questions.`);
   }
 
   return questions;
@@ -482,8 +557,12 @@ export async function gradeSaqAnswer(params: {
     "Do not expect or require Markdown tables or LaTeX in prompt or answer.",
     "When a prompt includes quantitative scenario data, verify whether the final conclusion/calculation is correct from that data.",
     "Accept mathematically equivalent expressions and equivalent units when contextually appropriate.",
+    "Accept valid alternative answers that are factually correct even if not in the marking guide. Note them as accepted alternatives in keyPointsMet.",
+    "Anchor scorePercent to the ratio of key points met vs total key points. For example, 3 of 4 met ≈ 75%. Adjust up to ±15 pp for quality of explanation, but never deviate more than that from the ratio.",
+    "Classify each marking-guide point as met (addressed correctly), missed (not addressed), or wrong (addressed but factually incorrect). Populate keyPointsMet, keyPointsMissed, and keyPointsWrong accordingly.",
+    "Do not penalise for correct information the student added beyond the marking guide; simply ignore it.",
     "Return JSON only:",
-    "{\"scorePercent\":0-100,\"feedback\":\"...\",\"keyPointsMet\":[\"...\"],\"keyPointsMissed\":[\"...\"],\"conceptuallyCorrect\":true|false}",
+    "{\"scorePercent\":0-100,\"feedback\":\"...\",\"keyPointsMet\":[\"...\"],\"keyPointsMissed\":[\"...\"],\"keyPointsWrong\":[\"...\"],\"conceptuallyCorrect\":true|false}",
   ].join("\n");
 
   const userPrompt = JSON.stringify(
@@ -520,6 +599,17 @@ export async function gradeSaqAnswer(params: {
   const conceptuallyCorrect = Boolean(obj.conceptuallyCorrect);
   const keyPointsMet = asStringArray(obj.keyPointsMet).slice(0, 8);
   const keyPointsMissed = asStringArray(obj.keyPointsMissed).slice(0, 8);
+  const keyPointsWrong = asStringArray(obj.keyPointsWrong).slice(0, 8);
+
+  // Proportional floor: anchor score to keyPointsMet ratio so the model cannot
+  // deviate too far from the objective count.  E.g. 3/4 met → base 75.
+  const totalPoints = keyPointsMet.length + keyPointsMissed.length + keyPointsWrong.length;
+  if (totalPoints > 0) {
+    const proportionalBase = Math.round((keyPointsMet.length / totalPoints) * 100);
+    if (scorePercent < proportionalBase - 15) {
+      scorePercent = proportionalBase - 15;
+    }
+  }
 
   // Fairness guardrail: conceptually correct answers should not collapse to near-zero
   // due to brevity or minor language errors.
@@ -536,5 +626,30 @@ export async function gradeSaqAnswer(params: {
     feedback,
     keyPointsMet,
     keyPointsMissed,
+    ...(keyPointsWrong.length > 0 ? { keyPointsWrong } : {}),
   };
+}
+
+export async function suggestTestName(params: {
+  settings: SproutSettings["studyAssistant"];
+  questionPrompts: string[];
+  difficulty: ExamGeneratorConfig["difficulty"];
+  questionMode: ExamGeneratorConfig["questionMode"];
+}): Promise<string> {
+  const { settings, questionPrompts, difficulty, questionMode } = params;
+
+  const systemPrompt =
+    "Suggest a short (2-5 word) descriptive test name based on the topics covered by the questions below. " +
+    "Return only the name. No quotes, no explanation, no punctuation at the end.";
+
+  const userPrompt = JSON.stringify({ difficulty, questionMode, questions: questionPrompts.slice(0, 15) });
+
+  const raw = await requestStudyAssistantCompletion({ settings, systemPrompt, userPrompt });
+
+  let name = raw.trim().replace(/^["']|["']$/g, "").trim();
+  if (name.length > 60) name = name.slice(0, 60).trimEnd();
+  // Sentence case
+  if (name.length > 0) name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  if (!name.toLowerCase().includes("test")) name += " test";
+  return name;
 }

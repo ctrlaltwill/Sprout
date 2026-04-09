@@ -46,6 +46,7 @@ export type GeneratedExamQuestion = {
   sourcePath: string;
   options?: string[];
   correctIndex?: number;
+  correctIndices?: number[];
   explanation?: string;
   markingGuide?: string[];
 };
@@ -55,4 +56,5 @@ export type SaqGradeResult = {
   feedback: string;
   keyPointsMet: string[];
   keyPointsMissed: string[];
+  keyPointsWrong?: string[];
 };

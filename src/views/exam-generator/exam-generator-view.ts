@@ -20,6 +20,7 @@ import type { Scope } from "../reviewer/types";
 import {
   generateExamQuestions,
   gradeSaqAnswer,
+  suggestTestName,
 } from "../../platform/integrations/ai/exam-generator-ai";
 import type {
   ExamDifficulty,
@@ -53,7 +54,7 @@ type ExamViewMode = "setup" | "generating" | "taking" | "grading" | "results" | 
 
 type SetupStage = "source" | "config";
 
-type StoredAnswer = string | number;
+type StoredAnswer = string | number | number[];
 
 type QuestionResult = {
   questionId: string;
@@ -1967,15 +1968,15 @@ export class SproutExamGeneratorView extends ItemView {
 
     for (const value of values) {
       const item = menu.createDiv({
-        cls: "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+        cls: "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground learnkit-exam-generator-select-item",
       });
       item.setAttr("role", "menuitemradio");
       item.setAttr("tabindex", "0");
       setChecked(item, value === currentValue);
 
-      const dotWrap = item.createDiv({ cls: "size-4 flex items-center justify-center" });
-      dotWrap.createDiv({ cls: "size-2 rounded-full bg-foreground invisible group-aria-checked:visible" });
-      item.createSpan({ text: getTextForValue(value) });
+      const dotWrap = item.createDiv({ cls: "size-4 flex items-center justify-center learnkit-exam-generator-select-item-dot-wrap" });
+      dotWrap.createDiv({ cls: "size-2 rounded-full learnkit-exam-generator-select-item-dot" });
+      item.createSpan({ cls: "learnkit-exam-generator-select-item-label", text: getTextForValue(value) });
 
       const activate = (): void => {
         currentValue = value;
@@ -2104,15 +2105,15 @@ export class SproutExamGeneratorView extends ItemView {
 
     for (const value of values) {
       const item = menu.createDiv({
-        cls: "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+        cls: "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground learnkit-exam-generator-select-item",
       });
       item.setAttr("role", "menuitemcheckbox");
       item.setAttr("tabindex", "0");
       setChecked(item, selected.has(value));
 
-      const dotWrap = item.createDiv({ cls: "size-4 flex items-center justify-center" });
-      dotWrap.createDiv({ cls: "size-2 rounded-full bg-foreground invisible group-aria-checked:visible" });
-      item.createSpan({ text: getTextForValue(value) });
+      const dotWrap = item.createDiv({ cls: "size-4 flex items-center justify-center learnkit-exam-generator-select-item-dot-wrap" });
+      dotWrap.createDiv({ cls: "size-2 rounded-full learnkit-exam-generator-select-item-dot" });
+      item.createSpan({ cls: "learnkit-exam-generator-select-item-label", text: getTextForValue(value) });
 
       const toggle = (): void => {
         if (selected.has(value)) selected.delete(value);
@@ -2347,6 +2348,27 @@ export class SproutExamGeneratorView extends ItemView {
       this._examStartMs = Date.now();
       this._activeTestId = this._persistGeneratedTest(rankedNotes);
       this._mode = "taking";
+
+      // Background AI naming (fire-and-forget) — only for unnamed tests
+      if (this._activeTestId && !this._config.testName.trim()) {
+        const testId = this._activeTestId;
+        const prompts = this._questions.map((q) => q.prompt);
+        suggestTestName({
+          settings: this.plugin.settings.studyAssistant,
+          questionPrompts: prompts,
+          difficulty: this._config.difficulty,
+          questionMode: this._config.questionMode,
+        })
+          .then((aiName) => {
+            if (!this._testsDb) return;
+            const newLabel = `${aiName} - ${new Date().toLocaleString()}`;
+            if (this._testsDb.updateTestLabel(testId, newLabel)) {
+              void this._testsDb.persist();
+              this._savedTests = this._testsDb.listTests(25);
+            }
+          })
+          .catch(() => {/* silently ignore — fallback label remains */});
+      }
 
       this._startTimer();
       this._render();
@@ -2731,22 +2753,54 @@ export class SproutExamGeneratorView extends ItemView {
 
     if (q.type === "mcq") {
       const options = q.options || [];
-      const selected = this._answers.has(q.id) ? Number(this._answers.get(q.id)) : -1;
+      const isMultiSelect = Array.isArray(q.correctIndices) && q.correctIndices.length > 1;
       const optionList = card.createDiv({ cls: "learnkit-mcq-options learnkit-mcq-options" });
-      for (let i = 0; i < options.length; i += 1) {
-        const btn = optionList.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
-        if (selected === i) btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
-        const left = btn.createSpan({ cls: "inline-flex items-center gap-2 min-w-0" });
-        left.createEl("kbd", { cls: "kbd", text: String(i + 1) });
-        const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text learnkit-mcq-option-text" });
-        renderMarkdownPreviewInElement(optionText, options[i]);
-        btn.addEventListener("click", () => {
-          const selection = window.getSelection();
-          if (selection && selection.toString().trim().length > 0) return;
-          this._answers.set(q.id, i);
-          optionList.querySelectorAll(".learnkit-btn-toolbar").forEach((el) => el.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected"));
-          btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
-        });
+
+      if (isMultiSelect) {
+        // Multi-select: toggle each option independently
+        const currentSelections: Set<number> = new Set(
+          Array.isArray(this._answers.get(q.id)) ? (this._answers.get(q.id) as number[]) : [],
+        );
+
+        for (let i = 0; i < options.length; i += 1) {
+          const btn = optionList.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
+          if (currentSelections.has(i)) btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
+          const left = btn.createSpan({ cls: "inline-flex items-center gap-2 min-w-0" });
+          left.createEl("kbd", { cls: "kbd", text: String(i + 1) });
+          const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text learnkit-mcq-option-text" });
+          renderMarkdownPreviewInElement(optionText, options[i]);
+          btn.addEventListener("click", () => {
+            const selection = window.getSelection();
+            if (selection && selection.toString().trim().length > 0) return;
+            if (currentSelections.has(i)) {
+              currentSelections.delete(i);
+              btn.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected");
+            } else {
+              currentSelections.add(i);
+              btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
+            }
+            this._answers.set(q.id, [...currentSelections].sort((a, b) => a - b));
+          });
+        }
+      } else {
+        // Single-select: exclusive selection
+        const selected = this._answers.has(q.id) ? Number(this._answers.get(q.id)) : -1;
+
+        for (let i = 0; i < options.length; i += 1) {
+          const btn = optionList.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
+          if (selected === i) btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
+          const left = btn.createSpan({ cls: "inline-flex items-center gap-2 min-w-0" });
+          left.createEl("kbd", { cls: "kbd", text: String(i + 1) });
+          const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text learnkit-mcq-option-text" });
+          renderMarkdownPreviewInElement(optionText, options[i]);
+          btn.addEventListener("click", () => {
+            const selection = window.getSelection();
+            if (selection && selection.toString().trim().length > 0) return;
+            this._answers.set(q.id, i);
+            optionList.querySelectorAll(".learnkit-btn-toolbar").forEach((el) => el.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected"));
+            btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
+          });
+        }
       }
     } else {
       const area = card.createEl("textarea", {
@@ -2816,22 +2870,55 @@ export class SproutExamGeneratorView extends ItemView {
     for (const q of this._questions) {
       const rawAnswer = this._answers.get(q.id);
       if (q.type === "mcq") {
-        const selected = typeof rawAnswer === "number" ? rawAnswer : -1;
-        const correct = selected === Number(q.correctIndex);
-        const score = correct ? 100 : 0;
-        const expected = q.options?.[Number(q.correctIndex)] || "";
-        const user = selected >= 0 && q.options?.[selected] ? q.options[selected] : "";
-        totalScore += score;
-        results.push({
-          questionId: q.id,
-          prompt: q.prompt,
-          questionType: "mcq",
-          scorePercent: score,
-          feedback: correct ? "Correct" : "Incorrect",
-          correct,
-          userAnswer: user,
-          expectedAnswer: expected,
-        });
+        const isMultiSelect = Array.isArray(q.correctIndices) && q.correctIndices.length > 1;
+
+        if (isMultiSelect) {
+          // Multi-select MCQ: proportional marking
+          const correctSet = new Set(q.correctIndices);
+          const selectedArr = Array.isArray(rawAnswer) ? rawAnswer : [];
+          const selectedSet = new Set(selectedArr);
+          const totalCorrect = correctSet.size;
+          let hits = 0;
+          let penalties = 0;
+          for (const s of selectedSet) {
+            if (correctSet.has(s)) hits += 1;
+            else penalties += 1;
+          }
+          // Proportional: each correct selection earns 1/totalCorrect, each incorrect selection deducts 1/totalCorrect, floor 0
+          const score = Math.max(0, Math.round(((hits - penalties) / totalCorrect) * 100));
+          const correct = score === 100;
+          const expectedOptions = (q.correctIndices ?? []).map((i) => q.options?.[i] || "").filter(Boolean);
+          const userOptions = selectedArr.map((i) => q.options?.[i] || "").filter(Boolean);
+          totalScore += score;
+          results.push({
+            questionId: q.id,
+            prompt: q.prompt,
+            questionType: "mcq",
+            scorePercent: score,
+            feedback: correct ? "Correct" : hits > 0 ? "Partly correct" : "Incorrect",
+            correct,
+            userAnswer: userOptions.join("; ") || "(none selected)",
+            expectedAnswer: expectedOptions.join("; "),
+          });
+        } else {
+          // Single-select MCQ: binary marking
+          const selected = typeof rawAnswer === "number" ? rawAnswer : -1;
+          const correct = selected === Number(q.correctIndex);
+          const score = correct ? 100 : 0;
+          const expected = q.options?.[Number(q.correctIndex)] || "";
+          const user = selected >= 0 && q.options?.[selected] ? q.options[selected] : "";
+          totalScore += score;
+          results.push({
+            questionId: q.id,
+            prompt: q.prompt,
+            questionType: "mcq",
+            scorePercent: score,
+            feedback: correct ? "Correct" : "Incorrect",
+            correct,
+            userAnswer: user,
+            expectedAnswer: expected,
+          });
+        }
       } else {
         const answerText = String(rawAnswer || "").trim();
         if (!answerText) {
@@ -3063,6 +3150,28 @@ export class SproutExamGeneratorView extends ItemView {
           }
         }
 
+        // SAQ key-point breakdown: wrong, missed
+        if (result.saq) {
+          const wrongPoints = result.saq.keyPointsWrong ?? [];
+          const missedPoints = result.saq.keyPointsMissed ?? [];
+          if (wrongPoints.length > 0) {
+            const wrongSection = body.createDiv({ cls: "learnkit-exam-generator-result-missed learnkit-exam-generator-result-missed" });
+            wrongSection.createDiv({ cls: "learnkit-exam-generator-result-missed-label learnkit-exam-generator-result-missed-label", text: "Incorrect" });
+            const wrongList = wrongSection.createEl("ul", { cls: "learnkit-exam-generator-result-missed-list learnkit-exam-generator-result-missed-list" });
+            for (const point of wrongPoints) {
+              wrongList.createEl("li", { text: point });
+            }
+          }
+          if (missedPoints.length > 0) {
+            const missedSection = body.createDiv({ cls: "learnkit-exam-generator-result-missed learnkit-exam-generator-result-missed" });
+            missedSection.createDiv({ cls: "learnkit-exam-generator-result-missed-label learnkit-exam-generator-result-missed-label", text: "Missed" });
+            const missedList = missedSection.createEl("ul", { cls: "learnkit-exam-generator-result-missed-list learnkit-exam-generator-result-missed-list" });
+            for (const point of missedPoints) {
+              missedList.createEl("li", { text: point });
+            }
+          }
+        }
+
       }
     }
 
@@ -3121,7 +3230,8 @@ export class SproutExamGeneratorView extends ItemView {
   private _persistGeneratedTest(notes: Array<{ path: string; title: string; content: string }>): string | null {
     if (!this._testsDb) return null;
     const customName = this._config.testName.trim();
-    const label = customName || `${this._config.difficulty.toUpperCase()} test - ${new Date().toLocaleString()}`;
+    const diffLabel = this._config.difficulty.charAt(0).toUpperCase() + this._config.difficulty.slice(1).toLowerCase();
+    const label = customName || `${diffLabel} test - ${new Date().toLocaleString()}`;
     try {
       const id = this._testsDb.saveTest({
         label,

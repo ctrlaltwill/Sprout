@@ -339,6 +339,12 @@ export class ExamTestsSqlite {
     return this.db.getRowsModified() > 0;
   }
 
+  updateTestLabel(testId: string, label: string): boolean {
+    if (!this.db) return false;
+    this.db.run("UPDATE tests SET label = ?, updated_at = ? WHERE test_id = ?", [label, Date.now(), testId]);
+    return this.db.getRowsModified() > 0;
+  }
+
   listAttempts(limit = 500): SavedExamAttemptRecord[] {
     if (!this.db) return [];
     const out: SavedExamAttemptRecord[] = [];
