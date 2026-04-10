@@ -589,7 +589,12 @@ export class LearnKitSettingsView extends ItemView {
             prevBtn.appendChild(label);
             const link = document.createElement("a");
             link.className = "learnkit-guide-prev-next-link";
-            link.textContent = `← ${prevSubTab.label}`;
+            link.textContent = t(
+              this.plugin.settings?.general?.interfaceLanguage,
+              "ui.settings.nav.prevWithLabel",
+              "← {label}",
+              { label: prevSubTab.label },
+            );
             link.addEventListener("click", (ev) => {
               ev.preventDefault();
               this._activeSettingsSubTab = prevSubTab.id;
@@ -612,7 +617,12 @@ export class LearnKitSettingsView extends ItemView {
             nextBtn.appendChild(label);
             const link = document.createElement("a");
             link.className = "learnkit-guide-prev-next-link";
-            link.textContent = `${nextSubTab.label} →`;
+            link.textContent = t(
+              this.plugin.settings?.general?.interfaceLanguage,
+              "ui.settings.nav.nextWithLabel",
+              "{label} →",
+              { label: nextSubTab.label },
+            );
             link.addEventListener("click", (ev) => {
               ev.preventDefault();
               this._activeSettingsSubTab = nextSubTab.id;
@@ -815,7 +825,10 @@ export class LearnKitSettingsView extends ItemView {
         const pages = this._orderGuidePagesByNavigation(await this._getGuidePages());
         if (!pages.length) {
           layout.classList.remove("is-loading");
-          inner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "No guide content available." });
+          inner.createDiv({
+            cls: "learnkit-guide-loading-label learnkit-guide-loading-label",
+            text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.settings.guide.empty", "No guide content available."),
+          });
           return;
         }
 
@@ -851,6 +864,8 @@ export class LearnKitSettingsView extends ItemView {
 
         const group = document.createElement("div");
         group.className = "learnkit-guide-nav-group";
+        const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
+          t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
 
         const btn = document.createElement("button");
         btn.className = "inline-flex items-center gap-2 h-9 px-3 text-sm learnkit-guide-nav-btn learnkit-settings-action-btn";
@@ -870,7 +885,10 @@ export class LearnKitSettingsView extends ItemView {
 
         if (categoryPages.length === 1) {
           const single = categoryPages[0];
-          btn.setAttribute("aria-label", `Open ${this._getGuideTooltipLabel(single.key).toLowerCase()} page`);
+          btn.setAttribute(
+            "aria-label",
+            tx("ui.settings.guide.openPage", "Open {page} page", { page: this._getGuideTooltipLabel(single.key) }),
+          );
           btn.setAttribute("data-tooltip-position", "bottom");
           navPageItems.push({ item: btn, pageKey: single.key });
         } else {
@@ -919,7 +937,10 @@ export class LearnKitSettingsView extends ItemView {
               item.classList.toggle("is-active", page.key === this._activeGuidePage);
               item.setAttribute("role", "menuitem");
               item.tabIndex = 0;
-              item.setAttribute("aria-label", `Open ${this._getGuideTooltipLabel(page.key).toLowerCase()} page`);
+              item.setAttribute(
+                "aria-label",
+                tx("ui.settings.guide.openPage", "Open {page} page", { page: this._getGuideTooltipLabel(page.key) }),
+              );
               item.setAttribute("data-tooltip-position", "bottom");
 
               const iconWrap = document.createElement("span");
@@ -1079,7 +1100,12 @@ export class LearnKitSettingsView extends ItemView {
               prevBtn.appendChild(label);
               const link = document.createElement("a");
               link.className = "learnkit-guide-prev-next-link";
-              link.textContent = `← ${prevPage.label}`;
+              link.textContent = t(
+                this.plugin.settings?.general?.interfaceLanguage,
+                "ui.settings.nav.prevWithLabel",
+                "← {label}",
+                { label: prevPage.label },
+              );
               link.addEventListener("click", (ev) => {
                 ev.preventDefault();
                 this._activeGuidePage = prevPage.key;
@@ -1102,7 +1128,12 @@ export class LearnKitSettingsView extends ItemView {
               nextBtn.appendChild(label);
               const link = document.createElement("a");
               link.className = "learnkit-guide-prev-next-link";
-              link.textContent = `${nextPage.label} →`;
+              link.textContent = t(
+                this.plugin.settings?.general?.interfaceLanguage,
+                "ui.settings.nav.nextWithLabel",
+                "{label} →",
+                { label: nextPage.label },
+              );
               link.addEventListener("click", (ev) => {
                 ev.preventDefault();
                 this._activeGuidePage = nextPage.key;
@@ -1154,7 +1185,10 @@ export class LearnKitSettingsView extends ItemView {
         layout.classList.remove("is-loading");
       } catch {
         layout.classList.remove("is-loading");
-        inner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "Could not load guide." });
+        inner.createDiv({
+          cls: "learnkit-guide-loading-label learnkit-guide-loading-label",
+          text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.settings.guide.loadFailed", "Could not load guide."),
+        });
       }
     };
 
@@ -1194,7 +1228,10 @@ export class LearnKitSettingsView extends ItemView {
         const pages = await this._getReleaseNotesPages();
         if (!pages.length) {
           layout.classList.remove("is-loading");
-          contentInner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "No release notes available." });
+          contentInner.createDiv({
+            cls: "learnkit-guide-loading-label learnkit-guide-loading-label",
+            text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.settings.releaseNotes.empty", "No release notes available."),
+          });
           return;
         }
 
@@ -1219,7 +1256,10 @@ export class LearnKitSettingsView extends ItemView {
         syncFade();
       } catch {
         layout.classList.remove("is-loading");
-        contentInner.createDiv({ cls: "learnkit-guide-loading-label learnkit-guide-loading-label", text: "Could not load release notes." });
+        contentInner.createDiv({
+          cls: "learnkit-guide-loading-label learnkit-guide-loading-label",
+          text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.settings.releaseNotes.loadFailed", "Could not load release notes."),
+        });
       }
     })();
   }
@@ -1238,9 +1278,11 @@ export class LearnKitSettingsView extends ItemView {
       const label = document.createElement("span");
       label.textContent = page.label;
       btn.appendChild(label);
+      const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
+        t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
       const tooltip = page.version
-        ? `Open ${page.version} release notes`
-        : `Open ${page.label.toLowerCase()}`;
+        ? tx("ui.settings.releaseNotes.openVersion", "Open {version} release notes", { version: page.version })
+        : tx("ui.settings.releaseNotes.openPage", "Open {page}", { page: page.label });
       btn.setAttribute("aria-label", tooltip);
       btn.setAttribute("data-tooltip-position", "bottom");
       btn.addEventListener("click", () => {
@@ -1267,7 +1309,12 @@ export class LearnKitSettingsView extends ItemView {
 
     if (active.version) {
       const h1 = document.createElement("h1");
-      h1.textContent = `Release Notes – ${active.version}`;
+      h1.textContent = t(
+        this.plugin.settings?.general?.interfaceLanguage,
+        "ui.settings.releaseNotes.titleVersion",
+        "Release Notes – {version}",
+        { version: active.version },
+      );
       body.appendChild(h1);
 
       const badge = document.createElement("span");
@@ -1276,7 +1323,12 @@ export class LearnKitSettingsView extends ItemView {
       iconSpan.className = "learnkit-guide-updated-badge-icon";
       setIcon(iconSpan, "calendar");
       const textSpan = document.createElement("span");
-      textSpan.textContent = `Date released: ${active.modifiedDate ?? this._formatDate(undefined)}`;
+      textSpan.textContent = t(
+        this.plugin.settings?.general?.interfaceLanguage,
+        "ui.settings.releaseNotes.dateReleased",
+        "Date released: {date}",
+        { date: active.modifiedDate ?? this._formatDate(undefined) },
+      );
       badge.appendChild(iconSpan);
       badge.appendChild(textSpan);
       body.appendChild(badge);
@@ -1311,7 +1363,12 @@ export class LearnKitSettingsView extends ItemView {
         prevBtn.appendChild(label);
         const link = document.createElement("a");
         link.className = "learnkit-guide-prev-next-link";
-        link.textContent = `← ${prevPage.label}`;
+        link.textContent = t(
+          this.plugin.settings?.general?.interfaceLanguage,
+          "ui.settings.nav.prevWithLabel",
+          "← {label}",
+          { label: prevPage.label },
+        );
         link.addEventListener("click", (ev) => {
           ev.preventDefault();
           this._activeReleasePage = prevPage.key;
@@ -1334,7 +1391,12 @@ export class LearnKitSettingsView extends ItemView {
         nextBtn.appendChild(label);
         const link = document.createElement("a");
         link.className = "learnkit-guide-prev-next-link";
-        link.textContent = `${nextPage.label} →`;
+        link.textContent = t(
+          this.plugin.settings?.general?.interfaceLanguage,
+          "ui.settings.nav.nextWithLabel",
+          "{label} →",
+          { label: nextPage.label },
+        );
         link.addEventListener("click", (ev) => {
           ev.preventDefault();
           this._activeReleasePage = nextPage.key;
@@ -1507,13 +1569,13 @@ export class LearnKitSettingsView extends ItemView {
             "error",
             () => {
               while (avatar.firstChild) avatar.firstChild.remove();
-              avatar.textContent = "WG";
+              avatar.textContent = tx("ui.settings.about.avatarInitials", "WG");
             },
             { once: true },
           );
           avatar.appendChild(image);
         } else {
-          avatar.textContent = "WG";
+          avatar.textContent = tx("ui.settings.about.avatarInitials", "WG");
         }
 
         const info = document.createElement("div");
@@ -1521,11 +1583,11 @@ export class LearnKitSettingsView extends ItemView {
 
         const founderName = document.createElement("div");
         founderName.className = "learnkit-about-name";
-        founderName.textContent = "William guy";
+        founderName.textContent = tx("ui.settings.about.founderName", "William Guy");
 
         const founderRole = document.createElement("div");
         founderRole.className = "learnkit-about-role";
-        founderRole.textContent = "Founder of " + "Learn" + "Kit.";
+        founderRole.textContent = tx("ui.settings.about.founderRole", "Founder of LearnKit.");
 
         const linksRow = document.createElement("div");
         linksRow.className = "learnkit-about-links-row";
@@ -1535,14 +1597,14 @@ export class LearnKitSettingsView extends ItemView {
         githubAnchor.href = "https://github.com/ctrlaltwill";
         githubAnchor.target = "_blank";
         githubAnchor.rel = "noopener nofollow";
-        githubAnchor.textContent = "View GitHub profile";
+        githubAnchor.textContent = tx("ui.settings.about.link.githubProfile", "View GitHub profile");
 
         const linkedinAnchor = document.createElement("a");
         linkedinAnchor.className = "learnkit-about-linkedin";
         linkedinAnchor.href = "https://www.linkedin.com/in/williamguy/";
         linkedinAnchor.target = "_blank";
         linkedinAnchor.rel = "noopener nofollow";
-        linkedinAnchor.textContent = "Linkedin →";
+        linkedinAnchor.textContent = tx("ui.settings.about.link.linkedinArrow", "LinkedIn →");
 
         info.appendChild(founderName);
         info.appendChild(founderRole);
@@ -1739,7 +1801,12 @@ export class LearnKitSettingsView extends ItemView {
     const normalizedTitle = (title || "").trim().toLowerCase();
     const normalizedH2 = (firstH2?.textContent || "").trim().toLowerCase();
     if (firstH2 && normalizedTitle && normalizedTitle === normalizedH2) {
-      firstH2.textContent = `${title} settings`;
+      firstH2.textContent = t(
+        this.plugin.settings?.general?.interfaceLanguage,
+        "ui.settings.sectionTitle.withSettings",
+        "{title} settings",
+        { title },
+      );
     }
   }
 

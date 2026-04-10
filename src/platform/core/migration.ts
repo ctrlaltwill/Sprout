@@ -9,6 +9,7 @@
 import { Notice } from "obsidian";
 import type LearnKitPlugin from "../../main";
 import { log } from "./logger";
+import { t } from "../translations/translator";
 import { SqliteStore, getFlashcardsDbPath, getSchedulingDirPath, isSqliteDatabasePresent } from "./sqlite-store";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -82,7 +83,7 @@ export async function migrateJsonToSqlite(
     delete root.store;
     await plugin.saveData(root);
 
-    new Notice("Learn" + "Kit upgraded scheduling storage to SQLite.");
+    new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.migration.sqliteUpgrade", "LearnKit upgraded scheduling storage to SQLite."));
     log.info(`Migrated scheduling store to SQLite at ${getSchedulingDirPath(plugin)}`);
     return true;
   } catch (e) {

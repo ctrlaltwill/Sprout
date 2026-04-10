@@ -1784,7 +1784,7 @@ export class SproutReviewerView extends ItemView {
               submitBtnEl.classList.remove("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
             }, { once: true });
             if (submitBtnEl.dataset.emptyAttempt === "1") {
-              submitBtnEl.setAttribute("aria-label", "Choose at least one answer to proceed");
+              submitBtnEl.setAttribute("aria-label", this.tx("ui.reviewer.mcq.chooseOne", "Choose at least one answer to proceed"));
               submitBtnEl.setAttribute("data-tooltip-position", "top");
               submitBtnEl.classList.add("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
               setTimeout(() => {

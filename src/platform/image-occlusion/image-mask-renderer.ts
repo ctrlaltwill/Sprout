@@ -9,6 +9,8 @@
 import { type App, Modal, Notice, Platform, TFile, setIcon } from "obsidian";
 import interact from "interactjs";
 
+import { t } from "../../platform/translations/translator";
+
 import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../../platform/core/store";
 import type { IOParentDef, StoredIORect, IOMaskMode } from "./image-occlusion-types";
@@ -106,6 +108,10 @@ export class ImageOcclusionEditorModal extends Modal {
     this.afterClose = opts?.onClose;
   }
 
+  private _tx(token: string, fallback: string, vars?: Record<string, string | number>): string {
+    return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
+  }
+
   static openForParent(plugin: LearnKitPlugin, parentId: string, opts?: IoEditorOpenOpts) {
     const m = new ImageOcclusionEditorModal(plugin.app, plugin, parentId, opts);
     m.open();
@@ -118,7 +124,7 @@ export class ImageOcclusionEditorModal extends Modal {
     this.containerEl.addClass("learnkit-io-editor-modal");
 
     if (Platform.isMobileApp) {
-      new Notice("Image occlusion editor is desktop-only");
+      new Notice(this._tx("ui.io.desktopOnly", "Image occlusion editor is desktop-only"));
       this.close();
       return;
     }

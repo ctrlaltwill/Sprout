@@ -16,6 +16,7 @@ import { resolveImageFile } from "./io-helpers";
 import type * as IoModule from "./image-occlusion-index";
 import { queryFirst, setCssProps } from "../../platform/core/ui";
 import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
+import { t } from "../../platform/translations/translator";
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -303,7 +304,7 @@ export function renderImageOcclusionReviewInto(args: {
 
         const closeBtn = document.createElement("button");
         closeBtn.type = "button";
-        closeBtn.setAttribute("aria-label", "Close");
+        closeBtn.setAttribute("aria-label", t(plugin.settings?.general?.interfaceLanguage, "ui.common.close", "Close"));
         closeBtn.setAttribute("data-learnkit-expand-collapse", "true");
         closeBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-toolbar",
           "learnkit-btn-filter", "learnkit-btn-filter",

@@ -107,6 +107,63 @@ body.is-phone .small-card {
   gap: 8px;
 }
 
+.learnkit .learnkit-mcq-correct-checkbox {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 2px solid var(--interactive-accent);
+  background-color: transparent;
+  position: relative;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.learnkit .learnkit-mcq-correct-checkbox:checked {
+  background-color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+.learnkit .learnkit-mcq-correct-checkbox:checked::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--text-on-accent, #fff);
+}
+
+.learnkit .learnkit-mcq-correct-checkbox:hover {
+  border-color: var(--interactive-accent-hover, var(--interactive-accent));
+}
+
+.learnkit .learnkit-mcq-correct-checkbox:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
+/* Dark theme: ensure unchecked border is visible */
+.theme-dark .learnkit .learnkit-mcq-correct-checkbox {
+  border-color: var(--interactive-accent);
+}
+
+.theme-dark .learnkit .learnkit-mcq-correct-checkbox:checked {
+  background-color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
 .learnkit .learnkit-edit-mcq-option-label {
   min-width: 70px;
 }
@@ -796,7 +853,7 @@ body.is-phone .small-card {
 }
 
 .learnkit .learnkit-coach-switcher-plan-card.is-create .learnkit-coach-switcher-slot-label {
-  color: var(--text-faint);
+  color: var(--interactive-accent);
 }
 
 .learnkit .learnkit-coach-switcher-create-title {
@@ -1064,11 +1121,21 @@ body.is-phone .small-card {
 }
 
 .learnkit .learnkit-coach-wizard-topline-right .learnkit-scope-clear-btn [data-learnkit-label="true"] {
-  display: none !important;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  transform: translateX(-4px);
+  transition: max-width 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 913ms ease, margin-left 1115ms cubic-bezier(0.2, 0.9, 0.2, 1), transform 1115ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 .learnkit .learnkit-coach-wizard-topline-right .learnkit-scope-clear-btn:is(:hover, :focus-visible, :focus-within, [aria-expanded="true"]) [data-learnkit-label="true"] {
-  display: none !important;
+  max-width: 9rem;
+  opacity: 1;
+  margin-left: 6px;
+  transform: translateX(0);
 }
 
 .learnkit .learnkit-coach-step-item {
@@ -1254,8 +1321,8 @@ margin: 0.1rem 0 0;
 
 .learnkit .learnkit-coach-scope-separator {
   height: 1px;
-  margin: 4px 0;
-  background: var(--border);
+  margin: 4px 8px;
+  background: var(--learnkit-border-color);
 }
 
 .learnkit .learnkit-coach-scope-item {

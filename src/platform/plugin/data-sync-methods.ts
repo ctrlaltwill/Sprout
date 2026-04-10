@@ -56,7 +56,7 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
     _runSyncCurrentNote = async (): Promise<void> => {
       const file = this._getActiveMarkdownFile();
       if (!(file instanceof TFile)) {
-        new Notice("No note is open");
+        new Notice(this._tx("ui.sync.notice.noNoteOpen", "No note is open"));
         return;
       }
 
@@ -125,7 +125,7 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
 
         if (!apiKeyWriteOk && hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
           log.error("Api key dedicated file write failed; keys were not persisted this save.");
-          new Notice("Could not save keys securely. Check file permissions", 8000);
+          new Notice(this._tx("ui.sync.notice.keysSaveFailed", "Could not save keys securely. Check file permissions"), 8000);
         }
 
         root.settings = syncSettings;
@@ -183,7 +183,7 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
         }
         if (!apiKeyWriteOk && hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
           log.error("Api key dedicated file write failed; keys were not persisted this save.");
-          new Notice("Could not save keys securely. Check file permissions", 8000);
+          new Notice(this._tx("ui.sync.notice.keysSaveFailed", "Could not save keys securely. Check file permissions"), 8000);
         }
 
         root.settings = syncSettings;
@@ -216,7 +216,7 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       }
       if (!apiKeyWriteOk && hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
         log.error("Api key dedicated file write failed; keys were not persisted this save.");
-        new Notice("Could not save keys securely. Check file permissions", 8000);
+        new Notice(this._tx("ui.sync.notice.keysSaveFailed", "Could not save keys securely. Check file permissions"), 8000);
       }
       root.settings = syncSettings;
       root.store = this.store.data;

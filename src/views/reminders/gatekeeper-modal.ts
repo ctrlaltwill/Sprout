@@ -28,6 +28,7 @@ import { renderImageOcclusionReviewInto } from "../../platform/image-occlusion/i
 import * as IO from "../../platform/image-occlusion/image-occlusion-index";
 import { getTtsService } from "../../platform/integrations/tts/tts-service";
 import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay-policy";
+import { t } from "../../platform/translations/translator";
 
 type GatekeeperModalArgs = {
   app: App;
@@ -177,10 +178,10 @@ export class GatekeeperModal extends Modal {
     if (titleEl) {
       titleEl.empty();
       // Separate strings avoid sentence-case lint trigger
-      titleEl.createSpan({ text: "Learn" });
-      titleEl.createSpan({ text: "Kit" });
+      titleEl.createSpan({ text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.gatekeeper.title.learn", "Learn") });
+      titleEl.createSpan({ text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.gatekeeper.title.kit", "Kit") });
       titleEl.createSpan({ text: " " });
-      titleEl.createSpan({ text: "Gatekeeper" });
+      titleEl.createSpan({ text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.gatekeeper.title.gatekeeper", "Gatekeeper") });
     }
 
     // Progress indicator (top-right, like close button position on other modals)

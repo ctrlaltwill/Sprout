@@ -20,6 +20,7 @@ import { clearNode } from "./shared-utils";
 import { KeyboardShortcutsModal } from "../modals/keyboard-shortcuts-modal";
 import { LearnKitCommandPalette } from "./command-palette";
 import type LearnKitPlugin from "../../main";
+import { t } from "../translations/translator";
 
 export type SproutHeaderPage = "home" | "cards" | "notes" | "exam" | "coach" | "analytics" | "library" | "settings";
 
@@ -85,6 +86,10 @@ export class SproutHeader {
     this.moreId = `lk-more-${Math.random().toString(36).slice(2, 9)}`;
   }
 
+  private tx(token: string, fallback: string, vars?: Record<string, string | number>): string {
+    return t(this.deps.plugin?.settings?.general?.interfaceLanguage, token, fallback, vars);
+  }
+
   private installCenterBrandLogo(viewHeader: HTMLElement) {
     let brandHost =
       queryFirst<HTMLElement>(viewHeader, ":scope > .learnkit-header-center-brand") ??
@@ -123,8 +128,8 @@ export class SproutHeader {
 
     const innerSvg = logo.querySelector(":scope > svg > svg");
     if (innerSvg) {
-      innerSvg.setAttribute("aria-label", "Home");
-      innerSvg.setAttribute("aria-description", "Go to home");
+      innerSvg.setAttribute("aria-label", this.tx("ui.header.home", "Home"));
+      innerSvg.setAttribute("aria-description", this.tx("ui.header.goHome", "Go to home"));
       innerSvg.removeAttribute("aria-tooltip");
       innerSvg.removeAttribute("title");
       innerSvg.removeAttribute("aria-hidden");
@@ -389,7 +394,7 @@ export class SproutHeader {
     const hide =
       availableWidth > 0 ? availableWidth <= MAX_CONTENT_WIDTH : typeof window !== "undefined" && window.innerWidth <= MAX_CONTENT_WIDTH;
     this.widthBtnEl.classList.toggle("learnkit-is-hidden", hide);
-    this.widthBtnEl.setAttribute("aria-label", "Expand / collapse page");
+    this.widthBtnEl.setAttribute("aria-label", this.tx("ui.header.expandCollapse", "Expand / collapse page"));
     this.widthBtnEl.setAttribute("data-tooltip-position", "bottom");
 
     if (this.widthBtnIconEl) {
@@ -532,7 +537,7 @@ export class SproutHeader {
       if (showBeta) {
         const beta = document.createElement("em");
         beta.className = "text-xs text-muted-foreground group-hover:text-inherit group-focus:text-inherit";
-        beta.textContent = "Beta";
+        beta.textContent = this.tx("ui.common.beta", "Beta");
         item.appendChild(beta);
       }
 
@@ -629,13 +634,13 @@ export class SproutHeader {
 
     mkNavItem("Home", "home", "house");
     mkSep();
-    mkSection("Study");
+    mkSection(this.tx("ui.header.section.study", "Study"));
     mkNavItem("Coach", "coach", "target");
     mkNavItem("Flashcards", "cards", "star");
     mkNavItem("Notes", "notes", "notebook-text");
     mkNavItem("Tests", "exam", "clipboard-check");
     mkSep();
-    mkSection("Tools");
+    mkSection(this.tx("ui.header.section.tools", "Tools"));
     mkNavItem("Analytics", "analytics", "chart-spline");
     mkNavItem("Library", "library", "table-2");
     mkSep();
@@ -722,7 +727,7 @@ export class SproutHeader {
     if (isMobile) navTrigger.classList.add("learnkit-mobile-nav-trigger", "learnkit-mobile-nav-trigger");
     navTrigger.setAttribute("aria-haspopup", "menu");
     navTrigger.setAttribute("aria-expanded", "false");
-    navTrigger.setAttribute("aria-label", "Open menu");
+    navTrigger.setAttribute("aria-label", this.tx("ui.header.openMenu", "Open menu"));
     navTrigger.setAttribute("data-tooltip-position", "bottom");
     navRoot.appendChild(navTrigger);
 
@@ -775,7 +780,7 @@ export class SproutHeader {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "learnkit-btn-toolbar learnkit-cmd-palette-trigger inline-flex items-center justify-center";
-    btn.setAttribute("aria-label", "Command palette");
+    btn.setAttribute("aria-label", this.tx("ui.commandPalette.title", "Command palette"));
     btn.setAttribute("data-tooltip-position", "bottom");
     btn.setAttribute("aria-haspopup", "dialog");
     btn.setAttribute("aria-expanded", "false");
@@ -1079,7 +1084,7 @@ export class SproutHeader {
     const syncBtn = document.createElement("button");
     syncBtn.type = "button";
     syncBtn.className = "learnkit-btn-toolbar inline-flex items-center gap-2";
-    syncBtn.setAttribute("aria-label", "Sync flashcards");
+    syncBtn.setAttribute("aria-label", this.tx("ui.header.syncFlashcards", "Sync flashcards"));
     syncBtn.setAttribute("data-tooltip-position", "bottom");
     syncBtn.setAttribute("data-learnkit-sync", "true");
     syncBtn.addEventListener("click", (ev) => {
@@ -1110,7 +1115,7 @@ export class SproutHeader {
     moreBtn.className = "btn-icon-outline learnkit-btn-toolbar";
     moreBtn.setAttribute("aria-haspopup", "menu");
     moreBtn.setAttribute("aria-expanded", "false");
-    moreBtn.setAttribute("aria-label", "Tools");
+    moreBtn.setAttribute("aria-label", this.tx("ui.header.section.tools", "Tools"));
     moreBtn.setAttribute("data-tooltip-position", "bottom");
     moreWrap.appendChild(moreBtn);
 

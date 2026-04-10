@@ -12,6 +12,7 @@
  */
 
 import { Modal, Notice, setIcon, type App } from "obsidian";
+import { t } from "../translations/translator";
 
 import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../core/store";
@@ -118,6 +119,10 @@ export class BulkEditCardModal extends Modal {
     this.onSaveCallback = onSave;
   }
 
+  private _tx(token: string, fallback: string, vars?: Record<string, string | number>): string {
+    return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
+  }
+
   onOpen() {
     const { plugin, cards, onSaveCallback: onSave } = this;
     if (!cards.length) { this.close(); return; }
@@ -148,7 +153,7 @@ export class BulkEditCardModal extends Modal {
       const close = document.createElement("button");
       close.type = "button";
       close.className = "learnkit-btn-toolbar learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-card-creator-close-btn learnkit-bulk-edit-close-btn";
-      close.setAttribute("aria-label", "Close");
+      close.setAttribute("aria-label", this._tx("ui.common.close", "Close"));
       close.setAttribute("data-tooltip-position", "top");
 
       const closeIcon = document.createElement("span");
@@ -682,7 +687,7 @@ export class BulkEditCardModal extends Modal {
       checkbox.type = "checkbox";
       checkbox.checked = isCorrect;
       checkbox.className = "learnkit-mcq-correct-checkbox";
-      checkbox.setAttribute("aria-label", "Mark as correct answer");
+      checkbox.setAttribute("aria-label", this._tx("ui.cardEditor.mcq.markCorrect", "Mark as correct answer"));
       checkbox.setAttribute("data-tooltip-position", "top");
       row.appendChild(checkbox);
 
@@ -704,7 +709,7 @@ export class BulkEditCardModal extends Modal {
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "inline-flex items-center justify-center h-9 w-9 p-0 learnkit-remove-btn-ghost";
-      removeBtn.setAttribute("aria-label", "Remove option");
+      removeBtn.setAttribute("aria-label", this._tx("ui.cardEditor.mcq.removeOption", "Remove option"));
       removeBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
       xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";
@@ -863,7 +868,7 @@ export class BulkEditCardModal extends Modal {
       const delBtn = document.createElement("button");
       delBtn.type = "button";
       delBtn.className = "inline-flex items-center justify-center p-0 learnkit-remove-btn-ghost learnkit-oq-del-btn";
-      delBtn.setAttribute("aria-label", "Remove step");
+      delBtn.setAttribute("aria-label", this._tx("ui.cardEditor.oq.removeStep", "Remove step"));
       delBtn.setAttribute("data-tooltip-position", "top");
       const xIcon = document.createElement("span");
       xIcon.className = "inline-flex items-center justify-center [&_svg]:size-4";

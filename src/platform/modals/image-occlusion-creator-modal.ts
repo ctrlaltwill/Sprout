@@ -6,6 +6,7 @@
  *   - ImageOcclusionCreatorModal — Obsidian Modal subclass for IO card creation/editing
  */
 import { Modal, Notice, setIcon, type App } from "obsidian";
+import { t } from "../translations/translator";
 import { log } from "../core/logger";
 import { setCssProps } from "../core/ui";
 import type LearnKitPlugin from "../../main";
@@ -119,6 +120,10 @@ export class ImageOcclusionCreatorModal extends Modal {
   constructor(app: App, plugin: LearnKitPlugin) {
     super(app);
     this.plugin = plugin;
+  }
+
+  private _tx(token: string, fallback: string, vars?: Record<string, string | number>): string {
+    return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
   }
 
   /** Factory: open the modal pre-loaded for editing an existing IO parent. */
@@ -1302,7 +1307,7 @@ export class ImageOcclusionCreatorModal extends Modal {
       });
 
       if (!masks.length) {
-        new Notice("No text regions detected. Try a clearer image.");
+        new Notice(this._tx("ui.io.autoMask.noRegions", "No text regions detected. Try a clearer image."));
         return;
       }
 
@@ -1312,9 +1317,9 @@ export class ImageOcclusionCreatorModal extends Modal {
       this.saveHistory();
       this.renderRects();
       this.updateResetMasksButtonState();
-      new Notice(`Added ${masks.length} auto masks.`);
+      new Notice(this._tx("ui.io.autoMask.added", "Added {count} auto masks.", { count: masks.length }));
     } catch (e: unknown) {
-      new Notice(`Auto-detect failed (${e instanceof Error ? e.message : String(e)})`);
+      new Notice(this._tx("ui.io.autoMask.failed", "Auto-detect failed ({error})", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       this.autoMaskBusy = false;
       this.updateAutoMaskButtonState();

@@ -1396,7 +1396,7 @@ export class SproutAssistantPopup {
       chip.createSpan({ text: formatAttachmentChipLabel(af.name, af.extension), cls: "learnkit-assistant-popup-attachment-name learnkit-assistant-popup-attachment-name" });
       const removeBtn = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove learnkit-assistant-popup-attachment-remove learnkit-assistant-popup-attachment-remove" });
       removeBtn.type = "button";
-      removeBtn.setAttribute("aria-label", "Remove");
+      removeBtn.setAttribute("aria-label", this._tx("ui.common.remove", "Remove"));
       setIcon(removeBtn, "x");
       removeBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -1971,9 +1971,9 @@ export class SproutAssistantPopup {
     const { skipped, truncatedNotes } = this._lastLinkedContextStats;
     if (!skipped && !truncatedNotes) return;
     const parts: string[] = [];
-    if (truncatedNotes > 0) parts.push(`${truncatedNotes} linked note${truncatedNotes > 1 ? "s" : ""} truncated`);
-    if (skipped > 0) parts.push(`${skipped} linked note${skipped > 1 ? "s" : ""} skipped`);
-    new Notice(`LearnKit – ${parts.join(", ")} due to context limits. Adjust in Settings → Companion → Context sources.`);
+    if (truncatedNotes > 0) parts.push(this._tx("ui.assistant.context.notesTruncated", "{count} linked note{suffix} truncated", { count: truncatedNotes, suffix: truncatedNotes > 1 ? "s" : "" }));
+    if (skipped > 0) parts.push(this._tx("ui.assistant.context.notesSkipped", "{count} linked note{suffix} skipped", { count: skipped, suffix: skipped > 1 ? "s" : "" }));
+    new Notice(this._tx("ui.assistant.context.limitNotice", "LearnKit – {details} due to context limits. Adjust in Settings → Companion → Context sources.", { details: parts.join(", ") }));
   }
 
   private _appendPlainTextCustomInstructions(noteContent: string, customInstructions: string, label: string): string {
@@ -4067,8 +4067,8 @@ export class SproutAssistantPopup {
       cls: "clickable-icon learnkit-assistant-popup-mobile-sidebar-btn learnkit-assistant-popup-mobile-sidebar-btn",
     });
     mobileSidebarBtn.type = "button";
-    mobileSidebarBtn.setAttribute("aria-label", "Toggle sidebar");
-    mobileSidebarBtn.setAttribute("title", "Toggle sidebar");
+    mobileSidebarBtn.setAttribute("aria-label", this._tx("ui.assistant.toggleSidebar", "Toggle sidebar"));
+    mobileSidebarBtn.setAttribute("title", this._tx("ui.assistant.toggleSidebar", "Toggle sidebar"));
     mobileSidebarBtn.setAttribute("data-tooltip-position", "top");
     setIcon(mobileSidebarBtn, "menu");
     mobileSidebarBtn.addEventListener("click", (e) => {
@@ -4078,7 +4078,7 @@ export class SproutAssistantPopup {
     });
 
     const headerLeft = header.createDiv({ cls: "learnkit-assistant-popup-header-left learnkit-assistant-popup-header-left" });
-    headerLeft.createDiv({ cls: "learnkit-assistant-popup-header-title learnkit-assistant-popup-header-title", text: "Companion" });
+    headerLeft.createDiv({ cls: "learnkit-assistant-popup-header-title learnkit-assistant-popup-header-title", text: this._tx("ui.assistant.title", "Companion") });
 
     const noteName = this.getActiveNoteDisplayName();
     if (noteName) {
@@ -4351,7 +4351,7 @@ export class SproutAssistantPopup {
     if (!this.isEmbeddedMode) {
       const closeBtn = headerActions.createEl("button", { cls: "learnkit-assistant-popup-close learnkit-assistant-popup-close" });
       closeBtn.type = "button";
-      closeBtn.setAttribute("aria-label", "Close");
+      closeBtn.setAttribute("aria-label", this._tx("ui.common.close", "Close"));
       closeBtn.setAttribute("data-tooltip-position", "top");
       setIcon(closeBtn, "x");
       const closePopup = (e?: Event): void => {
@@ -4593,7 +4593,7 @@ export class SproutAssistantPopup {
     const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
     sendBtn.disabled = this._isAssistantBusy();
-    sendBtn.setAttribute("aria-label", "Send");
+    sendBtn.setAttribute("aria-label", this._tx("ui.assistant.send", "Send"));
     setIcon(sendBtn, this._isAssistantBusy() ? "loader-2" : "arrow-up");
     sendBtn.addEventListener("click", () => void this.sendChatMessage());
 
@@ -4988,7 +4988,7 @@ class AttachmentPickerModal extends Modal {
     systemBtn.addEventListener("click", () => this._pickSystemFile());
 
     // ---- Divider ----
-    this.contentEl.createEl("div", { cls: "learnkit-attachment-picker-divider learnkit-attachment-picker-divider", text: "Or choose from vault" });
+    this.contentEl.createEl("div", { cls: "learnkit-attachment-picker-divider learnkit-attachment-picker-divider", text: this._tx("ui.assistant.orChooseFromVault", "Or choose from vault") });
 
     const search = this.contentEl.createEl("input", {
       cls: "input w-full learnkit-attachment-picker-search learnkit-attachment-picker-search",

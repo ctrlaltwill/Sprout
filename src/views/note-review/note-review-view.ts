@@ -986,7 +986,7 @@ export class SproutNoteReviewView extends ItemView {
     const title = document.createElement("div");
     title.className = SPROUT_TITLE_STRIP_LABEL_CLASS;
     title.textContent = coachShellMode
-      ? "Coach"
+      ? t(this.plugin.settings?.general?.interfaceLanguage, "ui.view.coach.title", "Coach")
       : t(this.plugin.settings?.general?.interfaceLanguage, "ui.view.noteReview.title", "Notes");
 
     const total = Math.max(this._queueSessionTotal, this._queue.length);
@@ -994,7 +994,11 @@ export class SproutNoteReviewView extends ItemView {
     const subtitle = document.createElement("div");
     subtitle.className = "text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
     if (coachShellMode) {
-      subtitle.textContent = "Build and manage focused study plans.";
+      subtitle.textContent = t(
+        this.plugin.settings?.general?.interfaceLanguage,
+        "ui.view.coach.subtitle",
+        "Build and manage focused study plans.",
+      );
     } else if (this._practiceMode) {
       subtitle.textContent = t(
         this.plugin.settings?.general?.interfaceLanguage,
@@ -1084,7 +1088,7 @@ export class SproutNoteReviewView extends ItemView {
       if (!markdown.trim()) {
         body.createEl("p", {
           cls: "learnkit-settings-text-muted learnkit-settings-text-muted",
-          text: "This note is empty.",
+          text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.noteReview.note.empty", "This note is empty."),
         });
       }
     } catch {
@@ -1092,7 +1096,7 @@ export class SproutNoteReviewView extends ItemView {
       body.empty();
       body.createEl("p", {
         cls: "learnkit-settings-text-muted learnkit-settings-text-muted",
-        text: "Could not load this note.",
+        text: t(this.plugin.settings?.general?.interfaceLanguage, "ui.noteReview.note.loadFailed", "Could not load this note."),
       });
     }
 
@@ -1203,9 +1207,17 @@ export class SproutNoteReviewView extends ItemView {
       menu.appendChild(item);
     };
 
-    addItem("Open in Note", "O", () => void this._openCurrentNote());
-    addItem("Bury", "B", () => void this._buryCurrentNote().then(() => new Notice("Note buried until tomorrow.")));
-    addItem("Suspend", "S", () => void this._suspendCurrentNote().then(() => new Notice("Note suspended.")));
+    addItem(t(lang, "ui.noteReview.menu.openInNote", "Open in Note"), "O", () => void this._openCurrentNote());
+    addItem(
+      t(lang, "ui.noteReview.menu.bury", "Bury"),
+      "B",
+      () => void this._buryCurrentNote().then(() => new Notice(t(lang, "ui.noteReview.notice.buried", "Note buried until tomorrow."))),
+    );
+    addItem(
+      t(lang, "ui.noteReview.menu.suspend", "Suspend"),
+      "S",
+      () => void this._suspendCurrentNote().then(() => new Notice(t(lang, "ui.noteReview.notice.suspended", "Note suspended."))),
+    );
 
     const undoItem = document.createElement("div");
     undoItem.className = `${itemClass} learnkit-menu-item--disabled`;
@@ -1214,15 +1226,15 @@ export class SproutNoteReviewView extends ItemView {
     undoItem.setAttribute("aria-disabled", "true");
     const undoSpan = document.createElement("span");
     undoSpan.className = "";
-    undoSpan.textContent = "Undo last grade";
+    undoSpan.textContent = t(lang, "ui.noteReview.menu.undo", "Undo last grade");
     undoItem.appendChild(undoSpan);
     const undoKbd = document.createElement("kbd");
     undoKbd.className = "kbd ml-auto text-xs text-muted-foreground tracking-widest";
-    undoKbd.textContent = "U";
+    undoKbd.textContent = t(lang, "ui.noteReview.menu.undoHotkey", "U");
     undoItem.appendChild(undoKbd);
     menu.appendChild(undoItem);
 
-    addItem(coachShellMode ? backToCoachLabel : "Exit to Decks", "Q", () => void this._quitToHome());
+    addItem(coachShellMode ? backToCoachLabel : t(lang, "ui.noteReview.menu.exitToDecks", "Exit to Decks"), "Q", () => void this._quitToHome());
 
     const stage = moreWrap.closest<HTMLElement>(".learnkit-note-review-stage");
     (stage ?? moreWrap).appendChild(popover);
@@ -1448,7 +1460,7 @@ export class SproutNoteReviewView extends ItemView {
       const loadingArticle = viewport.createDiv({ cls: "learnkit-note-review-article learnkit-note-review-article card learnkit-note-review-article-loading learnkit-note-review-article-loading" });
       loadingArticle.createDiv({
         cls: "learnkit-note-review-note-body learnkit-note-review-note-body markdown-rendered learnkit-note-review-loading-copy learnkit-note-review-loading-copy",
-        text: "Loading note...",
+        text: t(lang, "ui.noteReview.note.loading", "Loading note..."),
       });
       void this._renderCurrentNoteContent(viewport, effectiveCurrent, renderToken).then(() => {
         this._syncOverflowLayout(panel);
@@ -1468,7 +1480,12 @@ export class SproutNoteReviewView extends ItemView {
     setCssProps(countCard, "--learnkit-note-review-progress", `${Math.round(progress * 100)}%`);
     countCard.createDiv({
       cls: "learnkit-note-review-queue-count-label learnkit-note-review-queue-count-label",
-      text: isMobile ? `${remainingCount} remaining` : `${remainingCount} out of ${totalCount} remaining`,
+      text: isMobile
+        ? t(lang, "ui.noteReview.session.remainingOnly", "{count} remaining", { count: remainingCount })
+        : t(lang, "ui.noteReview.session.remainingOfTotal", "{remaining} out of {total} remaining", {
+          remaining: remainingCount,
+          total: totalCount,
+        }),
     });
 
     const buttonGroup = controls.createDiv({ cls: "learnkit-note-review-dock-buttons learnkit-note-review-dock-buttons" });
@@ -1477,11 +1494,11 @@ export class SproutNoteReviewView extends ItemView {
       const nextBtn = buttonGroup.createEl("button");
       nextBtn.classList.add("learnkit-btn-toolbar", "learnkit-btn-filter");
       nextBtn.setAttr("type", "button");
-      nextBtn.textContent = "Next";
+      nextBtn.textContent = t(lang, "ui.common.next", "Next");
       const nextKey = nextBtn.createEl("kbd", { text: "↵" });
       nextKey.classList.add("kbd", "ml-2");
       nextBtn.disabled = !current;
-      nextBtn.setAttr("aria-label", "Next");
+      nextBtn.setAttr("aria-label", t(lang, "ui.common.next", "Next"));
       nextBtn.setAttr("data-tooltip-position", "top");
       nextBtn.addEventListener("click", () => {
         this._advanceNoSchedulingQueue();
@@ -1489,11 +1506,11 @@ export class SproutNoteReviewView extends ItemView {
     } else if (algorithm === "fsrs") {
       const againBtn = buttonGroup.createEl("button");
       againBtn.classList.add("btn-destructive", "learnkit-btn-again", "learnkit-btn-again");
-      againBtn.createSpan({ text: "Deferred" });
+      againBtn.createSpan({ text: t(lang, "ui.noteReview.grade.deferred", "Deferred") });
       const againKey = againBtn.createEl("kbd", { text: "1" });
       againKey.classList.add("kbd", "ml-2");
       againBtn.disabled = !current;
-      againBtn.setAttr("aria-label", "Defer note (1)");
+      againBtn.setAttr("aria-label", t(lang, "ui.noteReview.grade.deferAria", "Defer note (1)"));
       againBtn.setAttr("data-tooltip-position", "top");
       againBtn.addEventListener("click", () => {
         void this._gradeCurrentFsrs("fail");
@@ -1501,11 +1518,11 @@ export class SproutNoteReviewView extends ItemView {
 
       const goodBtn = buttonGroup.createEl("button");
       goodBtn.classList.add("btn", "learnkit-btn-good", "learnkit-btn-good");
-      goodBtn.createSpan({ text: "Completed" });
+      goodBtn.createSpan({ text: t(lang, "ui.noteReview.grade.completed", "Completed") });
       const goodKey = goodBtn.createEl("kbd", { text: "2" });
       goodKey.classList.add("kbd", "ml-2");
       goodBtn.disabled = !current;
-      goodBtn.setAttr("aria-label", "Mark note as completed (2)");
+      goodBtn.setAttr("aria-label", t(lang, "ui.noteReview.grade.completedAria", "Mark note as completed (2)"));
       goodBtn.setAttr("data-tooltip-position", "top");
       goodBtn.addEventListener("click", () => {
         void this._gradeCurrentFsrs("pass");
@@ -1513,11 +1530,11 @@ export class SproutNoteReviewView extends ItemView {
     } else {
       const skipBtn = buttonGroup.createEl("button");
       skipBtn.classList.add("btn-destructive", "learnkit-btn-again", "learnkit-btn-again");
-      skipBtn.createSpan({ text: "Deferred" });
+      skipBtn.createSpan({ text: t(lang, "ui.noteReview.grade.deferred", "Deferred") });
       const skipKey = skipBtn.createEl("kbd", { text: "1" });
       skipKey.classList.add("kbd", "ml-2");
       skipBtn.disabled = !current;
-      skipBtn.setAttr("aria-label", "Defer note (1)");
+      skipBtn.setAttr("aria-label", t(lang, "ui.noteReview.grade.deferAria", "Defer note (1)"));
       skipBtn.setAttr("data-tooltip-position", "top");
       skipBtn.addEventListener("click", () => {
         this._skipCurrent();
@@ -1525,11 +1542,11 @@ export class SproutNoteReviewView extends ItemView {
 
       const markBtn = buttonGroup.createEl("button");
       markBtn.classList.add("btn", "learnkit-btn-good", "learnkit-btn-good");
-      markBtn.createSpan({ text: "Completed" });
+      markBtn.createSpan({ text: t(lang, "ui.noteReview.grade.completed", "Completed") });
       const markKey = markBtn.createEl("kbd", { text: "2" });
       markKey.classList.add("kbd", "ml-2");
       markBtn.disabled = !current;
-      markBtn.setAttr("aria-label", "Mark note as completed (2)");
+      markBtn.setAttr("aria-label", t(lang, "ui.noteReview.grade.completedAria", "Mark note as completed (2)"));
       markBtn.setAttr("data-tooltip-position", "top");
       markBtn.addEventListener("click", () => {
         void this._markCurrentAsRead();
@@ -1543,10 +1560,13 @@ export class SproutNoteReviewView extends ItemView {
       const moreBtn = moreWrap.createEl("button");
       moreBtn.disabled = !current || this._practiceMode || this._coachNoScheduling;
       moreBtn.classList.add("learnkit-note-review-more-trigger", "learnkit-note-review-more-trigger", "learnkit-btn-toolbar", "learnkit-btn-toolbar");
-      moreBtn.setAttr("aria-label", "More actions");
+      moreBtn.setAttr("aria-label", t(lang, "ui.noteReview.menu.moreAria", "More actions"));
       const moreIconWrap = moreBtn.createSpan({ cls: "inline-flex items-center justify-center" });
       setIcon(moreIconWrap, "ellipsis");
-      moreBtn.createSpan({ cls: "learnkit-note-review-more-label learnkit-note-review-more-label", text: "More" });
+      moreBtn.createSpan({
+        cls: "learnkit-note-review-more-label learnkit-note-review-more-label",
+        text: t(lang, "ui.noteReview.menu.more", "More"),
+      });
       const moreKbd = moreBtn.createEl("kbd", { text: "M" });
       moreKbd.classList.add("kbd", "ml-2");
       moreBtn.setAttr("data-tooltip-position", "top");

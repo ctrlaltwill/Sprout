@@ -2731,10 +2731,10 @@ export class LearnKitSettingsTab extends PluginSettingTab {
 
             if (includeFolderNotesChip && noteCfg.avoidFolderNotes !== false) {
               const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
-              chip.createSpan({ text: `Folder Notes (${folderNoteCount})` });
+              chip.createSpan({ text: this._tx("ui.settings.scope.folderNotes", "Folder Notes ({count})", { count: folderNoteCount }) });
               const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
               remove.type = "button";
-              remove.setAttr("aria-label", "Remove");
+              remove.setAttr("aria-label", this._tx("ui.common.remove", "Remove"));
               setIcon(remove, "x");
               remove.addEventListener("click", () => {
                 noteCfg.avoidFolderNotes = false;
@@ -3209,7 +3209,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
               setting.controlEl.empty();
               setting.addText((text) => {
                 text.setValue(currentModel);
-                text.setPlaceholder("OpenRouter model ID (e.g., openai/gpt-4o-mini)");
+                text.setPlaceholder(this._tx("ui.settings.studyAssistant.openrouter.placeholder", "OpenRouter model ID (e.g., openai/gpt-4o-mini)"));
                 text.onChange(async (value) => {
                   this.plugin.settings.studyAssistant.model = String(value || "").trim();
                   await this.plugin.saveAll();
@@ -4523,7 +4523,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         const vaultSync = this.plugin.settings.storage.vaultSync;
 
         const cur = vaultSync.folderPath ?? "LearnKit/";
-        t.setPlaceholder("Folder path");
+        t.setPlaceholder(this._tx("ui.settings.storage.folderPath", "Folder path"));
         t.setValue(String(cur));
 
         const inputEl = t.inputEl;

@@ -15,7 +15,11 @@ This document focuses on the workflow for translating the plugin to improve loca
 2. Translate values only. Do not rename token keys.
 3. Keep placeholders unchanged (example: `{language}`, `{count}`).
 4. Add the locale to the registry in `src/platform/translations/locale-registry.ts`.
-5. Run checks:
+5. Import the new JSON file in `src/platform/translations/translator.ts` and add it to the `MESSAGE_BUNDLES` object.
+
+> **All three files must land together.** Without the JSON file the build fails; without the registry and translator entries the language will not appear in Settings.
+
+6. Run checks:
    - `npm run translations:check`
    - `npm run test`
 6. Open a pull request with:

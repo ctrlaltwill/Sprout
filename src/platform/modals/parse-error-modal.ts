@@ -7,6 +7,7 @@
  */
 
 import { Modal, Notice, TFile, MarkdownView, setIcon, type App } from "obsidian";
+import { t } from "../translations/translator";
 import type LearnKitPlugin from "../../main";
 import type { CardRecord } from "../core/store";
 import { parseCardsFromText, type ParsedCard } from "../../engine/parser/parser";
@@ -37,7 +38,9 @@ export class ParseErrorModal extends Modal {
     this.plugin = plugin;
     this.quarantinedIds = Array.isArray(quarantinedIds) ? quarantinedIds : [];
   }
-
+  private _tx(token: string, fallback: string, vars?: Record<string, string | number>): string {
+    return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
+  }
   // ── Modal lifecycle ───────────────────────────────────────────────────────
 
   onOpen() {
@@ -218,13 +221,13 @@ export class ParseErrorModal extends Modal {
   private async openAtAnchor(id: string) {
     const ref = this.resolveCardRef(id);
     if (!ref?.sourceNotePath) {
-      new Notice(`Cannot resolve note path for ${buildPrimaryCardAnchor(id)}`);
+      new Notice(this._tx("ui.parseError.cannotResolve", "Cannot resolve note path for {anchor}", { anchor: buildPrimaryCardAnchor(id) }));
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(ref.sourceNotePath);
     if (!(file instanceof TFile)) {
-      new Notice(`Note not found (${ref.sourceNotePath})`);
+      new Notice(this._tx("ui.parseError.noteNotFound", "Note not found ({path})", { path: ref.sourceNotePath }));
       return;
     }
 
@@ -271,13 +274,13 @@ export class ParseErrorModal extends Modal {
   private async openQuickEdit(id: string) {
     const ref = this.resolveCardRef(id);
     if (!ref?.sourceNotePath) {
-      new Notice(`Cannot resolve note path for ${buildPrimaryCardAnchor(id)}`);
+      new Notice(this._tx("ui.parseError.cannotResolve", "Cannot resolve note path for {anchor}", { anchor: buildPrimaryCardAnchor(id) }));
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(ref.sourceNotePath);
     if (!(file instanceof TFile)) {
-      new Notice(`Note not found (${ref.sourceNotePath})`);
+      new Notice(this._tx("ui.parseError.noteNotFound", "Note not found ({path})", { path: ref.sourceNotePath }));
       return;
     }
 

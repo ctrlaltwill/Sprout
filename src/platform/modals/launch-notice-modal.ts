@@ -23,8 +23,8 @@ export class LaunchNoticeModal extends Modal {
   }
 
   override onOpen(): void {
-    const tx = (token: string, fallback: string) =>
-      t(this.plugin.settings?.general?.interfaceLanguage, token, fallback);
+    const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
+      t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
 
     setModalTitle(this, tx("ui.launchNotice.title", "LearnKit 1.1.0"));
     this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
@@ -41,10 +41,10 @@ export class LaunchNoticeModal extends Modal {
     });
     const body = contentInner.createDiv({ cls: "learnkit-guide-body learnkit-guide-body markdown-rendered" });
 
-    const title = body.createEl("h1", { text: "A message from the developer" });
+    const title = body.createEl("h1", { text: tx("ui.launchNotice.heading.message", "A message from the developer") });
     title.addClass("learnkit-guide-snap-heading");
 
-    const introHeading = body.createEl("h2", { text: "Thank you" });
+    const introHeading = body.createEl("h2", { text: tx("ui.launchNotice.heading.thankYou", "Thank you") });
     introHeading.addClass("learnkit-guide-snap-heading");
     body.createEl("p", {
       text: tx(
@@ -53,60 +53,67 @@ export class LaunchNoticeModal extends Modal {
       ),
     });
     body.createEl("p", {
-      text: "Version 1.1.0 is our biggest update so far. It introduces companion, our AI learning companion, with a bring-your-own-key model. This model allows it to be included for all users and not locked behind subscriptions or paywalls.",
+      text: tx(
+        "ui.launchNotice.body.versionSummary",
+        "Version 1.1.0 is our biggest update so far. It introduces companion, our AI learning companion, with a bring-your-own-key model. This model allows it to be included for all users and not locked behind subscriptions or paywalls.",
+      ),
     });
 
-    const setupHeading = body.createEl("h2", { text: "Getting started with companion" });
+    const setupHeading = body.createEl("h2", { text: tx("ui.launchNotice.heading.gettingStarted", "Getting started with companion") });
     setupHeading.addClass("learnkit-guide-snap-heading");
     const setupIntro = body.createEl("p");
-    setupIntro.setText("Companion is not ready out of the box. You will need to connect an AI provider first.");
+    setupIntro.setText(tx("ui.launchNotice.setup.intro", "Companion is not ready out of the box. You will need to connect an AI provider first."));
 
     const setupList = body.createEl("ol", { cls: "" });
-    setupList.createEl("li", { text: "Open sprout settings and go to companion." });
-    setupList.createEl("li", { text: "Choose your provider. It works with free providers (for example, google and openrouter) and premium providers (for example, anthropic and openai)." });
-    setupList.createEl("li", { text: "Choose the AI model from the provider that you want to use. This updates dynamically, and some models may return errors. If this happens, try a different model or raise an issue on GitHub." });
-    setupList.createEl("li", { text: "Paste your API key." });
-    setupList.createEl("li", { text: "Open companion from the command palette using 'open study companion widget', or from the companion modal button in the bottom-right of your notes. You can adjust this button's visibility in settings." });
+    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step1", "Open sprout settings and go to companion.") });
+    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step2", "Choose your provider. It works with free providers (for example, google and openrouter) and premium providers (for example, anthropic and openai).") });
+    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step3", "Choose the AI model from the provider that you want to use. This updates dynamically, and some models may return errors. If this happens, try a different model or raise an issue on GitHub.") });
+    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step4", "Paste your API key.") });
+    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step5", "Open companion from the command palette using 'open study companion widget', or from the companion modal button in the bottom-right of your notes. You can adjust this button's visibility in settings.") });
 
-    const freeSetupHeading = body.createEl("h2", { text: "Free setup recommendation" });
+    const freeSetupHeading = body.createEl("h2", { text: tx("ui.launchNotice.heading.freeSetup", "Free setup recommendation") });
     freeSetupHeading.addClass("learnkit-guide-snap-heading");
     const freeSetupList = body.createEl("ol", { cls: "" });
-    freeSetupList.createEl("li", { text: "Create an account at openrouter.ai. A free plan is available." });
-    freeSetupList.createEl("li", { text: "Generate an API key in your openrouter dashboard." });
-    freeSetupList.createEl("li", { text: "In sprout settings, set provider to openrouter." });
-    freeSetupList.createEl("li", { text: "We recommend setting the model to auto router." });
-    freeSetupList.createEl("li", { text: "Paste your API key." });
-    freeSetupList.createEl("li", { text: "You are ready to start using companion!" });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step1", "Create an account at openrouter.ai. A free plan is available.") });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step2", "Generate an API key in your openrouter dashboard.") });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step3", "In sprout settings, set provider to openrouter.") });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step4", "We recommend setting the model to auto router.") });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step5", "Paste your API key.") });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step6", "You are ready to start using companion!") });
 
-    const securityHeading = body.createEl("h2", { text: "API key security" });
+    const securityHeading = body.createEl("h2", { text: tx("ui.launchNotice.heading.apiSecurity", "API key security") });
     const configPath = `${this.app.vault.configDir}/plugins/sprout/data.json`;
     securityHeading.addClass("learnkit-guide-snap-heading");
     body.createEl("p", {
-      text: `Your API keys are stored in local plugin data files (${configPath}). If you use Git in your vault, make sure plugin data files are ignored in .gitignore before pushing to GitHub. If you do not sync that folder with Git, this is not an issue.`,
+      text: tx(
+        "ui.launchNotice.security.body",
+        "Your API keys are stored in local plugin data files ({configPath}). If you use Git in your vault, make sure plugin data files are ignored in .gitignore before pushing to GitHub. If you do not sync that folder with Git, this is not an issue.",
+        { configPath },
+      ),
     });
 
-    const changesHeading = body.createEl("h2", { text: "Other changes" });
+    const changesHeading = body.createEl("h2", { text: tx("ui.launchNotice.heading.otherChanges", "Other changes") });
     changesHeading.addClass("learnkit-guide-snap-heading");
     const changesList = body.createEl("ul", { cls: "" });
-    changesList.createEl("li", { text: "Improved reading view rendering and consistency." });
-    changesList.createEl("li", { text: "Grading duration visibility – can be turned on in settings, allowing you to see the duration between reviews." });
-    changesList.createEl("li", { text: "Improved image occlusion editing, including ocr-powered auto-masking." });
-    changesList.createEl("li", { text: "General quality-of-life improvements." });
+    changesList.createEl("li", { text: tx("ui.launchNotice.changes.item1", "Improved reading view rendering and consistency.") });
+    changesList.createEl("li", { text: tx("ui.launchNotice.changes.item2", "Grading duration visibility - can be turned on in settings, allowing you to see the duration between reviews.") });
+    changesList.createEl("li", { text: tx("ui.launchNotice.changes.item3", "Improved image occlusion editing, including ocr-powered auto-masking.") });
+    changesList.createEl("li", { text: tx("ui.launchNotice.changes.item4", "General quality-of-life improvements.") });
 
-    const closingHeading = body.createEl("h2", { text: "From" });
+    const closingHeading = body.createEl("h2", { text: tx("ui.launchNotice.heading.from", "From") });
     closingHeading.addClass("learnkit-guide-snap-heading");
     body.createEl("p", {
-      text: "There may be teething issues as 1.1.0 rolls out. Please report bugs and feedback on GitHub so we can improve quickly.",
+      text: tx("ui.launchNotice.closing.p1", "There may be teething issues as 1.1.0 rolls out. Please report bugs and feedback on GitHub so we can improve quickly."),
     });
     body.createEl("p", {
-      text: "We remain committed to keeping sprout open source and accessible.",
+      text: tx("ui.launchNotice.closing.p2", "We remain committed to keeping sprout open source and accessible."),
     });
     body.createEl("p", {
-      text: "If sprout is helping you, please share it with friends who might benefit too. Thank you again for being here.",
+      text: tx("ui.launchNotice.closing.p3", "If sprout is helping you, please share it with friends who might benefit too. Thank you again for being here."),
     });
 
     const signoff = body.createEl("p", {
-      text: "Will (ctrlaltwill) \ndeveloper, sprout",
+      text: tx("ui.launchNotice.closing.signoff", "Will (ctrlaltwill) \ndeveloper, sprout"),
     });
     setCssProps(signoff, "white-space", "pre-line");
 
@@ -133,22 +140,22 @@ export class LaunchNoticeModal extends Modal {
 
     const releaseNotesBtn = footer.createEl("button", {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
-      attr: { type: "button", "aria-label": "Open release notes" },
+      attr: { type: "button", "aria-label": tx("ui.launchNotice.releaseNotes.open", "Open release notes") },
     });
     const releaseIcon = releaseNotesBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(releaseIcon, "file-text");
-    releaseNotesBtn.createSpan({ text: "Release notes" });
+    releaseNotesBtn.createSpan({ text: tx("ui.launchNotice.releaseNotes.label", "Release notes") });
     releaseNotesBtn.addEventListener("click", () => {
       window.open("https://github.com/ctrlaltwill/Sprout/releases", "_blank", "noopener,noreferrer");
     });
 
     const settingsBtn = footer.createEl("button", {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
-      attr: { type: "button", "aria-label": "Open sprout settings" },
+      attr: { type: "button", "aria-label": tx("ui.launchNotice.settings.open", "Open sprout settings") },
     });
     const settingsIcon = settingsBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(settingsIcon, "settings");
-    settingsBtn.createSpan({ text: "Settings" });
+    settingsBtn.createSpan({ text: tx("ui.common.settings", "Settings") });
     settingsBtn.addEventListener("click", () => {
       void this.plugin.openSettingsTab(false, "settings");
       this.close();

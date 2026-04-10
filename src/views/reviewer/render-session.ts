@@ -1218,7 +1218,7 @@ export function renderSessionMode(args: Args) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "btn-icon learnkit-tts-replay-btn";
-      btn.setAttribute("aria-label", `Read ${text.toLowerCase()} aloud`);
+      btn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.tts.readAloud", "Read {text} aloud", { text: text.toLowerCase() }));
       btn.setAttribute("data-tooltip-position", "top");
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");

@@ -23,6 +23,7 @@ import { isParentCard } from "../../platform/core/card-utils";
 import { cascadeAOSOnLoad, initAOS, resetAOS } from "../../platform/core/aos-loader";
 import { CoachHealthPanel, CoachReadinessPanel, type ExamReadinessPoint } from "./coach-charts";
 import { mountSearchPopoverList, type SearchPopoverOption } from "../shared/search-popover-list";
+import { t } from "../../platform/translations/translator";
 import {
   rowToSavedScopePreset,
   scopeIdKeyFromIds,
@@ -203,6 +204,10 @@ export class SproutCoachView extends ItemView {
 
   getIcon(): string {
     return "target";
+  }
+
+  private _tx(token: string, fallback: string, vars?: Record<string, string | number>): string {
+    return t(this.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
   }
 
   async onOpen(): Promise<void> {
@@ -717,14 +722,17 @@ export class SproutCoachView extends ItemView {
 
   private _renderEmptyCta(host: HTMLElement): void {
     const card = host.createDiv({ cls: "card learnkit-coach-cta-card learnkit-coach-cta-card" });
-    card.createEl("h3", { text: "Create your first exam plan" });
+    card.createEl("h3", { text: this._tx("ui.view.coach.empty.title", "Create your first exam plan") });
     card.createEl("p", {
-      text: "Build a custom study plan with focused targets on notes and folders within your vault. Study coach will develop a unique, tailored plan to ensure you are ready for exam day.",
+      text: this._tx(
+        "ui.view.coach.empty.body",
+        "Build a custom study plan with focused targets on notes and folders within your vault. Study coach will develop a unique, tailored plan to ensure you are ready for exam day.",
+      ),
     });
 
     const cta = card.createEl("button", {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent",
-      text: "Get started",
+      text: this._tx("ui.view.coach.empty.cta", "Get started"),
     });
     cta.type = "button";
     cta.addEventListener("click", () => {
@@ -910,39 +918,54 @@ export class SproutCoachView extends ItemView {
 
   private _renderWizardScopeStep(card: HTMLElement, options: ScopeOption[]): void {
     const isEditingContent = !!this._wizardEditingPlanId;
-    const planName = this._planName || "this plan";
+    const planName = this._planName || this._tx("ui.view.coach.wizard.thisPlan", "this plan");
     card.createEl("h3", {
       text: isEditingContent
-        ? `Edit what you are studying for ${planName}`
-        : "Select what you are studying",
+        ? this._tx("ui.view.coach.wizard.scope.editTitle", "Edit what you are studying for {plan}", { plan: planName })
+        : this._tx("ui.view.coach.wizard.scope.title", "Select what you are studying"),
     });
     card.createEl("p", {
       cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
       text: isEditingContent
-        ? "Edit the content in your study plan by adding or removing notes, folders, tags, or properties."
-        : "Choose the content to include in your study plan, such as the notes or folders you need to revise.",
+        ? this._tx("ui.view.coach.wizard.scope.editBody", "Edit the content in your study plan by adding or removing notes, folders, tags, or properties.")
+        : this._tx("ui.view.coach.wizard.scope.body", "Choose the content to include in your study plan, such as the notes or folders you need to revise."),
     });
 
-    card.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Plan name" });
-    const nameInput = card.createEl("input", { cls: "input h-9", attr: { type: "text", placeholder: "Biology finals" } });
+    card.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: this._tx("ui.view.coach.wizard.scope.planName", "Plan name") });
+    const nameInput = card.createEl("input", {
+      cls: "input h-9",
+      attr: { type: "text", placeholder: this._tx("ui.view.coach.wizard.scope.planNamePlaceholder", "Biology finals") },
+    });
     nameInput.value = this._planName;
     nameInput.addEventListener("input", () => {
       this._planName = String(nameInput.value || "").trim();
     });
 
-    card.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label learnkit-coach-field-label-gap learnkit-coach-field-label-gap", text: "Content scope" });
+    card.createDiv({
+      cls: "learnkit-coach-field-label learnkit-coach-field-label learnkit-coach-field-label-gap learnkit-coach-field-label-gap",
+      text: this._tx("ui.view.coach.wizard.scope.contentScope", "Content scope"),
+    });
     const searchWrap = card.createDiv({ cls: "learnkit-coach-search-wrap learnkit-coach-search-wrap" });
     const searchIcon = searchWrap.createSpan({ cls: "learnkit-coach-search-icon learnkit-coach-search-icon" });
     setIcon(searchIcon, "search");
-    const search = searchWrap.createEl("input", { cls: "input h-9", attr: { type: "search", placeholder: "Search notes, folders, tags, or properties..." } });
+    const search = searchWrap.createEl("input", {
+      cls: "input h-9",
+      attr: {
+        type: "search",
+        placeholder: this._tx("ui.view.coach.wizard.scope.searchPlaceholder", "Search notes, folders, tags, or properties..."),
+      },
+    });
     search.value = this._searchQuery;
     const popover = searchWrap.createDiv({ cls: "learnkit-coach-scope-popover learnkit-coach-scope-popover dropdown-menu hidden" });
     const list = popover.createDiv({ cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel" });
     list.setAttr("role", "menu");
-    list.setAttr("aria-label", "Content matches");
+    list.setAttr("aria-label", this._tx("ui.view.coach.wizard.scope.matches", "Content matches"));
 
     const chipsWrap = card.createDiv({ cls: "learnkit-coach-selected-wrap learnkit-coach-selected-wrap" });
-    const selectedTitle = chipsWrap.createDiv({ cls: "learnkit-coach-selected-title learnkit-coach-selected-title", text: `Study content (${this._selectedScopeIds.size})` });
+    const selectedTitle = chipsWrap.createDiv({
+      cls: "learnkit-coach-selected-title learnkit-coach-selected-title",
+      text: this._tx("ui.view.coach.wizard.scope.studyContent", "Study content ({count})", { count: this._selectedScopeIds.size }),
+    });
     const chips = chipsWrap.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips" });
     const actionsGrid = chipsWrap.createDiv({ cls: "learnkit-coach-scope-actions-grid learnkit-coach-scope-actions-grid" });
     const presetWrap = actionsGrid.createDiv({ cls: "learnkit-coach-scope-action learnkit-coach-scope-action" });
@@ -952,18 +975,18 @@ export class SproutCoachView extends ItemView {
         type: "button",
         "aria-haspopup": "listbox",
         "aria-expanded": "false",
-        "aria-label": "Saved presets",
+        "aria-label": this._tx("ui.view.coach.wizard.scope.savedPresets", "Saved presets"),
       },
     });
     const presetBtnIcon = presetBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(presetBtnIcon, "bookmark");
-    const presetBtnLabel = presetBtn.createSpan({ cls: "", text: "Saved presets" });
+    const presetBtnLabel = presetBtn.createSpan({ cls: "", text: this._tx("ui.view.coach.wizard.scope.savedPresets", "Saved presets") });
     const presetPopover = presetWrap.createDiv({ cls: "learnkit-scope-preset-popover learnkit-scope-preset-popover dropdown-menu hidden" });
     const presetList = presetPopover.createDiv({
       cls: "learnkit-coach-scope-list learnkit-coach-scope-list min-w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1 learnkit-pointer-auto learnkit-pointer-auto learnkit-header-menu-panel learnkit-header-menu-panel",
     });
     presetList.setAttr("role", "listbox");
-    presetList.setAttr("aria-label", "Saved presets");
+    presetList.setAttr("aria-label", this._tx("ui.view.coach.wizard.scope.savedPresets", "Saved presets"));
     let presetOutsideAttached = false;
 
     const closePresetPopover = (): void => {
@@ -995,31 +1018,34 @@ export class SproutCoachView extends ItemView {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
       attr: {
         type: "button",
-        "aria-label": "Clear selection",
+        "aria-label": this._tx("ui.view.coach.wizard.scope.clearSelection", "Clear selection"),
       },
     });
     const clearBtnIcon = clearBtn.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(clearBtnIcon, "x");
-    clearBtn.createSpan({ cls: "", text: "Clear selection" });
+    clearBtn.createSpan({ cls: "", text: this._tx("ui.view.coach.wizard.scope.clearSelection", "Clear selection") });
 
     const footer = card.createDiv({ cls: "learnkit-coach-wizard-footer learnkit-coach-wizard-footer" });
     if (!isEditingContent) {
       const cancel = footer.createEl("button", {
         cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
         attr: {
-          "aria-label": "Cancel",
+          "aria-label": this._tx("ui.common.cancel", "Cancel"),
           "data-tooltip-position": "top",
         },
       });
       cancel.type = "button";
-      cancel.createSpan({ cls: "", text: "Cancel" });
+      cancel.createSpan({ cls: "", text: this._tx("ui.common.cancel", "Cancel") });
       cancel.addEventListener("click", () => {
         this._resetWizardDraft();
         void this._render();
       });
     }
 
-    const next = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2", text: isEditingContent ? "Save" : "Next" });
+    const next = footer.createEl("button", {
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
+      text: isEditingContent ? this._tx("ui.common.save", "Save") : this._tx("ui.common.next", "Next"),
+    });
     next.type = "button";
     if (!isEditingContent) {
       const nextIcon = next.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5" });
@@ -1035,14 +1061,14 @@ export class SproutCoachView extends ItemView {
       void (async () => {
         const selected = selectedScopes();
         if (!selected.length) {
-          new Notice("Select at least one scope.");
+          new Notice(this._tx("ui.view.coach.notice.selectScope", "Select at least one scope."));
           return;
         }
         if (!this._coachDb || !this._wizardEditingPlanId) return;
 
         const existingPlan = this._coachDb.listPlans().find((entry) => entry.plan_id === this._wizardEditingPlanId);
         if (!existingPlan) {
-          new Notice("Plan no longer exists.");
+          new Notice(this._tx("ui.view.coach.notice.planMissing", "Plan no longer exists."));
           this._resetWizardDraft();
           await this._render();
           return;
@@ -1059,7 +1085,7 @@ export class SproutCoachView extends ItemView {
 
         this._selectedPlanScopeId = existingPlan.plan_id;
         this._resetWizardDraft();
-        new Notice("Plan content updated.");
+        new Notice(this._tx("ui.view.coach.notice.planUpdated", "Plan content updated."));
         await this._render();
       })();
     });
@@ -1101,7 +1127,7 @@ export class SproutCoachView extends ItemView {
       const wasOpen = !presetPopover.classList.contains("hidden");
       const keepOpen = preserveOpen && wasOpen;
       presetList.empty();
-      presetBtnLabel.setText("Saved presets");
+      presetBtnLabel.setText(this._tx("ui.view.coach.wizard.scope.savedPresets", "Saved presets"));
       if (!keepOpen) closePresetPopover();
 
       const matchingPreset = hasSelection
@@ -1119,8 +1145,8 @@ export class SproutCoachView extends ItemView {
           cls: "learnkit-ss-search-input learnkit-ss-search-input",
           attr: {
             type: "text",
-            placeholder: "Preset name",
-            "aria-label": "Preset name",
+            placeholder: this._tx("ui.view.coach.wizard.scope.presetName", "Preset name"),
+            "aria-label": this._tx("ui.view.coach.wizard.scope.presetName", "Preset name"),
             autocomplete: "off",
             spellcheck: "false",
           },
@@ -1131,18 +1157,18 @@ export class SproutCoachView extends ItemView {
           attr: {
             role: "button",
             tabindex: "0",
-            "aria-label": "Save preset",
+            "aria-label": this._tx("ui.view.coach.wizard.scope.savePreset", "Save preset"),
           },
         });
       } else if (matchingPreset) {
         const status = presetList.createDiv({ cls: "learnkit-scope-preset-status learnkit-scope-preset-status" });
-        status.createSpan({ text: "Selection saved as " });
+        status.createSpan({ text: this._tx("ui.view.coach.wizard.scope.selectionSavedAs", "Selection saved as ") });
         status.createEl("strong", { text: matchingPreset.name });
       }
 
       const saveCurrentSelection = async (): Promise<void> => {
         if (!this._coachDb || !this._selectedScopeIds.size || isSelectionSaved()) return;
-        const suggestedName = `Preset ${presets.length + 1}`;
+        const suggestedName = this._tx("ui.view.coach.wizard.scope.presetSuggested", "Preset {index}", { index: presets.length + 1 });
         const name = String(nameInput?.value || "").trim() || suggestedName;
         const now = Date.now();
         const presetId = globalThis.crypto?.randomUUID?.() ?? `preset-${now}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1205,7 +1231,13 @@ export class SproutCoachView extends ItemView {
           applyBtn.classList.add("is-selected");
         }
         const itemText = applyBtn.createSpan({ cls: "learnkit-scope-preset-item-text learnkit-scope-preset-item-text" });
-        itemText.createSpan({ cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label", text: `${preset.name} (${preset.scopes.length})` });
+        itemText.createSpan({
+          cls: "learnkit-coach-scope-item-label learnkit-coach-scope-item-label",
+          text: this._tx("ui.view.coach.wizard.scope.presetWithCount", "{name} ({count})", {
+            name: preset.name,
+            count: preset.scopes.length,
+          }),
+        });
         applyBtn.addEventListener("click", () => {
           this._selectedScopeIds.clear();
           for (const scope of preset.scopes) {
@@ -1220,7 +1252,7 @@ export class SproutCoachView extends ItemView {
 
         const deleteBtn = row.createSpan({
           cls: "learnkit-scope-preset-remove learnkit-scope-preset-remove",
-          attr: { "aria-label": `Delete ${preset.name}` },
+          attr: { "aria-label": this._tx("ui.view.coach.wizard.scope.deletePreset", "Delete {name}", { name: preset.name }) },
         });
         setIcon(deleteBtn, "x");
         deleteBtn.setAttr("role", "button");
@@ -1255,9 +1287,9 @@ export class SproutCoachView extends ItemView {
       const canOpen = hasSelection || presets.length > 0;
       clearWrap.classList.toggle("hidden", !hasSelection);
       presetBtn.disabled = !canOpen;
-      if (!canOpen) presetBtn.setAttr("aria-label", "Select content to save a preset");
-      else if (!presets.length) presetBtn.setAttr("aria-label", "Save preset");
-      else presetBtn.setAttr("aria-label", "Saved presets");
+      if (!canOpen) presetBtn.setAttr("aria-label", this._tx("ui.view.coach.wizard.scope.selectToSavePreset", "Select content to save a preset"));
+      else if (!presets.length) presetBtn.setAttr("aria-label", this._tx("ui.view.coach.wizard.scope.savePreset", "Save preset"));
+      else presetBtn.setAttr("aria-label", this._tx("ui.view.coach.wizard.scope.savedPresets", "Saved presets"));
 
       if (!canOpen) closePresetPopover();
     };
@@ -1289,10 +1321,10 @@ export class SproutCoachView extends ItemView {
     });
 
     const renderSelected = (preservePresetPopover = false): void => {
-      selectedTitle.setText(`Selected (${this._selectedScopeIds.size})`);
+      selectedTitle.setText(this._tx("ui.view.coach.wizard.scope.selected", "Selected ({count})", { count: this._selectedScopeIds.size }));
       chips.empty();
       if (!this._selectedScopeIds.size) {
-        chips.createDiv({ cls: "text-muted-foreground", text: "No content selected yet." });
+        chips.createDiv({ cls: "text-muted-foreground", text: this._tx("ui.view.coach.wizard.scope.noneSelected", "No content selected yet.") });
       } else {
         for (const scopeId of this._selectedScopeIds) {
           const option = options.find((entry) => toScopeId(entry.scope) === scopeId);
@@ -1301,13 +1333,18 @@ export class SproutCoachView extends ItemView {
           if (option.scope.type === "folder") {
             const folderPath = String(option.scope.key || option.scope.name || "").trim();
             const count = this._allFiles().filter((file) => file.path.startsWith(`${folderPath}/`)).length;
-            chip.createSpan({ text: `Folder: ${formatFolderChipLabel(folderPath)} (${count})` });
+            chip.createSpan({
+              text: this._tx("ui.view.coach.scope.folder", "Folder: {folder} ({count})", {
+                folder: formatFolderChipLabel(folderPath),
+                count,
+              }),
+            });
           } else {
             chip.createSpan({ text: option.label });
           }
           const remove = chip.createEl("button", { cls: "learnkit-coach-chip-remove learnkit-coach-chip-remove" });
           remove.type = "button";
-          remove.setAttr("aria-label", "Remove");
+          remove.setAttr("aria-label", this._tx("ui.common.remove", "Remove"));
           setIcon(remove, "x");
           remove.addEventListener("click", (evt) => {
             evt.stopPropagation();
@@ -1348,13 +1385,13 @@ export class SproutCoachView extends ItemView {
         };
       }),
       onToggle: toggleScopeSelection,
-      emptyTextWhenQuery: "No matching notes, folders, tags, or properties.",
-      emptyTextWhenIdle: "Type to search notes, folders, tags, or properties.",
+      emptyTextWhenQuery: this._tx("ui.view.coach.wizard.scope.noMatch", "No matching notes, folders, tags, or properties."),
+      emptyTextWhenIdle: this._tx("ui.view.coach.wizard.scope.searchHint", "Type to search notes, folders, tags, or properties."),
       typeFilters: [
-        { type: "folder", label: "Folders" },
-        { type: "note", label: "Notes" },
-        { type: "tag", label: "Tags" },
-        { type: "property", label: "Properties" },
+        { type: "folder", label: this._tx("ui.view.coach.wizard.scope.filters.folders", "Folders") },
+        { type: "note", label: this._tx("ui.view.coach.wizard.scope.filters.notes", "Notes") },
+        { type: "tag", label: this._tx("ui.view.coach.wizard.scope.filters.tags", "Tags") },
+        { type: "property", label: this._tx("ui.view.coach.wizard.scope.filters.properties", "Properties") },
       ],
     });
 
@@ -1366,14 +1403,14 @@ export class SproutCoachView extends ItemView {
     card.classList.add("learnkit-coach-wizard-page-schedule", "learnkit-coach-wizard-page-schedule");
 
     const intro = card.createDiv({ cls: "learnkit-coach-schedule-intro learnkit-coach-schedule-intro" });
-    intro.createEl("h3", { text: "Set timeline and intensity" });
+    intro.createEl("h3", { text: this._tx("ui.view.coach.wizard.schedule.title", "Set timeline and intensity") });
     intro.createEl("p", {
       cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
-      text: "Choose your exam date and study pressure level. Targets update dynamically as your workload changes.",
+      text: this._tx("ui.view.coach.wizard.schedule.body", "Choose your exam date and study pressure level. Targets update dynamically as your workload changes."),
     });
 
     const dateBlock = card.createDiv({ cls: "learnkit-coach-schedule-field learnkit-coach-schedule-field" });
-    dateBlock.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Exam date" });
+    dateBlock.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: this._tx("ui.view.coach.wizard.schedule.examDate", "Exam date") });
     const dateInput = dateBlock.createEl("input", { cls: "input h-9 learnkit-coach-date-input learnkit-coach-date-input" });
     dateInput.type = "date";
     dateInput.value = this._examDateInput;
@@ -1382,25 +1419,25 @@ export class SproutCoachView extends ItemView {
     });
 
     const intensityBlock = card.createDiv({ cls: "learnkit-coach-schedule-intensity learnkit-coach-schedule-intensity" });
-    intensityBlock.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Intensity" });
+    intensityBlock.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: this._tx("ui.view.coach.wizard.schedule.intensity", "Intensity") });
     const optionsWrap = intensityBlock.createDiv({ cls: "learnkit-coach-intensity-grid learnkit-coach-intensity-grid" });
     const intensityMeta: Array<{ value: CoachIntensity; title: string; desc: string; level: number }> = [
       {
         value: "relaxed",
-        title: "Relaxed",
-        desc: "Lighter daily load for steadier progress and lower burnout risk.",
+        title: this._tx("ui.view.coach.wizard.schedule.relaxed", "Relaxed"),
+        desc: this._tx("ui.view.coach.wizard.schedule.relaxedDesc", "Lighter daily load for steadier progress and lower burnout risk."),
         level: 1,
       },
       {
         value: "balanced",
-        title: "Balanced",
-        desc: "Steady default pace with strong progress and sustainable workload.",
+        title: this._tx("ui.view.coach.wizard.schedule.balanced", "Balanced"),
+        desc: this._tx("ui.view.coach.wizard.schedule.balancedDesc", "Steady default pace with strong progress and sustainable workload."),
         level: 2,
       },
       {
         value: "aggressive",
-        title: "Aggressive",
-        desc: "Heavier daily load for faster gains during focused crunch periods.",
+        title: this._tx("ui.view.coach.wizard.schedule.aggressive", "Aggressive"),
+        desc: this._tx("ui.view.coach.wizard.schedule.aggressiveDesc", "Heavier daily load for faster gains during focused crunch periods."),
         level: 3,
       },
     ];
@@ -1429,25 +1466,28 @@ export class SproutCoachView extends ItemView {
     const back = footer.createEl("button", {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       attr: {
-        "aria-label": "Back",
+        "aria-label": this._tx("ui.common.back", "Back"),
         "data-tooltip-position": "top",
       },
     });
     back.type = "button";
     const backIcon = back.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(backIcon, "chevron-left");
-    back.createSpan({ cls: "", text: "Back" });
+    back.createSpan({ cls: "", text: this._tx("ui.common.back", "Back") });
     back.addEventListener("click", () => {
       this._transitionWizardPage(0, "back");
     });
 
-    const next = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2", text: "Next" });
+    const next = footer.createEl("button", {
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
+      text: this._tx("ui.common.next", "Next"),
+    });
     next.type = "button";
     const nextIcon = next.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5" });
     setIcon(nextIcon, "chevron-right");
     next.addEventListener("click", () => {
       if (!this._examDateInput) {
-        new Notice("Select an exam date.");
+        new Notice(this._tx("ui.view.coach.notice.selectExamDate", "Select an exam date."));
         return;
       }
       this._transitionWizardPage(2, "next");
@@ -1462,10 +1502,10 @@ export class SproutCoachView extends ItemView {
       .filter((scope): scope is Scope => !!scope);
 
     const intro = card.createDiv({ cls: "learnkit-coach-review-intro learnkit-coach-review-intro" });
-    intro.createEl("h3", { text: "Review and start plan" });
+    intro.createEl("h3", { text: this._tx("ui.view.coach.wizard.review.title", "Review and start plan") });
     intro.createEl("p", {
       cls: "learnkit-coach-step-copy learnkit-coach-step-copy",
-      text: "Targets will update dynamically each day to track readiness and keep studying within your chosen scope.",
+      text: this._tx("ui.view.coach.wizard.review.body", "Targets will update dynamically each day to track readiness and keep studying within your chosen scope."),
     });
 
     const rawDate = String(this._examDateInput || "").trim();
@@ -1477,38 +1517,46 @@ export class SproutCoachView extends ItemView {
     const dailyNote = Math.max(0, Math.ceil((stats.dueNotes / daysLeft) * intensityMultiplier(this._intensity)));
 
     const details = card.createDiv({ cls: "learnkit-coach-review-details learnkit-coach-review-details" });
-    details.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Plan details" });
+    details.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: this._tx("ui.view.coach.wizard.review.planDetails", "Plan details") });
     const detailRows = details.createDiv({ cls: "learnkit-coach-review-details-rows learnkit-coach-review-details-rows" });
     const addDetail = (label: string, value: string): void => {
       const row = detailRows.createDiv({ cls: "learnkit-coach-review-detail-row learnkit-coach-review-detail-row" });
       row.createSpan({ cls: "learnkit-coach-review-detail-label learnkit-coach-review-detail-label", text: label });
       row.createSpan({ cls: "learnkit-coach-review-detail-value learnkit-coach-review-detail-value", text: value });
     };
-    if (this._planName) addDetail("Plan Name", this._planName);
-    addDetail("Date", formatShortDate(examDateUtc));
-    addDetail("Intensity", titleCaseIntensity(this._intensity));
-    addDetail("Workload", `${dailyFlash} flashcards + ${dailyNote} notes per day`);
+    if (this._planName) addDetail(this._tx("ui.view.coach.wizard.review.planName", "Plan Name"), this._planName);
+    addDetail(this._tx("ui.view.coach.wizard.review.date", "Date"), formatShortDate(examDateUtc));
+    addDetail(this._tx("ui.view.coach.wizard.review.intensity", "Intensity"), titleCaseIntensity(this._intensity));
+    addDetail(
+      this._tx("ui.view.coach.wizard.review.workload", "Workload"),
+      this._tx("ui.view.coach.wizard.review.workloadValue", "{flash} flashcards + {notes} notes per day", { flash: dailyFlash, notes: dailyNote }),
+    );
 
     const content = card.createDiv({ cls: "learnkit-coach-review-content learnkit-coach-review-content" });
-    content.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: "Content" });
+    content.createDiv({ cls: "learnkit-coach-field-label learnkit-coach-field-label", text: this._tx("ui.view.coach.wizard.review.content", "Content") });
     const chips = content.createDiv({ cls: "learnkit-coach-selected-chips learnkit-coach-selected-chips learnkit-coach-review-chips learnkit-coach-review-chips" });
 
     const scopeChipLabel = (scope: Scope): string => {
       if (scope.type === "folder") {
         const folderPath = String(scope.key || scope.name || "").trim();
         const count = this._allFiles().filter((file) => file.path.startsWith(`${folderPath}/`)).length;
-        return `Folder: ${formatFolderChipLabel(folderPath)} (${count})`;
+        return this._tx("ui.view.coach.scope.folder", "Folder: {folder} ({count})", { folder: formatFolderChipLabel(folderPath), count });
       }
-      if (scope.type === "note") return `Note: ${scope.name}`;
-      if (scope.type === "tag") return `Tag: #${scope.key}`;
-      if (scope.type === "property") return `Property: ${scope.name}`;
-      if (scope.type === "group") return `Group: ${scope.name}`;
-      if (scope.type === "vault") return `Vault: ${this.app.vault.getName()} (${this._allFiles().length})`;
-      return String((scope as { name?: string }).name || "Scope");
+      if (scope.type === "note") return this._tx("ui.view.coach.scope.note", "Note: {name}", { name: scope.name });
+      if (scope.type === "tag") return this._tx("ui.view.coach.scope.tag", "Tag: #{name}", { name: scope.key });
+      if (scope.type === "property") return this._tx("ui.view.coach.scope.property", "Property: {name}", { name: scope.name });
+      if (scope.type === "group") return this._tx("ui.view.coach.scope.group", "Group: {name}", { name: scope.name });
+      if (scope.type === "vault") {
+        return this._tx("ui.view.coach.scope.vault", "Vault: {name} ({count})", {
+          name: this.app.vault.getName(),
+          count: this._allFiles().length,
+        });
+      }
+      return String((scope as { name?: string }).name || this._tx("ui.view.coach.scope.default", "Scope"));
     };
 
     if (!selectedScopes.length) {
-      chips.createDiv({ cls: "text-muted-foreground", text: "No content selected yet." });
+      chips.createDiv({ cls: "text-muted-foreground", text: this._tx("ui.view.coach.wizard.scope.noneSelected", "No content selected yet.") });
     } else {
       for (const scope of selectedScopes.slice(0, 12)) {
         const chip = chips.createDiv({ cls: "learnkit-coach-chip learnkit-coach-chip" });
@@ -1520,41 +1568,44 @@ export class SproutCoachView extends ItemView {
     const back = footer.createEl("button", {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
       attr: {
-        "aria-label": "Back",
+        "aria-label": this._tx("ui.common.back", "Back"),
         "data-tooltip-position": "top",
       },
     });
     back.type = "button";
     const backIcon = back.createSpan({ cls: "inline-flex items-center justify-center" });
     setIcon(backIcon, "chevron-left");
-    back.createSpan({ cls: "", text: "Back" });
+    back.createSpan({ cls: "", text: this._tx("ui.common.back", "Back") });
     back.addEventListener("click", () => {
       this._transitionWizardPage(1, "back");
     });
 
-    const start = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2", text: "Start plan" });
+    const start = footer.createEl("button", {
+      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2",
+      text: this._tx("ui.view.coach.wizard.review.startPlan", "Start plan"),
+    });
     start.type = "button";
     start.addEventListener("click", () => {
       void (async () => {
         if (!selectedScopes.length) {
-          new Notice("Select at least one scope.");
+          new Notice(this._tx("ui.view.coach.notice.selectScope", "Select at least one scope."));
           return;
         }
         if (!Number.isFinite(examDateUtc)) {
-          new Notice("Invalid exam date.");
+          new Notice(this._tx("ui.view.coach.notice.invalidExamDate", "Invalid exam date."));
           return;
         }
 
         const existingPlans = this._coachDb?.listPlans() ?? [];
         const primaryScope = selectedScopes[0];
         if (existingPlans.length >= 4) {
-          new Notice("You can have up to 4 plans. Delete one to add another.");
+          new Notice(this._tx("ui.view.coach.notice.maxPlans", "You can have up to 4 plans. Delete one to add another."));
           return;
         }
 
         await this._upsertPlan(primaryScope, examDateUtc, this._intensity, this._planName, selectedScopes);
         this._resetWizardDraft();
-        new Notice("Exam plan saved.");
+        new Notice(this._tx("ui.view.coach.notice.saved", "Exam plan saved."));
         await this._render();
       })();
     });
@@ -1757,7 +1808,9 @@ export class SproutCoachView extends ItemView {
     const latestCardReviewAt = this._latestCardReviewAtMs(planScopes);
     const latestProgressApproxMs = latestProgressDayUtc > 0 ? latestProgressDayUtc + (12 * 60 * 60 * 1000) : 0;
     const latestSessionMs = Math.max(latestCardReviewAt, latestProgressApproxMs);
-    const lastSessionLabel = latestSessionMs > 0 ? `Last session: ${formatTimeAgo(latestSessionMs)}` : "Last session: Not started";
+    const lastSessionLabel = latestSessionMs > 0
+      ? this._tx("ui.view.coach.plan.lastSession", "Last session: {value}", { value: formatTimeAgo(latestSessionMs) })
+      : this._tx("ui.view.coach.plan.lastSessionNotStarted", "Last session: Not started");
     headerLeft.createDiv({ cls: "learnkit-coach-step-copy learnkit-coach-step-copy", text: lastSessionLabel });
 
     const targetSection = card.createDiv({ cls: "learnkit-coach-plan-section learnkit-coach-plan-section learnkit-coach-plan-section-target learnkit-coach-plan-section-target" });
@@ -1765,9 +1818,15 @@ export class SproutCoachView extends ItemView {
     // Daily progress bar
     const progressSection = targetSection.createDiv({ cls: "learnkit-coach-daily-progress learnkit-coach-daily-progress" });
     const progressMeta = progressSection.createDiv({ cls: "learnkit-coach-daily-progress-meta learnkit-coach-daily-progress-meta" });
-    progressMeta.createSpan({ cls: "learnkit-coach-daily-progress-label learnkit-coach-daily-progress-label", text: `${donePct}% of today's target` });
+    progressMeta.createSpan({
+      cls: "learnkit-coach-daily-progress-label learnkit-coach-daily-progress-label",
+      text: this._tx("ui.view.coach.plan.dailyTargetPct", "{pct}% of today's target", { pct: donePct }),
+    });
     const doneCount = progress.flashcard + progress.note;
-    progressMeta.createSpan({ cls: "learnkit-coach-daily-progress-count learnkit-coach-daily-progress-count", text: `${doneCount} / ${totalTarget}` });
+    progressMeta.createSpan({
+      cls: "learnkit-coach-daily-progress-count learnkit-coach-daily-progress-count",
+      text: this._tx("ui.view.coach.plan.dailyCount", "{done} / {total}", { done: doneCount, total: totalTarget }),
+    });
     const progressTrack = progressSection.createDiv({ cls: "learnkit-coach-daily-progress-track learnkit-coach-daily-progress-track" });
     const progressFill = progressTrack.createDiv({ cls: "learnkit-coach-daily-progress-fill learnkit-coach-daily-progress-fill" });
     setCssProps(progressFill, "--learnkit-daily-progress-width", `${Math.min(100, donePct)}%`);
@@ -1781,10 +1840,12 @@ export class SproutCoachView extends ItemView {
     if (remainingNotes > 0) remainingParts.push(`${remainingNotes} note${remainingNotes === 1 ? "" : "s"}`);
     const remainingLine = targetSection.createDiv({ cls: "learnkit-coach-remaining-line learnkit-coach-remaining-line" });
     if (remainingParts.length) {
-      remainingLine.createSpan({ text: `${remainingParts.join(" + ")} remaining` });
+      remainingLine.createSpan({
+        text: this._tx("ui.view.coach.plan.remaining", "{parts} remaining", { parts: remainingParts.join(" + ") }),
+      });
     } else {
       const doneWrap = remainingLine.createSpan({ cls: "inline-flex items-center gap-1" });
-      doneWrap.createSpan({ text: "All done for today" });
+      doneWrap.createSpan({ text: this._tx("ui.view.coach.plan.allDone", "All done for today") });
       const doneIcon = doneWrap.createSpan({
         cls: "inline-flex items-center justify-center [&_svg]:size-4",
         attr: { "aria-hidden": "true" },
@@ -1832,7 +1893,12 @@ export class SproutCoachView extends ItemView {
       });
     };
 
-    const studyBtn = buildActionButton(isFlashDone ? "Study extra flashcards" : "Study flashcards", "star");
+    const studyBtn = buildActionButton(
+      isFlashDone
+        ? this._tx("ui.view.coach.plan.actions.studyExtraFlashcards", "Study extra flashcards")
+        : this._tx("ui.view.coach.plan.actions.studyFlashcards", "Study flashcards"),
+      "star",
+    );
     bindPrimaryAction(studyBtn, () => {
       void this.plugin.openReviewerScopeWithOptions(scope, {
         ignoreDailyReviewLimit: true,
@@ -1845,7 +1911,12 @@ export class SproutCoachView extends ItemView {
       }, this.leaf);
     });
 
-    const notesBtn = buildActionButton(isNotesDone ? "Review extra notes" : "Review notes", "notebook-text");
+    const notesBtn = buildActionButton(
+      isNotesDone
+        ? this._tx("ui.view.coach.plan.actions.reviewExtraNotes", "Review extra notes")
+        : this._tx("ui.view.coach.plan.actions.reviewNotes", "Review notes"),
+      "notebook-text",
+    );
     bindPrimaryAction(notesBtn, () => {
       void this.plugin.openNoteReviewScopeWithOptions(scope, {
         targetCount: isNotesDone ? extraNotesTarget : remainingNotes,
@@ -1855,13 +1926,13 @@ export class SproutCoachView extends ItemView {
       }, this.leaf);
     });
 
-    const testBtn = buildActionButton("Generate practice test", "clipboard-check");
+    const testBtn = buildActionButton(this._tx("ui.view.coach.plan.actions.generateTest", "Generate practice test"), "clipboard-check");
     bindPrimaryAction(testBtn, () => {
       const planScopes = this._scopesForPlan(plan);
       void this.plugin.openExamGeneratorScopes(planScopes, this.leaf);
     });
 
-    const editBtn = buildActionButton("Edit scope", "pencil");
+    const editBtn = buildActionButton(this._tx("ui.view.coach.plan.actions.editScope", "Edit scope"), "pencil");
     bindPrimaryAction(editBtn, () => {
       this._openEditContentWizard(plan);
       void this._render();
@@ -1941,14 +2012,23 @@ export class SproutCoachView extends ItemView {
         const planCard = slot.createEl("button", { cls: "card learnkit-coach-switcher-plan-card learnkit-coach-switcher-plan-card" });
         planCard.type = "button";
         planCard.dataset.scopeId = id;
-        planCard.setAttr("aria-label", `${scopeMeta.title} ${days} days remaining`);
+        planCard.setAttr(
+          "aria-label",
+          this._tx("ui.view.coach.switcher.aria", "{title} {days} days remaining", {
+            title: scopeMeta.title,
+            days,
+          }),
+        );
         const indicator = createSlotIndicator(planCard, idx, id === this._selectedPlanScopeId, examDate);
         selectorCards.push(planCard);
 
         const deleteBtn = indicator.createEl("button", { cls: "learnkit-coach-switcher-delete learnkit-coach-switcher-delete" });
         deleteBtn.type = "button";
-        deleteBtn.setAttr("aria-label", `Delete plan ${scopeMeta.title}`);
-        deleteBtn.createSpan({ cls: "learnkit-coach-switcher-delete-label learnkit-coach-switcher-delete-label", text: "Delete plan" });
+        deleteBtn.setAttr("aria-label", this._tx("ui.view.coach.switcher.deletePlanAria", "Delete plan {title}", { title: scopeMeta.title }));
+        deleteBtn.createSpan({
+          cls: "learnkit-coach-switcher-delete-label learnkit-coach-switcher-delete-label",
+          text: this._tx("ui.view.coach.switcher.deletePlan", "Delete plan"),
+        });
         setIcon(deleteBtn, "x");
         deleteBtn.addEventListener("click", (evt) => {
           evt.stopPropagation();
@@ -1962,7 +2042,10 @@ export class SproutCoachView extends ItemView {
         const titleRow = planCard.createDiv({ cls: "learnkit-coach-switcher-plan-top learnkit-coach-switcher-plan-top" });
         titleRow.createSpan({ cls: "learnkit-coach-switcher-plan-title learnkit-coach-switcher-plan-title", text: scopeMeta.title });
 
-        planCard.createDiv({ cls: "learnkit-coach-switcher-plan-date learnkit-coach-switcher-plan-date", text: `${days} day${days === 1 ? "" : "s"} remaining` });
+        planCard.createDiv({
+          cls: "learnkit-coach-switcher-plan-date learnkit-coach-switcher-plan-date",
+          text: this._tx("ui.view.coach.switcher.daysRemaining", "{days} day{suffix} remaining", { days, suffix: days === 1 ? "" : "s" }),
+        });
         planCard.createDiv({
           cls: `learnkit-coach-switcher-plan-overview ${statusBadge.toneClass}`,
           text: statusBadge.label,
@@ -1981,10 +2064,16 @@ export class SproutCoachView extends ItemView {
           cls: "card learnkit-coach-switcher-plan-card learnkit-coach-switcher-plan-card is-create",
         });
         addCard.type = "button";
-        addCard.setAttr("aria-label", "Add plan");
+        addCard.setAttr("aria-label", this._tx("ui.view.coach.switcher.addPlan", "Add plan"));
         createSlotIndicator(addCard, idx, false);
-        addCard.createDiv({ cls: "learnkit-coach-switcher-create-title learnkit-coach-switcher-create-title", text: "Create plan" });
-        addCard.createDiv({ cls: "learnkit-coach-switcher-create-copy learnkit-coach-switcher-create-copy", text: "Create a new study plan" });
+        addCard.createDiv({
+          cls: "learnkit-coach-switcher-create-title learnkit-coach-switcher-create-title",
+          text: this._tx("ui.view.coach.switcher.createPlan", "Create plan"),
+        });
+        addCard.createDiv({
+          cls: "learnkit-coach-switcher-create-copy learnkit-coach-switcher-create-copy",
+          text: this._tx("ui.view.coach.switcher.createPlanBody", "Create a new study plan"),
+        });
         addCard.addEventListener("click", () => {
           this._openCreateWizard();
           void this._render();
@@ -1994,8 +2083,14 @@ export class SproutCoachView extends ItemView {
 
       const placeholder = slot.createDiv({ cls: "card learnkit-coach-switcher-plan-card learnkit-coach-switcher-plan-card is-placeholder" });
       createSlotIndicator(placeholder, idx, false);
-      placeholder.createDiv({ cls: "learnkit-coach-switcher-placeholder-title learnkit-coach-switcher-placeholder-title", text: "Nothing here yet" });
-      placeholder.createDiv({ cls: "learnkit-coach-switcher-placeholder-copy learnkit-coach-switcher-placeholder-copy", text: "Add a plan to fill this slot." });
+      placeholder.createDiv({
+        cls: "learnkit-coach-switcher-placeholder-title learnkit-coach-switcher-placeholder-title",
+        text: this._tx("ui.view.coach.switcher.empty", "Nothing here yet"),
+      });
+      placeholder.createDiv({
+        cls: "learnkit-coach-switcher-placeholder-copy learnkit-coach-switcher-placeholder-copy",
+        text: this._tx("ui.view.coach.switcher.emptyBody", "Add a plan to fill this slot."),
+      });
     }
 
     refreshSelectedCardState();
@@ -2079,9 +2174,9 @@ export class SproutCoachView extends ItemView {
         titleFrame.strip.setAttribute("data-aos-delay", "0");
       }
       titleFrame.title.classList.add("text-xl", "font-semibold", "tracking-tight");
-      titleFrame.title.textContent = "Coach";
+      titleFrame.title.textContent = this._tx("ui.view.coach.title", "Coach");
       titleFrame.subtitle.classList.add("text-[0.95rem]", "font-normal", "leading-[1.3]", "text-muted-foreground");
-      titleFrame.subtitle.textContent = "Build and manage focused study plans.";
+      titleFrame.subtitle.textContent = this._tx("ui.view.coach.subtitle", "Build and manage focused study plans.");
 
       this._shellEl = root.createDiv({ cls: "learnkit-view-content-shell learnkit-view-content-shell lk-home-content-shell flex flex-col gap-4 learnkit-coach-shell learnkit-coach-shell" });
     }

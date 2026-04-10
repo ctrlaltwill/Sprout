@@ -82,8 +82,9 @@ export class SproutHomeView extends ItemView {
     const tabTitleEl = (this.leaf as unknown as Record<string, HTMLElement>).tabHeaderInnerTitleEl;
     if (tabTitleEl) {
       tabTitleEl.empty();
-      tabTitleEl.createSpan({ text: "Learn" });
-      tabTitleEl.createSpan({ text: "Kit" });
+      const lang = this.plugin.settings?.general?.interfaceLanguage;
+      tabTitleEl.createSpan({ text: t(lang, "ui.view.home.mobileBrand.learn", "Learn") });
+      tabTitleEl.createSpan({ text: t(lang, "ui.view.home.mobileBrand.kit", "Kit") });
     }
     // Init AOS after render completes (DOM ready)
     if (this.plugin.settings?.general?.enableAnimations ?? true) {
@@ -285,7 +286,7 @@ export class SproutHomeView extends ItemView {
     });
 
     if (trimmedName) {
-      subtitleRow.createSpan({ text: "Welcome back, " });
+      subtitleRow.createSpan({ text: tx("ui.home.greeting.welcomeBackComma", "Welcome back, ") });
 
       const nameInput = document.createElement("input");
       nameInput.className = "lk-home-name-input min-w-[1ch] shrink-0 grow-0 basis-auto max-w-full border-0 p-0 m-0 shadow-none text-[0.95rem] font-normal leading-[1.3] text-muted-foreground bg-transparent";
@@ -296,7 +297,7 @@ export class SproutHomeView extends ItemView {
 
       const greetingSuffixEl = document.createElement("div");
       greetingSuffixEl.className = "learnkit-greeting-suffix -ml-1 text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
-      greetingSuffixEl.textContent = "!";
+      greetingSuffixEl.textContent = tx("ui.home.greeting.punctuation.exclamation", "!");
       subtitleRow.appendChild(greetingSuffixEl);
 
       const nameSizer = document.createElement("span");
@@ -355,7 +356,7 @@ export class SproutHomeView extends ItemView {
         }, 300);
       });
     } else {
-      subtitleRow.textContent = "Welcome back!";
+      subtitleRow.textContent = tx("ui.home.greeting.welcomeBackSimple", "Welcome back!");
     }
 
     titleFrame.right.appendChild(quickStudyBtn);
@@ -530,7 +531,7 @@ export class SproutHomeView extends ItemView {
       if (cardCount <= 0) return "";
       const minutes = Math.max(0, Math.ceil((Math.max(0, cardCount) * estimatedMsPerCard) / 60000));
       if (minutes < 60) {
-        return `${minutes} min`;
+        return tx("ui.analytics.card.minutesSuffix", "{count} min", { count: minutes });
       }
       const hours = minutes / 60;
       const roundedHours = hours >= 10 ? Math.round(hours) : Math.round(hours * 10) / 10;
@@ -567,7 +568,7 @@ export class SproutHomeView extends ItemView {
       try {
         await this.plugin.openSettingsTab(false, tab);
       } catch {
-        new Notice("Unable to open settings right now");
+        new Notice(tx("ui.home.notice.unableToOpenSettings", "Unable to open settings right now"));
       }
     };
 
@@ -576,7 +577,7 @@ export class SproutHomeView extends ItemView {
         await this.leaf.setViewState({ type: VIEW_TYPE_BROWSER, active: true });
         void this.app.workspace.revealLeaf(this.leaf);
       } catch {
-        new Notice("Unable to open library right now");
+        new Notice(tx("ui.home.notice.unableToOpenLibrary", "Unable to open library right now"));
       }
     };
 
@@ -704,7 +705,9 @@ export class SproutHomeView extends ItemView {
       setIcon(icon, iconName);
       badge.appendChild(icon);
       const valueEl = document.createElement("span");
-      valueEl.textContent = trend.dir === 0 ? "0%" : `${trend.dir > 0 ? "+" : ""}0%`;
+      valueEl.textContent = trend.dir === 0
+        ? tx("ui.home.trend.zero", "0%")
+        : tx("ui.home.trend.signedPercent", "{sign}{value}%", { sign: trend.dir > 0 ? "+" : "", value: 0 });
       badge.appendChild(valueEl);
 
       // Animate count-up value only (no badge rotation)
@@ -716,7 +719,10 @@ export class SproutHomeView extends ItemView {
         const p = Math.min(Math.max(elapsed / durationMs, 0), 1);
         const eased = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p; // easeInOut
         const currentVal = (trend.dir === 0 ? 0 : (eased * Math.abs(target))) * (trend.dir >= 0 ? 1 : -1);
-        valueEl.textContent = `${currentVal >= 0 ? "+" : ""}${currentVal.toFixed(0)}%`;
+        valueEl.textContent = tx("ui.home.trend.signedPercent", "{sign}{value}%", {
+          sign: currentVal >= 0 ? "+" : "",
+          value: currentVal.toFixed(0),
+        });
         if (p < 1) requestAnimationFrame(animate);
         else valueEl.textContent = trend.text;
       };
@@ -744,7 +750,10 @@ export class SproutHomeView extends ItemView {
       header.createDiv({ text: tx("ui.home.stat.dailyTime", "Daily time"), cls: "lk-home-stat-trend-label" });
       const timeTrend = formatTrend(avgTimePerDayMinutes, prevAvgTimePerDayMinutes, prevActiveDaysTime);
       header.appendChild(buildTrendBadge(timeTrend));
-      card.createDiv({ cls: "text-2xl font-semibold lk-home-stat-trend-value", text: `${Math.ceil(avgTimePerDayMinutes)} min` });
+      card.createDiv({
+        cls: "text-2xl font-semibold lk-home-stat-trend-value",
+        text: tx("ui.analytics.card.minutesSuffix", "{count} min", { count: Math.ceil(avgTimePerDayMinutes) }),
+      });
       card.createDiv({ cls: "text-xs text-muted-foreground", text: tx("ui.home.stat.last7Days", "Last 7 days") });
     }
 
@@ -757,7 +766,10 @@ export class SproutHomeView extends ItemView {
       header.createDiv({ text: tx("ui.home.stat.dailyCards", "Daily cards"), cls: "lk-home-stat-trend-label" });
       const cardsTrend = formatTrend(avgCardsPerDay, prevAvgCardsPerDay, prevActiveDaysReviews);
       header.appendChild(buildTrendBadge(cardsTrend));
-      card.createDiv({ cls: "text-2xl font-semibold lk-home-stat-trend-value", text: `${Math.round(avgCardsPerDay)}` });
+      card.createDiv({
+        cls: "text-2xl font-semibold lk-home-stat-trend-value",
+        text: tx("ui.home.stat.countOnly", "{count}", { count: Math.round(avgCardsPerDay) }),
+      });
       card.createDiv({ cls: "text-xs text-muted-foreground", text: tx("ui.home.stat.last7Days", "Last 7 days") });
     }
     const pinnedList = pinnedSection.list;
@@ -1278,7 +1290,7 @@ export class SproutHomeView extends ItemView {
     infoRow.appendChild(tipCard);
 
     const tipHeader = tipCard.createDiv({ cls: "flex items-center justify-between gap-2" });
-    tipHeader.createDiv({ cls: "text-sm font-semibold", text: "Tip of the day" });
+    tipHeader.createDiv({ cls: "text-sm font-semibold", text: tx("ui.home.tip.title", "Tip of the day") });
     const tipBadge = tipHeader.createDiv({ cls: "text-xs text-muted-foreground" });
 
     const tipTitle = tipCard.createDiv({ cls: "text-base font-semibold" });
@@ -1303,7 +1315,10 @@ export class SproutHomeView extends ItemView {
 
     const renderTip = () => {
       const tip = tips[tipIndex];
-      tipBadge.textContent = `Tip ${tipIndex + 1}/${tips.length}`;
+      tipBadge.textContent = tx("ui.home.tip.counter", "Tip {current}/{total}", {
+        current: tipIndex + 1,
+        total: tips.length,
+      });
       tipTitle.textContent = tip.title;
       tipBody.textContent = tip.body;
       tipDemo.textContent = tip.demo;
@@ -1330,14 +1345,16 @@ export class SproutHomeView extends ItemView {
     projectCard.className = "card learnkit-ana-card lk-home-project-card p-4 flex flex-col gap-3";
     infoRow.appendChild(projectCard);
 
-    projectCard.createDiv({ cls: "text-sm font-semibold", text: "LearnKit project" });
+    projectCard.createDiv({ cls: "text-sm font-semibold", text: tx("ui.home.project.title", "LearnKit project") });
     projectCard.createDiv({
       cls: "text-sm text-muted-foreground",
       text: "Quick links for docs, release notes, and the public repository.",
     });
 
     const projectMeta = projectCard.createDiv({ cls: "text-xs text-muted-foreground" });
-    projectMeta.textContent = `Version ${this.plugin.manifest.version}`;
+    projectMeta.textContent = tx("ui.home.project.version", "Version {version}", {
+      version: this.plugin.manifest.version,
+    });
 
     const projectActions = projectCard.createDiv({ cls: "flex flex-col gap-2 mt-1" });
     createChevronLinkButton(projectActions, {

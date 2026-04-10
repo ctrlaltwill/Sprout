@@ -21,6 +21,7 @@ import { createBodyPortalPopover, type BodyPortalPopoverHandle } from "./popover
 import type LearnKitPlugin from "../../main";
 import type { Scope } from "../../views/reviewer/types";
 import { log } from "./logger";
+import { t } from "../translations/translator";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -131,6 +132,8 @@ export class LearnKitCommandPalette {
     let pendingCommandId: string | null = null;
     let query = "";
     let activeIndex = 0;
+    const tx = (token: string, fallback: string, vars?: Record<string, string | number>) =>
+      t(this.deps.plugin.settings?.general?.interfaceLanguage, token, fallback, vars);
 
     // ── Input ──
     const inputWrap = document.createElement("div");
@@ -145,8 +148,8 @@ export class LearnKitCommandPalette {
     const input = document.createElement("input");
     input.type = "text";
     input.className = "learnkit-cmd-input flex-1 bg-transparent text-sm placeholder:text-muted-foreground outline-none border-none py-2.5 h-10";
-    input.placeholder = "Type a command…";
-    input.setAttribute("aria-label", "Command palette search");
+    input.placeholder = tx("ui.commandPalette.search.placeholder", "Type a command...");
+    input.setAttribute("aria-label", tx("ui.commandPalette.search.aria", "Command palette search"));
     input.setAttribute("autocomplete", "off");
     input.setAttribute("spellcheck", "false");
     inputWrap.appendChild(input);
@@ -162,7 +165,7 @@ export class LearnKitCommandPalette {
     // ── Empty ──
     const emptyEl = document.createElement("div");
     emptyEl.className = "learnkit-cmd-empty py-6 text-center text-sm text-muted-foreground hidden";
-    emptyEl.textContent = "No results found.";
+    emptyEl.textContent = tx("ui.commandPalette.empty.results", "No results found.");
     panel.appendChild(emptyEl);
 
     // ── Data ──
@@ -223,7 +226,7 @@ export class LearnKitCommandPalette {
       if (matchingPinned.length > 0) {
         const heading = document.createElement("div");
         heading.className = "learnkit-cmd-group-heading px-2 py-1.5 text-xs font-medium text-muted-foreground";
-        heading.textContent = "Pinned decks";
+        heading.textContent = tx("ui.home.deck.pinned", "Pinned decks");
         heading.setAttribute("role", "presentation");
         listWrap.appendChild(heading);
       }
@@ -270,7 +273,7 @@ export class LearnKitCommandPalette {
 
           const badge = document.createElement("span");
           badge.className = "ml-auto text-xs text-muted-foreground";
-          badge.textContent = "Study";
+          badge.textContent = tx("ui.commandPalette.study", "Study");
           item.appendChild(badge);
 
           const scope = entry.scope;
@@ -301,7 +304,7 @@ export class LearnKitCommandPalette {
               mode = "scope-search";
               query = "";
               input.value = "";
-              input.placeholder = "Search scopes…";
+              input.placeholder = tx("ui.commandPalette.search.scopes", "Search scopes...");
               activeIndex = 0;
               render();
               input.focus();
@@ -373,14 +376,14 @@ export class LearnKitCommandPalette {
       setIcon(backIcon, "arrow-left");
       backItem.appendChild(backIcon);
       const backTxt = document.createElement("span");
-      backTxt.textContent = "Back to commands";
+      backTxt.textContent = tx("ui.commandPalette.back", "Back to commands");
       backItem.appendChild(backTxt);
       backItem.addEventListener("click", () => {
         mode = "root";
         pendingCommandId = null;
         query = "";
         input.value = "";
-        input.placeholder = "Type a command…";
+        input.placeholder = tx("ui.commandPalette.search.placeholder", "Type a command...");
         activeIndex = 0;
         render();
         input.focus();
@@ -388,7 +391,9 @@ export class LearnKitCommandPalette {
       listWrap.appendChild(backItem);
 
       if (!filtered.length) {
-        emptyEl.textContent = q ? "No matching scopes." : "No scopes available.";
+        emptyEl.textContent = q
+          ? tx("ui.commandPalette.empty.scopesMatching", "No matching scopes.")
+          : tx("ui.commandPalette.empty.scopes", "No scopes available.");
         emptyEl.classList.remove("hidden");
         activeIndex = -1;
         return;

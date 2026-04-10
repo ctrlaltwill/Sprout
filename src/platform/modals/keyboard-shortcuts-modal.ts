@@ -100,7 +100,7 @@ export class KeyboardShortcutsModal extends Modal {
       const close = document.createElement("button");
       close.type = "button";
       close.className = "learnkit-btn-toolbar learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-card-creator-close-btn learnkit-bulk-edit-close-btn";
-      close.setAttribute("aria-label", "Close");
+      close.setAttribute("aria-label", t(this.plugin.settings?.general?.interfaceLanguage, "ui.common.close", "Close"));
       close.setAttribute("data-tooltip-position", "top");
 
       const closeIcon = document.createElement("span");

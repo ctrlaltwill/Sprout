@@ -151,7 +151,7 @@ export class CardCreatorModal extends Modal {
   // ── Modal lifecycle ───────────────────────────────────────────────────────
 
   onOpen() {
-    setModalTitle(this, "Add flashcard");
+    setModalTitle(this, this.tx("ui.cardCreator.title", "Add flashcard"));
 
     // Apply all CSS classes and z-index BEFORE scoping to workspace.
     // scopeModalToWorkspace forces a repaint, which only works if the
@@ -172,14 +172,14 @@ export class CardCreatorModal extends Modal {
     const headerEl = this.modalEl.querySelector<HTMLElement>(":scope > .modal-header");
     if (headerEl) {
       const titleEl = headerEl.querySelector<HTMLElement>(":scope > .modal-title");
-      if (titleEl) titleEl.setText("Add flashcard");
+      if (titleEl) titleEl.setText(this.tx("ui.cardCreator.title", "Add flashcard"));
 
       const existingCloseBtn = headerEl.querySelector<HTMLElement>(":scope > .learnkit-card-creator-close-btn");
       if (existingCloseBtn) existingCloseBtn.remove();
 
       const closeBtn = headerEl.createEl("button", {
         cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn learnkit-card-creator-close-btn learnkit-card-creator-close-btn",
-        attr: { type: "button", "aria-label": "Close" },
+        attr: { type: "button", "aria-label": this.tx("ui.common.close", "Close") },
       });
       closeBtn.setAttr("data-tooltip-position", "top");
       const closeIconWrap = closeBtn.createSpan({ cls: "inline-flex items-center justify-center" });
