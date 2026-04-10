@@ -7,7 +7,7 @@ Last modified: 30/03/2026
 
 ## Purpose
 
-Burying removes a flashcard from today's session and brings it back tomorrow.
+Burying removes a flashcard from the current session and brings it back after 24 hours.
 It does **not** reset or change scheduling values (interval, stability, difficulty).
 
 ## Bury Steps
@@ -21,7 +21,7 @@ If you skip the same flashcard three times in one session, LearnKit offers a **B
 
 ## Return Rule
 
-Buried flashcards are automatically unburied at local midnight.
+Buried flashcards return to the review queue 24 hours after they were buried.
 
 ## Find Buried
 

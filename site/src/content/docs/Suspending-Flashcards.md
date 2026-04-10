@@ -44,10 +44,10 @@ Suspending is useful when:
 
 | | Bury | Suspend |
 |--|------|---------|
-| **Duration** | Until midnight (automatic reset) | Until you manually unsuspend |
+| **Duration** | 24 hours (automatic) | Until you manually unsuspend |
 | **Best for** | Skipping a flashcard for the rest of the day | Removing a flashcard from reviews long-term |
 | **Scheduling impact** | None | None |
-| **How to reverse** | Automatic (next day) | Manual (unsuspend in library or during study) |
+| **How to reverse** | Automatic (after 24 hours) | Manual (unsuspend in library or during study) |
 
 > [!TIP]
 > Use **Bury** for "I'll try again tomorrow" and **Suspend** for "I need to fix this flashcard first."

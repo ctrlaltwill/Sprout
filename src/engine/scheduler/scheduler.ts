@@ -11,7 +11,7 @@
  *  - shuffleCardsWithParentAwareness — shuffles cards while keeping siblings separated
  *  - gradeFromRating                 — grades a card with a specific FSRS rating (Again/Hard/Good/Easy)
  *  - gradeFromPassFail               — grades a card with a binary pass/fail result
- *  - buryCard                        — buries a card until the next day
+ *  - buryCard                        — buries a card for 24 hours
  *  - suspendCard                     — suspends a card indefinitely
  *  - unsuspendCard                   — restores a suspended card to its previous state
  *  - resetCardScheduling             — resets a card's scheduling state back to New
@@ -46,31 +46,6 @@ function clamp(x: number, lo: number, hi: number) {
 function daysToMs(d: number) {
   return d * MS_DAY;
 }
-
-/**
- * Returns the start of tomorrow in local timezone.
- * Use this when bury behavior should respect user's local day boundary.
- */
-export function startOfTomorrowLocalMs(now: number): number {
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 1);
-  return d.getTime();
-}
-
-/**
- * Returns the start of tomorrow in UTC.
- * Use this if the system operates on UTC time.
- */
-export function startOfTomorrowUtcMs(now: number): number {
-  const d = new Date(now);
-  d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.getTime();
-}
-
-// Use UTC so card scheduling remains consistent when traveling across timezones
-const startOfTomorrowMs = startOfTomorrowUtcMs;
 
 // Push suspended cards far into the future as a belt-and-suspenders safety net
 // (so they don't accidentally appear in any due-based queues).
@@ -550,13 +525,13 @@ export function gradeFromPassFail(
 }
 
 /**
- * Buries a card until the next day (UTC).
- * The card will be due at midnight UTC tomorrow, ensuring consistent
- * scheduling across timezones when traveling.
+ * Buries a card for 24 hours.
+ * The card will be due exactly 24 h from now, regardless of timezone.
+ * Does not alter any scheduling state (interval, stability, difficulty).
  */
 export function buryCard(prev: CardState, now: number): CardState {
-  const tomorrow = startOfTomorrowMs(now);
-  const nextDue = Math.max(Number(prev.due ?? 0), tomorrow);
+  const in24h = now + MS_DAY;
+  const nextDue = Math.max(Number(prev.due ?? 0), in24h);
 
   return {
     ...prev,

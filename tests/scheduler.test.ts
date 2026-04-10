@@ -162,16 +162,12 @@ describe("gradeFromPassFail", () => {
 // ── Bury / Suspend / Unsuspend / Reset ──────────────────────────────────────
 
 describe("buryCard", () => {
-  it("pushes due to at least tomorrow", () => {
+  it("pushes due forward by at least 24 hours", () => {
     const card = newCardState({ due: NOW });
     const buried = buryCard(card, NOW);
 
-    // Should be at start of tomorrow UTC or later
-    const tomorrow = new Date(NOW);
-    tomorrow.setUTCHours(0, 0, 0, 0);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-
-    expect(buried.due).toBeGreaterThanOrEqual(tomorrow.getTime());
+    // Should be exactly now + 24 h
+    expect(buried.due).toBe(NOW + 24 * 60 * 60 * 1000);
   });
 
   it("preserves the rest of the card state", () => {
