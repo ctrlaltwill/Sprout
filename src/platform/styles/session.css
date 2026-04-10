@@ -515,9 +515,9 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   line-height: 1.75;
 }
 
-/* Answer styling: keep semantic color while sharing body size above. */
+/* Keep answer text color aligned with question/info text color. */
 .learnkit .lk-session-card .learnkit-a {
-  color: var(--learnkit-easy-bg);
+  color: inherit;
 }
 
 
@@ -1655,17 +1655,19 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .learnkit-cloze-typed-correct,
 .learnkit-cloze-typed-wrong {
-  display: inline-block;
-  font-family: inherit;
-  font-size: var(--learnkit-font-xs);
-  font-weight: 500;
+font-family: inherit;
+    font-size: var(--learnkit-font-xs);
+    border-radius: var(--radius-s);
+    box-sizing: border-box;
+    vertical-align: middle !important;
+    min-height: 32px;
+    border: .5px solid #0000;
+    margin: 0 2px 0 4px;
+    padding: 4px 8px;
+    font-weight: 500;
   line-height: 1.5;
-  padding: 2px 8px 2px 8px;
-  margin: 0 2px 0 4px;
-  border: 0.5px solid transparent;
-  border-radius: var(--radius-s);
-  box-sizing: border-box;
-  vertical-align: baseline;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Compact padding in widget sidebar */

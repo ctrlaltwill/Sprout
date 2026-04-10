@@ -143,14 +143,13 @@ export function renderClozeFront(
           applyInlineMarkdownWithFlags(span, ans);
           p.appendChild(span);
         } else {
-          // Wrong: red pill with strikethrough showing what was typed, then green pill with correct
-          if (typed) {
-            const wrongSpan = document.createElement("span");
-            wrongSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-wrong";
-            wrongSpan.textContent = typed;
-            p.appendChild(wrongSpan);
-            p.appendChild(document.createTextNode(" "));
-          }
+          // Wrong (or blank): always show a red pill first, then the green correct answer.
+          const wrongSpan = document.createElement("span");
+          wrongSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-wrong";
+          wrongSpan.textContent = typed || "\u00A0\u00A0\u00A0";
+          p.appendChild(wrongSpan);
+          p.appendChild(document.createTextNode(" "));
+
           const correctSpan = document.createElement("span");
           correctSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
           applyInlineMarkdownWithFlags(correctSpan, ans);
