@@ -29,6 +29,6 @@ Open [Flashcard Library](../Flashcard-Library) and filter Stage = Buried.
 
 ## Limits
 
-- Burying is temporary (today only).
+- Burying is temporary (24 hours).
 - Burying does not delete flashcards.
 - For long-term removal from review, use [Suspending Flashcards](../Suspending-Flashcards).
