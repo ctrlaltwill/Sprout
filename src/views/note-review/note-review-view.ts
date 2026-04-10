@@ -1168,6 +1168,7 @@ export class SproutNoteReviewView extends ItemView {
     const coachShellMode = !!this._coachScope || this._returnToCoach;
     const coachLabel = "Coach";
     const backToCoachLabel = `Back to ${coachLabel}`;
+    const lang = this.plugin.settings?.general?.interfaceLanguage;
 
     const popover = document.createElement("div");
     popover.className =

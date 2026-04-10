@@ -1383,7 +1383,7 @@ export class SproutAssistantPopup {
       if (this._attachedFiles.some(af => af.name === attached.name)) return;
       this._attachedFiles.push(attached);
       this.render();
-    });
+    }, this.plugin.settings?.general?.interfaceLanguage);
     modal.open();
   }
 
@@ -4961,18 +4961,21 @@ class AttachmentPickerModal extends Modal {
   private _onPickExternal: (attached: AttachedFile) => void;
   private _filteredFiles: TFile[] = [];
   private _listEl: HTMLDivElement | null = null;
+  private _locale: string | undefined;
 
   constructor(
     app: import("obsidian").App,
     files: TFile[],
     onPick: (file: TFile) => void,
     onPickExternal: (attached: AttachedFile) => void,
+    locale?: string,
   ) {
     super(app);
     this._files = files.sort((a, b) => a.path.localeCompare(b.path));
     this._onPick = onPick;
     this._onPickExternal = onPickExternal;
     this._filteredFiles = [...this._files];
+    this._locale = locale;
   }
 
   onOpen(): void {
@@ -4988,7 +4991,7 @@ class AttachmentPickerModal extends Modal {
     systemBtn.addEventListener("click", () => this._pickSystemFile());
 
     // ---- Divider ----
-    this.contentEl.createEl("div", { cls: "learnkit-attachment-picker-divider learnkit-attachment-picker-divider", text: this._tx("ui.assistant.orChooseFromVault", "Or choose from vault") });
+    this.contentEl.createEl("div", { cls: "learnkit-attachment-picker-divider learnkit-attachment-picker-divider", text: t(this._locale, "ui.assistant.orChooseFromVault", "Or choose from vault") });
 
     const search = this.contentEl.createEl("input", {
       cls: "input w-full learnkit-attachment-picker-search learnkit-attachment-picker-search",
