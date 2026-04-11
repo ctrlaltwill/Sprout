@@ -49,6 +49,71 @@ function hasMarkdownList(text: string): boolean {
   return /^[ \t]*(?:[-+*]|\d+[.)])\s/m.test(text);
 }
 
+const QUESTION_NUMBER_WORDS: string[] = [
+  "Zero",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
+  "Twenty",
+];
+
+function toQuestionOrdinalWord(n: number): string {
+  const safe = Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+  return QUESTION_NUMBER_WORDS[safe] ?? String(safe);
+}
+
+function pageNameFromSourcePath(sourcePath: string): string {
+  const clean = String(sourcePath || "").trim().replace(/\\/g, "/");
+  if (!clean) return "Page";
+  const leaf = clean
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .pop() || "";
+  const noExt = leaf.replace(/\.md$/i, "").trim();
+  return noExt || "Page";
+}
+
+function questionNumberWithinNote(view: WidgetViewLike, card: CardRecord): number {
+  const currentId = String(card.id || "");
+  const sourcePath = String(card.sourceNotePath || "").trim().toLowerCase();
+  if (!sourcePath) return 1;
+
+  const noteCards = (view.session?.queue || [])
+    .filter((entry) => String(entry?.sourceNotePath || "").trim().toLowerCase() === sourcePath)
+    .slice()
+    .sort((a, b) => {
+      const lineDelta = (Number(a?.sourceStartLine) || 0) - (Number(b?.sourceStartLine) || 0);
+      if (lineDelta !== 0) return lineDelta;
+      return String(a?.id || "").localeCompare(String(b?.id || ""));
+    });
+
+  const idx = noteCards.findIndex((entry) => String(entry?.id || "") === currentId);
+  return idx >= 0 ? idx + 1 : 1;
+}
+
+function fallbackWidgetTitle(view: WidgetViewLike, card: CardRecord): string {
+  const page = pageNameFromSourcePath(String(card.sourceNotePath || view.activeFile?.path || ""));
+  const questionWord = toQuestionOrdinalWord(questionNumberWithinNote(view, card));
+  return `${page} \u2013 Question ${questionWord}`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  renderWidgetSession                                                */
 /* ------------------------------------------------------------------ */
@@ -65,11 +130,11 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   const wrap = el("div", "bg-background");
   wrap.classList.add("learnkit-widget", "learnkit-widget", "learnkit", "learnkit");
   // ---- Header -------------------------------------------------------
-  const header = el("div", "flex items-center justify-between px-4 py-3 gap-2 sprout-widget-header");
+  const header = el("div", "sprout-widget-header");
 
   const backBtn = document.createElement("button");
   backBtn.type = "button";
-  backBtn.className = "learnkit-btn-toolbar learnkit-widget-back-btn";
+  backBtn.className = "learnkit-widget-back-btn";
   setIcon(backBtn, "arrow-left");
   applyWidgetHoverDarken(backBtn);
 
@@ -79,7 +144,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
     view.backToSummary();
   });
 
-  const studyingWrap = el("div", "flex flex-col items-start mr-auto sprout-widget-header-labels");
+  const studyingWrap = el("div", "sprout-widget-header-labels");
   const scopeLabel = view.session?.scopeType === "folder"
     ? tx(view, "ui.widget.scope.folder", "Folder")
     : tx(view, "ui.widget.scope.note", "Note");
@@ -145,15 +210,10 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   const graded = view.session?.graded[id] || null;
 
   // ---- Body: card content -------------------------------------------
-  const body = el("div", "card px-4 py-4 flex-1 overflow-y-auto sprout-widget-card-body");
+  const body = el("div", "card sprout-widget-card-body");
 
   const applySectionStyles = (e: HTMLElement) => {
     e.classList.add("learnkit-widget-section", "learnkit-widget-section");
-  };
-
-  const makeDivider = () => {
-    const hr = el("div", "sprout-widget-divider");
-    return hr;
   };
 
   // ---- Card title ----------------------------------------------------
@@ -167,25 +227,26 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   const TYPE_LABELS = new Set(["basic", "basic (reversed)", "cloze", "multiple choice", "image occlusion", "ordered question", "flashcard"]);
   if (TYPE_LABELS.has(cardTitle.toLowerCase())) cardTitle = "";
 
-  const titleEl = el("div", "font-semibold sprout-widget-text");
-  if (!cardTitle) titleEl.hidden = true;
-  replaceChildrenWithHTML(titleEl, processMarkdownFeatures(cardTitle));
+  const titleText = cardTitle || fallbackWidgetTitle(view, card);
+  const titleEl = el("div", "sprout-widget-note-title sprout-widget-text learnkit-widget-section");
+  replaceChildrenWithHTML(titleEl, processMarkdownFeatures(titleText));
   applySectionStyles(titleEl);
-  body.appendChild(titleEl);
+  wrap.appendChild(titleEl);
+  setupInternalLinkHandlers(titleEl, view.app);
 
   const infoText = String((card)?.info ?? "").trim();
 
   // ---- Card-type–specific content ------------------------------------
   if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
-    renderBasicCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
+    renderBasicCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (isClozeLike(card)) {
-    renderClozeCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
+    renderClozeCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (card.type === "mcq") {
-    renderMcqCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
+    renderMcqCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (card.type === "io" || card.type === "io-child") {
-    renderIoCard(view, body, card, graded, infoText, makeDivider, applySectionStyles);
+    renderIoCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (card.type === "oq") {
-    renderOqCard(view, body, card, graded, infoText, applySectionStyles, makeDivider);
+    renderOqCard(view, body, card, graded, infoText, applySectionStyles);
   }
 
   // Setup link handlers for processMarkdownFeatures content
@@ -193,7 +254,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   wrap.appendChild(body);
 
   // ---- Footer: controls ---------------------------------------------
-  const footer = el("div", "px-4 py-3 space-y-2 border-t border-border sprout-widget-footer");
+  const footer = el("div", "sprout-widget-footer");
 
   if (view.session.mode === "practice") {
     renderPracticeFooter(view, footer, card, ioLike);
@@ -209,6 +270,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   renderProgressBar(view, wrap);
 
   root.appendChild(wrap);
+
   maybeAutoSpeakWidgetCard(view, card, graded);
   view.armTimer();
 }
@@ -224,13 +286,17 @@ function renderBasicCard(
   graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
-  makeDivider: () => HTMLElement,
 ) {
   const qActions = el("div", "flex items-center justify-end gap-2");
   appendWidgetTtsReplayButton(view, qActions, card, graded, false);
   if (qActions.childElementCount > 0) body.appendChild(qActions);
 
-  const qEl = el("div");
+  const qEl = el("div", "widget-question");
+  const questionLabel = document.createElement("div");
+  questionLabel.className = "sprout-widget-question-label";
+  questionLabel.textContent = tx(view, "ui.widget.label.question", "Question:");
+  qEl.appendChild(questionLabel);
+
   // For reversed-child cards, use reversedDirection to swap content
   const isBackDirection = card.type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
   const isOldReversed = card.type === "reversed";
@@ -242,23 +308,28 @@ function renderBasicCard(
     void view.renderMarkdownInto(qContainer, convertInlineDisplayMath(qText), sourcePath);
     qEl.appendChild(qContainer);
   } else {
-    const qP = document.createElement("p");
-    qP.className = "whitespace-pre-wrap break-words";
-    replaceChildrenWithHTML(qP, processMarkdownFeatures(qText.replace(/\n/g, "<br>")));
-    qEl.appendChild(qP);
+    const qDiv = document.createElement("div");
+    qDiv.className = "whitespace-pre-wrap break-words";
+    replaceChildrenWithHTML(qDiv, processMarkdownFeatures(qText.replace(/\n/g, "<br>")));
+    qEl.appendChild(qDiv);
   }
   qEl.classList.add("learnkit-widget-text", "learnkit-widget-text");
   applySectionStyles(qEl);
   body.appendChild(qEl);
 
   if (view.showAnswer || graded) {
-    body.appendChild(makeDivider());
     const aActions = el("div", "flex items-center justify-end gap-2");
     appendWidgetTtsReplayButton(view, aActions, card, graded, true);
     if (aActions.childElementCount > 0) body.appendChild(aActions);
 
-    const aEl = el("div");
-    const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
+    const aEl = el("div", "widget-answer");
+    const answerLabel = document.createElement("div");
+    answerLabel.className = "sprout-widget-answer-label";
+    answerLabel.textContent = tx(view, "ui.widget.label.answer", "Answer:");
+    aEl.appendChild(answerLabel);
+
+    const rawAnswerText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
+    const aText = rawAnswerText.trim().replace(/^\s*Answer:\s*/i, "");
     if (aText.includes("$") || aText.includes("[[") || aText.includes("\\(") || aText.includes("\\[") || hasMarkdownTable(aText) || hasMarkdownList(aText)) {
       const aContainer = document.createElement("div");
       aContainer.className = "whitespace-pre-wrap break-words";
@@ -266,10 +337,10 @@ function renderBasicCard(
       void view.renderMarkdownInto(aContainer, convertInlineDisplayMath(aText), sourcePath);
       aEl.appendChild(aContainer);
     } else {
-      const aP = document.createElement("p");
-      aP.className = "whitespace-pre-wrap break-words";
-      replaceChildrenWithHTML(aP, processMarkdownFeatures(aText.replace(/\n/g, "<br>")));
-      aEl.appendChild(aP);
+      const aDiv = document.createElement("div");
+      aDiv.className = "whitespace-pre-wrap break-words";
+      replaceChildrenWithHTML(aDiv, processMarkdownFeatures(aText.replace(/\n/g, "<br>")));
+      aEl.appendChild(aDiv);
     }
     aEl.classList.add("learnkit-widget-text", "learnkit-widget-text");
     applySectionStyles(aEl);
@@ -318,20 +389,30 @@ function renderClozeCard(
   graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
-  makeDivider: () => HTMLElement,
 ) {
   const text = card.clozeText || "";
   const reveal = view.showAnswer || !!graded;
   const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : undefined;
+  const clozeLabelText = reveal
+    ? tx(view, "ui.widget.label.answer", "Answer:")
+    : tx(view, "ui.widget.label.question", "Question:");
+  const clozeSectionClass = reveal ? "widget-answer" : "widget-question";
 
   if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[") || hasMarkdownTable(text) || hasMarkdownList(text)) {
-    const clozeEl = el("div", "sprout-widget-cloze sprout-widget-text w-full");
+    const clozeEl = el("div", `sprout-widget-cloze sprout-widget-text w-full ${clozeSectionClass}`);
+    const clozeLabel = document.createElement("div");
+    clozeLabel.className = reveal ? "sprout-widget-answer-label" : "sprout-widget-question-label";
+    clozeLabel.textContent = clozeLabelText;
+    clozeEl.appendChild(clozeLabel);
+
+    const clozeContent = document.createElement("div");
+    clozeEl.appendChild(clozeContent);
     applySectionStyles(clozeEl);
 
     const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
     const processedText = processClozeForMath(text, reveal, targetIndex);
 
-    void view.renderMarkdownInto(clozeEl, processedText, sourcePath);
+    void view.renderMarkdownInto(clozeContent, processedText, sourcePath);
     body.appendChild(clozeEl);
   } else {
     const clozeMode = view.plugin.settings.cards?.clozeMode ?? "standard";
@@ -354,13 +435,17 @@ function renderClozeCard(
         }
       },
     });
-    clozeEl.className = "learnkit-widget-cloze learnkit-widget-text w-full";
+    const clozeLabel = document.createElement("div");
+    clozeLabel.className = reveal ? "sprout-widget-answer-label" : "sprout-widget-question-label";
+    clozeLabel.textContent = clozeLabelText;
+    clozeEl.prepend(clozeLabel);
+
+    clozeEl.className = `learnkit-widget-cloze learnkit-widget-text w-full ${clozeSectionClass}`;
     applySectionStyles(clozeEl);
     body.appendChild(clozeEl);
   }
 
   if (reveal && infoText) {
-    body.appendChild(makeDivider());
     renderInfoBlock(body, infoText, applySectionStyles, view, card);
   }
 }
@@ -372,15 +457,24 @@ function renderMcqCard(
   graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
-  makeDivider: () => HTMLElement,
 ) {
   const stemText = card.stem || "";
   const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
-  const stemEl = el("div", "sprout-widget-text");
+  const stemEl = el("div", "sprout-widget-text widget-question");
+  const mcqQuestionLabel = document.createElement("div");
+  mcqQuestionLabel.className = "sprout-widget-question-label";
+  mcqQuestionLabel.textContent = tx(view, "ui.widget.label.question", "Question:");
+  stemEl.appendChild(mcqQuestionLabel);
   if (stemText.includes("$") || stemText.includes("\\(") || stemText.includes("\\[") || stemText.includes("[[")) {
-    void view.renderMarkdownInto(stemEl, convertInlineDisplayMath(stemText), sourcePath);
+    const stemContent = document.createElement("div");
+    stemContent.className = "whitespace-pre-wrap break-words";
+    void view.renderMarkdownInto(stemContent, convertInlineDisplayMath(stemText), sourcePath);
+    stemEl.appendChild(stemContent);
   } else {
-    replaceChildrenWithHTML(stemEl, processMarkdownFeatures(stemText));
+    const stemContent = document.createElement("div");
+    stemContent.className = "whitespace-pre-wrap break-words";
+    replaceChildrenWithHTML(stemContent, processMarkdownFeatures(stemText));
+    stemEl.appendChild(stemContent);
   }
   applySectionStyles(stemEl);
   body.appendChild(stemEl);
@@ -406,24 +500,33 @@ function renderMcqCard(
 
   // Label for multi-answer
   if (isMulti && !graded) {
-    const hint = el("div", "text-muted-foreground mb-1 text-center sprout-widget-info");
+    const hint = el("div", "sprout-widget-info sprout-widget-mcq-hint");
     hint.textContent = tx(view, "ui.widget.mcq.selectAllCorrect", "Select all correct answers");
     body.appendChild(hint);
   }
 
-  const optsContainer = el("div", "flex flex-col gap-2 sprout-widget-section");
+  const optsContainer = el("div", "sprout-widget-section sprout-widget-mcq-options");
+
+  const mcqSectionLabel = document.createElement("div");
+  mcqSectionLabel.className = (view.showAnswer || graded) ? "sprout-widget-answer-label" : "sprout-widget-question-label";
+  mcqSectionLabel.textContent = (view.showAnswer || graded)
+    ? tx(view, "ui.widget.label.answer", "Answer:")
+    : tx(view, "ui.widget.label.options", "Options:");
+  optsContainer.appendChild(mcqSectionLabel);
+
+  const mcqOptionsList = el("div", "sprout-widget-mcq-options-list");
 
   opts.forEach((opt: string, displayIdx: number) => {
     const text = typeof opt === "string" ? opt : "";
-    const d = el("div", "px-3 py-1 rounded border border-border cursor-pointer hover:bg-secondary sprout-widget-text sprout-widget-mcq-option");
+    const d = el("div", "sprout-widget-text sprout-widget-mcq-option");
     const origIdx = order[displayIdx];
 
-    const left = el("span", "inline-flex items-center gap-2 min-w-0");
+    const left = el("span", "sprout-widget-mcq-option-content");
     const key = el("kbd", "kbd");
     key.textContent = String(displayIdx + 1);
     left.appendChild(key);
 
-    const textEl = el("span", "min-w-0 whitespace-pre-wrap break-words sprout-widget-mcq-text");
+    const textEl = el("span", "sprout-widget-mcq-text");
     if (text && (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[["))) {
       void view.renderMarkdownInto(textEl, forceSingleLineDisplayMathInline(text), sourcePath);
     } else if (text && text.includes("\n")) {
@@ -469,21 +572,22 @@ function renderMcqCard(
           d.classList.add("learnkit-mcq-wrong-highlight", "learnkit-mcq-wrong-highlight");
       }
     }
-    optsContainer.appendChild(d);
+    mcqOptionsList.appendChild(d);
   });
 
+  optsContainer.appendChild(mcqOptionsList);
   body.appendChild(optsContainer);
 
   // Submit button for multi-answer (when not graded)
   if (isMulti && !graded) {
-    const submitBtn = el("button", "btn-primary w-full text-sm mt-2 sprout-mcq-submit-btn");
+    const submitBtn = el("button", "btn-primary sprout-widget-btn sprout-widget-btn-full sprout-mcq-submit-btn");
 
     const submitLabel = document.createElement("span");
     submitLabel.textContent = tx(view, "ui.widget.submit", "Submit");
     submitBtn.appendChild(submitLabel);
 
     const submitKbd = document.createElement("kbd");
-    submitKbd.className = "kbd ml-2";
+    submitKbd.className = "kbd sprout-widget-kbd";
     submitKbd.textContent = "\u21B5";
     submitBtn.appendChild(submitKbd);
 
@@ -511,7 +615,6 @@ function renderMcqCard(
   }
 
   if ((view.showAnswer || graded) && infoText) {
-    body.appendChild(makeDivider());
     renderInfoBlock(body, infoText, applySectionStyles, view, card);
   }
 }
@@ -522,19 +625,31 @@ function renderIoCard(
   card: CardRecord,
   graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
-  makeDivider: () => HTMLElement,
   applySectionStyles: (e: HTMLElement) => void,
 ) {
   const reveal = view.showAnswer || !!graded;
+
+  // Label switches from "Question:" to "Answer:" on reveal
+  const sectionClass = reveal ? "widget-answer" : "widget-question";
+  const qEl = el("div", sectionClass);
+  const ioLabel = document.createElement("div");
+  ioLabel.className = (reveal ? "sprout-widget-answer-label" : "sprout-widget-question-label") + " sprout-widget-io-label";
+  ioLabel.textContent = reveal
+    ? tx(view, "ui.widget.label.answer", "Answer:")
+    : tx(view, "ui.widget.label.question", "Question:");
+  qEl.appendChild(ioLabel);
+
   const ioContainer = el("div", "rounded border border-border bg-muted overflow-auto sprout-widget-io-container");
   ioContainer.dataset.sproutIoWidget = "1";
-  body.appendChild(ioContainer);
+  qEl.appendChild(ioContainer);
+  qEl.classList.add("learnkit-widget-text");
+  applySectionStyles(qEl);
+  body.appendChild(qEl);
 
   const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
   void view.renderImageOcclusionInto(ioContainer, card, sourcePath, reveal);
 
   if (reveal && infoText) {
-    body.appendChild(makeDivider());
     renderInfoBlock(body, infoText, applySectionStyles, view, card);
   }
 }
@@ -588,7 +703,6 @@ function renderOqCard(
   graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
-  makeDivider: () => HTMLElement,
 ) {
   const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
   const reveal = view.showAnswer || !!graded;
@@ -597,7 +711,11 @@ function renderOqCard(
   const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
 
   // Question text
-  const qEl = el("div", "sprout-widget-text");
+  const qEl = el("div", "sprout-widget-text widget-question");
+  const oqQuestionLabel = document.createElement("div");
+  oqQuestionLabel.className = "sprout-widget-question-label";
+  oqQuestionLabel.textContent = tx(view, "ui.widget.label.question", "Question:");
+  qEl.appendChild(oqQuestionLabel);
   const qText = card.q || "";
   if (qText.includes("$") || qText.includes("\\(") || qText.includes("\\[") || qText.includes("[[") || hasMarkdownTable(qText) || hasMarkdownList(qText)) {
     const qContainer = document.createElement("div");
@@ -605,10 +723,10 @@ function renderOqCard(
     void view.renderMarkdownInto(qContainer, convertInlineDisplayMath(qText), sourcePath);
     qEl.appendChild(qContainer);
   } else {
-    const qP = document.createElement("p");
-    qP.className = "whitespace-pre-wrap break-words";
-    replaceChildrenWithHTML(qP, processMarkdownFeatures(qText.replace(/\n/g, "<br>")));
-    qEl.appendChild(qP);
+    const qDiv = document.createElement("div");
+    qDiv.className = "whitespace-pre-wrap break-words";
+    replaceChildrenWithHTML(qDiv, processMarkdownFeatures(qText.replace(/\n/g, "<br>")));
+    qEl.appendChild(qDiv);
   }
   applySectionStyles(qEl);
   body.appendChild(qEl);
@@ -619,8 +737,18 @@ function renderOqCard(
     const shuffled = getWidgetOqShuffledOrder(view.session as unknown as Record<string, unknown>, card, shouldShuffle);
     const currentOrder = shuffled.slice();
 
+    const orderSection = el("div", "sprout-widget-text");
+    applySectionStyles(orderSection);
+
+    const orderLabel = document.createElement("div");
+    orderLabel.className = "sprout-widget-question-label";
+    orderLabel.textContent = tx(view, "ui.widget.label.order", "Order:");
+    orderSection.appendChild(orderLabel);
+
     const listWrap = el("div", "flex flex-col gap-2 sprout-oq-step-list");
-    body.appendChild(listWrap);
+    orderSection.appendChild(listWrap);
+
+    body.appendChild(orderSection);
 
     const previewController = createOqReorderPreviewController(listWrap);
 
@@ -728,33 +856,18 @@ function renderOqCard(
 
     renderSteps();
 
-    // Submit button
-    const submitBtn = document.createElement("button");
-    submitBtn.type = "button";
-    submitBtn.className = "learnkit-btn-toolbar w-full text-sm mt-2 learnkit-oq-submit-btn";
-
-    const submitLabel = document.createElement("span");
-    submitLabel.textContent = tx(view, "ui.widget.oq.submitOrder", "Submit order");
-    submitBtn.appendChild(submitLabel);
-
-    const submitKbd = document.createElement("kbd");
-    submitKbd.className = "kbd ml-2";
-    submitKbd.textContent = "\u21B5";
-    submitBtn.appendChild(submitKbd);
-
-    applyWidgetHoverDarken(submitBtn);
-    submitBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      void view.answerOq(currentOrder.slice());
-    });
-    body.appendChild(submitBtn);
-
   } else {
     // ── Back: user order with highlights ──
-    body.appendChild(makeDivider());
+    const answerSection = el("div", "sprout-widget-text");
+    applySectionStyles(answerSection);
+
+    const oqAnswerLabel = document.createElement("div");
+    oqAnswerLabel.className = "sprout-widget-answer-label";
+    oqAnswerLabel.textContent = tx(view, "ui.widget.label.answer", "Answer:");
+    answerSection.appendChild(oqAnswerLabel);
+
     const answerList = el("div", "flex flex-col gap-2 sprout-oq-answer-list");
-    body.appendChild(answerList);
+    answerSection.appendChild(answerList);
 
     const identity = Array.from({ length: steps.length }, (_, i) => i);
     const displayOrder = userOrder.length === steps.length ? userOrder : identity;
@@ -787,8 +900,9 @@ function renderOqCard(
       answerList.appendChild(row);
     });
 
+    body.appendChild(answerSection);
+
     if (infoText) {
-      body.appendChild(makeDivider());
       renderInfoBlock(body, infoText, applySectionStyles, view, card);
     }
   }
@@ -802,21 +916,29 @@ function renderInfoBlock(
   body: HTMLElement,
   infoText: string,
   applySectionStyles: (e: HTMLElement) => void,
-  view?: WidgetViewLike,
+  view: WidgetViewLike,
   card?: CardRecord,
 ) {
-  const infoEl = el("div", "sprout-widget-info");
-  if (view && (hasMarkdownTable(infoText) || hasMarkdownList(infoText))) {
+  const infoEl = el("div", "sprout-widget-info sprout-widget-extra-info widget-information");
+  const rawInfoText = infoText.trim();
+  const normalizedInfoText = rawInfoText.replace(/^\s*Extra Information:\s*/i, "");
+
+  const infoLabel = document.createElement("div");
+  infoLabel.className = "sprout-widget-extra-info-label";
+  infoLabel.textContent = tx(view, "ui.widget.label.extraInformation", "Extra Information:");
+  infoEl.appendChild(infoLabel);
+
+  if (view && (hasMarkdownTable(normalizedInfoText) || hasMarkdownList(normalizedInfoText))) {
     const infoContainer = document.createElement("div");
     infoContainer.className = "whitespace-pre-wrap break-words";
     const sourcePath = String(card?.sourceNotePath || view.activeFile?.path || "");
-    void view.renderMarkdownInto(infoContainer, infoText, sourcePath);
+    void view.renderMarkdownInto(infoContainer, normalizedInfoText, sourcePath);
     infoEl.appendChild(infoContainer);
   } else {
-    const infoP = document.createElement("p");
-    infoP.className = "whitespace-pre-wrap break-words";
-    replaceChildrenWithHTML(infoP, processMarkdownFeatures(infoText.replace(/\n/g, "<br>")));
-    infoEl.appendChild(infoP);
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "whitespace-pre-wrap break-words";
+    replaceChildrenWithHTML(infoDiv, processMarkdownFeatures(normalizedInfoText.replace(/\n/g, "<br>")));
+    infoEl.appendChild(infoDiv);
   }
   applySectionStyles(infoEl);
   body.appendChild(infoEl);
@@ -830,7 +952,7 @@ function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: C
   if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer) {
     const revealBtn = makeTextButton({
       label: tx(view, "ui.widget.showAnswer", "Show Answer"),
-      className: "learnkit-btn-toolbar w-full text-sm",
+      className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
       onClick: () => {
         view.showAnswer = true;
         view.render();
@@ -840,10 +962,26 @@ function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: C
     });
     applyWidgetActionButtonStyles(revealBtn);
     footer.appendChild(revealBtn);
+  } else if (card.type === "oq" && !view.showAnswer) {
+    const oqSubmitBtn = makeTextButton({
+      label: tx(view, "ui.widget.oq.submitOrder", "Submit order"),
+      className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
+      onClick: () => {
+        const oqMap = ensureWidgetOqOrderMap(view.session as unknown as Record<string, unknown>);
+        const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+        const currentOrder = oqMap[String(card.id)] || Array.from({ length: steps.length }, (_, i) => i);
+        void view.answerOq(currentOrder.slice());
+      },
+      kbd: "\u21B5",
+    });
+    applyWidgetActionButtonStyles(oqSubmitBtn);
+    footer.appendChild(oqSubmitBtn);
+  } else if (card.type === "mcq" && !view.showAnswer) {
+    // MCQ: no footer button on front — user progresses by selecting an option
   } else {
     const nextBtn = makeTextButton({
       label: tx(view, "ui.widget.next", "Next"),
-      className: "learnkit-btn-toolbar w-full text-sm",
+      className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
       onClick: () => void view.nextCard(),
       kbd: "↵",
     });
@@ -857,7 +995,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
   if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
     const revealBtn = makeTextButton({
       label: tx(view, "ui.widget.revealAnswer", "Reveal Answer"),
-      className: "learnkit-btn-toolbar w-full text-sm",
+      className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
       onClick: () => {
         view.showAnswer = true;
         view.render();
@@ -891,9 +1029,9 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
       };
       let gradingGrid: HTMLElement;
       if (fourButton) {
-        gradingGrid = el("div", "grid grid-cols-2 gap-2");
+        gradingGrid = el("div", "sprout-widget-grading-grid");
       } else {
-        gradingGrid = el("div", "flex gap-2");
+        gradingGrid = el("div", "sprout-widget-grading-row");
       }
 
       // Always show Again
@@ -901,7 +1039,9 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
         label: tx(view, "ui.widget.grade.again", "Again"),
         subtitle: getSubtitle("again"),
         title: tx(view, "ui.widget.grade.againTooltip", "Grade question as again (1)"),
-        className: fourButton ? "learnkit-btn-toolbar w-full" : "learnkit-btn-toolbar flex-1",
+        className: fourButton
+          ? "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full"
+          : "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half",
         onClick: () => {
           void (async () => {
             await view.gradeCurrentRating("again", {});
@@ -918,7 +1058,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
           label: tx(view, "ui.widget.grade.hard", "Hard"),
           subtitle: getSubtitle("hard"),
           title: tx(view, "ui.widget.grade.hardTooltip", "Grade question as hard (2)"),
-          className: "learnkit-btn-toolbar w-full",
+          className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
           onClick: () => {
             void (async () => {
               await view.gradeCurrentRating("hard", {});
@@ -938,7 +1078,9 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
         title: fourButton
           ? tx(view, "ui.widget.grade.goodTooltipFour", "Grade question as good (3)")
           : tx(view, "ui.widget.grade.goodTooltipTwo", "Grade question as good (2)"),
-        className: fourButton ? "learnkit-btn-toolbar w-full" : "learnkit-btn-toolbar flex-1",
+        className: fourButton
+          ? "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full"
+          : "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half",
         onClick: () => {
           void (async () => {
             await view.gradeCurrentRating("good", {});
@@ -955,7 +1097,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
           label: tx(view, "ui.widget.grade.easy", "Easy"),
           subtitle: getSubtitle("easy"),
           title: tx(view, "ui.widget.grade.easyTooltip", "Grade question as easy (4)"),
-          className: "learnkit-btn-toolbar w-full",
+          className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
           onClick: () => {
             void (async () => {
               await view.gradeCurrentRating("easy", {});
@@ -976,14 +1118,24 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
         : tx(view, "ui.widget.mcq.selectOption", "Select an option");
       footer.appendChild(mcqNote);
     } else if (card.type === "oq") {
-      const oqNote = el("div", "text-muted-foreground w-full text-center sprout-widget-info");
-      oqNote.textContent = tx(view, "ui.widget.oq.dragThenSubmit", "Drag to reorder, then submit");
-      footer.appendChild(oqNote);
+      const oqSubmitBtn = makeTextButton({
+        label: tx(view, "ui.widget.oq.submitOrder", "Submit order"),
+        className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
+        onClick: () => {
+          const oqMap = ensureWidgetOqOrderMap(view.session as unknown as Record<string, unknown>);
+          const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+          const currentOrder = oqMap[String(card.id)] || Array.from({ length: steps.length }, (_, i) => i);
+          void view.answerOq(currentOrder.slice());
+        },
+        kbd: "\u21B5",
+      });
+      applyWidgetActionButtonStyles(oqSubmitBtn);
+      footer.appendChild(oqSubmitBtn);
     }
   } else {
     const nextBtn = makeTextButton({
       label: tx(view, "ui.widget.next", "Next"),
-      className: "learnkit-btn-toolbar w-full text-sm",
+      className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
       onClick: () => void view.nextCard(),
       kbd: "↵",
     });
@@ -1059,11 +1211,11 @@ function maybeAutoSpeakWidgetCard(view: WidgetViewLike, card: CardRecord, graded
 }
 
 function renderActionRow(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null) {
-  const actionRow = el("div", "flex gap-2");
+  const actionRow = el("div", "sprout-widget-action-row");
 
   const editBtn = makeTextButton({
     label: tx(view, "ui.widget.edit", "Edit"),
-    className: "learnkit-btn-toolbar flex-1",
+    className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half",
     onClick: () => view.openEditModalForCurrentCard(),
     kbd: "E",
   });
@@ -1072,7 +1224,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, card: CardRe
 
   const moreBtn = document.createElement("button");
   moreBtn.type = "button";
-  moreBtn.className = "learnkit-btn-toolbar flex-1 flex items-center justify-center gap-2";
+  moreBtn.className = "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half";
   moreBtn.setAttribute("aria-label", tx(view, "ui.widget.more.tooltip", "More actions (M)"));
   moreBtn.setAttribute("data-tooltip-position", "top");
   applyWidgetHoverDarken(moreBtn);
@@ -1080,7 +1232,7 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, card: CardRe
   const moreText = document.createElement("span");
   moreText.textContent = tx(view, "ui.widget.more.label", "More");
   const moreKbd = document.createElement("kbd");
-  moreKbd.className = "kbd ml-2";
+  moreKbd.className = "kbd sprout-widget-kbd";
   moreKbd.textContent = "M";
   moreBtn.appendChild(moreText);
   moreBtn.appendChild(moreKbd);
@@ -1126,14 +1278,14 @@ function renderActionRow(view: WidgetViewLike, footer: HTMLElement, card: CardRe
 }
 
 function renderProgressBar(view: WidgetViewLike, wrap: HTMLElement) {
-  const progressBar = el("div", "px-4 py-2 border-b border-border sprout-widget-progress");
+  const progressBar = el("div", "sprout-widget-progress");
 
   const total = Math.max(0, view.session?.stats?.total || 0);
   const done = Math.max(0, view.session?.stats?.done || 0);
   const progressPercent = total > 0 ? (Math.min(done, total) / total) * 100 : 0;
-  const barBg = el("div", "w-full rounded-full overflow-hidden sprout-widget-progress-track");
+  const barBg = el("div", "sprout-widget-progress-track");
 
-  const barFill = el("div", "h-full transition-all sprout-widget-progress-fill");
+  const barFill = el("div", "sprout-widget-progress-fill");
   setCssProps(barFill, "--learnkit-progress", `${progressPercent}%`);
   barBg.appendChild(barFill);
   progressBar.appendChild(barBg);

@@ -589,10 +589,10 @@ export class LearnKitSettingsView extends ItemView {
             prevBtn.appendChild(label);
             const link = document.createElement("a");
             link.className = "learnkit-guide-prev-next-link";
-            link.textContent = t(
+            link.textContent = "← " + t(
               this.plugin.settings?.general?.interfaceLanguage,
               "ui.settings.nav.prevWithLabel",
-              "← {label}",
+              "{label}",
               { label: prevSubTab.label },
             );
             link.addEventListener("click", (ev) => {
@@ -620,9 +620,9 @@ export class LearnKitSettingsView extends ItemView {
             link.textContent = t(
               this.plugin.settings?.general?.interfaceLanguage,
               "ui.settings.nav.nextWithLabel",
-              "{label} →",
+              "{label}",
               { label: nextSubTab.label },
-            );
+            ) + " →";
             link.addEventListener("click", (ev) => {
               ev.preventDefault();
               this._activeSettingsSubTab = nextSubTab.id;
@@ -1100,10 +1100,10 @@ export class LearnKitSettingsView extends ItemView {
               prevBtn.appendChild(label);
               const link = document.createElement("a");
               link.className = "learnkit-guide-prev-next-link";
-              link.textContent = t(
+              link.textContent = "← " + t(
                 this.plugin.settings?.general?.interfaceLanguage,
                 "ui.settings.nav.prevWithLabel",
-                "← {label}",
+                "{label}",
                 { label: prevPage.label },
               );
               link.addEventListener("click", (ev) => {
@@ -1131,9 +1131,9 @@ export class LearnKitSettingsView extends ItemView {
               link.textContent = t(
                 this.plugin.settings?.general?.interfaceLanguage,
                 "ui.settings.nav.nextWithLabel",
-                "{label} →",
+                "{label}",
                 { label: nextPage.label },
-              );
+              ) + " →";
               link.addEventListener("click", (ev) => {
                 ev.preventDefault();
                 this._activeGuidePage = nextPage.key;
@@ -1363,10 +1363,10 @@ export class LearnKitSettingsView extends ItemView {
         prevBtn.appendChild(label);
         const link = document.createElement("a");
         link.className = "learnkit-guide-prev-next-link";
-        link.textContent = t(
+        link.textContent = "← " + t(
           this.plugin.settings?.general?.interfaceLanguage,
           "ui.settings.nav.prevWithLabel",
-          "← {label}",
+          "{label}",
           { label: prevPage.label },
         );
         link.addEventListener("click", (ev) => {
@@ -1394,9 +1394,9 @@ export class LearnKitSettingsView extends ItemView {
         link.textContent = t(
           this.plugin.settings?.general?.interfaceLanguage,
           "ui.settings.nav.nextWithLabel",
-          "{label} →",
+          "{label}",
           { label: nextPage.label },
-        );
+        ) + " →";
         link.addEventListener("click", (ev) => {
           ev.preventDefault();
           this._activeReleasePage = nextPage.key;
@@ -1604,7 +1604,7 @@ export class LearnKitSettingsView extends ItemView {
         linkedinAnchor.href = "https://www.linkedin.com/in/williamguy/";
         linkedinAnchor.target = "_blank";
         linkedinAnchor.rel = "noopener nofollow";
-        linkedinAnchor.textContent = tx("ui.settings.about.link.linkedinArrow", "LinkedIn →");
+        linkedinAnchor.textContent = tx("ui.settings.about.link.linkedin", "LinkedIn") + " \u2192";
 
         info.appendChild(founderName);
         info.appendChild(founderRole);

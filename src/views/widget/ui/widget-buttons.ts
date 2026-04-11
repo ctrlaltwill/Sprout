@@ -90,16 +90,16 @@ export function makeTextButton(opts: {
   btn.setAttribute("data-tooltip-position", "top");
 
   if (opts.subtitle) {
-    btn.classList.add("inline-flex", "items-center", "justify-center", "text-center");
+    btn.classList.add("sprout-widget-btn-with-subtitle");
     const labelWrap = document.createElement("span");
-    labelWrap.className = "inline-flex flex-col items-center justify-center gap-0.5 leading-[1.05]";
+    labelWrap.className = "sprout-widget-btn-label-wrap";
 
     const labelLine = document.createElement("span");
     labelLine.className = "learnkit-grade-btn-label";
     labelLine.textContent = opts.label;
 
     const subtitleLine = document.createElement("span");
-    subtitleLine.className = "text-[0.78em] opacity-90 font-medium";
+    subtitleLine.className = "sprout-widget-btn-subtitle";
     subtitleLine.textContent = opts.subtitle;
 
     labelWrap.appendChild(labelLine);
@@ -113,7 +113,7 @@ export function makeTextButton(opts: {
 
   if (opts.kbd) {
     const kbd = document.createElement("kbd");
-    kbd.className = "kbd ml-2";
+    kbd.className = "kbd sprout-widget-kbd";
     kbd.textContent = opts.kbd;
     btn.appendChild(kbd);
   }

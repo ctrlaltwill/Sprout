@@ -49,7 +49,7 @@ export class LaunchNoticeModal extends Modal {
     body.createEl("p", {
       text: tx(
         "ui.launchNotice.body",
-        "Thank you for using Sprout. I have thoroughly enjoyed building this over the last few months, and I am excited to release version 1.1.0.",
+        "Thank you for using LearnKit. I have thoroughly enjoyed building this over the last few months, and I am excited to release version 1.1.0.",
       ),
     });
     body.createEl("p", {
@@ -65,7 +65,7 @@ export class LaunchNoticeModal extends Modal {
     setupIntro.setText(tx("ui.launchNotice.setup.intro", "Companion is not ready out of the box. You will need to connect an AI provider first."));
 
     const setupList = body.createEl("ol", { cls: "" });
-    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step1", "Open sprout settings and go to companion.") });
+    setupList.createEl("li", { text: tx("ui.launchNotice.setup.step1", "Open LearnKit settings and go to companion.") });
     setupList.createEl("li", { text: tx("ui.launchNotice.setup.step2", "Choose your provider. It works with free providers (for example, google and openrouter) and premium providers (for example, anthropic and openai).") });
     setupList.createEl("li", { text: tx("ui.launchNotice.setup.step3", "Choose the AI model from the provider that you want to use. This updates dynamically, and some models may return errors. If this happens, try a different model or raise an issue on GitHub.") });
     setupList.createEl("li", { text: tx("ui.launchNotice.setup.step4", "Paste your API key.") });
@@ -76,7 +76,7 @@ export class LaunchNoticeModal extends Modal {
     const freeSetupList = body.createEl("ol", { cls: "" });
     freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step1", "Create an account at openrouter.ai. A free plan is available.") });
     freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step2", "Generate an API key in your openrouter dashboard.") });
-    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step3", "In sprout settings, set provider to openrouter.") });
+    freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step3", "In LearnKit settings, set provider to openrouter.") });
     freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step4", "We recommend setting the model to auto router.") });
     freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step5", "Paste your API key.") });
     freeSetupList.createEl("li", { text: tx("ui.launchNotice.freeSetup.step6", "You are ready to start using companion!") });
@@ -106,14 +106,14 @@ export class LaunchNoticeModal extends Modal {
       text: tx("ui.launchNotice.closing.p1", "There may be teething issues as 1.1.0 rolls out. Please report bugs and feedback on GitHub so we can improve quickly."),
     });
     body.createEl("p", {
-      text: tx("ui.launchNotice.closing.p2", "We remain committed to keeping sprout open source and accessible."),
+      text: tx("ui.launchNotice.closing.p2", "We remain committed to keeping LearnKit open source and accessible."),
     });
     body.createEl("p", {
-      text: tx("ui.launchNotice.closing.p3", "If sprout is helping you, please share it with friends who might benefit too. Thank you again for being here."),
+      text: tx("ui.launchNotice.closing.p3", "If LearnKit is helping you, please share it with friends who might benefit too. Thank you again for being here."),
     });
 
     const signoff = body.createEl("p", {
-      text: tx("ui.launchNotice.closing.signoff", "Will (ctrlaltwill) \ndeveloper, sprout"),
+      text: tx("ui.launchNotice.closing.signoff", "Will (ctrlaltwill) \ndeveloper, LearnKit"),
     });
     setCssProps(signoff, "white-space", "pre-line");
 
@@ -151,7 +151,7 @@ export class LaunchNoticeModal extends Modal {
 
     const settingsBtn = footer.createEl("button", {
       cls: "learnkit-btn-toolbar learnkit-btn-toolbar inline-flex items-center gap-2 h-9 px-3 text-sm",
-      attr: { type: "button", "aria-label": tx("ui.launchNotice.settings.open", "Open sprout settings") },
+      attr: { type: "button", "aria-label": tx("ui.launchNotice.settings.open", "Open LearnKit settings") },
     });
     const settingsIcon = settingsBtn.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
     setIcon(settingsIcon, "settings");

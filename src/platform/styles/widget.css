@@ -11,11 +11,21 @@
   --learnkit-widget-font-card-text:     0.9rem;  /* card body / question / answer text    */
   --learnkit-widget-font-section-title: 0.9rem;  /* section heading inside card body      */
   --learnkit-widget-font-badge:         0.9rem;  /* status badges                         */
-  --learnkit-widget-font-info:          0.9rem;  /* dimmed info text                      */
+  --learnkit-widget-font-info:          0.95rem; /* dimmed info text                      */
   --learnkit-widget-font-summary-title: 0.9rem;  /* summary-mode title ("Study …")        */
   --learnkit-widget-font-summary-count: 0.9rem;  /* summary-mode "0 Flashcards"           */
   --learnkit-widget-font-teaser-title:  0.9rem;  /* teaser card title                     */
   --learnkit-widget-font-kbd:           0.85rem; /* keyboard shortcut labels              */
+}
+
+.learnkit .border-border,
+.learnkit .border-border\/50 {
+  border-color: var(--color-base-35);
+}
+
+.learnkit .border {
+  border-style: var(--tw-border-style);
+  border-width: 0.5px;
 }
 
 /* Widget popover root should be transparent so rounded menu doesn't bleed */
@@ -23,6 +33,31 @@
   background: transparent;
   background-color: transparent;
   box-shadow: none;
+}
+
+.learnkit[id^="learnkit-widget-menu-"][id$="-popover"] > .learnkit {
+  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
+  border: 0.5px solid var(--color-base-35) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.learnkit[id^="learnkit-widget-menu-"][id$="-menu"] > .group {
+  color: var(--text-color);
+  border: 0.5px solid transparent !important;
+  background-color: transparent !important;
+}
+
+.learnkit[id^="learnkit-widget-menu-"][id$="-menu"] > .group:is(:hover, :focus, :focus-visible, :active) {
+  color: var(--text-color);
+  background-color: color-mix(in srgb, var(--color-base-40) 15%, transparent 85%) !important;
+  border: 0.5px solid color-mix(in srgb, var(--color-base-70) 25%, transparent 75%) !important;
+}
+
+.learnkit[id^="learnkit-widget-menu-"][id$="-menu"] > .group.learnkit-menu-item--disabled {
+  color: var(--text-faint);
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 .learnkit-widget.learnkit {
@@ -35,10 +70,18 @@
 .learnkit.learnkit-widget {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.learnkit.learnkit-widget:has(> .sprout-widget-summary-header) {
+  gap: 14px;
+}
+
+.learnkit.learnkit-widget:has(> .sprout-widget-header) {
+  gap: 14px;
 }
 
 .learnkit.learnkit-widget > .learnkit-widget-header,
@@ -95,15 +138,16 @@
   gap: 8px;
   height: 36px;
   padding: 0 12px;
-  border-radius: var(--radius-s, 4px);
-  border: 0.5px solid var(--color-base-35) !important;
-  background-color: var(--color-base-20) !important;
+  font-size: 0.9rem;
+  border-radius: 8px !important;
+  border: none;
+  background-color: var(--color-base-00) !important;
   color: var(--text-normal) !important;
   box-shadow: none;
 }
 
 .learnkit.learnkit-widget :is(.learnkit-widget-action-btn, .learnkit-btn-toolbar):not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy):is(:hover, :focus-visible, :active) {
-  background-color: var(--color-base-35) !important;
+  background-color: var(--color-base-10) !important;
   border-color: var(--color-base-40) !important;
   color: var(--color-base-100) !important;
 }
@@ -123,8 +167,22 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 2px 10px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  background-color: var(--color-base-00) !important;
+  border: none !important;
   border-radius: var(--radius-md);
+}
+
+.learnkit.learnkit-widget .learnkit-widget-back-btn:hover,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:focus-visible,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:active,
+.learnkit.learnkit-widget .learnkit-widget-back-btn:focus {
+  background-color: var(--color-base-20) !important;
+  border: none !important;
 }
 
 .learnkit.learnkit-widget button:hover,
@@ -526,19 +584,65 @@
 /* ---- Widget cloze styling ---- */
 
 /* Widget-only cloze reveal styling */
-.learnkit .learnkit-widget-cloze .learnkit-cloze-revealed {
-margin: 0 1px;
-    padding: 2px 5px;
-    font-weight: 500;
-    border: 0.5px solid var(--theme-base-35);
-    border-radius: var(--radius-md);
-    background-color: var(--theme-base-15);
-    color: var(--theme-base-95);
+.learnkit-widget-cloze .learnkit-cloze-revealed {
+  margin: 1px 1px;
+  padding: 2px 5px;
+  font-weight: 500;
+  border: 0.5px solid var(--theme-base-35);
+  border-radius: var(--radius-md);
+  background-color: var(--theme-base-15);
+  color: var(--theme-base-95);
+  max-width: 100%;
+  min-height: 26px;
+  height: auto;
+  max-height: none !important;
+  line-height: 1.5;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
-/* Widget-only cloze blanks: fixed width */
-.learnkit .learnkit-widget-cloze .learnkit-cloze-blank {
-  width: 30px;
+.learnkit-widget-cloze .learnkit-cloze-typed-input {
+  min-width: 60px;
+  max-width: 100%;
+  max-height: 26px;
+  box-sizing: border-box;
+}
+
+.learnkit-widget-cloze .learnkit-cloze-typed-wrap {
+  margin: 1px 0;
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  vertical-align: baseline;
+}
+
+.learnkit-widget-cloze .learnkit-cloze-revealed.learnkit-cloze-typed-correct {
+  background-color: color-mix(in srgb, var(--learnkit-good-bg) 10%, transparent);
+  color: var(--learnkit-good-bg);
+  border: 0.5px solid var(--learnkit-good-bg);
+}
+
+.learnkit-widget-cloze .learnkit-cloze-revealed.learnkit-cloze-typed-wrong {
+  background-color: color-mix(in srgb, var(--learnkit-again-bg) 10%, transparent);
+  color: var(--learnkit-again-bg);
+  border: 0.5px solid var(--learnkit-again-bg);
+  text-decoration: line-through;
+}
+
+.learnkit .learnkit-widget-session-complete-title {
+  color: var(--foreground);
+}
+
+.learnkit .learnkit-widget-session-complete-meta {
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+}
+
+.theme-dark .learnkit .learnkit-widget-session-complete-meta {
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
 }
 
 /* ---- Widget text ---- */
@@ -546,39 +650,56 @@ margin: 0 1px;
    across widget-render-session.ts (~15 usages) */
 
 .learnkit .learnkit-widget-text {
-  font-size: var(--learnkit-widget-font-card-text);
-  line-height: 1.75;
+  font-size: 0.95rem;
+  line-height: 2;
   color: var(--foreground);
+}
+
+.learnkit .widget-question,
+.learnkit .widget-answer,
+.learnkit .widget-information {
+  font-size: 0.95rem;
+  line-height: 2;
+}
+
+/* Keep widget markdown/QA wrappers aligned with card text rhythm. */
+.learnkit.learnkit-widget :is(.learnkit-widget-text, .learnkit-widget-info) > p.whitespace-pre-wrap.break-words,
+.learnkit.learnkit-widget :is(.learnkit-widget-text, .learnkit-widget-info) .whitespace-pre-wrap.break-words > p,
+.learnkit.learnkit-widget .learnkit-widget-cloze .whitespace-pre-wrap.break-words > p {
+  font-size: 0.95rem !important;
+  line-height: 2 !important;
+  margin: 0 !important;
 }
 
 /* Widget section spacing (replaces applySectionStyles inline helper) */
 .learnkit .learnkit-widget-section {
-  padding: 6px 0;
+  padding: 0px;
   margin: 0;
 }
 
 /* Widget divider (replaces makeDivider inline helper) */
 .learnkit .learnkit-widget-divider {
-  border-top: 0.5px solid var(--foreground);
-  opacity: 0.3;
-  margin: 6px 0;
+  display: none;
 }
 
 /* Widget card body (replaces body inline styles) */
 .learnkit .learnkit-widget-card-body {
-  margin: 10px auto 0 auto;
+  margin: 0.5rem auto 0;
+  margin-left: 14px;
+  margin-right: 14px;
   gap: 0;
-border-radius: var(--radius-md);
-border: 0.5px solid var(--theme-base-35);
-    background: var(--background);
+  border-radius: 8px;
+  border: none;
+  background-color: var(--color-base-00);
   padding: 20px;
-  width: 90%;
+  width: auto;
+  max-width: none;
   /* Content-sized by default; only shrink and scroll when viewport space is tight. */
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   height: auto;
   max-height: none;
-  overflow-y: auto;
+  overflow: visible;
   box-shadow: none;
   user-select: text;
   -webkit-user-select: text;
@@ -586,17 +707,29 @@ border: 0.5px solid var(--theme-base-35);
   -ms-overflow-style: auto;
 }
 
-.learnkit .learnkit-widget-card-body::-webkit-scrollbar {
+.learnkit .sprout-widget-card-body {
+  border: none;
+  background-color: var(--color-base-00);
+  margin: 0 14px;
+  gap: 14px;
+  padding: 20px !important;
+  /* Content-sized normally; shrinks and scrolls when viewport is tight. */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.learnkit .sprout-widget-card-body::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-.learnkit .learnkit-widget-card-body::-webkit-scrollbar-thumb {
+.learnkit .sprout-widget-card-body::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--foreground) 40%, transparent);
   border-radius: var(--radius-md);
 }
 
-.learnkit .learnkit-widget-card-body::-webkit-scrollbar-track {
+.learnkit .sprout-widget-card-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -606,6 +739,213 @@ border: 0.5px solid var(--theme-base-35);
   border-radius: 0;
   margin: 0 20px;
   padding: 15px 0 10px 0;
+}
+
+.learnkit .sprout-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: none;
+  border-radius: 0;
+  margin: 0 14px 0 22px;
+  padding: 15px 0 0;
+  flex-shrink: 0;
+}
+
+.learnkit .sprout-widget-header-labels,
+.learnkit .sprout-widget-summary-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.learnkit .sprout-widget-header-labels {
+  margin-right: auto;
+}
+
+.learnkit .sprout-widget-study-label,
+.learnkit .sprout-widget-summary-title,
+.learnkit .sprout-widget-teaser-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-normal);
+}
+
+.learnkit .sprout-widget-note-title {
+  margin: 0 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-normal);
+  text-align: center;
+  background-color: var(--color-base-00);
+  border-radius: 8px;
+  padding: 10px 20px;
+  flex-shrink: 0;
+}
+
+.learnkit .sprout-widget-remaining-label,
+.learnkit .sprout-widget-remaining-line,
+.learnkit .sprout-widget-counts-line,
+.learnkit .sprout-widget-info-line {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.learnkit .sprout-widget-info-line {
+  line-height: 1.5;
+}
+
+.learnkit .sprout-widget-empty-message {
+  color: var(--text-muted);
+  margin: 0 4px;
+  font-size: 0.95rem;
+}
+
+.learnkit .sprout-widget-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: none;
+  border-radius: 0;
+  margin: 0 14px 0 22px;
+  padding: 15px 0 0;
+  flex-shrink: 0;
+}
+
+.learnkit .sprout-widget-summary-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.learnkit .sprout-widget-teaser {
+  margin: 0 14px;
+  align-self: stretch;
+  width: auto;
+  max-width: none;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 8px;
+  background-color: var(--color-base-00);
+  border: none;
+  padding: 20px;
+  box-shadow: none;
+}
+
+.learnkit .sprout-widget-teaser .sprout-widget-counts-line,
+.learnkit .sprout-widget-teaser .sprout-widget-info-line {
+  font-size: 0.95rem;
+}
+
+.learnkit .sprout-widget-summary-footer {
+  border: none;
+  border-radius: 0;
+  width: auto;
+  max-width: none;
+  margin: 0px 14px 14px;
+  display: flex;
+  gap: 6px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.learnkit .sprout-widget-footer {
+  border: none;
+  margin: 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.learnkit .sprout-widget-action-row,
+.learnkit .sprout-widget-grading-row {
+  display: flex;
+  gap: 10px;
+}
+
+.learnkit .sprout-widget-grading-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learnkit .sprout-widget-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.learnkit .sprout-widget-btn-full {
+  width: 100%;
+}
+
+.learnkit .sprout-widget-btn-half {
+  flex: 1 1 0;
+}
+
+.learnkit .sprout-widget-kbd {
+  margin-left: 8px;
+}
+
+.learnkit .sprout-widget-btn-with-subtitle {
+  text-align: center;
+}
+
+.learnkit .sprout-widget-btn-label-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1.05;
+}
+
+.learnkit .sprout-widget-btn-subtitle {
+  font-size: 0.78em;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.learnkit .sprout-widget-progress {
+  border: none;
+  border-radius: 0;
+  margin: 0 auto;
+  padding: 16px 0 20px;
+  max-width: 200px;
+  width: 80%;
+  flex-shrink: 0;
+}
+
+.learnkit .sprout-widget-progress-track {
+  width: 100%;
+  height: 1.5px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.learnkit .sprout-widget-progress-fill {
+  width: var(--learnkit-progress, 0%);
+  height: 100%;
+  transition: width 180ms ease;
+  background-color: var(--theme-accent);
 }
 
 /* Widget footer (replaces footer inline styles) */
@@ -644,6 +984,24 @@ border: 0.5px solid var(--theme-base-35);
   line-height: 1.75;
   color: var(--foreground);
   opacity: 0.6;
+}
+
+.learnkit .sprout-widget-extra-info {
+  font-weight: 400;
+}
+
+.learnkit .sprout-widget-extra-info-label,
+.learnkit .sprout-widget-answer-label,
+.learnkit .sprout-widget-question-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.15;
+  margin-bottom: 0.8rem;
+}
+
+/* Question label for plain-text cards (basic, reversed, cloze) — tighter than structured content */
+.learnkit .widget-question > .sprout-widget-question-label {
+  margin-bottom: 0.5rem;
 }
 
 /* Paragraph margin reset — widget text and info blocks */
@@ -796,15 +1154,46 @@ border: 0.5px solid var(--theme-base-35);
   margin: 6px 0;
 }
 
-/* MCQ option bottom spacing */
-.learnkit .learnkit-widget-mcq-option {
-  margin-bottom: 8px;
+/* MCQ option spacing */
+.learnkit .sprout-widget-mcq-options {
+  display: flex;
+  flex-direction: column;
 }
 
-.learnkit .learnkit-widget-mcq-option:hover,
-.learnkit .learnkit-widget-mcq-option:focus-visible {
-  background-color: var(--background-modifier-hover);
-  color: var(--foreground);
+.learnkit .sprout-widget-mcq-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.learnkit .sprout-widget-mcq-option {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--color-base-35) !important;
+  background-color: var(--color-base-20) !important;
+  cursor: pointer;
+  padding: 4px 12px;
+  transition: background-color .15s, border-color .15s;
+}
+
+.learnkit .sprout-widget-mcq-option:hover,
+.learnkit .sprout-widget-mcq-option:focus-visible {
+  background-color: var(--color-base-35) !important;
+  border-color: var(--color-base-40) !important;
+}
+
+.learnkit .sprout-widget-mcq-option:active {
+  background-color: var(--color-base-35) !important;
+  border-color: var(--color-base-40) !important;
+}
+
+.learnkit .sprout-widget-mcq-option-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 /* MCQ option text span */
@@ -814,11 +1203,146 @@ border: 0.5px solid var(--theme-base-35);
   display: block;
 }
 
+.learnkit .sprout-widget-mcq-text {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.learnkit .sprout-widget-mcq-hint {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* Keep MCQ/OQ choice text consistent on widget front/back faces. */
+.learnkit.learnkit-widget :is(
+  .sprout-widget-mcq-text,
+  .learnkit-widget-mcq-text,
+  .learnkit-widget-mcq-line,
+  .learnkit-mcq-option-text,
+  .learnkit-mcq-option-line,
+  .sprout-oq-step-list .learnkit-oq-step-text,
+  .sprout-oq-answer-list .learnkit-oq-step-text
+) {
+  font-size: 0.9rem;
+}
+
 /* MCQ multi-line paragraph */
 .learnkit .learnkit-widget-mcq-line {
   font-size: var(--learnkit-widget-font-card-text);
   line-height: 1.75;
   margin-bottom: 2px;
+}
+
+/* ---- Widget MCQ / OQ reveal highlights ---- */
+/* session.css selectors use `.learnkit .learnkit-widget` (descendant) but in
+   the widget DOM both classes sit on the same element, so we need compound
+   `.learnkit.learnkit-widget` to match. */
+
+/* MCQ correct */
+.learnkit.learnkit-widget .learnkit-mcq-correct-highlight {
+  border-color: var(--learnkit-good-bg) !important;
+  background-color: var(--learnkit-good-bg-light) !important;
+  border-width: 0.5px !important;
+  border-style: solid !important;
+}
+
+.learnkit.learnkit-widget .learnkit-mcq-correct-highlight:is(:hover, :focus, :focus-visible, :active) {
+  border-color: var(--learnkit-good-bg) !important;
+  background-color: var(--learnkit-good-bg-light) !important;
+}
+
+/* MCQ wrong */
+.learnkit.learnkit-widget .learnkit-mcq-wrong-highlight {
+  border-color: var(--learnkit-again-bg) !important;
+  background-color: var(--learnkit-again-bg-light) !important;
+  border-width: 0.5px !important;
+  border-style: solid !important;
+}
+
+.learnkit.learnkit-widget .learnkit-mcq-wrong-highlight:is(:hover, :focus, :focus-visible, :active) {
+  border-color: var(--learnkit-again-bg) !important;
+  background-color: var(--learnkit-again-bg-light) !important;
+}
+
+/* MCQ multi-answer: selected toggle */
+.learnkit.learnkit-widget .learnkit-mcq-selected {
+  border-color: var(--interactive-accent) !important;
+  border-width: 0.5px !important;
+  border-style: solid !important;
+  background-color: rgba(var(--interactive-accent-rgb, 59, 130, 246), 0.08) !important;
+}
+
+/* MCQ multi-answer: missed correct on reveal */
+.learnkit.learnkit-widget .learnkit-mcq-missed-correct {
+  border-color: var(--learnkit-good-bg) !important;
+  border-width: 0.5px !important;
+  border-style: dashed !important;
+  opacity: 0.75;
+}
+
+/* OQ correct placement */
+.learnkit.learnkit-widget .learnkit-oq-correct-highlight {
+  border-color: var(--learnkit-good-bg) !important;
+  background-color: var(--learnkit-good-bg-light) !important;
+  border-width: 0.5px !important;
+  border-style: solid !important;
+}
+
+/* OQ wrong placement */
+.learnkit.learnkit-widget .learnkit-oq-wrong-highlight {
+  border-color: var(--learnkit-again-bg) !important;
+  background-color: var(--learnkit-again-bg-light) !important;
+  border-width: 0.5px !important;
+  border-style: solid !important;
+}
+
+/* Dark mode: softer highlight backgrounds */
+.theme-dark .learnkit.learnkit-widget .learnkit-mcq-correct-highlight {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+}
+
+.theme-dark .learnkit.learnkit-widget .learnkit-mcq-wrong-highlight {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.theme-dark .learnkit.learnkit-widget .learnkit-mcq-missed-correct {
+  border-color: rgba(34, 197, 94, 0.6) !important;
+}
+
+.theme-dark .learnkit.learnkit-widget .learnkit-oq-correct-highlight {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+}
+
+.theme-dark .learnkit.learnkit-widget .learnkit-oq-wrong-highlight {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+/* MCQ / OQ answer-row kbd badges: tint green for correct, red for wrong */
+.learnkit.learnkit-widget :is(.learnkit-mcq-correct-highlight, .learnkit-oq-correct-highlight) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-good-bg) 50%, transparent) !important;
+  border-color: color-mix(in srgb, var(--learnkit-good-bg) 48%, transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--learnkit-good-bg) 12%) !important;
+}
+
+.learnkit.learnkit-widget :is(.learnkit-mcq-wrong-highlight, .learnkit-oq-wrong-highlight) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--destructive) 50%, transparent) !important;
+  border-color: color-mix(in srgb, var(--destructive) 48%, transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--destructive) 12%) !important;
+}
+
+/* OQ step rows + MCQ options: compact 32px in widget view (front + back) */
+.learnkit.learnkit-widget :is(.learnkit-oq-step-row, .learnkit-oq-answer-row, .sprout-widget-mcq-option) {
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+}
+
+/* Widget OQ step row hover — match session view */
+.learnkit.learnkit-widget .learnkit-oq-step-row:hover,
+.learnkit.learnkit-widget .learnkit-oq-step-row:focus-visible {
+  background-color: var(--color-base-35) !important;
+  border-color: var(--color-base-40) !important;
 }
 
 /* Widget progress fill — dynamic width via CSS custom property */
@@ -831,29 +1355,15 @@ border: 0.5px solid var(--theme-base-35);
 
 .learnkit .learnkit-widget-badge {
   border: 0.5px solid var(--theme-accent);
-  color: var(--theme-accent);
+  margin: 0 auto;
   background-color: var(--theme-base-10);
   border-radius: var(--radius-xl);
   padding: 3px 10px;
   font-size: var(--learnkit-widget-font-badge);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-
-/* ---- Widget summary-mode ---- */
-
-/* Session-complete text colors should be stable across light/dark themes. */
-.learnkit .learnkit-widget-session-complete-title {
-  color: var(--foreground);
-}
-
-.learnkit .learnkit-widget-session-complete-meta {
-  color: color-mix(in srgb, var(--foreground) 72%, transparent);
-}
-
-.theme-dark .learnkit .learnkit-widget-session-complete-meta {
-  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  /* Content-sized by default; only shrink and scroll when viewport space is tight. */
+  flex: 0 0 auto;
 }
 
 /* Summary mode layout: keep teaser centered and content-sized in tall panes. */
@@ -880,9 +1390,11 @@ border: 0.5px solid var(--theme-base-35);
 }
 
 .learnkit.learnkit-widget .learnkit-widget-teaser {
-  width: 90%;
-  margin: 10px auto;
-  align-self: center;
+  margin: 10px 14px;
+  align-self: stretch;
+  width: auto;
+  max-width: none;
+  box-sizing: border-box;
 border-radius: var(--radius-md);
 border: 0.5px solid var(--theme-base-35);
     background: var(--background);
@@ -899,9 +1411,9 @@ border: 0.5px solid var(--theme-base-35);
 .learnkit.learnkit-widget .learnkit-widget-summary-footer {
   border: none;
   border-radius: 0;
-  width: 90%;
-  max-width: 90%;
-  margin: 8px auto 10px;
+  width: auto;
+  max-width: none;
+  margin: 8px 14px 10px;
   padding: 0;
   flex: 0 0 auto;
 }

@@ -1162,7 +1162,7 @@ export class SproutCoachView extends ItemView {
         });
       } else if (matchingPreset) {
         const status = presetList.createDiv({ cls: "learnkit-scope-preset-status learnkit-scope-preset-status" });
-        status.createSpan({ text: this._tx("ui.view.coach.wizard.scope.selectionSavedAs", "Selection saved as ") });
+        status.createSpan({ text: this._tx("ui.view.coach.wizard.scope.selectionSavedAs", "Selection saved as") + " " });
         status.createEl("strong", { text: matchingPreset.name });
       }
 

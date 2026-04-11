@@ -282,7 +282,7 @@ export class CardEditModal extends Modal {
       radio.title = tx("ui.reviewer.cardEditor.correctAnswer", "Correct answer");
       radio.checked = makeCorrect;
 
-      const delBtn = row.createEl("button", { text: tx("ui.reviewer.cardEditor.remove", "−") });
+      const delBtn = row.createEl("button", { text: "−", attr: { "aria-label": tx("ui.reviewer.cardEditor.remove", "Remove") } });
       delBtn.type = "button";
 
       const rec = { wrap: row, input, radio, delBtn };
@@ -417,7 +417,7 @@ export class CardEditModal extends Modal {
         input.classList.add("learnkit-edit-mcq-option-input", "learnkit-edit-mcq-option-input");
         input.placeholder = tx("ui.reviewer.cardEditor.field.stepN", "Step {index}", { index: oqStepRows.length + 1 });
 
-        const delBtn = row.createEl("button", { text: tx("ui.reviewer.cardEditor.remove", "−"), cls: "learnkit-oq-del-btn learnkit-oq-del-btn" });
+        const delBtn = row.createEl("button", { text: "−", cls: "learnkit-oq-del-btn learnkit-oq-del-btn", attr: { "aria-label": tx("ui.reviewer.cardEditor.remove", "Remove") } });
         delBtn.type = "button";
         delBtn.addEventListener("click", () => {
           if (oqStepRows.length <= 2) return;

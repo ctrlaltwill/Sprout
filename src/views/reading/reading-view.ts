@@ -3532,7 +3532,7 @@ function renderIoInReadingCard(
   const occlusions: StoredIORect[] = Array.isArray(ioDef.rects) ? ioDef.rects : [];
 
   // ---- Question container: image with mask overlays ----
-  const questionEl = queryFirst<HTMLElement>(el, '[id^="sprout-io-question-"]');
+  const questionEl = queryFirst<HTMLElement>(el, '[id^="sprout-io-question-"], [id^="learnkit-io-question-"]');
   if (questionEl) {
     questionEl.replaceChildren();
     const container = document.createElement('div');
@@ -3548,6 +3548,32 @@ function renderIoInReadingCard(
       const overlay = document.createElement('div');
       overlay.className = 'learnkit-io-reading-overlay';
 
+      // Sync overlay to the actual rendered image layout bounds using inline
+      // styles. Uses offset* properties instead of getBoundingClientRect so
+      // CSS transforms (rotateY during flip animation) never distort the values.
+      const syncOverlay = () => {
+        const w = img.offsetWidth;
+        const h = img.offsetHeight;
+        // Skip if the image has no layout size (hidden via display:none)
+        if (w === 0 && h === 0) return;
+        overlay.style.left = `${img.offsetLeft}px`;
+        overlay.style.top = `${img.offsetTop}px`;
+        overlay.style.width = `${w}px`;
+        overlay.style.height = `${h}px`;
+      };
+
+      const scheduleSync = () => requestAnimationFrame(syncOverlay);
+
+      if (img.complete && img.naturalWidth > 0) {
+        scheduleSync();
+      } else {
+        img.addEventListener('load', scheduleSync, { once: true });
+      }
+
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(syncOverlay).observe(img);
+      }
+
       for (const rect of occlusions) {
         const x = Number.isFinite(rect.x) ? Number(rect.x) : 0;
         const y = Number.isFinite(rect.y) ? Number(rect.y) : 0;
@@ -3556,9 +3582,6 @@ function renderIoInReadingCard(
 
         const mask = document.createElement('div');
         mask.className = 'learnkit-io-reading-mask learnkit-io-reading-mask-filled';
-        mask.classList.add(
-          rect.shape === 'circle' ? 'learnkit-io-reading-mask-circle' : 'learnkit-io-reading-mask-rect',
-        );
         mask.classList.add(
           rect.shape === 'circle' ? 'learnkit-io-reading-mask-circle' : 'learnkit-io-reading-mask-rect',
         );
@@ -3583,7 +3606,7 @@ function renderIoInReadingCard(
   }
 
   // ---- Answer container: clean image (no masks) ----
-  const answerEl = queryFirst<HTMLElement>(el, '[id^="sprout-io-answer-"]');
+  const answerEl = queryFirst<HTMLElement>(el, '[id^="sprout-io-answer-"], [id^="learnkit-io-answer-"]');
   if (answerEl) {
     answerEl.replaceChildren();
     const container = document.createElement('div');

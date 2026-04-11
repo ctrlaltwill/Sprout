@@ -480,7 +480,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
 
       /** Scans the vault for backup files and populates the table. */
       const scan = async () => {
-        renderEmpty(this._tx("ui.settings.backups.scan.scanning", "Scanning backups…"));
+        renderEmpty(this._tx("ui.settings.backups.scan.scanning", "Scanning backups") + "\u2026");
         try {
           const entries = await listDataJsonBackups(this.plugin);
 
@@ -518,7 +518,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         }
       };
 
-      renderEmpty(this._tx("ui.settings.backups.scan.loading", "Loading backups…"));
+      renderEmpty(this._tx("ui.settings.backups.scan.loading", "Loading backups") + "\u2026");
       void scan();
     }
   }
@@ -1079,7 +1079,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         evt.preventDefault();
         void this.app.workspace.openLinkText("Flags", "", false);
       };
-      flagsRoutingSetting.descEl.appendText(this._tx("ui.settings.audio.flagRouting.guide.trailing", " for a guide on using flags."));
+      flagsRoutingSetting.descEl.appendText(" " + this._tx("ui.settings.audio.flagRouting.guide.trailing", "for a guide on using flags."));
 
       new Setting(detailsWrapper)
         .setName(this._tx("ui.settings.audio.flagRouting.speakLabel.name", "Announce language name"))

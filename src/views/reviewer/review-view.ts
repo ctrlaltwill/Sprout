@@ -601,47 +601,44 @@ export class SproutReviewerView extends ItemView {
   }
 
   private buildPracticeQueue(scope: Scope, excludeIds?: Set<string>): CardRecord[] {
-    const now = Date.now();
-
     const cardsObj = (this.plugin.store.data?.cards || {});
     const cards = Object.values(cardsObj);
 
     const out: CardRecord[] = [];
 
     for (const c of cards) {
-      if (isIoParentCard(c)) continue;
+      if (isParentCard(c)) continue;
 
       const id = String((c)?.id ?? "");
       if (!id) continue;
       if (excludeIds?.has(id)) continue;
 
       const st = this.plugin.store.getState(id);
-      if (!st) continue;
+      if (st && String(st.stage || "") === "suspended") continue;
 
-      if (String(st.stage || "") === "suspended") continue;
-
-      const due = Number(st.due ?? 0);
-      if (!Number.isFinite(due)) continue;
-      if (due <= now) continue;
-
-      const path = String(
-        (c).sourceNotePath || "",
-      );
-      if (!path) continue;
-      if (!matchesScope(scope, path)) continue;
+      if (scope.type === "group") {
+        const groups = Array.isArray(c.groups) ? c.groups : [];
+        if (!groups.some((g) => String(g || "") === scope.key)) continue;
+      } else {
+        const path = String(
+          (c).sourceNotePath || "",
+        );
+        if (!path) continue;
+        if (!matchesScope(scope, path)) continue;
+      }
 
       out.push(c);
     }
 
     out.sort((a, b) => {
-      const da = Number(
-        this.plugin.store.getState(String((a).id))?.due ?? Number.POSITIVE_INFINITY,
-      );
-      const db = Number(
-        this.plugin.store.getState(String((b).id))?.due ?? Number.POSITIVE_INFINITY,
-      );
-      if (da !== db) return da - db;
-      return String((a).id).localeCompare(String((b).id));
+      const pathA = String(a?.sourceNotePath ?? "");
+      const pathB = String(b?.sourceNotePath ?? "");
+      const pathCmp = pathA.localeCompare(pathB);
+      if (pathCmp !== 0) return pathCmp;
+      const lineA = Number(a?.sourceStartLine ?? 0);
+      const lineB = Number(b?.sourceStartLine ?? 0);
+      if (lineA !== lineB) return lineA - lineB;
+      return String(a?.id ?? "").localeCompare(String(b?.id ?? ""));
     });
 
     return out;

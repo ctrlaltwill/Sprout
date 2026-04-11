@@ -1087,7 +1087,7 @@ function makeIoCell(
 
   const io = getIoResolvedImage(ctx.app, card);
   if (!io.src || !io.displayRef) {
-    return makeReadOnlyFieldCell(txFromCtx(ctx, "ui.browser.row.io.unresolved", "— (IO image not resolved)"), col, ctx);
+    return makeReadOnlyFieldCell("— (" + txFromCtx(ctx, "ui.browser.row.io.unresolved", "IO image not resolved") + ")", col, ctx);
   }
 
   /* Textarea-styled wrapper so the IO preview matches other cells */
@@ -1275,7 +1275,7 @@ function makeGroupsEditorCell(
   searchWrap.appendChild(search);
 
   const list = document.createElement("div");
-  list.className = "flex flex-col max-h-60 overflow-auto p-1";
+  list.className = "flex flex-col max-h-60 overflow-auto p-1 learnkit-group-picker-results";
   panel.appendChild(list);
 
   let cleanup: (() => void) | null = null;

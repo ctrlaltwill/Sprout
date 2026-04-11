@@ -609,12 +609,10 @@
   border: 0.5px solid var(--theme-accent) !important;
   border-radius: var(--radius-md) !important;
   font-size: 0.8rem !important;
+  background: var(--color-base-00) !important;
 }
 
-/* Typed cloze inputs override the global accent focus above */
-.learnkit .learnkit-cloze-typed-input {
-  border-width: 1px;
-}
+
 /* No state, focused → theme accent */
 .learnkit .learnkit-cloze-typed-input:focus {
   border-color: var(--interactive-accent, #7c9dff);

@@ -8,11 +8,17 @@ This document covers the workflow for translating the plugin into new languages.
 
 UI strings are wrapped with `t(locale, "token.key", "English fallback")`. At build time, JSON locale files from `src/platform/translations/locales/` are bundled into the plugin. If a token is missing from a locale file the English fallback is used automatically, so partial translations work fine.
 
+### Locale file structure
+
+- **`en-base.json`** — the canonical English source containing every translatable key. This is the file you copy when starting a new translation.
+- **`en-gb.json`** / **`en-us.json`** — small override files that only contain keys that differ from the base (e.g. colour → color). New locales follow the same pattern: a full translation file is loaded on top of the base.
+- **`ui.common.*`** keys are reusable microcopy tokens for high-frequency labels (Answer, Question, Next, Reset, etc.). Translate these once; they are shared across the UI.
+
 ## Contributor workflow
 
 ### Step 1 — You create the locale JSON
 
-1. Copy `src/platform/translations/locales/en-gb.json` to a new file named with the [IETF language tag](https://en.wikipedia.org/wiki/IETF_language_tag), for example `zh-cn.json`.
+1. Copy `src/platform/translations/locales/en-base.json` to a new file named with the [IETF language tag](https://en.wikipedia.org/wiki/IETF_language_tag), for example `zh-cn.json`.
 2. Translate **values only**. Do not rename or remove token keys.
 3. Keep placeholders exactly as-is (e.g. `{count}`, `{language}`).
 4. Open a pull request with:

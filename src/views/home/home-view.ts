@@ -286,7 +286,7 @@ export class SproutHomeView extends ItemView {
     });
 
     if (trimmedName) {
-      subtitleRow.createSpan({ text: tx("ui.home.greeting.welcomeBackComma", "Welcome back, ") });
+      subtitleRow.createSpan({ text: tx("ui.home.greeting.welcomeBackComma", "Welcome back,") + " " });
 
       const nameInput = document.createElement("input");
       nameInput.className = "lk-home-name-input min-w-[1ch] shrink-0 grow-0 basis-auto max-w-full border-0 p-0 m-0 shadow-none text-[0.95rem] font-normal leading-[1.3] text-muted-foreground bg-transparent";

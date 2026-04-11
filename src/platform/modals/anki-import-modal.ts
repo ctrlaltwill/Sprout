@@ -154,7 +154,7 @@ export class AnkiImportModal extends Modal {
       if (!this.apkgBytes) return;
       nextBtn.disabled = true;
       const nextSpan = nextBtn.querySelector("span:last-child");
-      if (nextSpan) nextSpan.textContent = this.tx("ui.anki.import.status.scanning", "Scanning…");
+      if (nextSpan) nextSpan.textContent = this.tx("ui.anki.import.status.scanning", "Scanning") + "\u2026";
       try {
         this.preview = await previewApkg(this.apkgBytes);
         this.renderPreviewStep(root);
@@ -206,7 +206,7 @@ export class AnkiImportModal extends Modal {
       }
       if (p.deckNames.length > 20) {
         deckList.createEl("li", {
-          text: this.tx("ui.anki.import.preview.moreDecks", "… and {count} more", { count: p.deckNames.length - 20 }),
+          text: "\u2026 " + this.tx("ui.anki.import.preview.moreDecks", "and {count} more", { count: p.deckNames.length - 20 }),
           cls: "text-muted-foreground",
         });
       }
@@ -216,7 +216,7 @@ export class AnkiImportModal extends Modal {
     if (p.warnings.length > 0) {
       const warnBox = body.createDiv({ cls: "rounded-lg p-3 text-sm learnkit-danger-callout learnkit-danger-callout" });
       for (const w of p.warnings) {
-        warnBox.createEl("p", { text: this.tx("ui.anki.import.preview.warningItem", "⚠️ {warning}", { warning: w }), cls: "mb-1" });
+        warnBox.createEl("p", { text: "⚠️ " + this.tx("ui.anki.import.preview.warningItem", "{warning}", { warning: w }), cls: "mb-1" });
       }
     }
 

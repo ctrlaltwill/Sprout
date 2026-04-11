@@ -251,7 +251,7 @@ export function renderDeckMode(args: Args) {
       const searchInput = document.createElement("input");
       searchInput.type = "text";
       searchInput.className = "learnkit-ss-search-input";
-      searchInput.placeholder = tx("ui.reviewer.deck.searchGroups", "Search groups…");
+      searchInput.placeholder = tx("ui.reviewer.deck.searchGroups", "Search groups") + "\u2026";
       searchInput.setAttribute("autocomplete", "off");
       searchInput.setAttribute("autocorrect", "off");
       searchInput.spellcheck = false;

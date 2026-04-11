@@ -826,6 +826,8 @@ mjx-container[jax="CHTML"][display="true"] {
   overflow: hidden;
   border: var(--learnkit-border-width) solid var(--learnkit-border-color);
   background: var(--background-secondary);
+  font-size: 0;
+  line-height: 0;
 }
 
 .learnkit-pretty-card .learnkit-io-reading-img {
@@ -838,10 +840,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .learnkit-pretty-card .learnkit-io-reading-overlay {
   position: absolute;
-  left: var(--learnkit-border-width, 1px);
-  top: var(--learnkit-border-width, 1px);
-  width: calc(100% - (2 * var(--learnkit-border-width, 1px)));
-  height: calc(100% - (2 * var(--learnkit-border-width, 1px)));
+  inset: 0;
   overflow: hidden;
   pointer-events: none;
   z-index: 2;
@@ -866,20 +865,18 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 .learnkit-pretty-card .learnkit-io-reading-mask-filled {
-  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), 0.75);
-  border: 2px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  border-radius: 4px;
+  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .75);
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l));
 }
 
 .learnkit-pretty-card.theme .learnkit-io-reading-mask-filled {
   background: var(--alt-accent-color);
-  border: 2px solid var(--color);
+  border: 0.5px solid var(--color);
 }
 
 .learnkit-pretty-card .learnkit-io-reading-mask-hint {
-  color: #fff;
-  font-weight: 600;
-  font-size: var(--learnkit-font-xs);
-  line-height: 1;
+  display: none;
 }
 
 /* Clean markdown IO sizing: cap to 300px on first-hit dimension */

@@ -421,6 +421,14 @@ body.is-phone .learnkit :is(
   background: transparent;
 }
 
+/* Modal surface shadow */
+.learnkit .lk-modals,
+.learnkit .lk-modals.shadow-lg,
+.learnkit .lk-modals.modal {
+  --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, #0000001a), 0 4px 6px -4px var(--tw-shadow-color, #0000001a);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+
 /* ---- Global resets ---- */
 
 /* Hide Obsidian's global status bar only when Sprout views are active */

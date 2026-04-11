@@ -107,63 +107,6 @@ body.is-phone .small-card {
   gap: 8px;
 }
 
-.learnkit .learnkit-mcq-correct-checkbox {
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  border: 2px solid var(--interactive-accent);
-  background-color: transparent;
-  position: relative;
-  transition: background-color 0.15s, border-color 0.15s;
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:checked {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:checked::after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
-  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-position: center;
-  background-color: var(--text-on-accent, #fff);
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:hover {
-  border-color: var(--interactive-accent-hover, var(--interactive-accent));
-}
-
-.learnkit .learnkit-mcq-correct-checkbox:focus-visible {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: 2px;
-}
-
-/* Dark theme: ensure unchecked border is visible */
-.theme-dark .learnkit .learnkit-mcq-correct-checkbox {
-  border-color: var(--interactive-accent);
-}
-
-.theme-dark .learnkit .learnkit-mcq-correct-checkbox:checked {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
 .learnkit .learnkit-edit-mcq-option-label {
   min-width: 70px;
 }
@@ -241,7 +184,7 @@ body.is-phone .small-card {
 .learnkit .learnkit-edit-modal .textarea,
 .learnkit .lk-browser-textarea--editable {
   font-family: var(--font-monospace);
-  font-size: 0.85rem;
+  font-size: 0.77rem;
   line-height: 1.6;
   border: var(--color-base-40) 0.5px solid;
   tab-size: 2;
@@ -336,12 +279,22 @@ body.is-phone .small-card {
   outline: none;
   border-radius: var(--radius-s);
   cursor: pointer;
+  color: var(--text-muted);
 }
 
 .learnkit-remove-btn-ghost:disabled,
 .learnkit-remove-btn-ghost.is-disabled {
   opacity: 0.35;
   cursor: default;
+  color: var(--text-faint);
+}
+
+.learnkit-remove-btn-ghost:not(:disabled):not(.is-disabled):not([aria-disabled="true"]) {
+  color: var(--text-muted);
+}
+
+.learnkit-remove-btn-ghost:not(:disabled):not(.is-disabled):not([aria-disabled="true"]):is(:hover, :active, :focus, :focus-visible) {
+  color: var(--text-color);
 }
 
 /* Fixed-height input (38px) — used across MCQ correct/wrong/add fields */

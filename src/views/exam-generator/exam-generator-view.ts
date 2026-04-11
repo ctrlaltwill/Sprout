@@ -1402,7 +1402,7 @@ export class SproutExamGeneratorView extends ItemView {
         } else if (matchingPreset) {
           hasTopSection = true;
           const status = presetList.createDiv({ cls: "learnkit-scope-preset-status learnkit-scope-preset-status" });
-          status.createSpan({ text: this._tx("ui.view.examGenerator.source.selectionSavedAs", "Selection saved as ") });
+          status.createSpan({ text: this._tx("ui.view.examGenerator.source.selectionSavedAs", "Selection saved as") + " " });
           status.createEl("strong", { text: matchingPreset.name });
         }
 
@@ -2786,7 +2786,7 @@ export class SproutExamGeneratorView extends ItemView {
       messageEl.createEl("strong", { text: this._tx("ui.view.examGenerator.taking.timesUp", "Time's up!") + " " });
       const countdownSpan = messageEl.createSpan({ text: String(this._autoSubmitGrace) });
       this._autoSubmitWarningCountdownEl = countdownSpan;
-      messageEl.createSpan({ text: this._tx("ui.view.examGenerator.taking.autoSubmitCountdown", " seconds until auto-submit.") });
+      messageEl.createSpan({ text: " " + this._tx("ui.view.examGenerator.taking.autoSubmitCountdown", "seconds until auto-submit.") });
       const actionsEl = banner.createDiv({ cls: "learnkit-exam-autosubmit-actions learnkit-exam-autosubmit-actions" });
       const extendBtn = actionsEl.createEl("button", {
         cls: "learnkit-btn-toolbar learnkit-btn-toolbar h-8 inline-flex items-center gap-2",
@@ -3268,14 +3268,14 @@ export class SproutExamGeneratorView extends ItemView {
         renderMarkdownPreviewInElement(prompt, result.prompt);
 
         const userAnswerLine = body.createDiv({ cls: "learnkit-exam-generator-result-detail learnkit-exam-generator-result-detail" });
-        userAnswerLine.createEl("strong", { text: this._tx("ui.view.examGenerator.review.yourAnswer", "Your answer: ") });
+        userAnswerLine.createEl("strong", { text: this._tx("ui.view.examGenerator.review.yourAnswer", "Your answer:") + " " });
         const userAnswerValue = userAnswerLine.createSpan();
         renderMarkdownPreviewInElement(userAnswerValue, result.userAnswer?.trim() || this._tx("ui.view.examGenerator.review.blank", "(blank)"));
 
         const expectedLine = body.createDiv({ cls: "learnkit-exam-generator-result-detail learnkit-exam-generator-result-detail" });
         const expectedLabel = result.questionType === "mcq"
-          ? this._tx("ui.view.examGenerator.review.correctOption", "Correct option: ")
-          : this._tx("ui.view.examGenerator.review.modelAnswer", "Model answer: ");
+          ? this._tx("ui.view.examGenerator.review.correctOption", "Correct option:") + " "
+          : this._tx("ui.view.examGenerator.review.modelAnswer", "Model answer:") + " ";
         expectedLine.createEl("strong", { text: expectedLabel });
         const expectedValue = expectedLine.createSpan();
         renderMarkdownPreviewInElement(expectedValue, this._formatModelAnswer(result.expectedAnswer));
@@ -3288,7 +3288,7 @@ export class SproutExamGeneratorView extends ItemView {
             || feedback === this._tx("ui.view.examGenerator.feedback.wrong", "Wrong");
           if (!statusOnly) {
             const feedbackLine = body.createDiv({ cls: "learnkit-exam-generator-result-feedback learnkit-exam-generator-result-feedback" });
-            feedbackLine.createEl("strong", { text: this._tx("ui.view.examGenerator.review.feedback", "Feedback: ") });
+            feedbackLine.createEl("strong", { text: this._tx("ui.view.examGenerator.review.feedback", "Feedback:") + " " });
             const feedbackValue = feedbackLine.createSpan();
             renderMarkdownPreviewInElement(feedbackValue, feedback);
           }

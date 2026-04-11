@@ -1068,7 +1068,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   );
 
   const list = document.createElement("div");
-  list.className = "flex flex-col max-h-60 overflow-auto p-1";
+  list.className = "flex flex-col max-h-60 overflow-auto p-1 learnkit-group-picker-results";
 
   const searchWrap = document.createElement("div");
   searchWrap.className = "flex items-center gap-1 border-b border-border pl-1 pr-0 w-full min-h-[44px]";

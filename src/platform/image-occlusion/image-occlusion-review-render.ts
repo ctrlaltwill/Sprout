@@ -387,17 +387,16 @@ export function renderImageOcclusionReviewInto(args: {
 
 
     function updateOverlay() {
-      // Use getBoundingClientRect to get the actual rendered size and position
-      const imgRect = img.getBoundingClientRect();
-      const hostRect = host.getBoundingClientRect();
-      // Calculate position relative to host
-      const left = imgRect.left - hostRect.left;
-      const top = imgRect.top - hostRect.top;
+      // Use offset* properties instead of getBoundingClientRect so that
+      // CSS `zoom` on an ancestor (widget root) doesn't double-scale the
+      // overlay — offset values are in CSS pixels, unaffected by zoom.
+      const left = img.offsetLeft;
+      const top = img.offsetTop;
       const imgStyles = getComputedStyle(img);
       setCssProps(overlay, "--learnkit-io-left", `${left}px`);
       setCssProps(overlay, "--learnkit-io-top", `${top}px`);
-      setCssProps(overlay, "--learnkit-io-width", `${imgRect.width}px`);
-      setCssProps(overlay, "--learnkit-io-height", `${imgRect.height}px`);
+      setCssProps(overlay, "--learnkit-io-width", `${img.offsetWidth}px`);
+      setCssProps(overlay, "--learnkit-io-height", `${img.offsetHeight}px`);
       setCssProps(overlay, "--learnkit-io-max-width", imgStyles.maxWidth);
       setCssProps(overlay, "--learnkit-io-max-height", imgStyles.maxHeight);
       setCssProps(overlay, "--learnkit-io-radius", imgStyles.borderRadius);
@@ -460,9 +459,30 @@ export function renderImageOcclusionReviewInto(args: {
     const onResize = () => syncOverlay();
     window.addEventListener("resize", onResize);
 
+    // Widget/review layouts can resize the image after load without a window resize,
+    // which causes mask drift (often increasing toward the bottom). Keep overlay in sync.
+    // Debounce via rAF to avoid multiple reflows per frame (prevents flicker).
+    let overlayResizeObserver: ResizeObserver | null = null;
+    let resizeRafId = 0;
+    if (typeof ResizeObserver !== "undefined") {
+      overlayResizeObserver = new ResizeObserver(() => {
+        if (resizeRafId) cancelAnimationFrame(resizeRafId);
+        resizeRafId = requestAnimationFrame(() => {
+          resizeRafId = 0;
+          syncOverlay();
+        });
+      });
+      overlayResizeObserver.observe(host);
+      overlayResizeObserver.observe(img);
+    }
+
     let detachedObserver: MutationObserver | null = null;
     const cleanupOverlayListeners = () => {
       window.removeEventListener("resize", onResize);
+      if (resizeRafId) cancelAnimationFrame(resizeRafId);
+      resizeRafId = 0;
+      overlayResizeObserver?.disconnect();
+      overlayResizeObserver = null;
       detachedObserver?.disconnect();
       detachedObserver = null;
     };

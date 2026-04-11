@@ -1169,6 +1169,7 @@ body.is-mobile .learnkit .learnkit-cloze-mobile-actions {
   border-radius: 0;
   background: transparent !important;
   color: var(--text-normal);
+  font-size: 1rem;
   padding: 6px 8px;
   box-sizing: border-box;
   white-space: pre-wrap;

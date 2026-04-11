@@ -37,10 +37,6 @@
   transition: background-color 0.2s ease;
 }
 
-.learnkit .lk-review-root[data-lk-review-mode="session"] :is(.learnkit-session-card, .lk-session-card, .lk-session-card.card):hover {
-  background-color: var(--background);
-}
-
 .learnkit .lk-session-column {
   gap: 16px;
   border: none;
@@ -899,7 +895,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-correct-highlight, .learnkit-mcq-correct-highlight) {
   border-color: var(--learnkit-good-bg) !important;
   background-color: var(--learnkit-good-bg-light) !important;
-  border-width: 2px;
+  border-width: 0.5px;
   border-style: solid;
 }
 
@@ -913,7 +909,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-btn-toolbar.learnkit-mcq-wrong-highlight, .learnkit-mcq-wrong-highlight) {
   border-color: var(--learnkit-again-bg) !important;
   background-color: var(--learnkit-again-bg-light) !important;
-  border-width: 2px;
+  border-width: 0.5px;
   border-style: solid;
 }
 
@@ -1008,7 +1004,8 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 /* ---- OQ (Ordering Question) drag-to-reorder ---- */
 
-.learnkit-oq-step-list {
+.learnkit-oq-step-list,
+.learnkit-oq-answer-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1102,13 +1099,14 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-answer-row {
   margin-bottom: 0;
+  min-height: 36px;
 }
 
 /* Correct placement – green border */
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-correct-highlight {
   border-color: var(--learnkit-good-bg) !important;
   background-color: var(--learnkit-good-bg-light) !important;
-  border-width: 2px;
+  border-width: 0.5px;
   border-style: solid;
 }
 
@@ -1116,7 +1114,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) .learnkit-oq-wrong-highlight {
   border-color: var(--learnkit-again-bg) !important;
   background-color: var(--learnkit-again-bg-light) !important;
-  border-width: 2px;
+  border-width: 0.5px;
   border-style: solid;
 }
 
@@ -1532,6 +1530,25 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   height: auto;
 }
 
+/* Main study session: keep typed cloze inputs at a fixed single-line height. */
+.learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card .learnkit-cloze-typed-wrap {
+  display: inline-block;
+  margin: 1px 0;
+}
+
+.learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card .learnkit-cloze-typed-input {
+  height: 30px;
+  max-height: 30px;
+}
+
+.learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card :is(.learnkit-cloze-typed-correct, .learnkit-cloze-typed-wrong) {
+  height: 30px;
+  min-height: 30px;
+  max-height: 30px;
+  margin-top: 1px;
+  margin-bottom: 1px;
+}
+
 /* Compact padding in widget sidebar */
 .learnkit-widget .learnkit-cloze-typed-input {
   padding: 2px 4px;
@@ -1539,7 +1556,11 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .learnkit .learnkit-cloze-typed-input {
   border-width: 0.5px;
-  border-color: var(--color-base-35);
+  border-color: var(--color-base-50);
+}
+
+.learnkit .learnkit-cloze-typed-input:hover {
+  border-color: var(--color-base-70);
 }
 
 .learnkit-cloze-typed-input:hover {

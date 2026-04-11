@@ -50,7 +50,7 @@ Suspending is useful when:
 | **How to reverse** | Automatic (after 24 hours) | Manual (unsuspend in library or during study) |
 
 > [!TIP]
-> Use **Bury** for "I'll try again tomorrow" and **Suspend** for "I need to fix this flashcard first."
+> Use **Bury** for "I'll try again tomorrow" and **Suspend** for "I need to fix this flashcard first" or "I don't want to see this again".
 
 ## Related
 

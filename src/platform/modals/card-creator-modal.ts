@@ -525,8 +525,9 @@ export class CardCreatorModal extends Modal {
       if (ioImageData) {
         this._ioBlobUrl = URL.createObjectURL(new Blob([ioImageData.data], { type: ioImageData.mime }));
         ioImgElement.src = this._ioBlobUrl;
-        ioImageInfo.textContent = this.tx("ui.cardCreator.io.imageInfo", "{mime} • {sizeKb} KB", {
+        ioImageInfo.textContent = this.tx("ui.cardCreator.io.imageInfo", "{mime} {separator} {sizeKb} KB", {
           mime: ioImageData.mime,
+          separator: "\u2022",
           sizeKb: (ioImageData.data.byteLength / 1024).toFixed(1),
         });
         ioImageName.textContent = this.tx("ui.cardCreator.io.ready", "Ready to save and edit occlusions");

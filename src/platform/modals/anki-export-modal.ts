@@ -283,7 +283,7 @@ export class AnkiExportModal extends Modal {
     searchWrap.appendChild(search);
 
     const listEl = document.createElement("div");
-    listEl.className = "flex flex-col max-h-60 overflow-auto p-1";
+    listEl.className = "flex flex-col max-h-60 overflow-auto p-1 learnkit-group-picker-results";
     panel.appendChild(listEl);
 
     const renderBadges = () => {
@@ -554,7 +554,7 @@ export class AnkiExportModal extends Modal {
     exportBtn.onclick = async () => {
       exportBtn.disabled = true;
       const exportSpan = exportBtn.querySelector("span:last-child");
-      if (exportSpan) exportSpan.textContent = this.tx("ui.anki.export.action.exporting", "Exporting…");
+      if (exportSpan) exportSpan.textContent = this.tx("ui.anki.export.action.exporting", "Exporting") + "\u2026";
 
       const scope = scopeDropdown.getValue() as ExportOptions["scope"];
       const opts: ExportOptions = {

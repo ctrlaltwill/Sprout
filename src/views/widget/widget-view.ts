@@ -671,11 +671,30 @@ export class SproutWidgetView extends ItemView {
 
   render() {
     const root = this.containerEl;
+    const hadFocusWithin = !!document.activeElement && root.contains(document.activeElement);
     root.empty();
     root.removeClass("learnkit");
 
     if (this.mode === "session") renderWidgetSession(this, root);
     else renderWidgetSummary(this, root);
+
+    // Preserve keyboard control after rerenders (e.g. reveal -> next transitions).
+    if (hadFocusWithin) {
+      queueMicrotask(() => {
+        if (!root.isConnected || root.offsetParent === null) return;
+        const active = document.activeElement as HTMLElement | null;
+        if (
+          active &&
+          (active.tagName === "INPUT" ||
+            active.tagName === "TEXTAREA" ||
+            active.tagName === "SELECT" ||
+            active.isContentEditable ||
+            !!active.closest("input, textarea, select, [contenteditable]"))
+        )
+          return;
+        root.focus();
+      });
+    }
   }
 
   onunload() {

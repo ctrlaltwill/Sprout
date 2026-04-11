@@ -474,10 +474,12 @@ export class ConfirmRestoreBackupModal extends Modal {
 
     const add = (label: string, cur: number, bak: number) => {
       summary.createDiv({
-        text: tx(locale, "ui.settings.modals.restoreBackup.summary", "{label}: current {current} → backup {backup} (Δ {delta})", {
+        text: tx(locale, "ui.settings.modals.restoreBackup.summary", "{label}: current {current} {arrow} backup {backup} ({delta_symbol} {delta})", {
           label,
           current: cur,
+          arrow: "\u2192",
           backup: bak,
+          delta_symbol: "\u0394",
           delta: this.fmtDelta(bak - cur),
         }),
       });

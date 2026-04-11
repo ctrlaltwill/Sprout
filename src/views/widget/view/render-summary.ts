@@ -39,7 +39,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const counts = computeCounts(cards, view.plugin.store);
 
   // Header: study title with open button
-  const header = el("div", "sprout-widget-summary-header flex items-center justify-between gap-2 border-none rounded-none mx-5 px-0 pt-[15px] pb-[10px]");
+  const header = el("div", "sprout-widget-summary-header");
 
   // Create title (not a button)
   const isFolder = isFolderNote(f);
@@ -48,8 +48,10 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const titleText = noteName.replace(/\.md$/, ""); // Remove .md extension
   const titleCased = toTitleCase(titleText);
 
-  const summaryLabelWrap = el("div", "flex flex-col items-start gap-2");
-  const summaryTitle = el("div", "sprout-widget-summary-title m-0 text-[var(--learnkit-widget-font-summary-title)] font-semibold text-foreground", tx("ui.widget.summary.headerTitle", "Flashcards"));
+  const summaryLabelWrap = el("div", "sprout-widget-summary-labels");
+  const learnWord = tx("ui.widget.summary.headerLearn", "Learn");
+  const kitWord = tx("ui.widget.summary.headerKit", "Kit");
+  const summaryTitle = el("div", "sprout-widget-summary-title", `${learnWord}${kitWord}`);
   summaryLabelWrap.appendChild(summaryTitle);
 
   const scopeKind = studyingAsFolder
@@ -59,7 +61,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
     scope: titleText,
     kind: scopeKind,
   });
-  const remainingLine = el("div", "sprout-widget-remaining-line mt-0 text-[var(--learnkit-widget-font-summary-count)] font-normal text-foreground", remainingLabel);
+  const remainingLine = el("div", "sprout-widget-remaining-line", remainingLabel);
   summaryLabelWrap.appendChild(remainingLine);
 
   header.appendChild(summaryLabelWrap);
@@ -84,7 +86,7 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
       msg = tx("ui.widget.summary.enableFolderDecks", "No flashcards found. Enable 'Treat folder notes as decks' in settings.");
     }
 
-    const msgEl = el("div", "text-muted-foreground mt-3 text-sm", msg);
+    const msgEl = el("div", "sprout-widget-empty-message", msg);
     body.appendChild(msgEl);
     wrap.appendChild(body);
     root.appendChild(wrap);
@@ -92,9 +94,9 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   }
 
   // Teaser card: summary + next up preview
-  const teaser = el("div", "sprout-widget-teaser card mx-auto my-[10px] flex h-auto w-[90%] max-h-[calc(100%-170px)] min-h-0 flex-none flex-col gap-2.5 overflow-y-auto border border-[var(--learnkit-border-color)] p-5 shadow-none text-[var(--learnkit-widget-font-teaser-title)]");
+  const teaser = el("div", "sprout-widget-teaser");
 
-  const teaserTitle = el("div", "sprout-widget-teaser-title mb-0 font-semibold text-foreground", titleCased);
+  const teaserTitle = el("div", "sprout-widget-teaser-title", titleCased);
   teaser.appendChild(teaserTitle);
 
   const previewSession = view.buildSessionForActiveNote();
@@ -120,16 +122,16 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   const dueLabel = queueCount > 0
     ? tx("ui.widget.summary.cardsDue", "{count} Cards Due", { count: queueCount })
     : tx("ui.widget.summary.noCardsDue", "No Cards Due");
-  const countsLine = el("div", "sprout-widget-counts-line m-0 text-foreground opacity-70", `${dueLabel}  •  ${counts.total} Cards Total`);
+  const countsLine = el("div", "sprout-widget-counts-line", `${dueLabel}  •  ${counts.total} Cards Total`);
   teaser.appendChild(countsLine);
 
   if (queueCount > 0) {
-    const timeLine = el("div", "sprout-widget-info-line text-foreground opacity-70 leading-[1.5]", tx("ui.widget.summary.estimatedTime", "Estimated Time: {minutes} min", { minutes: estMinutes }));
+    const timeLine = el("div", "sprout-widget-info-line", tx("ui.widget.summary.estimatedTime", "Estimated Time: {minutes} min", { minutes: estMinutes }));
     teaser.appendChild(timeLine);
   } else {
     const practiceLine = el(
       "div",
-      "sprout-widget-info-line text-foreground opacity-70 leading-[1.5]",
+      "sprout-widget-info-line",
       tx("ui.widget.summary.practicePrompt", "Would you like to start a practice session? This won't count towards card scheduling and you cannot bury cards or undo answers in this mode."),
     );
     teaser.appendChild(practiceLine);
@@ -138,19 +140,19 @@ export function renderWidgetSummary(view: WidgetViewLike, root: HTMLElement): vo
   wrap.appendChild(teaser);
 
   // Footer: Study button
-  const footer = el("div", "sprout-widget-summary-footer mx-auto mt-2 mb-[10px] flex max-w-[90%] gap-2 border-none rounded-none p-0");
+  const footer = el("div", "sprout-widget-summary-footer");
   const studyLabel = queueCount > 0
     ? tx("ui.widget.summary.startStudying", "Start Studying")
     : tx("ui.widget.summary.startPractice", "Start A Practice Session");
   const studyBtn = makeTextButton({
     label: studyLabel,
-    className: "learnkit-btn-toolbar w-full flex items-center justify-center gap-2",
+    className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
     onClick: () => (queueCount > 0 ? view.startSession() : view.startPracticeSession()),
   });
   applyWidgetActionButtonStyles(studyBtn);
 
   const studyKbd = document.createElement("kbd");
-  studyKbd.className = "kbd ml-2";
+  studyKbd.className = "kbd sprout-widget-kbd";
   studyKbd.textContent = "↵";
   studyBtn.appendChild(studyKbd);
 

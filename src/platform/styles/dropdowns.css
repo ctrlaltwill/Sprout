@@ -183,6 +183,14 @@
   display: block;
 }
 
+/* Popover search inputs: keep visually borderless, including focus state. */
+.learnkit .learnkit-popover-dropdown .learnkit-search-naked,
+.learnkit .learnkit-popover-overlay .learnkit-search-naked {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* Browser radio dropdown popovers: match analytics filter popover surface + states. */
 .learnkit .learnkit-dd-popover .learnkit-dd-panel {
   background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%) !important;
@@ -213,6 +221,12 @@
 
 .learnkit .learnkit-overflow-visible {
   overflow: visible;
+}
+
+/* Group picker results: show about 8 options max, then scroll. */
+.learnkit .learnkit-group-picker-results {
+  max-height: 264px !important;
+  overflow-y: auto;
 }
 
 .learnkit .learnkit-columns-panel {

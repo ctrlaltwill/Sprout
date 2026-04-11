@@ -28,6 +28,10 @@
   padding: 10px 20px;
 }
 
+.learnkit .lk-browser-search-card:hover {
+  background-color: var(--color-base-00) !important;
+}
+
 .learnkit .lk-browser-table-card {
   padding: 0;
   overflow: hidden;
@@ -925,12 +929,12 @@
 /* Selected browser rows (via row checkbox) */
 .learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked),
 .learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked) td {
-  background: var(--theme-base-35);
+  background: var(--theme-base-05);
 }
 
 .learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked):hover,
 .learnkit .lk-browser-view .table tbody tr:has(input[type="checkbox"][data-card-id]:checked):hover td {
-  background: var(--theme-base-35);
+  background: var(--theme-base-05);
 }
 
 .learnkit .lk-browser-view .table tbody tr:hover,
