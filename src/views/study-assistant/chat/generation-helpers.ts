@@ -4,6 +4,7 @@
  *
  * @exports
  *  - isFlashcardRequest
+ *  - isEditRequest
  *  - flashcardDisclaimerText
  *  - appendFlashcardDisclaimerIfNeeded
  *  - shouldShowGenerateSwitch
@@ -91,6 +92,20 @@ export function allFlashcardsInsertedText(tx: Tx): string {
     "ui.studyAssistant.generator.allInserted",
     "All flashcards inserted into the note.",
   );
+}
+
+export function isEditRequest(text: string): boolean {
+  const value = String(text || "").toLowerCase();
+  if (!value.trim()) return false;
+  // Exclude requests clearly about settings, flashcards, or other non-note targets
+  if (/\b(edit|change|update|fix|modify)\s+(settings?|flashcards?|cards?|preferences?|config)\b/i.test(value)) return false;
+  // Direct edit/modify verbs targeting note content — require a recognisable target
+  if (/\b(edit|rewrite|revise|rephrase|restructure|reorganise|reorganize)\s+(this|the|my)\s+(note|section|paragraph|text|content|intro|introduction|conclusion|document)\b/i.test(value)) return true;
+  if (/\b(fix|correct|improve|simplify|expand|shorten|condense|tighten)\s+(the\s+)?(grammar|spelling|wording|phrasing|tone|style|clarity|structure|formatting|language|writing|text|content|note|intro|introduction|conclusion|paragraph|section)\b/i.test(value)) return true;
+  if (/\b(make\s+(it|this|the\s+note)\s+(more|less)\s+\w+)\b/i.test(value)) return true;
+  if (/\b(rewrite|rephrase|restructure|reorganise|reorganize|polish|proofread|clean\s*up)\b/i.test(value)) return true;
+  if (/\b(fix|correct)\s+(this|the|my)\s*(note)?\s*$/i.test(value)) return true;
+  return false;
 }
 
 export function isTestGenerationRequest(text: string): boolean {

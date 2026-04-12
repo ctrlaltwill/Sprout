@@ -15,6 +15,7 @@ import type { TFile, WorkspaceLeaf } from "obsidian";
 import type { SproutSettings } from "../../../platform/types/settings";
 import type {
   StudyAssistantConversationRef,
+  StudyAssistantEditChange,
   StudyAssistantReviewDepth,
   StudyAssistantSuggestion,
 } from "../../../platform/integrations/ai/study-assistant-types";
@@ -23,11 +24,20 @@ export type AssistantMode = "assistant" | "review" | "generate";
 export type StudyAssistantLocation = SproutSettings["studyAssistant"]["location"];
 export type StudyAssistantModalButtonVisibility = SproutSettings["studyAssistant"]["modalButtonVisibility"];
 
+export type EditProposalStatus = "pending" | "accepted" | "rejected" | "partial" | "expired";
+
+export type ChatMessageEditProposal = {
+  summary: string;
+  edits: Array<StudyAssistantEditChange & { status?: "pending" | "accepted" | "rejected" }>;
+  status: EditProposalStatus;
+};
+
 export type ChatMessage = {
   role: "user" | "assistant";
   text: string;
   attachmentNames?: string[];
   savedTestId?: string;
+  editProposal?: ChatMessageEditProposal;
 };
 
 export type GenerateSuggestionBatch = {

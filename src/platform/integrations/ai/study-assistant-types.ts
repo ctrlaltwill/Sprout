@@ -9,6 +9,8 @@
  *  - StudyAssistantGeneratorInput
  *  - StudyAssistantSuggestion
  *  - StudyAssistantGeneratorResult
+ *  - StudyAssistantEditChange
+ *  - StudyAssistantEditProposal
  */
 
 import type { SproutSettings } from "../../types/settings";
@@ -76,7 +78,17 @@ export type StudyAssistantGeneratorResult = {
   conversationId?: string;
 };
 
-export type StudyAssistantChatMode = "ask" | "review";
+export type StudyAssistantChatMode = "ask" | "review" | "edit";
+
+export type StudyAssistantEditChange = {
+  original: string;
+  replacement: string;
+};
+
+export type StudyAssistantEditProposal = {
+  summary: string;
+  edits: StudyAssistantEditChange[];
+};
 
 export type StudyAssistantReviewDepth = "quick" | "standard" | "comprehensive";
 
@@ -92,6 +104,7 @@ export type StudyAssistantChatInput = {
   customInstructions: string;
   reviewDepth?: StudyAssistantReviewDepth;
   conversationId?: string;
+  conversationHistory?: { role: "user" | "assistant"; text: string }[];
 };
 
 export type StudyAssistantChatResult = {

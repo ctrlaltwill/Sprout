@@ -487,12 +487,19 @@ function markdownPreviewHtml(source: string): string {
 function convertMarkdownLists(text: string): string {
   const lines = text.split("\n");
   const out: string[] = [];
-  // Stack tracks open list types at each nesting depth
-  const stack: Array<"ul" | "ol"> = [];
+  const stack: Array<{ tag: "ul" | "ol"; hasOpenItem: boolean }> = [];
+
+  const closeItemAt = (depth: number) => {
+    const state = stack[depth];
+    if (!state?.hasOpenItem) return;
+    out.push("</li>");
+    state.hasOpenItem = false;
+  };
 
   const closeTo = (depth: number) => {
     while (stack.length > depth) {
-      out.push(`</${stack.pop()}>`);
+      closeItemAt(stack.length - 1);
+      out.push(`</${stack.pop()!.tag}>`);
     }
   };
 
@@ -510,22 +517,22 @@ function convertMarkdownLists(text: string): string {
       const tag: "ul" | "ol" = ulMatch ? "ul" : "ol";
 
       if (targetDepth > stack.length) {
-        // Open new list(s) to reach target depth
         while (stack.length < targetDepth) {
           out.push(`<${tag}>`);
-          stack.push(tag);
+          stack.push({ tag, hasOpenItem: false });
         }
       } else {
-        // Close lists down to target depth
         closeTo(targetDepth);
-        // If the list type changed at this depth, swap it
-        if (stack.length > 0 && stack[stack.length - 1] !== tag) {
-          out.push(`</${stack.pop()}>`);
+        closeItemAt(targetDepth - 1);
+        if (stack.length > 0 && stack[stack.length - 1].tag !== tag) {
+          out.push(`</${stack.pop()!.tag}>`);
           out.push(`<${tag}>`);
-          stack.push(tag);
+          stack.push({ tag, hasOpenItem: false });
         }
       }
-      out.push(`<li>${content}</li>`);
+
+      out.push(`<li>${content}`);
+      stack[targetDepth - 1].hasOpenItem = true;
     } else {
       closeTo(0);
       const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);

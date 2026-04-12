@@ -66,7 +66,8 @@ function providerBaseUrl(settings: SproutSettings["studyAssistant"]): string {
 
   if (settings.provider === "openai") return "https://api.openai.com/v1";
   if (settings.provider === "anthropic") return "https://api.anthropic.com/v1";
-  if (settings.provider === "deepseek") return "https://api.deepseek.com/v1";
+  // DeepSeek's OpenAI-compatible endpoint is /chat/completions without a /v1 prefix.
+  if (settings.provider === "deepseek") return "https://api.deepseek.com";
   if (settings.provider === "xai") return "https://api.x.ai/v1";
   if (settings.provider === "google") return "https://generativelanguage.googleapis.com/v1beta/openai";
   if (settings.provider === "perplexity") return "https://api.perplexity.ai";
@@ -124,10 +125,18 @@ function assertAnthropicResponseShape(json: Record<string, unknown>): void {
 }
 
 function shouldOmitTemperature(provider: StudyAssistantProvider, model: string): boolean {
-  if (provider !== "openai") return false;
+  if (provider !== "openai" && provider !== "deepseek") return false;
   const m = String(model || "").trim().toLowerCase();
-  // Some OpenAI model families enforce fixed/default sampling behavior.
+  // Some model families enforce fixed/default sampling behavior.
+  if (provider === "deepseek") return m.startsWith("deepseek-reasoner");
   return m.startsWith("gpt-5") || m.startsWith("o1") || m.startsWith("o3") || m.startsWith("o4");
+}
+
+function shouldInlineSystemPromptForOpenAiLike(provider: StudyAssistantProvider, model: string): boolean {
+  // DeepSeek reasoner is more reliable when instructions are in the user turn.
+  if (provider !== "deepseek") return false;
+  const m = String(model || "").trim().toLowerCase();
+  return m.startsWith("deepseek-reasoner");
 }
 
 function openRouterAlternateModelId(model: string): string {
@@ -525,6 +534,35 @@ export async function requestStudyAssistantCompletionDetailed(params: {
   const shouldUseStructuredJsonResponse = mode === "json" && settings.provider !== "openrouter";
 
   const requestOpenAiLike = async (requestModel: string): Promise<Awaited<ReturnType<typeof requestUrl>>> => {
+    const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(settings.provider, requestModel);
+    const effectiveUserContent = inlineSystemPrompt
+      ? `System instructions:\n${systemPrompt}\n\n${effectiveUserPrompt}`
+      : effectiveUserPrompt;
+    const messages = inlineSystemPrompt
+      ? [
+          {
+            role: "user",
+            content: attachments.length
+              ? [
+                  { type: "text", text: effectiveUserContent },
+                  ...buildOpenAiContentBlocks(attachments),
+                ]
+              : effectiveUserContent,
+          },
+        ]
+      : [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: attachments.length
+              ? [
+                  { type: "text", text: effectiveUserContent },
+                  ...buildOpenAiContentBlocks(attachments),
+                ]
+              : effectiveUserContent,
+          },
+        ];
+
     try {
       return await requestUrl({
         url: endpoint,
@@ -537,18 +575,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         body: JSON.stringify({
           model: requestModel,
           max_tokens: 2500,
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: attachments.length
-                ? [
-                    { type: "text", text: effectiveUserPrompt },
-                    ...buildOpenAiContentBlocks(attachments),
-                  ]
-                : effectiveUserPrompt,
-            },
-          ],
+          messages,
           ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
             ? { conversation_id: conversationId.trim() }
             : {}),

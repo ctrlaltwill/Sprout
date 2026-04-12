@@ -5,6 +5,8 @@
  * @exports
  *  - generateStudyAssistantSuggestions
  *  - generateStudyAssistantChatReply
+ *  - classifyUserIntent
+ *  - parseEditProposal
  */
 
 import type { SproutSettings } from "../../types/settings";
@@ -14,6 +16,7 @@ import type {
   StudyAssistantChatInput,
   StudyAssistantChatResult,
   StudyAssistantCardType,
+  StudyAssistantEditProposal,
   StudyAssistantGeneratorInput,
   StudyAssistantGeneratorResult,
   StudyAssistantSuggestion,
@@ -1041,14 +1044,16 @@ function buildChatSystemPrompt(input: StudyAssistantChatInput): string {
     hiddenPrompt,
     "",
     "Public-mode instructions:",
-    input.mode === "ask"
-      ? "You are LearnKit Study Companion. Answer with note context first, then supplement with external knowledge when needed."
-      : "You are LearnKit Study Companion. Review the note content using both note evidence and subject knowledge to provide study-focused quality feedback.",
+    input.mode === "edit"
+      ? "You are LearnKit Study Companion. Edit the note content as the user requested. Return a JSON object with a summary and edits array."
+      : input.mode === "ask"
+        ? "You are LearnKit Study Companion. Answer with note context first, then supplement with external knowledge when needed."
+        : "You are LearnKit Study Companion. Review the note content using both note evidence and subject knowledge to provide study-focused quality feedback.",
     "Use a warm, human tone when appropriate. Be motivating and supportive, especially when the user seems discouraged.",
     "Be concise, clear, and practical.",
     "When content is not supported by the note, state that it is external/background knowledge.",
-    "Use markdown formatting when useful.",
-  ];
+    input.mode === "edit" ? "" : "Use markdown formatting when useful.",
+  ].filter(Boolean);
 
   const extra = input.customInstructions.trim();
   if (extra) {
@@ -1064,14 +1069,31 @@ function buildChatUserPrompt(input: StudyAssistantChatInput): string {
     ? (input.reviewDepth === "quick" || input.reviewDepth === "comprehensive" ? input.reviewDepth : "standard")
     : undefined;
 
+  // Build a concise conversation-history block so the model can see prior turns
+  const historyBlock = (input.conversationHistory?.length)
+    ? input.conversationHistory
+        .slice(-20) // keep last 20 messages to avoid exceeding context limits
+        .map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`)
+        .join("\n\n")
+    : "";
+
   const payload = {
     notePath: input.notePath,
     includeImages: input.includeImages,
     imageRefs: input.includeImages ? input.imageRefs : [],
     noteContent: input.noteContent,
+    conversationHistory: historyBlock || undefined,
     userMessage: input.userMessage,
     reviewDepth,
   };
+
+  if (input.mode === "edit") {
+    return [
+      "Edit the note content as requested by the user. Return strictly valid JSON with a summary (max 40 words) and an edits array.",
+      "Each edit must have an \"original\" field that is an exact verbatim substring of noteContent, and a \"replacement\" field with the new text.",
+      JSON.stringify(payload, null, 2),
+    ].join("\n\n");
+  }
 
   return [
     input.mode === "ask"
@@ -1275,6 +1297,60 @@ export async function generateStudyAssistantSuggestions(params: {
   };
 }
 
+// ── Intent classification ──
+
+export type UserIntentClassification = "edit" | "review" | "ask" | "generate";
+
+const CLASSIFY_SYSTEM_PROMPT = [
+  "You are a request classifier for a study assistant inside Obsidian.",
+  "Given a user's message about their note, respond with exactly one word — no explanation, no punctuation.",
+  "You may also receive recent conversation history for context.",
+  "",
+  "Categories:",
+  "- Edit: The user wants to modify, change, fix, rewrite, improve, or update the text content of their note. This includes follow-up requests to implement, apply, or 'do' suggestions/recommendations from a previous review.",
+  "- Review: The user wants feedback, a review, critique, or quality assessment of their note.",
+  "- Generate: The user wants to create flashcards, study cards, quizzes, or tests from their note content.",
+  "- Ask: The user has a question, wants an explanation, or any other request that doesn't fit the above.",
+  "",
+  "Respond with one word only: Edit, Review, Generate, or Ask.",
+].join("\n");
+
+export function parseIntentResponse(raw: string): UserIntentClassification {
+  const text = String(raw || "").trim().toLowerCase();
+  if (text.startsWith("edit")) return "edit";
+  if (text.startsWith("review")) return "review";
+  if (text.startsWith("generate")) return "generate";
+  return "ask";
+}
+
+export async function classifyUserIntent(params: {
+  settings: SproutSettings["studyAssistant"];
+  userMessage: string;
+  recentMessages?: { role: "user" | "assistant"; text: string }[];
+}): Promise<UserIntentClassification> {
+  const { settings, userMessage, recentMessages } = params;
+
+  // Build user prompt with optional conversation context
+  let userPrompt = userMessage;
+  if (recentMessages && recentMessages.length > 0) {
+    const contextLines = recentMessages.slice(-4).map(m => {
+      const label = m.role === "user" ? "User" : "Assistant";
+      const snippet = m.text.length > 300 ? m.text.slice(0, 300) + "…" : m.text;
+      return `${label}: ${snippet}`;
+    });
+    userPrompt = `Recent conversation:\n${contextLines.join("\n")}\n\nNew message to classify:\n${userMessage}`;
+  }
+
+  const response = await requestStudyAssistantCompletionDetailed({
+    settings,
+    systemPrompt: CLASSIFY_SYSTEM_PROMPT,
+    userPrompt,
+    mode: "text",
+  });
+
+  return parseIntentResponse(response.text);
+}
+
 export async function generateStudyAssistantChatReply(params: {
   settings: SproutSettings["studyAssistant"];
   input: StudyAssistantChatInput;
@@ -1305,4 +1381,38 @@ export async function generateStudyAssistantChatReply(params: {
     rawResponseText,
     conversationId: response.conversationId ?? input.conversationId,
   };
+}
+
+// ── Edit proposal parsing ──
+
+export function parseEditProposal(rawText: string): StudyAssistantEditProposal | null {
+  const jsonSource = extractFirstJsonObject(rawText);
+  if (!jsonSource) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonSource);
+  } catch {
+    return null;
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const obj = parsed as Record<string, unknown>;
+
+  const summary = typeof obj.summary === "string" ? obj.summary.trim() : "";
+  if (!summary) return null;
+
+  const rawEdits = Array.isArray(obj.edits) ? obj.edits : [];
+  const edits: StudyAssistantEditProposal["edits"] = [];
+
+  for (const item of rawEdits) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const e = item as Record<string, unknown>;
+    const original = typeof e.original === "string" ? e.original : "";
+    const replacement = typeof e.replacement === "string" ? e.replacement : "";
+    if (!original) continue;
+    edits.push({ original, replacement });
+  }
+
+  return { summary, edits };
 }

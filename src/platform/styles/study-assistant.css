@@ -240,6 +240,10 @@
   font-size: 0.82em;
 }
 
+.learnkit .learnkit-study-assistant-message-bubble :is(b, strong) {
+  font-weight: 600;
+}
+
 .learnkit .learnkit-study-assistant-message-bubble > :first-child {
   margin-top: 0;
 }
@@ -588,8 +592,7 @@
   width: 400px;
   height: auto;
   min-height: 400px;
-  max-height: min(700px, 60vh);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 0.5px solid var(--color-base-30);
   background: var(--background-primary, #fff);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -629,7 +632,6 @@
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-header,
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-composer {
   background: transparent !important;
-  border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-content {
@@ -638,6 +640,38 @@
 
 .learnkit-assistant-popup.is-hidden {
   display: none;
+}
+
+/* ---- Modal resize handles ---- */
+.learnkit-assistant-popup-resize-handle {
+  position: absolute;
+  z-index: 3;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.learnkit-assistant-popup-resize-handle.is-top {
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.learnkit-assistant-popup-resize-handle.is-left {
+  top: 16px;
+  bottom: 16px;
+  left: 0;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.learnkit-assistant-popup-resize-handle.is-top-left {
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
 }
 
 .learnkit-assistant-popup.learnkit-assistant-popup-embedded {
@@ -739,7 +773,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.08));
+  border-bottom: .5px solid var(--color-base-35);
   flex: 0 0 auto;
   overflow: visible;
 }
@@ -1333,6 +1367,10 @@
   font-weight: 600;
 }
 
+.learnkit-assistant-popup .learnkit-assistant-popup-message-bubble :is(b, strong) {
+  font-weight: 600;
+}
+
 .learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h1 { font-size: 1.2rem; }
 .learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h2 { font-size: 1.15rem; }
 .learnkit-assistant-popup .learnkit-assistant-popup-message-bubble h3 { font-size: 1.1rem; }
@@ -1397,8 +1435,9 @@
 .learnkit-assistant-popup-composer {
   position: relative;
   padding: 10px 14px 14px;
-  border-top: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.06));
+  border-top: none;
   flex: 0 0 auto;
+  z-index: 3;
 }
 
 .learnkit-assistant-popup-composer::before {
@@ -1406,10 +1445,22 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(100% + 1px);
+  bottom: 100%;
   height: 16px;
   pointer-events: none;
   background: linear-gradient(to bottom, transparent, var(--color-base-00));
+  z-index: 1;
+}
+
+.learnkit-assistant-popup-composer::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  border-top: 0.5px solid var(--color-base-35) !important;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .learnkit-assistant-popup-composer-shell {
@@ -2639,4 +2690,329 @@
     right: 16px;
     bottom: 16px;
   }
+}
+
+/* ── AI Edit Proposal: Chat Buttons ── */
+
+.learnkit-assistant-popup-edit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learnkit-assistant-popup-edit-accept-btn {
+  color: var(--text-success, #16a34a);
+  border-color: color-mix(in srgb, var(--text-success, #16a34a) 32%, transparent);
+}
+
+.learnkit-assistant-popup-edit-accept-btn:hover {
+  background: color-mix(in srgb, var(--text-success, #16a34a) 10%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--text-success, #16a34a) 50%, transparent);
+}
+
+.learnkit-assistant-popup-edit-reject-btn {
+  color: var(--text-error, #b42318);
+  border-color: color-mix(in srgb, var(--text-error, #b42318) 32%, transparent);
+}
+
+.learnkit-assistant-popup-edit-reject-btn:hover {
+  background: color-mix(in srgb, var(--text-error, #b42318) 10%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--text-error, #b42318) 50%, transparent);
+}
+
+.learnkit-assistant-popup-edit-status {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+}
+
+.learnkit-assistant-popup-edit-status.is-accepted {
+  color: var(--text-success, #16a34a);
+  background: color-mix(in srgb, var(--text-success, #16a34a) 8%, var(--background-primary));
+}
+
+.learnkit-assistant-popup-edit-status.is-rejected {
+  color: var(--text-muted, #9ca3af);
+  background: color-mix(in srgb, var(--text-muted, #9ca3af) 8%, var(--background-primary));
+}
+
+/* ── AI Edit Proposal: CM6 Inline Decorations ── */
+
+.learnkit-edit-proposal-original-line {
+  background: color-mix(in srgb, var(--text-error, #b42318) 8%, transparent);
+}
+
+.learnkit-edit-proposal-widget {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.learnkit-edit-proposal-replacement {
+  display: block;
+  background: color-mix(in srgb, var(--text-success, #16a34a) 8%, transparent);
+  color: var(--text-normal);
+  font-size: inherit;
+  line-height: inherit;
+  word-break: break-word;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered,
+.learnkit-edit-block-new.markdown-rendered,
+.learnkit-edit-proposal-source-fragment {
+  white-space: normal;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered :is(p, ul, ol, table, pre, blockquote),
+.learnkit-edit-block-new.markdown-rendered :is(p, ul, ol, table, pre, blockquote) {
+  margin: 0.15em 0;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered :is(ul, ol),
+.learnkit-edit-block-new.markdown-rendered :is(ul, ol) {
+  margin: 0.15em 0;
+  padding-inline-start: 1.5em;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered ul,
+.learnkit-edit-block-new.markdown-rendered ul {
+  list-style-type: disc;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered ol,
+.learnkit-edit-block-new.markdown-rendered ol {
+  list-style-type: decimal;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered li,
+.learnkit-edit-block-new.markdown-rendered li {
+  margin: 0;
+  padding: 0;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered strong,
+.learnkit-edit-block-new.markdown-rendered strong {
+  font-weight: 700;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered em,
+.learnkit-edit-block-new.markdown-rendered em {
+  font-style: italic;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered mark,
+.learnkit-edit-block-new.markdown-rendered mark {
+  background-color: var(--text-highlight-bg, rgba(255, 208, 0, 0.4));
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered code,
+.learnkit-edit-block-new.markdown-rendered code {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  background: var(--code-background, rgba(0, 0, 0, 0.05));
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered s,
+.learnkit-edit-block-new.markdown-rendered s {
+  text-decoration: line-through;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered .internal-link,
+.learnkit-edit-block-new.markdown-rendered .internal-link {
+  color: var(--link-color, var(--text-accent));
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered :is(h1, h2, h3, h4, h5, h6),
+.learnkit-edit-block-new.markdown-rendered :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.15em 0;
+  line-height: 1.35;
+  font-weight: 700;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered h1,
+.learnkit-edit-block-new.markdown-rendered h1 {
+  font-size: 1.2rem;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered h2,
+.learnkit-edit-block-new.markdown-rendered h2 {
+  font-size: 1.15rem;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered table,
+.learnkit-edit-block-new.markdown-rendered table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.learnkit-edit-proposal-replacement.markdown-rendered :is(th, td),
+.learnkit-edit-block-new.markdown-rendered :is(th, td) {
+  padding: 0.35em 0.5em;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.learnkit-edit-proposal-source-fragment {
+  display: block;
+}
+
+.learnkit-edit-proposal-source-line {
+  line-height: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.learnkit-edit-proposal-source-list-line {
+  display: flex;
+  align-items: flex-start;
+}
+
+.learnkit-edit-proposal-source-indent-spacer {
+  flex: 0 0 var(--learnkit-edit-proposal-indent-width, 0px);
+  width: var(--learnkit-edit-proposal-indent-width, 0px);
+}
+
+.learnkit-edit-proposal-source-marker {
+  flex: 0 0 auto;
+}
+
+.learnkit-edit-proposal-source-content {
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.learnkit-edit-proposal-source-list-line .learnkit-edit-proposal-source-content {
+  flex: 1 1 auto;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-formatting,
+.learnkit-edit-proposal-source-fragment .cm-hr {
+  color: var(--text-faint);
+}
+
+.learnkit-edit-proposal-source-fragment .cm-strong {
+  font-weight: 700;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-em {
+  font-style: italic;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-inline-code {
+  font-family: var(--font-monospace);
+  font-size: 0.92em;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-strikethrough {
+  text-decoration: line-through;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-highlight {
+  background-color: var(--text-highlight-bg, rgba(255, 208, 0, 0.4));
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.learnkit-edit-proposal-source-fragment .internal-link {
+  color: var(--link-color, var(--text-accent));
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-header {
+  font-weight: 700;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-header-1 {
+  font-size: 1.2rem;
+}
+
+.learnkit-edit-proposal-source-fragment .cm-header-2 {
+  font-size: 1.15rem;
+}
+
+.learnkit-edit-proposal-source-fragment .virtual-link-span {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.learnkit-edit-proposal-source-fragment .virtual-link-a {
+  pointer-events: none;
+}
+
+.learnkit-edit-proposal-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px !important;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.learnkit-edit-proposal-action-btn.is-accept {
+  color: var(--text-success, #16a34a);
+  border: 0.5px solid color-mix(in srgb, var(--text-success, #16a34a) 40%, transparent);
+  background-color: color-mix(in srgb, var(--text-success, #16a34a) 14%, var(--background-primary));
+  box-shadow: none !important;
+}
+
+.learnkit-edit-proposal-action-btn.is-accept:hover,
+.learnkit-edit-proposal-action-btn.is-accept:focus-visible {
+  background: color-mix(in srgb, var(--text-success, #16a34a) 20%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--text-success, #16a34a) 52%, transparent);
+}
+
+.learnkit-edit-proposal-action-btn.is-reject {
+  color: var(--text-error, #b42318);
+  border: 0.5px solid color-mix(in srgb, var(--text-error, #b42318) 40%, transparent);
+  background-color: color-mix(in srgb, var(--text-error, #b42318) 14%, var(--background-primary));
+  box-shadow: none !important;
+}
+
+.learnkit-edit-proposal-action-btn.is-reject:hover,
+.learnkit-edit-proposal-action-btn.is-reject:focus-visible {
+  background: color-mix(in srgb, var(--text-error, #b42318) 20%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--text-error, #b42318) 52%, transparent);
+}
+
+/* ── AI Edit Proposal: Block Compare (multi-line edits) ── */
+
+.learnkit-edit-block-compare {
+  display: block;
+}
+
+.learnkit-edit-block-new {
+  background: color-mix(in srgb, var(--text-success, #16a34a) 8%, transparent);
+  color: var(--text-normal);
+  font-size: inherit;
+  line-height: inherit;
+  word-break: break-word;
+}
+
+.learnkit-edit-block-actions {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  flex-shrink: 0;
 }

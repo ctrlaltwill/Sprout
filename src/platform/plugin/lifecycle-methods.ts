@@ -38,6 +38,7 @@ import {
 import { log } from "../core/logger";
 import { isPlainObject, type FlashcardType } from "../core/utils";
 import { registerReadingViewPrettyCards, teardownReadingView } from "../../views/reading/reading-view";
+import { editDecorationExtension } from "../../views/study-assistant/editor/edit-decorations";
 import { removeAosErrorHandler } from "../core/aos-loader";
 import { initTooltipPositioner } from "../core/tooltip-positioner";
 import { initMobileKeyboardHandler, cleanupMobileKeyboardHandler } from "../core/mobile-keyboard-handler";
@@ -214,6 +215,9 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
         }
 
         registerReadingViewPrettyCards(this);
+
+        // CM6 extension: inline diff decorations for AI-proposed note edits
+        this.registerEditorExtension(editDecorationExtension);
 
         this.registerView(VIEW_TYPE_REVIEWER, (leaf: WorkspaceLeaf) => new SproutReviewerView(leaf, this));
         this.registerView(VIEW_TYPE_NOTE_REVIEW, (leaf: WorkspaceLeaf) => new SproutNoteReviewView(leaf, this));

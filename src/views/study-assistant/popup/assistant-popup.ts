@@ -19,6 +19,8 @@ import { bestEffortAttachmentPath, normaliseVaultPath, writeBinaryToVault } from
 import {
   generateStudyAssistantChatReply,
   generateStudyAssistantSuggestions,
+  parseEditProposal,
+  classifyUserIntent,
 } from "../../../platform/integrations/ai/study-assistant-generator";
 import { generateExamQuestions } from "../../../platform/integrations/ai/exam-generator-ai";
 import { ExamTestsSqlite } from "../../../platform/core/exam-tests-sqlite";
@@ -38,6 +40,7 @@ import {
   type StudyAssistantLocation,
   type StudyAssistantModalButtonVisibility,
   type ChatMessage,
+  type ChatMessageEditProposal,
   type GenerateSuggestionBatch,
   type SuggestionValidationResult,
   type ModeConversationRefs,
@@ -63,6 +66,8 @@ import {
   isTestGenerationRequest,
   testGeneratedText,
 } from "../chat/generation-helpers";
+import { validateEditProposal, mentionsFrontmatter } from "../chat/edit-helpers";
+import { setEditProposals, clearEditProposals } from "../editor/edit-decorations";
 import {
   ASSISTANT_MODES,
   CHAT_LOG_SYNC_EVENT_NAME,
@@ -101,6 +106,13 @@ import {
 } from "../../../platform/integrations/ai/attachment-helpers";
 import { formatAttachmentChipLabel } from "../../shared/attachment-chip-label";
 
+const ASSISTANT_POPUP_SIZE_STORAGE_KEY = "learnkit.assistant.popup.size.v1";
+
+type CodeMirrorDispatchTarget = {
+  dispatch?: (transaction: { effects: unknown }) => void;
+  state?: { doc?: { toString?: () => string } };
+};
+
 // ---------------------------------------------------------------------------
 //  SproutAssistantPopup
 // ---------------------------------------------------------------------------
@@ -127,6 +139,7 @@ export class SproutAssistantPopup {
   private chatMessages: ChatMessage[] = [];
   private chatDraft = "";
   private isSendingChat = false;
+  private _isClassifyingIntent = false;
   private chatError = "";
 
   // Review state
@@ -164,6 +177,9 @@ export class SproutAssistantPopup {
   private _maxObservedPopupHeight = 0;
   private _popupHeightFrame: number | null = null;
   private _popupCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private _userResizedWidth: number | null = null;
+  private _userResizedHeight: number | null = null;
+  private _resizeCleanup: (() => void) | null = null;
   private _suspendPopupAutoClose = false;
   private _isTriggerReplyNotificationActive = false;
   private _triggerReplyRevealTimer: ReturnType<typeof setTimeout> | null = null;
@@ -202,11 +218,40 @@ export class SproutAssistantPopup {
   // Per-leaf session state
   private _activeSessionLeaf: WorkspaceLeaf | null = null;
   private _leafSessions = new WeakMap<WorkspaceLeaf, AssistantLeafSession>();
-  private _openStateByFilePath = new Map<string, boolean>();
+
   private _onChatLogSynced: ((e: Event) => void) | null = null;
 
   constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
+    this._loadPersistedUserResize();
+  }
+
+  private _loadPersistedUserResize(): void {
+    try {
+      const raw = window.localStorage.getItem(ASSISTANT_POPUP_SIZE_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { width?: unknown; height?: unknown };
+      const width = Number(parsed?.width);
+      const height = Number(parsed?.height);
+      this._userResizedWidth = Number.isFinite(width) && width > 0 ? width : null;
+      this._userResizedHeight = Number.isFinite(height) && height > 0 ? height : null;
+    } catch {
+      // Ignore malformed or unavailable storage.
+    }
+  }
+
+  private _persistUserResize(): void {
+    try {
+      window.localStorage.setItem(
+        ASSISTANT_POPUP_SIZE_STORAGE_KEY,
+        JSON.stringify({
+          width: this._userResizedWidth,
+          height: this._userResizedHeight,
+        }),
+      );
+    } catch {
+      // Ignore storage write failures.
+    }
   }
 
   private _registerChatLogSyncListener(): void {
@@ -336,6 +381,9 @@ export class SproutAssistantPopup {
         if (isAssistantReviewDepth(data.reviewDepth)) {
           this.reviewDepth = data.reviewDepth;
         }
+        // Expire any edit proposals that were pending when the app was closed —
+        // CM6 decorations don't survive reload so buttons would be orphaned.
+        this._expireStaleEditProposals();
       } else {
         this.chatMessages = [];
         this.reviewMessages = [];
@@ -454,6 +502,43 @@ export class SproutAssistantPopup {
       this._emitChatLogSynced(file.path);
     } catch (e) {
       log.swallow("save chat for file", e);
+    }
+  }
+
+  /**
+   * Append assistant response(s) directly to a note's persisted chat JSON on disk.
+   * Used when an AI response arrives after the user has already switched to a different note,
+   * so the response must be routed to the originating note's storage without touching
+   * the live `this.chatMessages` / `this.reviewMessages` arrays.
+   */
+  private async _appendResponseToPersistedChat(
+    file: TFile,
+    field: "messages" | "reviewMessages",
+    ...newMessages: ChatMessage[]
+  ): Promise<void> {
+    const adapter = this.plugin.app?.vault?.adapter;
+    const chatPath = this._getChatFilePath(file);
+    const chatsFolder = this._getChatsFolderPath();
+    if (!adapter || !chatPath || !chatsFolder || !newMessages.length) return;
+    try {
+      let data: Record<string, unknown> = {};
+      if (await adapter.exists(chatPath)) {
+        const raw = await adapter.read(chatPath);
+        const parsed: unknown = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          data = parsed as Record<string, unknown>;
+        }
+      }
+      const arr = Array.isArray(data[field]) ? (data[field] as ChatMessage[]) : [];
+      arr.push(...newMessages);
+      data[field] = arr;
+      if (!(await adapter.exists(chatsFolder))) {
+        await (adapter as { mkdir?: (p: string) => Promise<void> }).mkdir?.(chatsFolder);
+      }
+      await adapter.write(chatPath, JSON.stringify(data, null, 2));
+      this._emitChatLogSynced(file.path);
+    } catch (e) {
+      log.swallow("append response to persisted chat", e);
     }
   }
 
@@ -856,12 +941,7 @@ export class SproutAssistantPopup {
     }
     const previousPath = this.activeFile?.path || "";
     const nextPath = file?.path || "";
-    if (previousPath) {
-      this._openStateByFilePath.set(previousPath, this.isOpen);
-    }
     if (previousPath !== nextPath) {
-      const nextOpenState = nextPath ? (this._openStateByFilePath.get(nextPath) ?? false) : false;
-      this.isOpen = nextOpenState;
       // Save outgoing note's chat before switching
       if (this.activeFile) this._scheduleSave();
       this.chatMessages = [];
@@ -875,7 +955,6 @@ export class SproutAssistantPopup {
       this.generatorError = "";
       this.generateSuggestionBatches = [];
       this._maxObservedPopupHeight = 0;
-      this.popupEl?.style.removeProperty("height");
       this.activeFile = file || null;
       // Load incoming note's persisted chat
       if (file) {
@@ -966,7 +1045,6 @@ export class SproutAssistantPopup {
     this.activeFile = this.plugin.app.workspace.getActiveFile();
     if (!this.chatMessages.length && !this.reviewMessages.length && !this.generateMessages.length && !this.generateSuggestionBatches.length) {
       this._maxObservedPopupHeight = 0;
-      this.popupEl?.style.removeProperty("height");
     }
     this.isOpen = true;
     if (this._popupCloseTimer != null) {
@@ -976,7 +1054,6 @@ export class SproutAssistantPopup {
     this.popupEl?.removeClass("is-closing");
     this.popupEl?.removeClass("is-hidden");
     this._clearPendingReplyForMode(this.mode);
-    if (this.activeFile?.path) this._openStateByFilePath.set(this.activeFile.path, true);
     this.triggerBtn?.addClass("is-open");
     this.ensurePopup();
     this._syncHosts();
@@ -1031,7 +1108,6 @@ export class SproutAssistantPopup {
       this._stopTts();
     }
     this.isOpen = false;
-    if (this.activeFile?.path) this._openStateByFilePath.set(this.activeFile.path, false);
     this.triggerBtn?.removeClass("is-open");
     if (this._popupCloseTimer != null) {
       clearTimeout(this._popupCloseTimer);
@@ -1274,6 +1350,22 @@ export class SproutAssistantPopup {
     return isTestGenerationRequest(text);
   }
 
+  /**
+   * Heuristic: a review reply is an assistant message immediately preceded by
+   * a user message that triggered a review (e.g. "Review this note",
+   * "Quick review", "Comprehensive review") and is the last assistant message
+   * in the thread.
+   */
+  private _isReviewReply(msgIndex: number): boolean {
+    const msgs = this.chatMessages;
+    if (msgIndex < 1 || msgIndex >= msgs.length) return false;
+    // Only show on the last assistant message
+    if (msgs.slice(msgIndex + 1).some(m => m.role === "assistant")) return false;
+    const prev = msgs[msgIndex - 1];
+    if (prev?.role !== "user") return false;
+    return /\breview\b/i.test(prev.text);
+  }
+
   private _testGeneratedText(testName: string): string {
     return testGeneratedText((token, fallback, vars) => this._tx(token, fallback, vars), testName);
   }
@@ -1416,7 +1508,7 @@ export class SproutAssistantPopup {
   }
 
   private _isAssistantBusy(): boolean {
-    return this.isSendingChat || this.isReviewingNote || this.isGenerating;
+    return this.isSendingChat || this.isReviewingNote || this.isGenerating || this._isClassifyingIntent;
   }
 
   private _renderAssistantWelcomeActions(parent: HTMLElement): void {
@@ -2528,29 +2620,69 @@ export class SproutAssistantPopup {
     const hasAttachments = this._attachedFiles.length > 0;
     if (!draft && !hasAttachments) return;
 
-    if (draft && this._isTestGenerationRequest(draft)) {
+    const originFile = this.activeFile;
+    const originPath = originFile?.path ?? "";
+
+    this._expireStaleEditProposals();
+
+    // --- AI-based intent classification (single-word response, hidden from user) ---
+    if (draft) {
+      const chatMsg: ChatMessage = { role: "user", text: draft };
+      const pendingAttachmentNames = this._attachedFiles.map(f => f.name);
+      if (pendingAttachmentNames.length) chatMsg.attachmentNames = pendingAttachmentNames;
+      this.chatMessages.push(chatMsg);
       this.chatDraft = "";
-      this.chatMessages.push({ role: "user", text: draft });
       this._scheduleSave();
-      await this._generateTestForAssistantThread(draft);
-      return;
-    }
+      this._isClassifyingIntent = true;
+      this.chatError = "";
+      this.render();
 
-    if (draft && this._isGenerateFlashcardRequest(draft)) {
-      this.chatDraft = "";
-      this.chatMessages.push({ role: "user", text: draft });
-
-      const requestedCount = this._extractRequestedGenerateCount(draft);
-      if (requestedCount != null && requestedCount > 20) {
-        this.chatMessages.push({ role: "assistant", text: this._generateExcessiveCountHintText(requestedCount) });
-        this._scheduleSave();
-        this.render();
-        return;
+      let intent: Awaited<ReturnType<typeof classifyUserIntent>>;
+      try {
+        const settings = this.plugin.settings.studyAssistant;
+        intent = await classifyUserIntent({ settings, userMessage: draft, recentMessages: this.chatMessages });
+      } catch {
+        // Classification failed — fall through to default ask mode
+        intent = "ask";
       }
 
-      this._scheduleSave();
-      await this._generateSuggestionsForAssistantThread(draft);
-      return;
+      this._isClassifyingIntent = false;
+
+      // If the user switched notes during intent classification, bail —
+      // the request is stale and sub-methods have their own file-switch guards.
+      if (this.activeFile?.path !== originPath) return;
+
+      switch (intent) {
+        case "generate": {
+          if (this._isTestGenerationRequest(draft)) {
+            this._scheduleSave();
+            await this._generateTestForAssistantThread(draft);
+          } else {
+            const requestedCount = this._extractRequestedGenerateCount(draft);
+            if (requestedCount != null && requestedCount > 20) {
+              this.chatMessages.push({ role: "assistant", text: this._generateExcessiveCountHintText(requestedCount) });
+              this._scheduleSave();
+              this.render();
+            } else {
+              this._scheduleSave();
+              await this._generateSuggestionsForAssistantThread(draft);
+            }
+          }
+          return;
+        }
+        case "edit": {
+          await this._sendEditRequest(draft, { skipUserMessageAppend: true });
+          return;
+        }
+        case "review": {
+          await this._sendReviewMessageInAssistantThread(draft, undefined, { skipUserMessageAppend: true });
+          return;
+        }
+        case "ask":
+        default:
+          // fall through to the ask flow below
+          break;
+      }
     }
 
     const file = this.getActiveMarkdownFile();
@@ -2571,7 +2703,16 @@ export class SproutAssistantPopup {
     this._clearAttachments();
     const chatMsg: ChatMessage = { role: "user", text: displayText };
     if (attachmentNames.length) chatMsg.attachmentNames = attachmentNames;
-    this.chatMessages.push(chatMsg);
+    if (!draft) {
+      this.chatMessages.push(chatMsg);
+    } else {
+      const lastMessage = this.chatMessages[this.chatMessages.length - 1];
+      if (lastMessage?.role === "user" && lastMessage.text === draft) {
+        if (attachmentNames.length) lastMessage.attachmentNames = attachmentNames;
+      } else {
+        this.chatMessages.push(chatMsg);
+      }
+    }
     this.render();
 
     try {
@@ -2614,6 +2755,7 @@ export class SproutAssistantPopup {
           userMessage,
           customInstructions: settings.prompts.assistant,
           conversationId,
+          conversationHistory: this.chatMessages,
         },
       });
 
@@ -2622,6 +2764,13 @@ export class SproutAssistantPopup {
         "No response returned.",
       );
       setRemoteConversationForMode(this.remoteConversationsByMode, "assistant", result.conversationId, this.plugin.settings.studyAssistant);
+
+      // File-switch guard: route response to originating note if user switched away
+      if (this.activeFile?.path !== originPath && originFile) {
+        await this._appendResponseToPersistedChat(originFile, "messages", { role: "assistant", text: reply });
+        return;
+      }
+
       this.chatMessages.push({ role: "assistant", text: reply });
       this._notifyIncomingAssistantReply("assistant");
       this._speakReply(reply, this.chatMessages.length - 1);
@@ -2631,14 +2780,16 @@ export class SproutAssistantPopup {
       this.chatError = userMessage;
     } finally {
       this.isSendingChat = false;
-      this._scheduleSave();
-      this.render();
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
     }
   }
 
-  private async _sendReviewMessageInAssistantThread(
+  private async _sendEditRequest(
     userMessage: string,
-    depthOverride?: StudyAssistantReviewDepth,
+    options: { skipUserMessageAppend?: boolean } = {},
   ): Promise<void> {
     if (this._isAssistantBusy()) return;
     const draft = String(userMessage || "").trim();
@@ -2651,9 +2802,241 @@ export class SproutAssistantPopup {
       return;
     }
 
+    const originPath = file.path;
+
+    if (!options.skipUserMessageAppend) {
+      this.chatMessages.push({ role: "user", text: draft });
+    }
+    this.isSendingChat = true;
+    this.chatError = "";
+    this.chatDraft = "";
+    this.render();
+
+    try {
+      const noteContent = await this.readActiveMarkdown(file);
+      const imageRefs = this.extractImageRefs(noteContent);
+      const settings = this.plugin.settings.studyAssistant;
+      const includeImages = !!settings.privacy.includeImagesInAsk;
+      const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
+      const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "assistant")?.conversationId;
+
+      const result = await generateStudyAssistantChatReply({
+        settings,
+        input: {
+          mode: "edit" as StudyAssistantChatMode,
+          notePath: file.path,
+          noteContent,
+          imageRefs,
+          imageDataUrls,
+          includeImages,
+          userMessage: draft,
+          customInstructions: settings.prompts.assistant,
+          conversationId,
+          conversationHistory: this.chatMessages,
+        },
+      });
+
+      setRemoteConversationForMode(this.remoteConversationsByMode, "assistant", result.conversationId, this.plugin.settings.studyAssistant);
+
+      // File-switch guard: if user moved to another note, persist reply to originating file
+      if (this.activeFile?.path !== originPath) {
+        const proposal = parseEditProposal(result.reply);
+        const fallback = proposal?.summary || result.reply || this._tx("ui.studyAssistant.edit.noChanges", "No changes could be made to the note.");
+        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: fallback });
+        return;
+      }
+
+      const proposal = parseEditProposal(result.reply);
+      if (!proposal || !proposal.edits.length) {
+        const fallback = proposal?.summary || this._tx("ui.studyAssistant.edit.noChanges", "No changes could be made to the note.");
+        this.chatMessages.push({ role: "assistant", text: fallback });
+      } else {
+        const allowFm = mentionsFrontmatter(draft);
+        const validation = validateEditProposal(proposal.edits, noteContent, allowFm);
+
+        if (!validation.validEdits.length) {
+          const reason = validation.rejectionReasons[0] || "All proposed edits could not be applied.";
+          this.chatMessages.push({ role: "assistant", text: `${proposal.summary}\n\n⚠️ ${reason}` });
+        } else {
+          const editProposal: ChatMessageEditProposal = {
+            summary: proposal.summary,
+            edits: validation.validEdits.map(e => ({ ...e, status: "pending" as const })),
+            status: "pending",
+          };
+          this.chatMessages.push({ role: "assistant", text: proposal.summary, editProposal });
+
+          // Dispatch to CM6 edit decorations
+          this._dispatchEditDecorationsToEditor(validation.validEdits, noteContent);
+        }
+      }
+
+      this._notifyIncomingAssistantReply("assistant");
+    } catch (e) {
+      const errMsg = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
+      logAssistantRequestError("edit", e, errMsg);
+      this.chatError = errMsg;
+    } finally {
+      this.isSendingChat = false;
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
+    }
+  }
+
+  private _dispatchEditDecorationsToEditor(edits: Array<{ original: string; replacement: string }>, noteContent: string): void {
+    const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view) {
+      new Notice(this._tx("ui.studyAssistant.edit.switchToEdit", "Switch to editing mode to review changes in the document."));
+      return;
+    }
+
+    // Reading mode uses static HTML, not CM6 — auto-switch to the user's
+    // preferred editing mode (source or live preview) before dispatching.
+    if (view.getMode() === "preview") {
+      const leaf = view.leaf;
+      if (leaf) {
+        const file = this.getActiveMarkdownFile();
+        void leaf.setViewState(
+          { type: "markdown", state: { file: file?.path, mode: "source" }, active: true },
+          { focus: false },
+        );
+      }
+      // Delay dispatch to let CM6 editor initialise after mode switch
+      setTimeout(() => this._dispatchEditDecorationsToEditorInner(edits), 200);
+      return;
+    }
+
+    this._dispatchEditDecorationsToEditorInner(edits);
+  }
+
+  private _dispatchEditDecorationsToEditorInner(edits: Array<{ original: string; replacement: string }>): void {
+    const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view?.editor) return;
+    const cmEditor = (view.editor as unknown as { cm?: CodeMirrorDispatchTarget }).cm;
+    if (!cmEditor?.dispatch || !cmEditor.state) return;
+
+    const editorContent = cmEditor.state.doc?.toString?.() ?? "";
+    const pendingEdits: Array<{ from: number; to: number; original: string; replacement: string }> = [];
+
+    for (const edit of edits) {
+      const idx = editorContent.indexOf(edit.original);
+      if (idx < 0) continue;
+      pendingEdits.push({
+        from: idx,
+        to: idx + edit.original.length,
+        original: edit.original,
+        replacement: edit.replacement,
+      });
+    }
+
+    if (!pendingEdits.length) return;
+
+    // Dispatch the edit proposals via the CM6 state effect
+    cmEditor.dispatch({ effects: setEditProposals.of(pendingEdits) });
+
+    // Scroll to the first proposed edit so the user sees it immediately
+    const firstFrom = pendingEdits[0].from;
+    const line = view.editor.offsetToPos(firstFrom).line;
+    view.editor.setCursor({ line, ch: 0 });
+    view.editor.scrollIntoView({ from: { line, ch: 0 }, to: { line, ch: 0 } }, true);
+  }
+
+  private async _applyAllPendingEdits(editProposal: ChatMessageEditProposal): Promise<void> {
+    const file = this.getActiveMarkdownFile();
+    if (!file) return;
+
+    // Read current file content directly from vault for reliable apply
+    let content = await this.plugin.app.vault.read(file);
+    const pendingEdits = editProposal.edits.filter(e => e.status === "pending");
+
+    // Apply each edit by string replacement in the file content
+    for (const edit of pendingEdits) {
+      const idx = content.indexOf(edit.original);
+      if (idx >= 0) {
+        content = content.slice(0, idx) + edit.replacement + content.slice(idx + edit.original.length);
+        edit.status = "accepted";
+      }
+    }
+
+    // Write back to vault
+    if (pendingEdits.some(e => e.status === "accepted")) {
+      await this.plugin.app.vault.modify(file, content);
+    }
+
+    // Update proposal status
+    const allResolved = editProposal.edits.every(e => e.status !== "pending");
+    if (allResolved) {
+      editProposal.status = editProposal.edits.some(e => e.status === "accepted") ? "accepted" : "rejected";
+    } else {
+      editProposal.status = "partial";
+    }
+
+    // Clear CM6 decorations
+    this._clearEditDecorations();
+    this._scheduleSave();
+    this.render();
+  }
+
+  private _rejectAllPendingEdits(editProposal: ChatMessageEditProposal): void {
+    for (const edit of editProposal.edits) {
+      if (edit.status === "pending") edit.status = "rejected";
+    }
+    editProposal.status = "rejected";
+
+    this._clearEditDecorations();
+    this._scheduleSave();
+    this.render();
+  }
+
+  private _expireStaleEditProposals(): void {
+    let changed = false;
+    for (const msg of this.chatMessages) {
+      if (msg.editProposal && msg.editProposal.status === "pending") {
+        for (const edit of msg.editProposal.edits) {
+          if (edit.status === "pending") edit.status = "rejected";
+        }
+        msg.editProposal.status = "expired";
+        changed = true;
+      }
+    }
+    if (changed) {
+      this._clearEditDecorations();
+    }
+  }
+
+  private _clearEditDecorations(): void {
+    const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view?.editor) return;
+    const cmEditor = (view.editor as unknown as { cm?: CodeMirrorDispatchTarget }).cm;
+    if (!cmEditor?.dispatch) return;
+
+    cmEditor.dispatch({ effects: clearEditProposals.of(null) });
+  }
+
+  private async _sendReviewMessageInAssistantThread(
+    userMessage: string,
+    depthOverride?: StudyAssistantReviewDepth,
+    options: { skipUserMessageAppend?: boolean } = {},
+  ): Promise<void> {
+    if (this._isAssistantBusy()) return;
+    const draft = String(userMessage || "").trim();
+    if (!draft) return;
+
+    const file = this.getActiveMarkdownFile();
+    if (!file) {
+      this.chatError = this._tx("ui.studyAssistant.chat.noNote", "Open a markdown note to chat with Companion.");
+      this.render();
+      return;
+    }
+
+    const originPath = file.path;
+
     if (depthOverride) this.reviewDepth = depthOverride;
 
-    this.chatMessages.push({ role: "user", text: draft });
+    if (!options.skipUserMessageAppend) {
+      this.chatMessages.push({ role: "user", text: draft });
+    }
     const threadReviewAttachedUrls = this._collectAttachedFileDataUrls();
     this._clearAttachments();
     this.isReviewingNote = true;
@@ -2702,6 +3085,7 @@ export class SproutAssistantPopup {
           customInstructions: settings.prompts.assistant,
           reviewDepth: depthOverride ?? this.reviewDepth,
           conversationId,
+          conversationHistory: this.chatMessages,
         },
       });
 
@@ -2710,6 +3094,13 @@ export class SproutAssistantPopup {
         "No response returned.",
       );
       setRemoteConversationForMode(this.remoteConversationsByMode, "review", result.conversationId, this.plugin.settings.studyAssistant);
+
+      // File-switch guard: route response to originating note if user switched away
+      if (this.activeFile?.path !== originPath) {
+        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: reply });
+        return;
+      }
+
       this.chatMessages.push({ role: "assistant", text: reply });
       this._notifyIncomingAssistantReply("assistant");
     } catch (e) {
@@ -2718,8 +3109,10 @@ export class SproutAssistantPopup {
       this.chatError = userMessageText;
     } finally {
       this.isReviewingNote = false;
-      this._scheduleSave();
-      this.render();
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
     }
   }
 
@@ -2735,6 +3128,8 @@ export class SproutAssistantPopup {
       this.render();
       return;
     }
+
+    const originPath = file.path;
 
     this.isSendingChat = true;
     this.chatError = "";
@@ -2788,16 +3183,24 @@ export class SproutAssistantPopup {
         attachedFileDataUrls: allAttachmentUrls,
       });
 
+      // File-switch guard: if user moved to another note, persist reply to originating file
+      const fileChanged = this.activeFile?.path !== originPath;
+
       if (!questions.length) {
-        this.chatMessages.push({
+        const noQuestionsMsg: ChatMessage = {
           role: "assistant",
           text: this._tx(
             "ui.studyAssistant.test.noQuestions",
             "I couldn't generate questions from this note. Try a note with more educational content.",
           ),
-        });
-        this._scheduleSave();
-        this.render();
+        };
+        if (fileChanged) {
+          await this._appendResponseToPersistedChat(file, "messages", noQuestionsMsg);
+        } else {
+          this.chatMessages.push(noQuestionsMsg);
+          this._scheduleSave();
+          this.render();
+        }
         return;
       }
 
@@ -2815,26 +3218,35 @@ export class SproutAssistantPopup {
       await testsDb.close();
 
       if (!testId) {
-        this.chatError = this._tx("ui.studyAssistant.test.saveError", "Could not save the test.");
-        this.render();
+        if (!fileChanged) {
+          this.chatError = this._tx("ui.studyAssistant.test.saveError", "Could not save the test.");
+          this.render();
+        }
         return;
       }
 
       const replyText = this._testGeneratedText(displayName);
-      this.chatMessages.push({
+      const testMsg: ChatMessage = {
         role: "assistant",
         text: replyText,
         savedTestId: testId,
-      });
-      this._notifyIncomingAssistantReply("assistant");
+      };
+      if (fileChanged) {
+        await this._appendResponseToPersistedChat(file, "messages", testMsg);
+      } else {
+        this.chatMessages.push(testMsg);
+        this._notifyIncomingAssistantReply("assistant");
+      }
     } catch (e) {
       const errMsg = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("test-generation", e, errMsg);
       this.chatError = errMsg;
     } finally {
       this.isSendingChat = false;
-      this._scheduleSave();
-      this.render();
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
     }
   }
 
@@ -2861,6 +3273,8 @@ export class SproutAssistantPopup {
       this.render();
       return;
     }
+
+    const originPath = file.path;
 
     if (depthOverride) this.reviewDepth = depthOverride;
 
@@ -2913,6 +3327,7 @@ export class SproutAssistantPopup {
           customInstructions: settings.prompts.assistant,
           reviewDepth: depthOverride ?? this.reviewDepth,
           conversationId,
+          conversationHistory: this.reviewMessages,
         },
       });
 
@@ -2921,6 +3336,13 @@ export class SproutAssistantPopup {
         "No response returned.",
       );
       setRemoteConversationForMode(this.remoteConversationsByMode, "review", result.conversationId, this.plugin.settings.studyAssistant);
+
+      // File-switch guard: route response to originating note if user switched away
+      if (this.activeFile?.path !== originPath) {
+        await this._appendResponseToPersistedChat(file, "reviewMessages", { role: "assistant", text: reply });
+        return;
+      }
+
       this.reviewMessages.push({ role: "assistant", text: reply });
       this._notifyIncomingAssistantReply("review");
     } catch (e) {
@@ -2929,8 +3351,10 @@ export class SproutAssistantPopup {
       this.reviewError = userMessage;
     } finally {
       this.isReviewingNote = false;
-      this._scheduleSave();
-      this.render();
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
     }
   }
 
@@ -3434,6 +3858,8 @@ export class SproutAssistantPopup {
       return;
     }
 
+    const originPath = file.path;
+
     this.isGenerating = true;
     this.chatError = "";
     this.generatorError = "";
@@ -3521,9 +3947,12 @@ export class SproutAssistantPopup {
           "ui.studyAssistant.generator.retryingFormat",
           "AI returned too many formatting errors, retrying with stricter card formatting. This may take a little longer.",
         );
-        this.chatMessages.push({ role: "assistant", text: retryStatus });
-        this._scheduleSave();
-        this.render();
+        // Only push to live array if still on the same note
+        if (this.activeFile?.path === originPath) {
+          this.chatMessages.push({ role: "assistant", text: retryStatus });
+          this._scheduleSave();
+          this.render();
+        }
 
         const reasonLines = rejectedReasons
           .slice(0, 5)
@@ -3559,6 +3988,13 @@ export class SproutAssistantPopup {
 
       const rejectedCount = rejectedReasons.length;
       const assistantJson = this._formatGeneratedSuggestionsAsJsonMessage(generatedSuggestions);
+
+      // File-switch guard: if user moved to another note, persist reply to originating file
+      if (this.activeFile?.path !== originPath) {
+        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: assistantJson });
+        return;
+      }
+
       this.chatMessages.push({ role: "assistant", text: assistantJson });
       this._notifyIncomingAssistantReply("assistant");
       const assistantMessageIndex = this.chatMessages.length - 1;
@@ -3597,8 +4033,10 @@ export class SproutAssistantPopup {
       this.chatError = userMessageText;
     } finally {
       this.isGenerating = false;
-      this._scheduleSave();
-      this.render();
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
     }
   }
 
@@ -4001,11 +4439,14 @@ export class SproutAssistantPopup {
 
   private _schedulePopupHeightSync(): void {
     if (!this.popupEl || this.popupEl.hasClass("is-hidden")) return;
+    // Skip auto-sizing when the user has manually resized.
+    if (this._userResizedHeight != null) return;
     if (this._popupHeightFrame != null) cancelAnimationFrame(this._popupHeightFrame);
 
     this._popupHeightFrame = requestAnimationFrame(() => {
       this._popupHeightFrame = null;
       if (!this.popupEl || this.popupEl.hasClass("is-hidden")) return;
+      if (this._userResizedHeight != null) return;
 
       const popup = this.popupEl;
       const viewportCap = Math.min(700, Math.max(360, Math.floor(window.innerHeight * 0.6)));
@@ -4019,6 +4460,129 @@ export class SproutAssistantPopup {
       const targetHeight = Math.min(Math.max(this._maxObservedPopupHeight, minInitialAssistantHeight), viewportCap);
       if (targetHeight > 0) setCssProps(popup, "height", `${targetHeight}px`);
     });
+  }
+
+  private _clearUserResize(): void {
+    this._userResizedWidth = null;
+    this._userResizedHeight = null;
+    this._resizeCleanup?.();
+    this._resizeCleanup = null;
+    if (this.popupEl) {
+      this.popupEl.style.removeProperty("width");
+      this.popupEl.style.removeProperty("height");
+    }
+  }
+
+  /**
+   * Attach invisible drag-handles on the top edge, left edge, and top-left
+   * corner of the popup so the user can resize it by dragging.
+    * Horizontal and vertical edge insets are separate so top drag can sit
+    * closer to the container edge without changing left-edge behavior.
+   */
+  private _initResizeHandles(root: HTMLElement): void {
+    if (this.isEmbeddedMode) return;
+
+    // Clean up any previous listeners.
+    this._resizeCleanup?.();
+    this._resizeCleanup = null;
+
+    const handleTop = root.createDiv({ cls: "learnkit-assistant-popup-resize-handle is-top" });
+    const handleLeft = root.createDiv({ cls: "learnkit-assistant-popup-resize-handle is-left" });
+    const handleCorner = root.createDiv({ cls: "learnkit-assistant-popup-resize-handle is-top-left" });
+
+    const MIN_WIDTH = 320;
+    const MIN_HEIGHT = 300;
+    const EDGE_INSET_X_REM = 5;
+    const EDGE_INSET_Y_REM = 2;
+
+    const getHostRect = (): DOMRect | null => {
+      const host = this._getHostElement();
+      return host?.getBoundingClientRect() ?? null;
+    };
+
+    const startDrag = (
+      e: PointerEvent,
+      axis: "height" | "width" | "both",
+    ) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const popup = this.popupEl;
+      if (!popup) return;
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startRect = popup.getBoundingClientRect();
+      const startWidth = startRect.width;
+      const startHeight = startRect.height;
+
+      const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const insetXPx = EDGE_INSET_X_REM * remPx;
+      const insetYPx = EDGE_INSET_Y_REM * remPx;
+
+      const onMove = (ev: PointerEvent) => {
+        const hostRect = getHostRect();
+        if (!hostRect) return;
+
+        if (axis === "width" || axis === "both") {
+          // Dragging left edge leftward → wider
+          const dx = startX - ev.clientX;
+          const maxW = startRect.right - hostRect.left - insetXPx;
+          const w = Math.max(MIN_WIDTH, Math.min(startWidth + dx, maxW));
+          popup.style.width = `${w}px`;
+          this._userResizedWidth = w;
+        }
+
+        if (axis === "height" || axis === "both") {
+          // Dragging top edge upward → taller
+          const dy = startY - ev.clientY;
+          const maxH = startRect.bottom - hostRect.top - insetYPx;
+          const h = Math.max(MIN_HEIGHT, Math.min(startHeight + dy, maxH));
+          popup.style.height = `${h}px`;
+          this._userResizedHeight = h;
+        }
+      };
+
+      const onUp = () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        document.body.style.removeProperty("cursor");
+        document.body.style.removeProperty("user-select");
+        this._persistUserResize();
+      };
+
+      document.body.style.cursor =
+        axis === "both" ? "nwse-resize" : axis === "width" ? "ew-resize" : "ns-resize";
+      setCssProps(document.body, "user-select", "none");
+
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    };
+
+    const onTopDown = (e: PointerEvent) => startDrag(e, "height");
+    const onLeftDown = (e: PointerEvent) => startDrag(e, "width");
+    const onCornerDown = (e: PointerEvent) => startDrag(e, "both");
+
+    handleTop.addEventListener("pointerdown", onTopDown);
+    handleLeft.addEventListener("pointerdown", onLeftDown);
+    handleCorner.addEventListener("pointerdown", onCornerDown);
+
+    // Re-apply persisted user sizes.
+    if (this._userResizedWidth != null) {
+      root.style.width = `${this._userResizedWidth}px`;
+    }
+    if (this._userResizedHeight != null) {
+      root.style.height = `${this._userResizedHeight}px`;
+    }
+
+    this._resizeCleanup = () => {
+      handleTop.removeEventListener("pointerdown", onTopDown);
+      handleLeft.removeEventListener("pointerdown", onLeftDown);
+      handleCorner.removeEventListener("pointerdown", onCornerDown);
+      handleTop.remove();
+      handleLeft.remove();
+      handleCorner.remove();
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -4379,6 +4943,9 @@ export class SproutAssistantPopup {
     const content = root.createDiv({ cls: "learnkit-assistant-popup-content learnkit-assistant-popup-content" });
     this.renderAssistantMode(content, preservedAssistantScrollTop);
 
+    // ---- Resize handles (top / left / corner) ----
+    this._initResizeHandles(root);
+
     this._schedulePopupHeightSync();
   }
 
@@ -4391,31 +4958,31 @@ export class SproutAssistantPopup {
     const userInitial = this.getUserAvatarInitial();
 
     const messages = this.chatMessages;
-    // Keep the intro message visible for the full thread, not only before the first reply.
-    const welcomeRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
-    this.createAssistantAvatar(welcomeRow);
-    const welcomeBubble = welcomeRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
-    this.renderMarkdownMessage(
-      welcomeBubble,
-      [
-        this._tx(
-          "ui.studyAssistant.chat.welcome",
-          "Hi, I'm Companion. You can think of me as your AI learning assistant. I can answer questions about your Obsidian notes, provide feedback, and generate LearnKit flashcards.",
-        ),
-        "",
-        this._tx(
-          "ui.studyAssistant.chat.welcome.attachments",
-          "You can also attach files like PDFs, images, PowerPoints or Word documents to give me more context for your requests.",
-        ),
-        "",
-        this._tx(
-          "ui.studyAssistant.chat.welcome.currentNote",
-          "It looks like you're viewing Home. Ask me anything, or choose an action below to get started.",
-        ),
-      ].join("\n"),
-    );
-
+    // Only show welcome message + actions when conversation is empty
     if (!messages.length) {
+      const welcomeRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
+      this.createAssistantAvatar(welcomeRow);
+      const welcomeBubble = welcomeRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
+      this.renderMarkdownMessage(
+        welcomeBubble,
+        [
+          this._tx(
+            "ui.studyAssistant.chat.welcome",
+            "Hi, I'm Companion. You can think of me as your AI learning assistant. I can answer questions about your Obsidian notes, provide feedback, and generate LearnKit flashcards.",
+          ),
+          "",
+          this._tx(
+            "ui.studyAssistant.chat.welcome.attachments",
+            "You can also attach files like PDFs, images, PowerPoints or Word documents to give me more context for your requests.",
+          ),
+          "",
+          this._tx(
+            "ui.studyAssistant.chat.welcome.currentNote",
+            "It looks like you're viewing Home. Ask me anything, or choose an action below to get started.",
+          ),
+        ].join("\n"),
+      );
+
       this._renderAssistantWelcomeActions(chatWrap);
     }
 
@@ -4531,6 +5098,65 @@ export class SproutAssistantPopup {
         openTestBtn.type = "button";
         openTestBtn.addEventListener("click", () => {
           void this._openSavedTest(msg.savedTestId!);
+        });
+      }
+
+      // Render edit proposal Accept/Reject buttons
+      if (msg.role === "assistant" && msg.editProposal) {
+        const ep = msg.editProposal;
+
+        if (ep.status === "pending") {
+          const editActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-edit-actions" });
+          const acceptBtn = editActions.createEl("button", {
+            cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-accept-btn",
+            text: this._tx("ui.studyAssistant.edit.acceptAll", "Accept all changes"),
+          });
+          acceptBtn.type = "button";
+          acceptBtn.addEventListener("click", () => {
+            void this._applyAllPendingEdits(ep);
+          });
+
+          const rejectBtn = editActions.createEl("button", {
+            cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-reject-btn",
+            text: this._tx("ui.studyAssistant.edit.reject", "Reject changes"),
+          });
+          rejectBtn.type = "button";
+          rejectBtn.addEventListener("click", () => {
+            this._rejectAllPendingEdits(ep);
+          });
+        } else if (ep.status === "accepted" || ep.status === "partial") {
+          const editActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-edit-actions" });
+          const doneBtn = editActions.createEl("button", {
+            cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-accept-btn is-clicked",
+            text: this._tx("ui.studyAssistant.edit.acceptAll", "Accept all changes"),
+          });
+          doneBtn.type = "button";
+          doneBtn.disabled = true;
+        } else if (ep.status === "rejected") {
+          const editActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-edit-actions" });
+          const doneBtn = editActions.createEl("button", {
+            cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-reject-btn is-clicked",
+            text: this._tx("ui.studyAssistant.edit.reject", "Reject changes"),
+          });
+          doneBtn.type = "button";
+          doneBtn.disabled = true;
+        }
+        // expired: show nothing – buttons disappear when user types a new message
+      }
+
+      // Render "Implement these changes" follow-up after review replies
+      if (msg.role === "assistant" && !msg.editProposal && !msg.savedTestId && this._isReviewReply(i)) {
+        const followUpActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-message-actions" });
+        const implBtn = followUpActions.createEl("button", {
+          cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
+          text: this._tx("ui.studyAssistant.edit.implementChanges", "Implement these changes"),
+        });
+        implBtn.type = "button";
+        implBtn.disabled = this._isAssistantBusy();
+        implBtn.addEventListener("click", () => {
+          void this._sendEditRequest(
+            this._tx("ui.studyAssistant.edit.implementPrompt", "Implement the changes you suggested in your review."),
+          );
         });
       }
 

@@ -20,7 +20,9 @@ function writeError(error) {
 // Obsidian provides the "obsidian" module at runtime.
 // Mark it external so esbuild doesn't try to bundle it.
 // Also mark CSS as external so it doesn't generate main.css
-const external = ["obsidian", "*.css"];
+// @codemirror/* must also be external — Obsidian bundles them and
+// duplicating them breaks instanceof checks in CM6.
+const external = ["obsidian", "*.css", "@codemirror/state", "@codemirror/view"];
 
 async function build() {
   const ctx = await esbuild.context({
