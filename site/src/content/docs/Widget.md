@@ -55,11 +55,11 @@ Practice mode is useful when:
 
 ## Folder Notes As Decks
 
-If your vault uses folder notes, the widget becomes more useful when **Treat folder notes as decks** is on.
+If your vault uses folder notes (where a note shares the same name as its parent folder, e.g. `Biology/Biology.md`), enabling **Treat folder notes as decks** in Settings expands the widget's scope. When viewing a folder note with this setting on, the widget includes flashcards from all child notes and subfolders, not just the note itself.
 
-In that setup, opening the folder note lets the widget treat that folder as one study scope.
+This is a niche setting primarily useful if you use a folder-note plugin and want quick parent-deck reviews from the widget.
 
-See [Decks & Organisation](../Decks-&-Organisation) for more on how folders and groups structure your flashcards.
+See [Decks & Organisation](../Decks-&-Organisation) for more on how notes and folders structure your decks.
 
 ## When To Use The Widget
 

@@ -3,54 +3,51 @@ title: "Decks & Organisation"
 ---
 
 
-LearnKit uses your vault's folder structure and a group system to organise flashcards into decks.
+LearnKit organises flashcards into decks using your vault's folder structure. Each note is its own deck, and folders act as parent decks that combine the flashcards from all notes inside them.
 
-You do not need to create separate deck files or manage a deck database. Your folders and groups are your decks.
+You do not need to create separate deck files or manage a deck database. Your existing notes and folders are your decks.
 
 ## What Is a Deck?
 
-A deck is any collection of flashcards scoped by location or group.
+A deck is a collection of flashcards defined entirely by your vault's file and folder hierarchy.
 
-In LearnKit, decks are derived from:
+- **A note is a deck.** Every note containing flashcards is the smallest deck unit. For example, `Vocabulary.md` is the Vocabulary deck.
+- **A folder is a parent deck.** A folder combines the flashcards from all of its child notes and subfolders into one larger deck. For example, a `Biology/` folder containing `Cell Division.md` and `Genetics.md` forms the Biology deck, which includes all flashcards from both notes.
 
-- **Folders**: each folder in your vault is a natural deck boundary
-- **Folder notes**: when enabled, a folder note acts as the deck entry point for everything in that folder
-- **Groups**: tags you assign to individual flashcards to create cross-folder collections
+Decks are derived purely from your folder structure. There is no other mechanism for creating decks.
 
-## Folder-Based Organisation
+## Deck Hierarchy
 
-The simplest way to organise flashcards is by folder.
+Your vault's folder tree directly maps to a deck hierarchy:
 
 ```
 Vault/
-├── Biology/
-│   ├── Cell Division.md       ← cards here belong to the "Biology" deck
-│   └── Genetics.md
-├── History/
-│   ├── Ancient Rome.md        ← cards here belong to the "History" deck
-│   └── Medieval Europe.md
+├── Biology/                        ← "Biology" deck (all cards from both notes below)
+│   ├── Cell Division.md            ← "Cell Division" deck (its own cards only)
+│   └── Genetics.md                 ← "Genetics" deck (its own cards only)
+├── History/                        ← "History" deck (all cards from both notes below)
+│   ├── Ancient Rome.md             ← "Ancient Rome" deck
+│   └── Medieval Europe.md          ← "Medieval Europe" deck
 └── Languages/
-    └── Spanish/
-        └── Vocabulary.md      ← cards here belong to "Languages/Spanish"
+    └── Spanish/                    ← "Languages/Spanish" deck
+        └── Vocabulary.md           ← "Vocabulary" deck
 ```
 
-Every flashcard inherits its deck from the folder it lives in. Subfolders create a natural hierarchy.
+- Opening `Cell Division.md` scopes you to just its flashcards.
+- Scoping to the `Biology/` folder gives you all flashcards from both `Cell Division.md` and `Genetics.md` together.
+- Nesting folders deeper creates deeper deck hierarchies automatically.
 
-## Folder Notes as Decks
+## Folder Notes and Widget Scoping
 
-If your vault uses folder notes (a note with the same name as its parent folder), you can enable **Treat folder notes as decks** in [Settings](../Settings).
+The [Study Widget](../Widget) normally shows flashcards from the note you are currently viewing. If you use folder notes (where a note shares the same name as its parent folder, e.g. `Biology/Biology.md`), there is an optional setting to expand the widget's scope.
 
-When this is on:
+Enable **Treat folder notes as decks** in [Settings](../Settings) to make the widget include flashcards from all child notes and subfolders when you are viewing a folder note.
 
-- opening a folder note scopes the [Study Widget](../Widget) to that entire folder
-- subfolder cards are included in the scope
-- the folder note becomes the deck's entry point for quick review
-
-This is useful when you have a folder like `Biology/Biology.md` and want to study all Biology cards from one place.
+This is a niche setting primarily useful if you use a folder-note plugin and want the widget to act as a parent-deck review surface without opening the [Flashcard Library](../Flashcard-Library).
 
 ## Groups
 
-Groups let you organise flashcards across folder boundaries.
+Groups are a separate organisational layer on top of the folder-based deck system. They let you tag and filter flashcards across folder boundaries, but they do not create decks.
 
 A group is a label you assign to a flashcard using the `G` field:
 
@@ -68,13 +65,11 @@ Groups support a path-like hierarchy using `/` as a separator:
 G | Science/Biology/Genetics |
 ```
 
-This creates a tree:
+This creates a tree you can filter by in the [Flashcard Library](../Flashcard-Library):
 
 - Science
   - Biology
     - Genetics
-
-You can filter and scope by any level of the hierarchy in the [Flashcard Library](../Flashcard-Library).
 
 ### Multiple Groups
 
@@ -88,25 +83,23 @@ G | Biology/Genetics, Exam Prep/Final |
 
 | Use case | Recommended approach |
 |---|---|
-| Cards naturally live in one topic | Folders |
-| Cards span multiple topics | Groups |
-| You want deck-scoped widget review | Folder notes |
+| Cards naturally live in one topic | Folders (each note is a deck) |
+| Cards span multiple topics | Groups (cross-folder tagging) |
 | You want cross-folder collections | Groups |
-| You want both | Combine folders with groups |
+| You want widget review of a whole folder | Folder notes setting |
 
 ## Scoping and Filtering
 
 Once your flashcards are organised, you can scope study and review by:
 
-- **Folder scope**: the [Study Widget](../Widget) uses the current note's folder
+- **Note scope**: the [Study Widget](../Widget) uses the current note's flashcards
+- **Folder scope**: the [Flashcard Library](../Flashcard-Library) and [Study Sessions](../Study-Sessions) can scope to a folder, combining all child note-decks
 - **Group filters**: the [Flashcard Library](../Flashcard-Library) lets you filter by group hierarchy
-- **Study Sessions**: [Study Sessions](../Study-Sessions) can be scoped to specific folders or groups
 
 ## Tips
 
 - Keep your group hierarchy shallow (2–3 levels) for easy navigation
 - Use folder structure for primary organisation and groups for cross-cutting concerns like "Exam Prep" or "Weak Topics"
-- Sync after adding or changing groups so LearnKit detects the updates
 
 ## Related
 
@@ -114,7 +107,6 @@ Once your flashcards are organised, you can scope study and review by:
 - [Flashcard Library](../Flashcard-Library)
 - [Study Widget](../Widget)
 - [Study Sessions](../Study-Sessions)
-- [Syncing](../Syncing)
 
 ---
 

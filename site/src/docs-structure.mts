@@ -50,6 +50,7 @@ export const docsSidebarTree: DocsGroup[] = [
     items: [
       { page: "Flashcards", text: "Overview" },
       { page: "Creating-Flashcards" },
+      { page: "Decks-&-Organisation" },
       { page: "Editing-Flashcards" },
       { page: "Flashcard-Formatting" },
       { page: "Basic-&-Reversed-Flashcards" },
@@ -73,7 +74,7 @@ export const docsSidebarTree: DocsGroup[] = [
       { page: "Scheduling" },
       { page: "Burying-Flashcards" },
       { page: "Suspending-Flashcards" },
-      { page: "Widget", text: "Overview" },
+      { page: "Widget", text: "Study Widget" },
     ],
   },
   {
