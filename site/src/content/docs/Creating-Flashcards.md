@@ -41,6 +41,8 @@ By default, fields use the `|` delimiter unless you changed it in [Custom Delimi
 | `I` | Extra info | No |
 | `G` | Groups | No |
 
+See [Decks & Organisation](../Decks-&-Organisation) for how to use groups effectively.
+
 ## Minimal Examples
 
 **Basic**

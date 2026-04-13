@@ -24,6 +24,7 @@ import {
 } from "@codemirror/view";
 import { StateField, StateEffect, type Extension, type Range } from "@codemirror/state";
 import { renderMarkdownPreviewInElement, setCssProps } from "../../../platform/core/ui";
+import { t } from "../../../platform/translations/translator";
 
 // ── Types ──
 
@@ -336,8 +337,8 @@ class EditReplacementWidget extends WidgetType {
     acceptBtn.className = "learnkit-edit-proposal-action-btn is-accept";
     acceptBtn.type = "button";
     acceptBtn.textContent = "✓";
-    acceptBtn.title = "Accept this change";
-    acceptBtn.setAttribute("aria-label", "Accept this change");
+    acceptBtn.title = t("en", "ui.editProposal.accept", "Accept this change");
+    acceptBtn.setAttribute("aria-label", t("en", "ui.editProposal.accept", "Accept this change"));
     acceptBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -350,8 +351,8 @@ class EditReplacementWidget extends WidgetType {
     rejectBtn.className = "learnkit-edit-proposal-action-btn is-reject";
     rejectBtn.type = "button";
     rejectBtn.textContent = "✗";
-    rejectBtn.title = "Discard this change";
-    rejectBtn.setAttribute("aria-label", "Discard this change");
+    rejectBtn.title = t("en", "ui.editProposal.discard", "Discard this change");
+    rejectBtn.setAttribute("aria-label", t("en", "ui.editProposal.discard", "Discard this change"));
     rejectBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -420,8 +421,8 @@ class EditBlockCompareWidget extends WidgetType {
     acceptBtn.className = "learnkit-edit-proposal-action-btn is-accept";
     acceptBtn.type = "button";
     acceptBtn.textContent = "✓";
-    acceptBtn.title = "Accept this change";
-    acceptBtn.setAttribute("aria-label", "Accept this change");
+    acceptBtn.title = t("en", "ui.editProposal.accept", "Accept this change");
+    acceptBtn.setAttribute("aria-label", t("en", "ui.editProposal.accept", "Accept this change"));
     acceptBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -436,8 +437,8 @@ class EditBlockCompareWidget extends WidgetType {
     rejectBtn.className = "learnkit-edit-proposal-action-btn is-reject";
     rejectBtn.type = "button";
     rejectBtn.textContent = "✗";
-    rejectBtn.title = "Discard this change";
-    rejectBtn.setAttribute("aria-label", "Discard this change");
+    rejectBtn.title = t("en", "ui.editProposal.discard", "Discard this change");
+    rejectBtn.setAttribute("aria-label", t("en", "ui.editProposal.discard", "Discard this change"));
     rejectBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();

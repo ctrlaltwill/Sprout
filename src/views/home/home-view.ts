@@ -34,6 +34,48 @@ import {
   getDeckLeafName,
 } from "./home-helpers";
 
+/* ── Greeting picker ─────────────────────────────────────── */
+
+interface GreetingDef {
+  key: string | null;
+  fallback: string;
+  suffix: string;
+}
+
+const TIME_GREETINGS: readonly [GreetingDef, GreetingDef, GreetingDef] = [
+  { key: "ui.home.greeting.goodMorningComma", fallback: "Good morning,", suffix: "!" },
+  { key: "ui.home.greeting.goodAfternoonComma", fallback: "Good afternoon,", suffix: "!" },
+  { key: "ui.home.greeting.goodEveningComma", fallback: "Good evening,", suffix: "!" },
+];
+
+const READY_TO_LEARN: GreetingDef = {
+  key: "ui.home.greeting.readyToLearnComma", fallback: "Ready to learn,", suffix: "?",
+};
+
+const OTHER_GREETINGS: readonly GreetingDef[] = [
+  { key: "ui.home.greeting.welcomeBackComma", fallback: "Welcome back,", suffix: "!" },
+  { key: "ui.home.greeting.timeToStudyComma", fallback: "Time to study,", suffix: "!" },
+  { key: "ui.home.greeting.letsKeepGoingComma", fallback: "Let's keep going,", suffix: "!" },
+  { key: "ui.home.greeting.stayCuriousComma", fallback: "Stay curious,", suffix: "!" },
+  { key: null, fallback: "Hej,", suffix: "!" },
+  { key: null, fallback: "Kia ora,", suffix: "!" },
+  { key: null, fallback: "Salut,", suffix: "!" },
+  { key: "ui.home.greeting.backAtItComma", fallback: "Back at it,", suffix: "!" },
+  { key: "ui.home.greeting.knowledgeAwaitsComma", fallback: "Knowledge awaits,", suffix: "!" },
+];
+
+function pickHomeGreeting(): GreetingDef {
+  const roll = Math.random();
+  if (roll < 1 / 3) return READY_TO_LEARN;
+  if (roll < 2 / 3) {
+    const hour = new Date().getHours();
+    if (hour < 12) return TIME_GREETINGS[0];
+    if (hour < 17) return TIME_GREETINGS[1];
+    return TIME_GREETINGS[2];
+  }
+  return OTHER_GREETINGS[Math.floor(Math.random() * OTHER_GREETINGS.length)];
+}
+
 /**
  * The main Home / dashboard view for the Sprout plugin.
  *
@@ -58,6 +100,7 @@ export class SproutHomeView extends ItemView {
   private _typingTimer: number | null = null;
   private _nameObserver: ResizeObserver | null = null;
   private _themeObserver: MutationObserver | null = null;
+  private _greeting: GreetingDef | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
@@ -77,6 +120,7 @@ export class SproutHomeView extends ItemView {
   }
 
   async onOpen() {
+    this._greeting = pickHomeGreeting();
     this.render();
     // Patch tab header with two spans to avoid sentence-case CSS rule
     const tabTitleEl = (this.leaf as unknown as Record<string, HTMLElement>).tabHeaderInnerTitleEl;
@@ -207,6 +251,7 @@ export class SproutHomeView extends ItemView {
 
     const HOME_AOS_FIRST_DELAY = 100;
     const HOME_AOS_STEP = 100;
+    const HOME_NAME_MAX_LENGTH = 50;
     const applyAos = (_el: HTMLElement, _delay: number = 0) => {
       // Home view uses a strict two-step AOS sequence: title strip then content shell.
       // Keep this helper as a no-op to prevent nested section-level animations.
@@ -285,19 +330,25 @@ export class SproutHomeView extends ItemView {
       void quickStartStudy();
     });
 
-    if (trimmedName) {
-      subtitleRow.createSpan({ text: tx("ui.home.greeting.welcomeBackComma", "Welcome back,") + " " });
+    const greeting = this._greeting ?? pickHomeGreeting();
+    const greetingPrefix = greeting.key
+      ? tx(greeting.key, greeting.fallback)
+      : greeting.fallback;
+
+    {
+      subtitleRow.createSpan({ text: greetingPrefix + " " });
 
       const nameInput = document.createElement("input");
       nameInput.className = "lk-home-name-input min-w-[1ch] shrink-0 grow-0 basis-auto max-w-full border-0 p-0 m-0 shadow-none text-[0.95rem] font-normal leading-[1.3] text-muted-foreground bg-transparent";
       nameInput.type = "text";
-      nameInput.placeholder = tx("ui.home.placeholder.yourName", "Your name");
+      nameInput.maxLength = HOME_NAME_MAX_LENGTH;
+      nameInput.placeholder = tx("ui.home.typing.yourName", "your name");
       nameInput.value = trimmedName;
       subtitleRow.appendChild(nameInput);
 
       const greetingSuffixEl = document.createElement("div");
       greetingSuffixEl.className = "learnkit-greeting-suffix -ml-1 text-[0.95rem] font-normal leading-[1.3] text-muted-foreground";
-      greetingSuffixEl.textContent = tx("ui.home.greeting.punctuation.exclamation", "!");
+      greetingSuffixEl.textContent = greeting.suffix;
       subtitleRow.appendChild(greetingSuffixEl);
 
       const nameSizer = document.createElement("span");
@@ -316,15 +367,64 @@ export class SproutHomeView extends ItemView {
         setCssProps(nameSizer, "--lk-home-font-variant", computed.fontVariant);
         setCssProps(nameSizer, "--lk-home-line-height", computed.lineHeight);
         nameSizer.textContent = value;
-        const measured = Math.ceil(nameSizer.getBoundingClientRect().width);
+        const measured = Math.round(nameSizer.getBoundingClientRect().width);
         const paddingLeft = Number.parseFloat(computed.paddingLeft || "0") || 0;
         const paddingRight = Number.parseFloat(computed.paddingRight || "0") || 0;
         const borderLeft = Number.parseFloat(computed.borderLeftWidth || "0") || 0;
         const borderRight = Number.parseFloat(computed.borderRightWidth || "0") || 0;
         const chromeWidth = paddingLeft + paddingRight + borderLeft + borderRight;
-        const next = Math.max(1, measured + chromeWidth + 2);
+        const next = Math.max(1, Math.round(measured + chromeWidth));
         setCssProps(nameInput, "--lk-home-name-width", `${next}px`);
       };
+
+      const triggerNameLimitShake = () => {
+        nameInput.classList.remove("lk-home-name-input-limit-shake");
+        // Force reflow so the same animation can be replayed on repeated overflow attempts.
+        void nameInput.offsetWidth;
+        nameInput.classList.add("lk-home-name-input-limit-shake");
+      };
+
+      nameInput.addEventListener("beforeinput", (event: InputEvent) => {
+        if (event.isComposing) return;
+        if (!event.inputType.startsWith("insert")) return;
+        const currentValue = nameInput.value;
+        const start = nameInput.selectionStart ?? currentValue.length;
+        const end = nameInput.selectionEnd ?? currentValue.length;
+        const selectedLength = Math.max(0, end - start);
+        const incomingLength = typeof event.data === "string" ? event.data.length : 1;
+        const nextLength = currentValue.length - selectedLength + incomingLength;
+        if (nextLength > HOME_NAME_MAX_LENGTH) {
+          event.preventDefault();
+          triggerNameLimitShake();
+        }
+      });
+
+      nameInput.addEventListener("paste", (event: ClipboardEvent) => {
+        const pasted = event.clipboardData?.getData("text") ?? "";
+        if (!pasted) return;
+        const currentValue = nameInput.value;
+        const start = nameInput.selectionStart ?? currentValue.length;
+        const end = nameInput.selectionEnd ?? currentValue.length;
+        const selectedLength = Math.max(0, end - start);
+        const nextLength = currentValue.length - selectedLength + pasted.length;
+        if (nextLength > HOME_NAME_MAX_LENGTH) {
+          event.preventDefault();
+          const allowed = Math.max(0, HOME_NAME_MAX_LENGTH - (currentValue.length - selectedLength));
+          if (allowed > 0) {
+            const prefix = currentValue.slice(0, start);
+            const suffix = currentValue.slice(end);
+            nameInput.value = `${prefix}${pasted.slice(0, allowed)}${suffix}`;
+            syncNameWidth();
+            const caret = prefix.length + Math.min(allowed, pasted.length);
+            nameInput.setSelectionRange(caret, caret);
+          }
+          triggerNameLimitShake();
+        }
+      });
+
+      nameInput.addEventListener("animationend", () => {
+        nameInput.classList.remove("lk-home-name-input-limit-shake");
+      });
 
       let saveTimer: number | null = null;
       const onNameResize = () => syncNameWidth();
@@ -351,12 +451,9 @@ export class SproutHomeView extends ItemView {
             const next = nameInput.value.trim();
             this.plugin.settings.general.userName = next;
             await this.plugin.saveAll();
-            if (!next) this.render();
           })();
         }, 300);
       });
-    } else {
-      subtitleRow.textContent = tx("ui.home.greeting.welcomeBackSimple", "Welcome back!");
     }
 
     titleFrame.right.appendChild(quickStudyBtn);

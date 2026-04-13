@@ -28,7 +28,7 @@ These settings control what Companion remembers and what context it can send:
 
 | Setting | What it does |
 |---------|--------------|
-| Save chat history | Restores prior Ask, Review, and Generate conversations for each note |
+| Save chat history | Restores prior Ask, Review, Edit, and Generate conversations for each note |
 | Delete chats on provider too | Requests remote deletion when you clear or reset chats, if the provider supports it |
 | Linked notes context limit | Limits how much linked-note text is sent |
 | Text attachment context limit | Limits how much text extracted from attached files is sent |
@@ -37,7 +37,7 @@ The context limits use four presets: Conservative, Standard, Extended, and No li
 
 ## Companion sources
 
-The `Companion sources` section controls what extra material Ask and Review can use from the current note:
+The `Companion sources` section controls what extra material Ask, Review, and Edit can use from the current note:
 
 | Setting | What it does |
 |---------|--------------|
@@ -50,7 +50,7 @@ Attachment-heavy workflows depend on the selected model. Some cheaper or free mo
 
 ## Flashcard generation
 
-The `Flashcard generation` section controls Generate mode:
+The `Flashcard generation` section controls the Generate feature:
 
 | Setting | What it does |
 |---------|--------------|
@@ -64,7 +64,7 @@ Image occlusion only appears when the current model looks vision-capable. Even t
 
 ## Test settings in the same tab
 
-The Companion tab also includes `Test sources` and test-specific `Custom instructions`. Those settings affect AI test generation rather than Ask, Review, or Generate mode.
+The Companion tab also includes `Test sources` and test-specific `Custom instructions`. Those settings affect AI test generation rather than the Ask, Review, Edit, or Generate features.
 
 ## Sensible defaults
 
@@ -75,4 +75,4 @@ The Companion tab also includes `Test sources` and test-specific `Custom instruc
 
 See [Companion Setting Up](../Companion-Setting-Up), [Companion Usage](../Companion-Usage), and [AI Usage Policy](../AI-Usage-Policy).
 
-Last modified: 30/03/2026
+Last modified: 13/04/2026

@@ -3,7 +3,7 @@ title: "Architecture"
 description: "High-level architecture of LearnKit plugin runtime, modules, and data flow."
 ---
 
-This page describes how LearnKit is organized so contributors can quickly locate responsibility boundaries and extension points.
+This page describes how LearnKit is organised so contributors can quickly locate responsibility boundaries and extension points.
 
 ## Runtime Layers
 

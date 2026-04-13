@@ -120,7 +120,7 @@ export const docsSidebarTree: DocsGroup[] = [
   },
   {
     text: "Maintenance",
-    items: [{ page: "Backups" }, { page: "Localization-Debt" }],
+    items: [{ page: "Backups" }],
   },
   {
     text: "Policies",

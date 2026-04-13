@@ -1060,6 +1060,12 @@ export class LearnKitSettingsView extends ItemView {
           const selected = pages.find((p) => p.key === this._activeGuidePage) ?? pages[0];
           const guidePageClass = `sprout-guide-page-${selected.key.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
           body.classList.add(guidePageClass);
+
+          const pageTitle = document.createElement("h1");
+          pageTitle.className = "learnkit-guide-page-title";
+          pageTitle.textContent = selected.label;
+          body.appendChild(pageTitle);
+
           await MarkdownRenderer.render(
             this.app,
             selected.markdown,
@@ -1597,7 +1603,7 @@ export class LearnKitSettingsView extends ItemView {
         githubAnchor.href = "https://github.com/ctrlaltwill";
         githubAnchor.target = "_blank";
         githubAnchor.rel = "noopener nofollow";
-        githubAnchor.textContent = tx("ui.settings.about.link.githubProfile", "View GitHub profile");
+        githubAnchor.textContent = tx("ui.settings.about.link.githubProfile", "Github \u2192");
 
         const linkedinAnchor = document.createElement("a");
         linkedinAnchor.className = "learnkit-about-linkedin";
@@ -1912,7 +1918,6 @@ export class LearnKitSettingsView extends ItemView {
         "Obsidian Sync database storage",
         "Obsidian sync database storage",
         "Data backup",
-        "Analytics coaching",
       ],
       reset: ["Reset", "Danger zone"],
     };

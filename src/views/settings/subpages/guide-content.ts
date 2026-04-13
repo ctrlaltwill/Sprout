@@ -53,6 +53,7 @@ const PREFERRED_GUIDE_FILES = [
   "Coach.md",
   "Tests.md",
   "Creating-Flashcards.md",
+  "Decks-&-Organisation.md",
   "Flag-Codes.md",
   "Flags.md",
   "Basic-&-Reversed-Flashcards.md",
@@ -79,7 +80,6 @@ const PREFERRED_GUIDE_FILES = [
   "Reminders.md",
   "Gatekeeper.md",
   "Keyboard-Shortcuts.md",
-  "Localization-Debt.md",
   "Custom-Delimiters.md",
   "AI-Usage-Policy.md",
   "Backups.md",
@@ -101,7 +101,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
     sections: [
       {
         title: tx("ui.guide.sections.headerNavigation", "Header Navigation"),
-        pageKeys: ["Coach", "Flashcards", "Notes", "Tests"],
+        pageKeys: ["Coach", "FlStashcards", "Notes", "Tests"],
       },
       {
         title: tx("ui.guide.sections.reviewFlow", "Review Flow"),
@@ -112,12 +112,12 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
   },
   {
     key: "cards",
-    label: "Flashcards",
+    label: tx("ui.guide.categories.cards", "Flashcards"),
     icon: "square-stack",
     sections: [
-      { pageKeys: ["Flashcards", "Creating-Flashcards", "Editing-Flashcards", "Flashcard-Formatting"] },
+      { pageKeys: ["Flashcards", "Creating-Flashcards", "Editing-Flashcards", "Flashcard-Formatting", "Decks-&-Organisation"] },
       {
-        title: "Flashcard Types",
+        title: tx("ui.guide.sections.cardTypes", "Flashcard Types"),
         pageKeys: ["Basic-&-Reversed-Flashcards", "Cloze-Flashcards", "Image-Occlusion", "Multiple-Choice-Questions", "Ordered-Questions"],
       },
       { title: tx("ui.guide.sections.flags", "Flags"), pageKeys: ["Flags", "Flag-Codes"] },
@@ -157,7 +157,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
     key: "maintenance",
     label: tx("ui.guide.categories.maintenance", "Maintenance"),
     icon: "database",
-    sections: [{ pageKeys: ["Backups", "Localization-Debt"] }],
+    sections: [{ pageKeys: ["Backups"] }],
   },
   {
     key: "policies",
@@ -185,12 +185,12 @@ const GUIDE_LABEL_MAP: Record<string, string> = {
   Flashcards: "Flashcards",
   Notes: "Notes",
   "Creating-Flashcards": "Creating Flashcards",
+  "Decks-&-Organisation": "Decks & Organisation",
   "Editing-Flashcards": "Editing Flashcards",
   "Flashcard-Formatting": "Flashcard Formatting",
   "Language-Settings": "Language Options",
   "Settings-Explained": "Settings Explained",
   Backups: "Back Up",
-  "Localization-Debt": "Localization Debt",
   "Support-LearnKit": "About LearnKit",
   "Reading-View-Styles": "Reading View Styles",
   "Custom-Reading-Styles": "Custom Reading Styles",
@@ -217,6 +217,7 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   Coach: "target",
   Tests: "clipboard-check",
   "Creating-Flashcards": "plus-circle",
+  "Decks-&-Organisation": "folder-tree",
   "Custom-Delimiters": "separator-vertical",
   "Keyboard-Shortcuts": "keyboard",
   "Basic-&-Reversed-Flashcards": "repeat",
@@ -244,7 +245,6 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   Settings: "settings",
   Syncing: "refresh-cw",
   Backups: "database",
-  "Localization-Debt": "languages",
   "Settings-Explained": "sliders-horizontal",
   "Support-LearnKit": "book-open-text",
   Flags: "flag",
@@ -351,7 +351,6 @@ export async function loadGuidePages(app: App, pluginDir?: string): Promise<Guid
     "Custom-Delimiters",
     "Gatekeeper",
     "Backups",
-    "Localization-Debt",
     "AI-Usage-Policy",
     "Support-LearnKit",
   ];

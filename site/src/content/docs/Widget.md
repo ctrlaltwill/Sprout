@@ -59,6 +59,8 @@ If your vault uses folder notes, the widget becomes more useful when **Treat fol
 
 In that setup, opening the folder note lets the widget treat that folder as one study scope.
 
+See [Decks & Organisation](../Decks-&-Organisation) for more on how folders and groups structure your flashcards.
+
 ## When To Use The Widget
 
 Use the widget when you want:

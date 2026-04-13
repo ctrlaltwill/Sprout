@@ -273,7 +273,7 @@ export class SproutReviewerView extends ItemView {
       return "Coach";
     }
     if (this.mode === "deck") {
-      return t(this.plugin.settings?.general?.interfaceLanguage, "ui.reviewer.deck.title", "Deck browser");
+      return t(this.plugin.settings?.general?.interfaceLanguage, "ui.reviewer.deck.title", "Flashcards");
     }
     return t(this.plugin.settings?.general?.interfaceLanguage, "ui.reviewer.session.header.title", "Flashcards");
   }

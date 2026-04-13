@@ -16,7 +16,7 @@ If you want help choosing the right tab first, start with [Settings Explained](.
 | General | Theme, accent, animations, greeting, name, interface language, and Reading view controls |
 | Audio | Text to speech, voice routing, script fallbacks, and voice tuning |
 | Companion | Provider setup, models, API keys, privacy, context sources, prompts, and flashcard generation |
-| Data & Maintenance | Attachment folders, vault database copies, backups, and analytics coaching controls |
+| Data & Maintenance | Attachment folders, vault database copies, and backups |
 | Flashcards | Flashcard-type options plus parsing controls such as delimiters and fenced-code handling |
 | Notes | Note selection rules and note-review scheduling |
 | Reminders | Launch reminders, routine reminders, Gatekeeper timing, and bypass rules |
@@ -134,7 +134,7 @@ See [Companion Configuration](../Companion-Configuration), [Companion Usage](../
 
 ## Data & Maintenance
 
-Data & Maintenance combines storage, vault database syncing, backups, and analytics-coaching maintenance controls.
+Data & Maintenance combines storage, vault database syncing, and backups.
 
 ### Attachment Storage
 
@@ -156,14 +156,6 @@ These options copy LearnKit database files into a vault folder so Obsidian Sync 
 - **Backup table** with backup label, date, scheduling-data summary, integrity status, and restore or delete actions
 
 Use **Create manual backup** before large imports, schema changes, or destructive resets. See [Backups](../Backups).
-
-### Analytics Coaching
-
-- **Include practice sessions**
-- **Topic hierarchy**
-- **Mastery red threshold**
-- **Mastery yellow threshold**
-- **Weak topics shown**
 
 ## Flashcards
 

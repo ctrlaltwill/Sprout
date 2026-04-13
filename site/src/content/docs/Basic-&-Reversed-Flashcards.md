@@ -52,7 +52,7 @@ See [Grading](../Grading).
 - If `Q` or `A` is missing, the flashcard cannot work correctly.
 - Keep one fact per flashcard for better retention.
 - Use `I` for hints or references instead of making `A` too long.
-- Use groups to organize by topic.
+- Use groups to organise by topic.
 
 ## Related
 

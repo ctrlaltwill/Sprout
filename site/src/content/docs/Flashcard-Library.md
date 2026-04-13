@@ -44,3 +44,4 @@ See [Suspending Flashcards](../Suspending-Flashcards) for suspend behavior.
 
 - [Editing Flashcards](../Editing-Flashcards)
 - [Suspending Flashcards](../Suspending-Flashcards)
+- [Decks & Organisation](../Decks-&-Organisation)

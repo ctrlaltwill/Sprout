@@ -74,8 +74,7 @@ LearnKit Docs
 │  └─ Gatekeeper
 ├─ database Maintenance
 │  ├─ Backups
-│  ├─ Architecture
-│  └─ Localization Debt
+│  └─ Architecture
 ├─ shield-check Policies
 │  └─ AI Usage Policy
 └─ library Reference
@@ -132,7 +131,6 @@ LearnKit Docs
 | Gatekeeper.md | Settings |
 | Backups.md | Maintenance |
 | Architecture.md | Maintenance |
-| Localization-Debt.md | Maintenance |
 | AI-Usage-Policy.md | Policies |
 | Support-LearnKit.md | Reference |
 

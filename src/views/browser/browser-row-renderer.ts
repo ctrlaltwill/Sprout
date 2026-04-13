@@ -106,6 +106,15 @@ export function buildPageTableBody(
   const quarantine = (ctx.plugin.store.data.quarantine || {});
   const pageRowCount = pageRows.length;
 
+  // Pre-compute the shared group option set once for all rows on this page.
+  const sharedOptionSet = new Set<string>();
+  for (const g of (ctx.plugin.store.getAllCards() || [])
+    .flatMap((c) => (Array.isArray(c?.groups) ? c.groups : []))
+    .map((g) => titleCaseGroupPath(String(g).trim()))
+    .filter(Boolean)) {
+    for (const tag of expandGroupAncestors(g)) sharedOptionSet.add(tag);
+  }
+
   for (const [rowIndex, { card, state, dueMs }] of pageRows.entries()) {
     const isQuarantined = !!quarantine[String(card.id)];
     const tr = document.createElement("tr");
@@ -254,7 +263,7 @@ export function buildPageTableBody(
     tr.appendChild(tdMuted(fmtLocation(card.sourceNotePath), "location", card.sourceNotePath));
 
     // ── Groups editor cell ──
-    tr.appendChild(makeGroupsEditorCell(card, isQuarantined, rowIndex, pageRowCount, pageRows, ctx));
+    tr.appendChild(makeGroupsEditorCell(card, isQuarantined, rowIndex, pageRowCount, pageRows, ctx, sharedOptionSet));
 
     // ── Row click → checkbox toggle ──
     tr.addEventListener("pointerdown", (ev: PointerEvent) => {
@@ -1148,6 +1157,7 @@ function makeGroupsEditorCell(
   pageRowCount: number,
   _pageRows: BrowserRow[],
   ctx: RowRendererContext,
+  sharedOptionSet: Set<string>,
 ): HTMLTableCellElement {
   if (isQuarantined) {
     return makeReadOnlyFieldCell("—", "groups", ctx);
@@ -1280,13 +1290,7 @@ function makeGroupsEditorCell(
 
   let cleanup: (() => void) | null = null;
 
-  const optionSet = new Set<string>();
-  for (const g of (ctx.plugin.store.getAllCards() || [])
-    .flatMap((c) => (Array.isArray(c?.groups) ? c.groups : []))
-    .map((g) => titleCaseGroupPath(String(g).trim()))
-    .filter(Boolean)) {
-    for (const tag of expandGroupAncestors(g)) optionSet.add(tag);
-  }
+  const optionSet = new Set<string>(sharedOptionSet);
   let allOptions = Array.from(optionSet).sort((a, b) =>
     formatGroupDisplay(a).localeCompare(formatGroupDisplay(b)),
   );
@@ -1409,7 +1413,10 @@ function makeGroupsEditorCell(
     }
   };
 
+  let closing = false;
   const close = () => {
+    if (closing) return;
+    closing = true;
     popover.setAttribute("aria-hidden", "true");
     popover.classList.remove("is-open");
     try { cleanup?.(); } catch (e) { log.swallow("popover cleanup", e); }

@@ -361,6 +361,13 @@ a.learnkit-header-center-brand-link:hover {
   border-color: var(--color-base-35) !important;
 }
 
+/* Revert icon-only header actions to base after click release if not hovered/open. */
+.learnkit .learnkit-header .learnkit-actions-host .learnkit-btn-toolbar:is(:focus, :focus-visible, :focus-within):not(:hover):not([aria-expanded="true"]) {
+  background-color: transparent !important;
+  color: var(--text-normal) !important;
+  border-color: transparent !important;
+}
+
 /* Keep topnav trigger on transparent base border; show border only on interaction. */
 .learnkit .learnkit-header .learnkit-btn-toolbar[aria-label="Open menu"] {
   border: 0.5px solid transparent;

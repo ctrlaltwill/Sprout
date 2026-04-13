@@ -12,7 +12,7 @@ Use it when you know what you want to change, but not where LearnKit put that co
 - change the look of LearnKit, your greeting, your name, or Reading view styling: go to **General**
 - change text to speech, default voices, or flag-based voice routing: go to **Audio**
 - set up providers, models, API keys, prompts, privacy, or AI flashcard generation: go to **Companion**
-- move attachment folders, store databases in the vault, create backups, or tune analytics coaching: go to **Data & Maintenance**
+- move attachment folders, store databases in the vault, or create backups: go to **Data & Maintenance**
 - change cloze behaviour, image occlusion reveal mode, multiple-choice shuffle, ordered-question shuffle, or parsing rules such as delimiters: go to **Flashcards**
 - control which notes are eligible for note review or change note-review scheduling: go to **Notes**
 - adjust reminders, launch nudges, Gatekeeper timing, or Gatekeeper bypass: go to **Reminders**
@@ -26,7 +26,7 @@ Use it when you know what you want to change, but not where LearnKit put that co
 | General | Change theme, accent, animations, greeting text, name, interface language, or Reading view card style |
 | Audio | Configure text to speech, autoplay, voice selection, script fallbacks, speech rate, or pitch |
 | Companion | Pick an AI provider, select a model, add API keys, choose privacy limits, or tune generator output |
-| Data & Maintenance | Manage attachment folders, vault database copies, backups, and analytics-coaching thresholds |
+| Data & Maintenance | Manage attachment folders, vault database copies, and backups |
 | Flashcards | Change flashcard-type behaviour and parsing rules such as code-fence handling and delimiters |
 | Notes | Filter note-review scope and choose FSRS or LKRS note scheduling |
 | Reminders | Control launch reminders, routine reminders, Gatekeeper popups, and bypass rules |

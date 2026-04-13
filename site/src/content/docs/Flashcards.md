@@ -31,6 +31,7 @@ Flashcards in LearnKit includes:
 - [Editing Flashcards](../Editing-Flashcards)
 - [Flashcard Formatting](../Flashcard-Formatting)
 - [Flashcard Library](../Flashcard-Library)
+- [Decks & Organisation](../Decks-&-Organisation)
 
 ## Flashcard Types
 

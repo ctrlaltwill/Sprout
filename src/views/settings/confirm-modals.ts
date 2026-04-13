@@ -383,7 +383,7 @@ export class BackupCompareModal extends Modal {
       });
     };
 
-    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.cards", "Cards"), this.current.cards, this.backup.cards);
+    addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.cards", "Flashcards"), this.current.cards, this.backup.cards);
     addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.states", "States"), this.current.states, this.backup.states);
     addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.reviewLog", "Review log"), this.current.reviewLog, this.backup.reviewLog);
     addRow(tx(this.locale, "ui.settings.modals.backupComparison.row.quarantine", "Quarantine"), this.current.quarantine, this.backup.quarantine);

@@ -551,6 +551,17 @@
   font-size: 0.9rem !important;
 }
 
+/* Guide page title (injected h1, not from markdown) */
+.learnkit-guide-page-title {
+  font-size: 1.6rem !important;
+  font-weight: 700;
+  margin-bottom: 2rem !important;
+  margin-top: 0;
+  padding: 0;
+  line-height: 1.25;
+  color: var(--text-normal);
+}
+
 /* Headings — graduated sizing */
 .learnkit-guide-body.markdown-rendered h1 {
   margin-bottom: 1em;
@@ -1590,6 +1601,9 @@ body:not(.is-mobile) .learnkit-guide-body pre button.copy-code-button.learnkit-g
 }
 
 .learnkit .learnkit-about-buttons .learnkit-about-btn {
+  display: inline-flex;
+  justify-content: center;
+  gap: 8px;
   text-decoration: none;
   margin: 0;
   color: var(--theme-base-95) !important;
@@ -1651,8 +1665,21 @@ body:not(.is-mobile) .learnkit-guide-body pre button.copy-code-button.learnkit-g
   align-items: center;
 }
 
+.learnkit .learnkit-about-buttons .learnkit-about-btn .learnkit-about-btn-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  justify-content: center;
+}
+
+.learnkit .learnkit-about-buttons .learnkit-about-btn .learnkit-about-btn-icon .svg-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 .learnkit .learnkit-about-buttons .learnkit-about-btn .learnkit-about-btn-label {
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .learnkit .learnkit-about-buttons .learnkit-about-btn .learnkit-about-star-spin,
