@@ -1033,10 +1033,8 @@ export class ImageOcclusionEditorModal extends Modal {
       if (!id) continue;
       if (keepChildIds.has(id)) continue;
 
-      ch.retired = true;
-      ch.updatedAt = now;
-      ch.lastSeenAt = now;
-      this.plugin.store.upsertCard(ch);
+      delete cards[id];
+      if (this.plugin.store.data.states) delete this.plugin.store.data.states[id];
     }
   }
 }

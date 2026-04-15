@@ -246,15 +246,14 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       plugin.store.ensureState(childId, now, 2.5);
     }
 
-    // Retire stale children that no longer have a matching group
+    // Delete stale children that no longer have a matching group
     for (const c of Object.values(cards)) {
       if (!c || c.type !== "io-child") continue;
       if (String(c.parentId) !== parentId) continue;
-      if (keepChildIds.has(String(c.id))) continue;
-      c.retired = true;
-      c.updatedAt = now;
-      c.lastSeenAt = now;
-      plugin.store.upsertCard(c);
+      const cid = String(c.id);
+      if (keepChildIds.has(cid)) continue;
+      delete cards[cid];
+      if (plugin.store.data.states) delete plugin.store.data.states[cid];
     }
 
     await plugin.store.persist();
@@ -421,15 +420,14 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     plugin.store.ensureState(childId, now, 2.5);
   }
 
-  // Retire stale children
+  // Delete stale children
   for (const c of Object.values(cards)) {
     if (!c || c.type !== "io-child") continue;
     if (String(c.parentId) !== id) continue;
-    if (keepChildIds.has(String(c.id))) continue;
-    c.retired = true;
-    c.updatedAt = now;
-    c.lastSeenAt = now;
-    plugin.store.upsertCard(c);
+    const cid = String(c.id);
+    if (keepChildIds.has(cid)) continue;
+    delete cards[cid];
+    if (plugin.store.data.states) delete plugin.store.data.states[cid];
   }
 
   await plugin.store.persist();
