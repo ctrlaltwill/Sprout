@@ -124,12 +124,29 @@ function assertAnthropicResponseShape(json: Record<string, unknown>): void {
   }
 }
 
-function shouldOmitTemperature(provider: StudyAssistantProvider, model: string): boolean {
-  if (provider !== "openai" && provider !== "deepseek") return false;
+/**
+ * Returns true when the model identifier looks like a reasoning / thinking
+ * model regardless of provider.  Used to conditionally strip parameters that
+ * reasoning models reject (temperature, response_format, etc.).
+ */
+function isReasoningModelId(model: string): boolean {
   const m = String(model || "").trim().toLowerCase();
-  // Some model families enforce fixed/default sampling behavior.
-  if (provider === "deepseek") return m.startsWith("deepseek-reasoner");
-  return m.startsWith("gpt-5") || m.startsWith("o1") || m.startsWith("o3") || m.startsWith("o4");
+  return (
+    m.startsWith("o1") ||
+    m.startsWith("o3") ||
+    m.startsWith("o4") ||
+    m.startsWith("gpt-5") ||
+    m.startsWith("deepseek-reasoner") ||
+    m.includes("deepseek-r1")
+  );
+}
+
+function shouldOmitTemperature(provider: StudyAssistantProvider, model: string): boolean {
+  if (provider === "openai" || provider === "deepseek") return isReasoningModelId(model);
+  // OpenRouter model IDs embed the upstream model name
+  // (e.g. "deepseek/deepseek-r1:free"), so the same check works.
+  if (provider === "openrouter") return isReasoningModelId(model);
+  return false;
 }
 
 function shouldInlineSystemPromptForOpenAiLike(provider: StudyAssistantProvider, model: string): boolean {
@@ -531,7 +548,6 @@ export async function requestStudyAssistantCompletionDetailed(params: {
   }
 
   const endpoint = `${base}/chat/completions`;
-  const shouldUseStructuredJsonResponse = mode === "json" && settings.provider !== "openrouter";
 
   const requestOpenAiLike = async (requestModel: string): Promise<Awaited<ReturnType<typeof requestUrl>>> => {
     const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(settings.provider, requestModel);
@@ -563,6 +579,19 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           },
         ];
 
+    // --- provider-aware body parameters ---
+    // OpenAI reasoning models (o1/o3/o4, gpt-5) require max_completion_tokens;
+    // all other OpenAI-compatible providers accept max_tokens.
+    const useMaxCompletionTokens =
+      settings.provider === "openai" && isReasoningModelId(requestModel);
+
+    // response_format is unsupported by OpenRouter (unpredictable model
+    // routing) and by reasoning models (DeepSeek-R1, o1, etc.).
+    const useJsonResponseFormat =
+      mode === "json" &&
+      settings.provider !== "openrouter" &&
+      !isReasoningModelId(requestModel);
+
     try {
       return await requestUrl({
         url: endpoint,
@@ -571,16 +600,21 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${apiKey}`,
+          ...(settings.provider === "openrouter"
+            ? { "HTTP-Referer": "https://github.com/ctrlaltwill/learnkit", "X-Title": "LearnKit" }
+            : {}),
         },
         body: JSON.stringify({
           model: requestModel,
-          max_tokens: 2500,
+          ...(useMaxCompletionTokens
+            ? { max_completion_tokens: 2500 }
+            : { max_tokens: 2500 }),
           messages,
           ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
             ? { conversation_id: conversationId.trim() }
             : {}),
           ...(shouldOmitTemperature(settings.provider, requestModel) ? {} : { temperature: 0.4 }),
-          ...(shouldUseStructuredJsonResponse ? { response_format: { type: "json_object" } } : {}),
+          ...(useJsonResponseFormat ? { response_format: { type: "json_object" } } : {}),
         }),
       });
     } catch (err) {

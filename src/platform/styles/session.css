@@ -818,7 +818,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   cursor: pointer;
   background: transparent;
   color: var(--text-muted);
-  border: none;
+  border: 0.5px solid transparent;
   box-shadow: none;
   border-radius: var(--radius-md);
   padding: 2px;
@@ -827,20 +827,22 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
   opacity: 0.6;
 }
 
 .learnkit-tts-replay-btn:hover,
 .learnkit-tts-replay-btn:focus-visible {
-  color: var(--text-normal);
-  background: var(--background-modifier-hover);
+  color: var(--color-base-100);
+  background-color: var(--color-base-20);
+  border-color: var(--color-base-35);
   opacity: 1;
 }
 
 .learnkit-tts-replay-btn:active {
-  color: var(--text-normal);
-  background: var(--background-modifier-active-hover);
+  color: var(--color-base-100);
+  background-color: var(--color-base-25);
+  border-color: var(--color-base-40);
   opacity: 1;
 }
 

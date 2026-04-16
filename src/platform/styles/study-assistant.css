@@ -2747,10 +2747,13 @@
   display: flex;
   align-items: flex-start;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .learnkit-edit-proposal-replacement {
   display: block;
+  flex: 1 1 0;
+  min-width: 0;
   background: color-mix(in srgb, var(--text-success, #16a34a) 8%, transparent);
   color: var(--text-normal);
   font-size: inherit;
@@ -2965,7 +2968,12 @@
   line-height: 1;
   padding: 0;
   flex-shrink: 0;
+  margin-top: 2px;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.learnkit-edit-proposal-action-btn + .learnkit-edit-proposal-action-btn {
+  margin-left: 2px;
 }
 
 .learnkit-edit-proposal-action-btn.is-accept {
