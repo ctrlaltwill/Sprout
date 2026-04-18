@@ -11,7 +11,7 @@ import { Plugin, type Editor, type MarkdownView, type TFile, type WorkspaceLeaf 
 
 import { DEFAULT_SETTINGS, type LearnKitSettings } from "../core/constants";
 
-export type Constructor<T = NonNullable<unknown>> = new (...args: unknown[]) => T;
+export type Constructor<T = NonNullable<unknown>> = new (...args: any[]) => T;
 import type { IStore } from "../core/store-interface";
 import type { FlashcardType } from "../core/utils";
 import type { BasecoatApi } from "../core/basecoat";
@@ -95,6 +95,7 @@ export class LearnKitPluginBase extends Plugin {
   declare _getConfigDirPath: () => string | null;
   declare _getConfigFilePath: (filename: string) => string | null;
   declare _getApiKeysFilePath: () => string | null;
+  declare _getTtsApiKeysFilePath: () => string | null;
   declare _doSave: () => Promise<void>;
   declare refreshGithubStars: (force?: boolean) => Promise<void>;
   declare resetSettingsToDefaults: () => Promise<void>;
@@ -161,8 +162,10 @@ export class LearnKitPluginBase extends Plugin {
 
   // -- Lifecycle methods --
   declare _registerCommands: () => void;
-  declare onload: () => Promise<void>;
-  declare onunload: () => void;
+
+  // Narrow Plugin's `onload(): Promise<void> | void` so that the
+  // mixin chain sees a consistent `Promise<void>` return type.
+  async onload(): Promise<void> {}
 }
 
 // Backwards-compatible alias retained for Phase 1 rename safety.

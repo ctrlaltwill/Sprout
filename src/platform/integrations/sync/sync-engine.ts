@@ -17,6 +17,10 @@ import { normalizeCardOptions } from "../../../platform/types/card";
 import {
   FLASHCARD_HEADER_CARD_RE,
   FLASHCARD_HEADER_FIELD_RE,
+  BASIC_SHORTHAND_RE,
+  CLOZE_SHORTHAND_RE,
+  getDelimiter,
+  escapeDelimiterText,
 } from "../../../platform/core/delimiter";
 import type { CardState } from "../../types/scheduler";
 import { loadSchedulingFromDataJson } from "../../../platform/core/store";
@@ -39,6 +43,7 @@ import {
   listDataJsonBackups,
   readValidatedBackupStates,
 } from "./backup";
+import { deleteTtsCacheForCardIds, getTtsCacheDirPath } from "../../../platform/integrations/tts/tts-cache";
 
 // ────────────────────────────────────────────
 // Types
@@ -160,6 +165,8 @@ function looksLikeFlashcardHeader(rest: string): boolean {
   if (FLASHCARD_HEADER_CARD_RE().test(s)) return true;
   if (FLASHCARD_HEADER_FIELD_RE().test(s)) return true;
   if (/^\d+(?:\.\d+)?\s*\|\s*/.test(s)) return true;
+  if (CLOZE_SHORTHAND_RE.test(s)) return true;
+  if (BASIC_SHORTHAND_RE.test(s)) return true;
   return false;
 }
 
@@ -1086,6 +1093,38 @@ function inferIoIdFromCard(c: ParsedCard): string | null {
   return match?.[1] ?? null;
 }
 
+/** Collect all card IDs currently linked to a given note path (including child cards). */
+function collectCardIdsForNote(plugin: LearnKitPlugin, notePath: string): Set<string> {
+  const out = new Set<string>();
+  for (const [id, rec] of Object.entries(plugin.store.data.cards || {})) {
+    if (!rec) continue;
+    if (String(rec.sourceNotePath || "") !== notePath) continue;
+    out.add(String(id));
+  }
+  return out;
+}
+
+/** Best-effort cleanup of external TTS cache files for removed or updated card IDs. */
+async function pruneTtsCacheForCards(plugin: LearnKitPlugin, cardIds: readonly string[], reason: string): Promise<void> {
+  if (!cardIds.length) return;
+
+  const adapter = plugin.app?.vault?.adapter;
+  const configDir = plugin.app?.vault?.configDir;
+  const pluginId = plugin.manifest?.id;
+  if (!adapter || !configDir || !pluginId) return;
+
+  const cacheDirPath = getTtsCacheDirPath(configDir, pluginId);
+  const removedCount = await deleteTtsCacheForCardIds(
+    adapter as Parameters<typeof deleteTtsCacheForCardIds>[0],
+    cacheDirPath,
+    cardIds,
+  );
+
+  if (removedCount > 0) {
+    log.info(`sync: removed ${removedCount} cached TTS file(s) for ${reason} card(s)`);
+  }
+}
+
 // ────────────────────────────────────────────
 // syncOneFile (exported)
 // ────────────────────────────────────────────
@@ -1110,6 +1149,7 @@ export async function syncOneFile(
   return withFileSyncLock(file.path, async () => {
     const vault = plugin.app.vault;
     const now = Date.now();
+    const noteCardIdsBefore = collectCardIdsForNote(plugin, file.path);
 
     const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
 
@@ -1175,7 +1215,33 @@ export async function syncOneFile(
       usedIds.add(id);
       keepIds.add(id);
 
-      if (!existingAnchorIds.has(id)) {
+      if (c.isShorthand) {
+        // Shorthand card: replace the ::: line with canonical format.
+        // sourceEndLine is the actual ::: line (sourceStartLine may point to an anchor line above it).
+        const shorthandLine = c.sourceEndLine;
+        const prefix = inferPrefixAt(lines, shorthandLine);
+        const d = getDelimiter();
+
+        const canonicalLines: string[] = [];
+        if (!existingAnchorIds.has(id)) {
+          canonicalLines.push(`${prefix}${buildPrimaryCardAnchor(id)}`);
+          idsInserted += 1;
+        }
+
+        if (c.type === "cloze") {
+          const cqEsc = escapeDelimiterText(c.clozeText ?? "");
+          canonicalLines.push(`${prefix}CQ ${d} ${cqEsc} ${d}`);
+        } else {
+          const qEsc = escapeDelimiterText(c.q ?? "");
+          const aEsc = escapeDelimiterText(c.a ?? "");
+          canonicalLines.push(`${prefix}Q ${d} ${qEsc} ${d}`);
+          canonicalLines.push(`${prefix}A ${d} ${aEsc} ${d}`);
+        }
+
+        edits.push({ lineIndex: shorthandLine, deleteLine: true });
+        edits.push({ lineIndex: shorthandLine, insertText: canonicalLines.join("\n") });
+        existingAnchorIds.add(id);
+      } else if (!existingAnchorIds.has(id)) {
         const insertAt = findAnchorInsertLineIndex(lines, c.sourceStartLine);
         const prefix = inferPrefixAt(lines, insertAt);
         edits.push({ lineIndex: insertAt, insertText: `${prefix}${buildPrimaryCardAnchor(id)}` });
@@ -1218,6 +1284,7 @@ export async function syncOneFile(
     let sameCount = 0;
     let quarantinedCount = 0;
     const quarantinedIds: string[] = [];
+    const updatedCardIds: string[] = [];
 
     for (const c of cards as Array<ParsedCard & { assignedId?: string }>) {
       const id = String(c.id || c.assignedId || "");
@@ -1396,6 +1463,14 @@ export async function syncOneFile(
       }
     }
 
+    const noteCardIdsAfter = collectCardIdsForNote(plugin, file.path);
+    const removedCardIdsForCache: string[] = [];
+    for (const id of noteCardIdsBefore) {
+      if (!noteCardIdsAfter.has(id)) removedCardIdsForCache.push(id);
+    }
+    await pruneTtsCacheForCards(plugin, removedCardIdsForCache, "deleted");
+    await pruneTtsCacheForCards(plugin, updatedCardIds, "edited");
+
     const groupsAfter = collectGroupKeys(plugin.store.data.cards || {});
     const tagsDeleted = countRemovedGroups(groupsBefore, groupsAfter);
 
@@ -1429,6 +1504,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
     const now = Date.now();
 
     const groupsBefore = collectGroupKeys(plugin.store.data.cards || {});
+    const allCardIdsBefore = new Set(Object.keys(plugin.store.data.cards || {}));
 
     // NOTE: Backups are no longer created automatically here. Use Settings → Backups.
 
@@ -1459,6 +1535,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
     let sameCount = 0;
     let quarantinedCount = 0;
     const quarantinedIds: string[] = [];
+    const updatedCardIds: string[] = [];
 
     let removed = 0;
 
@@ -1527,7 +1604,32 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
         }
         keepIds.add(id);
 
-        if (!existingAnchorIds.has(id)) {
+        if (c.isShorthand) {
+          // Shorthand card: replace the ::: line with canonical format.
+          const shorthandLine = c.sourceEndLine;
+          const prefix = inferPrefixAt(lines, shorthandLine);
+          const d = getDelimiter();
+
+          const canonicalLines: string[] = [];
+          if (!existingAnchorIds.has(id)) {
+            canonicalLines.push(`${prefix}${buildPrimaryCardAnchor(id)}`);
+            planInserted += 1;
+          }
+
+          if (c.type === "cloze") {
+            const cqEsc = escapeDelimiterText(c.clozeText ?? "");
+            canonicalLines.push(`${prefix}CQ ${d} ${cqEsc} ${d}`);
+          } else {
+            const qEsc = escapeDelimiterText(c.q ?? "");
+            const aEsc = escapeDelimiterText(c.a ?? "");
+            canonicalLines.push(`${prefix}Q ${d} ${qEsc} ${d}`);
+            canonicalLines.push(`${prefix}A ${d} ${aEsc} ${d}`);
+          }
+
+          edits.push({ lineIndex: shorthandLine, deleteLine: true });
+          edits.push({ lineIndex: shorthandLine, insertText: canonicalLines.join("\n") });
+          existingAnchorIds.add(id);
+        } else if (!existingAnchorIds.has(id)) {
           const insertAt = findAnchorInsertLineIndex(lines, c.sourceStartLine);
           const prefix = inferPrefixAt(lines, insertAt);
           edits.push({ lineIndex: insertAt, insertText: `${prefix}${buildPrimaryCardAnchor(id)}` });
@@ -1645,7 +1747,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       };
 
       if (!prev) newCount += 1;
-      else if (cardSignature(prev) !== cardSignature(record)) updatedCount += 1;
+      else if (cardSignature(prev) !== cardSignature(record)) { updatedCount += 1; updatedCardIds.push(id); }
       else sameCount += 1;
 
       plugin.store.upsertCard(record);
@@ -1749,6 +1851,15 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
 
     const deletedImages = await deleteOrphanedIoImages(plugin);
     if (deletedImages > 0) log.info(`Deleted ${deletedImages} orphaned IO image(s)`);
+
+    // Prune TTS cache for cards that were removed or edited during full sync
+    const allCardIdsAfter = new Set(Object.keys(plugin.store.data.cards || {}));
+    const removedCardIdsForCache: string[] = [];
+    for (const id of allCardIdsBefore) {
+      if (!allCardIdsAfter.has(id)) removedCardIdsForCache.push(id);
+    }
+    await pruneTtsCacheForCards(plugin, removedCardIdsForCache, "deleted");
+    await pruneTtsCacheForCards(plugin, updatedCardIds, "edited");
 
     await plugin.store.persist();
 

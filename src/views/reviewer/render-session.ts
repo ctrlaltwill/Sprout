@@ -119,6 +119,9 @@ type Args = {
   ttsEnabled?: boolean;
   ttsReplayFront?: () => void;
   ttsReplayBack?: () => void;
+  ttsReplayMcqQuestion?: () => void;
+  ttsReplayMcqOptions?: () => void;
+  ttsReplayMcqAnswer?: () => void;
 
   /** Hide the card-title topbar inside the session card. */
   hideSessionTopbar?: boolean;
@@ -631,16 +634,16 @@ function makeHeaderMenu(opts: {
 /** Renders MCQ card content (single-answer and multi-answer). */
 function renderMcqContent(ctx: CardRenderCtx): void {
   const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
-  section.appendChild(labelRow("Question"));
+  section.appendChild(labelRow("Question", args.ttsReplayMcqQuestion));
   section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(card.stem || "")));
   const reveal = !!graded || !!args.showAnswer;
   const multiAnswer = isMultiAnswerMcq(card);
   const correctSet = new Set(getCorrectIndices(card));
 
   if (multiAnswer && !reveal) {
-    section.appendChild(labelRow("Options (select all correct answers)"));
+    section.appendChild(labelRow("Options (select all correct answers)", args.ttsReplayMcqOptions));
   } else {
-    section.appendChild(labelRow(reveal ? "Answer" : "Options"));
+    section.appendChild(labelRow(reveal ? "Answer" : "Options", reveal ? args.ttsReplayMcqAnswer : args.ttsReplayMcqOptions));
   }
 
   // Only show MCQ options, not info, as answer options

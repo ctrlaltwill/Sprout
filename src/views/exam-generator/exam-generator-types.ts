@@ -58,3 +58,15 @@ export type SaqGradeResult = {
   keyPointsMissed: string[];
   keyPointsWrong?: string[];
 };
+
+export type FullTestGradeQuestionResult = {
+  questionNumber: number;
+  correct: boolean;
+  scorePercent: number;
+  feedback: string;
+};
+
+export type FullTestGradeResult = {
+  overallScorePercent: number;
+  results: FullTestGradeQuestionResult[];
+};

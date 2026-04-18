@@ -61,7 +61,7 @@
 }
 
 .learnkit .view-header.learnkit-header {
-  --learnkit-header-surface-bg: color-mix(in srgb, var(--color-base-00) 75%, transparent 25%);
+  --learnkit-header-surface-bg: color-mix(in srgb, var(--color-base-00) 100%, transparent 30%);
     border-radius: var(--radius-md);
   background: var(--learnkit-header-surface-bg);
   border: 0.5px solid var(--color-base-30);

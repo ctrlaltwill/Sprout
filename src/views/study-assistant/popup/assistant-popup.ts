@@ -18,12 +18,13 @@ import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
 import { bestEffortAttachmentPath, normaliseVaultPath, writeBinaryToVault } from "../../../platform/modals/modal-utils";
 import {
   generateStudyAssistantChatReply,
+  generateStudyAssistantChatReplyStreaming,
   generateStudyAssistantSuggestions,
   parseEditProposal,
   classifyUserIntent,
 } from "../../../platform/integrations/ai/study-assistant-generator";
-import { generateExamQuestions } from "../../../platform/integrations/ai/exam-generator-ai";
-import { ExamTestsSqlite } from "../../../platform/core/exam-tests-sqlite";
+import { generateExamQuestions, gradeFullTest } from "../../../platform/integrations/ai/exam-generator-ai";
+import type { GeneratedExamQuestion, ExamGeneratorConfig } from "../../exam-generator/exam-generator-types";
 import { deleteStudyAssistantConversation } from "../../../platform/integrations/ai/study-assistant-provider";
 import type {
   StudyAssistantCardType,
@@ -64,7 +65,7 @@ import {
   generateExcessiveCountHintText,
   allFlashcardsInsertedText,
   isTestGenerationRequest,
-  testGeneratedText,
+  parseTestConfigFromRequest,
 } from "../chat/generation-helpers";
 import { validateEditProposal, mentionsFrontmatter } from "../chat/edit-helpers";
 import { setEditProposals, clearEditProposals } from "../editor/edit-decorations";
@@ -141,6 +142,14 @@ export class SproutAssistantPopup {
   private isSendingChat = false;
   private _isClassifyingIntent = false;
   private chatError = "";
+  private _pendingTestQuestions: GeneratedExamQuestion[] | null = null;
+  private _pendingTestDifficulty: ExamGeneratorConfig["difficulty"] = "medium";
+
+  // Streaming state
+  private _streamingReplyText = "";
+  private _isStreaming = false;
+  private _streamAbort: AbortController | null = null;
+  private _streamRenderTimer: number | null = null;
 
   // Review state
   private reviewDepth: StudyAssistantReviewDepth = "standard";
@@ -878,27 +887,7 @@ export class SproutAssistantPopup {
       this._saveChatTimer = null;
     }
     void this._saveChatForActiveFile();
-    this._reviewDepthMenuAbort?.abort();
-    this._reviewDepthMenuAbort = null;
-    this._headerMenuAbort?.abort();
-    this._headerMenuAbort = null;
-    this._teardownHeaderMenuPortal();
-    if (this._popupHeightFrame != null) {
-      cancelAnimationFrame(this._popupHeightFrame);
-      this._popupHeightFrame = null;
-    }
-    if (this._popupCloseTimer != null) {
-      clearTimeout(this._popupCloseTimer);
-      this._popupCloseTimer = null;
-    }
-    if (this._triggerReplyRevealTimer != null) {
-      clearTimeout(this._triggerReplyRevealTimer);
-      this._triggerReplyRevealTimer = null;
-    }
-    if (this._triggerReplyBounceTimer != null) {
-      clearTimeout(this._triggerReplyBounceTimer);
-      this._triggerReplyBounceTimer = null;
-    }
+    this._shutdownTransientUiActivity();
     if (this._onClickOutside) {
       document.removeEventListener("mousedown", this._onClickOutside, true);
       this._onClickOutside = null;
@@ -975,6 +964,68 @@ export class SproutAssistantPopup {
       this.triggerBtn?.removeClass("is-open");
     }
     this._applyPresentationState();
+  }
+
+  private _shutdownTransientUiActivity(): void {
+    this._headerMenuOpen = false;
+    this._headerMenuAbort?.abort();
+    this._headerMenuAbort = null;
+    this._teardownHeaderMenuPortal();
+
+    this.reviewDepthMenuOpen = false;
+    this._reviewDepthMenuAbort?.abort();
+    this._reviewDepthMenuAbort = null;
+
+    if (this._streamAbort) {
+      this._streamAbort.abort();
+      this._streamAbort = null;
+    }
+    this._isStreaming = false;
+    this._streamingReplyText = "";
+
+    if (this._streamRenderTimer != null) {
+      cancelAnimationFrame(this._streamRenderTimer);
+      this._streamRenderTimer = null;
+    }
+    if (this._popupHeightFrame != null) {
+      cancelAnimationFrame(this._popupHeightFrame);
+      this._popupHeightFrame = null;
+    }
+    if (this._popupCloseTimer != null) {
+      clearTimeout(this._popupCloseTimer);
+      this._popupCloseTimer = null;
+    }
+    if (this._triggerReplyRevealTimer != null) {
+      clearTimeout(this._triggerReplyRevealTimer);
+      this._triggerReplyRevealTimer = null;
+    }
+    if (this._triggerReplyBounceTimer != null) {
+      clearTimeout(this._triggerReplyBounceTimer);
+      this._triggerReplyBounceTimer = null;
+    }
+    if (this._voiceSilenceTimer != null) {
+      clearTimeout(this._voiceSilenceTimer);
+      this._voiceSilenceTimer = null;
+    }
+
+    if (this._isListening || this._recognition) {
+      this._stopVoiceInput();
+      this._recognition = null;
+      this._isListening = false;
+    } else {
+      this._clearVoiceAutoStopTimer();
+      this._stopVoiceMeter();
+    }
+    this._voiceStopRequested = true;
+
+    if (this._isTtsSpeaking || this._pendingTtsMessageIndex != null) {
+      this._stopTts();
+    } else {
+      this._resetTtsPlaybackState();
+    }
+
+    this._resizeCleanup?.();
+    this._resizeCleanup = null;
   }
 
   onActiveLeafChange(): void {
@@ -1078,35 +1129,7 @@ export class SproutAssistantPopup {
       return;
     }
     if (!this.isOpen) return;
-    this._headerMenuOpen = false;
-    this._headerMenuAbort?.abort();
-    this._headerMenuAbort = null;
-    this._teardownHeaderMenuPortal();
-    this.reviewDepthMenuOpen = false;
-    this._reviewDepthMenuAbort?.abort();
-    this._reviewDepthMenuAbort = null;
-    if (this._popupHeightFrame != null) {
-      cancelAnimationFrame(this._popupHeightFrame);
-      this._popupHeightFrame = null;
-    }
-    if (this._ttsPollTimer != null) {
-      clearTimeout(this._ttsPollTimer);
-      this._ttsPollTimer = null;
-    }
-    if (this._ttsStartDelayTimer != null) {
-      clearTimeout(this._ttsStartDelayTimer);
-      this._ttsStartDelayTimer = null;
-      this._pendingTtsMessageIndex = null;
-    }
-    if (this._ttsCollapseTimer != null) {
-      clearTimeout(this._ttsCollapseTimer);
-      this._ttsCollapseTimer = null;
-    }
-    this._teardownTtsFinishInteraction();
-    // Stop any active TTS playback
-    if (this._isTtsSpeaking || this._pendingTtsMessageIndex != null) {
-      this._stopTts();
-    }
+    this._shutdownTransientUiActivity();
     this.isOpen = false;
     this.triggerBtn?.removeClass("is-open");
     if (this._popupCloseTimer != null) {
@@ -1366,10 +1389,6 @@ export class SproutAssistantPopup {
     return /\breview\b/i.test(prev.text);
   }
 
-  private _testGeneratedText(testName: string): string {
-    return testGeneratedText((token, fallback, vars) => this._tx(token, fallback, vars), testName);
-  }
-
   private _looksLikeVitestTestCode(code: string): boolean {
     const value = String(code || "");
     if (!value.trim()) return false;
@@ -1509,6 +1528,37 @@ export class SproutAssistantPopup {
 
   private _isAssistantBusy(): boolean {
     return this.isSendingChat || this.isReviewingNote || this.isGenerating || this._isClassifyingIntent;
+  }
+
+  private _scheduleStreamRender(): void {
+    if (this._streamRenderTimer != null) return;
+    this._streamRenderTimer = requestAnimationFrame(() => {
+      this._streamRenderTimer = null;
+      if (!this._isStreaming) return;
+      this._updateStreamingBubble();
+    });
+  }
+
+  private _updateStreamingBubble(): void {
+    const rows = this.popupEl?.querySelectorAll(
+      ".learnkit-assistant-popup-message-row.is-assistant",
+    );
+    const lastRow = rows?.[rows.length - 1] as HTMLElement | undefined;
+    const bubbleEl = lastRow?.querySelector(
+      ".learnkit-assistant-popup-message-content",
+    ) as HTMLElement | null;
+    if (bubbleEl) {
+      this.renderMarkdownMessage(bubbleEl, this._streamingReplyText);
+      // Auto-scroll to bottom
+      const chatWrap = bubbleEl.closest(".learnkit-assistant-popup-chat-wrap");
+      if (chatWrap) chatWrap.scrollTop = chatWrap.scrollHeight;
+    }
+  }
+
+  private _isStreamingAssistantMessage(messageIndex: number, messages: ChatMessage[]): boolean {
+    return this._isStreaming
+      && messageIndex === messages.length - 1
+      && messages[messageIndex]?.role === "assistant";
   }
 
   private _renderAssistantWelcomeActions(parent: HTMLElement): void {
@@ -2625,6 +2675,17 @@ export class SproutAssistantPopup {
 
     this._expireStaleEditProposals();
 
+    // --- Intercept: if there is a pending inline test, grade instead of classifying intent ---
+    if (draft && this._pendingTestQuestions?.length) {
+      const chatMsg: ChatMessage = { role: "user", text: draft };
+      this.chatMessages.push(chatMsg);
+      this.chatDraft = "";
+      this._scheduleSave();
+      this.render();
+      await this._gradeTestFromChat(draft);
+      return;
+    }
+
     // --- AI-based intent classification (single-word response, hidden from user) ---
     if (draft) {
       const chatMsg: ChatMessage = { role: "user", text: draft };
@@ -2715,6 +2776,8 @@ export class SproutAssistantPopup {
     }
     this.render();
 
+    let placeholderPushed = false;
+
     try {
       const noteContent = file ? await this.readActiveMarkdown(file) : "";
       const imageRefs = file ? this.extractImageRefs(noteContent) : [];
@@ -2742,7 +2805,13 @@ export class SproutAssistantPopup {
       const allAttachmentUrls = this._dedupeDataUrls([...attachedFileDataUrls, ...noteEmbedUrls, ...linkedAttachmentUrls]);
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "assistant")?.conversationId;
 
-      const result = await generateStudyAssistantChatReply({
+      // Streaming placeholder – deferred until the first token arrives so
+      // the typing indicator stays visible and no empty bubble is shown.
+      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
+      this._streamingReplyText = "";
+      this._streamAbort = new AbortController();
+
+      const result = await generateStudyAssistantChatReplyStreaming({
         settings,
         input: {
           mode: "ask" as StudyAssistantChatMode,
@@ -2757,12 +2826,30 @@ export class SproutAssistantPopup {
           conversationId,
           conversationHistory: this.chatMessages,
         },
+        onChunk: (token) => {
+          this._streamingReplyText += token;
+          streamingMsg.text = this._streamingReplyText;
+          if (!placeholderPushed) {
+            this.chatMessages.push(streamingMsg);
+            placeholderPushed = true;
+            this._isStreaming = true;
+            this.render();
+          } else {
+            this._scheduleStreamRender();
+          }
+        },
+        signal: this._streamAbort.signal,
       });
+
+      this._isStreaming = false;
+      this._streamAbort = null;
 
       const reply = this._appendFlashcardDisclaimerIfNeeded(String(result.reply || "").trim(), draft) || this._tx(
         "ui.studyAssistant.chat.emptyReply",
         "No response returned.",
       );
+      if (!placeholderPushed) this.chatMessages.push(streamingMsg);
+      streamingMsg.text = reply;
       setRemoteConversationForMode(this.remoteConversationsByMode, "assistant", result.conversationId, this.plugin.settings.studyAssistant);
 
       // File-switch guard: route response to originating note if user switched away
@@ -2771,10 +2858,21 @@ export class SproutAssistantPopup {
         return;
       }
 
-      this.chatMessages.push({ role: "assistant", text: reply });
       this._notifyIncomingAssistantReply("assistant");
       this._speakReply(reply, this.chatMessages.length - 1);
     } catch (e) {
+      this._isStreaming = false;
+      this._streamAbort = null;
+      // Remove the empty streaming placeholder if no content was received
+      if (!placeholderPushed) {
+        // Placeholder was never pushed – nothing to remove
+      } else {
+        const lastMsg = this.chatMessages[this.chatMessages.length - 1];
+        if (lastMsg?.role === "assistant" && !lastMsg.text.trim()) {
+          this.chatMessages.pop();
+        }
+      }
+      if ((e as Error)?.name === "AbortError") return;
       const userMessage = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("ask", e, userMessage);
       this.chatError = userMessage;
@@ -3044,6 +3142,8 @@ export class SproutAssistantPopup {
     this.reviewError = "";
     this.render();
 
+    let placeholderPushed = false;
+
     try {
       const noteContent = await this.readActiveMarkdown(file);
       const imageRefs = this.extractImageRefs(noteContent);
@@ -3071,7 +3171,12 @@ export class SproutAssistantPopup {
       const allAttachmentUrls = this._dedupeDataUrls([...threadReviewAttachedUrls, ...noteEmbedUrls, ...linkedAttachmentUrls]);
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "review")?.conversationId;
 
-      const result = await generateStudyAssistantChatReply({
+      // Streaming placeholder – deferred until the first token arrives
+      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
+      this._streamingReplyText = "";
+      this._streamAbort = new AbortController();
+
+      const result = await generateStudyAssistantChatReplyStreaming({
         settings,
         input: {
           mode: "review",
@@ -3087,12 +3192,30 @@ export class SproutAssistantPopup {
           conversationId,
           conversationHistory: this.chatMessages,
         },
+        onChunk: (token) => {
+          this._streamingReplyText += token;
+          streamingMsg.text = this._streamingReplyText;
+          if (!placeholderPushed) {
+            this.chatMessages.push(streamingMsg);
+            placeholderPushed = true;
+            this._isStreaming = true;
+            this.render();
+          } else {
+            this._scheduleStreamRender();
+          }
+        },
+        signal: this._streamAbort.signal,
       });
+
+      this._isStreaming = false;
+      this._streamAbort = null;
 
       const reply = String(result.reply || "").trim() || this._tx(
         "ui.studyAssistant.chat.emptyReply",
         "No response returned.",
       );
+      if (!placeholderPushed) this.chatMessages.push(streamingMsg);
+      streamingMsg.text = reply;
       setRemoteConversationForMode(this.remoteConversationsByMode, "review", result.conversationId, this.plugin.settings.studyAssistant);
 
       // File-switch guard: route response to originating note if user switched away
@@ -3101,9 +3224,18 @@ export class SproutAssistantPopup {
         return;
       }
 
-      this.chatMessages.push({ role: "assistant", text: reply });
       this._notifyIncomingAssistantReply("assistant");
     } catch (e) {
+      this._isStreaming = false;
+      this._streamAbort = null;
+      // Remove the empty streaming placeholder if no content was received
+      if (placeholderPushed) {
+        const lastMsg = this.chatMessages[this.chatMessages.length - 1];
+        if (lastMsg?.role === "assistant" && !lastMsg.text.trim()) {
+          this.chatMessages.pop();
+        }
+      }
+      if ((e as Error)?.name === "AbortError") return;
       const userMessageText = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("review", e, userMessageText);
       this.chatError = userMessageText;
@@ -3160,12 +3292,13 @@ export class SproutAssistantPopup {
       );
       const allAttachmentUrls = this._dedupeDataUrls([...threadTestAttachedUrls, ...noteEmbedUrls, ...linkedAttachmentUrls]);
 
+      const parsed = parseTestConfigFromRequest(userMessage);
       const config: import("../../exam-generator/exam-generator-types").ExamGeneratorConfig = {
-        difficulty: "medium",
-        questionMode: "mixed",
-        questionCount: 10,
+        difficulty: parsed.difficulty ?? "medium",
+        questionMode: parsed.questionMode ?? "mixed",
+        questionCount: parsed.questionCount ?? 5,
         testName: "",
-        appliedScenarios: false,
+        appliedScenarios: parsed.appliedScenarios ?? false,
         timed: false,
         durationMinutes: 15,
         customInstructions: String(settings.prompts.tests || "").trim(),
@@ -3204,32 +3337,13 @@ export class SproutAssistantPopup {
         return;
       }
 
-      // Save to tests.db
-      const testsDb = new ExamTestsSqlite(this.plugin);
-      await testsDb.open();
-      const displayName = file.basename || file.name || "note";
-      const testId = testsDb.saveTest({
-        label: `${displayName} - ${new Date().toLocaleString()}`,
-        sourceSummary: file.path,
-        configJson: JSON.stringify(config),
-        questionsJson: JSON.stringify(questions),
-      });
-      await testsDb.persist();
-      await testsDb.close();
+      this._pendingTestQuestions = questions;
+      this._pendingTestDifficulty = config.difficulty;
 
-      if (!testId) {
-        if (!fileChanged) {
-          this.chatError = this._tx("ui.studyAssistant.test.saveError", "Could not save the test.");
-          this.render();
-        }
-        return;
-      }
-
-      const replyText = this._testGeneratedText(displayName);
+      const testMarkdown = this._formatTestQuestionsAsMarkdown(questions, config);
       const testMsg: ChatMessage = {
         role: "assistant",
-        text: replyText,
-        savedTestId: testId,
+        text: testMarkdown,
       };
       if (fileChanged) {
         await this._appendResponseToPersistedChat(file, "messages", testMsg);
@@ -3250,12 +3364,87 @@ export class SproutAssistantPopup {
     }
   }
 
-  private async _openSavedTest(testId: string): Promise<void> {
+  private _formatTestQuestionsAsMarkdown(
+    questions: GeneratedExamQuestion[],
+    config: Pick<ExamGeneratorConfig, "difficulty" | "questionMode" | "questionCount">,
+  ): string {
+    const OPTION_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const header = `**Here's your test** (${questions.length} question${questions.length === 1 ? "" : "s"}, ${config.difficulty} difficulty):\n\nReply with your answers to get graded.\n`;
+    const items = questions.map((q, i) => {
+      const num = i + 1;
+      const lines: string[] = [`**${num}.** ${q.prompt}`];
+      if (q.type === "mcq" && q.options) {
+        const isMultiSelect = Array.isArray(q.correctIndices) && q.correctIndices.length > 1;
+        if (isMultiSelect) lines.push("*(select all that apply)*");
+        for (let j = 0; j < q.options.length; j++) {
+          lines.push(`  ${OPTION_LABELS[j] ?? String(j + 1)}) ${q.options[j]}`);
+        }
+      }
+      return lines.join("\n");
+    });
+    return `${header}\n${items.join("\n\n")}`;
+  }
+
+  private _formatTestResultsAsMarkdown(
+    gradeResult: import("../../exam-generator/exam-generator-types").FullTestGradeResult,
+    questions: GeneratedExamQuestion[],
+  ): string {
+    const OPTION_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const header = `**Results: ${gradeResult.overallScorePercent}%**\n`;
+    const items = gradeResult.results.map((r) => {
+      const q = questions[r.questionNumber - 1];
+      const icon = r.correct ? "✅" : "❌";
+      const lines: string[] = [`**Q${r.questionNumber}.** ${icon} (${r.scorePercent}%) — ${r.feedback}`];
+      if (q) {
+        if (q.type === "mcq" && q.options) {
+          const indices = q.correctIndices ?? (q.correctIndex != null ? [q.correctIndex] : []);
+          const labels = indices.map((idx) => OPTION_LABELS[idx] ?? String(idx + 1));
+          const answers = indices.map((idx) => q.options![idx]).filter(Boolean);
+          lines.push(`Correct answer: ${labels.join(", ")} — ${answers.join("; ")}`);
+        }
+        if (q.explanation) lines.push(`*${q.explanation}*`);
+      }
+      return lines.join("\n");
+    });
+    return `${header}\n${items.join("\n\n")}`;
+  }
+
+  private async _gradeTestFromChat(userAnswerText: string): Promise<void> {
+    const questions = this._pendingTestQuestions;
+    if (!questions?.length) return;
+    const difficulty = this._pendingTestDifficulty;
+
+    // Clear pending immediately so subsequent messages route normally
+    this._pendingTestQuestions = null;
+
+    const originPath = this.activeFile?.path ?? "";
+    this.isSendingChat = true;
+    this.chatError = "";
+    this.render();
+
     try {
-      await this.plugin.openExamGeneratorTest(testId);
+      const settings = this.plugin.settings.studyAssistant;
+      const gradeResult = await gradeFullTest({ settings, questions, userAnswerText, difficulty });
+      const resultsMarkdown = this._formatTestResultsAsMarkdown(gradeResult, questions);
+      const fileChanged = this.activeFile?.path !== originPath;
+      const resultsMsg: ChatMessage = { role: "assistant", text: resultsMarkdown };
+      if (fileChanged) {
+        const file = this.getActiveMarkdownFile();
+        if (file) await this._appendResponseToPersistedChat(file, "messages", resultsMsg);
+      } else {
+        this.chatMessages.push(resultsMsg);
+        this._notifyIncomingAssistantReply("assistant");
+      }
     } catch (e) {
-      log.warn("open-test", e);
-      new Notice(this._tx("ui.studyAssistant.test.openError", "LearnKit – could not open the test"));
+      const errMsg = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
+      logAssistantRequestError("test-grading", e, errMsg);
+      this.chatError = errMsg;
+    } finally {
+      this.isSendingChat = false;
+      if (this.activeFile?.path === originPath) {
+        this._scheduleSave();
+        this.render();
+      }
     }
   }
 
@@ -3286,6 +3475,8 @@ export class SproutAssistantPopup {
     this.reviewError = "";
     this.render();
 
+    let placeholderPushed = false;
+
     try {
       const noteContent = await this.readActiveMarkdown(file);
       const imageRefs = this.extractImageRefs(noteContent);
@@ -3313,7 +3504,12 @@ export class SproutAssistantPopup {
       const allAttachmentUrls = this._dedupeDataUrls([...reviewAttachedUrls, ...noteEmbedUrls, ...linkedAttachmentUrls]);
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "review")?.conversationId;
 
-      const result = await generateStudyAssistantChatReply({
+      // Streaming placeholder – deferred until the first token arrives
+      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
+      this._streamingReplyText = "";
+      this._streamAbort = new AbortController();
+
+      const result = await generateStudyAssistantChatReplyStreaming({
         settings,
         input: {
           mode: "review",
@@ -3329,12 +3525,30 @@ export class SproutAssistantPopup {
           conversationId,
           conversationHistory: this.reviewMessages,
         },
+        onChunk: (token) => {
+          this._streamingReplyText += token;
+          streamingMsg.text = this._streamingReplyText;
+          if (!placeholderPushed) {
+            this.reviewMessages.push(streamingMsg);
+            placeholderPushed = true;
+            this._isStreaming = true;
+            this.render();
+          } else {
+            this._scheduleStreamRender();
+          }
+        },
+        signal: this._streamAbort.signal,
       });
+
+      this._isStreaming = false;
+      this._streamAbort = null;
 
       const reply = this._appendFlashcardDisclaimerIfNeeded(String(result.reply || "").trim(), draft) || this._tx(
         "ui.studyAssistant.chat.emptyReply",
         "No response returned.",
       );
+      if (!placeholderPushed) this.reviewMessages.push(streamingMsg);
+      streamingMsg.text = reply;
       setRemoteConversationForMode(this.remoteConversationsByMode, "review", result.conversationId, this.plugin.settings.studyAssistant);
 
       // File-switch guard: route response to originating note if user switched away
@@ -3343,9 +3557,18 @@ export class SproutAssistantPopup {
         return;
       }
 
-      this.reviewMessages.push({ role: "assistant", text: reply });
       this._notifyIncomingAssistantReply("review");
     } catch (e) {
+      this._isStreaming = false;
+      this._streamAbort = null;
+      // Remove the empty streaming placeholder if no content was received
+      if (placeholderPushed) {
+        const lastMsg = this.reviewMessages[this.reviewMessages.length - 1];
+        if (lastMsg?.role === "assistant" && !lastMsg.text.trim()) {
+          this.reviewMessages.pop();
+        }
+      }
+      if ((e as Error)?.name === "AbortError") return;
       const userMessage = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("review", e, userMessage);
       this.reviewError = userMessage;
@@ -4988,6 +5211,7 @@ export class SproutAssistantPopup {
 
     for (let i = 0; i < messages.length; i += 1) {
       const msg = messages[i];
+      const isStreamingAssistantMessage = this._isStreamingAssistantMessage(i, messages);
       const row = chatWrap.createDiv({
         cls: `learnkit-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}`,
       });
@@ -5088,19 +5312,6 @@ export class SproutAssistantPopup {
         });
       }
 
-      // Render "Open test" button for test-generation replies
-      if (msg.role === "assistant" && msg.savedTestId) {
-        const testActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters" });
-        const openTestBtn = testActions.createEl("button", {
-          cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
-          text: this._tx("ui.studyAssistant.test.open", "Open test"),
-        });
-        openTestBtn.type = "button";
-        openTestBtn.addEventListener("click", () => {
-          void this._openSavedTest(msg.savedTestId!);
-        });
-      }
-
       // Render edit proposal Accept/Reject buttons
       if (msg.role === "assistant" && msg.editProposal) {
         const ep = msg.editProposal;
@@ -5145,7 +5356,7 @@ export class SproutAssistantPopup {
       }
 
       // Render "Implement these changes" follow-up after review replies
-      if (msg.role === "assistant" && !msg.editProposal && !msg.savedTestId && this._isReviewReply(i)) {
+      if (msg.role === "assistant" && !isStreamingAssistantMessage && !msg.editProposal && this._isReviewReply(i)) {
         const followUpActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-message-actions" });
         const implBtn = followUpActions.createEl("button", {
           cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn",
@@ -5160,7 +5371,7 @@ export class SproutAssistantPopup {
         });
       }
 
-      if (msg.role === "assistant" && this._shouldShowGenerateMoreButton(msg.text, i, "assistant")) {
+      if (msg.role === "assistant" && !isStreamingAssistantMessage && this._shouldShowGenerateMoreButton(msg.text, i, "assistant")) {
         const activeNoteName = this.getActiveNoteDisplayName();
         const generateTooltip = activeNoteName
           ? this._tx("ui.studyAssistant.generator.generateFor", "Generate flashcards for {name}", { name: activeNoteName })
@@ -5169,7 +5380,7 @@ export class SproutAssistantPopup {
       }
     }
 
-    if (this._isAssistantBusy()) {
+    if (this._isAssistantBusy() && !this._isStreaming) {
       const typingRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
       this.createAssistantAvatar(typingRow);
       const typingBubble = typingRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
@@ -5266,6 +5477,7 @@ export class SproutAssistantPopup {
     } else {
       for (let i = 0; i < this.reviewMessages.length; i += 1) {
         const msg = this.reviewMessages[i];
+        const isStreamingAssistantMessage = this._isStreamingAssistantMessage(i, this.reviewMessages);
         const row = chatWrap.createDiv({ cls: `learnkit-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}` });
         row.setAttr("data-msg-idx", String(i));
         row.setAttr("data-msg-role", msg.role);
@@ -5278,13 +5490,13 @@ export class SproutAssistantPopup {
           this.createUserAvatar(row, userInitial);
         }
 
-        if (msg.role === "assistant" && this._shouldShowGenerateSwitch(msg.text)) {
+        if (msg.role === "assistant" && !isStreamingAssistantMessage && this._shouldShowGenerateSwitch(msg.text)) {
           this._renderSwitchToGenerateButton(chatWrap);
         }
       }
     }
 
-    if (this.isReviewingNote) {
+    if (this.isReviewingNote && !this._isStreaming) {
       const typingRow = chatWrap.createDiv({ cls: "learnkit-assistant-popup-message-row learnkit-assistant-popup-message-row is-assistant" });
       this.createAssistantAvatar(typingRow);
       const typingBubble = typingRow.createDiv({ cls: "learnkit-assistant-popup-message-bubble learnkit-assistant-popup-message-bubble is-assistant" });
@@ -5412,6 +5624,7 @@ export class SproutAssistantPopup {
     } else {
       for (let i = 0; i < this.generateMessages.length; i += 1) {
         const msg = this.generateMessages[i];
+        const isStreamingAssistantMessage = this._isStreamingAssistantMessage(i, this.generateMessages);
         const row = chatWrap.createDiv({ cls: `learnkit-assistant-popup-message-row ${msg.role === "user" ? "is-user" : "is-assistant"}` });
         row.setAttr("data-msg-idx", String(i));
         row.setAttr("data-msg-role", msg.role);
@@ -5420,11 +5633,11 @@ export class SproutAssistantPopup {
         this.renderMarkdownMessage(bubble, msg.text);
         if (msg.role === "user" && userInitial) this.createUserAvatar(row, userInitial);
 
-        if (msg.role === "assistant" && this._shouldShowAskSwitch(msg.text)) {
+        if (msg.role === "assistant" && !isStreamingAssistantMessage && this._shouldShowAskSwitch(msg.text)) {
           this._renderSwitchToAskButton(chatWrap);
         }
 
-        if (msg.role === "assistant" && this._shouldShowGenerateMoreButton(msg.text, i, "generate")) {
+        if (msg.role === "assistant" && !isStreamingAssistantMessage && this._shouldShowGenerateMoreButton(msg.text, i, "generate")) {
           this._renderGenerateMoreButton(chatWrap, generateTooltip);
         }
 

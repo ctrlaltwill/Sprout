@@ -11,6 +11,8 @@
  */
 
 import { detectLanguage, getBlankWord } from "./language-detect";
+import { requestExternalTts } from "./tts-provider";
+import { ttsCacheKey, getCachedAudio, cacheAudio } from "./tts-cache";
 import { Platform } from "obsidian";
 import { log } from "../../core/logger";
 import type { SproutSettings } from "../../types/settings";
@@ -1089,6 +1091,8 @@ function buildFlagSpeechSegments(
  * - On the **front** (reveal=false): replaces the target cloze(s) with the "blank" word
  *   in the user's default language. Non-target clozes show their answer text.
  * - On the **back** (reveal=true): replaces all cloze tokens with their answer text.
+ *
+ * Handles the hint syntax `{{c1::answer::hint}}` by stripping the hint portion.
  */
 export function prepareClozeTextForTts(
   clozeText: string,
@@ -1099,25 +1103,27 @@ export function prepareClozeTextForTts(
   const blankWord = getBlankWord(defaultLanguage);
   const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
 
-  const result = clozeText.replace(re, (_match, idxStr: string, answer: string) => {
+  const result = clozeText.replace(re, (_match, idxStr: string, content: string) => {
     const idx = Number(idxStr);
     const isTarget = targetIndex === null || idx === targetIndex;
+    // Strip hint: "answer::hint" → "answer"
+    const answer = content.split("::")[0];
 
     if (reveal) {
-      // Back: always show answer text
       return answer;
     }
 
     if (isTarget) {
-      // Front, target cloze: say "blank"
       return blankWord;
     }
 
-    // Front, non-target cloze: say the answer text
     return answer;
   });
 
-  return stripToPlainText(result);
+  // Safety net: strip any surviving cloze-like syntax that the regex missed
+  const cleaned = result.replace(/\{\{[^}]*\}\}/g, "");
+
+  return stripToPlainText(cleaned);
 }
 
 /**
@@ -1125,6 +1131,8 @@ export function prepareClozeTextForTts(
  * Returns only the answer(s) of the target cloze(s), stripped to plain text.
  * For example, if the cloze is "The {{c1::mitochondria}} is the powerhouse",
  * this returns "mitochondria".
+ *
+ * Handles the hint syntax `{{c1::answer::hint}}` by stripping the hint portion.
  */
 export function extractClozeAnswerForTts(
   clozeText: string,
@@ -1136,7 +1144,8 @@ export function extractClozeAnswerForTts(
 
   while ((match = re.exec(clozeText)) !== null) {
     const idx = Number(match[1]);
-    const answer = match[2];
+    // Strip hint: "answer::hint" → "answer"
+    const answer = match[2].split("::")[0];
     const isTarget = targetIndex === null || idx === targetIndex;
     if (isTarget && answer.trim()) {
       answers.push(answer.trim());
@@ -1152,11 +1161,38 @@ export class TtsService {
   private _speaking = false;
   private _speakSession = 0;
   private _resumeKeepAliveInterval: ReturnType<typeof setInterval> | null = null;
+  private _activeAudioElement: HTMLAudioElement | null = null;
+  private _activeObjectUrl: string | null = null;
+
+  /** Vault adapter for cache reads/writes. Set externally by the plugin at init. */
+  vaultAdapter: {
+    exists(path: string): Promise<boolean>;
+    readBinary?(path: string): Promise<ArrayBuffer>;
+    writeBinary?(path: string, data: ArrayBuffer): Promise<void>;
+    remove?(path: string): Promise<void>;
+    mkdir?(path: string): Promise<void>;
+    list?(path: string): Promise<{ files: string[]; folders: string[] }>;
+  } | null = null;
+
+  /** Resolved tts-cache directory path. Set externally by the plugin at init. */
+  ttsCacheDirPath: string | null = null;
 
   private _clearResumeKeepAliveInterval(): void {
     if (this._resumeKeepAliveInterval) {
       clearInterval(this._resumeKeepAliveInterval);
       this._resumeKeepAliveInterval = null;
+    }
+  }
+
+  private _stopAudioElement(): void {
+    if (this._activeAudioElement) {
+      this._activeAudioElement.pause();
+      this._activeAudioElement.removeAttribute("src");
+      this._activeAudioElement = null;
+    }
+    if (this._activeObjectUrl) {
+      URL.revokeObjectURL(this._activeObjectUrl);
+      this._activeObjectUrl = null;
     }
   }
 
@@ -1172,10 +1208,12 @@ export class TtsService {
 
   /** Cancel any ongoing speech. */
   stop(): void {
-    if (!this.isSupported) return;
     this._speakSession += 1;
     this._clearResumeKeepAliveInterval();
-    window.speechSynthesis.cancel();
+    this._stopAudioElement();
+    if (this.isSupported) {
+      window.speechSynthesis.cancel();
+    }
     this._speaking = false;
   }
 
@@ -1204,13 +1242,24 @@ export class TtsService {
     settings: SproutSettings["audio"],
     autoDetect = true,
     bypassEnabled = false,
+    cacheId?: string,
   ): void {
     // Respect the master TTS toggle (unless bypassed for test playback)
     if (!bypassEnabled && !settings.enabled) return;
-    if (!this.isSupported || !text.trim()) return;
+    if (!text.trim()) return;
 
     // Cancel any ongoing utterance
     this.stop();
+
+    // ── External TTS provider branch ──
+    const provider = settings.ttsProvider ?? "browser";
+    if (provider !== "browser") {
+      this._speakExternal(text, lang, settings, cacheId);
+      return;
+    }
+
+    // ── Web Speech API (browser provider) ──
+    if (!this.isSupported) return;
 
     const defaultLang = normaliseLocaleTag(lang || settings.defaultLanguage || "en-US") || "en-US";
     const includeLanguageLabel = Boolean((settings as Record<string, unknown>)["speakFlagLanguageLabel"]);
@@ -1343,13 +1392,125 @@ export class TtsService {
   }
 
   /**
+   * Speak text using an external TTS provider (ElevenLabs, OpenAI, Google Cloud, custom).
+   * Handles caching: checks cache first, falls back to API, stores result in cache.
+   * Falls back to Web Speech API on error if the browser supports it.
+   */
+  private _speakExternal(text: string, lang: string, settings: SproutSettings["audio"], cacheId?: string): void {
+    // Detect circle-flag tokens (e.g. {{es}}) and use them for language selection
+    const flagMatches = getCircleFlagTokenMatches(text);
+    const plainText = stripToPlainText(stripCircleFlagTokens(text));
+    if (!plainText) return;
+
+    const session = this._speakSession;
+    this._speaking = true;
+
+    // If a flag was found and flag-based voice selection is enabled, use its language
+    const flagEnabled = (settings as Record<string, unknown>)["useFlagsForVoiceSelection"] !== false;
+    let effectiveLang: string;
+    if (flagEnabled && flagMatches.length > 0) {
+      const flagLang = languageFromFlagCode(flagMatches[0].code, lang || settings.defaultLanguage || "en-US");
+      effectiveLang = normaliseLocaleTag(flagLang || lang || settings.defaultLanguage || "en-US") || "en-US";
+    } else {
+      effectiveLang = normaliseLocaleTag(lang || settings.defaultLanguage || "en-US") || "en-US";
+    }
+
+    const doSpeak = async () => {
+      try {
+        const adapter = this.vaultAdapter;
+        const cacheDirPath = this.ttsCacheDirPath;
+        const cacheEnabled = settings.ttsCacheEnabled !== false && adapter && cacheDirPath;
+
+        let audioData: ArrayBuffer | null = null;
+
+        // Check cache first
+        if (cacheEnabled) {
+          const key = ttsCacheKey(
+            plainText,
+            settings.ttsProvider,
+            settings.ttsVoiceId || "",
+            settings.ttsModel || "",
+            cacheId,
+            effectiveLang,
+          );
+          audioData = await getCachedAudio(adapter, cacheDirPath, key);
+          if (audioData) {
+            ttsLog("Cache hit — playing cached audio");
+          }
+        }
+
+        // Fetch from provider if not cached
+        if (!audioData) {
+          ttsLog(`Requesting audio from ${settings.ttsProvider} provider…`);
+          audioData = await requestExternalTts({ text: plainText, lang: effectiveLang, audio: settings });
+
+          // Store in cache
+          if (cacheEnabled && audioData) {
+            const key = ttsCacheKey(
+              plainText,
+              settings.ttsProvider,
+              settings.ttsVoiceId || "",
+              settings.ttsModel || "",
+              cacheId,
+              effectiveLang,
+            );
+            void cacheAudio(adapter, cacheDirPath, key, audioData);
+          }
+        }
+
+        // Check session is still current
+        if (session !== this._speakSession) return;
+
+        // Play via HTMLAudioElement
+        const blob = new Blob([audioData], { type: "audio/mpeg" });
+        const objectUrl = URL.createObjectURL(blob);
+        const audioEl = new Audio(objectUrl);
+
+        this._activeAudioElement = audioEl;
+        this._activeObjectUrl = objectUrl;
+
+        audioEl.onended = () => {
+          this._speaking = false;
+          this._stopAudioElement();
+          ttsLog("⏹ External TTS playback ended.");
+        };
+
+        audioEl.onerror = () => {
+          this._speaking = false;
+          this._stopAudioElement();
+          ttsLog("External TTS audio element error.");
+        };
+
+        await audioEl.play();
+        ttsLog(`▶ Playing external TTS audio (${(audioData.byteLength / 1024).toFixed(1)} KB)`);
+      } catch (e) {
+        if (session !== this._speakSession) return;
+        this._speaking = false;
+        log.warn("[TTS] External provider failed, falling back to Web Speech API", e);
+
+        // Fallback to browser TTS
+        if (this.isSupported) {
+          const fallbackSettings: SproutSettings["audio"] = {
+            ...settings,
+            ttsProvider: "browser",
+          };
+          this.speak(plainText, effectiveLang, fallbackSettings, false, true);
+        }
+      }
+    };
+
+    void doSpeak();
+  }
+
+  /**
    * Convenience: speak a basic card's question or answer.
    */
   speakBasicCard(
     text: string,
     settings: SproutSettings["audio"],
+    cacheId?: string,
   ): void {
-    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings));
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, cacheId);
   }
 
   /**
@@ -1365,9 +1526,11 @@ export class TtsService {
     reveal: boolean,
     targetIndex: number | null,
     settings: SproutSettings["audio"],
+    cacheId?: string,
   ): void {
     let prepared: string;
-    if (reveal && settings.clozeAnswerMode === "cloze-only") {
+    const isClozeOnly = reveal && settings.clozeAnswerMode === "cloze-only";
+    if (isClozeOnly) {
       prepared = extractClozeAnswerForTts(clozeText, targetIndex);
     } else {
       prepared = prepareClozeTextForTts(
@@ -1377,8 +1540,164 @@ export class TtsService {
         settings.defaultLanguage,
       );
     }
-    this.speak(prepared, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings));
+
+    // Differentiate cache entries by cloze answer mode so switching
+    // between "Just the answer" / "Full sentence" triggers a new request
+    // rather than replaying stale audio.
+    let effectiveCacheId = cacheId;
+    if (effectiveCacheId && reveal) {
+      effectiveCacheId += isClozeOnly ? "-short" : "-full";
+    }
+
+    this.speak(prepared, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, effectiveCacheId);
   }
+
+  /**
+   * Convenience: speak an MCQ card's question or answer.
+   *
+   * On the front (reveal=false) reads: "Stem. 1. Option A. 2. Option B. …"
+   * On the back (reveal=true)  reads: "The answer is: Option X" (or multiple answers).
+   *
+   * `displayOrder` is the shuffled index array so numbering matches what the
+   * user sees on screen.  When absent, options are read in original order.
+   *
+   * The cache key encodes the display order so different shuffles produce
+   * different cached audio files.
+   */
+  speakMcqCard(
+    stem: string,
+    options: string[],
+    displayOrder: number[],
+    reveal: boolean,
+    correctIndices: number[],
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    const text = formatMcqTextForTts(stem, options, displayOrder, reveal, correctIndices);
+    if (!text) return;
+
+    // Encode the display order into the cache key so each unique shuffle
+    // produces its own cached mp3.
+    let effectiveCacheId = cacheId;
+    if (effectiveCacheId) {
+      effectiveCacheId += `-${displayOrder.join("")}`;
+    }
+
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, effectiveCacheId);
+  }
+
+  /** Speak only the MCQ question stem. */
+  speakMcqStem(
+    stem: string,
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    if (!stem.trim()) return;
+    this.speak(stem, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, cacheId);
+  }
+
+  /** Speak only the MCQ options (numbered, in display order). */
+  speakMcqOptions(
+    options: string[],
+    displayOrder: number[],
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    const text = formatMcqOptionsForTts(options, displayOrder);
+    if (!text) return;
+    let effectiveCacheId = cacheId;
+    if (effectiveCacheId) effectiveCacheId += `-${displayOrder.join("")}`;
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, effectiveCacheId);
+  }
+
+  /** Speak only the MCQ answer (correct option(s)). */
+  speakMcqAnswer(
+    options: string[],
+    displayOrder: number[],
+    correctIndices: number[],
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    const text = formatMcqAnswerForTts(options, displayOrder, correctIndices);
+    if (!text) return;
+    let effectiveCacheId = cacheId;
+    if (effectiveCacheId) effectiveCacheId += `-${displayOrder.join("")}`;
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, effectiveCacheId);
+  }
+}
+
+/**
+ * Format MCQ card content for TTS.
+ *
+ * Front (reveal=false): "Stem. 1. Option A. 2. Option B. 3. Option C."
+ * Back  (reveal=true):  "The answer is: Option X" or "The answers are: 1. X, 2. Y"
+ */
+export function formatMcqTextForTts(
+  stem: string,
+  options: string[],
+  displayOrder: number[],
+  reveal: boolean,
+  correctIndices: number[],
+): string {
+  const order = displayOrder.length === options.length ? displayOrder : options.map((_, i) => i);
+
+  if (!reveal) {
+    // Front side: stem + numbered options in display order
+    const numbered = order.map((origIdx, displayIdx) => `${displayIdx + 1}. ${options[origIdx] ?? ""}`);
+    return [stem, ...numbered].filter(Boolean).join(". ");
+  }
+
+  // Back side: announce the correct answer(s)
+  const correctSet = new Set(correctIndices);
+  if (correctSet.size <= 1) {
+    // Single answer — find the displayed number for the correct option
+    const correctOrig = correctIndices[0] ?? 0;
+    const displayNum = order.indexOf(correctOrig) + 1;
+    const answerText = options[correctOrig] ?? "";
+    return displayNum > 0
+      ? `The answer is ${displayNum}. ${answerText}`
+      : `The answer is ${answerText}`;
+  }
+
+  // Multiple correct answers
+  const answers = order
+    .map((origIdx, displayIdx) => ({ origIdx, displayIdx }))
+    .filter(({ origIdx }) => correctSet.has(origIdx))
+    .map(({ origIdx, displayIdx }) => `${displayIdx + 1}. ${options[origIdx] ?? ""}`);
+  return `The answers are: ${answers.join(". ")}`;
+}
+
+/** Format just the MCQ options as a numbered list for TTS. */
+export function formatMcqOptionsForTts(
+  options: string[],
+  displayOrder: number[],
+): string {
+  const order = displayOrder.length === options.length ? displayOrder : options.map((_, i) => i);
+  const numbered = order.map((origIdx, displayIdx) => `${displayIdx + 1}. ${options[origIdx] ?? ""}`);
+  return numbered.filter(Boolean).join(". ");
+}
+
+/** Format just the MCQ answer (correct option(s)) for TTS. */
+export function formatMcqAnswerForTts(
+  options: string[],
+  displayOrder: number[],
+  correctIndices: number[],
+): string {
+  const order = displayOrder.length === options.length ? displayOrder : options.map((_, i) => i);
+  const correctSet = new Set(correctIndices);
+  if (correctSet.size <= 1) {
+    const correctOrig = correctIndices[0] ?? 0;
+    const displayNum = order.indexOf(correctOrig) + 1;
+    const answerText = options[correctOrig] ?? "";
+    return displayNum > 0
+      ? `The answer is ${displayNum}. ${answerText}`
+      : `The answer is ${answerText}`;
+  }
+  const answers = order
+    .map((origIdx, displayIdx) => ({ origIdx, displayIdx }))
+    .filter(({ origIdx }) => correctSet.has(origIdx))
+    .map(({ origIdx, displayIdx }) => `${displayIdx + 1}. ${options[origIdx] ?? ""}`);
+  return `The answers are: ${answers.join(". ")}`;
 }
 
 /** Shared singleton instance. */

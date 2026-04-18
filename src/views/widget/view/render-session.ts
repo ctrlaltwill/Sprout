@@ -1157,38 +1157,41 @@ function speakWidgetCard(
   const reveal = typeof forceAnswerSide === "boolean" ? forceAnswerSide : (view.showAnswer || !!graded);
   const isBackDirection = card.type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
   const isOldReversed = card.type === "reversed";
+  const cid = `${card.id}-${reveal ? "answer" : "question"}`;
 
   if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
     const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
     const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
     const text = reveal ? aText : qText;
-    tts.speakBasicCard(text, audio);
+    tts.speakBasicCard(text, audio, cid);
     return;
   }
 
   if (isClozeLike(card)) {
     const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
-    tts.speakClozeCard(card.clozeText || "", reveal, targetIndex, audio);
+    tts.speakClozeCard(card.clozeText || "", reveal, targetIndex, audio, cid);
     return;
   }
 
   if (card.type === "mcq") {
-    const parts = [card.stem || "", ...normalizeCardOptions(card.options)];
-    tts.speakBasicCard(parts.filter(Boolean).join(". "), audio);
+    const options = normalizeCardOptions(card.options);
+    const randomize = !!(view.plugin.settings.study?.randomizeMcqOptions);
+    const order = getWidgetMcqDisplayOrder(view.session, card, randomize);
+    tts.speakMcqCard(card.stem || "", options, order, reveal, getCorrectIndices(card), audio, cid);
     return;
   }
 
   if (card.type === "oq") {
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
     const text = [card.q || "", ...steps].filter(Boolean).join(". ");
-    tts.speakBasicCard(text, audio);
+    tts.speakBasicCard(text, audio, cid);
     return;
   }
 
   if (card.type === "io" || card.type === "io-child") {
     const qText = card.q || "";
     const aText = card.a || "";
-    tts.speakBasicCard(reveal ? aText : qText, audio);
+    tts.speakBasicCard(reveal ? aText : qText, audio, cid);
   }
 }
 

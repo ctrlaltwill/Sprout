@@ -13,8 +13,11 @@ import { log } from "../core/logger";
 import { clonePlain, isPlainObject } from "../core/utils";
 import {
   normaliseApiKeys,
+  normaliseTtsApiKeys,
   hasAnyApiKey,
+  hasAnyTtsApiKey,
   persistApiKeysToDedicatedFile,
+  persistTtsApiKeysToDedicatedFile,
 } from "../core/settings-storage";
 import { SqliteStore } from "../core/sqlite-store";
 import { NoteReviewSqlite } from "../core/note-review-sqlite";
@@ -105,6 +108,10 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
       return this._getConfigFilePath("api-keys.json");
     };
 
+    _getTtsApiKeysFilePath = (): string | null => {
+      return this._getConfigFilePath("tts-api-keys.json");
+    };
+
     _doSave = async (): Promise<void> => {
       if (this.store instanceof SqliteStore) {
         const root: Record<string, unknown> = ((await this.loadData()) || {}) as Record<string, unknown>;
@@ -117,15 +124,30 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
           apiKeys: this.settings.studyAssistant.apiKeys,
         });
 
+        this.settings.audio.ttsApiKeys = normaliseTtsApiKeys(this.settings.audio.ttsApiKeys);
+        const ttsKeyWriteOk = await persistTtsApiKeysToDedicatedFile({
+          adapter: this.app?.vault?.adapter,
+          dirPath: this._getConfigDirPath(),
+          filePath: this._getTtsApiKeysFilePath(),
+          apiKeys: this.settings.audio.ttsApiKeys,
+        });
+
         const syncSettings = clonePlain(this.settings) as Record<string, unknown>;
         if (isPlainObject(syncSettings.studyAssistant)) {
           syncSettings.studyAssistant.apiKeys =
             { ...DEFAULT_SETTINGS.studyAssistant.apiKeys };
         }
+        if (isPlainObject(syncSettings.audio)) {
+          syncSettings.audio.ttsApiKeys = { ...DEFAULT_SETTINGS.audio.ttsApiKeys };
+        }
 
         if (!apiKeyWriteOk && hasAnyApiKey(this.settings.studyAssistant.apiKeys)) {
           log.error("Api key dedicated file write failed; keys were not persisted this save.");
           new Notice(this._tx("ui.sync.notice.keysSaveFailed", "Could not save keys securely. Check file permissions"), 8000);
+        }
+
+        if (!ttsKeyWriteOk && hasAnyTtsApiKey(this.settings.audio.ttsApiKeys)) {
+          log.error("TTS api key dedicated file write failed; keys were not persisted this save.");
         }
 
         root.settings = syncSettings;
@@ -319,7 +341,7 @@ export function WithDataSyncMethods<T extends Constructor<LearnKitPluginBase>>(B
         total = db.clearAllNoteState();
         await db.persist();
       } finally {
-        await db.close().catch((e) => log.swallow("close note review sqlite after reset", e));
+        await db.close().catch((e: unknown) => log.swallow("close note review sqlite after reset", e));
       }
 
       return total;

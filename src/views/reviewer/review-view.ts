@@ -14,12 +14,14 @@ import {
   setIcon,
 } from "obsidian";
 
-import { MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, MS_DAY, VIEW_TYPE_REVIEWER } from "../../platform/core/constants";
+import { MAX_CONTENT_WIDTH, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_REVIEWER } from "../../platform/core/constants";
 import { log } from "../../platform/core/logger";
 import { queryFirst, setCssProps } from "../../platform/core/ui";
 import { createTitleStripFrame } from "../../platform/core/view-primitives";
 import { SPROUT_HOME_CONTENT_SHELL_CLASS } from "../../platform/core/ui-classes";
-import { gradeFromRating } from "../../engine/scheduler/scheduler";
+import { gradeCard } from "../../platform/services/grading-service";
+import { undoGrade } from "../../platform/services/undo-service";
+import { buryCardAction, suspendCardAction } from "../../platform/services/card-action-service";
 import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
 import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
 import { ParseErrorModal } from "../../platform/modals/parse-error-modal";
@@ -29,7 +31,7 @@ import type LearnKitPlugin from "../../main";
 
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../../platform/types/card";
-import { getCorrectIndices, isMultiAnswerMcq } from "../../platform/types/card";
+import { getCorrectIndices, isMultiAnswerMcq, normalizeCardOptions } from "../../platform/types/card";
 import { buildSession, getNextDueInScope, type SessionBuildOptions } from "./session";
 import { formatCountdown } from "./timers";
 import { renderClozeFront } from "./question-cloze";
@@ -430,6 +432,43 @@ export class SproutReviewerView extends ItemView {
     if (card) this._doSpeakBack(card, true);
   }
 
+  /** Replay just the MCQ question stem. */
+  private _replayMcqQuestion() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) { tts.stop(); return; }
+    const card = this.currentCard();
+    if (!card || card.type !== "mcq") return;
+    const audio = this.plugin.settings?.audio;
+    if (!audio || !this._canUseTtsForCard(card)) return;
+    tts.speakMcqStem(card.stem || "", audio, `${card.id}-question`);
+  }
+
+  /** Replay just the MCQ numbered options. */
+  private _replayMcqOptions() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) { tts.stop(); return; }
+    const card = this.currentCard();
+    if (!card || card.type !== "mcq") return;
+    const audio = this.plugin.settings?.audio;
+    if (!audio || !this._canUseTtsForCard(card)) return;
+    const options = normalizeCardOptions(card.options);
+    const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
+    tts.speakMcqOptions(options, order, audio, `${card.id}-options`);
+  }
+
+  /** Replay just the MCQ correct answer. */
+  private _replayMcqAnswer() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) { tts.stop(); return; }
+    const card = this.currentCard();
+    if (!card || card.type !== "mcq") return;
+    const audio = this.plugin.settings?.audio;
+    if (!audio || !this._canUseTtsForCard(card)) return;
+    const options = normalizeCardOptions(card.options);
+    const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
+    tts.speakMcqAnswer(options, order, getCorrectIndices(card), audio, `${card.id}-answer`);
+  }
+
   /**
    * Internal: actually speak the front of the card.
    * @param force When true, skip the dedup key check (used for replay).
@@ -445,19 +484,26 @@ export class SproutReviewerView extends ItemView {
     const key = `front:${card.id}`;
     if (!force && this._ttsLastSpokenKey === key) return;
 
+    const cid = `${card.id}-question`;
+
     if (card.type === "basic" && card.q) {
       this._ttsLastSpokenKey = key;
-      tts.speakBasicCard(card.q, audio);
+      tts.speakBasicCard(card.q, audio, cid);
     } else if ((card.type === "reversed" || card.type === "reversed-child") && (card.q || card.a)) {
       this._ttsLastSpokenKey = key;
       const reversedDirection = (card as Record<string, unknown>).reversedDirection;
       const isBackDir = card.type === "reversed-child" && reversedDirection === "back";
       const frontText = (isBackDir || card.type === "reversed") ? (card.a || "") : (card.q || "");
-      tts.speakBasicCard(frontText, audio);
+      tts.speakBasicCard(frontText, audio, cid);
     } else if ((card.type === "cloze" || card.type === "cloze-child") && card.clozeText) {
       this._ttsLastSpokenKey = key;
       const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
-      tts.speakClozeCard(card.clozeText, false, targetIndex, audio);
+      tts.speakClozeCard(card.clozeText, false, targetIndex, audio, cid);
+    } else if (card.type === "mcq" && (card.stem || card.options?.length)) {
+      this._ttsLastSpokenKey = key;
+      const options = normalizeCardOptions(card.options);
+      const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
+      tts.speakMcqCard(card.stem || "", options, order, false, getCorrectIndices(card), audio, cid);
     }
   }
 
@@ -476,19 +522,26 @@ export class SproutReviewerView extends ItemView {
     const key = `back:${card.id}`;
     if (!force && this._ttsLastSpokenKey === key) return;
 
+    const cid = `${card.id}-answer`;
+
     if (card.type === "basic" && card.a) {
       this._ttsLastSpokenKey = key;
-      tts.speakBasicCard(card.a, audio);
+      tts.speakBasicCard(card.a, audio, cid);
     } else if ((card.type === "reversed" || card.type === "reversed-child") && (card.q || card.a)) {
       this._ttsLastSpokenKey = key;
       const reversedDirection = (card as Record<string, unknown>).reversedDirection;
       const isBackDir = card.type === "reversed-child" && reversedDirection === "back";
       const backText = (isBackDir || card.type === "reversed") ? (card.q || "") : (card.a || "");
-      tts.speakBasicCard(backText, audio);
+      tts.speakBasicCard(backText, audio, cid);
     } else if ((card.type === "cloze" || card.type === "cloze-child") && card.clozeText) {
       this._ttsLastSpokenKey = key;
       const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
-      tts.speakClozeCard(card.clozeText, true, targetIndex, audio);
+      tts.speakClozeCard(card.clozeText, true, targetIndex, audio, cid);
+    } else if (card.type === "mcq" && (card.stem || card.options?.length)) {
+      this._ttsLastSpokenKey = key;
+      const options = normalizeCardOptions(card.options);
+      const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
+      tts.speakMcqAnswer(options, order, getCorrectIndices(card), audio, cid);
     }
   }
 
@@ -545,23 +598,16 @@ export class SproutReviewerView extends ItemView {
 
     this._undoStack.pop();
 
-    const store = this.plugin.store;
-
-    const fromState = u.storeMutated ? deepClone(store.getState(u.id)) : null;
-
     try {
-      const needPersist = u.storeMutated || u.analyticsMutated;
-
-      if (u.storeMutated) {
-        if (u.prevState) store.upsertState(deepClone(u.prevState));
-        store.truncateReviewLog(u.reviewLogLenBefore);
-      }
-
-      if (u.analyticsMutated) {
-        store.truncateAnalyticsEvents(u.analyticsLenBefore);
-      }
-
-      if (needPersist) await store.persist();
+      const { fromState, toState } = await undoGrade({
+        id: u.id,
+        prevState: u.prevState,
+        reviewLogLenBefore: u.reviewLogLenBefore,
+        analyticsLenBefore: u.analyticsLenBefore,
+        storeMutated: u.storeMutated,
+        analyticsMutated: u.analyticsMutated,
+        store: this.plugin.store,
+      });
 
       delete this.session.graded[u.id];
       this.session.stats.done = Object.keys(this.session.graded || {}).length;
@@ -571,8 +617,6 @@ export class SproutReviewerView extends ItemView {
 
       // Reset to show question (front) to allow restudying
       this.showAnswer = false;
-
-      const toState = u.storeMutated ? store.getState(u.id) : null;
 
       logUndoIfNeeded({
         id: u.id,
@@ -1182,43 +1226,22 @@ export class SproutReviewerView extends ItemView {
       this._undoStack.splice(0, this._undoStack.length - SproutReviewerView.UNDO_MAX);
 
     try {
-      const { nextState, prevDue, nextDue, metrics } = gradeFromRating(
-        st,
+      const { nextDue, metrics } = await gradeCard({
+        id,
+        cardType: String(card.type || "unknown"),
         rating,
         now,
-        this.plugin.settings,
-      );
-
-      this.plugin.store.upsertState(nextState);
-      this.plugin.store.appendReviewLog({
-        id,
-        at: now,
-        result: rating,
-        prevDue,
-        nextDue,
-        meta: meta || null,
+        prevState: st,
+        settings: this.plugin.settings,
+        store,
+        msToAnswer,
+        scope: this.session.scope,
+        meta: meta || undefined,
       });
-
-      if (typeof store.appendAnalyticsReview === "function") {
-        store.appendAnalyticsReview({
-          at: now,
-          cardId: id,
-          cardType: String(card.type || "unknown"),
-          result: rating,
-          mode: "scheduled",
-          msToAnswer,
-          prevDue,
-          nextDue,
-          scope: this.session.scope,
-          meta: meta || undefined,
-        });
-      }
 
       if (this._isCoachSession && this._trackCoachProgress && !this.isPracticeSession()) {
         await this.plugin.recordCoachProgressForScope(this.session.scope, "flashcard", 1);
       }
-
-      await this.plugin.store.persist();
 
       this.session.graded[id] = { rating, at: now, meta: meta || undefined };
       this.session.stats.done = Object.keys(this.session.graded).length;
@@ -1255,10 +1278,8 @@ export class SproutReviewerView extends ItemView {
     if (!st) return;
 
     const now = Date.now();
-    const nextState = { ...st, due: now + MS_DAY };
 
-    this.plugin.store.upsertState(nextState);
-    await this.plugin.store.persist();
+    await buryCardAction({ id, prevState: st, now, store: this.plugin.store });
 
     this.session.graded[id] = { rating: "again", at: now, meta: { action: "bury" } };
     this.session.stats.done = Object.keys(this.session.graded).length;
@@ -1281,10 +1302,8 @@ export class SproutReviewerView extends ItemView {
     if (!st) return;
 
     const now = Date.now();
-    const nextState = { ...st, stage: "suspended" as const };
 
-    this.plugin.store.upsertState(nextState);
-    await this.plugin.store.persist();
+    await suspendCardAction({ id, prevState: st, now, store: this.plugin.store });
 
     this.session.graded[id] = { rating: "again", at: now, meta: { action: "suspend" } };
     this.session.stats.done = Object.keys(this.session.graded).length;
@@ -2218,6 +2237,9 @@ export class SproutReviewerView extends ItemView {
       ttsEnabled: ttsEnabledForCard,
       ttsReplayFront: () => this._replayFront(),
       ttsReplayBack: () => this._replayBack(),
+      ttsReplayMcqQuestion: () => this._replayMcqQuestion(),
+      ttsReplayMcqOptions: () => this._replayMcqOptions(),
+      ttsReplayMcqAnswer: () => this._replayMcqAnswer(),
 
       hideSessionTopbar: !!this.plugin.settings.study?.hideSessionTopbar,
 

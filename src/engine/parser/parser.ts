@@ -13,6 +13,8 @@ import {
   FIELD_DELIM_RE,
   TITLE_OUTSIDE_DELIM_RE,
   ANY_HEADER_DELIM_RE,
+  BASIC_SHORTHAND_RE,
+  CLOZE_SHORTHAND_RE,
   stripClosingDelimiter,
   unescapeDelimiterText,
   escapeDelimiterRe,
@@ -76,6 +78,11 @@ export type ParsedCard = {
 
   sourceNotePath: string;
   sourceStartLine: number;
+  sourceEndLine: number;
+
+  /** True when this card was parsed from shorthand `:::` syntax. */
+  isShorthand: boolean;
+
   errors: string[];
 };
 
@@ -187,6 +194,19 @@ function validateClozeText(text: string): string[] {
   return errors;
 }
 
+/**
+ * Auto-number bare `{{text}}` tokens into `{{c1::text}}`, `{{c2::text}}`, etc.
+ * Already-numbered `{{cN::text}}` tokens are left untouched.
+ */
+function autoNumberClozeTokens(text: string): string {
+  let counter = 0;
+  // Replace bare {{text}} (not already {{cN::text}}) with {{cN::text}}
+  return text.replace(/\{\{(?!c\d+::)([\s\S]*?)\}\}/g, (_match, content) => {
+    counter += 1;
+    return `{{c${counter}::${content}}}`;
+  });
+}
+
 function makeEmptyCard(
   notePath: string,
   startLine: number,
@@ -229,6 +249,8 @@ function makeEmptyCard(
 
     sourceNotePath: notePath,
     sourceStartLine: startLine,
+    sourceEndLine: startLine,
+    isShorthand: false,
     errors: [],
   };
 }
@@ -695,6 +717,54 @@ export function parseCardsFromText(
       const prev = current[currentField];
       (current as Record<string, unknown>)[currentField] = (prev ? String(prev) + "\n" : "") + line;
       continue;
+    }
+
+    // 11a) Shorthand cloze card: cloze:::text with {{hidden}}  /  cq:::...  /  CQ:::...
+    {
+      const cm = line.match(CLOZE_SHORTHAND_RE);
+      if (cm) {
+        const body = cm[1].trim();
+        if (body) {
+          flush();
+          const startLine = pendingIdLine !== null ? pendingIdLine : i;
+          current = makeEmptyCard(notePath, startLine, pendingId, pendingTitle, "CQ");
+          current.clozeText = autoNumberClozeTokens(body);
+          current.isShorthand = true;
+          current.sourceEndLine = i;
+          pendingId = null;
+          pendingIdLine = null;
+          pendingTitle = null;
+          pendingTitleFieldOpen = false;
+          pendingTitlePipeOpen = false;
+          flush();
+          continue;
+        }
+      }
+    }
+
+    // 11b) Shorthand basic card: Question:::Answer
+    {
+      const sm = line.match(BASIC_SHORTHAND_RE);
+      if (sm) {
+        const qText = sm[1].trim();
+        const aText = sm[2].trim();
+        if (qText && aText) {
+          flush();
+          const startLine = pendingIdLine !== null ? pendingIdLine : i;
+          current = makeEmptyCard(notePath, startLine, pendingId, pendingTitle, "Q");
+          current.q = qText;
+          current.a = aText;
+          current.isShorthand = true;
+          current.sourceEndLine = i;
+          pendingId = null;
+          pendingIdLine = null;
+          pendingTitle = null;
+          pendingTitleFieldOpen = false;
+          pendingTitlePipeOpen = false;
+          flush();
+          continue;
+        }
+      }
     }
 
     // 14) Prose encountered while inside a card but not consuming a field => flush

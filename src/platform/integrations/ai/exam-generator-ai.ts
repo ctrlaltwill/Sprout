@@ -5,6 +5,7 @@
  * @exports
  *  - generateExamQuestions
  *  - gradeSaqAnswer
+ *  - gradeFullTest
  *  - suggestTestName
  */
 
@@ -13,6 +14,7 @@ import type { SproutSettings } from "../../types/settings";
 import type {
   ExamGeneratorConfig,
   ExamSourceNote,
+  FullTestGradeResult,
   GeneratedExamQuestion,
   SaqGradeResult,
 } from "../../../views/exam-generator/exam-generator-types";
@@ -628,6 +630,97 @@ export async function gradeSaqAnswer(params: {
     keyPointsMissed,
     ...(keyPointsWrong.length > 0 ? { keyPointsWrong } : {}),
   };
+}
+
+export async function gradeFullTest(params: {
+  settings: SproutSettings["studyAssistant"];
+  questions: GeneratedExamQuestion[];
+  userAnswerText: string;
+  difficulty: ExamGeneratorConfig["difficulty"];
+}): Promise<FullTestGradeResult> {
+  const { settings, questions, userAnswerText, difficulty } = params;
+
+  const questionsForPrompt = questions.map((q, i) => {
+    const entry: Record<string, unknown> = {
+      questionNumber: i + 1,
+      type: q.type,
+      prompt: q.prompt,
+    };
+    if (q.type === "mcq" && q.options) {
+      entry.options = q.options;
+      if (q.correctIndices) {
+        entry.correctIndices = q.correctIndices;
+      } else if (q.correctIndex != null) {
+        entry.correctIndex = q.correctIndex;
+      }
+    }
+    if (q.type === "saq" && q.markingGuide) {
+      entry.markingGuide = q.markingGuide;
+    }
+    if (q.explanation) entry.explanation = q.explanation;
+    return entry;
+  });
+
+  const systemPrompt = [
+    "You are LearnKit Exam Marker.",
+    `Difficulty level: ${difficulty}.`,
+    "The student was given a test and replied with freeform answers.",
+    "Grade each question. For MCQs, check whether the student selected the correct option(s). For SAQs, evaluate against the marking guide and award partial credit where appropriate.",
+    "The student may use numbering, bullet points, or prose. Match each part of their response to the corresponding question by number or context.",
+    "If a question's answer is missing or unidentifiable, score it 0.",
+    "Return JSON only:",
+    '{"results":[{"questionNumber":1,"correct":true,"scorePercent":0-100,"feedback":"..."}],"overallScorePercent":0-100}',
+    "overallScorePercent should be the average of all question scorePercent values.",
+  ].join("\n");
+
+  const userPrompt = JSON.stringify({
+    questions: questionsForPrompt,
+    studentResponse: String(userAnswerText || "").trim(),
+  }, null, 2);
+
+  const raw = await requestStudyAssistantCompletion({
+    settings,
+    systemPrompt,
+    userPrompt,
+    mode: "json",
+  });
+
+  let parsed: unknown;
+  try {
+    parsed = parseJson<unknown>(raw);
+  } catch {
+    throw new Error("Test grader returned invalid JSON.");
+  }
+
+  const obj = toRecord(parsed);
+  if (!obj) throw new Error("Test grader returned invalid result.");
+
+  const rawResults = Array.isArray(obj.results) ? obj.results : [];
+  const results = rawResults.map((r) => {
+    const rec = toRecord(r);
+    if (!rec) return { questionNumber: 0, correct: false, scorePercent: 0, feedback: "No result." };
+    const rawScore = Number(rec.scorePercent);
+    const feedback = typeof rec.feedback === "string"
+      ? rec.feedback.trim()
+      : typeof rec.feedback === "number" || typeof rec.feedback === "boolean"
+        ? String(rec.feedback).trim()
+        : "";
+    return {
+      questionNumber: Number(rec.questionNumber) || 0,
+      correct: Boolean(rec.correct),
+      scorePercent: Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : 0,
+      feedback: feedback || "No feedback.",
+    };
+  });
+
+  const rawOverall = Number(obj.overallScorePercent);
+  const overallScorePercent = Number.isFinite(rawOverall)
+    ? Math.max(0, Math.min(100, rawOverall))
+    : results.length > 0
+      ? Math.round(results.reduce((sum, r) => sum + r.scorePercent, 0) / results.length)
+      : 0;
+
+  return { overallScorePercent, results };
 }
 
 export async function suggestTestName(params: {

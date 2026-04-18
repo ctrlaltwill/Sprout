@@ -50,3 +50,7 @@ export class ItemView {
 export class MarkdownRenderer {
   static render() { return Promise.resolve(); }
 }
+
+export async function requestUrl(_params: any): Promise<any> {
+  throw new Error("requestUrl is not mocked – use vi.mocked(requestUrl) in your test");
+}

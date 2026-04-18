@@ -684,9 +684,17 @@ export class LearnKitSettingsView extends ItemView {
     // Restore scroll position (or reset to top for fresh tab switch)
     requestAnimationFrame(() => {
       const nextInnerScroller = container.querySelector<HTMLElement>(".learnkit-guide-content-inner--snap");
-      if (nextInnerScroller) nextInnerScroller.scrollTop = prevInnerScroll;
+      if (nextInnerScroller) {
+        // Temporarily disable smooth scrolling so the position restores instantly
+        setCssProps(nextInnerScroller, "scroll-behavior", "auto");
+        nextInnerScroller.scrollTop = prevInnerScroll;
+      }
       container.scrollTop = prevScroll;
       this._clearInnerAOS(container);
+      // Re-apply after a frame so future user scrolls are smooth again
+      requestAnimationFrame(() => {
+        if (nextInnerScroller) setCssProps(nextInnerScroller, "scroll-behavior", null);
+      });
     });
   }
 

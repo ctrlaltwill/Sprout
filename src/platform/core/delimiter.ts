@@ -280,6 +280,24 @@ export function FLASHCARD_HEADER_CARD_RE(): RegExp { return _FLASHCARD_HEADER_CA
 /** Sync-engine flashcard header — field types */
 export function FLASHCARD_HEADER_FIELD_RE(): RegExp { return _FLASHCARD_HEADER_FIELD_RE; }
 
+// ── Shorthand syntax ────────────────────────────────────────────────
+
+/**
+ * Matches a single-line shorthand basic card: `Question:::Answer`.
+ * Uses triple-colon to avoid collision with Dataview's `::` inline fields.
+ * Both question (group 1) and answer (group 2) must be non-empty.
+ */
+export const BASIC_SHORTHAND_RE = /^(.+?):::(.+)$/;
+
+/**
+ * Matches a single-line shorthand cloze card:
+ *   `cloze:::text with {{hidden}}`
+ *   `cq:::text with {{hidden}}`
+ *   `CQ:::text with {{hidden}}`
+ * Case-insensitive prefix (cloze|cq). Group 1 = cloze body.
+ */
+export const CLOZE_SHORTHAND_RE = /^(?:cloze|cq):::(.+)$/i;
+
 // ── Field formatting (write-side) ───────────────────────────────────
 
 /**

@@ -405,4 +405,28 @@ export function normaliseSettingsInPlace(s: SproutSettings): void {
 
   if (!s.general.enableReadingStyles) s.general.prettifyCards = "off";
   else if (!s.general.prettifyCards || s.general.prettifyCards === "off") s.general.prettifyCards = "accent";
+
+  // ── Audio / TTS provider ──
+  s.audio ??= {} as SproutSettings["audio"];
+  const ttsProvider = String(s.audio.ttsProvider ?? DEFAULT_SETTINGS.audio.ttsProvider);
+  s.audio.ttsProvider =
+    ttsProvider === "elevenlabs" || ttsProvider === "openai" || ttsProvider === "google-cloud" || ttsProvider === "custom"
+      ? ttsProvider
+      : "browser";
+  s.audio.ttsVoiceId = String(s.audio.ttsVoiceId ?? DEFAULT_SETTINGS.audio.ttsVoiceId).trim();
+  s.audio.ttsModel = String(s.audio.ttsModel ?? DEFAULT_SETTINGS.audio.ttsModel).trim();
+  // Migrate legacy OpenAI models that lack `instructions` support
+  if (s.audio.ttsProvider === "openai" && (s.audio.ttsModel === "tts-1" || s.audio.ttsModel === "tts-1-hd")) {
+    s.audio.ttsModel = "gpt-4o-mini-tts";
+  }
+  // Migrate legacy ElevenLabs monolingual models to multilingual v2
+  if (s.audio.ttsProvider === "elevenlabs" && (s.audio.ttsModel === "eleven_monolingual_v1" || s.audio.ttsModel === "eleven_turbo_v2" || s.audio.ttsModel === "eleven_multilingual_v1")) {
+    s.audio.ttsModel = "eleven_multilingual_v2";
+  }
+  s.audio.ttsEndpointOverride = String(s.audio.ttsEndpointOverride ?? DEFAULT_SETTINGS.audio.ttsEndpointOverride).trim();
+  if (s.audio.ttsEndpointOverride && !/^https?:\/\//i.test(s.audio.ttsEndpointOverride)) {
+    s.audio.ttsEndpointOverride = "";
+  }
+  s.audio.ttsCacheEnabled ??= DEFAULT_SETTINGS.audio.ttsCacheEnabled;
+  s.audio.ttsApiKeys ??= { ...DEFAULT_SETTINGS.audio.ttsApiKeys };
 }

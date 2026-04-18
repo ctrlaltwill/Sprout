@@ -117,6 +117,33 @@ export function isTestGenerationRequest(text: string): boolean {
   return false;
 }
 
+export function parseTestConfigFromRequest(text: string): {
+  questionCount?: number;
+  difficulty?: "easy" | "medium" | "hard";
+  questionMode?: "mcq" | "saq" | "mixed";
+  appliedScenarios?: boolean;
+} {
+  const value = String(text || "").toLowerCase();
+  const result: ReturnType<typeof parseTestConfigFromRequest> = {};
+
+  const countMatch = value.match(/(\d+)\s*(questions?|qs?)\b/i);
+  if (countMatch?.[1]) {
+    const n = Number.parseInt(countMatch[1], 10);
+    if (Number.isFinite(n) && n > 0) result.questionCount = Math.min(n, 15);
+  }
+
+  if (/\beasy\b/i.test(value)) result.difficulty = "easy";
+  else if (/\bhard\b/i.test(value)) result.difficulty = "hard";
+  else if (/\bmedium\b/i.test(value)) result.difficulty = "medium";
+
+  if (/\b(mcqs?|multiple[\s-]?choice)\b/i.test(value)) result.questionMode = "mcq";
+  else if (/\b(saqs?|short[\s-]?answer|written)\b/i.test(value)) result.questionMode = "saq";
+
+  if (/\b(scenario|applied|case[\s-]?stud)/i.test(value)) result.appliedScenarios = true;
+
+  return result;
+}
+
 export function testGeneratedText(tx: Tx, testName: string): string {
   return tx(
     "ui.studyAssistant.test.generated",

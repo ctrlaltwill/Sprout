@@ -65,10 +65,13 @@ import { ParseErrorModal } from "../modals/parse-error-modal";
 import { setDelimiter } from "../core/delimiter";
 import {
   initialiseDedicatedApiKeyStorage,
+  initialiseDedicatedTtsApiKeyStorage,
   migrateLegacyConfigFiles,
 } from "../core/settings-storage";
 import { ReminderEngine } from "../../views/reminders/reminder-engine";
 import { ensurePluginRuntimeState } from "./runtime-state";
+import { getTtsService } from "../integrations/tts/tts-service";
+import { getTtsCacheDirPath } from "../integrations/tts/tts-cache";
 
 export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(Base: T) {
   return class WithLifecycleMethods extends Base {
@@ -176,6 +179,24 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
           filePath: this._getApiKeysFilePath(),
           settings: this.settings,
         });
+        await initialiseDedicatedTtsApiKeyStorage({
+          adapter: this.app?.vault?.adapter,
+          dirPath: this._getConfigDirPath(),
+          filePath: this._getTtsApiKeysFilePath(),
+          settings: this.settings,
+        });
+
+        // Wire vault adapter into TTS service for external provider caching
+        {
+          const tts = getTtsService();
+          tts.vaultAdapter = this.app?.vault?.adapter ?? null;
+          const configDir = this.app?.vault?.configDir;
+          const pluginId = this.manifest?.id;
+          if (configDir && pluginId) {
+            tts.ttsCacheDirPath = getTtsCacheDirPath(configDir, pluginId);
+          }
+        }
+
         this._registerSproutPinchZoom();
 
         setDelimiter(this.settings.indexing.delimiter ?? "|");
@@ -190,8 +211,9 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
           await sqliteStore.open();
           this.store = sqliteStore;
         } else if (hasLegacyStore) {
-          const migrated = await migrateJsonToSqlite(this, rootObj);
-          if (migrated) {
+          // Legacy JSON → migrate to SQLite
+          const migratedToSqlite = await migrateJsonToSqlite(this, rootObj);
+          if (migratedToSqlite) {
             const sqliteStore = new SqliteStore(this);
             await sqliteStore.open();
             this.store = sqliteStore;
@@ -200,6 +222,7 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
             this.store.load(rootObj);
           }
         } else {
+          // Fresh install — create empty SQLite store
           const sqliteStore = new SqliteStore(this);
           await sqliteStore.open();
           this.store = sqliteStore;

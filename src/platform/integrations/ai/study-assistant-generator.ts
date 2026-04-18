@@ -5,12 +5,13 @@
  * @exports
  *  - generateStudyAssistantSuggestions
  *  - generateStudyAssistantChatReply
+ *  - generateStudyAssistantChatReplyStreaming
  *  - classifyUserIntent
  *  - parseEditProposal
  */
 
 import type { SproutSettings } from "../../types/settings";
-import { requestStudyAssistantCompletionDetailed } from "./study-assistant-provider";
+import { requestStudyAssistantCompletionDetailed, requestStudyAssistantStreamingCompletion } from "./study-assistant-provider";
 import { buildStudyAssistantHiddenPrompt } from "./study-assistant-hidden-prompts";
 import type {
   StudyAssistantChatInput,
@@ -249,10 +250,11 @@ function userExplicitlyAllowsRepeatTopics(input: StudyAssistantGeneratorInput): 
   return allowPatterns.some((re) => re.test(text));
 }
 
-type UserRequestOverrides = {
+export type UserRequestOverrides = {
   count?: number;
   exactCountRequested?: boolean;
   types?: StudyAssistantCardType[];
+  perTypeCounts?: Map<StudyAssistantCardType, number>;
   topic?: string;
 };
 
@@ -295,7 +297,7 @@ const TYPE_ALIASES: Record<string, StudyAssistantCardType> = {
   "image-occlusion card": "io",
 };
 
-function parseUserRequestOverrides(text: string): UserRequestOverrides {
+export function parseUserRequestOverrides(text: string): UserRequestOverrides {
   const t = String(text || "").toLowerCase().trim();
   if (!t) return {};
 
@@ -308,6 +310,7 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
 
   // Extract count+type pairs first
   const detectedTypes: StudyAssistantCardType[] = [];
+  const perTypeCounts = new Map<StudyAssistantCardType, number>();
   let match: RegExpExecArray | null;
 
   while ((match = countTypePattern.exec(t)) !== null) {
@@ -322,10 +325,9 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
       .replace(/s$/, "");
     const mapped = TYPE_ALIASES[typeKey];
     if (mapped) {
-      if (!result.count) {
-        result.count = n;
-        result.exactCountRequested = true;
-      }
+      result.count = (result.count ?? 0) + n;
+      result.exactCountRequested = true;
+      perTypeCounts.set(mapped, (perTypeCounts.get(mapped) ?? 0) + n);
       if (!detectedTypes.includes(mapped)) detectedTypes.push(mapped);
     }
   }
@@ -346,15 +348,20 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
     }
   }
 
-  // If no count from a count+type pair, look for standalone count like "3 cards"
-  if (result.count == null) {
-    const cm = countOnlyPattern.exec(t);
-    if (cm) {
-      result.count = parseInt(cm[1], 10);
-      result.exactCountRequested = true;
+  // Also check standalone count like "3 cards" and take the max with any summed per-type counts
+  const cm = countOnlyPattern.exec(t);
+  if (cm) {
+    const standaloneCount = parseInt(cm[1], 10);
+    if (result.count == null) {
+      result.count = standaloneCount;
+    } else {
+      result.count = Math.max(result.count, standaloneCount);
     }
-    // Also handle "a card", "a question"
-    else if (/\b(a|an|one|single)\s+(card|question|flashcard)\b/i.test(t)) {
+    result.exactCountRequested = true;
+  }
+  // If still no count, handle "a card", "a question"
+  if (result.count == null) {
+    if (/\b(a|an|one|single)\s+(card|question|flashcard)\b/i.test(t)) {
       result.count = 1;
       result.exactCountRequested = true;
     }
@@ -367,6 +374,7 @@ function parseUserRequestOverrides(text: string): UserRequestOverrides {
 
   if (result.count != null) result.count = Math.max(1, Math.floor(result.count));
   if (detectedTypes.length) result.types = detectedTypes;
+  if (perTypeCounts.size > 0) result.perTypeCounts = perTypeCounts;
   result.topic = extractRequestedTopic(t);
 
   return result;
@@ -1159,10 +1167,22 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
     optionalRowsInstructions.push("If you include noteRows, do not include optional T/I/G rows for this run.");
   }
 
+  // Build a per-type breakdown instruction when the user specified counts per type
+  let countInstruction: string;
+  if (exactTarget != null && overrides.perTypeCounts && overrides.perTypeCounts.size > 1) {
+    const parts: string[] = [];
+    for (const [type, cnt] of overrides.perTypeCounts) {
+      parts.push(`${cnt} ${type}`);
+    }
+    countInstruction = `Generate exactly ${parts.join(", ")} (${target} total) high-quality flashcard suggestions from this note.`;
+  } else if (exactTarget != null) {
+    countInstruction = `Generate exactly ${target} high-quality flashcard suggestions from this note.`;
+  } else {
+    countInstruction = `Generate approximately ${target} high-quality flashcard suggestions from this note (allowed range: ${minCount}-${maxCount}).`;
+  }
+
   const lines = [
-    exactTarget != null
-      ? `Generate exactly ${target} high-quality flashcard suggestions from this note.`
-      : `Generate approximately ${target} high-quality flashcard suggestions from this note (allowed range: ${minCount}-${maxCount}).`,
+    countInstruction,
     "Sort by difficulty descending (1 = easy recall, 2 = moderate recall, 3 = hard recall).",
     "Respect enabledTypes and generationOptions exactly.",
     "Output must be strictly valid JSON and parse successfully with no non-JSON text.",
@@ -1372,6 +1392,41 @@ export async function generateStudyAssistantChatReply(params: {
     attachedFileDataUrls,
     mode: "text",
     conversationId: input.conversationId,
+  });
+  const rawResponseText = response.text;
+
+  return {
+    reply: String(rawResponseText || "").trim(),
+    payloadPreview,
+    rawResponseText,
+    conversationId: response.conversationId ?? input.conversationId,
+  };
+}
+
+export async function generateStudyAssistantChatReplyStreaming(params: {
+  settings: SproutSettings["studyAssistant"];
+  input: StudyAssistantChatInput;
+  onChunk: (token: string) => void;
+  signal?: AbortSignal;
+}): Promise<StudyAssistantChatResult> {
+  const { settings, input, onChunk, signal } = params;
+
+  const systemPrompt = buildChatSystemPrompt(input);
+  const userPrompt = buildChatUserPrompt(input);
+  const payloadPreview = `System prompt:\n${systemPrompt}\n\nUser prompt:\n${userPrompt}`;
+
+  const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
+  const attachedFileDataUrls = Array.isArray(input.attachedFileDataUrls) ? input.attachedFileDataUrls.filter(Boolean) : [];
+
+  const response = await requestStudyAssistantStreamingCompletion({
+    settings,
+    systemPrompt,
+    userPrompt,
+    imageDataUrls: input.includeImages ? imageDataUrls : [],
+    attachedFileDataUrls,
+    conversationId: input.conversationId,
+    onChunk,
+    signal,
   });
   const rawResponseText = response.text;
 

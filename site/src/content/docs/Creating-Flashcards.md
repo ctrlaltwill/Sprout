@@ -64,6 +64,35 @@ O | London |
 O | Berlin |
 ```
 
+## Method 3: Quick Cards
+
+Quick Cards let you write flashcards in a single line using the `:::` shorthand. On sync, LearnKit expands them to the full format.
+
+**Basic**
+```
+What is the capital of France?:::Paris
+```
+
+This expands to:
+```
+Q | What is the capital of France? |
+A | Paris |
+```
+
+**Cloze**
+
+Prefix with `cloze:::`, `cq:::`, or `CQ:::`:
+```
+cloze:::The capital of {{France}} is {{Paris}}
+```
+
+This expands to:
+```
+CQ | The capital of {{c1::France}} is {{c2::Paris}} |
+```
+
+Bare `{{tokens}}` are auto-numbered. If you already include a number like `{{c1::text}}`, it is preserved.
+
 ## After You Create Flashcards
 
 After writing or inserting new flashcards, [Sync](../Syncing) your database so LearnKit can detect them.
@@ -86,4 +115,4 @@ Do not delete or edit that anchor. It links the source note block to the flashca
 
 ---
 
-Last modified: 30/03/2026
+Last modified: 17/04/2026

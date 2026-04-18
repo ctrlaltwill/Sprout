@@ -480,6 +480,23 @@ describe("sync engine", () => {
     expect(readCount).toBeGreaterThanOrEqual(2);
   });
 
+  // ── syncQuestionBank: shorthand normalization ───────────────────────────
+
+  it("normalizes shorthand cards via vault-wide sync", async () => {
+    const vault = new MemoryVault();
+    await vault.create("Notes/Quick.md", "question:::answer");
+    const plugin = makePlugin(vault);
+    setCryptoSequence([100000000]);
+
+    await syncQuestionBank(plugin);
+
+    const files = vault.getMarkdownFiles();
+    const content = await vault.read(files[0]);
+    expect(content).toContain("Q | question |");
+    expect(content).toContain("A | answer |");
+    expect(content).not.toContain(":::");
+  });
+
   // ── syncOneFile: idempotent re-sync ─────────────────────────────────────
 
   it("re-syncing the same file is idempotent", async () => {
@@ -502,5 +519,184 @@ describe("sync engine", () => {
 
     // Card count doesn't change
     expect(Object.keys(plugin.store.data.cards)).toHaveLength(1);
+  });
+
+  // ── syncOneFile: shorthand normalization ─────────────────────────────────
+
+  it("normalizes a shorthand card to canonical format on sync", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create("Notes/Short.md", "Capital of France:::Paris");
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    const res = await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(res.idsInserted).toBe(1);
+    expect(res.newCount).toBe(1);
+    expect(content).toContain("^learnkit-100000000");
+    expect(content).toContain("Q | Capital of France |");
+    expect(content).toContain("A | Paris |");
+    expect(content).not.toContain(":::");
+    expect(plugin.store.data.cards["100000000"]).toBeDefined();
+    expect(plugin.store.data.cards["100000000"].q).toContain("Capital of France");
+  });
+
+  it("re-sync after shorthand normalization is idempotent", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create("Notes/Short.md", "Capital:::Paris");
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+    const contentAfterFirst = await vault.read(file);
+
+    const res2 = await syncOneFile(plugin, file);
+    const contentAfterSecond = await vault.read(file);
+
+    expect(res2.idsInserted).toBe(0);
+    expect(res2.sameCount).toBe(1);
+    expect(contentAfterSecond).toBe(contentAfterFirst);
+  });
+
+  it("normalizes multiple shorthand cards in one file", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/Multi.md",
+      "Q1:::A1\n\nQ2:::A2",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0, 100000000]);
+
+    const res = await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(res.newCount).toBe(2);
+    expect(content).toContain("Q | Q1 |");
+    expect(content).toContain("A | A1 |");
+    expect(content).toContain("Q | Q2 |");
+    expect(content).toContain("A | A2 |");
+    expect(content).not.toContain(":::");
+  });
+
+  it("normalizes shorthand cards mixed with regular cards", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/Mix.md",
+      [
+        "Q | Regular Q |",
+        "A | Regular A |",
+        "",
+        "Shorthand Q:::Shorthand A",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0, 100000000]);
+
+    const res = await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(res.newCount).toBe(2);
+    // Regular card should remain unchanged (just anchor inserted)
+    expect(content).toContain("Q | Regular Q |");
+    expect(content).toContain("A | Regular A |");
+    // Shorthand should be normalized
+    expect(content).toContain("Q | Shorthand Q |");
+    expect(content).toContain("A | Shorthand A |");
+    expect(content).not.toContain(":::");
+  });
+
+  it("normalizes shorthand card that already has a pre-existing anchor", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/PreAnchor.md",
+      "^learnkit-999888777\nquestion:::answer",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    const res = await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    // Anchor should remain (not duplicated)
+    expect(content).toContain("^learnkit-999888777");
+    // Shorthand should be normalized to canonical format
+    expect(content).toContain("Q | question |");
+    expect(content).toContain("A | answer |");
+    expect(content).not.toContain(":::");
+    // Card should exist in store
+    expect(plugin.store.data.cards["999888777"]).toBeDefined();
+    expect(plugin.store.data.cards["999888777"].q).toContain("question");
+  });
+
+  // ── Cloze shorthand normalization ────────────────────────────────────
+
+  it("normalizes cloze shorthand to canonical CQ format via syncOneFile", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/ClozeShort.md",
+      "cloze:::The capital of {{France}} is {{Paris}}",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(content).toContain("CQ | The capital of {{c1::France}} is {{c2::Paris}} |");
+    expect(content).not.toContain("cloze:::");
+    expect(content).toContain("^learnkit-");
+  });
+
+  it("normalizes cq::: shorthand via syncQuestionBank", async () => {
+    const vault = new MemoryVault();
+    await vault.create(
+      "Notes/ClozeBank.md",
+      "cq:::The answer is {{42}}",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([100000000]);
+
+    await syncQuestionBank(plugin);
+
+    const files = vault.getMarkdownFiles();
+    const content = await vault.read(files[0]);
+    expect(content).toContain("CQ | The answer is {{c1::42}} |");
+    expect(content).not.toContain("cq:::");
+  });
+
+  it("normalizes cloze shorthand with pre-existing anchor", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/ClozeAnchor.md",
+      "^learnkit-999888777\ncloze:::Text with {{hidden}}",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(content).toContain("^learnkit-999888777");
+    expect(content).toContain("CQ | Text with {{c1::hidden}} |");
+    expect(content).not.toContain("cloze:::");
+    // No duplicate anchor
+    expect(content.match(/\^learnkit-999888777/g)?.length).toBe(1);
+  });
+
+  it("normalizes cloze shorthand preserving already-numbered tokens", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/ClozeNumbered.md",
+      "CQ:::{{c2::second}} then {{first}}",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(content).toContain("CQ | {{c2::second}} then {{c1::first}} |");
+    expect(content).not.toContain("CQ:::");
   });
 });

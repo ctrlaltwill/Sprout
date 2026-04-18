@@ -14,8 +14,9 @@
  */
 
 import { TFile, Notice } from "obsidian";
-import { MS_DAY } from "../../../platform/core/constants";
-import { gradeFromRating } from "../../../engine/scheduler/scheduler";
+import { gradeCard } from "../../../platform/services/grading-service";
+import { undoGrade } from "../../../platform/services/undo-service";
+import { buryCardAction, suspendCardAction } from "../../../platform/services/card-action-service";
 import { deepClone, clampInt } from "../../reviewer/utilities";
 import { openBulkEditModalForCards } from "../../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../../platform/modals/image-occlusion-creator-modal";
@@ -100,26 +101,17 @@ export async function gradeCurrentRating(
   if (view._undoStack.length > UNDO_MAX)
     view._undoStack.splice(0, view._undoStack.length - UNDO_MAX);
 
-  const { nextState, prevDue, nextDue } = gradeFromRating(st, rating, now, view.plugin.settings);
-
-  view.plugin.store.upsertState(nextState);
-  view.plugin.store.appendReviewLog({ id, at: now, result: rating, prevDue, nextDue, meta: meta || null });
-
-  // Append analytics review with timing
-  if (typeof view.plugin.store.appendAnalyticsReview === "function") {
-    view.plugin.store.appendAnalyticsReview({
-      at: now,
-      cardId: id,
-      cardType: String(card.type || "unknown"),
-      result: rating,
-      mode: "scheduled",
-      msToAnswer,
-      prevDue,
-      nextDue,
-    });
-  }
-
-  await view.plugin.store.persist();
+  await gradeCard({
+    id,
+    cardType: String(card.type || "unknown"),
+    rating,
+    now,
+    prevState: st,
+    settings: view.plugin.settings,
+    store,
+    msToAnswer,
+    meta: meta || undefined,
+  });
 
   view.session.graded[id] = { rating, at: now, meta: meta || null };
   view.session.stats.done = Object.keys(view.session.graded).length;
@@ -155,25 +147,17 @@ export async function undoLastGrade(view: WidgetViewLike): Promise<void> {
   }
 
   view._undoStack.pop();
-  const store = view.plugin.store;
 
   try {
-    if (u.prevState) store.upsertState(deepClone(u.prevState));
-
-    if (typeof store.truncateReviewLog === "function") {
-      store.truncateReviewLog(u.reviewLogLenBefore);
-    } else if (Array.isArray(store.data?.reviewLog)) {
-      store.data.reviewLog.length = Math.max(0, Math.floor(u.reviewLogLenBefore));
-    }
-
-    if (typeof store.truncateAnalyticsEvents === "function") {
-      store.truncateAnalyticsEvents(u.analyticsLenBefore);
-    } else {
-      const a = store.data?.analytics;
-      if (a && Array.isArray(a.events)) a.events.length = Math.max(0, Math.floor(u.analyticsLenBefore));
-    }
-
-    await store.persist();
+    await undoGrade({
+      id: u.id,
+      prevState: u.prevState,
+      reviewLogLenBefore: u.reviewLogLenBefore,
+      analyticsLenBefore: u.analyticsLenBefore,
+      storeMutated: true,
+      analyticsMutated: true,
+      store: view.plugin.store,
+    });
 
     delete view.session.graded[u.id];
     view.session.stats.done = Object.keys(view.session.graded || {}).length;
@@ -206,9 +190,7 @@ export async function buryCurrentCard(view: WidgetViewLike): Promise<void> {
   if (!st) return;
 
   const now = Date.now();
-  const nextState = { ...st, due: now + MS_DAY };
-  view.plugin.store.upsertState(nextState);
-  await view.plugin.store.persist();
+  await buryCardAction({ id, prevState: st, now, store: view.plugin.store });
 
   view.session.graded[id] = { rating: "again", at: now, meta: { action: "bury" } };
   view.session.stats.done = Object.keys(view.session.graded).length;
@@ -229,9 +211,7 @@ export async function suspendCurrentCard(view: WidgetViewLike): Promise<void> {
   if (!st) return;
 
   const now = Date.now();
-  const nextState = { ...st, stage: "suspended" as const };
-  view.plugin.store.upsertState(nextState);
-  await view.plugin.store.persist();
+  await suspendCardAction({ id, prevState: st, now, store: view.plugin.store });
 
   view.session.graded[id] = { rating: "again", at: now, meta: { action: "suspend" } };
   view.session.stats.done = Object.keys(view.session.graded).length;

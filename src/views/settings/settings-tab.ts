@@ -30,6 +30,7 @@ import {
 import { getCircleFlagFallbackUrl, getCircleFlagUrl } from "../../platform/flags/flag-tokens";
 import { t } from "../../platform/translations/translator";
 import { getLanguageOptions, getScriptLanguageGroups, getAvailableVoices, getTtsService } from "../../platform/integrations/tts/tts-service";
+import { clearTtsCache } from "../../platform/integrations/tts/tts-cache";
 import {
   listDataJsonBackups,
   getDataJsonBackupStats,
@@ -984,6 +985,8 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         (audio as Record<string, unknown>).speakFlagLanguageLabel = false;
       }
 
+      new Setting(detailsWrapper).setName(this._tx("ui.settings.sections.audioOptions", "Audio options")).setHeading();
+
       new Setting(detailsWrapper)
         .setName(this._tx("ui.settings.audio.limitToGroup.name", "Limit to group"))
         .setDesc(
@@ -1269,6 +1272,310 @@ export class LearnKitSettingsTab extends PluginSettingTab {
                 "If it is still empty, check your operating system's speech settings.",
             ),
           );
+      }
+
+      // ── External TTS ──
+      new Setting(detailsWrapper).setName(this._tx("ui.settings.sections.ttsProvider", "External TTS")).setHeading();
+
+      const isExternalTts = (audio.ttsProvider ?? "browser") !== "browser";
+
+      const ttsExternalContainer = detailsWrapper.createDiv({ cls: "learnkit-tts-external-settings" });
+      ttsExternalContainer.hidden = !isExternalTts;
+
+      new Setting(detailsWrapper)
+        .setName(this._tx("ui.settings.audio.ttsExternal.name", "Enable external TTS"))
+        .setDesc(
+          this._tx(
+            "ui.settings.audio.ttsExternal.desc",
+            "Use a cloud TTS provider (ElevenLabs, OpenAI, Google Cloud, or a custom endpoint) instead of the built-in system voice.",
+          ),
+        )
+        .addToggle((t) => {
+          t.setValue(isExternalTts);
+          t.onChange(async (v) => {
+            if (!v) {
+              this.plugin.settings.audio.ttsProvider = "browser";
+            } else {
+              const last = this.plugin.settings.audio.ttsProvider;
+              if (!last || last === "browser") {
+                this.plugin.settings.audio.ttsProvider = "openai";
+              }
+            }
+            await this.plugin.saveAll();
+            this._softRerender();
+          });
+        });
+
+      // Move external container after the toggle
+      detailsWrapper.appendChild(ttsExternalContainer);
+
+      if (isExternalTts) {
+        const ttsProviderStandard: Array<{ value: string; label: string }> = [
+          { value: "elevenlabs", label: this._tx("ui.settings.audio.ttsProvider.elevenlabs", "ElevenLabs") },
+          { value: "google-cloud", label: this._tx("ui.settings.audio.ttsProvider.googleCloud", "Google Cloud") },
+          { value: "openai", label: this._tx("ui.settings.audio.ttsProvider.openai", "OpenAI") },
+        ];
+        const ttsProviderOptions: Array<{ value: string; label: string }> = [
+          ...ttsProviderStandard,
+          { value: "custom", label: this._tx("ui.settings.audio.ttsProvider.custom", "Custom") },
+        ];
+
+        new Setting(ttsExternalContainer)
+          .setName(this._tx("ui.settings.audio.ttsProvider.name", "Provider"))
+          .setDesc(this._tx(
+            "ui.settings.audio.ttsProvider.desc",
+            "Choose which cloud TTS provider to use.",
+          ))
+          .then((setting) => {
+            this._addSimpleSelect(setting.controlEl, {
+              options: ttsProviderOptions,
+              value: audio.ttsProvider ?? "openai",
+              separatorAfterIndex: ttsProviderStandard.length - 1,
+              onChange: (v) => {
+                void (async () => {
+                  this.plugin.settings.audio.ttsProvider = v as SproutSettings["audio"]["ttsProvider"];
+                  await this.plugin.saveAll();
+                  this._softRerender();
+                })();
+              },
+            });
+          });
+
+        const providerLabel =
+          audio.ttsProvider === "elevenlabs" ? "ElevenLabs"
+            : audio.ttsProvider === "openai" ? "OpenAI"
+              : audio.ttsProvider === "google-cloud" ? "Google Cloud"
+                : "Custom";
+
+        new Setting(ttsExternalContainer)
+          .setName(this._tx("ui.settings.audio.ttsApiKey.name", `${providerLabel} API key`))
+          .setDesc(this._tx("ui.settings.audio.ttsApiKey.desc", "API key for the selected TTS provider. Stored locally in a dedicated file, never synced."))
+          .addText((t) => {
+            t.inputEl.type = "password";
+            t.inputEl.autocomplete = "off";
+            const currentProvider = audio.ttsProvider ?? "browser";
+            const currentKey = currentProvider !== "browser"
+              ? (audio.ttsApiKeys?.[currentProvider] ?? "")
+              : "";
+            t.setValue(currentKey);
+            t.setPlaceholder(
+              audio.ttsProvider === "openai" ? "sk-..."
+                : audio.ttsProvider === "elevenlabs" ? "xi-..."
+                  : "",
+            );
+            t.onChange(async (v) => {
+              const p = this.plugin.settings.audio.ttsProvider;
+              if (p && p !== "browser") {
+                this.plugin.settings.audio.ttsApiKeys ??= { elevenlabs: "", openai: "", "google-cloud": "", custom: "" };
+                (this.plugin.settings.audio.ttsApiKeys as Record<string, string>)[p] = v.trim();
+              }
+              await this.plugin.saveAll();
+            });
+          });
+
+        new Setting(ttsExternalContainer)
+          .setName(this._tx("ui.settings.audio.ttsVoiceId.name", "Voice"))
+          .setDesc(this._tx("ui.settings.audio.ttsVoiceId.desc", "Provider-specific voice identifier."))
+          .addText((t) => {
+            t.setValue(audio.ttsVoiceId ?? "");
+            const placeholder =
+              audio.ttsProvider === "elevenlabs" ? "21m00Tcm4TlvDq8ikWAM"
+                : audio.ttsProvider === "openai" ? "alloy"
+                  : "";
+            t.setPlaceholder(placeholder);
+            t.onChange(async (v) => {
+              this.plugin.settings.audio.ttsVoiceId = v.trim();
+              await this.plugin.saveAll();
+            });
+          });
+
+        // Replace the Setting element with a searchable popover when the
+        // provider has known voices; keep the text input for custom.
+        if (audio.ttsProvider !== "custom") {
+          const ttsVoiceOptions: Array<{ value: string; label: string; description?: string }> =
+            audio.ttsProvider === "openai" ? [
+              { value: "alloy", label: "Alloy" },
+              { value: "ash", label: "Ash" },
+              { value: "ballad", label: "Ballad" },
+              { value: "coral", label: "Coral" },
+              { value: "echo", label: "Echo" },
+              { value: "fable", label: "Fable" },
+              { value: "nova", label: "Nova" },
+              { value: "onyx", label: "Onyx" },
+              { value: "sage", label: "Sage" },
+              { value: "shimmer", label: "Shimmer" },
+            ]
+            : audio.ttsProvider === "elevenlabs" ? [
+              { value: "21m00Tcm4TlvDq8ikWAM", label: "Rachel", description: "Calm, narration" },
+              { value: "AZnzlk1XvdvUeBnXmlld", label: "Domi", description: "Confident, authoritative" },
+              { value: "EXAVITQu4vr4xnSDxMaL", label: "Bella", description: "Soft, warm" },
+              { value: "ErXwobaYiN019PkySvjV", label: "Antoni", description: "Well-rounded, expressive" },
+              { value: "MF3mGyEYCl7XYWbV9V6O", label: "Elli", description: "Young, friendly" },
+              { value: "TxGEqnHWrfWFTfGW9XjX", label: "Josh", description: "Deep, narrative" },
+              { value: "VR6AewLTigWG4xSOukaG", label: "Arnold", description: "Strong, authoritative" },
+              { value: "pNInz6obpgDQGcFmaJgB", label: "Adam", description: "Deep, clear" },
+              { value: "yoZ06aMxZJJ28mfd3POQ", label: "Sam", description: "Raspy, engaging" },
+              { value: "jBpfuIE2acCO8z3wKNLl", label: "Gigi", description: "Childlike, animated" },
+              { value: "onwK4e9ZLuTAKqWW03F9", label: "Daniel", description: "Authoritative, British" },
+              { value: "XB0fDUnXU5powFXDhCwa", label: "Charlotte", description: "Natural, warm" },
+            ]
+            : audio.ttsProvider === "google-cloud" ? [
+              { value: "en-US-Neural2-A", label: "Neural2-A", description: "Female (US English)" },
+              { value: "en-US-Neural2-C", label: "Neural2-C", description: "Female (US English)" },
+              { value: "en-US-Neural2-D", label: "Neural2-D", description: "Male (US English)" },
+              { value: "en-US-Neural2-F", label: "Neural2-F", description: "Female (US English)" },
+              { value: "en-US-Neural2-I", label: "Neural2-I", description: "Male (US English)" },
+              { value: "en-US-Neural2-J", label: "Neural2-J", description: "Male (US English)" },
+              { value: "en-US-Studio-O", label: "Studio-O", description: "Female (US English)" },
+              { value: "en-US-Studio-Q", label: "Studio-Q", description: "Male (US English)" },
+              { value: "en-US-Wavenet-A", label: "Wavenet-A", description: "Male (US English)" },
+              { value: "en-US-Wavenet-C", label: "Wavenet-C", description: "Female (US English)" },
+              { value: "en-US-Wavenet-D", label: "Wavenet-D", description: "Male (US English)" },
+              { value: "en-US-Wavenet-F", label: "Wavenet-F", description: "Female (US English)" },
+            ]
+            : [];
+
+          if (ttsVoiceOptions.length > 0) {
+            const currentVoice = String(audio.ttsVoiceId || "").trim();
+            const voiceOptions = [...ttsVoiceOptions];
+            if (currentVoice && !ttsVoiceOptions.some((o) => o.value === currentVoice)) {
+              voiceOptions.push({ value: currentVoice, label: `${currentVoice} (custom)` });
+            }
+
+            // Remove the text-input Setting we just created and replace with popover
+            const voiceAnchor = ttsExternalContainer.lastElementChild;
+            this._addSearchablePopover(ttsExternalContainer, {
+              name: this._tx("ui.settings.audio.ttsVoiceId.name", "Voice"),
+              description: this._tx("ui.settings.audio.ttsVoiceId.desc", "Provider-specific voice identifier."),
+              options: voiceOptions,
+              value: currentVoice || voiceOptions[0]?.value || "",
+              onChange: (v) => {
+                void (async () => {
+                  this.plugin.settings.audio.ttsVoiceId = v.trim();
+                  await this.plugin.saveAll();
+                })();
+              },
+            });
+            const insertedVoice = ttsExternalContainer.lastElementChild;
+            if (voiceAnchor && insertedVoice && insertedVoice !== voiceAnchor) {
+              ttsExternalContainer.insertBefore(insertedVoice, voiceAnchor.nextSibling);
+            }
+            voiceAnchor?.remove();
+          }
+        }
+
+        new Setting(ttsExternalContainer)
+          .setName(this._tx("ui.settings.audio.ttsModel.name", "Model"))
+          .setDesc(this._tx("ui.settings.audio.ttsModel.desc", "Provider-specific model identifier."))
+          .addText((t) => {
+            t.setValue(audio.ttsModel ?? "");
+            const placeholder =
+              audio.ttsProvider === "elevenlabs" ? "eleven_multilingual_v2"
+                : audio.ttsProvider === "openai" ? "gpt-4o-mini-tts"
+                  : "";
+            t.setPlaceholder(placeholder);
+            t.onChange(async (v) => {
+              this.plugin.settings.audio.ttsModel = v.trim();
+              await this.plugin.saveAll();
+            });
+          });
+
+        // Replace the Setting element with a searchable popover when the
+        // provider has known models; keep the text input for custom.
+        if (audio.ttsProvider !== "custom") {
+          const ttsModelOptions: Array<{ value: string; label: string; description?: string }> =
+            audio.ttsProvider === "openai" ? [
+              { value: "gpt-4o-mini-tts", label: "GPT-4o Mini TTS", description: "Expressive, steerable, multilingual" },
+            ]
+            : audio.ttsProvider === "elevenlabs" ? [
+              { value: "eleven_multilingual_v2", label: "Multilingual v2", description: "29 languages" },
+              { value: "eleven_turbo_v2_5", label: "Turbo v2.5", description: "Low-latency, 32 languages" },
+            ]
+            : audio.ttsProvider === "google-cloud" ? [
+              { value: "default", label: "Default", description: "Uses the voice's native model" },
+            ]
+            : [];
+
+          if (ttsModelOptions.length > 0) {
+            const currentModel = String(audio.ttsModel || "").trim();
+            const modelOptions = [...ttsModelOptions];
+            if (currentModel && !ttsModelOptions.some((o) => o.value === currentModel)) {
+              modelOptions.push({ value: currentModel, label: `${currentModel} (custom)` });
+            }
+
+            // Remove the text-input Setting we just created and replace with popover
+            const modelAnchor = ttsExternalContainer.lastElementChild;
+            this._addSearchablePopover(ttsExternalContainer, {
+              name: this._tx("ui.settings.audio.ttsModel.name", "Model"),
+              description: this._tx("ui.settings.audio.ttsModel.desc", "Provider-specific model identifier."),
+              options: modelOptions,
+              value: currentModel || modelOptions[0]?.value || "",
+              onChange: (v) => {
+                void (async () => {
+                  this.plugin.settings.audio.ttsModel = v.trim();
+                  await this.plugin.saveAll();
+                })();
+              },
+            });
+            const insertedModel = ttsExternalContainer.lastElementChild;
+            if (modelAnchor && insertedModel && insertedModel !== modelAnchor) {
+              ttsExternalContainer.insertBefore(insertedModel, modelAnchor.nextSibling);
+            }
+            modelAnchor?.remove();
+          }
+        }
+
+        if (audio.ttsProvider === "custom") {
+          new Setting(ttsExternalContainer)
+            .setName(this._tx("ui.settings.audio.ttsEndpoint.name", "Endpoint URL"))
+            .setDesc(this._tx("ui.settings.audio.ttsEndpoint.desc", "Base URL for the custom TTS endpoint."))
+            .addText((t) => {
+              t.setValue(audio.ttsEndpointOverride ?? "");
+              t.setPlaceholder("");
+              t.onChange(async (v) => {
+                this.plugin.settings.audio.ttsEndpointOverride = v.trim();
+                await this.plugin.saveAll();
+              });
+            });
+        }
+
+        new Setting(ttsExternalContainer)
+          .setName(this._tx("ui.settings.audio.ttsCache.name", "Cache generated audio"))
+          .setDesc(
+            this._tx(
+              "ui.settings.audio.ttsCache.desc",
+              "Save generated audio files locally to avoid repeat API calls and reduce costs.",
+            ),
+          )
+          .addToggle((t) => {
+            t.setValue(audio.ttsCacheEnabled !== false);
+            t.onChange(async (v) => {
+              this.plugin.settings.audio.ttsCacheEnabled = v;
+              await this.plugin.saveAll();
+            });
+          });
+
+        new Setting(ttsExternalContainer)
+          .setName(this._tx("ui.settings.audio.ttsClearCache.name", "Clear audio cache"))
+          .setDesc(this._tx("ui.settings.audio.ttsClearCache.desc", "Remove all cached TTS audio files."))
+          .addButton((btn) => {
+            btn.setButtonText(this._tx("ui.settings.audio.ttsClearCache.button", "Clear cache"));
+            btn.onClick(async () => {
+              const tts = getTtsService();
+              if (!tts.vaultAdapter || !tts.ttsCacheDirPath) {
+                new Notice(this._tx("ui.settings.audio.ttsClearCache.noCache", "No cache directory configured."));
+                return;
+              }
+              const removed = await clearTtsCache(tts.vaultAdapter, tts.ttsCacheDirPath);
+              if (removed >= 0) {
+                new Notice(
+                  this._tx("ui.settings.audio.ttsClearCache.done", `Cleared ${removed} cached audio file(s).`),
+                );
+              } else {
+                new Notice(this._tx("ui.settings.audio.ttsClearCache.error", "Failed to clear cache."));
+              }
+            });
+          });
       }
     }
   }

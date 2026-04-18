@@ -8,7 +8,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { generateStudyAssistantSuggestions } from "../src/platform/integrations/ai/study-assistant-generator";
+import { generateStudyAssistantSuggestions, parseUserRequestOverrides } from "../src/platform/integrations/ai/study-assistant-generator";
 import type { SproutSettings } from "../src/platform/types/settings";
 import { requestStudyAssistantCompletionDetailed } from "../src/platform/integrations/ai/study-assistant-provider";
 
@@ -226,5 +226,52 @@ describe("study assistant generator", () => {
 
     expect(result.suggestions.length).toBeGreaterThan(0);
     expect(result.suggestions[0]?.type).toBe("basic");
+  });
+});
+
+describe("parseUserRequestOverrides", () => {
+  it("sums per-type counts for multi-type requests", () => {
+    const r = parseUserRequestOverrides("Generate 3 flashcards from this note: 1 basic, 1 cloze, and 1 MCQ");
+    expect(r.count).toBe(3);
+    expect(r.exactCountRequested).toBe(true);
+    expect(r.types).toEqual(expect.arrayContaining(["basic", "cloze", "mcq"]));
+    expect(r.types).toHaveLength(3);
+  });
+
+  it("sums counts when only per-type counts are given", () => {
+    const r = parseUserRequestOverrides("1 basic and 1 cloze");
+    expect(r.count).toBe(2);
+    expect(r.types).toEqual(expect.arrayContaining(["basic", "cloze"]));
+  });
+
+  it("uses standalone count when no per-type counts exist", () => {
+    const r = parseUserRequestOverrides("5 flashcards");
+    expect(r.count).toBe(5);
+    expect(r.exactCountRequested).toBe(true);
+  });
+
+  it("takes max of summed per-type and standalone count", () => {
+    const r = parseUserRequestOverrides("Generate 5 flashcards: 1 basic, 1 cloze");
+    expect(r.count).toBe(5);
+  });
+
+  it("handles single type+count correctly", () => {
+    const r = parseUserRequestOverrides("3 basic");
+    expect(r.count).toBe(3);
+    expect(r.types).toEqual(["basic"]);
+  });
+
+  it("populates perTypeCounts map", () => {
+    const r = parseUserRequestOverrides("2 basic, 3 cloze, 1 mcq");
+    expect(r.count).toBe(6);
+    expect(r.perTypeCounts?.get("basic")).toBe(2);
+    expect(r.perTypeCounts?.get("cloze")).toBe(3);
+    expect(r.perTypeCounts?.get("mcq")).toBe(1);
+  });
+
+  it("handles a/an/one/single patterns", () => {
+    const r = parseUserRequestOverrides("a flashcard");
+    expect(r.count).toBe(1);
+    expect(r.exactCountRequested).toBe(true);
   });
 });

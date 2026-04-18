@@ -36,7 +36,6 @@ export type ChatMessage = {
   role: "user" | "assistant";
   text: string;
   attachmentNames?: string[];
-  savedTestId?: string;
   editProposal?: ChatMessageEditProposal;
 };
 

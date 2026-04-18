@@ -412,5 +412,16 @@ export const DEFAULT_SETTINGS: LearnKitSettings = {
     rate: 1.0,
     pitch: 1.0,
     preferredVoiceURI: "",
+    ttsProvider: "browser" as const,
+    ttsVoiceId: "",
+    ttsModel: "",
+    ttsEndpointOverride: "",
+    ttsCacheEnabled: true,
+    ttsApiKeys: {
+      elevenlabs: "",
+      openai: "",
+      "google-cloud": "",
+      custom: "",
+    },
   },
 };

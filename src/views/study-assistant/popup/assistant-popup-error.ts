@@ -15,7 +15,7 @@ import { formatProviderLabel } from "./assistant-popup-provider";
 
 type Tx = (token: string, fallback: string, vars?: Record<string, string | number>) => string;
 
-export type AssistantErrorContext = "ask" | "review" | "generate" | "test-generation";
+export type AssistantErrorContext = "ask" | "edit" | "review" | "generate" | "test-generation" | "test-grading";
 
 export function assistantConsoleErrorDetails(error: unknown): Record<string, unknown> {
   const details: Record<string, unknown> = {};

@@ -606,8 +606,37 @@ export type LearnKitSettings = {
      * Set to "" (auto) to let the scoring algorithm pick the best voice.
      */
     preferredVoiceURI: string;
+
+    // ── External TTS provider ──
+    /**
+     * Which TTS engine to use:
+     * - "browser"      — built-in Web Speech API (default, zero config)
+     * - "elevenlabs"   — ElevenLabs text-to-speech
+     * - "openai"       — OpenAI TTS (/v1/audio/speech)
+     * - "google-cloud" — Google Cloud Text-to-Speech
+     * - "custom"       — user-provided HTTP endpoint
+     */
+    ttsProvider: "browser" | "elevenlabs" | "openai" | "google-cloud" | "custom";
+    /** Provider-specific voice identifier (e.g. ElevenLabs voice_id, OpenAI voice name). */
+    ttsVoiceId: string;
+    /** Provider-specific model identifier (e.g. "tts-1", "eleven_multilingual_v2"). */
+    ttsModel: string;
+    /** Base URL override for the "custom" TTS provider. */
+    ttsEndpointOverride: string;
+    /** When true, cache generated audio in the plugin data folder to avoid repeat API calls. */
+    ttsCacheEnabled: boolean;
+    /** API keys for external TTS providers. Stored in configuration/tts-api-keys.json. */
+    ttsApiKeys: {
+      elevenlabs: string;
+      openai: string;
+      "google-cloud": string;
+      custom: string;
+    };
   };
 };
+
+/** Valid external TTS provider identifiers. */
+export type TtsProvider = LearnKitSettings["audio"]["ttsProvider"];
 
 // Backwards-compatible alias retained for Phase 1 rename safety.
 export type SproutSettings = LearnKitSettings;

@@ -15,7 +15,7 @@ import { replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
 import { renderClozeFront } from "../../views/reviewer/question-cloze";
 import { SproutMarkdownHelper } from "../../views/reviewer/markdown-render";
 import { openSproutImageZoom } from "../../views/reviewer/zoom";
-import { gradeFromRating } from "../../engine/scheduler/scheduler";
+import { gradeCard } from "../../platform/services/grading-service";
 import type { ReviewRating } from "../../platform/types/scheduler";
 import { logFsrsIfNeeded } from "../../views/reviewer/fsrs-log";
 import { log } from "../../platform/core/logger";
@@ -417,33 +417,17 @@ export class GatekeeperModal extends Modal {
         gatekeeperTotal: this.cards.length,
       } as Record<string, unknown>;
 
-      const { nextState, prevDue, nextDue, metrics } = gradeFromRating(st, rating, now, this.plugin.settings);
-
-      this.plugin.store.upsertState(nextState);
-      this.plugin.store.appendReviewLog({
+      const { metrics, nextDue } = await gradeCard({
         id,
-        at: now,
-        result: rating,
-        prevDue,
-        nextDue,
+        cardType: String(card.type || "unknown"),
+        rating,
+        now,
+        prevState: st,
+        settings: this.plugin.settings,
+        store: this.plugin.store,
+        msToAnswer,
         meta,
       });
-
-      if (typeof this.plugin.store.appendAnalyticsReview === "function") {
-        this.plugin.store.appendAnalyticsReview({
-          at: now,
-          cardId: id,
-          cardType: String(card.type || "unknown"),
-          result: rating,
-          mode: "scheduled",
-          msToAnswer,
-          prevDue,
-          nextDue,
-          meta,
-        });
-      }
-
-      await this.plugin.store.persist();
 
       logFsrsIfNeeded({
         id,
@@ -623,35 +607,37 @@ export class GatekeeperModal extends Modal {
 
     const isBackDirection = card.type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
     const isOldReversed = card.type === "reversed";
+    const cid = `${card.id}-${answerSide ? "answer" : "question"}`;
 
     if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
       const questionText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
       const answerText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
-      tts.speakBasicCard(answerSide ? answerText : questionText, audio);
+      tts.speakBasicCard(answerSide ? answerText : questionText, audio, cid);
       return;
     }
 
     if (card.type === "cloze" || card.type === "cloze-child") {
       const targetIndex = card.type === "cloze-child" ? Number(card.clozeIndex) : null;
-      tts.speakClozeCard(card.clozeText || "", answerSide, targetIndex, audio);
+      tts.speakClozeCard(card.clozeText || "", answerSide, targetIndex, audio, cid);
       return;
     }
 
     if (card.type === "mcq") {
-      const text = [card.stem || "", ...normalizeCardOptions(card.options)].filter(Boolean).join(". ");
-      tts.speakBasicCard(text, audio);
+      const options = normalizeCardOptions(card.options);
+      const order = options.map((_, i) => i);
+      tts.speakMcqCard(card.stem || "", options, order, answerSide, getCorrectIndices(card), audio, cid);
       return;
     }
 
     if (card.type === "oq") {
       const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
       const text = [card.q || "", ...steps].filter(Boolean).join(". ");
-      tts.speakBasicCard(text, audio);
+      tts.speakBasicCard(text, audio, cid);
       return;
     }
 
     if (card.type === "io" || card.type === "io-child") {
-      tts.speakBasicCard(answerSide ? (card.a || "") : (card.q || ""), audio);
+      tts.speakBasicCard(answerSide ? (card.a || "") : (card.q || ""), audio, cid);
     }
   }
 

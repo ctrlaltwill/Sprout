@@ -35,5 +35,8 @@ export default defineConfig([
         tsconfigRootDir: rootDir,
       },
     },
+    rules: {
+      "@typescript-eslint/no-explicit-any": ["error", { ignoreRestArgs: true }],
+    },
   },
 ]);

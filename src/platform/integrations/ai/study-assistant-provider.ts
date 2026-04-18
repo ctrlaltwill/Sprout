@@ -5,6 +5,7 @@
  * @exports
  *  - requestStudyAssistantCompletionDetailed
  *  - requestStudyAssistantCompletion
+ *  - requestStudyAssistantStreamingCompletion
  *  - deleteStudyAssistantConversation
  */
 
@@ -27,6 +28,9 @@ type DeleteConversationResult = {
   status?: number;
   detail?: string;
 };
+
+const DEFAULT_MAX_OUTPUT_TOKENS = 8000;
+const REASONING_MAX_OUTPUT_TOKENS = 25000;
 
 type ProviderRequestError = Error & {
   provider?: StudyAssistantProvider;
@@ -147,6 +151,12 @@ function shouldOmitTemperature(provider: StudyAssistantProvider, model: string):
   // (e.g. "deepseek/deepseek-r1:free"), so the same check works.
   if (provider === "openrouter") return isReasoningModelId(model);
   return false;
+}
+
+function completionTokenBudget(provider: StudyAssistantProvider, model: string): number {
+  const isReasoning = (provider === "openai" || provider === "deepseek" || provider === "openrouter")
+    && isReasoningModelId(model);
+  return isReasoning ? REASONING_MAX_OUTPUT_TOKENS : DEFAULT_MAX_OUTPUT_TOKENS;
 }
 
 function shouldInlineSystemPromptForOpenAiLike(provider: StudyAssistantProvider, model: string): boolean {
@@ -271,6 +281,23 @@ function buildProviderRequestError(args: {
 }
 
 function extractTextFromOpenAiLikeResponse(json: Record<string, unknown>): string {
+  // Reasoning models (o-series, gpt-5) may use an "output" array instead of "choices".
+  // Each output item has { type: "message", content: [{ type: "output_text", text }] }.
+  if (Array.isArray(json.output)) {
+    const parts: string[] = [];
+    for (const item of json.output) {
+      const obj = parseJsonFromUnknown(item);
+      if (!obj) continue;
+      if (obj.type === "message" && Array.isArray(obj.content)) {
+        for (const block of obj.content) {
+          const b = parseJsonFromUnknown(block);
+          if (b?.type === "output_text" && typeof b.text === "string") parts.push(b.text);
+        }
+      }
+    }
+    if (parts.length) return parts.join("\n");
+  }
+
   const choices = Array.isArray(json.choices) ? json.choices : [];
   const firstChoice = parseJsonFromUnknown(choices[0]);
   const message = parseJsonFromUnknown(firstChoice?.message);
@@ -470,6 +497,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
 
   if (settings.provider === "anthropic") {
     const endpoint = `${base}/messages`;
+    const tokenBudget = completionTokenBudget(settings.provider, model);
     let res: Awaited<ReturnType<typeof requestUrl>>;
     try {
       res = await requestUrl({
@@ -483,7 +511,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         },
         body: JSON.stringify({
           model,
-          max_tokens: 2500,
+          max_tokens: tokenBudget,
           system: systemPrompt,
           messages: [{
             role: "user",
@@ -554,6 +582,11 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     const effectiveUserContent = inlineSystemPrompt
       ? `System instructions:\n${systemPrompt}\n\n${effectiveUserPrompt}`
       : effectiveUserPrompt;
+    // OpenAI reasoning models (o1/o3/o4, gpt-5) use "developer" role
+    // instead of "system".  Other providers still expect "system".
+    const systemRole = settings.provider === "openai" && isReasoningModelId(requestModel)
+      ? "developer"
+      : "system";
     const messages = inlineSystemPrompt
       ? [
           {
@@ -567,7 +600,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           },
         ]
       : [
-          { role: "system", content: systemPrompt },
+          { role: systemRole, content: systemPrompt },
           {
             role: "user",
             content: attachments.length
@@ -584,6 +617,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     // all other OpenAI-compatible providers accept max_tokens.
     const useMaxCompletionTokens =
       settings.provider === "openai" && isReasoningModelId(requestModel);
+    const tokenBudget = completionTokenBudget(settings.provider, requestModel);
 
     // response_format is unsupported by OpenRouter (unpredictable model
     // routing) and by reasoning models (DeepSeek-R1, o1, etc.).
@@ -607,8 +641,8 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         body: JSON.stringify({
           model: requestModel,
           ...(useMaxCompletionTokens
-            ? { max_completion_tokens: 2500 }
-            : { max_tokens: 2500 }),
+            ? { max_completion_tokens: tokenBudget }
+            : { max_tokens: tokenBudget }),
           messages,
           ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
             ? { conversation_id: conversationId.trim() }
@@ -699,6 +733,246 @@ export async function requestStudyAssistantCompletion(params: {
 }): Promise<string> {
   const result = await requestStudyAssistantCompletionDetailed(params);
   return result.text;
+}
+
+// ---------------------------------------------------------------------------
+//  Streaming completion (SSE) — text mode only
+// ---------------------------------------------------------------------------
+
+function parseSSELines(buffer: string): { events: string[]; remainder: string } {
+  const events: string[] = [];
+  let remainder = buffer;
+
+  while (true) {
+    const idx = remainder.indexOf("\n");
+    if (idx === -1) break;
+    const line = remainder.slice(0, idx).replace(/\r$/, "");
+    remainder = remainder.slice(idx + 1);
+
+    if (line.startsWith("data: ")) {
+      const payload = line.slice(6);
+      if (payload === "[DONE]") continue;
+      events.push(payload);
+    }
+  }
+
+  return { events, remainder };
+}
+
+function extractDeltaTextOpenAiLike(payload: string): string {
+  try {
+    const json = JSON.parse(payload) as Record<string, unknown>;
+    const choices = Array.isArray(json.choices) ? json.choices : [];
+    const first = parseJsonFromUnknown(choices[0]);
+    const delta = parseJsonFromUnknown(first?.delta);
+    if (typeof delta?.content === "string") return delta.content;
+  } catch {
+    // Malformed chunk — skip
+  }
+  return "";
+}
+
+function extractDeltaTextAnthropic(payload: string): string {
+  try {
+    const json = JSON.parse(payload) as Record<string, unknown>;
+    if (json.type === "content_block_delta") {
+      const delta = parseJsonFromUnknown(json.delta);
+      if (typeof delta?.text === "string") return delta.text;
+    }
+  } catch {
+    // Malformed chunk — skip
+  }
+  return "";
+}
+
+export async function requestStudyAssistantStreamingCompletion(params: {
+  settings: SproutSettings["studyAssistant"];
+  systemPrompt: string;
+  userPrompt: string;
+  imageDataUrls?: string[];
+  attachedFileDataUrls?: string[];
+  conversationId?: string;
+  onChunk: (token: string) => void;
+  signal?: AbortSignal;
+}): Promise<CompletionResult> {
+  const {
+    settings,
+    systemPrompt,
+    userPrompt,
+    imageDataUrls = [],
+    attachedFileDataUrls = [],
+    conversationId,
+    onChunk,
+    signal,
+  } = params;
+
+  const apiKey = providerApiKey(settings.provider, settings.apiKeys);
+  if (!apiKey) throw new Error(`Missing API key for provider: ${settings.provider}`);
+
+  const base = providerBaseUrl(settings);
+  const model = String(settings.model || "").trim();
+  if (!base) throw new Error("Missing endpoint override for custom provider.");
+  if (!model) throw new Error("Missing model name in Study Companion settings.");
+
+  const textAttachmentPrep = buildTextAttachmentContext(attachedFileDataUrls, settings.privacy.textAttachmentContextLimit);
+  const effectiveUserPrompt = textAttachmentPrep.textContext
+    ? `${userPrompt}\n\n${textAttachmentPrep.textContext}`
+    : userPrompt;
+  const allDataUrls = [...imageDataUrls, ...textAttachmentPrep.binaryDataUrls];
+  const attachments = parseAttachmentDataUrls(allDataUrls);
+
+  const isAnthropic = settings.provider === "anthropic";
+  const endpoint = isAnthropic ? `${base}/messages` : `${base}/chat/completions`;
+
+  let headers: Record<string, string>;
+  let body: string;
+
+  if (isAnthropic) {
+    const tokenBudget = completionTokenBudget(settings.provider, model);
+    headers = {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    };
+    body = JSON.stringify({
+      model,
+      max_tokens: tokenBudget,
+      stream: true,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: attachments.length
+          ? [
+              { type: "text", text: effectiveUserPrompt },
+              ...buildAnthropicContentBlocks(attachments),
+            ]
+          : effectiveUserPrompt,
+      }],
+    });
+  } else {
+    const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(settings.provider, model);
+    const effectiveUserContent = inlineSystemPrompt
+      ? `System instructions:\n${systemPrompt}\n\n${effectiveUserPrompt}`
+      : effectiveUserPrompt;
+    const messages = inlineSystemPrompt
+      ? [{
+          role: "user",
+          content: attachments.length
+            ? [{ type: "text", text: effectiveUserContent }, ...buildOpenAiContentBlocks(attachments)]
+            : effectiveUserContent,
+        }]
+      : [
+          { role: (settings.provider === "openai" && isReasoningModelId(model) ? "developer" : "system"), content: systemPrompt },
+          {
+            role: "user",
+            content: attachments.length
+              ? [{ type: "text", text: effectiveUserContent }, ...buildOpenAiContentBlocks(attachments)]
+              : effectiveUserContent,
+          },
+        ];
+
+    const useMaxCompletionTokens = settings.provider === "openai" && isReasoningModelId(model);
+    const tokenBudget = completionTokenBudget(settings.provider, model);
+
+    headers = {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+      Authorization: `Bearer ${apiKey}`,
+      ...(settings.provider === "openrouter"
+        ? { "HTTP-Referer": "https://github.com/ctrlaltwill/learnkit", "X-Title": "LearnKit" }
+        : {}),
+    };
+    body = JSON.stringify({
+      model,
+      stream: true,
+      ...(useMaxCompletionTokens ? { max_completion_tokens: tokenBudget } : { max_tokens: tokenBudget }),
+      messages,
+      ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
+        ? { conversation_id: conversationId.trim() }
+        : {}),
+      ...(shouldOmitTemperature(settings.provider, model) ? {} : { temperature: 0.4 }),
+    });
+  }
+
+  if (signal?.aborted) {
+    throw new Error("Streaming request was aborted.");
+  }
+
+  let response: Awaited<ReturnType<typeof requestUrl>>;
+  try {
+    response = await requestUrl({
+      url: endpoint,
+      method: "POST",
+      headers,
+      body,
+    });
+  } catch (err) {
+    const status = statusFromUnknownError(err) ?? 0;
+    if (status > 0) {
+      const responseText = responseTextFromUnknownError(err);
+      const responseJson = responseJsonFromUnknownError(err);
+      const detail = providerErrorDetail({ json: responseJson, text: responseText });
+      const code = providerErrorCode({ json: responseJson, text: responseText });
+      const errorType = providerErrorType({ json: responseJson });
+      throw buildProviderRequestError({
+        provider: settings.provider,
+        endpoint,
+        status,
+        detail,
+        code,
+        errorType,
+        responseText,
+        responseJson,
+        originalError: err,
+      });
+    }
+    throw err;
+  }
+
+  if (response.status < 200 || response.status >= 300) {
+    const detail = providerErrorDetail(response);
+    const code = providerErrorCode(response);
+    const errorType = providerErrorType(response);
+    throw buildProviderRequestError({
+      provider: settings.provider,
+      endpoint,
+      status: response.status,
+      detail,
+      code,
+      errorType,
+      responseText: typeof response.text === "string" ? response.text : "",
+      responseJson: response.json,
+    });
+  }
+
+  if (signal?.aborted) {
+    throw new Error("Streaming request was aborted.");
+  }
+
+  const responseText = typeof response.text === "string" ? response.text : "";
+  if (!responseText.trim()) {
+    throw new Error("Streaming response body is not readable.");
+  }
+
+  let fullText = "";
+  const extractDelta = isAnthropic ? extractDeltaTextAnthropic : extractDeltaTextOpenAiLike;
+
+  const { events } = parseSSELines(`${responseText}\n`);
+  for (const payload of events) {
+    if (signal?.aborted) {
+      throw new Error("Streaming request was aborted.");
+    }
+    const token = extractDelta(payload);
+    if (token) {
+      fullText += token;
+      onChunk(token);
+    }
+  }
+
+  if (!fullText.trim()) throw new Error(`${settings.provider} streaming response did not include text content.`);
+
+  return { text: fullText, conversationId };
 }
 
 export async function deleteStudyAssistantConversation(params: {

@@ -2521,7 +2521,7 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
   };
   let front = '';
   let back = '';
-  const allowSpeakerForCardType = card.type === 'basic' || card.type === 'reversed' || card.type === 'cloze';
+  const allowSpeakerForCardType = card.type === 'basic' || card.type === 'reversed' || card.type === 'cloze' || card.type === 'mcq';
 
   const getOqSteps = (): string[] => {
     const fieldsAny = card.fields as Record<string, string | string[] | undefined>;
@@ -3122,6 +3122,8 @@ function enhanceCardElement(
         .join(" ");
       const domFallback = [panelText, imageAlt].filter(Boolean).join(" ").trim();
 
+      const readingCacheId = card.anchorId ? `${card.anchorId}-${side === "back" ? "answer" : "question"}` : undefined;
+
       if (isClozeLike) {
         const clozeSource = rawCloze || String(card.fields.CQ ?? "");
         if (!clozeSource && !domFallback) return;
@@ -3133,7 +3135,7 @@ function enhanceCardElement(
               ...DEFAULT_SETTINGS.audio.scriptLanguages,
               ...(audioSettings?.scriptLanguages ?? {}),
             },
-          });
+          }, readingCacheId);
           return;
         }
       }
@@ -3149,7 +3151,7 @@ function enhanceCardElement(
           ...(audioSettings?.scriptLanguages ?? {}),
         },
       };
-      tts.speakBasicCard(text, mergedAudio);
+      tts.speakBasicCard(text, mergedAudio, readingCacheId);
     });
 
     speakBtn.addEventListener("keydown", (ev) => {
