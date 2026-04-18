@@ -122,6 +122,9 @@ type Args = {
   ttsReplayMcqQuestion?: () => void;
   ttsReplayMcqOptions?: () => void;
   ttsReplayMcqAnswer?: () => void;
+  ttsReplayOqQuestion?: () => void;
+  ttsReplayOqSteps?: () => void;
+  ttsReplayOqAnswer?: () => void;
 
   /** Hide the card-title topbar inside the session card. */
   hideSessionTopbar?: boolean;
@@ -831,7 +834,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
 function renderOqContent(ctx: CardRenderCtx): void {
   const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
   // ── Ordering Question ──────────────────────────────────────────────
-  section.appendChild(labelRow("Question"));
+  section.appendChild(labelRow("Question", args.ttsReplayOqQuestion));
   section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(card.q || "")));
 
   const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
@@ -841,7 +844,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
 
   if (!reveal) {
     // ── Front: drag-to-reorder interface ──
-    section.appendChild(labelRow("Order the steps"));
+    section.appendChild(labelRow("Order the steps", args.ttsReplayOqSteps));
 
     const shuffled = getOqShuffledOrder(args.session, card, !!args.randomizeOqOrder);
     const currentOrder = shuffled.slice();
@@ -960,7 +963,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
 
   } else {
     // ── Back: show user order with correctness highlighting ──
-    section.appendChild(labelRow("Your Order"));
+    section.appendChild(labelRow("Your Order", args.ttsReplayOqAnswer));
 
     const answerList = document.createElement("div");
     answerList.className = "flex flex-col gap-2 learnkit-oq-answer-list";

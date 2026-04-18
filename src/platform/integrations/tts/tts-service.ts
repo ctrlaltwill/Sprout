@@ -1624,6 +1624,57 @@ export class TtsService {
     if (effectiveCacheId) effectiveCacheId += `-${displayOrder.join("")}`;
     this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, effectiveCacheId);
   }
+
+  // ── Ordered Question (OQ) ─────────────────────────────────────
+
+  /**
+   * Speak an OQ card's front: question followed by the steps (unnumbered).
+   */
+  speakOqFront(
+    question: string,
+    steps: string[],
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    const text = formatOqFrontForTts(question, steps);
+    if (!text) return;
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, cacheId);
+  }
+
+  /** Speak only the OQ question stem. */
+  speakOqQuestion(
+    question: string,
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    if (!question.trim()) return;
+    this.speak(question, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, cacheId);
+  }
+
+  /** Speak just the OQ steps (unnumbered, as a list). */
+  speakOqSteps(
+    steps: string[],
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    const text = formatOqStepsForTts(steps);
+    if (!text) return;
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, cacheId);
+  }
+
+  /**
+   * Speak the OQ answer: whether the user was correct, then the correct order.
+   */
+  speakOqAnswer(
+    steps: string[],
+    pass: boolean,
+    settings: SproutSettings["audio"],
+    cacheId?: string,
+  ): void {
+    const text = formatOqAnswerForTts(steps, pass);
+    if (!text) return;
+    this.speak(text, settings.defaultLanguage, settings, this.shouldAutoDetectLanguage(settings), false, cacheId);
+  }
 }
 
 /**
@@ -1698,6 +1749,40 @@ export function formatMcqAnswerForTts(
     .filter(({ origIdx }) => correctSet.has(origIdx))
     .map(({ origIdx, displayIdx }) => `${displayIdx + 1}. ${options[origIdx] ?? ""}`);
   return `The answers are: ${answers.join(". ")}`;
+}
+
+// ── OQ format helpers ───────────────────────────────────────────
+
+/**
+ * Format OQ front for TTS: question followed by the steps (unnumbered).
+ * Steps are read as a plain list so the user hears the content without
+ * positional hints.
+ */
+export function formatOqFrontForTts(question: string, steps: string[]): string {
+  const parts = [question, ...steps].map((s) => s.trim()).filter(Boolean);
+  return parts.join(". ");
+}
+
+/** Format just the OQ steps as a plain (unnumbered) list for TTS. */
+export function formatOqStepsForTts(steps: string[]): string {
+  return steps.map((s) => s.trim()).filter(Boolean).join(". ");
+}
+
+/**
+ * Format the OQ answer for TTS.
+ *
+ * Announces whether the user was correct or not, then reads the correct
+ * order with numbered positions:
+ *   "Correct. 1) Step A. 2) Step B. 3) Step C."
+ *   "Incorrect, the correct order is: 1) Step A. 2) Step B. 3) Step C."
+ */
+export function formatOqAnswerForTts(steps: string[], pass: boolean): string {
+  const numbered = steps
+    .map((s, i) => `${i + 1}) ${s.trim()}`)
+    .filter((s) => s.length > 3);
+  if (!numbered.length) return "";
+  const prefix = pass ? "Correct" : "Incorrect, the correct order is";
+  return `${prefix}. ${numbered.join(". ")}`;
 }
 
 /** Shared singleton instance. */

@@ -1183,8 +1183,12 @@ function speakWidgetCard(
 
   if (card.type === "oq") {
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
-    const text = [card.q || "", ...steps].filter(Boolean).join(". ");
-    tts.speakBasicCard(text, audio, cid);
+    if (reveal) {
+      const pass = !!(graded?.meta as Record<string, unknown> | undefined)?.oqPass;
+      tts.speakOqAnswer(steps, pass, audio, `${cid}-${pass ? "pass" : "fail"}`);
+    } else {
+      tts.speakOqFront(card.q || "", steps, audio, cid);
+    }
     return;
   }
 

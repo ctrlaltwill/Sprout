@@ -469,6 +469,44 @@ export class SproutReviewerView extends ItemView {
     tts.speakMcqAnswer(options, order, getCorrectIndices(card), audio, `${card.id}-answer`);
   }
 
+  /** Replay just the OQ question stem. */
+  private _replayOqQuestion() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) { tts.stop(); return; }
+    const card = this.currentCard();
+    if (!card || card.type !== "oq") return;
+    const audio = this.plugin.settings?.audio;
+    if (!audio || !this._canUseTtsForCard(card)) return;
+    tts.speakOqQuestion(card.q || "", audio, `${card.id}-question`);
+  }
+
+  /** Replay just the OQ steps (unnumbered). */
+  private _replayOqSteps() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) { tts.stop(); return; }
+    const card = this.currentCard();
+    if (!card || card.type !== "oq") return;
+    const audio = this.plugin.settings?.audio;
+    if (!audio || !this._canUseTtsForCard(card)) return;
+    const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+    tts.speakOqSteps(steps, audio, `${card.id}-steps`);
+  }
+
+  /** Replay the OQ answer with correctness result. */
+  private _replayOqAnswer() {
+    const tts = getTtsService();
+    if (tts.isSupported && tts.isSpeaking) { tts.stop(); return; }
+    const card = this.currentCard();
+    if (!card || card.type !== "oq") return;
+    const audio = this.plugin.settings?.audio;
+    if (!audio || !this._canUseTtsForCard(card)) return;
+    const id = String(card.id);
+    const graded = this.session?.graded?.[id];
+    const pass = !!(graded?.meta as Record<string, unknown> | undefined)?.oqPass;
+    const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+    tts.speakOqAnswer(steps, pass, audio, `${card.id}-answer-${pass ? "pass" : "fail"}`);
+  }
+
   /**
    * Internal: actually speak the front of the card.
    * @param force When true, skip the dedup key check (used for replay).
@@ -504,6 +542,10 @@ export class SproutReviewerView extends ItemView {
       const options = normalizeCardOptions(card.options);
       const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
       tts.speakMcqCard(card.stem || "", options, order, false, getCorrectIndices(card), audio, cid);
+    } else if (card.type === "oq" && (card.q || card.oqSteps?.length)) {
+      this._ttsLastSpokenKey = key;
+      const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+      tts.speakOqFront(card.q || "", steps, audio, cid);
     }
   }
 
@@ -542,6 +584,13 @@ export class SproutReviewerView extends ItemView {
       const options = normalizeCardOptions(card.options);
       const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
       tts.speakMcqAnswer(options, order, getCorrectIndices(card), audio, cid);
+    } else if (card.type === "oq" && (card.q || card.oqSteps?.length)) {
+      this._ttsLastSpokenKey = key;
+      const id = String(card.id);
+      const graded = this.session?.graded?.[id];
+      const pass = !!(graded?.meta as Record<string, unknown> | undefined)?.oqPass;
+      const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
+      tts.speakOqAnswer(steps, pass, audio, `${cid}-${pass ? "pass" : "fail"}`);
     }
   }
 
@@ -2240,6 +2289,9 @@ export class SproutReviewerView extends ItemView {
       ttsReplayMcqQuestion: () => this._replayMcqQuestion(),
       ttsReplayMcqOptions: () => this._replayMcqOptions(),
       ttsReplayMcqAnswer: () => this._replayMcqAnswer(),
+      ttsReplayOqQuestion: () => this._replayOqQuestion(),
+      ttsReplayOqSteps: () => this._replayOqSteps(),
+      ttsReplayOqAnswer: () => this._replayOqAnswer(),
 
       hideSessionTopbar: !!this.plugin.settings.study?.hideSessionTopbar,
 
