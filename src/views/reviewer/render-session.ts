@@ -12,6 +12,7 @@ import { createOqReorderPreviewController } from "../../platform/core/oq-reorder
 import { setCssProps } from "../../platform/core/ui";
 import { applyInlineMarkdown } from "../../platform/integrations/anki/anki-mapper";
 import { setIcon } from "obsidian";
+import { bindTtsPlayingState, markTtsButtonActive } from "../../platform/integrations/tts/tts-service";
 import { renderStudySessionHeader } from "./study-session-header";
 import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../../platform/core/store";
@@ -135,7 +136,7 @@ type Args = {
 /** Shared rendering context passed to per-card-type helpers. */
 interface CardRenderCtx {
   section: HTMLElement;
-  labelRow: (text: string, replayFn?: () => void) => HTMLElement;
+  labelRow: (text: string, replayFn?: () => void, ttsField?: string) => HTMLElement;
   renderMdBlock: (cls: string, md: string) => HTMLElement;
   setupLinkHandlers: (rootEl: HTMLElement, srcPath: string) => void;
   args: Args;
@@ -637,16 +638,16 @@ function makeHeaderMenu(opts: {
 /** Renders MCQ card content (single-answer and multi-answer). */
 function renderMcqContent(ctx: CardRenderCtx): void {
   const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
-  section.appendChild(labelRow("Question", args.ttsReplayMcqQuestion));
+  section.appendChild(labelRow("Question", args.ttsReplayMcqQuestion, "mcq-question"));
   section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(card.stem || "")));
   const reveal = !!graded || !!args.showAnswer;
   const multiAnswer = isMultiAnswerMcq(card);
   const correctSet = new Set(getCorrectIndices(card));
 
   if (multiAnswer && !reveal) {
-    section.appendChild(labelRow("Options (select all correct answers)", args.ttsReplayMcqOptions));
+    section.appendChild(labelRow("Options (select all correct answers)", args.ttsReplayMcqOptions, "mcq-options"));
   } else {
-    section.appendChild(labelRow(reveal ? "Answer" : "Options", reveal ? args.ttsReplayMcqAnswer : args.ttsReplayMcqOptions));
+    section.appendChild(labelRow(reveal ? "Answer" : "Options", reveal ? args.ttsReplayMcqAnswer : args.ttsReplayMcqOptions, reveal ? "mcq-answer" : "mcq-options"));
   }
 
   // Only show MCQ options, not info, as answer options
@@ -834,7 +835,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
 function renderOqContent(ctx: CardRenderCtx): void {
   const { section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath } = ctx;
   // ── Ordering Question ──────────────────────────────────────────────
-  section.appendChild(labelRow("Question", args.ttsReplayOqQuestion));
+  section.appendChild(labelRow("Question", args.ttsReplayOqQuestion, "oq-question"));
   section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(card.q || "")));
 
   const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
@@ -844,7 +845,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
 
   if (!reveal) {
     // ── Front: drag-to-reorder interface ──
-    section.appendChild(labelRow("Order the steps", args.ttsReplayOqSteps));
+    section.appendChild(labelRow("Order the steps", args.ttsReplayOqSteps, "oq-steps"));
 
     const shuffled = getOqShuffledOrder(args.session, card, !!args.randomizeOqOrder);
     const currentOrder = shuffled.slice();
@@ -963,7 +964,7 @@ function renderOqContent(ctx: CardRenderCtx): void {
 
   } else {
     // ── Back: show user order with correctness highlighting ──
-    section.appendChild(labelRow("Your Order", args.ttsReplayOqAnswer));
+    section.appendChild(labelRow("Your Order", args.ttsReplayOqAnswer, "oq-answer"));
 
     const answerList = document.createElement("div");
     answerList.className = "flex flex-col gap-2 learnkit-oq-answer-list";
@@ -1216,7 +1217,7 @@ export function renderSessionMode(args: Args) {
   const mutedLabel = (s: string) => h("div", "text-muted-foreground text-sm font-medium", s);
 
   /** Build a "Question" or "Answer" label row with an optional TTS replay button. */
-  const labelRow = (text: string, replayFn?: () => void) => {
+  const labelRow = (text: string, replayFn?: () => void, ttsField?: string) => {
     const row = document.createElement("div");
     row.className = "flex items-center justify-between learnkit-label-row";
     row.appendChild(mutedLabel(text));
@@ -1226,34 +1227,15 @@ export function renderSessionMode(args: Args) {
       btn.className = "btn-icon learnkit-tts-replay-btn";
       btn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.tts.readAloud", "Read {text} aloud", { text: text.toLowerCase() }));
       btn.setAttribute("data-tooltip-position", "top");
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      svg.setAttribute("width", "18");
-      svg.setAttribute("height", "18");
-      svg.setAttribute("viewBox", "0 0 24 24");
-      svg.setAttribute("fill", "none");
-      svg.setAttribute("stroke", "currentColor");
-      svg.setAttribute("stroke-width", "2");
-      svg.setAttribute("stroke-linecap", "round");
-      svg.setAttribute("stroke-linejoin", "round");
-      svg.classList.add("lucide", "lucide-volume-2");
-      // Lucide volume-2 icon paths
-      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      polygon.setAttribute("points", "11 5 6 9 2 9 2 15 6 15 11 19 11 5");
-      svg.appendChild(polygon);
-      const path1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path1.setAttribute("d", "M15.54 8.46a5 5 0 0 1 0 7.07");
-      svg.appendChild(path1);
-      const path2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path2.setAttribute("d", "M19.07 4.93a10 10 0 0 1 0 14.14");
-      svg.appendChild(path2);
-      btn.appendChild(svg);
+      if (ttsField) btn.setAttribute("data-tts-field", ttsField);
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        markTtsButtonActive(btn);
         replayFn();
       });
       row.appendChild(btn);
+      bindTtsPlayingState(btn);
     }
     return row;
   };

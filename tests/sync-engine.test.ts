@@ -26,8 +26,20 @@ class MemoryVault {
     return entry.content;
   }
 
+  async cachedRead(file: TFile): Promise<string> {
+    return this.read(file);
+  }
+
   async modify(file: TFile, content: string): Promise<void> {
     this.files.set(file.path, { file, content });
+  }
+
+  async process(file: TFile, fn: (data: string) => string): Promise<string> {
+    const entry = this.files.get(file.path);
+    if (!entry) throw new Error(`File not found: ${file.path}`);
+    const result = fn(entry.content);
+    entry.content = result;
+    return result;
   }
 
   async create(path: string, content: string): Promise<TFile> {
@@ -460,24 +472,24 @@ describe("sync engine", () => {
 
   // ── syncQuestionBank: TOCTOU re-read in vault sync ──────────────────────
 
-  it("re-reads file content before write in vault sync", async () => {
+  it("uses vault.process for atomic TOCTOU-safe writes in vault sync", async () => {
     const vault = new MemoryVault();
     await vault.create("Notes/File.md", "Q | Q |\nA | A |");
     const plugin = makePlugin(vault);
     setCryptoSequence([100000000]);
 
-    // Count reads to verify the re-read happens
-    let readCount = 0;
-    const origRead = vault.read.bind(vault);
-    vi.spyOn(vault, "read").mockImplementation(async (f: TFile) => {
-      readCount++;
-      return origRead(f);
+    // Verify vault.process is called (provides atomic read+write TOCTOU safety)
+    let processCount = 0;
+    const origProcess = vault.process.bind(vault);
+    vi.spyOn(vault, "process").mockImplementation(async (f: TFile, fn: (data: string) => string) => {
+      processCount++;
+      return origProcess(f, fn);
     });
 
     await syncQuestionBank(plugin);
 
-    // Should read at least twice: initial parse + TOCTOU re-validation
-    expect(readCount).toBeGreaterThanOrEqual(2);
+    // Should use vault.process for the write
+    expect(processCount).toBeGreaterThanOrEqual(1);
   });
 
   // ── syncQuestionBank: shorthand normalization ───────────────────────────

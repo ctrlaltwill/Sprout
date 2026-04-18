@@ -27,7 +27,7 @@ import { processMarkdownFeatures, setupInternalLinkHandlers } from "./markdown";
 import { openCardAnchorInNote } from "../../../platform/core/open-card-anchor";
 import { processClozeForMath, textContainsMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../../../platform/core/shared-utils";
 import { MarkdownView } from "obsidian";
-import { getTtsService } from "../../../platform/integrations/tts/tts-service";
+import { getTtsService, bindTtsPlayingState, markTtsButtonActive } from "../../../platform/integrations/tts/tts-service";
 import { shouldSkipBackAutoplay } from "../../../platform/integrations/tts/autoplay-policy";
 import { t } from "../../../platform/translations/translator";
 import { getRatingIntervalPreview } from "../../../platform/core/grade-intervals";
@@ -373,13 +373,14 @@ function appendWidgetTtsReplayButton(
   btn.className = "btn-icon learnkit-tts-replay-btn";
   btn.setAttribute("aria-label", answerSide ? "Read answer aloud" : "Read question aloud");
   btn.setAttribute("data-tooltip-position", "top");
-  setIcon(btn, "volume-2");
   btn.addEventListener("click", (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
+    markTtsButtonActive(btn);
     speakWidgetCard(view, card, graded, answerSide);
   });
   parent.appendChild(btn);
+  bindTtsPlayingState(btn);
 }
 
 function renderClozeCard(
@@ -1187,7 +1188,17 @@ function speakWidgetCard(
       const pass = !!graded?.meta?.oqPass;
       tts.speakOqAnswer(steps, pass, audio, `${cid}-${pass ? "pass" : "fail"}`);
     } else {
-      tts.speakOqFront(card.q || "", steps, audio, cid);
+      const s = view.session as unknown as { oqOrderMap?: Record<string, number[]> };
+      const order = s?.oqOrderMap?.[String(card.id)];
+      const displaySteps = Array.isArray(order) && order.length === steps.length
+        ? order.map((i) => steps[i])
+        : steps;
+      const orderKey = Array.isArray(order) ? order.join("") : "";
+      // Speak question stem first, then chain the shuffled steps
+      tts.speakOqQuestion(card.q || "", audio, `${card.id}-oq-stem`);
+      tts.setContinuation(() => {
+        tts.speakOqSteps(displaySteps, audio, `${card.id}-steps-${orderKey}`);
+      });
     }
     return;
   }

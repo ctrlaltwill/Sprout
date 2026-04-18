@@ -386,7 +386,7 @@ body.is-phone .learnkit .learnkit-deck-table-wrap {
 }
 
 .learnkit .learnkit-deck-table-wrap:hover {
-  background-color: var(--background) !important;
+  background-color: var(--color-base-10) !important;
 }
 
 .learnkit .learnkit-review-root[data-learnkit-review-mode="deck"] .learnkit-review-content-shell {

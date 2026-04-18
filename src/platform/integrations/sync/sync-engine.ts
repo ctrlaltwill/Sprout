@@ -1159,7 +1159,7 @@ export async function syncOneFile(
     purgeDeprecatedTypes(plugin);
     quarantineIoCardsWithMissingImages(plugin);
 
-    const originalText = await vault.read(file);
+    const originalText = await vault.cachedRead(file);
     const lines = originalText.split(/\r?\n/);
     const pruneGlobalOrphans = options?.pruneGlobalOrphans ?? true;
 
@@ -1258,17 +1258,28 @@ export async function syncOneFile(
     }
 
     // 3) Apply file edits (with TOCTOU re-validation)
+    //    Use vault.process() instead of vault.modify() so Obsidian applies the
+    //    change through the editor layer, preserving scroll position & cursor.
     if (edits.length) {
-      const latestText = await vault.read(file);
-      if (latestText !== originalText) {
-        // File was modified while we were computing edits — abort the write.
-        // The next sync triggered by the file-change event will pick up
-        // the new content, so silently skipping here is safe.
-        log.warn(`syncOneFile: file "${file.path}" changed during sync; skipping write to avoid data loss`);
-      } else {
+      await vault.process(file, (data) => {
+        if (data !== originalText) {
+          // File was modified while we were computing edits — re-parse from
+          // the live content so the upsert / deletion passes below reflect
+          // the editor's current state (mirrors syncQuestionBank behaviour).
+          log.warn(`syncOneFile: file "${file.path}" changed during sync; re-parsing from live content`);
+          const freshParseText = normaliseTextForParsing(data);
+          const { cards: freshCards } = parseCardsFromText(file.path, freshParseText, plugin.settings.indexing.ignoreInCodeFences);
+          cards.length = 0;
+          cards.push(...freshCards);
+          keepIds.clear();
+          for (const c of freshCards) {
+            if (c.id) keepIds.add(String(c.id));
+          }
+          return data;
+        }
         applyEditsToLines(lines, edits);
-        await vault.modify(file, lines.join("\n"));
-      }
+        return lines.join("\n");
+      });
     }
 
     // Recovery: if we found a snapshot, attach states for known IDs before we create defaults.
@@ -1649,23 +1660,24 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
 
     for (const file of mdFiles) {
       try {
-        let text = await vault.read(file);
+        let text = await vault.cachedRead(file);
         let plan = buildFilePlan(file, text);
         if (!plan.cards.length && !plan.edits.length) continue;
 
         if (plan.edits.length) {
-          const latestText = await vault.read(file);
-          if (latestText !== text) {
-            for (const id of plan.addedIds) usedIds.delete(id);
-            text = latestText;
-            plan = buildFilePlan(file, text);
-          }
-
-          if (plan.edits.length) {
-            const lines = plan.lines.slice();
-            applyEditsToLines(lines, plan.edits);
-            await vault.modify(file, lines.join("\n"));
-          }
+          await vault.process(file, (data) => {
+            if (data !== text) {
+              for (const id of plan.addedIds) usedIds.delete(id);
+              text = data;
+              plan = buildFilePlan(file, text);
+            }
+            if (plan.edits.length) {
+              const lines = plan.lines.slice();
+              applyEditsToLines(lines, plan.edits);
+              return lines.join("\n");
+            }
+            return data;
+          });
         }
 
         idsInserted += plan.idsInserted;

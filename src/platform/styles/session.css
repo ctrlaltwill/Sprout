@@ -846,6 +846,33 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   opacity: 1;
 }
 
+/* ── TTS button icon layers ── */
+
+.learnkit-tts-replay-btn .tts-icon-idle,
+.learnkit-tts-replay-btn .tts-icon-playing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learnkit-tts-replay-btn .tts-icon-playing {
+  display: none;
+}
+
+/* Playing: swap volume-2 → volume-off */
+.learnkit-tts-replay-btn.is-tts-playing .tts-icon-idle {
+  display: none;
+}
+.learnkit-tts-replay-btn.is-tts-playing .tts-icon-playing {
+  display: inline-flex;
+}
+
+.learnkit-tts-replay-btn.is-tts-playing:hover,
+.learnkit-tts-replay-btn.is-tts-playing:focus-visible {
+  background-color: var(--color-base-20);
+  border-color: var(--color-base-35);
+}
+
 /* ---- Markdown block text (Q/A/cloze/info) ---- */
 
 .learnkit-md-block {

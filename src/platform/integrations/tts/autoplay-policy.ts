@@ -12,6 +12,8 @@ export type CardTypeLike = {
 };
 
 export function shouldSkipBackAutoplay(card: CardTypeLike | null | undefined): boolean {
-  const type = typeof card?.type === "string" ? card.type.toLowerCase() : "";
-  return type === "mcq" || type === "oq";
+  // Back-side autoplay eligibility is controlled by the global autoplay setting.
+  // Do not skip by card type so MCQ/OQ/etc. all follow the same autoplay rule.
+  void card;
+  return false;
 }

@@ -56,7 +56,7 @@ import {
 import { logFsrsIfNeeded, logUndoIfNeeded } from "./fsrs-log";
 import { renderTitleMarkdownIfNeeded } from "./title-markdown";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "./markdown-block";
-import { getTtsService } from "../../platform/integrations/tts/tts-service";
+import { getTtsService, markTtsFieldActive } from "../../platform/integrations/tts/tts-service";
 import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay-policy";
 import { openCardAnchorInNote } from "../../platform/core/open-card-anchor";
 import { t } from "../../platform/translations/translator";
@@ -382,8 +382,6 @@ export class SproutReviewerView extends ItemView {
       this._timing = { stamp, cardId: id, startedAt: Date.now() };
     }
 
-    // TTS: speak front of card when first presented (skip if answer already revealed)
-    if (!this.showAnswer) this._speakCardFront(card);
   }
 
   // ── TTS helpers ─────────────────────────────
@@ -477,7 +475,7 @@ export class SproutReviewerView extends ItemView {
     if (!card || card.type !== "oq") return;
     const audio = this.plugin.settings?.audio;
     if (!audio || !this._canUseTtsForCard(card)) return;
-    tts.speakOqQuestion(card.q || "", audio, `${card.id}-question`);
+    tts.speakOqQuestion(card.q || "", audio, `${card.id}-oq-stem`);
   }
 
   /** Replay just the OQ steps (unnumbered). */
@@ -489,7 +487,8 @@ export class SproutReviewerView extends ItemView {
     const audio = this.plugin.settings?.audio;
     if (!audio || !this._canUseTtsForCard(card)) return;
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
-    tts.speakOqSteps(steps, audio, `${card.id}-steps`);
+    const { steps: shuffled, order } = this._getOqDisplayOrder(card, steps);
+    tts.speakOqSteps(shuffled, audio, `${card.id}-steps-${order.join("")}`);
   }
 
   /** Replay the OQ answer with correctness result. */
@@ -505,6 +504,15 @@ export class SproutReviewerView extends ItemView {
     const pass = !!graded?.meta?.oqPass;
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
     tts.speakOqAnswer(steps, pass, audio, `${card.id}-answer-${pass ? "pass" : "fail"}`);
+  }
+
+  /** Return OQ steps reordered to match the shuffled display order, plus the raw order indices. */
+  private _getOqDisplayOrder(card: CardRecord, steps: string[]): { steps: string[]; order: number[] } {
+    if (!this.session || !steps.length) return { steps, order: steps.map((_, i) => i) };
+    const s = this.session as unknown as { oqOrderMap?: Record<string, number[]> };
+    const order = s.oqOrderMap?.[String(card.id)];
+    if (!Array.isArray(order) || order.length !== steps.length) return { steps, order: steps.map((_, i) => i) };
+    return { steps: order.map((i) => steps[i]), order };
   }
 
   /**
@@ -541,11 +549,37 @@ export class SproutReviewerView extends ItemView {
       this._ttsLastSpokenKey = key;
       const options = normalizeCardOptions(card.options);
       const order = this.session ? getMcqOptionOrder(this.plugin, this.session, card) : options.map((_, i) => i);
-      tts.speakMcqCard(card.stem || "", options, order, false, getCorrectIndices(card), audio, cid);
+      const stem = (card.stem || "").trim();
+      if (stem) {
+        // Speak stem first, then chain the options after it finishes
+        markTtsFieldActive(this.contentEl, "mcq-question");
+        tts.speakMcqStem(stem, audio, `${card.id}-question`);
+        tts.setContinuation(() => {
+          markTtsFieldActive(this.contentEl, "mcq-options");
+          tts.speakMcqOptions(options, order, audio, `${card.id}-options`);
+        });
+      } else {
+        markTtsFieldActive(this.contentEl, "mcq-options");
+        tts.speakMcqOptions(options, order, audio, `${card.id}-options`);
+      }
     } else if (card.type === "oq" && (card.q || card.oqSteps?.length)) {
       this._ttsLastSpokenKey = key;
       const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
-      tts.speakOqFront(card.q || "", steps, audio, cid);
+      const { steps: shuffled, order } = this._getOqDisplayOrder(card, steps);
+      const orderKey = order.join("");
+      const question = (card.q || "").trim();
+      if (question) {
+        // Speak question stem first, then chain the shuffled steps after it finishes
+        markTtsFieldActive(this.contentEl, "oq-question");
+        tts.speakOqQuestion(question, audio, `${card.id}-oq-stem`);
+        tts.setContinuation(() => {
+          markTtsFieldActive(this.contentEl, "oq-steps");
+          tts.speakOqSteps(shuffled, audio, `${card.id}-steps-${orderKey}`);
+        });
+      } else {
+        markTtsFieldActive(this.contentEl, "oq-steps");
+        tts.speakOqSteps(shuffled, audio, `${card.id}-steps-${orderKey}`);
+      }
     }
   }
 
@@ -2297,6 +2331,9 @@ export class SproutReviewerView extends ItemView {
 
       rerender: () => this.render(),
     });
+
+    // TTS: speak front after render so OQ shuffled display order is initialized.
+    if (activeCard && !this.showAnswer) this._speakCardFront(activeCard);
 
     const renderedSessionHeader = queryFirst<HTMLElement>(sessionColumn ?? root, "[data-study-session-header]");
     const renderedSessionTimerRow = renderedSessionHeader?.querySelector<HTMLElement>(".lk-session-header-left > div:nth-child(2)") ?? null;

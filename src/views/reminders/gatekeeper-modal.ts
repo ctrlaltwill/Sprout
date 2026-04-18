@@ -26,7 +26,7 @@ import { processCircleFlagsInMarkdown, hydrateCircleFlagsInElement } from "../..
 import { getCorrectIndices, isMultiAnswerMcq, normalizeCardOptions } from "../../platform/types/card";
 import { renderImageOcclusionReviewInto } from "../../platform/image-occlusion/image-occlusion-review-render";
 import * as IO from "../../platform/image-occlusion/image-occlusion-index";
-import { getTtsService } from "../../platform/integrations/tts/tts-service";
+import { getTtsService, bindTtsPlayingState, markTtsButtonActive } from "../../platform/integrations/tts/tts-service";
 import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay-policy";
 import { t } from "../../platform/translations/translator";
 
@@ -571,17 +571,18 @@ export class GatekeeperModal extends Modal {
     if (!tts.isSupported) return;
 
     const btn = parent.createEl("button", {
-      cls: "btn-icon learnkit-tts-replay-btn learnkit-tts-replay-btn",
+      cls: "btn-icon learnkit-tts-replay-btn",
       type: "button",
     });
     btn.setAttribute("aria-label", answerSide ? "Read answer aloud" : "Read question aloud");
     btn.setAttribute("data-tooltip-position", "top");
-    setIcon(btn, "volume-2");
     btn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
+      markTtsButtonActive(btn);
       this.speakCardSide(card, answerSide);
     });
+    bindTtsPlayingState(btn);
   }
 
   private maybeAutoSpeakCurrentCard(card: CardRecord): void {

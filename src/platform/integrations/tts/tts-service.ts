@@ -13,7 +13,7 @@
 import { detectLanguage, getBlankWord } from "./language-detect";
 import { requestExternalTts } from "./tts-provider";
 import { ttsCacheKey, getCachedAudio, cacheAudio } from "./tts-cache";
-import { Platform } from "obsidian";
+import { Platform, setIcon } from "obsidian";
 import { log } from "../../core/logger";
 import type { SproutSettings } from "../../types/settings";
 import { getCircleFlagTokenMatches, stripCircleFlagTokens } from "../../../platform/flags/flag-tokens";
@@ -1163,6 +1163,20 @@ export class TtsService {
   private _resumeKeepAliveInterval: ReturnType<typeof setInterval> | null = null;
   private _activeAudioElement: HTMLAudioElement | null = null;
   private _activeObjectUrl: string | null = null;
+  private _speakingListeners = new Set<(speaking: boolean) => void>();
+  private _pendingContinuation: (() => void) | null = null;
+
+  /** Register a callback that fires whenever the speaking state changes. Returns an unsubscribe function. */
+  onSpeakingChange(fn: (speaking: boolean) => void): () => void {
+    this._speakingListeners.add(fn);
+    return () => { this._speakingListeners.delete(fn); };
+  }
+
+  private _setSpeaking(value: boolean): void {
+    if (this._speaking === value) return;
+    this._speaking = value;
+    for (const fn of this._speakingListeners) fn(value);
+  }
 
   /** Vault adapter for cache reads/writes. Set externally by the plugin at init. */
   vaultAdapter: {
@@ -1209,12 +1223,25 @@ export class TtsService {
   /** Cancel any ongoing speech. */
   stop(): void {
     this._speakSession += 1;
+    this._pendingContinuation = null;
     this._clearResumeKeepAliveInterval();
     this._stopAudioElement();
     if (this.isSupported) {
       window.speechSynthesis.cancel();
     }
-    this._speaking = false;
+    this._setSpeaking(false);
+  }
+
+  /** Run and clear any pending continuation callback. */
+  private _runContinuation(): void {
+    const fn = this._pendingContinuation;
+    this._pendingContinuation = null;
+    if (fn) fn();
+  }
+
+  /** Set a callback to run when the current speech finishes. Cleared on stop(). */
+  setContinuation(fn: (() => void) | null): void {
+    this._pendingContinuation = fn;
   }
 
   private shouldAutoDetectLanguage(settings: SproutSettings["audio"]): boolean {
@@ -1296,8 +1323,9 @@ export class TtsService {
     const speakSegmentAt = (index: number) => {
       if (session !== this._speakSession) return;
       if (index >= segments.length) {
-        this._speaking = false;
+        this._setSpeaking(false);
         ttsLog("⏹ Speaking ended.");
+        this._runContinuation();
         return;
       }
 
@@ -1330,7 +1358,7 @@ export class TtsService {
       }
 
       utterance.onstart = () => {
-        this._speaking = true;
+        this._setSpeaking(true);
         this._clearResumeKeepAliveInterval();
         this._resumeKeepAliveInterval = setInterval(() => {
           if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
@@ -1403,7 +1431,7 @@ export class TtsService {
     if (!plainText) return;
 
     const session = this._speakSession;
-    this._speaking = true;
+    this._setSpeaking(true);
 
     // If a flag was found and flag-based voice selection is enabled, use its language
     const flagEnabled = (settings as Record<string, unknown>)["useFlagsForVoiceSelection"] !== false;
@@ -1470,13 +1498,14 @@ export class TtsService {
         this._activeObjectUrl = objectUrl;
 
         audioEl.onended = () => {
-          this._speaking = false;
+          this._setSpeaking(false);
           this._stopAudioElement();
           ttsLog("⏹ External TTS playback ended.");
+          this._runContinuation();
         };
 
         audioEl.onerror = () => {
-          this._speaking = false;
+          this._setSpeaking(false);
           this._stopAudioElement();
           ttsLog("External TTS audio element error.");
         };
@@ -1485,7 +1514,7 @@ export class TtsService {
         ttsLog(`▶ Playing external TTS audio (${(audioData.byteLength / 1024).toFixed(1)} KB)`);
       } catch (e) {
         if (session !== this._speakSession) return;
-        this._speaking = false;
+        this._setSpeaking(false);
         log.warn("[TTS] External provider failed, falling back to Web Speech API", e);
 
         // Fallback to browser TTS
@@ -1791,4 +1820,98 @@ let _instance: TtsService | null = null;
 export function getTtsService(): TtsService {
   if (!_instance) _instance = new TtsService();
   return _instance;
+}
+
+// ── Per-button TTS playing state ────────────────────────────────
+
+/** The single button currently associated with active TTS playback. */
+let _activeTtsBtn: HTMLElement | null = null;
+
+/** Restore the original aria-label saved before "Stop playing" was set. */
+function _restoreTtsTooltip(btn: HTMLElement): void {
+  const orig = btn.dataset.ttsOrigLabel;
+  if (orig) {
+    btn.setAttribute("aria-label", orig);
+    delete btn.dataset.ttsOrigLabel;
+  }
+}
+
+/**
+ * Mark a specific TTS button as the one that triggered playback.
+ * Call this from the button's click handler *before* starting speech.
+ */
+export function markTtsButtonActive(btn: HTMLElement): void {
+  // Clear previous active button
+  if (_activeTtsBtn && _activeTtsBtn !== btn) {
+    _activeTtsBtn.classList.remove("is-tts-playing");
+    _restoreTtsTooltip(_activeTtsBtn);
+  }
+  _activeTtsBtn = btn;
+  btn.classList.add("is-tts-playing");
+  // Swap tooltip to "Stop playing"
+  const orig = btn.getAttribute("aria-label");
+  if (orig) btn.dataset.ttsOrigLabel = orig;
+  btn.setAttribute("aria-label", "Stop playing");
+}
+
+/**
+ * Find the TTS replay button for a specific field within a container and mark it active.
+ * Looks for a button with a matching `data-tts-field` attribute.
+ * Returns `true` if a matching button was found and marked.
+ */
+export function markTtsFieldActive(container: HTMLElement, field: string): boolean {
+  const btn = container.querySelector<HTMLElement>(`.learnkit-tts-replay-btn[data-tts-field="${field}"]`);
+  if (!btn) return false;
+  markTtsButtonActive(btn);
+  return true;
+}
+
+/**
+ * Prepare a TTS replay button with two icon layers so CSS can swap
+ * between idle and playing states.
+ *
+ * Icon mapping:
+ * - Idle    → `volume-2`   (speaker icon)
+ * - Playing → `volume-off` (muted speaker — only on the active button)
+ *
+ * Call {@link markTtsButtonActive} in the click handler to associate the
+ * button with the current playback session.
+ */
+export function bindTtsPlayingState(btn: HTMLElement): void {
+  const tts = getTtsService();
+
+  // Clear any existing icon content (e.g. from setIcon call before this)
+  btn.empty();
+
+  const idleWrap = document.createElement("span");
+  idleWrap.className = "tts-icon-idle";
+  setIcon(idleWrap, "volume-2");
+
+  const playingWrap = document.createElement("span");
+  playingWrap.className = "tts-icon-playing";
+  setIcon(playingWrap, "volume-off");
+
+  btn.append(idleWrap, playingWrap);
+
+  // When speaking stops globally, clear the active button's class
+  const unsub = tts.onSpeakingChange((speaking) => {
+    if (!speaking) {
+      if (_activeTtsBtn) {
+        _activeTtsBtn.classList.remove("is-tts-playing");
+        _restoreTtsTooltip(_activeTtsBtn);
+      }
+      _activeTtsBtn = null;
+    }
+  });
+
+  // Auto-cleanup when the button leaves the DOM
+  const observer = new MutationObserver(() => {
+    if (!btn.isConnected) {
+      unsub();
+      observer.disconnect();
+    }
+  });
+  if (btn.parentElement) {
+    observer.observe(btn.parentElement, { childList: true });
+  }
 }
