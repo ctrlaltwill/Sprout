@@ -1184,7 +1184,7 @@ function speakWidgetCard(
   if (card.type === "oq") {
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
     if (reveal) {
-      const pass = !!(graded?.meta as Record<string, unknown> | undefined)?.oqPass;
+      const pass = !!graded?.meta?.oqPass;
       tts.speakOqAnswer(steps, pass, audio, `${cid}-${pass ? "pass" : "fail"}`);
     } else {
       tts.speakOqFront(card.q || "", steps, audio, cid);

@@ -502,7 +502,7 @@ export class SproutReviewerView extends ItemView {
     if (!audio || !this._canUseTtsForCard(card)) return;
     const id = String(card.id);
     const graded = this.session?.graded?.[id];
-    const pass = !!(graded?.meta as Record<string, unknown> | undefined)?.oqPass;
+    const pass = !!graded?.meta?.oqPass;
     const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
     tts.speakOqAnswer(steps, pass, audio, `${card.id}-answer-${pass ? "pass" : "fail"}`);
   }
@@ -588,7 +588,7 @@ export class SproutReviewerView extends ItemView {
       this._ttsLastSpokenKey = key;
       const id = String(card.id);
       const graded = this.session?.graded?.[id];
-      const pass = !!(graded?.meta as Record<string, unknown> | undefined)?.oqPass;
+      const pass = !!graded?.meta?.oqPass;
       const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
       tts.speakOqAnswer(steps, pass, audio, `${cid}-${pass ? "pass" : "fail"}`);
     }
