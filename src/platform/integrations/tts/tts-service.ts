@@ -15,6 +15,7 @@ import { requestExternalTts } from "./tts-provider";
 import { ttsCacheKey, getCachedAudio, cacheAudio } from "./tts-cache";
 import { Platform, setIcon } from "obsidian";
 import { log } from "../../core/logger";
+import { t } from "../../translations/translator";
 import type { SproutSettings } from "../../types/settings";
 import { getCircleFlagTokenMatches, stripCircleFlagTokens } from "../../../platform/flags/flag-tokens";
 
@@ -1851,7 +1852,7 @@ export function markTtsButtonActive(btn: HTMLElement): void {
   // Swap tooltip to "Stop playing"
   const orig = btn.getAttribute("aria-label");
   if (orig) btn.dataset.ttsOrigLabel = orig;
-  btn.setAttribute("aria-label", "Stop playing");
+  btn.setAttribute("aria-label", t("en", "ui.tts.stopPlaying", "Stop playing"));
 }
 
 /**
