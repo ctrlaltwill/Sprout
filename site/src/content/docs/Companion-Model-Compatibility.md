@@ -14,120 +14,122 @@ Linked notes are not tracked as a separate compatibility column because they are
 
 ## Feature key
 
-- **Chat** — Conversational responses about your note (Ask, Review, and general chat all happen in one unified chat)
-- **Edit** — Agentic editing that proposes changes you can accept into your document
-- **Generate Flashcards** — AI flashcard drafting
-- **Generate Tests** — AI test generation
-- **File Attachments** — Sending embedded or linked files (PDFs, images, etc.)
+- 🟢 Fully functional — 🟡 Partially functional — 🔴 Non-functional
+- **Chat** — Conversational responses about your note
+- **Edit** — Proposes changes you can accept into your document
+- **Flashcards** — AI flashcard drafting
+- **Tests** — AI test generation
+- **Attachments** — File attachments (DOCX, PPTX, PDF)
+- **Image** — Image attachment support
 
 ## DeepSeek
 
-| Model | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `deepseek-chat` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `deepseek-reasoner` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
+| Model | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `deepseek-chat` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `deepseek-reasoner` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 
 ## OpenAI
 
-| Model | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `gpt-5` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `gpt-5-mini` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `gpt-5-nano` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `gpt-4.1` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `gpt-4.1-mini` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
+| Model | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `gpt-5` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `gpt-5-mini` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `gpt-5-nano` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `gpt-4.1` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `gpt-4.1-mini` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
 
 ## OpenRouter
 
 The following models were all tested via [OpenRouter](https://openrouter.ai). They are grouped by provider for readability.
 
-### Amazon Nova (via OpenRouter)
+### Amazon Nova
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `amazon/nova-lite-v1` | Paid | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | Test generation unreliable; everything else works including images. |
-| `amazon/nova-micro-v1` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `amazon/nova-premier-v1` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `amazon/nova-pro-v1` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | PPTX occasionally unreliable in fallback mode. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `amazon/nova-lite-v1` | Paid | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 | 🟢 | Tests unreliable. |
+| `amazon/nova-micro-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `amazon/nova-premier-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `amazon/nova-pro-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
 
-### Meta Llama (via OpenRouter)
+### Meta Llama
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `meta-llama/llama-3.1-70b-instruct` | Paid | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | Core features work; most attachments fail. PPTX fallback sometimes passes. |
-| `meta-llama/llama-3.2-11b-vision-instruct` | Paid | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | Only PPTX attachments work; DOCX, PDF, and images fail. |
-| `meta-llama/llama-3.3-70b-instruct` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | PDF output unreliable; no image support. |
-| `meta-llama/llama-4-maverick` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `meta-llama/llama-4-scout` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `meta-llama/llama-3.1-70b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | 🔴 | No attachment or image support. |
+| `meta-llama/llama-3.2-11b-vision-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | Only PPTX works; no image support. |
+| `meta-llama/llama-3.3-70b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | PDF not supported; no image support. |
+| `meta-llama/llama-4-maverick` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `meta-llama/llama-4-scout` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
 
-### Mistral (via OpenRouter)
+### Mistral
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `mistralai/mistral-large` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `mistralai/mistral-medium-3.1` | Paid | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Edit proposals not generated correctly; everything else works. |
-| `mistralai/mistral-nemo` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `mistralai/mistral-small-3.2-24b-instruct` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `mistralai/pixtral-large-2411` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `mistralai/mistral-large` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `mistralai/mistral-medium-3.1` | Paid | 🟢 | 🔴 | 🟢 | 🟢 | 🟢 | 🟢 | Edit not supported. |
+| `mistralai/mistral-nemo` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `mistralai/mistral-small-3.2-24b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `mistralai/pixtral-large-2411` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
 
-### Nvidia (via OpenRouter)
+### Nvidia
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `nvidia/llama-3.3-nemotron-super-49b-v1.5` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `nvidia/nemotron-3-super-120b-a12b` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `nvidia/llama-3.3-nemotron-super-49b-v1.5` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `nvidia/nemotron-3-super-120b-a12b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 
-### Qwen (via OpenRouter)
+### Qwen
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `qwen/qwen3-235b-a22b` | Paid | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | Test generation unreliable; no image support. |
-| `qwen/qwen3-32b` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `qwen/qwen3-max` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `qwen/qwen-plus` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `qwen/qwq-32b` | Paid | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Edit proposals not generated correctly; no image support. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `qwen/qwen3-235b-a22b` | Paid | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 | 🔴 | Tests unreliable; no image support. |
+| `qwen/qwen3-32b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `qwen/qwen3-max` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `qwen/qwen-plus` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `qwen/qwq-32b` | Paid | 🟢 | 🔴 | 🟢 | 🟢 | 🟢 | 🔴 | Edit not supported; no image support. |
 
-### Other Providers (via OpenRouter)
+### Other Providers
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `baidu/ernie-4.5-300b-a47b` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `bytedance-seed/seed-1.6` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `cohere/command-a` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `inception/mercury-2` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `inflection/inflection-3-productivity` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | PPTX not supported; no image support. |
-| `liquid/lfm-2-24b-a2b` | Paid | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | Flashcard generation unreliable; no image support. |
-| `microsoft/phi-4` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | PPTX and PDF fallback can be unreliable; no image support. |
-| `minimax/minimax-m2.7` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `moonshotai/kimi-k2` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `moonshotai/kimi-k2.5` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. |
-| `nousresearch/hermes-4-405b` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `nousresearch/hermes-4-70b` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `stepfun/step-3.5-flash` | Paid | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | Edit and flashcard generation fail; no image support. |
-| `tencent/hunyuan-a13b-instruct` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `writer/palmyra-x5` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `xiaomi/mimo-v2-pro` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `z-ai/glm-4.6` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `z-ai/glm-4.7` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `z-ai/glm-5` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
-| `arcee-ai/trinity-large-preview:free` | Free | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Full support except images. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `baidu/ernie-4.5-300b-a47b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `bytedance-seed/seed-1.6` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `cohere/command-a` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `inception/mercury-2` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `inflection/inflection-3-productivity` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | PPTX not supported; no image support. |
+| `liquid/lfm-2-24b-a2b` | Paid | 🟢 | 🟢 | 🔴 | 🟢 | 🟢 | 🔴 | Flashcards unreliable; no image support. |
+| `microsoft/phi-4` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | PPTX/PDF can be unreliable; no image support. |
+| `minimax/minimax-m2.7` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `moonshotai/kimi-k2` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `moonshotai/kimi-k2.5` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `nousresearch/hermes-4-405b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `nousresearch/hermes-4-70b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `stepfun/step-3.5-flash` | Paid | 🟢 | 🔴 | 🔴 | 🟢 | 🟢 | 🔴 | Edit and flashcards not supported; no image support. |
+| `tencent/hunyuan-a13b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `writer/palmyra-x5` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `xiaomi/mimo-v2-pro` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `z-ai/glm-4.6` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `z-ai/glm-4.7` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `z-ai/glm-5` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
+| `arcee-ai/trinity-large-preview:free` | Free | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 
-### OpenRouter Routers
+### Routers
 
 These are meta-models that route your request to another model at runtime. Results vary depending on which underlying model is selected.
 
-| Model | Tier | Chat | Edit | Flashcards | Tests | DOCX | PPTX | PDF | Image | Comments |
-|-------|------|:----:|:----:|:----------:|:-----:|:----:|:----:|:---:|:-----:|----------|
-| `openrouter/auto` | Paid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full support including images. Routes to best available model. |
-| `openrouter/free` | Free | Varies | Varies | Varies | Varies | Varies | Varies | Varies | Varies | Results depend on whichever free model is chosen at runtime. |
+| Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
+|-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
+| `openrouter/auto` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Routes to best available model. |
+| `openrouter/free` | Free | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | Depends on which free model is chosen. |
 
-### OpenRouter Models Not Supported
+### Models Not Supported
 
 | Model | Notes |
 |-------|-------|
 | `arcee-ai/maestro-reasoning` | All features failed. |
 | `arcee-ai/virtuoso-large` | All features failed. |
-| `minimax/minimax-m1` | All features failed. |
+| `minimax/minimax-m1` | All corefeatures failed. |
 | `rekaai/reka-flash-3` | All core features failed. |
 
 ## How to test and contribute
@@ -145,8 +147,8 @@ If you test a provider/model that is not listed, you can submit a pull request t
 ### How to submit your results
 
 1. Fork the repository and edit `site/src/content/docs/Companion-Model-Compatibility.md`.
-2. Add a new row for the provider and model you tested, then mark each feature with ✅ (works) or ❌ (does not work).
-3. Add a short comment if there are caveats (e.g. "Intermittent error 400 messages").
+2. Add a new row for the provider and model you tested, then mark each feature with 🟢 (fully-functional), 🟡 (partially functional), or 🔴 (non-functional).
+3. Add a short comment if there are caveats.
 4. Open a pull request with the provider, model, and a brief summary of what you tested.
 
 Last modified: 19/04/2026
