@@ -12,6 +12,7 @@
  */
 
 import type { App, TFile } from "obsidian";
+import { strFromU8, unzipSync, unzlibSync } from "fflate";
 
 /** MIME types we support as native AI attachments. */
 const EXT_MIME: Record<string, string> = {
@@ -124,6 +125,290 @@ function base64ToUtf8(base64: string): string {
     for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
     const decoder = new TextDecoder("utf-8", { fatal: false });
     return decoder.decode(bytes);
+  } catch {
+    return "";
+  }
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function bytesToLatin1(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder("latin1").decode(bytes);
+  } catch {
+    let out = "";
+    for (let i = 0; i < bytes.length; i += 1) out += String.fromCharCode(bytes[i]);
+    return out;
+  }
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function extractTextFromDocxXml(xml: string): string {
+  return decodeHtmlEntities(
+    xml
+      .replace(/<w:tab\s*\/>/g, "\t")
+      .replace(/<w:br\s*\/?>/g, "\n")
+      .replace(/<w:cr\s*\/?>/g, "\n")
+      .replace(/<\/w:p>/g, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\r/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim(),
+  );
+}
+
+function normalizeExtractedText(text: string): string {
+  return String(text || "")
+    .replace(/\r/g, "")
+    .replace(/\u0000/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function decodePdfTextBytes(bytes: Uint8Array): string {
+  if (!bytes.length) return "";
+
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    let out = "";
+    for (let i = 2; i + 1 < bytes.length; i += 2) {
+      out += String.fromCharCode((bytes[i] << 8) | bytes[i + 1]);
+    }
+    return out;
+  }
+
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    let out = "";
+    for (let i = 2; i + 1 < bytes.length; i += 2) {
+      out += String.fromCharCode(bytes[i] | (bytes[i + 1] << 8));
+    }
+    return out;
+  }
+
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return bytesToLatin1(bytes);
+  }
+}
+
+function unescapePdfString(value: string): string {
+  return value
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\b/g, "\b")
+    .replace(/\\f/g, "\f")
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\\/g, "\\")
+    .replace(/\\([0-7]{1,3})/g, (_m, oct) => String.fromCharCode(parseInt(oct, 8)));
+}
+
+function decodePdfLiteralText(value: string): string {
+  const unescaped = unescapePdfString(value);
+  const bytes = new Uint8Array(unescaped.length);
+  for (let i = 0; i < unescaped.length; i += 1) bytes[i] = unescaped.charCodeAt(i) & 0xff;
+  return normalizeExtractedText(decodePdfTextBytes(bytes));
+}
+
+function decodePdfHexText(value: string): string {
+  const compact = String(value || "").replace(/\s+/g, "");
+  if (!compact) return "";
+  const evenHex = compact.length % 2 === 0 ? compact : `${compact}0`;
+  const bytes = new Uint8Array(evenHex.length / 2);
+  for (let i = 0; i < evenHex.length; i += 2) {
+    const parsed = Number.parseInt(evenHex.slice(i, i + 2), 16);
+    if (!Number.isFinite(parsed)) return "";
+    bytes[i / 2] = parsed;
+  }
+  return normalizeExtractedText(decodePdfTextBytes(bytes));
+}
+
+function extractPdfTextOperators(content: string): string[] {
+  const lines: string[] = [];
+  const push = (value: string): void => {
+    const normalized = normalizeExtractedText(value);
+    if (!normalized) return;
+    lines.push(normalized);
+  };
+
+  const directTextRegex = /\(((?:\\.|[^\\()])*)\)\s*(?:Tj|'|")/gs;
+  let match: RegExpExecArray | null;
+  while ((match = directTextRegex.exec(content)) !== null) {
+    push(decodePdfLiteralText(match[1] || ""));
+  }
+
+  const directHexRegex = /<([0-9a-fA-F\s]+)>\s*(?:Tj|'|")/g;
+  while ((match = directHexRegex.exec(content)) !== null) {
+    push(decodePdfHexText(match[1] || ""));
+  }
+
+  const arrayTextRegex = /\[(.*?)\]\s*TJ/gs;
+  while ((match = arrayTextRegex.exec(content)) !== null) {
+    const segment = match[1] || "";
+    const parts: string[] = [];
+    const tokenRegex = /\(((?:\\.|[^\\()])*)\)|<([0-9a-fA-F\s]+)>/gs;
+    let token: RegExpExecArray | null;
+    while ((token = tokenRegex.exec(segment)) !== null) {
+      const decoded = token[1] != null
+        ? decodePdfLiteralText(token[1])
+        : decodePdfHexText(token[2] || "");
+      if (decoded) parts.push(decoded);
+    }
+    if (parts.length) push(parts.join(" "));
+  }
+
+  return lines;
+}
+
+function trimTrailingPdfStreamWhitespace(bytes: Uint8Array): Uint8Array {
+  let end = bytes.length;
+  while (end > 0 && (bytes[end - 1] === 0x0a || bytes[end - 1] === 0x0d)) end -= 1;
+  return end === bytes.length ? bytes : bytes.subarray(0, end);
+}
+
+function decodePdfStreamContent(dict: string, bytes: Uint8Array): string[] {
+  const rawContent = bytesToLatin1(bytes);
+  const results = extractPdfTextOperators(rawContent);
+
+  if (!/\/FlateDecode\b/.test(dict)) return results;
+
+  const trimmed = trimTrailingPdfStreamWhitespace(bytes);
+  const candidates = trimmed === bytes ? [bytes] : [bytes, trimmed];
+  for (const candidate of candidates) {
+    try {
+      const inflated = unzlibSync(candidate);
+      results.push(...extractPdfTextOperators(bytesToLatin1(inflated)));
+      break;
+    } catch {
+      // Try next candidate shape.
+    }
+  }
+
+  return results;
+}
+
+function extractPdfTextFromStreams(bytes: Uint8Array): string[] {
+  const raw = bytesToLatin1(bytes);
+  const lines: string[] = [];
+  const streamRegex = /<<(.*?)>>\s*stream(?:\r\n|\n|\r)/gs;
+  let match: RegExpExecArray | null;
+
+  while ((match = streamRegex.exec(raw)) !== null) {
+    const dict = match[1] || "";
+    const streamStart = match.index + match[0].length;
+    let streamBytes: Uint8Array | null = null;
+
+    const lengthMatch = dict.match(/\/Length\s+(\d+)\b/);
+    if (lengthMatch?.[1]) {
+      const declaredLength = Number(lengthMatch[1]);
+      if (Number.isFinite(declaredLength) && declaredLength > 0 && streamStart + declaredLength <= bytes.length) {
+        streamBytes = bytes.subarray(streamStart, streamStart + declaredLength);
+      }
+    }
+
+    if (!streamBytes) {
+      const endIndex = raw.indexOf("endstream", streamStart);
+      if (endIndex === -1) continue;
+      let streamEnd = endIndex;
+      while (streamEnd > streamStart && (raw.charCodeAt(streamEnd - 1) === 0x0a || raw.charCodeAt(streamEnd - 1) === 0x0d)) {
+        streamEnd -= 1;
+      }
+      streamBytes = bytes.subarray(streamStart, streamEnd);
+    }
+
+    lines.push(...decodePdfStreamContent(dict, streamBytes));
+  }
+
+  return lines;
+}
+
+export function extractPdfTextFromDataUrl(dataUrl: string): string {
+  const parsed = parseDataUrl(dataUrl);
+  if (!parsed) return "";
+  if (parsed.mimeType !== "application/pdf") return "";
+
+  try {
+    const bytes = base64ToBytes(parsed.base64);
+    const lines = extractPdfTextFromStreams(bytes);
+    if (!lines.length) {
+      lines.push(...extractPdfTextOperators(bytesToLatin1(bytes)));
+    }
+
+    const deduped: string[] = [];
+    const seen = new Set<string>();
+    for (const line of lines) {
+      const normalized = normalizeExtractedText(line);
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      deduped.push(normalized);
+    }
+
+    return normalizeExtractedText(deduped.join("\n"));
+  } catch {
+    return "";
+  }
+}
+
+export function extractPptxTextFromDataUrl(dataUrl: string): string {
+  const parsed = parseDataUrl(dataUrl);
+  if (!parsed) return "";
+  if (parsed.mimeType !== "application/vnd.openxmlformats-officedocument.presentationml.presentation") return "";
+
+  try {
+    const files = unzipSync(base64ToBytes(parsed.base64));
+    const slideParts = Object.keys(files)
+      .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
+      .sort((a, b) => {
+        const ai = Number((a.match(/slide(\d+)\.xml/i) || [])[1] || 0);
+        const bi = Number((b.match(/slide(\d+)\.xml/i) || [])[1] || 0);
+        return ai - bi;
+      });
+
+    const sections: string[] = [];
+    for (const part of slideParts) {
+      const xml = strFromU8(files[part]);
+      const textRuns = Array.from(xml.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)).map((m) => decodeHtmlEntities(m[1] || ""));
+      const slideText = normalizeExtractedText(textRuns.join("\n"));
+      if (slideText) sections.push(slideText);
+    }
+
+    return normalizeExtractedText(sections.join("\n\n"));
+  } catch {
+    return "";
+  }
+}
+
+export function extractDocxTextFromDataUrl(dataUrl: string): string {
+  const parsed = parseDataUrl(dataUrl);
+  if (!parsed) return "";
+  if (parsed.mimeType !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "";
+
+  try {
+    const files = unzipSync(base64ToBytes(parsed.base64));
+    const docParts = Object.keys(files)
+      .filter((name) => name.startsWith("word/") && name.endsWith(".xml"))
+      .sort((a, b) => a.localeCompare(b));
+    const chunks: string[] = [];
+    for (const part of docParts) {
+      const xml = strFromU8(files[part]);
+      const text = extractTextFromDocxXml(xml);
+      if (text) chunks.push(text);
+    }
+    return chunks.join("\n\n").trim();
   } catch {
     return "";
   }

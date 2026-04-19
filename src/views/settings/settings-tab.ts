@@ -3613,7 +3613,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     withDependentSetting(
       new Setting(wrapper)
         .setName(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInCompanion.name", "Include embedded attachments"))
-        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInCompanion.desc", "Send embedded files from the current note such as PDFs or images. Some free models may not support attachments."))
+        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInCompanion.desc", "Send embedded files from the current note such as PDFs or images. Not all models support attachments."))
         .addToggle((toggle) =>
           toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.includeAttachmentsInCompanion).onChange(async (value) => {
             this.plugin.settings.studyAssistant.privacy.includeAttachmentsInCompanion = !!value;
@@ -3637,7 +3637,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     withDependentSetting(
       new Setting(wrapper)
         .setName(this._tx("ui.settings.studyAssistant.privacy.includeLinkedAttachmentsInCompanion.name", "Include linked attachments"))
-        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeLinkedAttachmentsInCompanion.desc", "Send non-markdown files linked from the current note. Some free models may not support attachments."))
+        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeLinkedAttachmentsInCompanion.desc", "Send non-markdown files linked from the current note. Not all models support attachments."))
         .addToggle((toggle) =>
           toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.includeLinkedAttachmentsInCompanion).onChange(async (value) => {
             this.plugin.settings.studyAssistant.privacy.includeLinkedAttachmentsInCompanion = !!value;
@@ -3667,7 +3667,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     withDependentSetting(
       new Setting(wrapper)
         .setName(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInExam.name", "Include embedded attachments"))
-        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInExam.desc", "Send embedded files from test source notes such as PDFs or images. Some free models may not support attachments."))
+        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeAttachmentsInExam.desc", "Send embedded files from test source notes such as PDFs or images. Not all models support attachments."))
         .addToggle((toggle) =>
           toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.includeAttachmentsInExam).onChange(async (value) => {
             this.plugin.settings.studyAssistant.privacy.includeAttachmentsInExam = !!value;
@@ -3691,7 +3691,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     withDependentSetting(
       new Setting(wrapper)
         .setName(this._tx("ui.settings.studyAssistant.privacy.includeLinkedAttachmentsInExam.name", "Include linked attachments"))
-        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeLinkedAttachmentsInExam.desc", "Send non-markdown files linked from test source notes. Some free models may not support attachments."))
+        .setDesc(this._tx("ui.settings.studyAssistant.privacy.includeLinkedAttachmentsInExam.desc", "Send non-markdown files linked from test source notes. Not all models support attachments."))
         .addToggle((toggle) =>
           toggle.setValue(!!this.plugin.settings.studyAssistant.privacy.includeLinkedAttachmentsInExam).onChange(async (value) => {
             this.plugin.settings.studyAssistant.privacy.includeLinkedAttachmentsInExam = !!value;

@@ -3302,7 +3302,7 @@ export class SproutExamGeneratorView extends ItemView {
             const wrongSection = body.createDiv({ cls: "learnkit-exam-generator-result-missed learnkit-exam-generator-result-missed" });
             wrongSection.createDiv({
               cls: "learnkit-exam-generator-result-missed-label learnkit-exam-generator-result-missed-label",
-              text: this._tx("ui.view.examGenerator.feedback.incorrect", "Incorrect"),
+              text: this._tx("ui.view.examGenerator.feedback.incorrect", "Incorrect") + ": ",
             });
             const wrongList = wrongSection.createEl("ul", { cls: "learnkit-exam-generator-result-missed-list learnkit-exam-generator-result-missed-list" });
             for (const point of wrongPoints) {
@@ -3313,7 +3313,7 @@ export class SproutExamGeneratorView extends ItemView {
             const missedSection = body.createDiv({ cls: "learnkit-exam-generator-result-missed learnkit-exam-generator-result-missed" });
             missedSection.createDiv({
               cls: "learnkit-exam-generator-result-missed-label learnkit-exam-generator-result-missed-label",
-              text: this._tx("ui.view.examGenerator.review.missed", "Missed"),
+              text: this._tx("ui.view.examGenerator.review.missed", "Missed") + ": ",
             });
             const missedList = missedSection.createEl("ul", { cls: "learnkit-exam-generator-result-missed-list learnkit-exam-generator-result-missed-list" });
             for (const point of missedPoints) {

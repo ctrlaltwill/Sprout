@@ -13,7 +13,12 @@ import { requestUrl } from "obsidian";
 import type { SproutSettings } from "../../types/settings";
 import type { StudyAssistantProvider } from "./study-assistant-types";
 import { getTextAttachmentLimits, type ContextLimitPreset } from "./study-assistant-types";
-import { splitTextLikeAttachmentDataUrls } from "./attachment-helpers";
+import {
+  extractDocxTextFromDataUrl,
+  extractPdfTextFromDataUrl,
+  extractPptxTextFromDataUrl,
+  splitTextLikeAttachmentDataUrls,
+} from "./attachment-helpers";
 
 type CompletionMode = "text" | "json";
 
@@ -74,7 +79,7 @@ function providerBaseUrl(settings: SproutSettings["studyAssistant"]): string {
   if (settings.provider === "deepseek") return "https://api.deepseek.com";
   if (settings.provider === "xai") return "https://api.x.ai/v1";
   if (settings.provider === "google") return "https://generativelanguage.googleapis.com/v1beta/openai";
-  if (settings.provider === "perplexity") return "https://api.perplexity.ai";
+  if (settings.provider === "perplexity") return "https://api.perplexity.ai/v1";
   if (settings.provider === "openrouter") return "https://openrouter.ai/api/v1";
   return "";
 }
@@ -117,8 +122,8 @@ function sanitizeJsonResponse(value: unknown, depth = 0): unknown {
 }
 
 function assertOpenAiLikeResponseShape(json: Record<string, unknown>): void {
-  if (!Array.isArray(json.choices)) {
-    throw new Error("Invalid response from provider: missing 'choices' array.");
+  if (!Array.isArray(json.choices) && !Array.isArray(json.output)) {
+    throw new Error("Invalid response from provider: missing 'choices' or 'output' array.");
   }
 }
 
@@ -134,7 +139,11 @@ function assertAnthropicResponseShape(json: Record<string, unknown>): void {
  * reasoning models reject (temperature, response_format, etc.).
  */
 function isReasoningModelId(model: string): boolean {
-  const m = String(model || "").trim().toLowerCase();
+  const m = String(model || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^[^/]+\//, "")
+    .replace(/:free$/i, "");
   return (
     m.startsWith("o1") ||
     m.startsWith("o3") ||
@@ -146,7 +155,9 @@ function isReasoningModelId(model: string): boolean {
 }
 
 function shouldOmitTemperature(provider: StudyAssistantProvider, model: string): boolean {
-  if (provider === "openai" || provider === "deepseek") return isReasoningModelId(model);
+  if (provider === "openai" || provider === "deepseek" || provider === "perplexity") {
+    return isReasoningModelId(model);
+  }
   // OpenRouter model IDs embed the upstream model name
   // (e.g. "deepseek/deepseek-r1:free"), so the same check works.
   if (provider === "openrouter") return isReasoningModelId(model);
@@ -154,7 +165,10 @@ function shouldOmitTemperature(provider: StudyAssistantProvider, model: string):
 }
 
 function completionTokenBudget(provider: StudyAssistantProvider, model: string): number {
-  const isReasoning = (provider === "openai" || provider === "deepseek" || provider === "openrouter")
+  const isReasoning = (provider === "openai"
+    || provider === "deepseek"
+    || provider === "openrouter"
+    || provider === "perplexity")
     && isReasoningModelId(model);
   return isReasoning ? REASONING_MAX_OUTPUT_TOKENS : DEFAULT_MAX_OUTPUT_TOKENS;
 }
@@ -170,6 +184,34 @@ function openRouterAlternateModelId(model: string): string {
   const value = String(model || "").trim();
   if (!value) return "";
   return /:free$/i.test(value) ? value.replace(/:free$/i, "") : `${value}:free`;
+}
+
+type ChatCompletionsRequestVariant = "default" | "deepseek-compat";
+
+function providerUsesResponsesApi(provider: StudyAssistantProvider): boolean {
+  return provider === "openai" || provider === "xai" || provider === "perplexity";
+}
+
+function providerSupportsNativeDocumentAttachment(provider: StudyAssistantProvider, mimeType: string): boolean {
+  const mime = String(mimeType || "").toLowerCase();
+  if (!mime || mime.startsWith("image/")) return false;
+  if (provider === "openai" || provider === "perplexity") return true;
+  if (provider === "anthropic") return mime === PDF_MIME_TYPE;
+  if (provider === "deepseek") return mime === DOCX_MIME_TYPE || mime === PPTX_MIME_TYPE;
+  return false;
+}
+
+function shouldRetryDeepSeekCompatibility(provider: StudyAssistantProvider, err: unknown): boolean {
+  if (provider !== "deepseek") return false;
+  const status = statusFromUnknownError(err) ?? 0;
+  return status === 400 || status === 415 || status === 422;
+}
+
+function deepSeekCompatibilityTokenBudget(model: string): number {
+  const tokenBudget = completionTokenBudget("deepseek", model);
+  return isReasoningModelId(model)
+    ? Math.min(tokenBudget, 8192)
+    : Math.min(tokenBudget, 4096);
 }
 
 function providerErrorDetail(res: { json?: unknown; text?: string }): string {
@@ -281,6 +323,10 @@ function buildProviderRequestError(args: {
 }
 
 function extractTextFromOpenAiLikeResponse(json: Record<string, unknown>): string {
+  if (typeof json.output_text === "string" && json.output_text.trim()) {
+    return json.output_text.trim();
+  }
+
   // Reasoning models (o-series, gpt-5) may use an "output" array instead of "choices".
   // Each output item has { type: "message", content: [{ type: "output_text", text }] }.
   if (Array.isArray(json.output)) {
@@ -383,6 +429,192 @@ type ParsedAttachment = {
   dataUrl: string;
 };
 
+const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const PDF_MIME_TYPE = "application/pdf";
+const PPTX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+const MIME_EXTENSION_MAP: Record<string, string> = {
+  "application/pdf": "pdf",
+  "text/plain": "txt",
+  "text/markdown": "md",
+  "text/csv": "csv",
+  "text/html": "html",
+  "application/json": "json",
+  "application/xml": "xml",
+  "application/x-yaml": "yaml",
+  "application/javascript": "js",
+  "application/typescript": "ts",
+  "application/sql": "sql",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+};
+
+function fileExtensionFromMimeType(mimeType: string): string {
+  const mime = String(mimeType || "").toLowerCase().trim();
+  if (!mime) return "bin";
+  const mapped = MIME_EXTENSION_MAP[mime];
+  if (mapped) return mapped;
+  const slash = mime.lastIndexOf("/");
+  const tail = slash >= 0 ? mime.slice(slash + 1) : mime;
+  const normalized = tail.replace(/^vnd\.[^.]+\./, "").replace(/[^a-z0-9]+/g, "");
+  return normalized || "bin";
+}
+
+function parseDataUrlMimeType(raw: string): string {
+  const match = String(raw || "").trim().match(/^data:([^;,]+);base64,/i);
+  return String(match?.[1] || "").toLowerCase();
+}
+
+function isDocumentDataUrl(raw: string): boolean {
+  const mimeType = parseDataUrlMimeType(raw);
+  return !!mimeType && !mimeType.startsWith("image/");
+}
+
+function hasDocumentDataUrls(urls: string[]): boolean {
+  return (urls || []).some((value) => isDocumentDataUrl(value));
+}
+
+function extractTextFallbackFromDataUrl(dataUrl: string): string {
+  const mimeType = parseDataUrlMimeType(dataUrl);
+  if (!mimeType) return "";
+  if (mimeType === DOCX_MIME_TYPE) return extractDocxTextFromDataUrl(dataUrl);
+  if (mimeType === PDF_MIME_TYPE) return extractPdfTextFromDataUrl(dataUrl);
+  if (mimeType === PPTX_MIME_TYPE) return extractPptxTextFromDataUrl(dataUrl);
+  return "";
+}
+
+function fallbackLabelForMimeType(mimeType: string): string {
+  if (mimeType === DOCX_MIME_TYPE) return "DOCX";
+  if (mimeType === PDF_MIME_TYPE) return "PDF";
+  if (mimeType === PPTX_MIME_TYPE) return "PPTX";
+  return "FILE";
+}
+
+function isAttachmentRelatedRequestError(err: unknown): boolean {
+  const status = statusFromUnknownError(err) ?? 0;
+  const obj = recordFromUnknown(err) || {};
+  const detail = String(obj.detail || responseTextFromUnknownError(err) || "").toLowerCase();
+  const code = String(obj.code || "").toLowerCase();
+  const errorType = String(obj.errorType || "").toLowerCase();
+  const combined = `${detail} ${code} ${errorType}`;
+  if (status === 415 || status === 422) return true;
+  if (status === 400 && /(attachment|file|docx|mime|media|content block|multimodal|invalid)/.test(combined)) return true;
+  return false;
+}
+
+function buildDocumentFallbackContext(
+  userPrompt: string,
+  dataUrls: string[],
+  preset?: ContextLimitPreset,
+  shouldFallback: (dataUrl: string) => boolean = (dataUrl) => isDocumentDataUrl(dataUrl),
+): {
+  applied: boolean;
+  userPrompt: string;
+  dataUrls: string[];
+} {
+  const limits = getTextAttachmentLimits(preset);
+  const maxFiles = Math.max(1, limits.maxFiles);
+  const maxCharsPerFile = Math.max(500, limits.maxCharsPerFile);
+  const maxCharsTotal = Math.max(2000, limits.maxCharsTotal);
+
+  let fileCount = 0;
+  let totalChars = 0;
+  let removedAttachmentCount = 0;
+  const textBlocks: string[] = [];
+  const filteredDataUrls: string[] = [];
+
+  for (const raw of dataUrls || []) {
+    if (!shouldFallback(raw)) {
+      filteredDataUrls.push(raw);
+      continue;
+    }
+
+    removedAttachmentCount += 1;
+
+    if (fileCount >= maxFiles || totalChars >= maxCharsTotal) continue;
+    const extracted = extractTextFallbackFromDataUrl(raw);
+    if (!extracted) continue;
+
+    const mimeType = parseDataUrlMimeType(raw);
+    const label = fallbackLabelForMimeType(mimeType);
+
+    const remaining = maxCharsTotal - totalChars;
+    if (remaining <= 0) continue;
+    const capped = extracted.slice(0, Math.min(maxCharsPerFile, remaining)).trim();
+    if (!capped) continue;
+
+    fileCount += 1;
+    totalChars += capped.length;
+    textBlocks.push(`\n[${label} attachment ${fileCount}]\n${capped}`);
+  }
+
+  if (!removedAttachmentCount) {
+    return { applied: false, userPrompt, dataUrls };
+  }
+
+  const noteLines: string[] = [];
+  if (textBlocks.length) {
+    noteLines.push(
+      "Additional attachment context (text-extracted fallback for document attachments):",
+      textBlocks.join("\n"),
+    );
+  }
+
+  const omittedCount = Math.max(0, removedAttachmentCount - textBlocks.length);
+  if (omittedCount > 0) {
+    noteLines.push(
+      `Note: ${omittedCount} attached document file(s) could not be sent natively and were omitted from the request.`,
+    );
+  }
+
+  const fallbackPrompt = noteLines.length ? `${userPrompt}\n\n${noteLines.join("\n")}` : userPrompt;
+  return { applied: true, userPrompt: fallbackPrompt, dataUrls: filteredDataUrls };
+}
+
+function prepareProviderAttachmentPayload(args: {
+  provider: StudyAssistantProvider;
+  userPrompt: string;
+  imageDataUrls: string[];
+  attachedFileDataUrls: string[];
+  preset?: ContextLimitPreset;
+}): {
+  userPrompt: string;
+  dataUrls: string[];
+  attachments: ParsedAttachment[];
+} {
+  const { provider, userPrompt, imageDataUrls, attachedFileDataUrls, preset } = args;
+  const textAttachmentPrep = buildTextAttachmentContext(attachedFileDataUrls, preset);
+  let nextUserPrompt = textAttachmentPrep.textContext
+    ? `${userPrompt}\n\n${textAttachmentPrep.textContext}`
+    : userPrompt;
+  let nextDataUrls = [...imageDataUrls, ...textAttachmentPrep.binaryDataUrls];
+
+  if (provider !== "custom") {
+    const proactiveFallback = buildDocumentFallbackContext(
+      nextUserPrompt,
+      nextDataUrls,
+      preset,
+      (dataUrl) => {
+        const mimeType = parseDataUrlMimeType(dataUrl);
+        return !!mimeType
+          && !mimeType.startsWith("image/")
+          && !providerSupportsNativeDocumentAttachment(provider, mimeType);
+      },
+    );
+    if (proactiveFallback.applied) {
+      nextUserPrompt = proactiveFallback.userPrompt;
+      nextDataUrls = proactiveFallback.dataUrls;
+    }
+  }
+
+  return {
+    userPrompt: nextUserPrompt,
+    dataUrls: nextDataUrls,
+    attachments: parseAttachmentDataUrls(nextDataUrls),
+  };
+}
+
 function parseAttachmentDataUrls(urls: string[]): ParsedAttachment[] {
   const out: ParsedAttachment[] = [];
   for (const raw of urls) {
@@ -406,16 +638,135 @@ function buildAnthropicContentBlocks(attachments: ParsedAttachment[]): unknown[]
     .filter((block) => block.source.data);
 }
 
-function buildOpenAiContentBlocks(attachments: ParsedAttachment[]): unknown[] {
+function buildAnthropicUserContent(userPrompt: string, attachments: ParsedAttachment[]): string | unknown[] {
+  if (!attachments.length) return userPrompt;
+  return [
+    { type: "text", text: userPrompt },
+    ...buildAnthropicContentBlocks(attachments),
+  ];
+}
+
+function buildChatCompletionsContentBlocks(provider: StudyAssistantProvider, attachments: ParsedAttachment[]): unknown[] {
   return attachments.map((att) => {
     if (att.kind === "image") {
       return { type: "image_url", image_url: { url: att.dataUrl } };
     }
-    // Documents (PDF, docx, pptx, xlsx, csv, txt, md) — use the OpenAI file
-    // content block format supported by GPT-4o and compatible providers.
-    const extGuess = att.mimeType.split("/").pop()?.replace(/^vnd\..+\./, "") || "file";
-    return { type: "file", file: { filename: `attachment.${extGuess}`, file_data: att.dataUrl } };
+    const ext = fileExtensionFromMimeType(att.mimeType);
+    return {
+      type: "file",
+      file: {
+        filename: `attachment.${ext}`,
+        file_data: provider === "deepseek" ? att.base64 : att.dataUrl,
+      },
+    };
   });
+}
+
+function buildResponsesContentBlocks(attachments: ParsedAttachment[]): unknown[] {
+  return attachments.map((att) => {
+    if (att.kind === "image") {
+      return { type: "input_image", image_url: att.dataUrl };
+    }
+    const ext = fileExtensionFromMimeType(att.mimeType);
+    return { type: "input_file", filename: `attachment.${ext}`, file_data: att.base64 };
+  });
+}
+
+function buildChatCompletionsMessages(args: {
+  provider: StudyAssistantProvider;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  attachments: ParsedAttachment[];
+}): Array<Record<string, unknown>> {
+  const { provider, model, systemPrompt, userPrompt, attachments } = args;
+  const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(provider, model);
+  const effectiveUserContent = inlineSystemPrompt
+    ? `System instructions:\n${systemPrompt}\n\n${userPrompt}`
+    : userPrompt;
+  const systemRole = provider === "openai" && isReasoningModelId(model) ? "developer" : "system";
+
+  if (inlineSystemPrompt) {
+    return [{
+      role: "user",
+      content: attachments.length
+        ? [{ type: "text", text: effectiveUserContent }, ...buildChatCompletionsContentBlocks(provider, attachments)]
+        : effectiveUserContent,
+    }];
+  }
+
+  return [
+    { role: systemRole, content: systemPrompt },
+    {
+      role: "user",
+      content: attachments.length
+        ? [{ type: "text", text: effectiveUserContent }, ...buildChatCompletionsContentBlocks(provider, attachments)]
+        : effectiveUserContent,
+    },
+  ];
+}
+
+function buildChatCompletionsBody(args: {
+  provider: StudyAssistantProvider;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  attachments: ParsedAttachment[];
+  mode: CompletionMode;
+  conversationId?: string;
+  variant?: ChatCompletionsRequestVariant;
+}): Record<string, unknown> {
+  const {
+    provider,
+    model,
+    systemPrompt,
+    userPrompt,
+    attachments,
+    mode,
+    conversationId,
+    variant = "default",
+  } = args;
+
+  const useMaxCompletionTokens = provider === "openai" && isReasoningModelId(model);
+  const tokenBudget = provider === "deepseek" && variant === "deepseek-compat"
+    ? deepSeekCompatibilityTokenBudget(model)
+    : completionTokenBudget(provider, model);
+  const useJsonResponseFormat =
+    mode === "json" &&
+    provider !== "openrouter" &&
+    !isReasoningModelId(model) &&
+    !(provider === "deepseek" && variant === "deepseek-compat");
+  const omitTemperature = shouldOmitTemperature(provider, model)
+    || (provider === "deepseek" && variant === "deepseek-compat");
+
+  return {
+    model,
+    ...(useMaxCompletionTokens
+      ? { max_completion_tokens: tokenBudget }
+      : { max_tokens: tokenBudget }),
+    messages: buildChatCompletionsMessages({
+      provider,
+      model,
+      systemPrompt,
+      userPrompt,
+      attachments,
+    }),
+    ...(provider === "custom" && typeof conversationId === "string" && conversationId.trim()
+      ? { conversation_id: conversationId.trim() }
+      : {}),
+    ...(omitTemperature ? {} : { temperature: 0.4 }),
+    ...(useJsonResponseFormat ? { response_format: { type: "json_object" } } : {}),
+  };
+}
+
+function buildResponsesInput(userPrompt: string, attachments: ParsedAttachment[]): Array<Record<string, unknown>> {
+  return [{
+    role: "user",
+    content: [
+      { type: "input_text", text: userPrompt },
+      ...buildResponsesContentBlocks(attachments),
+    ],
+  }];
 }
 
 function buildTextAttachmentContext(dataUrls: string[], preset?: ContextLimitPreset): {
@@ -488,12 +839,16 @@ export async function requestStudyAssistantCompletionDetailed(params: {
 
   if (!model) throw new Error("Missing model name in Study Companion settings.");
 
-  const textAttachmentPrep = buildTextAttachmentContext(attachedFileDataUrls, settings.privacy.textAttachmentContextLimit);
-  const effectiveUserPrompt = textAttachmentPrep.textContext
-    ? `${userPrompt}\n\n${textAttachmentPrep.textContext}`
-    : userPrompt;
-  const allDataUrls = [...imageDataUrls, ...textAttachmentPrep.binaryDataUrls];
-  const attachments = parseAttachmentDataUrls(allDataUrls);
+  const attachmentPayload = prepareProviderAttachmentPayload({
+    provider: settings.provider,
+    userPrompt,
+    imageDataUrls,
+    attachedFileDataUrls,
+    preset: settings.privacy.textAttachmentContextLimit,
+  });
+  const effectiveUserPrompt = attachmentPayload.userPrompt;
+  const allDataUrls = attachmentPayload.dataUrls;
+  const attachments = attachmentPayload.attachments;
 
   if (settings.provider === "anthropic") {
     const endpoint = `${base}/messages`;
@@ -515,12 +870,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           system: systemPrompt,
           messages: [{
             role: "user",
-            content: attachments.length
-              ? [
-                  { type: "text", text: effectiveUserPrompt },
-                  ...buildAnthropicContentBlocks(attachments),
-                ]
-              : effectiveUserPrompt,
+            content: buildAnthropicUserContent(effectiveUserPrompt, attachments),
           }],
         }),
       });
@@ -575,56 +925,144 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     return { text, conversationId: resolvedConversationId ?? conversationId };
   }
 
+  if (providerUsesResponsesApi(settings.provider)) {
+    const endpoint = `${base}/responses`;
+
+    const requestResponsesApi = async (
+      requestModel: string,
+      options?: {
+        userPromptOverride?: string;
+        attachmentsOverride?: ParsedAttachment[];
+      },
+    ): Promise<Awaited<ReturnType<typeof requestUrl>>> => {
+      const requestUserPrompt = options?.userPromptOverride ?? effectiveUserPrompt;
+      const requestAttachments = options?.attachmentsOverride ?? attachments;
+      const tokenBudget = completionTokenBudget(settings.provider, requestModel);
+      const useJsonResponseFormat = mode === "json" && !isReasoningModelId(requestModel);
+
+      try {
+        return await requestUrl({
+          url: endpoint,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: requestModel,
+            max_output_tokens: tokenBudget,
+            instructions: systemPrompt,
+            input: buildResponsesInput(requestUserPrompt, requestAttachments),
+            ...(shouldOmitTemperature(settings.provider, requestModel) ? {} : { temperature: 0.4 }),
+            ...(useJsonResponseFormat ? { text: { format: { type: "json_object" } } } : {}),
+          }),
+        });
+      } catch (err) {
+        const status = statusFromUnknownError(err) ?? 0;
+        if (status > 0) {
+          const responseText = responseTextFromUnknownError(err);
+          const responseJson = responseJsonFromUnknownError(err);
+          const detail = providerErrorDetail({ json: responseJson, text: responseText });
+          const code = providerErrorCode({ json: responseJson, text: responseText });
+          const errorType = providerErrorType({ json: responseJson });
+          throw buildProviderRequestError({
+            provider: settings.provider,
+            endpoint,
+            status,
+            detail,
+            code,
+            errorType,
+            responseText,
+            responseJson,
+            originalError: err,
+          });
+        }
+        throw err;
+      }
+    };
+
+    const assertOkOrThrow = (response: Awaited<ReturnType<typeof requestUrl>>): void => {
+      if (response.status < 200 || response.status >= 300) {
+        const detail = providerErrorDetail(response);
+        const code = providerErrorCode(response);
+        const errorType = providerErrorType(response);
+        throw buildProviderRequestError({
+          provider: settings.provider,
+          endpoint,
+          status: response.status,
+          detail,
+          code,
+          errorType,
+          responseText: typeof response.text === "string" ? response.text : "",
+          responseJson: response.json,
+        });
+      }
+    };
+
+    let res: Awaited<ReturnType<typeof requestUrl>>;
+    let activeUserPrompt = effectiveUserPrompt;
+    let activeAttachments = attachments;
+    let activeDataUrls = allDataUrls;
+    try {
+      res = await requestResponsesApi(model, {
+        userPromptOverride: activeUserPrompt,
+        attachmentsOverride: activeAttachments,
+      });
+      assertOkOrThrow(res);
+    } catch (err) {
+      let retryError: unknown = err;
+
+      if (hasDocumentDataUrls(activeDataUrls) && isAttachmentRelatedRequestError(err)) {
+        const fallback = buildDocumentFallbackContext(
+          activeUserPrompt,
+          activeDataUrls,
+          settings.privacy.textAttachmentContextLimit,
+        );
+        if (fallback.applied) {
+          activeUserPrompt = fallback.userPrompt;
+          activeDataUrls = fallback.dataUrls;
+          activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+          try {
+            res = await requestResponsesApi(model, {
+              userPromptOverride: activeUserPrompt,
+              attachmentsOverride: activeAttachments,
+            });
+            assertOkOrThrow(res);
+            retryError = null;
+          } catch (fallbackErr) {
+            retryError = fallbackErr;
+          }
+        }
+      }
+
+      if (retryError) throw retryError;
+    }
+
+    const json = parseJsonFromUnknown(sanitizeJsonResponse(res.json));
+    if (!json) throw new Error(`${settings.provider} response was not a valid object.`);
+    assertOpenAiLikeResponseShape(json);
+    const text = extractTextFromOpenAiLikeResponse(json);
+    if (!text) throw new Error(`${settings.provider} response did not include text content.`);
+    const resolvedConversationId = extractConversationIdFromResponse(json);
+    if (resolvedConversationId && typeof onConversationResolved === "function") {
+      onConversationResolved(resolvedConversationId);
+    }
+    return { text, conversationId: resolvedConversationId ?? conversationId };
+  }
+
   const endpoint = `${base}/chat/completions`;
 
-  const requestOpenAiLike = async (requestModel: string): Promise<Awaited<ReturnType<typeof requestUrl>>> => {
-    const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(settings.provider, requestModel);
-    const effectiveUserContent = inlineSystemPrompt
-      ? `System instructions:\n${systemPrompt}\n\n${effectiveUserPrompt}`
-      : effectiveUserPrompt;
-    // OpenAI reasoning models (o1/o3/o4, gpt-5) use "developer" role
-    // instead of "system".  Other providers still expect "system".
-    const systemRole = settings.provider === "openai" && isReasoningModelId(requestModel)
-      ? "developer"
-      : "system";
-    const messages = inlineSystemPrompt
-      ? [
-          {
-            role: "user",
-            content: attachments.length
-              ? [
-                  { type: "text", text: effectiveUserContent },
-                  ...buildOpenAiContentBlocks(attachments),
-                ]
-              : effectiveUserContent,
-          },
-        ]
-      : [
-          { role: systemRole, content: systemPrompt },
-          {
-            role: "user",
-            content: attachments.length
-              ? [
-                  { type: "text", text: effectiveUserContent },
-                  ...buildOpenAiContentBlocks(attachments),
-                ]
-              : effectiveUserContent,
-          },
-        ];
-
-    // --- provider-aware body parameters ---
-    // OpenAI reasoning models (o1/o3/o4, gpt-5) require max_completion_tokens;
-    // all other OpenAI-compatible providers accept max_tokens.
-    const useMaxCompletionTokens =
-      settings.provider === "openai" && isReasoningModelId(requestModel);
-    const tokenBudget = completionTokenBudget(settings.provider, requestModel);
-
-    // response_format is unsupported by OpenRouter (unpredictable model
-    // routing) and by reasoning models (DeepSeek-R1, o1, etc.).
-    const useJsonResponseFormat =
-      mode === "json" &&
-      settings.provider !== "openrouter" &&
-      !isReasoningModelId(requestModel);
+  const requestOpenAiLike = async (
+    requestModel: string,
+    options?: {
+      userPromptOverride?: string;
+      attachmentsOverride?: ParsedAttachment[];
+      variant?: ChatCompletionsRequestVariant;
+    },
+  ): Promise<Awaited<ReturnType<typeof requestUrl>>> => {
+    const requestUserPrompt = options?.userPromptOverride ?? effectiveUserPrompt;
+    const requestAttachments = options?.attachmentsOverride ?? attachments;
 
     try {
       return await requestUrl({
@@ -638,18 +1076,16 @@ export async function requestStudyAssistantCompletionDetailed(params: {
             ? { "HTTP-Referer": "https://github.com/ctrlaltwill/learnkit", "X-Title": "LearnKit" }
             : {}),
         },
-        body: JSON.stringify({
+        body: JSON.stringify(buildChatCompletionsBody({
+          provider: settings.provider,
           model: requestModel,
-          ...(useMaxCompletionTokens
-            ? { max_completion_tokens: tokenBudget }
-            : { max_tokens: tokenBudget }),
-          messages,
-          ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
-            ? { conversation_id: conversationId.trim() }
-            : {}),
-          ...(shouldOmitTemperature(settings.provider, requestModel) ? {} : { temperature: 0.4 }),
-          ...(useJsonResponseFormat ? { response_format: { type: "json_object" } } : {}),
-        }),
+          systemPrompt,
+          userPrompt: requestUserPrompt,
+          attachments: requestAttachments,
+          mode,
+          conversationId,
+          variant: options?.variant,
+        })),
       });
     } catch (err) {
       const status = statusFromUnknownError(err) ?? 0;
@@ -694,19 +1130,84 @@ export async function requestStudyAssistantCompletionDetailed(params: {
   };
 
   let res: Awaited<ReturnType<typeof requestUrl>>;
+  let activeUserPrompt = effectiveUserPrompt;
+  let activeAttachments = attachments;
+  let activeDataUrls = allDataUrls;
+  let activeVariant: ChatCompletionsRequestVariant = "default";
   try {
-    res = await requestOpenAiLike(model);
+    res = await requestOpenAiLike(model, {
+      userPromptOverride: activeUserPrompt,
+      attachmentsOverride: activeAttachments,
+      variant: activeVariant,
+    });
     assertOkOrThrow(res);
   } catch (err) {
-    const status = statusFromUnknownError(err) ?? (recordFromUnknown(err)?.status as number | undefined) ?? 0;
-    const canRetryOpenRouterModelAlias = settings.provider === "openrouter" && status === 404;
-    if (!canRetryOpenRouterModelAlias) throw err;
+    let retryError: unknown = err;
 
-    const alternateModel = openRouterAlternateModelId(model);
-    if (!alternateModel || alternateModel.toLowerCase() === model.toLowerCase()) throw err;
+    if (hasDocumentDataUrls(activeDataUrls) && isAttachmentRelatedRequestError(err)) {
+      const fallback = buildDocumentFallbackContext(
+        activeUserPrompt,
+        activeDataUrls,
+        settings.privacy.textAttachmentContextLimit,
+      );
+      if (fallback.applied) {
+        activeUserPrompt = fallback.userPrompt;
+        activeDataUrls = fallback.dataUrls;
+        activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        try {
+          res = await requestOpenAiLike(model, {
+            userPromptOverride: activeUserPrompt,
+            attachmentsOverride: activeAttachments,
+            variant: activeVariant,
+          });
+          assertOkOrThrow(res);
+          retryError = null;
+        } catch (fallbackErr) {
+          retryError = fallbackErr;
+        }
+      }
+    }
 
-    res = await requestOpenAiLike(alternateModel);
-    assertOkOrThrow(res);
+    if (retryError && shouldRetryDeepSeekCompatibility(settings.provider, retryError)) {
+      const fallback = buildDocumentFallbackContext(
+        activeUserPrompt,
+        activeDataUrls,
+        settings.privacy.textAttachmentContextLimit,
+      );
+      if (fallback.applied) {
+        activeUserPrompt = fallback.userPrompt;
+        activeDataUrls = fallback.dataUrls;
+        activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+      }
+      activeVariant = "deepseek-compat";
+      try {
+        res = await requestOpenAiLike(model, {
+          userPromptOverride: activeUserPrompt,
+          attachmentsOverride: activeAttachments,
+          variant: activeVariant,
+        });
+        assertOkOrThrow(res);
+        retryError = null;
+      } catch (deepSeekErr) {
+        retryError = deepSeekErr;
+      }
+    }
+
+    if (retryError) {
+      const status = statusFromUnknownError(retryError) ?? (recordFromUnknown(retryError)?.status as number | undefined) ?? 0;
+      const canRetryOpenRouterModelAlias = settings.provider === "openrouter" && status === 404;
+      if (!canRetryOpenRouterModelAlias) throw retryError;
+
+      const alternateModel = openRouterAlternateModelId(model);
+      if (!alternateModel || alternateModel.toLowerCase() === model.toLowerCase()) throw retryError;
+
+      res = await requestOpenAiLike(alternateModel, {
+        userPromptOverride: activeUserPrompt,
+        attachmentsOverride: activeAttachments,
+        variant: activeVariant,
+      });
+      assertOkOrThrow(res);
+    }
   }
 
   const json = parseJsonFromUnknown(sanitizeJsonResponse(res.json));
@@ -749,8 +1250,8 @@ function parseSSELines(buffer: string): { events: string[]; remainder: string } 
     const line = remainder.slice(0, idx).replace(/\r$/, "");
     remainder = remainder.slice(idx + 1);
 
-    if (line.startsWith("data: ")) {
-      const payload = line.slice(6);
+    if (line.startsWith("data:")) {
+      const payload = line.slice(5).trimStart();
       if (payload === "[DONE]") continue;
       events.push(payload);
     }
@@ -766,6 +1267,21 @@ function extractDeltaTextOpenAiLike(payload: string): string {
     const first = parseJsonFromUnknown(choices[0]);
     const delta = parseJsonFromUnknown(first?.delta);
     if (typeof delta?.content === "string") return delta.content;
+  } catch {
+    // Malformed chunk — skip
+  }
+  return "";
+}
+
+function extractDeltaTextResponses(payload: string): string {
+  try {
+    const json = JSON.parse(payload) as Record<string, unknown>;
+    if (
+      (json.type === "response.output_text.delta" || json.type === "response.text.delta")
+      && typeof json.delta === "string"
+    ) {
+      return json.delta;
+    }
   } catch {
     // Malformed chunk — skip
   }
@@ -814,21 +1330,74 @@ export async function requestStudyAssistantStreamingCompletion(params: {
   if (!base) throw new Error("Missing endpoint override for custom provider.");
   if (!model) throw new Error("Missing model name in Study Companion settings.");
 
-  const textAttachmentPrep = buildTextAttachmentContext(attachedFileDataUrls, settings.privacy.textAttachmentContextLimit);
-  const effectiveUserPrompt = textAttachmentPrep.textContext
-    ? `${userPrompt}\n\n${textAttachmentPrep.textContext}`
-    : userPrompt;
-  const allDataUrls = [...imageDataUrls, ...textAttachmentPrep.binaryDataUrls];
-  const attachments = parseAttachmentDataUrls(allDataUrls);
+  const attachmentPayload = prepareProviderAttachmentPayload({
+    provider: settings.provider,
+    userPrompt,
+    imageDataUrls,
+    attachedFileDataUrls,
+    preset: settings.privacy.textAttachmentContextLimit,
+  });
+  const effectiveUserPrompt = attachmentPayload.userPrompt;
+  const allDataUrls = attachmentPayload.dataUrls;
+  const attachments = attachmentPayload.attachments;
 
-  const isAnthropic = settings.provider === "anthropic";
-  const endpoint = isAnthropic ? `${base}/messages` : `${base}/chat/completions`;
+  const requestFamily = settings.provider === "anthropic"
+    ? "anthropic"
+    : providerUsesResponsesApi(settings.provider)
+      ? "responses"
+      : "chat";
+  const endpoint = requestFamily === "anthropic"
+    ? `${base}/messages`
+    : requestFamily === "responses"
+      ? `${base}/responses`
+      : `${base}/chat/completions`;
 
   let headers: Record<string, string>;
   let body: string;
+  let activeUserPrompt = effectiveUserPrompt;
+  let activeAttachments = attachments;
+  let activeDataUrls = allDataUrls;
+  let activeVariant: ChatCompletionsRequestVariant = "default";
 
-  if (isAnthropic) {
-    const tokenBudget = completionTokenBudget(settings.provider, model);
+  const tokenBudget = completionTokenBudget(settings.provider, model);
+
+  const buildResponsesStreamingBody = (userPromptForRequest: string, attachmentsForRequest: ParsedAttachment[]): string => {
+    return JSON.stringify({
+      model,
+      stream: true,
+      max_output_tokens: tokenBudget,
+      instructions: systemPrompt,
+      input: buildResponsesInput(userPromptForRequest, attachmentsForRequest),
+      ...(shouldOmitTemperature(settings.provider, model) ? {} : { temperature: 0.4 }),
+    });
+  };
+
+  const buildChatStreamingBody = (userPromptForRequest: string, attachmentsForRequest: ParsedAttachment[]): string => {
+    const requestTokenBudget = settings.provider === "deepseek" && activeVariant === "deepseek-compat"
+      ? deepSeekCompatibilityTokenBudget(model)
+      : tokenBudget;
+    const omitTemperature = shouldOmitTemperature(settings.provider, model)
+      || (settings.provider === "deepseek" && activeVariant === "deepseek-compat");
+    const useMaxCompletionTokens = settings.provider === "openai" && isReasoningModelId(model);
+    return JSON.stringify({
+      model,
+      stream: true,
+      ...(useMaxCompletionTokens ? { max_completion_tokens: requestTokenBudget } : { max_tokens: requestTokenBudget }),
+      messages: buildChatCompletionsMessages({
+        provider: settings.provider,
+        model,
+        systemPrompt,
+        userPrompt: userPromptForRequest,
+        attachments: attachmentsForRequest,
+      }),
+      ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
+        ? { conversation_id: conversationId.trim() }
+        : {}),
+      ...(omitTemperature ? {} : { temperature: 0.4 }),
+    });
+  };
+
+  if (requestFamily === "anthropic") {
     headers = {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
@@ -842,39 +1411,17 @@ export async function requestStudyAssistantStreamingCompletion(params: {
       system: systemPrompt,
       messages: [{
         role: "user",
-        content: attachments.length
-          ? [
-              { type: "text", text: effectiveUserPrompt },
-              ...buildAnthropicContentBlocks(attachments),
-            ]
-          : effectiveUserPrompt,
+        content: buildAnthropicUserContent(activeUserPrompt, activeAttachments),
       }],
     });
+  } else if (requestFamily === "responses") {
+    headers = {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+      Authorization: `Bearer ${apiKey}`,
+    };
+    body = buildResponsesStreamingBody(activeUserPrompt, activeAttachments);
   } else {
-    const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(settings.provider, model);
-    const effectiveUserContent = inlineSystemPrompt
-      ? `System instructions:\n${systemPrompt}\n\n${effectiveUserPrompt}`
-      : effectiveUserPrompt;
-    const messages = inlineSystemPrompt
-      ? [{
-          role: "user",
-          content: attachments.length
-            ? [{ type: "text", text: effectiveUserContent }, ...buildOpenAiContentBlocks(attachments)]
-            : effectiveUserContent,
-        }]
-      : [
-          { role: (settings.provider === "openai" && isReasoningModelId(model) ? "developer" : "system"), content: systemPrompt },
-          {
-            role: "user",
-            content: attachments.length
-              ? [{ type: "text", text: effectiveUserContent }, ...buildOpenAiContentBlocks(attachments)]
-              : effectiveUserContent,
-          },
-        ];
-
-    const useMaxCompletionTokens = settings.provider === "openai" && isReasoningModelId(model);
-    const tokenBudget = completionTokenBudget(settings.provider, model);
-
     headers = {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
@@ -883,16 +1430,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         ? { "HTTP-Referer": "https://github.com/ctrlaltwill/learnkit", "X-Title": "LearnKit" }
         : {}),
     };
-    body = JSON.stringify({
-      model,
-      stream: true,
-      ...(useMaxCompletionTokens ? { max_completion_tokens: tokenBudget } : { max_tokens: tokenBudget }),
-      messages,
-      ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
-        ? { conversation_id: conversationId.trim() }
-        : {}),
-      ...(shouldOmitTemperature(settings.provider, model) ? {} : { temperature: 0.4 }),
-    });
+    body = buildChatStreamingBody(activeUserPrompt, activeAttachments);
   }
 
   if (signal?.aborted) {
@@ -908,42 +1446,156 @@ export async function requestStudyAssistantStreamingCompletion(params: {
       body,
     });
   } catch (err) {
-    const status = statusFromUnknownError(err) ?? 0;
-    if (status > 0) {
-      const responseText = responseTextFromUnknownError(err);
-      const responseJson = responseJsonFromUnknownError(err);
-      const detail = providerErrorDetail({ json: responseJson, text: responseText });
-      const code = providerErrorCode({ json: responseJson, text: responseText });
-      const errorType = providerErrorType({ json: responseJson });
-      throw buildProviderRequestError({
-        provider: settings.provider,
-        endpoint,
-        status,
-        detail,
-        code,
-        errorType,
-        responseText,
-        responseJson,
-        originalError: err,
-      });
+    let latestError: unknown = err;
+    let retryResponse: Awaited<ReturnType<typeof requestUrl>> | null = null;
+
+    if (requestFamily !== "anthropic" && hasDocumentDataUrls(activeDataUrls) && isAttachmentRelatedRequestError(latestError)) {
+      const fallback = buildDocumentFallbackContext(
+        activeUserPrompt,
+        activeDataUrls,
+        settings.privacy.textAttachmentContextLimit,
+      );
+      if (fallback.applied) {
+        activeUserPrompt = fallback.userPrompt;
+        activeDataUrls = fallback.dataUrls;
+        activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        const fallbackBody = requestFamily === "responses"
+          ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
+          : buildChatStreamingBody(activeUserPrompt, activeAttachments);
+        try {
+          retryResponse = await requestUrl({
+            url: endpoint,
+            method: "POST",
+            headers,
+            body: fallbackBody,
+          });
+        } catch (fallbackErr) {
+          latestError = fallbackErr;
+        }
+      }
     }
-    throw err;
+
+    if (!retryResponse && shouldRetryDeepSeekCompatibility(settings.provider, latestError)) {
+      const fallback = buildDocumentFallbackContext(
+        activeUserPrompt,
+        activeDataUrls,
+        settings.privacy.textAttachmentContextLimit,
+      );
+      if (fallback.applied) {
+        activeUserPrompt = fallback.userPrompt;
+        activeDataUrls = fallback.dataUrls;
+        activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+      }
+      activeVariant = "deepseek-compat";
+      const fallbackBody = requestFamily === "responses"
+        ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
+        : buildChatStreamingBody(activeUserPrompt, activeAttachments);
+      try {
+        retryResponse = await requestUrl({
+          url: endpoint,
+          method: "POST",
+          headers,
+          body: fallbackBody,
+        });
+      } catch (fallbackErr) {
+        latestError = fallbackErr;
+      }
+    }
+
+    if (retryResponse) {
+      response = retryResponse;
+    } else {
+      const status = statusFromUnknownError(latestError) ?? 0;
+      if (status > 0) {
+        const responseText = responseTextFromUnknownError(latestError);
+        const responseJson = responseJsonFromUnknownError(latestError);
+        const detail = providerErrorDetail({ json: responseJson, text: responseText });
+        const code = providerErrorCode({ json: responseJson, text: responseText });
+        const errorType = providerErrorType({ json: responseJson });
+        throw buildProviderRequestError({
+          provider: settings.provider,
+          endpoint,
+          status,
+          detail,
+          code,
+          errorType,
+          responseText,
+          responseJson,
+          originalError: latestError,
+        });
+      }
+      throw latestError;
+    }
   }
 
   if (response.status < 200 || response.status >= 300) {
-    const detail = providerErrorDetail(response);
-    const code = providerErrorCode(response);
-    const errorType = providerErrorType(response);
-    throw buildProviderRequestError({
-      provider: settings.provider,
-      endpoint,
-      status: response.status,
-      detail,
-      code,
-      errorType,
-      responseText: typeof response.text === "string" ? response.text : "",
-      responseJson: response.json,
-    });
+    if (requestFamily !== "anthropic" && hasDocumentDataUrls(activeDataUrls)) {
+      const detail = providerErrorDetail(response);
+      const code = providerErrorCode(response);
+      const errorType = providerErrorType(response);
+      if (isAttachmentRelatedRequestError({ status: response.status, detail, code, errorType })) {
+        const fallback = buildDocumentFallbackContext(
+          activeUserPrompt,
+          activeDataUrls,
+          settings.privacy.textAttachmentContextLimit,
+        );
+        if (fallback.applied) {
+          activeUserPrompt = fallback.userPrompt;
+          activeDataUrls = fallback.dataUrls;
+          activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+          const fallbackBody = requestFamily === "responses"
+            ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
+            : buildChatStreamingBody(activeUserPrompt, activeAttachments);
+          response = await requestUrl({
+            url: endpoint,
+            method: "POST",
+            headers,
+            body: fallbackBody,
+          });
+        }
+      }
+    }
+
+    if (response.status >= 400 && shouldRetryDeepSeekCompatibility(settings.provider, response)) {
+      const fallback = buildDocumentFallbackContext(
+        activeUserPrompt,
+        activeDataUrls,
+        settings.privacy.textAttachmentContextLimit,
+      );
+      if (fallback.applied) {
+        activeUserPrompt = fallback.userPrompt;
+        activeDataUrls = fallback.dataUrls;
+        activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+      }
+      activeVariant = "deepseek-compat";
+      const fallbackBody = requestFamily === "responses"
+        ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
+        : buildChatStreamingBody(activeUserPrompt, activeAttachments);
+      response = await requestUrl({
+        url: endpoint,
+        method: "POST",
+        headers,
+        body: fallbackBody,
+      });
+    }
+
+    if (response.status >= 200 && response.status < 300) {
+      // Fallback retry produced a successful stream response.
+    } else {
+      const detail = providerErrorDetail(response);
+      const code = providerErrorCode(response);
+      const errorType = providerErrorType(response);
+      throw buildProviderRequestError({
+        provider: settings.provider,
+        endpoint,
+        status: response.status,
+        detail,
+        code,
+        errorType,
+        responseText: typeof response.text === "string" ? response.text : "",
+        responseJson: response.json,
+      });
+    }
   }
 
   if (signal?.aborted) {
@@ -956,7 +1608,11 @@ export async function requestStudyAssistantStreamingCompletion(params: {
   }
 
   let fullText = "";
-  const extractDelta = isAnthropic ? extractDeltaTextAnthropic : extractDeltaTextOpenAiLike;
+  const extractDelta = requestFamily === "anthropic"
+    ? extractDeltaTextAnthropic
+    : requestFamily === "responses"
+      ? extractDeltaTextResponses
+      : extractDeltaTextOpenAiLike;
 
   const { events } = parseSSELines(`${responseText}\n`);
   for (const payload of events) {
