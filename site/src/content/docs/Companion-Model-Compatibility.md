@@ -33,11 +33,11 @@ Linked notes are not tracked as a separate compatibility column because they are
 
 | Model | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
 |-------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
-| `gpt-5` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `gpt-5-mini` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `gpt-5-nano` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `gpt-4.1` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `gpt-4.1-mini` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `gpt-5` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `gpt-5-mini` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `gpt-5-nano` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `gpt-4.1` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `gpt-4.1-mini` | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
 
 ## OpenRouter
 
@@ -49,8 +49,8 @@ The following models were all tested via [OpenRouter](https://openrouter.ai). Th
 |-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
 | `amazon/nova-lite-v1` | Paid | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 | 🟢 | Tests unreliable. |
 | `amazon/nova-micro-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
-| `amazon/nova-premier-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `amazon/nova-pro-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `amazon/nova-premier-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `amazon/nova-pro-v1` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
 
 ### Meta Llama
 
@@ -59,8 +59,8 @@ The following models were all tested via [OpenRouter](https://openrouter.ai). Th
 | `meta-llama/llama-3.1-70b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | 🔴 | No attachment or image support. |
 | `meta-llama/llama-3.2-11b-vision-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | Only PPTX works; no image support. |
 | `meta-llama/llama-3.3-70b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | PDF not supported; no image support. |
-| `meta-llama/llama-4-maverick` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `meta-llama/llama-4-scout` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `meta-llama/llama-4-maverick` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `meta-llama/llama-4-scout` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
 
 ### Mistral
 
@@ -69,8 +69,8 @@ The following models were all tested via [OpenRouter](https://openrouter.ai). Th
 | `mistralai/mistral-large` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 | `mistralai/mistral-medium-3.1` | Paid | 🟢 | 🔴 | 🟢 | 🟢 | 🟢 | 🟢 | Edit not supported. |
 | `mistralai/mistral-nemo` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
-| `mistralai/mistral-small-3.2-24b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
-| `mistralai/pixtral-large-2411` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `mistralai/mistral-small-3.2-24b-instruct` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
+| `mistralai/pixtral-large-2411` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
 
 ### Nvidia
 
@@ -94,7 +94,7 @@ The following models were all tested via [OpenRouter](https://openrouter.ai). Th
 | Model | Tier | Chat | Edit | Flashcards | Tests | Attachments | Image | Comments |
 |-------|------|:----:|:----:|:----------:|:-----:|:-----------:|:-----:|----------|
 | `baidu/ernie-4.5-300b-a47b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
-| `bytedance-seed/seed-1.6` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `bytedance-seed/seed-1.6` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
 | `cohere/command-a` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 | `inception/mercury-2` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 | `inflection/inflection-3-productivity` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | PPTX not supported; no image support. |
@@ -102,7 +102,7 @@ The following models were all tested via [OpenRouter](https://openrouter.ai). Th
 | `microsoft/phi-4` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | PPTX/PDF can be unreliable; no image support. |
 | `minimax/minimax-m2.7` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 | `moonshotai/kimi-k2` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
-| `moonshotai/kimi-k2.5` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | |
+| `moonshotai/kimi-k2.5` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | Fully functional. |
 | `nousresearch/hermes-4-405b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 | `nousresearch/hermes-4-70b` | Paid | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | No image support. |
 | `stepfun/step-3.5-flash` | Paid | 🟢 | 🔴 | 🔴 | 🟢 | 🟢 | 🔴 | Edit and flashcards not supported; no image support. |
@@ -147,7 +147,7 @@ If you test a provider/model that is not listed, you can submit a pull request t
 ### How to submit your results
 
 1. Fork the repository and edit `site/src/content/docs/Companion-Model-Compatibility.md`.
-2. Add a new row for the provider and model you tested, then mark each feature with 🟢 (fully-functional), 🟡 (partially functional), or 🔴 (non-functional).
+2. Add a new row for the provider and model you tested, then mark each feature with 🟢 (fully functional), 🟡 (partially functional), or 🔴 (non-functional).
 3. Add a short comment if there are caveats.
 4. Open a pull request with the provider, model, and a brief summary of what you tested.
 
