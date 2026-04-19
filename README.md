@@ -11,7 +11,7 @@
 > [!IMPORTANT]
 > **Latest release: 1.3.0** — all core learning features are now in place. This release adds agentic Companion editing, quick flashcard shorthand, and external TTS support. I will am now focusing on stability and hotfixes. New feature requests are welcome but are lower priority. If you run into an AI-related issue, please [file an AI issue report](https://github.com/ctrlaltwill/learnkit/issues/new?template=ai_issue.yml) so we can track problematic models and providers.
 >
-> We maintain a [Companion Model Compatibility](https://learnkit.wiki/companion-model-compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
+> We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
 
 LearnKit helps you remember what you write. It brings flashcards, note review, tests, and AI-assisted study tools into Obsidian, so your vault becomes a place to learn, not just store information.
 
