@@ -230,6 +230,7 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
 
         this._reminderEngine = new ReminderEngine(this);
         this._registerReminderDevConsoleCommands();
+        this._registerStudyAssistantDevConsoleCommands();
 
         if (!(this.store instanceof SqliteStore) && !this.store.loadedFromDisk && isPlainObject(root)) {
           log.warn(
@@ -377,6 +378,7 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
       this._disposeTooltipPositioner?.();
       this._disposeTooltipPositioner = null;
       this._unregisterReminderDevConsoleCommands();
+      this._unregisterStudyAssistantDevConsoleCommands();
       this._reminderEngine?.stop();
       this._reminderEngine = null;
 

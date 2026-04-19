@@ -14,6 +14,7 @@ import type { SproutSettings } from "../../types/settings";
 import { requestStudyAssistantCompletionDetailed, requestStudyAssistantStreamingCompletion } from "./study-assistant-provider";
 import { buildStudyAssistantHiddenPrompt } from "./study-assistant-hidden-prompts";
 import type {
+  StudyAssistantAttachmentRoute,
   StudyAssistantChatInput,
   StudyAssistantChatResult,
   StudyAssistantCardType,
@@ -22,6 +23,13 @@ import type {
   StudyAssistantGeneratorResult,
   StudyAssistantSuggestion,
 } from "./study-assistant-types";
+
+function combineAttachmentRoutes(...routes: StudyAssistantAttachmentRoute[]): StudyAssistantAttachmentRoute {
+  if (routes.includes("retry-fallback")) return "retry-fallback";
+  if (routes.includes("forced-fallback")) return "forced-fallback";
+  if (routes.includes("native")) return "native";
+  return "none";
+}
 
 function clampDifficulty(value: unknown): number {
   const n = Number(value);
@@ -1241,11 +1249,13 @@ export async function generateStudyAssistantSuggestions(params: {
     userPrompt,
     imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
     attachedFileDataUrls,
+    documentAttachmentMode: input.documentAttachmentMode,
     mode: "json",
     conversationId: resolvedConversationId,
   });
   const rawResponseText = firstResponse.text;
   resolvedConversationId = firstResponse.conversationId ?? resolvedConversationId;
+  let attachmentRoute = firstResponse.attachmentRoute;
 
   let suggestions = parseSuggestions(rawResponseText)
     .filter((s) => canUseVisionForIo || s.type !== "io")
@@ -1288,11 +1298,13 @@ export async function generateStudyAssistantSuggestions(params: {
       userPrompt: refillUserPrompt,
       imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
       attachedFileDataUrls,
+      documentAttachmentMode: input.documentAttachmentMode,
       mode: "json",
       conversationId: resolvedConversationId,
     });
     refillRawResponseText = refillResponse.text;
     resolvedConversationId = refillResponse.conversationId ?? resolvedConversationId;
+    attachmentRoute = combineAttachmentRoutes(attachmentRoute, refillResponse.attachmentRoute);
 
     const refillSuggestions = parseSuggestions(refillRawResponseText)
       .filter((s) => canUseVisionForIo || s.type !== "io")
@@ -1310,6 +1322,7 @@ export async function generateStudyAssistantSuggestions(params: {
   return {
     suggestions: calibratedSuggestions,
     payloadPreview,
+    attachmentRoute,
     conversationId: resolvedConversationId,
     rawResponseText: refillRawResponseText
       ? `${rawResponseText}\n\n--- refill ---\n${refillRawResponseText}`
@@ -1390,6 +1403,7 @@ export async function generateStudyAssistantChatReply(params: {
     userPrompt,
     imageDataUrls: input.includeImages ? imageDataUrls : [],
     attachedFileDataUrls,
+    documentAttachmentMode: input.documentAttachmentMode,
     mode: "text",
     conversationId: input.conversationId,
   });
@@ -1399,6 +1413,7 @@ export async function generateStudyAssistantChatReply(params: {
     reply: String(rawResponseText || "").trim(),
     payloadPreview,
     rawResponseText,
+    attachmentRoute: response.attachmentRoute,
     conversationId: response.conversationId ?? input.conversationId,
   };
 }
@@ -1424,6 +1439,7 @@ export async function generateStudyAssistantChatReplyStreaming(params: {
     userPrompt,
     imageDataUrls: input.includeImages ? imageDataUrls : [],
     attachedFileDataUrls,
+    documentAttachmentMode: input.documentAttachmentMode,
     conversationId: input.conversationId,
     onChunk,
     signal,
@@ -1434,6 +1450,7 @@ export async function generateStudyAssistantChatReplyStreaming(params: {
     reply: String(rawResponseText || "").trim(),
     payloadPreview,
     rawResponseText,
+    attachmentRoute: response.attachmentRoute,
     conversationId: response.conversationId ?? input.conversationId,
   };
 }

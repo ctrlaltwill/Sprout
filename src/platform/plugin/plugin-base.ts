@@ -157,6 +157,8 @@ export class LearnKitPluginBase extends Plugin {
   declare refreshReminderEngine: () => void;
   declare _registerReminderDevConsoleCommands: () => void;
   declare _unregisterReminderDevConsoleCommands: () => void;
+  declare _registerStudyAssistantDevConsoleCommands: () => void;
+  declare _unregisterStudyAssistantDevConsoleCommands: () => void;
   declare _registerRibbonIcons: () => void;
   declare _registerBrandIcons: () => void;
 

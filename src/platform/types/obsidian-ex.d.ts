@@ -134,6 +134,7 @@ declare module "obsidian" {
 // Global window augmentations for Obsidian environment
 // ---------------------------------------------------------------------------
 import type { App, Command, TFile } from "obsidian";
+import type { StudyAssistantMatrixConsoleApi } from "../integrations/ai/study-assistant-matrix-runner";
 
 interface BasecoatApi {
   start?(): void;
@@ -153,6 +154,14 @@ interface SproutGlobals {
   SproutWidgetView?: unknown;
   /** Sprout boot flag. */
   __sprout_started?: boolean;
+  /** LearnKit console AI matrix runner API. */
+  learnKitAi?: StudyAssistantMatrixConsoleApi;
+  /** Legacy alias for the LearnKit console AI matrix runner API. */
+  sproutAi?: StudyAssistantMatrixConsoleApi;
+  /** Shorthand runner entry point for the LearnKit AI matrix. */
+  learnKitAiMatrixRun?: StudyAssistantMatrixConsoleApi["runMatrix"];
+  /** Legacy shorthand runner entry point for the LearnKit AI matrix. */
+  sproutAiMatrixRun?: StudyAssistantMatrixConsoleApi["runMatrix"];
 }
 
 declare global {

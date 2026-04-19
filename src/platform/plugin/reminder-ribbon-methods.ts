@@ -9,6 +9,7 @@
 import { addIcon } from "obsidian";
 import { LearnKitPluginBase, type Constructor } from "./plugin-base";
 import { BRAND } from "../core/constants";
+import { createStudyAssistantMatrixConsoleApi } from "../integrations/ai/study-assistant-matrix-runner";
 import {
   LEARNKIT_BRAND_ICON_KEY,
   LEARNKIT_BRAND_HORIZONTAL_ICON_KEY,
@@ -59,6 +60,27 @@ export function WithReminderAndRibbonMethods<T extends Constructor<LearnKitPlugi
       delete target.learnKitReminderLaunch;
       delete target.learnKitReminderRoutine;
       delete target.learnKitReminderGatekeeper;
+    };
+
+    _registerStudyAssistantDevConsoleCommands = (): void => {
+      if (typeof window === "undefined") return;
+
+      const target = window as unknown as Record<string, unknown>;
+      const api = createStudyAssistantMatrixConsoleApi(this);
+
+      target.learnKitAi = api;
+      target.sproutAi = api;
+      target.learnKitAiMatrixRun = api.runMatrix;
+      target.sproutAiMatrixRun = api.runMatrix;
+    };
+
+    _unregisterStudyAssistantDevConsoleCommands = (): void => {
+      if (typeof window === "undefined") return;
+      const target = window as unknown as Record<string, unknown>;
+      delete target.learnKitAi;
+      delete target.sproutAi;
+      delete target.learnKitAiMatrixRun;
+      delete target.sproutAiMatrixRun;
     };
 
     _registerRibbonIcons = (): void => {

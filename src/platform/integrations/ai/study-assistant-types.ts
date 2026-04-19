@@ -17,6 +17,10 @@ import type { SproutSettings } from "../../types/settings";
 
 export type StudyAssistantProvider = SproutSettings["studyAssistant"]["provider"];
 
+export type StudyAssistantAttachmentRoute = "none" | "native" | "retry-fallback" | "forced-fallback";
+
+export type StudyAssistantDocumentAttachmentMode = "auto" | "force-fallback";
+
 export type StudyAssistantConversationRef = {
   provider: StudyAssistantProvider;
   conversationId: string;
@@ -31,6 +35,7 @@ export type StudyAssistantGeneratorInput = {
   imageRefs: string[];
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
+  documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
   includeImages: boolean;
   enabledTypes: StudyAssistantCardType[];
   targetSuggestionCount: number;
@@ -75,6 +80,7 @@ export type StudyAssistantGeneratorResult = {
   suggestions: StudyAssistantSuggestion[];
   payloadPreview: string;
   rawResponseText: string;
+  attachmentRoute: StudyAssistantAttachmentRoute;
   conversationId?: string;
 };
 
@@ -99,6 +105,7 @@ export type StudyAssistantChatInput = {
   imageRefs: string[];
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
+  documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
   includeImages: boolean;
   userMessage: string;
   customInstructions: string;
@@ -111,6 +118,7 @@ export type StudyAssistantChatResult = {
   reply: string;
   payloadPreview: string;
   rawResponseText: string;
+  attachmentRoute: StudyAssistantAttachmentRoute;
   conversationId?: string;
 };
 

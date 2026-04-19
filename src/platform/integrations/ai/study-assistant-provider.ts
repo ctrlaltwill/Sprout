@@ -11,8 +11,13 @@
 
 import { requestUrl } from "obsidian";
 import type { SproutSettings } from "../../types/settings";
-import type { StudyAssistantProvider } from "./study-assistant-types";
-import { getTextAttachmentLimits, type ContextLimitPreset } from "./study-assistant-types";
+import {
+  getTextAttachmentLimits,
+  type ContextLimitPreset,
+  type StudyAssistantAttachmentRoute,
+  type StudyAssistantDocumentAttachmentMode,
+  type StudyAssistantProvider,
+} from "./study-assistant-types";
 import {
   extractDocxTextFromDataUrl,
   extractPdfTextFromDataUrl,
@@ -24,6 +29,7 @@ type CompletionMode = "text" | "json";
 
 type CompletionResult = {
   text: string;
+  attachmentRoute: StudyAssistantAttachmentRoute;
   conversationId?: string;
 };
 
@@ -39,6 +45,7 @@ const REASONING_MAX_OUTPUT_TOKENS = 25000;
 
 type ProviderRequestError = Error & {
   provider?: StudyAssistantProvider;
+  attachmentRoute?: StudyAssistantAttachmentRoute;
   status?: number;
   detail?: string;
   code?: string;
@@ -84,7 +91,7 @@ function providerBaseUrl(settings: SproutSettings["studyAssistant"]): string {
   return "";
 }
 
-function providerApiKey(
+export function providerApiKey(
   provider: StudyAssistantProvider,
   apiKeys: SproutSettings["studyAssistant"]["apiKeys"],
 ): string {
@@ -192,7 +199,7 @@ function providerUsesResponsesApi(provider: StudyAssistantProvider): boolean {
   return provider === "openai" || provider === "xai" || provider === "perplexity";
 }
 
-function providerSupportsNativeDocumentAttachment(provider: StudyAssistantProvider, mimeType: string): boolean {
+export function providerSupportsNativeDocumentAttachment(provider: StudyAssistantProvider, mimeType: string): boolean {
   const mime = String(mimeType || "").toLowerCase();
   if (!mime || mime.startsWith("image/")) return false;
   if (provider === "openai" || provider === "perplexity") return true;
@@ -318,6 +325,7 @@ function buildProviderRequestError(args: {
   provider: StudyAssistantProvider;
   endpoint: string;
   status: number;
+  attachmentRoute?: StudyAssistantAttachmentRoute;
   detail?: string;
   code?: string;
   errorType?: string;
@@ -325,17 +333,26 @@ function buildProviderRequestError(args: {
   responseJson?: unknown;
   originalError?: unknown;
 }): ProviderRequestError {
-  const { provider, endpoint, status, detail = "", code = "", errorType = "", responseText = "", responseJson, originalError } = args;
+  const { provider, endpoint, status, attachmentRoute, detail = "", code = "", errorType = "", responseText = "", responseJson, originalError } = args;
   const err = new Error(`${provider} request failed (${status})`) as ProviderRequestError;
   err.provider = provider;
   err.endpoint = endpoint;
   err.status = status;
+  if (attachmentRoute) err.attachmentRoute = attachmentRoute;
   if (detail) err.detail = detail;
   if (code) err.code = code;
   if (errorType) err.errorType = errorType;
   if (responseText) err.responseText = responseText;
   if (responseJson !== undefined) err.responseJson = responseJson;
   if (originalError !== undefined) err.originalError = originalError;
+  return err;
+}
+
+function attachAttachmentRouteToError<T extends Error>(
+  err: T,
+  attachmentRoute: StudyAssistantAttachmentRoute,
+): T {
+  (err as T & { attachmentRoute?: StudyAssistantAttachmentRoute }).attachmentRoute = attachmentRoute;
   return err;
 }
 
@@ -597,19 +614,41 @@ function prepareProviderAttachmentPayload(args: {
   imageDataUrls: string[];
   attachedFileDataUrls: string[];
   preset?: ContextLimitPreset;
+  documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
 }): {
   userPrompt: string;
   dataUrls: string[];
   attachments: ParsedAttachment[];
+  attachmentRoute: StudyAssistantAttachmentRoute;
 } {
-  const { provider, userPrompt, imageDataUrls, attachedFileDataUrls, preset } = args;
+  const {
+    provider,
+    userPrompt,
+    imageDataUrls,
+    attachedFileDataUrls,
+    preset,
+    documentAttachmentMode = "auto",
+  } = args;
+  const hadAnyAttachments = (imageDataUrls?.length ?? 0) > 0 || (attachedFileDataUrls?.length ?? 0) > 0;
   const textAttachmentPrep = buildTextAttachmentContext(attachedFileDataUrls, preset);
   let nextUserPrompt = textAttachmentPrep.textContext
     ? `${userPrompt}\n\n${textAttachmentPrep.textContext}`
     : userPrompt;
   let nextDataUrls = [...imageDataUrls, ...textAttachmentPrep.binaryDataUrls];
+  let attachmentRoute: StudyAssistantAttachmentRoute = hadAnyAttachments ? "native" : "none";
 
-  if (provider !== "custom") {
+  if (textAttachmentPrep.textContext) {
+    attachmentRoute = "forced-fallback";
+  }
+
+  if (documentAttachmentMode === "force-fallback") {
+    const forcedFallback = buildDocumentFallbackContext(nextUserPrompt, nextDataUrls, preset);
+    if (forcedFallback.applied) {
+      nextUserPrompt = forcedFallback.userPrompt;
+      nextDataUrls = forcedFallback.dataUrls;
+      attachmentRoute = "forced-fallback";
+    }
+  } else if (provider !== "custom") {
     const proactiveFallback = buildDocumentFallbackContext(
       nextUserPrompt,
       nextDataUrls,
@@ -624,6 +663,7 @@ function prepareProviderAttachmentPayload(args: {
     if (proactiveFallback.applied) {
       nextUserPrompt = proactiveFallback.userPrompt;
       nextDataUrls = proactiveFallback.dataUrls;
+      attachmentRoute = "forced-fallback";
     }
   }
 
@@ -631,6 +671,7 @@ function prepareProviderAttachmentPayload(args: {
     userPrompt: nextUserPrompt,
     dataUrls: nextDataUrls,
     attachments: parseAttachmentDataUrls(nextDataUrls),
+    attachmentRoute,
   };
 }
 
@@ -829,6 +870,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
   userPrompt: string;
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
+  documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
   mode?: CompletionMode;
   conversationId?: string;
   onConversationResolved?: (conversationId: string) => void;
@@ -839,6 +881,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     userPrompt,
     imageDataUrls = [],
     attachedFileDataUrls = [],
+    documentAttachmentMode = "auto",
     mode = "text",
     conversationId,
     onConversationResolved,
@@ -864,10 +907,12 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     imageDataUrls,
     attachedFileDataUrls,
     preset: settings.privacy.textAttachmentContextLimit,
+    documentAttachmentMode,
   });
   const effectiveUserPrompt = attachmentPayload.userPrompt;
   const allDataUrls = attachmentPayload.dataUrls;
   const attachments = attachmentPayload.attachments;
+  let activeAttachmentRoute = attachmentPayload.attachmentRoute;
 
   if (settings.provider === "anthropic") {
     const endpoint = `${base}/messages`;
@@ -905,6 +950,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           provider: settings.provider,
           endpoint,
           status,
+            attachmentRoute: activeAttachmentRoute,
           detail,
           code,
           errorType,
@@ -913,7 +959,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           originalError: err,
         });
       }
-      throw err;
+        throw attachAttachmentRouteToError(errorFromUnknown(err), activeAttachmentRoute);
     }
 
     if (res.status < 200 || res.status >= 300) {
@@ -924,6 +970,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         provider: settings.provider,
         endpoint,
         status: res.status,
+        attachmentRoute: activeAttachmentRoute,
         detail,
         code,
         errorType,
@@ -941,7 +988,11 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     if (resolvedConversationId && typeof onConversationResolved === "function") {
       onConversationResolved(resolvedConversationId);
     }
-    return { text, conversationId: resolvedConversationId ?? conversationId };
+    return {
+      text,
+      attachmentRoute: activeAttachmentRoute,
+      conversationId: resolvedConversationId ?? conversationId,
+    };
   }
 
   if (providerUsesResponsesApi(settings.provider)) {
@@ -989,6 +1040,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
             provider: settings.provider,
             endpoint,
             status,
+            attachmentRoute: activeAttachmentRoute,
             detail,
             code,
             errorType,
@@ -997,7 +1049,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
             originalError: err,
           });
         }
-        throw err;
+        throw attachAttachmentRouteToError(errorFromUnknown(err), activeAttachmentRoute);
       }
     };
 
@@ -1010,6 +1062,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           provider: settings.provider,
           endpoint,
           status: response.status,
+          attachmentRoute: activeAttachmentRoute,
           detail,
           code,
           errorType,
@@ -1042,6 +1095,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           activeUserPrompt = fallback.userPrompt;
           activeDataUrls = fallback.dataUrls;
           activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+          activeAttachmentRoute = "retry-fallback";
           try {
             res = await requestResponsesApi(model, {
               userPromptOverride: activeUserPrompt,
@@ -1055,7 +1109,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         }
       }
 
-      if (retryError) throw errorFromUnknown(retryError);
+      if (retryError) throw attachAttachmentRouteToError(errorFromUnknown(retryError), activeAttachmentRoute);
     }
 
     const json = parseJsonFromUnknown(sanitizeJsonResponse(res.json));
@@ -1067,7 +1121,11 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     if (resolvedConversationId && typeof onConversationResolved === "function") {
       onConversationResolved(resolvedConversationId);
     }
-    return { text, conversationId: resolvedConversationId ?? conversationId };
+    return {
+      text,
+      attachmentRoute: activeAttachmentRoute,
+      conversationId: resolvedConversationId ?? conversationId,
+    };
   }
 
   const endpoint = `${base}/chat/completions`;
@@ -1118,6 +1176,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           provider: settings.provider,
           endpoint,
           status,
+          attachmentRoute: activeAttachmentRoute,
           detail,
           code,
           errorType,
@@ -1126,7 +1185,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           originalError: err,
         });
       }
-      throw errorFromUnknown(err);
+      throw attachAttachmentRouteToError(errorFromUnknown(err), activeAttachmentRoute);
     }
   };
 
@@ -1139,6 +1198,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         provider: settings.provider,
         endpoint,
         status: response.status,
+        attachmentRoute: activeAttachmentRoute,
         detail,
         code,
         errorType,
@@ -1173,6 +1233,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         activeUserPrompt = fallback.userPrompt;
         activeDataUrls = fallback.dataUrls;
         activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        activeAttachmentRoute = "retry-fallback";
         try {
           res = await requestOpenAiLike(model, {
             userPromptOverride: activeUserPrompt,
@@ -1197,6 +1258,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         activeUserPrompt = fallback.userPrompt;
         activeDataUrls = fallback.dataUrls;
         activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        activeAttachmentRoute = "retry-fallback";
       }
       activeVariant = "deepseek-compat";
       try {
@@ -1215,11 +1277,13 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     if (retryError) {
       const status = statusFromUnknownError(retryError) ?? (recordFromUnknown(retryError)?.status as number | undefined) ?? 0;
       const canRetryOpenRouterModelAlias = settings.provider === "openrouter" && status === 404;
-      if (!canRetryOpenRouterModelAlias) throw errorFromUnknown(retryError);
+      if (!canRetryOpenRouterModelAlias) {
+        throw attachAttachmentRouteToError(errorFromUnknown(retryError), activeAttachmentRoute);
+      }
 
       const alternateModel = openRouterAlternateModelId(model);
       if (!alternateModel || alternateModel.toLowerCase() === model.toLowerCase()) {
-        throw errorFromUnknown(retryError);
+        throw attachAttachmentRouteToError(errorFromUnknown(retryError), activeAttachmentRoute);
       }
 
       res = await requestOpenAiLike(alternateModel, {
@@ -1240,7 +1304,11 @@ export async function requestStudyAssistantCompletionDetailed(params: {
   if (resolvedConversationId && typeof onConversationResolved === "function") {
     onConversationResolved(resolvedConversationId);
   }
-  return { text, conversationId: resolvedConversationId ?? conversationId };
+  return {
+    text,
+    attachmentRoute: activeAttachmentRoute,
+    conversationId: resolvedConversationId ?? conversationId,
+  };
 }
 
 export async function requestStudyAssistantCompletion(params: {
@@ -1249,6 +1317,7 @@ export async function requestStudyAssistantCompletion(params: {
   userPrompt: string;
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
+  documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
   mode?: CompletionMode;
   conversationId?: string;
   onConversationResolved?: (conversationId: string) => void;
@@ -1328,6 +1397,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
   userPrompt: string;
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
+  documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
   conversationId?: string;
   onChunk: (token: string) => void;
   signal?: AbortSignal;
@@ -1338,6 +1408,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
     userPrompt,
     imageDataUrls = [],
     attachedFileDataUrls = [],
+    documentAttachmentMode = "auto",
     conversationId,
     onChunk,
     signal,
@@ -1357,10 +1428,12 @@ export async function requestStudyAssistantStreamingCompletion(params: {
     imageDataUrls,
     attachedFileDataUrls,
     preset: settings.privacy.textAttachmentContextLimit,
+    documentAttachmentMode,
   });
   const effectiveUserPrompt = attachmentPayload.userPrompt;
   const allDataUrls = attachmentPayload.dataUrls;
   const attachments = attachmentPayload.attachments;
+  let activeAttachmentRoute = attachmentPayload.attachmentRoute;
 
   const requestFamily = settings.provider === "anthropic"
     ? "anthropic"
@@ -1480,6 +1553,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         activeUserPrompt = fallback.userPrompt;
         activeDataUrls = fallback.dataUrls;
         activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        activeAttachmentRoute = "retry-fallback";
         const fallbackBody = requestFamily === "responses"
           ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
           : buildChatStreamingBody(activeUserPrompt, activeAttachments);
@@ -1506,6 +1580,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         activeUserPrompt = fallback.userPrompt;
         activeDataUrls = fallback.dataUrls;
         activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        activeAttachmentRoute = "retry-fallback";
       }
       activeVariant = "deepseek-compat";
       const fallbackBody = requestFamily === "responses"
@@ -1537,6 +1612,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
           provider: settings.provider,
           endpoint,
           status,
+          attachmentRoute: activeAttachmentRoute,
           detail,
           code,
           errorType,
@@ -1545,7 +1621,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
           originalError: latestError,
         });
       }
-      throw latestError;
+      throw attachAttachmentRouteToError(errorFromUnknown(latestError), activeAttachmentRoute);
     }
   }
 
@@ -1564,6 +1640,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
           activeUserPrompt = fallback.userPrompt;
           activeDataUrls = fallback.dataUrls;
           activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+          activeAttachmentRoute = "retry-fallback";
           const fallbackBody = requestFamily === "responses"
             ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
             : buildChatStreamingBody(activeUserPrompt, activeAttachments);
@@ -1587,6 +1664,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         activeUserPrompt = fallback.userPrompt;
         activeDataUrls = fallback.dataUrls;
         activeAttachments = parseAttachmentDataUrls(activeDataUrls);
+        activeAttachmentRoute = "retry-fallback";
       }
       activeVariant = "deepseek-compat";
       const fallbackBody = requestFamily === "responses"
@@ -1610,6 +1688,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         provider: settings.provider,
         endpoint,
         status: response.status,
+        attachmentRoute: activeAttachmentRoute,
         detail,
         code,
         errorType,
@@ -1649,7 +1728,11 @@ export async function requestStudyAssistantStreamingCompletion(params: {
 
   if (!fullText.trim()) throw new Error(`${settings.provider} streaming response did not include text content.`);
 
-  return { text: fullText, conversationId };
+  return {
+    text: fullText,
+    attachmentRoute: activeAttachmentRoute,
+    conversationId,
+  };
 }
 
 export async function deleteStudyAssistantConversation(params: {
