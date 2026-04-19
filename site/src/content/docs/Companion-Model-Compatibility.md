@@ -25,11 +25,11 @@ If you find something has changed, please submit a pull request to update the ta
 |----------|-------|:----:|:----:|:-------------------:|:--------------:|:----------------:|----------|
 | DeepSeek | `deepseek-chat` | ✅ | ✅ | ✅ | ✅ | ✅ | Images not supported as file attachments. PDF, DOCX, and PPTX file attachments tested. |
 | DeepSeek | `deepseek-reasoner` | ✅ | ✅ | ✅ | ✅ | ✅ | Images not supported as file attachments. PDF, DOCX, and PPTX file attachments tested. |
-| OpenAI | `gpt-5` | ✅ | ✅ | ✅ | ✅ | ✅ | Images are supported. |
-| OpenAI | `gpt-5-mini` | ✅ | ✅ | ✅ | ✅ | ✅ | Images are supported. |
-| OpenAI | `gpt-5-nano` | ✅ | ✅ | ✅ | ✅ | ✅ | Images are supported. |
-| OpenAI | `gpt-4.1` | ✅ | ✅ | ✅ | ✅ | ✅ | Images are supported. |
-| OpenAI | `gpt-4.1-mini` | ✅ | ✅ | ✅ | ✅ | ✅ | Images are supported. |
+| OpenAI | `gpt-5` | ✅ | ✅ | ✅ | ✅ | ✅ | Images, PDF, PPT, and DOC attachments are supported. |
+| OpenAI | `gpt-5-mini` | ✅ | ✅ | ✅ | ✅ | ✅ | Images, PDF, PPT, and DOC attachments are supported. |
+| OpenAI | `gpt-5-nano` | ✅ | ✅ | ✅ | ✅ | ✅ | Images, PDF, PPT, and DOC attachments are supported. |
+| OpenAI | `gpt-4.1` | ✅ | ✅ | ✅ | ✅ | ✅ | Images, PDF, PPT, and DOC attachments are supported. |
+| OpenAI | `gpt-4.1-mini` | ✅ | ✅ | ✅ | ✅ | ✅ | Images, PDF, PPT, and DOC attachments are supported. |
 | OpenRouter | `openrouter/free` (Free Models Router) | Varies | Varies | Varies | Varies | Varies | Variable: support depends on the routed free model chosen at runtime. |
 
 ## How to test and contribute

@@ -202,6 +202,8 @@ export type LearnKitSettings = {
     requestRetention: number;
     /** When true, add slight randomness to review intervals to prevent clustering. */
     enableFuzz: boolean;
+    /** Custom FSRS weight vector produced by the optimizer. */
+    fsrsWeights?: number[];
   };
 
   // Note Review — reading scheduler + filter

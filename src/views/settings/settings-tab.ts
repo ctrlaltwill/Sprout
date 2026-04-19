@@ -2602,6 +2602,10 @@ export class LearnKitSettingsTab extends PluginSettingTab {
       reviewsPerDay: 10,
       reviewStepsDays: [1, 7, 30, 365],
       fillFromFutureWhenUnderLimit: true,
+      fsrsRetention: 0.9,
+      fsrsLearningStepsMinutes: [10, 1440],
+      fsrsRelearningStepsMinutes: [10],
+      fsrsEnableFuzz: true,
     };
 
     const noteCfg = this.plugin.settings.noteReview;
