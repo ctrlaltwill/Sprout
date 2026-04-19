@@ -20,6 +20,7 @@ import { clearNode } from "./shared-utils";
 import { KeyboardShortcutsModal } from "../modals/keyboard-shortcuts-modal";
 import { LearnKitCommandPalette } from "./command-palette";
 import type LearnKitPlugin from "../../main";
+import { LearnKitSettingsView } from "../../views/settings/view/settings-view";
 import { t } from "../translations/translator";
 
 export type SproutHeaderPage = "home" | "cards" | "notes" | "exam" | "coach" | "analytics" | "library" | "settings";
@@ -454,21 +455,29 @@ export class SproutHeader {
     this.deps.afterNavigate?.();
   }
 
-  private switchSettingsTab(tab: "settings" | "guide" | "about") {
+  private switchSettingsTab(tab: "settings" | "guide" | "about", reanimate = true) {
     setTimeout(() => {
       const settingsLeaf = this.deps.leaf;
       const view = settingsLeaf?.view as {
         navigateToTab?: (tabId: string, options?: { reanimateEntrance?: boolean }) => void;
       } | undefined;
       if (view && typeof view.navigateToTab === "function") {
-        view.navigateToTab(tab, { reanimateEntrance: true });
+        view.navigateToTab(tab, { reanimateEntrance: reanimate });
       }
     }, 100);
   }
 
   private openSettingsTab(tab: "settings" | "guide" | "about") {
+    const wasAlreadySettings =
+      this.deps.leaf?.view?.getViewType?.() === VIEW_TYPE_SETTINGS;
+    if (!wasAlreadySettings && tab !== "settings") {
+      LearnKitSettingsView.pendingInitialTab = tab;
+    }
     void this.navigate("settings");
-    this.switchSettingsTab(tab);
+    if (wasAlreadySettings) {
+      // Leaf already shows settings — switch tab with entrance animation.
+      this.switchSettingsTab(tab, true);
+    }
   }
 
   // ---------------------------

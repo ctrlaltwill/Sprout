@@ -174,7 +174,7 @@ export function renderDeckMode(args: Args) {
     icon: "arrow-right",
     label: tx("ui.reviewer.deck.studyAll", "Study all"),
     title: tx("ui.reviewer.deck.studyAllTooltip", "Start a vault-wide session"),
-    className: "learnkit-btn-toolbar learnkit-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-deck-study-all-btn",
+    className: "learnkit-btn-toolbar learnkit-btn-outline-muted h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn sprout-deck-study-all-btn",
     labelClassName: "",
     iconClassName: "sprout-btn-icon",
     iconAfterLabel: true,
@@ -190,7 +190,7 @@ export function renderDeckMode(args: Args) {
   const comboTrigger = document.createElement("button");
   comboTrigger.type = "button";
   comboTrigger.className =
-    "learnkit-btn-toolbar learnkit-btn-accent h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn learnkit-deck-group-trigger";
+    "learnkit-btn-toolbar learnkit-btn-outline-muted h-9 w-full md:w-auto inline-flex items-center gap-2 equal-height-btn learnkit-deck-group-trigger";
   comboTrigger.setAttribute("aria-haspopup", "listbox");
   comboTrigger.setAttribute("aria-expanded", "false");
 

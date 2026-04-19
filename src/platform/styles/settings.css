@@ -86,7 +86,7 @@
   min-height: 0;
   flex: 1;
   overflow: hidden;
-  border: var(--color-base-35) .5px solid;
+  border: none !important;
     background-color: var(--color-base-05);
   position: relative;
 }
@@ -257,7 +257,7 @@
   left: var(--learnkit-popover-left, auto);
   z-index: 1000;
   min-width: 224px;
-  width: var(--learnkit-popover-width, auto);
+  width: max-content;
   padding-top: 0;
   pointer-events: none;
   visibility: hidden;
@@ -297,6 +297,7 @@
   justify-content: flex-start;
   gap: 8px;
   width: 100%;
+  white-space: nowrap;
   margin: 0;
   padding: 6px 8px;
   border: 0.5px solid transparent;
@@ -401,7 +402,7 @@
 
 .learnkit-guide-content-inner {
   height: 100%;
-  padding: calc(var(--learnkit-guide-topbar-clearance, 88px) + 20px) 40px 35px 40px;
+  padding: calc(var(--learnkit-guide-topbar-clearance, 88px) + 20px) 40px 110px 40px;
   overflow-y: auto;
 }
 
@@ -488,12 +489,23 @@
   scroll-snap-type: none;
 }
 
-/* ---- Fixed footer for prev/next navigation ---- */
+/* ---- Floating dock footer for prev/next navigation ---- */
 
 .learnkit-guide-footer {
-  flex-shrink: 0;
-  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
-  z-index: 2;
+  position: absolute;
+  left: 1.2rem;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 80;
+  border: 0.5px solid var(--color-base-35);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-base-05) 74%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.learnkit-guide-footer:empty {
+  display: none;
 }
 
 .learnkit-guide-header {
@@ -730,24 +742,31 @@
   margin-top: 0.3em;
 }
 
-/* Tables — styled to match analytics / changelog look */
+/* Tables — styled to match deck table look */
 .learnkit-guide-body table {
   width: 100%;
   margin: 1.1em 0;
   font-size: var(--learnkit-font-xs);
   border-collapse: separate;
   border-spacing: 0;
-  border: none;
-  border-radius: 0;
-  overflow: visible;
-  background: var(--background-primary);
-  padding: 0 8px;
-  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
+  overflow: hidden;
+  background-color: var(--color-base-05);
+  padding: 20px;
+  border: var(--color-base-35) 0.5px solid;
   border-radius: var(--radius-m, 8px);
+  transition: background-color 0.2s;
+}
+
+body.is-phone .learnkit-guide-body table {
+  padding: 0.8rem;
+}
+
+.learnkit-guide-body table:hover {
+  background-color: var(--color-base-10);
 }
 
 .learnkit-guide-body thead tr {
-  background: var(--background-primary);
+  background: transparent;
 }
 
 .learnkit-guide-body th {
@@ -757,18 +776,36 @@
   color: var(--text-muted);
   text-align: left;
   border: none;
+  transition: color 0.15s ease;
+  cursor: default;
+}
+
+.learnkit-guide-body th:hover {
+  color: var(--color-base-100);
 }
 
 .learnkit-guide-body tbody {
-  border-top: var(--learnkit-border-width) solid var(--learnkit-border-color);
+  border-top: none;
 }
 
 .learnkit-guide-body td {
   padding: 8px 10px;
   font-size: var(--learnkit-font-xs);
-  border: none;
   vertical-align: top;
   background: inherit;
+  border-top: 0.5px solid transparent;
+  border-bottom: 0.5px solid transparent;
+  border-left: 0;
+  border-right: 0;
+  transition: border-color 0.18s ease;
+}
+
+.learnkit-guide-body tbody td:first-child {
+  border-left: 0.5px solid transparent;
+}
+
+.learnkit-guide-body tbody td:last-child {
+  border-right: 0.5px solid transparent;
 }
 
 .learnkit-guide-body table code {
@@ -779,18 +816,36 @@
   border-bottom: none;
 }
 
-.learnkit-guide-body tbody tr:hover td {
-  background: var(--background-secondary);
-}
-
 .learnkit-guide-body tbody tr:hover td:first-child {
-  border-top-left-radius: var(--radius-m, 8px);
-  border-bottom-left-radius: var(--radius-m, 8px);
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
 }
 
 .learnkit-guide-body tbody tr:hover td:last-child {
-  border-top-right-radius: var(--radius-m, 8px);
-  border-bottom-right-radius: var(--radius-m, 8px);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+@media (hover: hover) {
+  .learnkit-guide-body tbody tr:hover {
+    background-color: var(--theme-base-10);
+    color: var(--theme-base-95);
+  }
+
+  .learnkit-guide-body tbody tr:hover td {
+    background-color: var(--theme-base-10);
+    border-top-color: var(--theme-base-35);
+    border-bottom-color: var(--theme-base-35);
+    color: var(--theme-base-95);
+  }
+
+  .learnkit-guide-body tbody tr:hover td:first-child {
+    border-left-color: var(--theme-base-35);
+  }
+
+  .learnkit-guide-body tbody tr:hover td:last-child {
+    border-right-color: var(--theme-base-35);
+  }
 }
 
 /* Flag Codes guide page — Obsidian rendering tweaks moved from markdown */
@@ -1866,7 +1921,8 @@ body:not(.is-mobile) .learnkit-guide-body pre button.copy-code-button.learnkit-g
 
 /* When guide layout is inside, remove parent border/padding — guide has its own */
 .learnkit-settings-tab-content:has(.learnkit-guide-layout) {
-  border: none;
+  border: 0.5px solid var(--color-base-35);
+  background-color: var(--color-base-05);
   padding: 0;
   overflow: hidden;
 }
@@ -2350,18 +2406,14 @@ color: var(--color-base-100);
 /* ---- Popover panel ---- */
 
 .learnkit-ss-panel {
-  padding: 0px 6px;
-  max-height: 320px;
-  display: flex;
+  background: var(--color-base-05);
   flex-direction: column;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
-  color: var(--text-normal);
-  border: 0.5px solid var(--color-base-35) !important;
+  max-height: 320px;
+  padding: 4px 6px;
+  display: flex;
   border-radius: var(--radius-md);
-  box-shadow: var(--lk-shadow-popover-md);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .theme-dark .learnkit-ss-panel {
@@ -2374,17 +2426,22 @@ color: var(--color-base-100);
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 0 5px;
+  padding: 2px 0;
 }
 
 .learnkit-ss-search-icon {
   display: inline-flex;
   align-items: center;
-  opacity: 0.45;
+  padding-left: 5px;
+  opacity: 0.75;
 }
 .learnkit-ss-search-icon svg {
   width: 14px;
   height: 14px;
+}
+
+input.learnkit-ss-search-input {
+    background-color: #0000 !important;
 }
 
 .learnkit-ss-search-input {
@@ -2392,7 +2449,7 @@ color: var(--color-base-100);
   border: none;
   outline: none;
   border: none !important;
-  background: transparent;
+  background-color: #0000 !important;
   box-shadow: none;
   color: var(--text-normal);
   font-size: var(--font-ui-small);
@@ -2414,10 +2471,10 @@ color: var(--color-base-100);
 
 .learnkit-ss-search-wrap + .learnkit-ss-listbox::before {
   content: "";
-  display: block;
-  height: 1px;
-  margin: 4px 0 6px;
   background: var(--learnkit-border-color);
+  height: 1px;
+  margin: 0px 0 6px;
+  display: block;
 }
 
 .learnkit-ss-section-title {
@@ -2433,20 +2490,22 @@ color: var(--color-base-100);
 /* ---- Individual option item ---- */
 
 .learnkit-ss-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 8px;
-  margin: 4px 0;
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  border: 0.5px solid transparent;
-  background-color: transparent;
   font-size: var(--font-ui-small);
   color: var(--text-normal);
+  -webkit-user-select: none;
   user-select: none;
+  background-color: #0000;
+  border: .5px solid #0000;
   outline: none;
-  transition: background-color 80ms ease, border-color 80ms ease, color 80ms ease;
+  align-items: center;
+  gap: 8px;
+  margin: 1px 0;
+  max-height: 32px;
+  padding: 8px;
+  transition: background-color 80ms, border-color 80ms, color 80ms;
+  display: flex;
 }
 .learnkit-ss-item:hover,
 .learnkit-ss-item:focus,
@@ -2665,14 +2724,17 @@ color: var(--color-base-100);
   height: 14px;
 }
 
-.learnkit-settings-title-tab-btn.is-active.learnkit-btn-control,
-.learnkit-settings-title-tab-btn.is-active.learnkit-btn-control:hover,
-.learnkit-settings-title-tab-btn.is-active.learnkit-btn-control:focus,
-.learnkit-settings-title-tab-btn.is-active.learnkit-btn-control:hover:not(:disabled):not([disabled])
+.learnkit-settings-title-tab-btn.is-active,
+.learnkit-settings-title-tab-btn.is-active:hover,
+.learnkit-settings-title-tab-btn.is-active:focus,
+.learnkit-settings-title-tab-btn.is-active:hover:not(:disabled):not([disabled])
 {
-    border: 0.5px solid var(--theme-black-95) !important;
-    background: var(--theme-base-95) !important;
-    color: #fff !important;}
+    cursor: not-allowed;
+    transform: none !important;
+    color: var(--theme-base-95) !important;
+    background: var(--theme-base-25) !important;
+    border: 0.5px solid var(--theme-base-45) !important;
+}
 
 
 /* Tab navigation row (reuses the same classes as Obsidian settings tab) */
@@ -2911,6 +2973,19 @@ body.is-phone .learnkit .learnkit-guide-content-inner {
   overflow-y: visible;
 }
 
+/* Mobile: revert floating dock footer to static flow */
+body.is-phone .learnkit .learnkit-guide-footer {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 1.2rem 1.2rem;
+}
+
+body.is-phone .learnkit .learnkit-guide-content-inner {
+  padding-bottom: 24px;
+}
+
 /* Button groups: transparent backgrounds on mobile */
 body.is-phone .learnkit .learnkit-about-buttons {
   background-color: transparent;
@@ -3015,7 +3090,7 @@ body.is-phone .learnkit .learnkit-about-links-row {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 12px 16px;
 }
 
 .learnkit-guide-prev-next-btn {

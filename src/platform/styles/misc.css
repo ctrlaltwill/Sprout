@@ -608,7 +608,7 @@
 .learnkit [data-lk-browser-root='1']:not([data-lk-browser-density='compact']) :is(textarea.lk-browser-textarea, textarea.lk-browser-textarea--editable, textarea.lk-browser-flag-textarea) {
   border: 0.5px solid var(--theme-accent) !important;
   border-radius: var(--radius-md) !important;
-  font-size: 0.8rem !important;
+  font-size: 0.76rem !important;
   background: var(--color-base-00) !important;
 }
 

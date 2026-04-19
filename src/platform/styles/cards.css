@@ -806,7 +806,11 @@ body.is-phone .small-card {
 }
 
 .learnkit .learnkit-coach-switcher-plan-card.is-create .learnkit-coach-switcher-slot-label {
-  color: var(--interactive-accent);
+  color: var(--text-muted);
+}
+
+.learnkit .learnkit-coach-switcher-plan-card.is-create .learnkit-coach-switcher-slot-dot {
+  background: color-mix(in srgb, var(--color-base-40) 70%, transparent);
 }
 
 .learnkit .learnkit-coach-switcher-create-title {

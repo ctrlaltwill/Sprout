@@ -210,12 +210,22 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   cursor: default;
 }
 
+.theme-dark .learnkit .learnkit-btn-timer-display {
+  background: var(--theme-base-95) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-95) !important;
+}
+
 .learnkit .lk-session-timer-group .learnkit-btn-outline-muted:disabled,
 .learnkit .lk-session-timer-group .learnkit-btn-outline-muted[disabled],
 .learnkit .lk-session-timer-group .learnkit-btn-outline-muted:disabled:hover,
 .learnkit .lk-session-timer-group .learnkit-btn-outline-muted[disabled]:hover {
-  cursor: default !important;
+  cursor: not-allowed !important;
   transform: none !important;
+  pointer-events: auto !important;
+  color: var(--theme-base-95) !important;
+  background: var(--theme-base-25) !important;
+  border: 0.5px solid var(--theme-base-45) !important;
 }
 
 .learnkit .lk-session-location-text {

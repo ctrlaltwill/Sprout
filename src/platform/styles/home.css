@@ -136,7 +136,14 @@
 
 /* ---- Primary action button ---- */
 
-.learnkit .lk-home-quick-study-btn,
+.learnkit .lk-home-quick-study-btn {
+  margin-left: auto;
+  font-size: var(--learnkit-font-xs);
+  font-weight: 600;
+  line-height: 1;
+  padding: 9px 14px;
+}
+
 .learnkit .learnkit-btn-accent {
   margin-left: auto;
   border: 0.5px solid var(--theme-black-95) !important;
@@ -151,7 +158,6 @@
   transition: transform 140ms ease;
 }
 
-.learnkit .lk-home-quick-study-btn:hover,
 .learnkit .learnkit-btn-accent:hover {
     border: 0.5px solid var(--theme-black-85) !important;
   border-radius: 8px;
@@ -161,8 +167,6 @@
   box-shadow: none;
 }
 
-.learnkit .lk-home-quick-study-btn:focus-visible,
-.learnkit .lk-home-quick-study-btn:active,
 .learnkit .learnkit-btn-accent:focus-visible,
 .learnkit .learnkit-btn-accent:active {
       border: 0.5px solid var(--theme-black-75) !important;

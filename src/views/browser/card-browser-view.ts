@@ -403,7 +403,6 @@ export class SproutCardBrowserView extends ItemView {
 
     const setActive = (btn: HTMLButtonElement, active: boolean) => {
       btn.setAttribute("aria-pressed", active ? "true" : "false");
-      btn.classList.toggle("learnkit-btn-control", active);
       btn.classList.toggle("learnkit-btn-outline-muted", !active);
       btn.classList.toggle("lk-browser-density-btn-active", active);
     };

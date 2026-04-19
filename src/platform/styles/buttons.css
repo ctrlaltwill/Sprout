@@ -173,6 +173,29 @@
   border-color: var(--color-base-40) !important;
 }
 
+/* ---- When toolbar + accent coexist, let accent win ---- */
+
+.learnkit .learnkit-btn-toolbar.learnkit-btn-accent {
+  background: var(--theme-base-95) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-95) !important;
+}
+
+.learnkit .learnkit-btn-toolbar.learnkit-btn-accent:hover {
+  background: var(--theme-black-95) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-85) !important;
+  transform: translateY(-1px);
+}
+
+.learnkit .learnkit-btn-toolbar.learnkit-btn-accent:focus-visible,
+.learnkit .learnkit-btn-toolbar.learnkit-btn-accent:active {
+  background: var(--theme-black-85) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-75) !important;
+  transform: translateY(0);
+}
+
 .learnkit .learnkit-btn-filter {
   background-color: color-mix(in srgb, var(--color-base-40) 8%, transparent 92%) !important;
   color: var(--text-normal) !important;
@@ -408,6 +431,26 @@
 .theme-dark .learnkit .button-group > :last-child {
   border-top-right-radius: var(--radius-md, var(--radius-md)) !important;
   border-bottom-right-radius: var(--radius-md, var(--radius-md)) !important;
+}
+
+/* Dark theme: let accent win over toolbar defaults */
+.theme-dark .learnkit .learnkit-btn-toolbar.learnkit-btn-accent {
+  background: var(--theme-base-95) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-95) !important;
+}
+.theme-dark .learnkit .learnkit-btn-toolbar.learnkit-btn-accent:hover {
+  background: var(--theme-black-95) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-85) !important;
+  transform: translateY(-1px);
+}
+.theme-dark .learnkit .learnkit-btn-toolbar.learnkit-btn-accent:focus-visible,
+.theme-dark .learnkit .learnkit-btn-toolbar.learnkit-btn-accent:active {
+  background: var(--theme-black-85) !important;
+  color: #fff !important;
+  border: 0.5px solid var(--theme-black-75) !important;
+  transform: translateY(0);
 }
 
 /* ---- Title-strip filter buttons: keep light/dark parity ---- */

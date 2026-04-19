@@ -975,7 +975,7 @@ export class SproutNoteReviewView extends ItemView {
     const strip = document.createElement("div");
     strip.className = coachShellMode
       ? "lk-home-title-strip sprout-coach-title-strip"
-      : "lk-home-title-strip sprout-note-review-title-strip";
+      : "lk-home-title-strip learnkit-note-review-title-strip";
 
     const row = document.createElement("div");
     row.className = "learnkit-inline-sentence w-full flex items-center justify-between gap-[10px] learnkit-note-review-title-row";

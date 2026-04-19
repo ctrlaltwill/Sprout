@@ -9,7 +9,7 @@
 import { Notice, type WorkspaceLeaf } from "obsidian";
 import { LearnKitPluginBase, type Constructor } from "./plugin-base";
 import type { Scope } from "../../views/reviewer/types";
-import type { LearnKitSettingsView } from "../../views/settings/view/settings-view";
+import { LearnKitSettingsView } from "../../views/settings/view/settings-view";
 import {
   VIEW_TYPE_REVIEWER,
   VIEW_TYPE_WIDGET,
@@ -92,21 +92,11 @@ export function WithNavigationMethods<T extends Constructor<LearnKitPluginBase>>
       }
 
       const leaf = this.app.workspace.getLeaf("tab");
+      if (resolvedTargetTab !== "settings") {
+        LearnKitSettingsView.pendingInitialTab = resolvedTargetTab;
+      }
       await leaf.setViewState({ type: VIEW_TYPE_SETTINGS, active: true });
       void this.app.workspace.revealLeaf(leaf);
-
-      // Only navigate if the caller requested a non-default tab.
-      // The initial render() already displays "settings/general" with its
-      // entrance animation — calling navigateToTab again would re-render
-      // the content mid-animation, causing a visible stutter.
-      if (resolvedTargetTab !== "settings") {
-        setTimeout(() => {
-          const view = leaf.view as LearnKitSettingsView | undefined;
-          if (view && typeof view.navigateToTab === "function") {
-            view.navigateToTab(resolvedTargetTab, { reanimateEntrance: false });
-          }
-        }, 50);
-      }
     }
 
     async openExamGeneratorTab(forceNew: boolean = false): Promise<void> {

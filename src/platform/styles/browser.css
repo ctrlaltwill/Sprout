@@ -108,13 +108,20 @@
   white-space: nowrap;
   font-size: var(--font-ui-small) !important;
   padding: 6px 14px !important;
-  min-height: 32px !important;
+  min-height: 34px !important;
   height: 32px !important;
   border-radius: var(--radius-md) !important;
 }
 
-.learnkit .lk-browser-density-btn-active {
-  pointer-events: none;
+.learnkit .lk-browser-density-btn.lk-browser-density-btn-active,
+.learnkit .lk-browser-density-btn.lk-browser-density-btn-active:hover,
+.learnkit .lk-browser-density-btn.lk-browser-density-btn-active:focus-visible,
+.learnkit .lk-browser-density-btn.lk-browser-density-btn-active:active {
+  cursor: not-allowed;
+  transform: none !important;
+  color: var(--theme-base-95);
+  background: var(--theme-base-25) !important;
+  border: 0.5px solid var(--theme-base-45) !important;
 }
 
 /* ---- Compact density overrides ---- */

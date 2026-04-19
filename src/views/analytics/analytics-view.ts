@@ -362,7 +362,6 @@ export class SproutAnalyticsView extends ItemView {
       btn.type = "button";
       btn.className = "learnkit-btn-toolbar inline-flex items-center gap-2 h-8 px-3 text-sm learnkit-analytics-filter-btn";
       btn.classList.toggle("is-active", active);
-      btn.classList.toggle("learnkit-btn-control", active);
       btn.classList.toggle("learnkit-btn-outline-muted", !active);
       btn.setAttribute("aria-pressed", active ? "true" : "false");
       btn.setAttribute("data-tooltip-position", "top");

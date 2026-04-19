@@ -666,7 +666,7 @@ export class SproutExamGeneratorView extends ItemView {
     savedTestsWrap.className = "learnkit-exam-generator-saved-tests-wrap";
 
     const savedTestsBtn = document.createElement("button");
-    savedTestsBtn.className = "learnkit-btn-accent inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn";
+    savedTestsBtn.className = "learnkit-btn-toolbar learnkit-btn-outline-muted inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn";
     savedTestsBtn.type = "button";
     savedTestsBtn.setAttribute("aria-label", this._tx("ui.view.examGenerator.savedTests", "Saved tests"));
     savedTestsBtn.createSpan({ text: this._tx("ui.view.examGenerator.savedTests", "Saved tests") });
@@ -3215,7 +3215,7 @@ export class SproutExamGeneratorView extends ItemView {
     });
 
     const setup = actions.createEl("button", {
-      cls: "learnkit-btn-accent learnkit-btn-accent inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
+      cls: "learnkit-btn-toolbar learnkit-btn-outline-muted inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
       text: this._tx("ui.view.examGenerator.results.backToTests", "Back to tests"),
     });
     setup.setAttribute("aria-label", this._tx("ui.view.examGenerator.results.backToTests", "Back to tests"));
@@ -3337,7 +3337,7 @@ export class SproutExamGeneratorView extends ItemView {
       this._render();
     });
     const setup = actions.createEl("button", {
-      cls: "learnkit-btn-accent learnkit-btn-accent inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
+      cls: "learnkit-btn-toolbar learnkit-btn-outline-muted inline-flex items-center gap-2 learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-saved-tests-btn learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
       text: this._tx("ui.view.examGenerator.results.backToTests", "Back to tests"),
     });
     setup.setAttribute("aria-label", this._tx("ui.view.examGenerator.results.backToTests", "Back to tests"));

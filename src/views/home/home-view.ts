@@ -299,7 +299,7 @@ export class SproutHomeView extends ItemView {
     subtitleRow.classList.add("lk-home-title-subtitle");
 
     const quickStudyBtn = document.createElement("button");
-    quickStudyBtn.className = "lk-home-quick-study-btn learnkit-btn-accent inline-flex items-center gap-2";
+    quickStudyBtn.className = "lk-home-quick-study-btn learnkit-btn-toolbar learnkit-btn-outline-muted inline-flex items-center gap-2";
     quickStudyBtn.type = "button";
     quickStudyBtn.setAttribute("aria-label", tx("ui.home.quickAction.startStudying", "Start studying"));
     quickStudyBtn.setAttribute("data-tooltip-position", "bottom");

@@ -17,7 +17,6 @@ import { AOS_CASCADE_STEP, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_SETTINGS } from "../.
 import { placePopover, setCssProps } from "../../platform/core/ui";
 import { createTitleStripFrame } from "../../platform/core/view-primitives";
 import { SPROUT_HOME_CONTENT_SHELL_CLASS } from "../../platform/core/ui-classes";
-import { refreshAOS } from "../../platform/core/aos-loader";
 import type LearnKitPlugin from "../../main";
 import { LearnKitSettingsTab } from "./settings-tab";
 import {
@@ -39,6 +38,12 @@ import { txCommon } from "../../platform/translations/ui-common";
 import { getPluginDirCandidates } from "../../platform/core/identity";
 
 export class LearnKitSettingsView extends ItemView {
+  /**
+   * Set by `openSettingsTab()` before creating the view so the first
+   * render uses the requested tab instead of defaulting to "settings".
+   */
+  static pendingInitialTab: string | null = null;
+
   plugin: LearnKitPlugin;
 
   private _header: SproutHeader | null = null;
@@ -103,6 +108,11 @@ export class LearnKitSettingsView extends ItemView {
   }
 
   async onOpen() {
+    const pending = LearnKitSettingsView.pendingInitialTab;
+    if (pending) {
+      LearnKitSettingsView.pendingInitialTab = null;
+      this._activeTab = pending;
+    }
     this.render();
     await Promise.resolve();
   }
@@ -249,7 +259,6 @@ export class LearnKitSettingsView extends ItemView {
     for (const [id, btn] of this._titleStripTabBtnEls) {
       const active = id === this._activeTab;
       btn.classList.toggle("is-active", active);
-      btn.classList.toggle("learnkit-btn-control", active);
       btn.classList.toggle("learnkit-btn-outline-muted", !active);
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     }
@@ -357,12 +366,6 @@ export class LearnKitSettingsView extends ItemView {
     if (animationsEnabled) this._animateTopLevelEntrance();
 
     this._renderActiveTabContent();
-
-    if (animationsEnabled) {
-      requestAnimationFrame(() => {
-        refreshAOS();
-      });
-    }
   }
 
   // ── Tab switching ───────────────────────────────────────────
@@ -973,13 +976,14 @@ export class LearnKitSettingsView extends ItemView {
           const show = () => {
             const navRect = nav.getBoundingClientRect();
             const triggerRect = btn.getBoundingClientRect();
-            const align: "left" | "right" = triggerRect.left + 224 > (navRect.right - SAFE_MARGIN) ? "right" : "left";
+            const dropdownW = Math.max(224, dropdown.scrollWidth);
+            const align: "left" | "right" = triggerRect.left + dropdownW > (navRect.right - SAFE_MARGIN) ? "right" : "left";
 
             placePopover({
               trigger: btn,
               panel: dropdown,
               popoverEl: dropdown,
-              width: 224,
+              setWidth: false,
               align,
               dropUp: false,
               gap: 6,
@@ -1462,7 +1466,7 @@ export class LearnKitSettingsView extends ItemView {
   ): HTMLAnchorElement | HTMLButtonElement {
     const btn = document.createElement(tagName);
     const variantClass = styleVariant === "active"
-      ? "is-active learnkit-btn-control"
+      ? "is-active"
       : styleVariant === "accent"
         ? "learnkit-btn-accent"
         : "learnkit-btn-outline-muted";

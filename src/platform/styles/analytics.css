@@ -523,6 +523,17 @@ body.is-mobile .learnkit .learnkit-analytics-title-strip .learnkit-analytics-tit
   text-align: center;
 }
 
+.learnkit .learnkit-analytics-filter-btn.is-active,
+.learnkit .learnkit-analytics-filter-btn.is-active:hover,
+.learnkit .learnkit-analytics-filter-btn.is-active:focus-visible,
+.learnkit .learnkit-analytics-filter-btn.is-active:active {
+  cursor: not-allowed;
+  transform: none !important;
+  color: var(--theme-base-95) !important;
+  background: var(--theme-base-25) !important;
+  border: 0.5px solid var(--theme-base-45) !important;
+}
+
 body.is-mobile .learnkit .learnkit-analytics-title-strip .learnkit-analytics-filter-buttons {
   width: 100%;
   display: grid;
