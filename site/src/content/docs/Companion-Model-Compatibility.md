@@ -2,6 +2,9 @@
 title: "Companion Model Compatibility"
 ---
 
+<style>
+  table { font-size: 0.7rem !important; }
+</style>
 
 This table tracks which Companion features work with each provider and model. Only models with reported test data are listed.
 
