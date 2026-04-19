@@ -9,7 +9,7 @@
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
 > [!IMPORTANT]
-> **Latest release: 1.3.0** — all core learning features are now in place. This release adds agentic Companion editing, quick flashcard shorthand, and external TTS support. I am now focusing on stability and hotfixes. New feature requests are welcome but are lower priority. If you run into a Companion AI issue (non-TTS), please [file a Companion AI issue report](https://github.com/ctrlaltwill/learnkit/issues/new?template=ai_issue.yml) so we can track problematic models and providers.
+> **Latest release: 1.3.0** — all core learning features are now in place. This release adds agentic Companion editing, quick flashcard shorthand, and external TTS support. I am now focusing on stability and hotfixes. New feature requests are welcome but are lower priority. If you run into a Companion AI issue, please [file an AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yaml) so we can track problematic models and providers.
 >
 > We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
 

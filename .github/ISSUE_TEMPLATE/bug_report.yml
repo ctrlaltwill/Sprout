@@ -23,8 +23,8 @@ body:
       label: Steps to Reproduce
       description: How can we reproduce this issue?
       placeholder: |
-        1. Open LearnKit reviewer
-        2. Click on '...'
+        1. Open LearnKit chat
+        2. Send a message saying '...'
         3. See error
     validations:
       required: true
