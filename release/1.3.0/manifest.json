@@ -1,0 +1,10 @@
+{
+  "id": "learnkit",
+  "name": "LearnKit — Flashcards, Spaced Repetition & Study Tools",
+  "version": "1.3.0",
+  "minAppVersion": "1.5.0",
+  "description": "A full-featured spaced repetition system for Obsidian. It turns your vault into a memory layer where notes, review, and retention work together.",
+  "author": "William Guy",
+  "authorUrl": "https://github.com/ctrlaltwill",
+  "isDesktopOnly": false
+}

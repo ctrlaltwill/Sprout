@@ -9,6 +9,8 @@ Host platform APIs (for example, Obsidian) are not redistributed by this plugin 
 
 | Package | Repository | Version (lockfile) | License | Purpose |
 | --- | --- | --- | --- | --- |
+| @codemirror/state | [codemirror/state](https://github.com/codemirror/state) | 6.5.0 | MIT | Editor state model for Companion edit proposal rendering |
+| @codemirror/view | [codemirror/view](https://github.com/codemirror/view) | 6.38.6 | MIT | Editor view and decorations for Companion edit proposal rendering |
 | aos | [michalsnik/aos](https://github.com/michalsnik/aos) | 2.3.4 | MIT | Scroll-based animations in LearnKit views |
 | basecoat-css | [hansottowirtz/basecoat-css](https://github.com/hansottowirtz/basecoat-css) | 0.3.11 | MIT | Baseline CSS primitives for plugin UI |
 | class-variance-authority | [joe-bell/cva](https://github.com/joe-bell/cva) | 0.7.1 | Apache-2.0 | Variant-based class composition for shared components |
@@ -29,6 +31,7 @@ Host platform APIs (for example, Obsidian) are not redistributed by this plugin 
 
 | Package | Repository | Version (lockfile) | License | Purpose |
 | --- | --- | --- | --- | --- |
+| @lucide/astro | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) | 1.7.0 | ISC | Icon components used across the LearnKit documentation site |
 | astro | [withastro/astro](https://github.com/withastro/astro) | 6.1.1 | MIT | Static site generator for LearnKit documentation |
 | @astrojs/starlight | [withastro/starlight](https://github.com/withastro/starlight) | 0.38.2 | MIT | Documentation theme and navigation framework |
 

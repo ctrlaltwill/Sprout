@@ -49,7 +49,7 @@ LearnKit is easiest to understand once you use it. Install it, create a flashcar
 
 💡 Need help in-app? Open the built-in LearnKit guide inside Obsidian.
 
-🌐 Want to contribute or help translate LearnKit? See the **[Contributing Guide →](CONTRIBUTING.md)**
+🌐 Want to contribute translations or Companion compatibility test results? See the **[Contributing Guide →](CONTRIBUTING.md)**
 
 ## Key features
 
@@ -109,9 +109,7 @@ See the [full license](LICENSE.md) for more details.
 ### Credits
 FSRS scheduling in LearnKit is powered by FSRS-6 via [open-spaced-repetition/ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs).
 
-This project also uses Circle Flags assets from [HatScripts/circle-flags](https://github.com/HatScripts/circle-flags), licensed under MIT.
-
-See [here](NOTICES.md) for additional third-party attributions and license notices.
+See [NOTICES.md](NOTICES.md) for the complete list of third-party dependencies, bundled assets, and license notices.
 
 ### Our Commitment
 

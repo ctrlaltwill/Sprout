@@ -2,9 +2,42 @@
 
 Thanks for helping to improve LearnKit.
 
-This document covers the workflow for translating the plugin into new languages.
+This document covers two common contribution paths:
 
-## How translation works
+- translating the plugin into new languages
+- updating the Companion model compatibility table with tested provider and model results
+
+## Companion compatibility table
+
+The Companion compatibility page is community-maintained and should reflect confirmed behavior in real LearnKit use.
+
+Edit `site/src/content/docs/Companion-Model-Compatibility.md` when:
+
+- you test a provider or model that is not listed yet
+- a listed model changes behavior after a LearnKit update or provider-side change
+- you confirm an important caveat that should help users choose a model, especially around attachments or intermittent failures
+
+If the result looks like a product bug rather than a simple compatibility note, also file the [Companion AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yml) so it can be tracked separately.
+
+### AI table workflow
+
+1. Edit `site/src/content/docs/Companion-Model-Compatibility.md`.
+2. Add a new row or update an existing row for the exact provider and model ID you tested.
+3. Mark each feature with `✅`, `❌`, or `Varies` if the provider route is not stable.
+4. Keep the comment short but specific. Note the main caveat, such as attachment limits, image support, or repeatable API errors.
+5. Open a pull request that includes the LearnKit version, provider, exact model ID, tested features, and any attachment types you tried.
+
+### Suggested AI test pass
+
+1. **Chat** — ask Companion to review or explain the active note and confirm it returns a normal chat response.
+2. **Edit** — ask Companion to make a concrete change and confirm the proposed edit can be applied back into the note.
+3. **Generate Flashcards** — generate flashcards from a note and confirm the drafted cards appear and can be inserted.
+4. **Generate Tests** — generate a short test, complete it, and confirm grading works as expected.
+5. **File Attachments** — if supported by your setup, test a note with embedded or linked attachments and record what file types worked.
+
+## Translation contributions
+
+### How translation works
 
 UI strings are wrapped with `t(locale, "token.key", "English fallback")`. At build time, JSON locale files from `src/platform/translations/locales/` are bundled into the plugin. If a token is missing from a locale file the English fallback is used automatically, so partial translations work fine.
 

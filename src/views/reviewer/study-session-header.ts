@@ -73,6 +73,7 @@ export function renderStudySessionHeader(
   // Timer and controls
   const timerContainer = document.createElement("div");
   timerContainer.className = "flex items-center gap-3";
+  timerContainer.setAttribute("data-study-session-timer-row", "true");
 
   // Standalone timer controls (display, play, pause)
   const timerGroup = document.createElement("div");

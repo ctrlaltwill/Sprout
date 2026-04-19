@@ -347,6 +347,14 @@ export class SproutReviewerView extends ItemView {
     this._titleTimerHostEl = timerHost;
   }
 
+  private _restoreStudySessionTimerRow(root: ParentNode): void {
+    const studySessionHeader = root.querySelector<HTMLElement>("[data-study-session-header]");
+    const sessionHeaderLeft = studySessionHeader?.querySelector<HTMLElement>(".lk-session-header-left") ?? null;
+    const timerRow = root.querySelector<HTMLElement>("[data-study-session-timer-row]");
+    if (!sessionHeaderLeft || !timerRow || timerRow.parentElement === sessionHeaderLeft) return;
+    sessionHeaderLeft.appendChild(timerRow);
+  }
+
   private resetTiming() {
     this._timing = { stamp: 0, cardId: "", startedAt: 0 };
   }
@@ -2072,6 +2080,7 @@ export class SproutReviewerView extends ItemView {
     const suppressEntranceAos = this._suppressEntranceAosOnce;
     this._suppressEntranceAosOnce = false;
     const coachShellMode = this._returnToCoach || this._isCoachSession;
+    this._restoreStudySessionTimerRow(root);
     const preservedCoachStrip = coachShellMode
       ? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.learnkit-coach-title-strip")
       : null;
@@ -2336,7 +2345,7 @@ export class SproutReviewerView extends ItemView {
     if (activeCard && !this.showAnswer) this._speakCardFront(activeCard);
 
     const renderedSessionHeader = queryFirst<HTMLElement>(sessionColumn ?? root, "[data-study-session-header]");
-    const renderedSessionTimerRow = renderedSessionHeader?.querySelector<HTMLElement>(".lk-session-header-left > div:nth-child(2)") ?? null;
+    const renderedSessionTimerRow = renderedSessionHeader?.querySelector<HTMLElement>("[data-study-session-timer-row]") ?? null;
     const titleTimerHost = this._titleTimerHostEl as HTMLElement | null;
     if (titleTimerHost) {
       while (titleTimerHost.firstChild) titleTimerHost.removeChild(titleTimerHost.firstChild);
