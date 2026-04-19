@@ -77,10 +77,10 @@ body:
     id: companion-area
     attributes:
       label: Where did this happen?
-      description: Which Companion area was affected?
+      description: Which interface had the issue?
       options:
-        - Companion Chat
-        - Companion Tests
+        - Chat Interface
+        - Test Interface
         - Both
         - Not sure
     validations:
@@ -100,27 +100,9 @@ body:
         - Grade tests
         - Use linked notes
         - Use file attachments
-        - Stream a reply
         - Other / Unsure
     validations:
       required: true
-
-  - type: checkboxes
-    id: affected-features
-    attributes:
-      label: What is affected?
-      description: Select everything that applies.
-      options:
-        - label: Chat responses
-        - label: Note review
-        - label: Note editing
-        - label: Flashcard generation
-        - label: Test generation
-        - label: Test grading
-        - label: Linked notes
-        - label: File attachments
-        - label: Streaming replies
-        - label: Other / Unsure
 
   - type: dropdown
     id: companion-provider
