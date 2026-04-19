@@ -1,7 +1,6 @@
 name: TTS Issue Report
 description: Report an issue with Text-to-Speech features
 title: "[TTS]: "
-labels: ["ai"]
 body:
   - type: markdown
     attributes:

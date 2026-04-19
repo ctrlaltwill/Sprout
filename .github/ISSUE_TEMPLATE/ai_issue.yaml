@@ -1,7 +1,6 @@
 name: Companion AI Issue Report
 description: Report an issue with Companion AI features (non-TTS)
 title: "[Companion AI]: "
-labels: ["ai"]
 body:
   - type: markdown
     attributes:
