@@ -1,12 +1,13 @@
-name: AI Issue Report
-description: Report an issue with Companion AI or Text-to-Speech
-title: "[AI]: "
+name: Companion AI Issue Report
+description: Report an issue with Companion AI features (non-TTS)
+title: "[Companion AI]: "
 labels: ["ai"]
 body:
   - type: markdown
     attributes:
       value: |
-        Use this form to report issues with AI-powered features — Companion or Text-to-Speech. This helps us identify problematic models and providers so we can fix them or document known limitations.
+        Use this form to report issues with Companion AI features.
+        For Text-to-Speech issues, please use the dedicated TTS issue form.
 
   - type: input
     id: plugin-version
@@ -27,61 +28,49 @@ body:
       required: true
 
   - type: dropdown
-    id: feature
-    attributes:
-      label: Feature
-      description: Which AI feature is the issue with?
-      options:
-        - Companion
-        - Text-to-Speech
-    validations:
-      required: true
-
-  - type: dropdown
     id: companion-location
     attributes:
-      label: Companion — Location
-      description: If Companion, where did the issue occur?
+      label: Where Did This Happen?
+      description: Which Companion area had the issue?
       options:
-        - N/A (TTS issue)
         - Tests
-        - Chat interface (widget / popup)
+        - Chat Interface (Widget / Popup)
     validations:
       required: true
 
   - type: dropdown
     id: companion-test-action
     attributes:
-      label: Companion — Test Action
-      description: If the issue is in Tests, what were you doing?
+      label: Tests Action
+      description: If this happened in Tests, what were you doing?
       options:
         - N/A
-        - Generating tests
-        - Grading tests
+        - Generating Tests
+        - Grading Tests
     validations:
       required: false
 
   - type: dropdown
     id: companion-chat-action
     attributes:
-      label: Companion — Chat Action
-      description: If the issue is in the Chat interface, what were you doing?
+      label: Chat Action
+      description: If this happened in Chat, what were you doing?
       options:
         - N/A
-        - General chat
-        - Editing your notes
-        - Reviewing your notes
-        - Generating flashcards
+        - General Chat
+        - Editing Notes
+        - Reviewing Notes
+        - Generating Flashcards
+        - Generating Tests
     validations:
       required: false
 
   - type: dropdown
     id: companion-provider
     attributes:
-      label: Companion — Provider
-      description: If Companion, which provider were you using?
+      label: AI Provider
+      description: Which provider were you using in Companion?
       options:
-        - N/A (TTS issue)
         - OpenAI
         - Anthropic
         - DeepSeek
@@ -96,33 +85,9 @@ body:
   - type: input
     id: companion-model
     attributes:
-      label: Companion — Model
-      description: If Companion, which model were you using? (e.g. gpt-4o, claude-sonnet-4-20250514, gemini-2.0-flash)
+      label: Model Name
+      description: Which model were you using? (for example: gpt-4o, claude-sonnet-4-20250514, gemini-2.0-flash)
       placeholder: "e.g., gpt-4o"
-    validations:
-      required: false
-
-  - type: dropdown
-    id: tts-provider
-    attributes:
-      label: TTS — Provider
-      description: If Text-to-Speech, which provider were you using?
-      options:
-        - N/A (Companion issue)
-        - OpenAI
-        - ElevenLabs
-        - Google Cloud
-        - System (Web Speech API)
-        - Custom
-    validations:
-      required: false
-
-  - type: input
-    id: tts-model
-    attributes:
-      label: TTS — Model
-      description: If Text-to-Speech, which model or voice were you using? (e.g. GPT-4o Mini TTS, Multilingual v2)
-      placeholder: "e.g., GPT-4o Mini TTS"
     validations:
       required: false
 
