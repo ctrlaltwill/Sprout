@@ -1,0 +1,156 @@
+name: AI Issue Report
+description: Report an issue with Companion AI or Text-to-Speech
+title: "[AI]: "
+labels: ["ai"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to report issues with AI-powered features — Companion or Text-to-Speech. This helps us identify problematic models and providers so we can fix them or document known limitations.
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: LearnKit Version
+      description: What version of LearnKit are you using?
+      placeholder: "e.g., 1.3.0"
+    validations:
+      required: true
+
+  - type: input
+    id: obsidian-version
+    attributes:
+      label: Obsidian Version
+      description: What version of Obsidian are you using?
+      placeholder: "e.g., 1.8.9"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature
+      description: Which AI feature is the issue with?
+      options:
+        - Companion
+        - Text-to-Speech
+    validations:
+      required: true
+
+  - type: dropdown
+    id: companion-location
+    attributes:
+      label: Companion — Location
+      description: If Companion, where did the issue occur?
+      options:
+        - N/A (TTS issue)
+        - Tests
+        - Chat interface (widget / popup)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: companion-test-action
+    attributes:
+      label: Companion — Test Action
+      description: If the issue is in Tests, what were you doing?
+      options:
+        - N/A
+        - Generating tests
+        - Grading tests
+    validations:
+      required: false
+
+  - type: dropdown
+    id: companion-chat-action
+    attributes:
+      label: Companion — Chat Action
+      description: If the issue is in the Chat interface, what were you doing?
+      options:
+        - N/A
+        - General chat
+        - Editing your notes
+        - Reviewing your notes
+        - Generating flashcards
+    validations:
+      required: false
+
+  - type: dropdown
+    id: companion-provider
+    attributes:
+      label: Companion — Provider
+      description: If Companion, which provider were you using?
+      options:
+        - N/A (TTS issue)
+        - OpenAI
+        - Anthropic
+        - DeepSeek
+        - xAI (Grok)
+        - Google (Gemini)
+        - Perplexity
+        - OpenRouter
+        - Custom
+    validations:
+      required: false
+
+  - type: input
+    id: companion-model
+    attributes:
+      label: Companion — Model
+      description: If Companion, which model were you using? (e.g. gpt-4o, claude-sonnet-4-20250514, gemini-2.0-flash)
+      placeholder: "e.g., gpt-4o"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: tts-provider
+    attributes:
+      label: TTS — Provider
+      description: If Text-to-Speech, which provider were you using?
+      options:
+        - N/A (Companion issue)
+        - OpenAI
+        - ElevenLabs
+        - Google Cloud
+        - System (Web Speech API)
+        - Custom
+    validations:
+      required: false
+
+  - type: input
+    id: tts-model
+    attributes:
+      label: TTS — Model
+      description: If Text-to-Speech, which model or voice were you using? (e.g. GPT-4o Mini TTS, Multilingual v2)
+      placeholder: "e.g., GPT-4o Mini TTS"
+    validations:
+      required: false
+
+  - type: input
+    id: error-message
+    attributes:
+      label: Error Message (if any)
+      description: Paste any specific error codes or messages you saw.
+      placeholder: "e.g., 400 Bad Request, 429 Rate Limit, context length exceeded"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe what you were doing, what went wrong, and how it happened. Include what you expected vs what actually occurred.
+      placeholder: |
+        I was using Companion with Claude to generate flashcards from a long note.
+        After submitting, I got a 400 error. The note is about 5,000 words.
+        I expected flashcards to be generated but instead saw an error banner.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Screenshots, console errors, or anything else that might help.
+    validations:
+      required: false

@@ -46,7 +46,7 @@ The `Companion sources` section controls what extra material Ask, Review, and Ed
 | Include linked attachments | Sends linked non-markdown files |
 | Custom instructions | Adds your own persistent prompt rules for Companion |
 
-Attachment-heavy workflows depend on the selected model. Some cheaper or free models may reject attachments entirely.
+Attachment-heavy workflows depend on the selected model. Some cheaper or free models may reject attachments entirely. See [Companion Model Compatibility](../Companion-Model-Compatibility) for a breakdown by model.
 
 ## Flashcard generation
 

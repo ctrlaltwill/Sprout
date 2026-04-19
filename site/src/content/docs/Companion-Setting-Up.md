@@ -22,6 +22,8 @@ In the same tab:
 
 For a low-friction start, use a reliable text model first and add image-capable models later only if you need attachment or image workflows.
 
+See [Companion Model Compatibility](../Companion-Model-Compatibility) for a community-maintained table of what works on each model.
+
 ## 3. Save your API key
 
 Companion stores provider keys locally in:

@@ -9,7 +9,9 @@
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
 > [!IMPORTANT]
-> **Latest release: 1.2.9** — internationalisation overhaul preparing LearnKit for community translation. If you are updating from a version before 1.2.3, review the [1.2.3 migration notes](release/1.2.3/RELEASE_NOTES.md#important-plugin-id-migration) first because the plugin ID changed in that release.
+> **Latest release: 1.3.0** — all core learning features are now in place. This model adds in agentic Companion editing, quick notes We are focusing on stability and hotfixes. New feature requests are welcome but are lower priority. If you run into an AI-related issue, please [file an AI issue report](https://github.com/ctrlaltwill/learnkit/issues/new?template=ai_issue.yml) so we can track problematic models and providers.
+>
+> We maintain a [Companion Model Compatibility](https://learnkit.wiki/companion-model-compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
 
 LearnKit helps you remember what you write. It brings flashcards, note review, tests, and AI-assisted study tools into Obsidian, so your vault becomes a place to learn, not just store information.
 
@@ -65,9 +67,10 @@ LearnKit is easiest to understand once you use it. Install it, create a flashcar
 
 Companion is LearnKit's built-in AI study assistant for working directly with the notes you already have.
 
-- **Answer questions** about what you are reading.
-- **Generate flashcards and tests** from note content.
-- **Review notes** and surface actionable feedback.
+- **Ask anything** — get instant answers grounded in the note you're reading.
+- **Generate flashcards and tests** — turn any note into study-ready material in seconds.
+- **Review and improve** — get targeted feedback that makes your notes clearer and more complete.
+- **Edit with AI** — Companion can rewrite, restructure, and refine your notes for you, right where you work.
 
 Turn notes into study-ready material without leaving Obsidian.
 
@@ -89,7 +92,7 @@ If you are deciding whether LearnKit fits your workflow, start here.
 - **Can I use LearnKit with my existing notes?** Yes. LearnKit is designed to work with the notes you already have in Obsidian, so you can turn existing material into flashcards, reviews, and tests instead of starting from scratch.
 - **Does it work with Anki?** Yes. LearnKit supports Anki import and export for decks, media, and scheduling-related data where supported. Image Occlusion flashcards are currently skipped on import and are not exported.
 - **Does it work on mobile?** Yes. LearnKit is not desktop-only, though some workflows may feel better on larger screens. Check the docs for current platform notes and limitations.
-- **What is planned for Companion?** Custom skills and note editing are planned for future updates.
+- **What is planned for Companion?** Companion now supports agentic note editing alongside chat, flashcard generation, and test generation. Custom skills are planned for future updates.
 - **Do I need AI to use LearnKit?** No. AI is an optional layer in LearnKit, not a requirement. You can use the main study workflow without connecting any model provider.
 - **Is LearnKit free?** Yes. LearnKit itself is free and open source. Companion does not add a subscription layer, but external model providers may charge depending on the API you use.
 - **How does Companion work?** Companion uses your own API key, so there are no subscriptions or markups from LearnKit. It works with providers including Google, OpenRouter, Anthropic, OpenAI, and Perplexity.

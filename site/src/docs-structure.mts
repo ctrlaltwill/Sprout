@@ -91,6 +91,7 @@ export const docsSidebarTree: DocsGroup[] = [
       { page: "Companion-Configuration" },
       { page: "Companion-Setting-Up" },
       { page: "Companion-Usage" },
+      { page: "Companion-Model-Compatibility" },
       { page: "Guide-for-Free-Usage" },
     ],
   },

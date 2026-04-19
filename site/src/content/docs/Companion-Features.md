@@ -26,6 +26,7 @@ Both entry points open the same content-aware chat, where you can switch between
 
 - [Companion Setting Up](../Companion-Setting-Up) for first-time setup
 - [Companion Configuration](../Companion-Configuration) for all settings
+- [Companion Model Compatibility](../Companion-Model-Compatibility) for feature support by model
 - [Guide for Free Usage](../Guide-for-Free-Usage) for low-cost model choices
 
 ## Then use it
