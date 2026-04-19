@@ -38,6 +38,7 @@ function convertDocsLinksForObsidianGuide(markdown: string): string {
 const PREFERRED_GUIDE_FILES = [
   "What-LearnKit-Is.md",
   "Getting-Started.md",
+  "First-Review-in-5-Minutes.md",
   "Installation.md",
   "Syncing.md",
   "Import-From-Anki.md",
@@ -47,6 +48,7 @@ const PREFERRED_GUIDE_FILES = [
   "Flashcard-Formatting.md",
   "Companion-Configuration.md",
   "Companion-Features.md",
+  "Companion-Model-Compatibility.md",
   "Guide-for-Free-Usage.md",
   "Companion-Setting-Up.md",
   "Companion-Usage.md",
@@ -89,69 +91,29 @@ const PREFERRED_GUIDE_FILES = [
 export const GUIDE_CATEGORIES: GuideCategory[] = [
   { key: "home", label: tx("ui.guide.categories.home", "Home"), icon: "house", sections: [{ pageKeys: ["What-LearnKit-Is"] }] },
   {
-    key: "getting-started",
-    label: tx("ui.guide.categories.gettingStarted", "Getting Started"),
-    icon: "rocket",
-    sections: [{ pageKeys: ["Getting-Started", "Installation", "Syncing", "Import-From-Anki"] }],
-  },
-  {
-    key: "study-review",
-    label: tx("ui.guide.categories.studyReview", "Study & Review"),
-    icon: "star",
-    sections: [
-      {
-        title: tx("ui.guide.sections.headerNavigation", "Header Navigation"),
-        pageKeys: ["Coach", "FlStashcards", "Notes", "Tests"],
-      },
-      {
-        title: tx("ui.guide.sections.reviewFlow", "Review Flow"),
-        pageKeys: ["Study-Sessions", "Grading", "Scheduling", "Burying-Flashcards", "Suspending-Flashcards"],
-      },
-      { title: tx("ui.guide.sections.scope", "Scope"), pageKeys: ["Widget"] },
-    ],
+    key: "companion",
+    label: tx("ui.guide.categories.companion", "Companion"),
+    icon: "sparkles",
+    sections: [{ pageKeys: ["Companion-Configuration", "Companion-Features", "Companion-Model-Compatibility", "Companion-Setting-Up", "Companion-Usage", "Guide-for-Free-Usage"] }],
   },
   {
     key: "cards",
     label: tx("ui.guide.categories.cards", "Flashcards"),
     icon: "square-stack",
     sections: [
-      { pageKeys: ["Flashcards", "Creating-Flashcards", "Editing-Flashcards", "Flashcard-Formatting", "Decks-&-Organisation"] },
+      { pageKeys: ["Creating-Flashcards", "Decks-&-Organisation", "Editing-Flashcards", "Flashcard-Formatting", "Flashcards"] },
       {
         title: tx("ui.guide.sections.cardTypes", "Flashcard Types"),
         pageKeys: ["Basic-&-Reversed-Flashcards", "Cloze-Flashcards", "Image-Occlusion", "Multiple-Choice-Questions", "Ordered-Questions"],
       },
-      { title: tx("ui.guide.sections.flags", "Flags"), pageKeys: ["Flags", "Flag-Codes"] },
+      { title: tx("ui.guide.sections.flags", "Flags"), pageKeys: ["Flag-Codes", "Flags"] },
     ],
   },
   {
-    key: "tools",
-    label: tx("ui.guide.categories.tools", "Tools"),
-    icon: "table-2",
-    sections: [
-      { title: tx("ui.guide.sections.library", "Library"), pageKeys: ["Flashcard-Library"] },
-      { title: tx("ui.guide.sections.analytics", "Analytics"), pageKeys: ["Analytics", "Charts"] },
-    ],
-  },
-  {
-    key: "companion",
-    label: tx("ui.guide.categories.companion", "Companion"),
-    icon: "sparkles",
-    sections: [{ pageKeys: ["Companion-Features", "Companion-Configuration", "Companion-Setting-Up", "Companion-Usage", "Guide-for-Free-Usage"] }],
-  },
-  {
-    key: "reading-audio",
-    label: tx("ui.guide.categories.readingAudio", "Reading & Audio"),
-    icon: "book-open",
-    sections: [
-      { title: tx("ui.guide.sections.readingView", "Reading View"), pageKeys: ["Reading-View", "Reading-View-Styles", "Custom-Reading-Styles"] },
-      { title: tx("ui.guide.sections.audio", "Audio"), pageKeys: ["Text-to-Speech", "Language-Settings"] },
-    ],
-  },
-  {
-    key: "settings",
-    label: tx("ui.guide.categories.settings", "Settings"),
-    icon: "settings",
-    sections: [{ pageKeys: ["Settings-Explained", "Settings", "Reminders", "Keyboard-Shortcuts", "Custom-Delimiters", "Gatekeeper"] }],
+    key: "getting-started",
+    label: tx("ui.guide.categories.gettingStarted", "Getting Started"),
+    icon: "rocket",
+    sections: [{ pageKeys: ["First-Review-in-5-Minutes", "Getting-Started", "Import-From-Anki", "Installation", "Syncing"] }],
   },
   {
     key: "maintenance",
@@ -166,10 +128,50 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
     sections: [{ pageKeys: ["AI-Usage-Policy"] }],
   },
   {
+    key: "reading-audio",
+    label: tx("ui.guide.categories.readingAudio", "Reading & Audio"),
+    icon: "book-open",
+    sections: [
+      { title: tx("ui.guide.sections.audio", "Audio"), pageKeys: ["Language-Settings", "Text-to-Speech"] },
+      { title: tx("ui.guide.sections.readingView", "Reading View"), pageKeys: ["Custom-Reading-Styles", "Reading-View", "Reading-View-Styles"] },
+    ],
+  },
+  {
     key: "reference",
     label: tx("ui.guide.categories.reference", "Reference"),
     icon: "library",
     sections: [{ pageKeys: ["Support-LearnKit"] }],
+  },
+  {
+    key: "settings",
+    label: tx("ui.guide.categories.settings", "Settings"),
+    icon: "settings",
+    sections: [{ pageKeys: ["Custom-Delimiters", "Gatekeeper", "Keyboard-Shortcuts", "Reminders", "Settings", "Settings-Explained"] }],
+  },
+  {
+    key: "study-review",
+    label: tx("ui.guide.categories.studyReview", "Study & Review"),
+    icon: "star",
+    sections: [
+      {
+        title: tx("ui.guide.sections.headerNavigation", "Header Navigation"),
+        pageKeys: ["Coach", "Flashcards", "Notes", "Tests"],
+      },
+      {
+        title: tx("ui.guide.sections.reviewFlow", "Review Flow"),
+        pageKeys: ["Burying-Flashcards", "Grading", "Scheduling", "Study-Sessions", "Suspending-Flashcards"],
+      },
+      { title: tx("ui.guide.sections.scope", "Scope"), pageKeys: ["Widget"] },
+    ],
+  },
+  {
+    key: "tools",
+    label: tx("ui.guide.categories.tools", "Tools"),
+    icon: "table-2",
+    sections: [
+      { title: tx("ui.guide.sections.analytics", "Analytics"), pageKeys: ["Analytics", "Charts"] },
+      { title: tx("ui.guide.sections.library", "Library"), pageKeys: ["Flashcard-Library"] },
+    ],
   },
 ];
 
@@ -198,6 +200,8 @@ const GUIDE_LABEL_MAP: Record<string, string> = {
   Reminders: "Reminders",
   Gatekeeper: "Gatekeeper",
   "Flag-Codes": "Flag Codes",
+  "Companion-Model-Compatibility": "Companion Model Compatibility",
+  "First-Review-in-5-Minutes": "First Review in 5 Minutes",
 };
 
 const GUIDE_ICON_MAP: Record<string, string> = {
@@ -249,6 +253,8 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   "Support-LearnKit": "book-open-text",
   Flags: "flag",
   "Flag-Codes": "list",
+  "Companion-Model-Compatibility": "git-compare-arrows",
+  "First-Review-in-5-Minutes": "timer",
 };
 
 export async function loadGuidePages(app: App, pluginDir?: string): Promise<GuidePage[]> {
