@@ -1,13 +1,44 @@
-name: Companion AI Issue Report
-description: Report an issue with Companion AI features (non-TTS)
+name: Companion AI Issue
+description: Report a bug with Companion chat or Companion tests
 title: "[Companion AI]: "
 labels: ["bug", "ai"]
 body:
   - type: markdown
     attributes:
       value: |
-        Use this form to report issues with Companion AI features.
-        For Text-to-Speech issues, please use the dedicated TTS issue form.
+        Thanks for reporting a Companion AI issue.
+        Please include as much detail as you can about where the problem happened, which provider/model you used, and what you expected to happen.
+
+  - type: textarea
+    id: issue-summary
+    attributes:
+      label: What isn't working?
+      description: Give a short description of the problem.
+      placeholder: "Example: Companion chat works, but generating tests fails with a 400 error when I use attachments."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Tell us how to reproduce the issue.
+      placeholder: |
+        1. Open Companion
+        2. Select provider/model
+        3. Ask it to ...
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen instead?
+      placeholder: "Example: The response should have streamed normally and returned flashcards."
+    validations:
+      required: true
 
   - type: input
     id: plugin-version
@@ -28,42 +59,68 @@ body:
       required: true
 
   - type: dropdown
-    id: companion-location
+    id: os
     attributes:
-      label: Where Did This Happen?
-      description: Which Companion area had the issue?
+      label: Operating System
+      description: What operating system are you using?
       options:
-        - Tests
-        - Chat Interface (Widget / Popup)
+        - macOS
+        - Windows
+        - Linux
+        - iOS
+        - Android
+        - Other / Unsure
     validations:
       required: true
 
   - type: dropdown
-    id: companion-test-action
+    id: companion-area
     attributes:
-      label: Tests Action
-      description: If this happened in Tests, what were you doing?
+      label: Where did this happen?
+      description: Which Companion area was affected?
       options:
-        - N/A
-        - Generating Tests
-        - Grading Tests
+        - Companion Chat
+        - Companion Tests
+        - Both
+        - Not sure
     validations:
-      required: false
+      required: true
 
   - type: dropdown
-    id: companion-chat-action
+    id: workflow
     attributes:
-      label: Chat Action
-      description: If this happened in Chat, what were you doing?
+      label: What were you trying to do?
+      description: Pick the closest workflow.
       options:
-        - N/A
-        - General Chat
-        - Editing Notes
-        - Reviewing Notes
-        - Generating Flashcards
-        - Generating Tests
+        - General chat
+        - Review a note
+        - Edit a note
+        - Generate flashcards
+        - Generate tests
+        - Grade tests
+        - Use linked notes
+        - Use file attachments
+        - Stream a reply
+        - Other / Unsure
     validations:
-      required: false
+      required: true
+
+  - type: checkboxes
+    id: affected-features
+    attributes:
+      label: What is affected?
+      description: Select everything that applies.
+      options:
+        - label: Chat responses
+        - label: Note review
+        - label: Note editing
+        - label: Flashcard generation
+        - label: Test generation
+        - label: Test grading
+        - label: Linked notes
+        - label: File attachments
+        - label: Streaming replies
+        - label: Other / Unsure
 
   - type: dropdown
     id: companion-provider
@@ -79,15 +136,16 @@ body:
         - Perplexity
         - OpenRouter
         - Custom
+        - Not sure
     validations:
-      required: false
+      required: true
 
   - type: input
     id: companion-model
     attributes:
       label: Model Name
-      description: Which model were you using? (for example: gpt-4o, claude-sonnet-4-20250514, gemini-2.0-flash)
-      placeholder: "e.g., gpt-4o"
+      description: Which model were you using?
+      placeholder: "e.g., gpt-5, deepseek-chat, claude-sonnet-4-5"
     validations:
       required: false
 
@@ -101,21 +159,11 @@ body:
       required: false
 
   - type: textarea
-    id: description
-    attributes:
-      label: What happened?
-      description: Describe what you were doing, what went wrong, and how it happened. Include what you expected vs what actually occurred.
-      placeholder: |
-        I was using Companion with Claude to generate flashcards from a long note.
-        After submitting, I got a 400 error. The note is about 5,000 words.
-        I expected flashcards to be generated but instead saw an error banner.
-    validations:
-      required: true
-
-  - type: textarea
     id: additional
     attributes:
-      label: Additional Context
-      description: Screenshots, console errors, or anything else that might help.
+      label: Additional context
+      description: Add anything else that will help reproduce or debug the issue.
+      placeholder: |
+        Screenshots, copied prompts, provider responses, note setup, whether linked notes or attachments were enabled, and any other useful details.
     validations:
       required: false
