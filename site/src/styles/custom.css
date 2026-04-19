@@ -138,3 +138,41 @@ html {
     width: min(72vw, 18rem);
   }
 }
+
+/* Scope table compaction to the Companion model compatibility table only. */
+.sl-markdown-content h2#compatibility-table + table {
+  width: 100%;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.sl-markdown-content h2#compatibility-table + table th,
+.sl-markdown-content h2#compatibility-table + table td {
+  padding: 0.35rem 0.45rem;
+  vertical-align: top;
+}
+
+/* Keep short status columns from wrapping while allowing the comments column to wrap naturally. */
+.sl-markdown-content h2#compatibility-table + table th:nth-child(1),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(1),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(2),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(2),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(3),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(3),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(4),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(4),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(5),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(5),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(6),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(6),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(7),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(7),
+.sl-markdown-content h2#compatibility-table + table th:nth-child(8),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(8) {
+  white-space: nowrap;
+}
+
+.sl-markdown-content h2#compatibility-table + table th:nth-child(9),
+.sl-markdown-content h2#compatibility-table + table td:nth-child(9) {
+  white-space: normal;
+}
