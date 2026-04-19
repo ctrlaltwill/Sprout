@@ -249,6 +249,23 @@ function recordFromUnknown(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
+function stringValueFromUnknown(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  return "";
+}
+
+function errorFromUnknown(err: unknown): Error {
+  if (err instanceof Error) return err;
+  const obj = recordFromUnknown(err);
+  const detail = stringValueFromUnknown(obj?.detail)
+    || stringValueFromUnknown(obj?.message)
+    || responseTextFromUnknownError(err);
+  return new Error(detail || "Unknown error");
+}
+
 function statusFromUnknownError(err: unknown): number | null {
   const obj = recordFromUnknown(err);
   const statusRaw = obj?.status;
@@ -494,9 +511,11 @@ function fallbackLabelForMimeType(mimeType: string): string {
 function isAttachmentRelatedRequestError(err: unknown): boolean {
   const status = statusFromUnknownError(err) ?? 0;
   const obj = recordFromUnknown(err) || {};
-  const detail = String(obj.detail || responseTextFromUnknownError(err) || "").toLowerCase();
-  const code = String(obj.code || "").toLowerCase();
-  const errorType = String(obj.errorType || "").toLowerCase();
+  const detail = (stringValueFromUnknown(obj.detail)
+    || responseTextFromUnknownError(err)
+    || stringValueFromUnknown(obj.message)).toLowerCase();
+  const code = stringValueFromUnknown(obj.code).toLowerCase();
+  const errorType = stringValueFromUnknown(obj.errorType).toLowerCase();
   const combined = `${detail} ${code} ${errorType}`;
   if (status === 415 || status === 422) return true;
   if (status === 400 && /(attachment|file|docx|mime|media|content block|multimodal|invalid)/.test(combined)) return true;
@@ -1036,7 +1055,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         }
       }
 
-      if (retryError) throw retryError;
+      if (retryError) throw errorFromUnknown(retryError);
     }
 
     const json = parseJsonFromUnknown(sanitizeJsonResponse(res.json));
@@ -1107,7 +1126,7 @@ export async function requestStudyAssistantCompletionDetailed(params: {
           originalError: err,
         });
       }
-      throw err;
+      throw errorFromUnknown(err);
     }
   };
 
@@ -1196,10 +1215,12 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     if (retryError) {
       const status = statusFromUnknownError(retryError) ?? (recordFromUnknown(retryError)?.status as number | undefined) ?? 0;
       const canRetryOpenRouterModelAlias = settings.provider === "openrouter" && status === 404;
-      if (!canRetryOpenRouterModelAlias) throw retryError;
+      if (!canRetryOpenRouterModelAlias) throw errorFromUnknown(retryError);
 
       const alternateModel = openRouterAlternateModelId(model);
-      if (!alternateModel || alternateModel.toLowerCase() === model.toLowerCase()) throw retryError;
+      if (!alternateModel || alternateModel.toLowerCase() === model.toLowerCase()) {
+        throw errorFromUnknown(retryError);
+      }
 
       res = await requestOpenAiLike(alternateModel, {
         userPromptOverride: activeUserPrompt,

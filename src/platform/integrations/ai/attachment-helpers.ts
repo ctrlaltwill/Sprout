@@ -171,9 +171,11 @@ function extractTextFromDocxXml(xml: string): string {
 }
 
 function normalizeExtractedText(text: string): string {
-  return String(text || "")
+  const normalized = String(text || "");
+  return normalized
     .replace(/\r/g, "")
-    .replace(/\u0000/g, "")
+    .split("\u0000")
+    .join("")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -214,7 +216,7 @@ function unescapePdfString(value: string): string {
     .replace(/\\\(/g, "(")
     .replace(/\\\)/g, ")")
     .replace(/\\\\/g, "\\")
-    .replace(/\\([0-7]{1,3})/g, (_m, oct) => String.fromCharCode(parseInt(oct, 8)));
+    .replace(/\\([0-7]{1,3})/g, (_m: string, oct: string) => String.fromCharCode(parseInt(oct, 8)));
 }
 
 function decodePdfLiteralText(value: string): string {
