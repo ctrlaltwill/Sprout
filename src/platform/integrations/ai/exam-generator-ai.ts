@@ -249,7 +249,7 @@ function normaliseQuestion(
 
   const typeRaw = asText(row.type).trim().toLowerCase();
   const type = typeRaw === "saq" ? "saq" : typeRaw === "mcq" || typeRaw === "msq" ? "mcq" : null;
-  if (!type) return fail(`unsupported question type \"${typeRaw || "(empty)"}\".`);
+  if (!type) return fail(`unsupported question type "${typeRaw || "(empty)"}".`);
 
   const prompt = asText(row.prompt).trim();
   if (!prompt) return fail("prompt was empty.");
@@ -289,7 +289,7 @@ function normaliseQuestion(
     }
 
     if (selectionMode === "multiple" || promptRequiresMultiSelect) {
-      return fail("multi-select stem must use type \"msq\" or selectionMode \"multiple\" with 2+ correctIndices.");
+      return fail('multi-select stem must use type "msq" or selectionMode "multiple" with 2+ correctIndices.');
     }
 
     if (correctIndices.length === 1) {
@@ -335,7 +335,7 @@ function normaliseGeneratedQuestions(
     const q = normaliseQuestion(obj.questions[i], i, fallbackPath, issues);
     if (!q) continue;
     if (!allowedTypes.has(q.type)) {
-      issues.push(`Question ${i + 1}: type \"${q.type}\" is not allowed for requested mode \"${requestedType}\".`);
+      issues.push(`Question ${i + 1}: type "${q.type}" is not allowed for requested mode "${requestedType}".`);
       continue;
     }
     const uniqueId = seen.has(q.id) ? `${q.id}-${i + 1}` : q.id;
@@ -571,10 +571,10 @@ export async function generateExamQuestions(params: {
       ]
       : []),
     "Return valid JSON only with this schema:",
-    "{\"questions\":[{\"id\":\"q1\",\"type\":\"mcq|msq|saq\",\"prompt\":\"...\",\"sourcePath\":\"...\",\"options\":[\"...\"],\"correctIndex\":0,\"correctIndices\":[0,2],\"selectionMode\":\"single|multiple\",\"explanation\":\"...\",\"markingGuide\":[\"...\"]}]}",
+    '{"questions":[{"id":"q1","type":"mcq|msq|saq","prompt":"...","sourcePath":"...","options":["..."],"correctIndex":0,"correctIndices":[0,2],"selectionMode":"single|multiple","explanation":"...","markingGuide":["..."]}]}',
     "Rules:",
     `- Return exactly ${config.questionCount} questions (no more, no fewer).`,
-    `- Requested question mode is \"${requestedType}\". ${requestedType === "mixed" ? "Mixed mode: include only mcq, msq, or saq types." : requestedType === "mcq" ? "MCQ mode may include single-select \"mcq\" items and multi-select \"msq\" items only." : `Every question MUST have type \"${requestedType}\".`}`,
+    `- Requested question mode is "${requestedType}". ${requestedType === "mixed" ? "Mixed mode: include only mcq, msq, or saq types." : requestedType === "mcq" ? 'MCQ mode may include single-select "mcq" items and multi-select "msq" items only.' : `Every question MUST have type "${requestedType}".`}`,
     "- MCQ must have 4 options when possible.",
     '- Use type "mcq" only for true single-best-answer questions with exactly one defensibly correct option and one correctIndex.',
     '- Use type "msq" for any question with more than one correct answer. "msq" items must include correctIndices with 2+ correct option indices and at least one wrong distractor.',
