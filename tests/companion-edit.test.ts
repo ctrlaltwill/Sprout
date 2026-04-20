@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { isTestGenerationRequest } from "../src/views/study-assistant/chat/generation-helpers";
 import {
-  isTestGenerationRequest,
-} from "../src/views/study-assistant/chat/generation-helpers";
-import { parseEditProposal, parseIntentResponse } from "../src/platform/integrations/ai/study-assistant-generator";
+  extractVisibleEditResponseText,
+  parseEditProposal,
+  parseIntentResponse,
+} from "../src/platform/integrations/ai/study-assistant-generator";
 import { validateEditProposal, mentionsFrontmatter } from "../src/views/study-assistant/chat/edit-helpers";
 
 // ── parseIntentResponse ─────────────────────────────────────────────────────
@@ -81,6 +83,20 @@ describe("parseEditProposal", () => {
     expect(result!.edits).toHaveLength(1);
   });
 
+  it("parses tagged JSON after a visible summary prelude", () => {
+    const raw = [
+      "I prepared the requested updates.",
+      "",
+      "<learnkit-edit-proposal>",
+      '{"summary":"Applied the requested fixes","edits":[{"original":"teh cat","replacement":"the cat"}]}',
+      "</learnkit-edit-proposal>",
+    ].join("\n");
+    const result = parseEditProposal(raw);
+    expect(result).not.toBeNull();
+    expect(result!.summary).toBe("Applied the requested fixes");
+    expect(result!.edits).toHaveLength(1);
+  });
+
   it("returns null for plain text", () => {
     expect(parseEditProposal("I cannot make any edits to this note.")).toBeNull();
   });
@@ -114,6 +130,30 @@ describe("parseEditProposal", () => {
     expect(result).not.toBeNull();
     expect(result!.summary).toBe("Nothing to change");
     expect(result!.edits).toHaveLength(0);
+  });
+});
+
+describe("extractVisibleEditResponseText", () => {
+  it("returns only the human-readable prelude before tagged JSON", () => {
+    const raw = [
+      "I prepared the requested updates.",
+      "",
+      "<learnkit-edit-proposal>",
+      '{"summary":"Applied the requested fixes","edits":[{"original":"teh cat","replacement":"the cat"}]}',
+      "</learnkit-edit-proposal>",
+    ].join("\n");
+
+    expect(extractVisibleEditResponseText(raw)).toBe("I prepared the requested updates.");
+  });
+
+  it("hides partial marker fragments during streaming", () => {
+    expect(extractVisibleEditResponseText("I prepared the requested updates.\n\n<learnkit-edit-pro")).toBe(
+      "I prepared the requested updates.",
+    );
+  });
+
+  it("suppresses raw JSON-only edit output", () => {
+    expect(extractVisibleEditResponseText('{"summary":"Applied the requested fixes","edits":[]}')).toBe("");
   });
 });
 

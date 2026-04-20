@@ -40,6 +40,14 @@ type DeleteConversationResult = {
   detail?: string;
 };
 
+type StreamingTransportResponse = {
+  status: number;
+  text: string;
+  json?: unknown;
+  headers: Record<string, string>;
+  body: ReadableStream<Uint8Array> | null;
+};
+
 const DEFAULT_MAX_OUTPUT_TOKENS = 8000;
 const REASONING_MAX_OUTPUT_TOKENS = 25000;
 
@@ -180,7 +188,20 @@ function completionTokenBudget(provider: StudyAssistantProvider, model: string):
   return isReasoning ? REASONING_MAX_OUTPUT_TOKENS : DEFAULT_MAX_OUTPUT_TOKENS;
 }
 
-function shouldInlineSystemPromptForOpenAiLike(provider: StudyAssistantProvider, model: string): boolean {
+type OpenAiLikeCompatibilityVariant = "default" | "compatibility";
+type ResponsesRequestVariant = OpenAiLikeCompatibilityVariant;
+type ChatCompletionsRequestVariant = OpenAiLikeCompatibilityVariant | "deepseek-compat";
+
+function inlineSystemPromptIntoUserPrompt(systemPrompt: string, userPrompt: string): string {
+  return `System instructions:\n${systemPrompt}\n\n${userPrompt}`;
+}
+
+function shouldInlineSystemPromptForOpenAiLike(
+  provider: StudyAssistantProvider,
+  model: string,
+  variant: OpenAiLikeCompatibilityVariant = "default",
+): boolean {
+  if (variant === "compatibility") return true;
   // DeepSeek reasoner is more reliable when instructions are in the user turn.
   if (provider !== "deepseek") return false;
   const m = String(model || "").trim().toLowerCase();
@@ -193,10 +214,208 @@ function openRouterAlternateModelId(model: string): string {
   return /:free$/i.test(value) ? value.replace(/:free$/i, "") : `${value}:free`;
 }
 
-type ChatCompletionsRequestVariant = "default" | "deepseek-compat";
+type OpenRouterCatalogModel = {
+  id: string;
+  canonicalSlug: string;
+  name: string;
+};
+
+let openRouterCatalogCache: OpenRouterCatalogModel[] | null = null;
+let openRouterCatalogPromise: Promise<OpenRouterCatalogModel[]> | null = null;
+
+function cleanOpenRouterModelDisplayName(value: string): string {
+  return String(value || "")
+    .replace(/\s*\(free\)\s*$/i, "")
+    .replace(/:free\s*$/i, "")
+    .trim();
+}
+
+function formatOpenRouterModelLabel(model: string): string {
+  const input = String(model || "").trim();
+  if (!input) return "";
+  const base = input.includes("/") ? input.split("/").slice(1).join("/") : input;
+  const clean = base.replace(/:free$/i, "");
+  const parts = clean.split(/[\s._:/-]+/g).filter(Boolean);
+  const acronyms = new Map<string, string>([
+    ["gpt", "GPT"],
+    ["ai", "AI"],
+    ["api", "API"],
+    ["r1", "R1"],
+    ["vl", "VL"],
+    ["llama", "Llama"],
+    ["qwen", "Qwen"],
+    ["sonnet", "Sonnet"],
+    ["opus", "Opus"],
+    ["haiku", "Haiku"],
+    ["gemini", "Gemini"],
+    ["deepseek", "DeepSeek"],
+  ]);
+  return parts
+    .map((part) => {
+      const lower = part.toLowerCase();
+      const mapped = acronyms.get(lower);
+      if (mapped) return mapped;
+      if (/^[0-9]+[a-z]?$/i.test(part)) return part.toUpperCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
+function normaliseOpenRouterLookupKey(value: string): string {
+  return cleanOpenRouterModelDisplayName(value)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function openRouterCatalogLookupKeys(model: OpenRouterCatalogModel): string[] {
+  const keys = new Set<string>();
+  const add = (value: string) => {
+    const key = normaliseOpenRouterLookupKey(value);
+    if (key) keys.add(key);
+  };
+
+  add(model.id);
+  add(model.canonicalSlug);
+  add(model.name);
+  add(formatOpenRouterModelLabel(model.id));
+  if (model.canonicalSlug) add(formatOpenRouterModelLabel(model.canonicalSlug));
+
+  return [...keys];
+}
+
+async function loadOpenRouterCatalogModels(forceReload = false): Promise<OpenRouterCatalogModel[]> {
+  if (!forceReload && openRouterCatalogCache) return openRouterCatalogCache;
+  if (!forceReload && openRouterCatalogPromise) return openRouterCatalogPromise;
+
+  if (forceReload) {
+    openRouterCatalogCache = null;
+    openRouterCatalogPromise = null;
+  }
+
+  openRouterCatalogPromise = (async () => {
+    try {
+      const res = await requestUrl({
+        url: "https://openrouter.ai/api/v1/models",
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+
+      if (res.status < 200 || res.status >= 300) return [];
+
+      const rawJson = parseJsonFromUnknown(res.json);
+      const rawModels = Array.isArray(rawJson?.data) ? rawJson.data : [];
+      const parsed: OpenRouterCatalogModel[] = [];
+
+      for (const entry of rawModels) {
+        const model = parseJsonFromUnknown(entry);
+        if (!model) continue;
+
+        const id = stringValueFromUnknown(model.id).trim();
+        if (!id) continue;
+
+        parsed.push({
+          id,
+          canonicalSlug: stringValueFromUnknown(model.canonical_slug).trim(),
+          name: cleanOpenRouterModelDisplayName(stringValueFromUnknown(model.name)),
+        });
+      }
+
+      openRouterCatalogCache = parsed;
+      return parsed;
+    } catch {
+      return [];
+    } finally {
+      openRouterCatalogPromise = null;
+    }
+  })();
+
+  return openRouterCatalogPromise;
+}
+
+async function resolveOpenRouterCurrentModelId(model: string): Promise<string> {
+  const lookup = normaliseOpenRouterLookupKey(model);
+  if (!lookup) return "";
+
+  const findMatch = (models: OpenRouterCatalogModel[]): string => {
+    if (!models.length) return "";
+
+    const exactId = models.find((entry) => entry.id.toLowerCase() === String(model || "").trim().toLowerCase());
+    if (exactId) return exactId.id;
+
+    const exactCanonical = models.find((entry) => entry.canonicalSlug.toLowerCase() === String(model || "").trim().toLowerCase());
+    if (exactCanonical) return exactCanonical.id;
+
+    for (const entry of models) {
+      if (openRouterCatalogLookupKeys(entry).includes(lookup)) {
+        return entry.id;
+      }
+    }
+
+    return "";
+  };
+
+  const cachedMatch = findMatch(await loadOpenRouterCatalogModels());
+  if (cachedMatch) return cachedMatch;
+
+  return findMatch(await loadOpenRouterCatalogModels(true));
+
+}
+
+async function getOpenRouterRetryModelIds(model: string): Promise<string[]> {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const push = (value: string) => {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) return;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    candidates.push(trimmed);
+  };
+
+  const resolvedModel = await resolveOpenRouterCurrentModelId(model);
+  push(resolvedModel);
+  push(openRouterAlternateModelId(model));
+  if (resolvedModel) push(openRouterAlternateModelId(resolvedModel));
+
+  return candidates.filter((candidate) => candidate.toLowerCase() !== String(model || "").trim().toLowerCase());
+}
 
 function providerUsesResponsesApi(provider: StudyAssistantProvider): boolean {
   return provider === "openai" || provider === "xai" || provider === "perplexity";
+}
+
+function shouldRetryOpenAiLikeCompatibility(provider: StudyAssistantProvider, err: unknown): boolean {
+  const supportsCompatibilityRetry = providerUsesResponsesApi(provider)
+    || provider === "openrouter"
+    || provider === "google"
+    || provider === "custom";
+  if (!supportsCompatibilityRetry) return false;
+
+  const status = statusFromUnknownError(err)
+    ?? (recordFromUnknown(err)?.status as number | undefined)
+    ?? 0;
+  if (status !== 400 && status !== 422) return false;
+
+  const obj = recordFromUnknown(err) || {};
+  const combined = [
+    stringValueFromUnknown(obj.detail),
+    stringValueFromUnknown(obj.code),
+    stringValueFromUnknown(obj.errorType),
+    stringValueFromUnknown(obj.message),
+    responseTextFromUnknownError(err),
+  ].join(" ").toLowerCase();
+
+  if (/(attachment|attachments|file_data|input_file|multimodal|mime|media|document|image_url|vision|pdf|docx|pptx)/.test(combined)) {
+    return false;
+  }
+
+  if (/(invalid api key|unauthorized|permission|forbidden|quota|billing|credit|insufficient_quota|rate limit|too many requests|model_not_found|unknown model|not found|context length|too long|max context|token limit|safety|content policy)/.test(combined)) {
+    return false;
+  }
+
+  return true;
 }
 
 export function providerSupportsNativeDocumentAttachment(provider: StudyAssistantProvider, mimeType: string): boolean {
@@ -346,6 +565,195 @@ function buildProviderRequestError(args: {
   if (responseJson !== undefined) err.responseJson = responseJson;
   if (originalError !== undefined) err.originalError = originalError;
   return err;
+}
+
+function createAbortError(): Error {
+  const err = new Error("Streaming request was aborted.");
+  err.name = "AbortError";
+  return err;
+}
+
+function throwIfStreamingAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw createAbortError();
+}
+
+function tryParseJsonText(text: string): unknown {
+  const rawText = String(text || "").trim();
+  if (!rawText) return undefined;
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return undefined;
+  }
+}
+
+async function requestStreamingTransport(params: {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string;
+  signal?: AbortSignal;
+}): Promise<StreamingTransportResponse> {
+  const { url, method, headers, body, signal } = params;
+  const fetchImpl = typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : null;
+
+  if (fetchImpl) {
+    try {
+      throwIfStreamingAborted(signal);
+      const response = await fetchImpl(url, {
+        method,
+        headers,
+        body,
+        signal,
+      });
+
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      if (response.status < 200 || response.status >= 300) {
+        const responseText = await response.text();
+        return {
+          status: response.status,
+          text: responseText,
+          json: tryParseJsonText(responseText),
+          headers: responseHeaders,
+          body: null,
+        };
+      }
+
+      if (!response.body || typeof response.body.getReader !== "function") {
+        const responseText = await response.text();
+        return {
+          status: response.status,
+          text: responseText,
+          json: tryParseJsonText(responseText),
+          headers: responseHeaders,
+          body: null,
+        };
+      }
+
+      return {
+        status: response.status,
+        text: "",
+        headers: responseHeaders,
+        body: response.body,
+      };
+    } catch (err) {
+      if (signal?.aborted || (err instanceof Error && err.name === "AbortError")) {
+        throw createAbortError();
+      }
+    }
+  }
+
+  const fallback = await requestUrl({
+    url,
+    method,
+    headers,
+    body,
+  });
+  return {
+    status: fallback.status,
+    text: typeof fallback.text === "string" ? fallback.text : "",
+    json: fallback.json,
+    headers: fallback.headers ?? {},
+    body: null,
+  };
+}
+
+function appendStreamingPayloads(args: {
+  buffer: string;
+  extractDelta: (payload: string) => string;
+  onChunk: (token: string) => void;
+  signal?: AbortSignal;
+  fullText: string;
+}): { buffer: string; fullText: string } {
+  const { extractDelta, onChunk, signal } = args;
+  const parsed = parseSSELines(args.buffer);
+  let fullText = args.fullText;
+
+  for (const payload of parsed.events) {
+    throwIfStreamingAborted(signal);
+    const token = extractDelta(payload);
+    if (!token) continue;
+    fullText += token;
+    onChunk(token);
+  }
+
+  return {
+    buffer: parsed.remainder,
+    fullText,
+  };
+}
+
+async function readStreamingResponseText(args: {
+  response: StreamingTransportResponse;
+  extractDelta: (payload: string) => string;
+  onChunk: (token: string) => void;
+  signal?: AbortSignal;
+}): Promise<string> {
+  const { response, extractDelta, onChunk, signal } = args;
+
+  if (!response.body || typeof response.body.getReader !== "function") {
+    const responseText = typeof response.text === "string" ? response.text : "";
+    if (!responseText.trim()) throw new Error("Streaming response body is not readable.");
+    return appendStreamingPayloads({
+      buffer: `${responseText}\n`,
+      extractDelta,
+      onChunk,
+      signal,
+      fullText: "",
+    }).fullText;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullText = "";
+
+  try {
+    while (true) {
+      throwIfStreamingAborted(signal);
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      const parsed = appendStreamingPayloads({
+        buffer,
+        extractDelta,
+        onChunk,
+        signal,
+        fullText,
+      });
+      buffer = parsed.buffer;
+      fullText = parsed.fullText;
+    }
+
+    buffer += decoder.decode();
+    if (buffer) {
+      const parsed = appendStreamingPayloads({
+        buffer: `${buffer}\n`,
+        extractDelta,
+        onChunk,
+        signal,
+        fullText,
+      });
+      fullText = parsed.fullText;
+    }
+  } catch (err) {
+    if (signal?.aborted || (err instanceof Error && err.name === "AbortError")) {
+      throw createAbortError();
+    }
+    throw err;
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {
+      // Ignore reader cleanup errors.
+    }
+  }
+
+  return fullText;
 }
 
 function attachAttachmentRouteToError<T extends Error>(
@@ -738,13 +1146,14 @@ function buildChatCompletionsMessages(args: {
   systemPrompt: string;
   userPrompt: string;
   attachments: ParsedAttachment[];
+  variant?: ChatCompletionsRequestVariant;
 }): Array<Record<string, unknown>> {
-  const { provider, model, systemPrompt, userPrompt, attachments } = args;
-  const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(provider, model);
+  const { provider, model, systemPrompt, userPrompt, attachments, variant = "default" } = args;
+  const inlineSystemPrompt = shouldInlineSystemPromptForOpenAiLike(provider, model, variant);
   const effectiveUserContent = inlineSystemPrompt
-    ? `System instructions:\n${systemPrompt}\n\n${userPrompt}`
+    ? inlineSystemPromptIntoUserPrompt(systemPrompt, userPrompt)
     : userPrompt;
-  const systemRole = provider === "openai" && isReasoningModelId(model) ? "developer" : "system";
+  const systemRole = provider === "openai" && isReasoningModelId(model) && variant === "default" ? "developer" : "system";
 
   if (inlineSystemPrompt) {
     return [{
@@ -775,6 +1184,7 @@ function buildChatCompletionsBody(args: {
   mode: CompletionMode;
   conversationId?: string;
   variant?: ChatCompletionsRequestVariant;
+  stream?: boolean;
 }): Record<string, unknown> {
   const {
     provider,
@@ -785,6 +1195,7 @@ function buildChatCompletionsBody(args: {
     mode,
     conversationId,
     variant = "default",
+    stream = false,
   } = args;
 
   const useMaxCompletionTokens = provider === "openai" && isReasoningModelId(model);
@@ -792,15 +1203,17 @@ function buildChatCompletionsBody(args: {
     ? deepSeekCompatibilityTokenBudget(model)
     : completionTokenBudget(provider, model);
   const useJsonResponseFormat =
+    variant === "default" &&
     mode === "json" &&
     provider !== "openrouter" &&
-    !isReasoningModelId(model) &&
-    !(provider === "deepseek" && variant === "deepseek-compat");
-  const omitTemperature = shouldOmitTemperature(provider, model)
+    !isReasoningModelId(model);
+  const omitTemperature = variant === "compatibility"
+    || shouldOmitTemperature(provider, model)
     || (provider === "deepseek" && variant === "deepseek-compat");
 
   return {
     model,
+    ...(stream ? { stream: true } : {}),
     ...(useMaxCompletionTokens
       ? { max_completion_tokens: tokenBudget }
       : { max_tokens: tokenBudget }),
@@ -810,6 +1223,7 @@ function buildChatCompletionsBody(args: {
       systemPrompt,
       userPrompt,
       attachments,
+      variant,
     }),
     ...(provider === "custom" && typeof conversationId === "string" && conversationId.trim()
       ? { conversation_id: conversationId.trim() }
@@ -827,6 +1241,44 @@ function buildResponsesInput(userPrompt: string, attachments: ParsedAttachment[]
       ...buildResponsesContentBlocks(attachments),
     ],
   }];
+}
+
+function buildResponsesRequestBody(args: {
+  provider: StudyAssistantProvider;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  attachments: ParsedAttachment[];
+  mode: CompletionMode;
+  variant?: ResponsesRequestVariant;
+  stream?: boolean;
+}): Record<string, unknown> {
+  const {
+    provider,
+    model,
+    systemPrompt,
+    userPrompt,
+    attachments,
+    mode,
+    variant = "default",
+    stream = false,
+  } = args;
+
+  const effectiveUserPrompt = variant === "compatibility"
+    ? inlineSystemPromptIntoUserPrompt(systemPrompt, userPrompt)
+    : userPrompt;
+  const useJsonResponseFormat = variant === "default" && mode === "json" && !isReasoningModelId(model);
+  const omitTemperature = variant === "compatibility" || shouldOmitTemperature(provider, model);
+
+  return {
+    model,
+    ...(stream ? { stream: true } : {}),
+    max_output_tokens: completionTokenBudget(provider, model),
+    ...(variant === "compatibility" ? {} : { instructions: systemPrompt }),
+    input: buildResponsesInput(effectiveUserPrompt, attachments),
+    ...(omitTemperature ? {} : { temperature: 0.4 }),
+    ...(useJsonResponseFormat ? { text: { format: { type: "json_object" } } } : {}),
+  };
 }
 
 function buildTextAttachmentContext(dataUrls: string[], preset?: ContextLimitPreset): {
@@ -1003,12 +1455,11 @@ export async function requestStudyAssistantCompletionDetailed(params: {
       options?: {
         userPromptOverride?: string;
         attachmentsOverride?: ParsedAttachment[];
+        variant?: ResponsesRequestVariant;
       },
     ): Promise<Awaited<ReturnType<typeof requestUrl>>> => {
       const requestUserPrompt = options?.userPromptOverride ?? effectiveUserPrompt;
       const requestAttachments = options?.attachmentsOverride ?? attachments;
-      const tokenBudget = completionTokenBudget(settings.provider, requestModel);
-      const useJsonResponseFormat = mode === "json" && !isReasoningModelId(requestModel);
 
       try {
         return await requestUrl({
@@ -1019,14 +1470,15 @@ export async function requestStudyAssistantCompletionDetailed(params: {
             Accept: "application/json",
             Authorization: `Bearer ${apiKey}`,
           },
-          body: JSON.stringify({
+          body: JSON.stringify(buildResponsesRequestBody({
+            provider: settings.provider,
             model: requestModel,
-            max_output_tokens: tokenBudget,
-            instructions: systemPrompt,
-            input: buildResponsesInput(requestUserPrompt, requestAttachments),
-            ...(shouldOmitTemperature(settings.provider, requestModel) ? {} : { temperature: 0.4 }),
-            ...(useJsonResponseFormat ? { text: { format: { type: "json_object" } } } : {}),
-          }),
+            systemPrompt,
+            userPrompt: requestUserPrompt,
+            attachments: requestAttachments,
+            mode,
+            variant: options?.variant,
+          })),
         });
       } catch (err) {
         const status = statusFromUnknownError(err) ?? 0;
@@ -1076,10 +1528,12 @@ export async function requestStudyAssistantCompletionDetailed(params: {
     let activeUserPrompt = effectiveUserPrompt;
     let activeAttachments = attachments;
     let activeDataUrls = allDataUrls;
+    let activeVariant: ResponsesRequestVariant = "default";
     try {
       res = await requestResponsesApi(model, {
         userPromptOverride: activeUserPrompt,
         attachmentsOverride: activeAttachments,
+        variant: activeVariant,
       });
       assertOkOrThrow(res);
     } catch (err) {
@@ -1100,12 +1554,28 @@ export async function requestStudyAssistantCompletionDetailed(params: {
             res = await requestResponsesApi(model, {
               userPromptOverride: activeUserPrompt,
               attachmentsOverride: activeAttachments,
+              variant: activeVariant,
             });
             assertOkOrThrow(res);
             retryError = null;
           } catch (fallbackErr) {
             retryError = fallbackErr;
           }
+        }
+      }
+
+      if (retryError && shouldRetryOpenAiLikeCompatibility(settings.provider, retryError)) {
+        activeVariant = "compatibility";
+        try {
+          res = await requestResponsesApi(model, {
+            userPromptOverride: activeUserPrompt,
+            attachmentsOverride: activeAttachments,
+            variant: activeVariant,
+          });
+          assertOkOrThrow(res);
+          retryError = null;
+        } catch (compatibilityErr) {
+          retryError = compatibilityErr;
         }
       }
 
@@ -1212,9 +1682,10 @@ export async function requestStudyAssistantCompletionDetailed(params: {
   let activeUserPrompt = effectiveUserPrompt;
   let activeAttachments = attachments;
   let activeDataUrls = allDataUrls;
+  let activeModel = model;
   let activeVariant: ChatCompletionsRequestVariant = "default";
   try {
-    res = await requestOpenAiLike(model, {
+    res = await requestOpenAiLike(activeModel, {
       userPromptOverride: activeUserPrompt,
       attachmentsOverride: activeAttachments,
       variant: activeVariant,
@@ -1274,6 +1745,21 @@ export async function requestStudyAssistantCompletionDetailed(params: {
       }
     }
 
+    if (retryError && shouldRetryOpenAiLikeCompatibility(settings.provider, retryError)) {
+      activeVariant = "compatibility";
+      try {
+        res = await requestOpenAiLike(activeModel, {
+          userPromptOverride: activeUserPrompt,
+          attachmentsOverride: activeAttachments,
+          variant: activeVariant,
+        });
+        assertOkOrThrow(res);
+        retryError = null;
+      } catch (compatibilityErr) {
+        retryError = compatibilityErr;
+      }
+    }
+
     if (retryError) {
       const status = statusFromUnknownError(retryError) ?? (recordFromUnknown(retryError)?.status as number | undefined) ?? 0;
       const canRetryOpenRouterModelAlias = settings.provider === "openrouter" && status === 404;
@@ -1281,17 +1767,37 @@ export async function requestStudyAssistantCompletionDetailed(params: {
         throw attachAttachmentRouteToError(errorFromUnknown(retryError), activeAttachmentRoute);
       }
 
-      const alternateModel = openRouterAlternateModelId(model);
-      if (!alternateModel || alternateModel.toLowerCase() === model.toLowerCase()) {
+      const retryModels = await getOpenRouterRetryModelIds(activeModel);
+      if (!retryModels.length) {
         throw attachAttachmentRouteToError(errorFromUnknown(retryError), activeAttachmentRoute);
       }
 
-      res = await requestOpenAiLike(alternateModel, {
-        userPromptOverride: activeUserPrompt,
-        attachmentsOverride: activeAttachments,
-        variant: activeVariant,
-      });
-      assertOkOrThrow(res);
+      let resolved = false;
+      let latestRetryError: unknown = retryError;
+
+      for (const retryModel of retryModels) {
+        try {
+          res = await requestOpenAiLike(retryModel, {
+            userPromptOverride: activeUserPrompt,
+            attachmentsOverride: activeAttachments,
+            variant: activeVariant,
+          });
+          assertOkOrThrow(res);
+          activeModel = retryModel;
+          resolved = true;
+          break;
+        } catch (candidateErr) {
+          latestRetryError = candidateErr;
+          const candidateStatus = statusFromUnknownError(candidateErr)
+            ?? (recordFromUnknown(candidateErr)?.status as number | undefined)
+            ?? 0;
+          if (candidateStatus !== 404) break;
+        }
+      }
+
+      if (!resolved) {
+        throw attachAttachmentRouteToError(errorFromUnknown(latestRetryError), activeAttachmentRoute);
+      }
     }
   }
 
@@ -1327,7 +1833,7 @@ export async function requestStudyAssistantCompletion(params: {
 }
 
 // ---------------------------------------------------------------------------
-//  Streaming completion (SSE) — text mode only
+//  Streaming completion (SSE)
 // ---------------------------------------------------------------------------
 
 function parseSSELines(buffer: string): { events: string[]; remainder: string } {
@@ -1395,6 +1901,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
   settings: SproutSettings["studyAssistant"];
   systemPrompt: string;
   userPrompt: string;
+  mode?: CompletionMode;
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
   documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
@@ -1406,6 +1913,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
     settings,
     systemPrompt,
     userPrompt,
+    mode = "text",
     imageDataUrls = [],
     attachedFileDataUrls = [],
     documentAttachmentMode = "auto",
@@ -1451,45 +1959,42 @@ export async function requestStudyAssistantStreamingCompletion(params: {
   let activeUserPrompt = effectiveUserPrompt;
   let activeAttachments = attachments;
   let activeDataUrls = allDataUrls;
+  let activeModel = model;
+  let activeResponsesVariant: ResponsesRequestVariant = "default";
   let activeVariant: ChatCompletionsRequestVariant = "default";
 
-  const tokenBudget = completionTokenBudget(settings.provider, model);
+  const buildResponsesStreamingBody = (
+    requestModel: string,
+    userPromptForRequest: string,
+    attachmentsForRequest: ParsedAttachment[],
+    variant: ResponsesRequestVariant = "default",
+  ): string => JSON.stringify(buildResponsesRequestBody({
+    provider: settings.provider,
+    model: requestModel,
+    systemPrompt,
+    userPrompt: userPromptForRequest,
+    attachments: attachmentsForRequest,
+    mode,
+    variant,
+    stream: true,
+  }));
 
-  const buildResponsesStreamingBody = (userPromptForRequest: string, attachmentsForRequest: ParsedAttachment[]): string => {
-    return JSON.stringify({
-      model,
-      stream: true,
-      max_output_tokens: tokenBudget,
-      instructions: systemPrompt,
-      input: buildResponsesInput(userPromptForRequest, attachmentsForRequest),
-      ...(shouldOmitTemperature(settings.provider, model) ? {} : { temperature: 0.4 }),
-    });
-  };
-
-  const buildChatStreamingBody = (userPromptForRequest: string, attachmentsForRequest: ParsedAttachment[]): string => {
-    const requestTokenBudget = settings.provider === "deepseek" && activeVariant === "deepseek-compat"
-      ? deepSeekCompatibilityTokenBudget(model)
-      : tokenBudget;
-    const omitTemperature = shouldOmitTemperature(settings.provider, model)
-      || (settings.provider === "deepseek" && activeVariant === "deepseek-compat");
-    const useMaxCompletionTokens = settings.provider === "openai" && isReasoningModelId(model);
-    return JSON.stringify({
-      model,
-      stream: true,
-      ...(useMaxCompletionTokens ? { max_completion_tokens: requestTokenBudget } : { max_tokens: requestTokenBudget }),
-      messages: buildChatCompletionsMessages({
-        provider: settings.provider,
-        model,
-        systemPrompt,
-        userPrompt: userPromptForRequest,
-        attachments: attachmentsForRequest,
-      }),
-      ...(settings.provider === "custom" && typeof conversationId === "string" && conversationId.trim()
-        ? { conversation_id: conversationId.trim() }
-        : {}),
-      ...(omitTemperature ? {} : { temperature: 0.4 }),
-    });
-  };
+  const buildChatStreamingBody = (
+    requestModel: string,
+    userPromptForRequest: string,
+    attachmentsForRequest: ParsedAttachment[],
+    variant: ChatCompletionsRequestVariant = "default",
+  ): string => JSON.stringify(buildChatCompletionsBody({
+    provider: settings.provider,
+    model: requestModel,
+    systemPrompt,
+    userPrompt: userPromptForRequest,
+    attachments: attachmentsForRequest,
+    mode,
+    conversationId,
+    variant,
+    stream: true,
+  }));
 
   if (requestFamily === "anthropic") {
     headers = {
@@ -1500,7 +2005,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
     };
     body = JSON.stringify({
       model,
-      max_tokens: tokenBudget,
+      max_tokens: completionTokenBudget(settings.provider, model),
       stream: true,
       system: systemPrompt,
       messages: [{
@@ -1514,7 +2019,7 @@ export async function requestStudyAssistantStreamingCompletion(params: {
       Accept: "text/event-stream",
       Authorization: `Bearer ${apiKey}`,
     };
-    body = buildResponsesStreamingBody(activeUserPrompt, activeAttachments);
+    body = buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant);
   } else {
     headers = {
       "Content-Type": "application/json",
@@ -1524,24 +2029,25 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         ? { "HTTP-Referer": "https://github.com/ctrlaltwill/learnkit", "X-Title": "LearnKit" }
         : {}),
     };
-    body = buildChatStreamingBody(activeUserPrompt, activeAttachments);
+    body = buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
   }
 
-  if (signal?.aborted) {
-    throw new Error("Streaming request was aborted.");
-  }
+  throwIfStreamingAborted(signal);
 
-  let response: Awaited<ReturnType<typeof requestUrl>>;
+  const sendStreamingRequest = async (requestBody: string): Promise<StreamingTransportResponse> => requestStreamingTransport({
+    url: endpoint,
+    method: "POST",
+    headers,
+    body: requestBody,
+    signal,
+  });
+
+  let response: StreamingTransportResponse;
   try {
-    response = await requestUrl({
-      url: endpoint,
-      method: "POST",
-      headers,
-      body,
-    });
+    response = await sendStreamingRequest(body);
   } catch (err) {
     let latestError: unknown = err;
-    let retryResponse: Awaited<ReturnType<typeof requestUrl>> | null = null;
+    let retryResponse: StreamingTransportResponse | null = null;
 
     if (requestFamily !== "anthropic" && hasDocumentDataUrls(activeDataUrls) && isAttachmentRelatedRequestError(latestError)) {
       const fallback = buildDocumentFallbackContext(
@@ -1555,15 +2061,10 @@ export async function requestStudyAssistantStreamingCompletion(params: {
         activeAttachments = parseAttachmentDataUrls(activeDataUrls);
         activeAttachmentRoute = "retry-fallback";
         const fallbackBody = requestFamily === "responses"
-          ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
-          : buildChatStreamingBody(activeUserPrompt, activeAttachments);
+          ? buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+          : buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
         try {
-          retryResponse = await requestUrl({
-            url: endpoint,
-            method: "POST",
-            headers,
-            body: fallbackBody,
-          });
+          retryResponse = await sendStreamingRequest(fallbackBody);
         } catch (fallbackErr) {
           latestError = fallbackErr;
         }
@@ -1584,17 +2085,50 @@ export async function requestStudyAssistantStreamingCompletion(params: {
       }
       activeVariant = "deepseek-compat";
       const fallbackBody = requestFamily === "responses"
-        ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
-        : buildChatStreamingBody(activeUserPrompt, activeAttachments);
+        ? buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+        : buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
       try {
-        retryResponse = await requestUrl({
-          url: endpoint,
-          method: "POST",
-          headers,
-          body: fallbackBody,
-        });
+        retryResponse = await sendStreamingRequest(fallbackBody);
       } catch (fallbackErr) {
         latestError = fallbackErr;
+      }
+    }
+
+    if (!retryResponse && shouldRetryOpenAiLikeCompatibility(settings.provider, latestError)) {
+      if (requestFamily === "responses") activeResponsesVariant = "compatibility";
+      else activeVariant = "compatibility";
+      const compatibilityBody = requestFamily === "responses"
+        ? buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+        : buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
+      try {
+        retryResponse = await sendStreamingRequest(compatibilityBody);
+      } catch (compatibilityErr) {
+        latestError = compatibilityErr;
+      }
+    }
+
+    if (!retryResponse && settings.provider === "openrouter") {
+      const status = statusFromUnknownError(latestError) ?? 0;
+      if (status === 404) {
+        const retryModels = await getOpenRouterRetryModelIds(activeModel);
+        for (const retryModel of retryModels) {
+          const retryBody = requestFamily === "responses"
+            ? buildResponsesStreamingBody(retryModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+            : buildChatStreamingBody(retryModel, activeUserPrompt, activeAttachments, activeVariant);
+          try {
+            retryResponse = await sendStreamingRequest(retryBody);
+            if (retryResponse.status >= 200 && retryResponse.status < 300) {
+              activeModel = retryModel;
+              break;
+            }
+            latestError = retryResponse;
+            if (retryResponse.status !== 404) break;
+          } catch (candidateErr) {
+            latestError = candidateErr;
+            const candidateStatus = statusFromUnknownError(candidateErr) ?? 0;
+            if (candidateStatus !== 404) break;
+          }
+        }
       }
     }
 
@@ -1642,14 +2176,9 @@ export async function requestStudyAssistantStreamingCompletion(params: {
           activeAttachments = parseAttachmentDataUrls(activeDataUrls);
           activeAttachmentRoute = "retry-fallback";
           const fallbackBody = requestFamily === "responses"
-            ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
-            : buildChatStreamingBody(activeUserPrompt, activeAttachments);
-          response = await requestUrl({
-            url: endpoint,
-            method: "POST",
-            headers,
-            body: fallbackBody,
-          });
+            ? buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+            : buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
+          response = await sendStreamingRequest(fallbackBody);
         }
       }
     }
@@ -1668,14 +2197,33 @@ export async function requestStudyAssistantStreamingCompletion(params: {
       }
       activeVariant = "deepseek-compat";
       const fallbackBody = requestFamily === "responses"
-        ? buildResponsesStreamingBody(activeUserPrompt, activeAttachments)
-        : buildChatStreamingBody(activeUserPrompt, activeAttachments);
-      response = await requestUrl({
-        url: endpoint,
-        method: "POST",
-        headers,
-        body: fallbackBody,
-      });
+        ? buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+        : buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
+      response = await sendStreamingRequest(fallbackBody);
+    }
+
+    if (response.status >= 400 && shouldRetryOpenAiLikeCompatibility(settings.provider, response)) {
+      if (requestFamily === "responses") activeResponsesVariant = "compatibility";
+      else activeVariant = "compatibility";
+      const compatibilityBody = requestFamily === "responses"
+        ? buildResponsesStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+        : buildChatStreamingBody(activeModel, activeUserPrompt, activeAttachments, activeVariant);
+      response = await sendStreamingRequest(compatibilityBody);
+    }
+
+    if (response.status === 404 && settings.provider === "openrouter") {
+      const retryModels = await getOpenRouterRetryModelIds(activeModel);
+      for (const retryModel of retryModels) {
+        const retryBody = requestFamily === "responses"
+          ? buildResponsesStreamingBody(retryModel, activeUserPrompt, activeAttachments, activeResponsesVariant)
+          : buildChatStreamingBody(retryModel, activeUserPrompt, activeAttachments, activeVariant);
+        response = await sendStreamingRequest(retryBody);
+        if (response.status >= 200 && response.status < 300) {
+          activeModel = retryModel;
+          break;
+        }
+        if (response.status !== 404) break;
+      }
     }
 
     if (response.status >= 200 && response.status < 300) {
@@ -1698,33 +2246,20 @@ export async function requestStudyAssistantStreamingCompletion(params: {
     }
   }
 
-  if (signal?.aborted) {
-    throw new Error("Streaming request was aborted.");
-  }
+  throwIfStreamingAborted(signal);
 
-  const responseText = typeof response.text === "string" ? response.text : "";
-  if (!responseText.trim()) {
-    throw new Error("Streaming response body is not readable.");
-  }
-
-  let fullText = "";
   const extractDelta = requestFamily === "anthropic"
     ? extractDeltaTextAnthropic
     : requestFamily === "responses"
       ? extractDeltaTextResponses
       : extractDeltaTextOpenAiLike;
 
-  const { events } = parseSSELines(`${responseText}\n`);
-  for (const payload of events) {
-    if (signal?.aborted) {
-      throw new Error("Streaming request was aborted.");
-    }
-    const token = extractDelta(payload);
-    if (token) {
-      fullText += token;
-      onChunk(token);
-    }
-  }
+  const fullText = await readStreamingResponseText({
+    response,
+    extractDelta,
+    onChunk,
+    signal,
+  });
 
   if (!fullText.trim()) throw new Error(`${settings.provider} streaming response did not include text content.`);
 

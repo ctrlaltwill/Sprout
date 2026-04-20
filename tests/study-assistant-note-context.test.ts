@@ -159,6 +159,31 @@ describe("study assistant note context", () => {
     vi.clearAllMocks();
   });
 
+  it("prefers noteContentOverride for live editor content", async () => {
+    const { app, noteFile } = makeAppFixture();
+    const settings = makeStudyAssistantSettings();
+    const override = [
+      "# Unsaved draft",
+      "",
+      "This content is newer than disk.",
+      "",
+      "Related material: [[test-linked]]",
+    ].join("\n");
+
+    const context = await buildStudyAssistantNoteContext({
+      app: app as any,
+      file: noteFile,
+      settings,
+      mode: "ask",
+      noteContentOverride: override,
+    });
+
+    expect(context.noteContent).toBe(override);
+    expect(context.noteContentForAi).toContain("This content is newer than disk.");
+    expect(context.linkedNotesContext).toContain("Linked note");
+    expect(app.vault.read).not.toHaveBeenCalled();
+  });
+
   it("collects linked note text, embedded image data, and linked attachment data for ask mode", async () => {
     const { app, noteFile } = makeAppFixture();
     const settings = makeStudyAssistantSettings();

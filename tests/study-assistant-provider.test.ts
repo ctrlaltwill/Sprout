@@ -126,6 +126,38 @@ function makeProviderErrorResponse(status = 400, message = "Bad request") {
   } as any;
 }
 
+function makeOpenRouterModelsResponse(models: Array<Record<string, unknown>>) {
+  return {
+    status: 200,
+    json: {
+      data: models,
+    },
+    text: "",
+    headers: {},
+  } as any;
+}
+
+function makeStreamingFetchResponse(chunks: string[], status = 200, headers: Record<string, string> = {}) {
+  const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    }),
+    {
+      status,
+      headers: {
+        "content-type": "text/event-stream",
+        ...headers,
+      },
+    },
+  );
+}
+
 function escapePdfLiteral(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
@@ -151,6 +183,7 @@ function makeFlatePdfDataUrl(lines: string[]): string {
 describe("study assistant provider attachments", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.stubGlobal("fetch", undefined);
   });
 
   it("uses Responses API input_file blocks for OpenAI document attachments", async () => {
@@ -376,6 +409,79 @@ describe("study assistant provider attachments", () => {
     expect(secondBody.max_tokens).toBe(4096);
   });
 
+  it("retries OpenAI Responses JSON requests with a compatibility body after HTTP 400", async () => {
+    vi.mocked(requestUrl)
+      .mockResolvedValueOnce(makeProviderErrorResponse(400, "Unsupported parameter: text.format"))
+      .mockResolvedValueOnce(makeResponsesSuccessResponse('{"questions":[]}'));
+
+    const settings = makeStudyAssistant({
+      provider: "openai",
+      model: "gpt-4.1-mini",
+      apiKeys: makeApiKeys({ openai: "sk-openai" }),
+    });
+
+    const result = await requestStudyAssistantCompletionDetailed({
+      settings,
+      systemPrompt: "You are helpful.",
+      userPrompt: "Generate a JSON response.",
+      mode: "json",
+    });
+
+    expect(result.text).toBe('{"questions":[]}');
+    expect(requestUrl).toHaveBeenCalledTimes(2);
+
+    const firstBody = JSON.parse((vi.mocked(requestUrl).mock.calls[0][0] as any).body);
+    expect(firstBody.instructions).toBe("You are helpful.");
+    expect(firstBody.text).toEqual({ format: { type: "json_object" } });
+    expect(firstBody.temperature).toBe(0.4);
+
+    const secondBody = JSON.parse((vi.mocked(requestUrl).mock.calls[1][0] as any).body);
+    expect(secondBody.instructions).toBeUndefined();
+    expect(secondBody.text).toBeUndefined();
+    expect(secondBody.temperature).toBeUndefined();
+    expect(secondBody.input[0].content[0]).toEqual({
+      type: "input_text",
+      text: "System instructions:\nYou are helpful.\n\nGenerate a JSON response.",
+    });
+  });
+
+  it("retries OpenRouter chat JSON requests with a compatibility body after HTTP 400", async () => {
+    vi.mocked(requestUrl)
+      .mockResolvedValueOnce(makeProviderErrorResponse(400, "Unsupported parameter: temperature"))
+      .mockResolvedValueOnce(makeChatSuccessResponse('{"questions":[]}'));
+
+    const settings = makeStudyAssistant({
+      provider: "openrouter",
+      model: "meta-llama/llama-3.1-70b-instruct",
+      apiKeys: makeApiKeys({ openrouter: "sk-or-test" }),
+    });
+
+    const result = await requestStudyAssistantCompletionDetailed({
+      settings,
+      systemPrompt: "You are helpful.",
+      userPrompt: "Generate a JSON response.",
+      mode: "json",
+    });
+
+    expect(result.text).toBe('{"questions":[]}');
+    expect(requestUrl).toHaveBeenCalledTimes(2);
+
+    const firstBody = JSON.parse((vi.mocked(requestUrl).mock.calls[0][0] as any).body);
+  expect(firstBody.response_format).toBeUndefined();
+    expect(firstBody.temperature).toBe(0.4);
+    expect(firstBody.messages[0]).toEqual({ role: "system", content: "You are helpful." });
+
+    const secondBody = JSON.parse((vi.mocked(requestUrl).mock.calls[1][0] as any).body);
+    expect(secondBody.response_format).toBeUndefined();
+    expect(secondBody.temperature).toBeUndefined();
+    expect(secondBody.messages).toEqual([
+      {
+        role: "user",
+        content: "System instructions:\nYou are helpful.\n\nGenerate a JSON response.",
+      },
+    ]);
+  });
+
   it("keeps xAI on Responses API but falls document binaries back to text", async () => {
     vi.mocked(requestUrl).mockResolvedValue(makeResponsesSuccessResponse("done"));
 
@@ -403,7 +509,80 @@ describe("study assistant provider attachments", () => {
     ]);
   });
 
-  it("parses Responses API streaming text deltas", async () => {
+  it("retries OpenRouter chat requests with the current model id from the catalog after HTTP 404", async () => {
+    vi.mocked(requestUrl)
+      .mockResolvedValueOnce(makeProviderErrorResponse(404, "model_not_found"))
+      .mockResolvedValueOnce(makeOpenRouterModelsResponse([
+        {
+          id: "openai/gpt-5",
+          canonical_slug: "openai/gpt-5.4",
+          name: "OpenAI: GPT-5",
+        },
+      ]))
+      .mockResolvedValueOnce(makeChatSuccessResponse("done"));
+
+    const settings = makeStudyAssistant({
+      provider: "openrouter",
+      model: "openai/gpt-5.4",
+      apiKeys: makeApiKeys({ openrouter: "sk-or-test" }),
+    });
+
+    const result = await requestStudyAssistantCompletionDetailed({
+      settings,
+      systemPrompt: "You are helpful.",
+      userPrompt: "Say hello.",
+    });
+
+    expect(result.text).toBe("done");
+    expect(requestUrl).toHaveBeenCalledTimes(3);
+
+    const firstCall = vi.mocked(requestUrl).mock.calls[0][0] as any;
+    expect(firstCall.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(JSON.parse(firstCall.body).model).toBe("openai/gpt-5.4");
+
+    const secondCall = vi.mocked(requestUrl).mock.calls[1][0] as any;
+    expect(secondCall.url).toBe("https://openrouter.ai/api/v1/models");
+
+    const thirdCall = vi.mocked(requestUrl).mock.calls[2][0] as any;
+    expect(thirdCall.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(JSON.parse(thirdCall.body).model).toBe("openai/gpt-5");
+  });
+
+  it("streams Responses API text deltas from fetch chunks", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(makeStreamingFetchResponse([
+      'data: {"type":"response.output_text.delta","delta":"Hel',
+      '"}\n',
+      'data: {"type":"response.output_text.delta","delta":"lo"}\n',
+      'data: {"type":"response.completed","response":{"id":"resp_123"}}\n',
+      'data: [DONE]\n',
+    ])));
+
+    const settings = makeStudyAssistant({
+      provider: "openai",
+      model: "gpt-4.1-mini",
+      apiKeys: makeApiKeys({ openai: "sk-openai" }),
+    });
+
+    const chunks: string[] = [];
+    const result = await requestStudyAssistantStreamingCompletion({
+      settings,
+      systemPrompt: "You are helpful.",
+      userPrompt: "Say hello.",
+      onChunk: (token) => chunks.push(token),
+    });
+
+    expect(result.text).toBe("Hello");
+    expect(chunks).toEqual(["Hel", "lo"]);
+    expect(requestUrl).not.toHaveBeenCalled();
+
+    const call = vi.mocked(globalThis.fetch as typeof fetch).mock.calls[0] as any[];
+    expect(call[0]).toBe("https://api.openai.com/v1/responses");
+    const body = JSON.parse(String(call[1]?.body || "{}"));
+    expect(body.input[0].content[0]).toEqual({ type: "input_text", text: "Say hello." });
+  });
+
+  it("falls back to buffered requestUrl when fetch transport fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     vi.mocked(requestUrl).mockResolvedValue({
       status: 200,
       json: {},
@@ -432,6 +611,7 @@ describe("study assistant provider attachments", () => {
 
     expect(result.text).toBe("Hello");
     expect(chunks).toEqual(["Hel", "lo"]);
+    expect(requestUrl).toHaveBeenCalledOnce();
 
     const call = vi.mocked(requestUrl).mock.calls[0][0] as any;
     expect(call.url).toBe("https://api.openai.com/v1/responses");
@@ -477,5 +657,51 @@ describe("study assistant provider attachments", () => {
     const secondBody = JSON.parse((vi.mocked(requestUrl).mock.calls[1][0] as any).body);
     expect(secondBody.temperature).toBeUndefined();
     expect(secondBody.max_tokens).toBe(4096);
+  });
+
+  it("retries OpenRouter streaming requests after HTTP 404 using a catalog name match", async () => {
+    vi.mocked(requestUrl)
+      .mockResolvedValueOnce(makeProviderErrorResponse(404, "model_not_found"))
+      .mockResolvedValueOnce(makeOpenRouterModelsResponse([
+        {
+          id: "anthropic/claude-sonnet-4-5",
+          canonical_slug: "anthropic/claude-sonnet-4.6",
+          name: "Anthropic: Claude Sonnet 4.6",
+        },
+      ]))
+      .mockResolvedValueOnce({
+        status: 200,
+        json: {},
+        headers: {},
+        text: [
+          'data: {"choices":[{"delta":{"content":"Hel"}}]}',
+          'data: {"choices":[{"delta":{"content":"lo"}}]}',
+          'data: [DONE]',
+        ].join("\n"),
+      } as any);
+
+    const settings = makeStudyAssistant({
+      provider: "openrouter",
+      model: "Anthropic: Claude Sonnet 4.6",
+      apiKeys: makeApiKeys({ openrouter: "sk-or-test" }),
+    });
+
+    const chunks: string[] = [];
+    const result = await requestStudyAssistantStreamingCompletion({
+      settings,
+      systemPrompt: "You are helpful.",
+      userPrompt: "Say hello.",
+      onChunk: (token) => chunks.push(token),
+    });
+
+    expect(result.text).toBe("Hello");
+    expect(chunks).toEqual(["Hel", "lo"]);
+    expect(requestUrl).toHaveBeenCalledTimes(3);
+
+    const firstCall = vi.mocked(requestUrl).mock.calls[0][0] as any;
+    expect(JSON.parse(firstCall.body).model).toBe("Anthropic: Claude Sonnet 4.6");
+
+    const thirdCall = vi.mocked(requestUrl).mock.calls[2][0] as any;
+    expect(JSON.parse(thirdCall.body).model).toBe("anthropic/claude-sonnet-4-5");
   });
 });

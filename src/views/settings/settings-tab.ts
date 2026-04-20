@@ -3253,19 +3253,14 @@ export class LearnKitSettingsTab extends PluginSettingTab {
       return setting;
     };
 
-    new Setting(wrapper).setName(this._tx("ui.settings.studyAssistant.sections.info", "Info")).setHeading();
-
-    const infoItem = wrapper.createDiv({ cls: "setting-item" });
-    const infoInfo = infoItem.createDiv({ cls: "setting-item-info" });
-    infoInfo.createDiv({
-      cls: "setting-item-description",
-      text: this._tx(
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.studyAssistant.info.name", "API Keys"))
+      .setDesc(this._tx(
         "ui.settings.studyAssistant.info.desc",
-        "Companion uses your own API key. Cost depends on the provider and model. " +
+        "Companion uses a bring-your-own API key model. Cost depends on the provider and model. " +
           "Free and paid providers are supported — Google, OpenRouter, Anthropic, OpenAI, Perplexity, and more. " +
           "No subscription fees or API markups. For a free start, try Auto Router on OpenRouter.",
-      ),
-    });
+      ));
 
     new Setting(wrapper).setName(this._tx("ui.settings.studyAssistant.sections.enableSprig", "Enable Companion")).setHeading();
 
@@ -5137,6 +5132,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     const listbox = document.createElement("div");
     listbox.setAttribute("role", "listbox");
     listbox.className = "learnkit-ss-listbox";
+    setCssProps(listbox, "scrollbar-gutter", "stable");
     panel.appendChild(listbox);
 
     type ItemEntry = { value: string; el: HTMLElement };
@@ -5428,6 +5424,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     type SectionEntry = { titleEl: HTMLElement; separatorEl: HTMLElement | null; visibleCount: number };
     const items: ItemEntry[] = [];
     const sections = new Map<string, SectionEntry>();
+    let baseContentWidth = 0;
 
     const buildItems = () => {
       listbox.replaceChildren();
@@ -5571,11 +5568,37 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     }
 
     // ── Positioning ──
-    const place = () => {
+    const measureBaseContentWidth = (): number => {
+      const triggerWidth = Math.ceil(trigger.getBoundingClientRect().width);
+      const searchWrap = searchInput?.parentElement instanceof HTMLElement ? searchInput.parentElement : null;
+      const optionWidth = items.reduce((max, item) => Math.max(max, Math.ceil(item.el.scrollWidth)), 0);
+      const sectionWidth = Array.from(sections.values()).reduce(
+        (max, section) => Math.max(max, Math.ceil(section.titleEl.scrollWidth)),
+        0,
+      );
+
+      return Math.max(
+        triggerWidth,
+        optionWidth,
+        sectionWidth,
+        searchWrap ? Math.ceil(searchWrap.scrollWidth) : 0,
+      );
+    };
+
+    const measurePopoverWidth = (): number | undefined => {
       const isPhone = document.body.classList.contains("is-mobile") && window.innerWidth < 768;
+      if (isPhone) return undefined;
+
+      const viewportMaxWidth = Math.max(280, window.innerWidth - 32);
+      const contentWidth = Math.max(baseContentWidth, Math.ceil(trigger.getBoundingClientRect().width));
+
+      return Math.min(viewportMaxWidth, Math.max(280, contentWidth + 20));
+    };
+
+    const place = () => {
       placePopover({
         trigger, panel, popoverEl: popover,
-        width: isPhone ? undefined : Math.max(220, trigger.getBoundingClientRect().width),
+        width: measurePopoverWidth(),
         align: "right",
         gap: 4,
       });
@@ -5588,6 +5611,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
       trigger.setAttribute("aria-expanded", "false");
       popover.setAttribute("aria-hidden", "true");
       popover.classList.remove("is-open");
+      baseContentWidth = 0;
       cleanup?.();
       cleanup = null;
       if (sproutWrapper.parentNode === document.body) {
@@ -5598,7 +5622,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
     const open = () => {
       buildItems();
       if (searchInput) searchInput.value = "";
-      applyFilter();
+      baseContentWidth = 0;
 
       trigger.setAttribute("aria-expanded", "true");
       popover.setAttribute("aria-hidden", "false");
@@ -5606,6 +5630,8 @@ export class LearnKitSettingsTab extends PluginSettingTab {
 
       document.body.appendChild(sproutWrapper);
       requestAnimationFrame(() => {
+        baseContentWidth = measureBaseContentWidth();
+        applyFilter();
         place();
         if (searchInput) {
           searchInput.focus();

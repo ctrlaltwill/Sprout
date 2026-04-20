@@ -188,6 +188,77 @@
   padding: 1.2rem;
 }
 
+.learnkit .learnkit-exam-generator-runner-card {
+  width: 100%;
+  min-height: min(720px, calc(100vh - 220px));
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.learnkit .learnkit-exam-generator-runner-card > section.learnkit-exam-generator-runner-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 14px;
+  margin: 1.25rem 1.25rem 0.9rem;
+}
+
+.learnkit .learnkit-exam-generator-runner-card .learnkit-exam-generator-runner-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.learnkit .learnkit-exam-generator-runner-card .learnkit-exam-generator-runner-options {
+  gap: 0.55rem;
+}
+
+.learnkit .learnkit-exam-generator-runner-card .learnkit-exam-generator-option-button {
+  margin-bottom: 0 !important;
+  min-height: 44px;
+  padding: 0.7rem 0.85rem;
+  align-items: flex-start;
+}
+
+.learnkit .learnkit-exam-generator-runner-card .learnkit-exam-generator-option-button .learnkit-mcq-option-text {
+  display: block;
+}
+
+.learnkit .learnkit-exam-generator-runner-card .learnkit-exam-generator-answer-wrap {
+  min-width: 0;
+}
+
+.learnkit .learnkit-exam-generator-runner-card .learnkit-exam-generator-runner-textarea {
+  width: 100%;
+  min-height: clamp(180px, 32vh, 320px);
+  max-height: 440px;
+  box-sizing: border-box;
+}
+
+.learnkit .learnkit-exam-generator-runner-footer {
+  margin-top: auto;
+}
+
+.learnkit .learnkit-exam-generator-runner-footer .learnkit-session-study-dock-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.learnkit .learnkit-exam-generator-runner-footer .learnkit-exam-generator-runner-nav-btn {
+  min-width: 0;
+  justify-content: center;
+}
+
+.learnkit .learnkit-exam-generator-runner-footer .learnkit-exam-generator-runner-kbd {
+  pointer-events: none;
+}
+
+.learnkit .learnkit-exam-generator-runner-footer .learnkit-exam-generator-runner-kbd .svg-icon {
+  width: 12px;
+  height: 12px;
+}
+
 .learnkit .learnkit-exam-generator-card-loading {
   position: relative;
   overflow: hidden;
@@ -990,6 +1061,19 @@
   -webkit-user-select: text;
   user-select: text;
   margin: 0 0 0 0 !important;
+}
+
+body.is-phone .learnkit .learnkit-exam-generator-runner-card {
+  min-height: 0;
+}
+
+body.is-phone .learnkit .learnkit-exam-generator-runner-card > section.learnkit-exam-generator-runner-body {
+  margin: 0.9rem 0.9rem 0.75rem;
+  gap: 12px;
+}
+
+body.is-phone .learnkit .learnkit-exam-generator-runner-footer .learnkit-exam-generator-runner-nav-btn {
+  min-width: 0;
 }
 
 .learnkit .learnkit-exam-generator-scope-summary {

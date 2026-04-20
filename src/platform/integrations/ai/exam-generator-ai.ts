@@ -179,16 +179,80 @@ function asText(value: unknown, fallback = ""): string {
   return fallback;
 }
 
-function normaliseQuestion(candidate: unknown, index: number, fallbackPath: string): GeneratedExamQuestion | null {
+type McqSelectionMode = "single" | "multiple";
+
+const EXPLICIT_MULTI_SELECT_PROMPT_PATTERNS: RegExp[] = [
+  /\bselect\s+all\s+that\s+apply\b/i,
+  /\ball\s+that\s+apply\b/i,
+  /\bidentify\s+all\b/i,
+  /\bwhich\s+of\s+the\s+following\s+are\b/i,
+  /\bwhich\s+of\s+these\s+are\b/i,
+  /\bwhich\s+statements?\s+are\b/i,
+  /\bwhich\s+options?\s+are\b/i,
+  /\bwhich\s+(?:two|three|four|five|six|\d+)\b/i,
+  /\b(?:choose|select|pick|identify)\s+(?:the\s+)?(?:two|three|four|five|six|\d+)\b/i,
+];
+
+const EXPLICIT_MULTI_SELECT_INSTRUCTION_PATTERNS: RegExp[] = [
+  /\bselect\s+all\s+that\s+apply\b/i,
+  /\ball\s+that\s+apply\b/i,
+  /\b(?:choose|select|pick|identify)\s+(?:the\s+)?(?:two|three|four|five|six|\d+)\b/i,
+];
+
+function normaliseMcqSelectionMode(value: unknown): McqSelectionMode | null {
+  const mode = asText(value).trim().toLowerCase();
+  if (!mode) return null;
+  if (["single", "single-select", "single select", "single_best", "single-best", "one"].includes(mode)) return "single";
+  if (["multiple", "multi", "multi-select", "multi select", "multiple-select", "multiple select", "msq", "all-that-apply", "all that apply"].includes(mode)) {
+    return "multiple";
+  }
+  return null;
+}
+
+function getMcqSelectionMode(row: Record<string, unknown>): McqSelectionMode | null {
+  const candidateKeys = ["selectionMode", "answerMode", "optionMode", "variant", "mcqMode"];
+  for (const key of candidateKeys) {
+    const mode = normaliseMcqSelectionMode(row[key]);
+    if (mode) return mode;
+  }
+  return null;
+}
+
+function promptSignalsMultiSelect(prompt: string): boolean {
+  return EXPLICIT_MULTI_SELECT_PROMPT_PATTERNS.some((re) => re.test(prompt));
+}
+
+function promptHasExplicitMultiSelectInstruction(prompt: string): boolean {
+  return EXPLICIT_MULTI_SELECT_INSTRUCTION_PATTERNS.some((re) => re.test(prompt));
+}
+
+function ensureExplicitMultiSelectPrompt(prompt: string): string {
+  const trimmed = String(prompt || "").trim();
+  if (!trimmed) return trimmed;
+  if (promptHasExplicitMultiSelectInstruction(trimmed)) return trimmed;
+  return `Select all that apply: ${trimmed}`;
+}
+
+function normaliseQuestion(
+  candidate: unknown,
+  index: number,
+  fallbackPath: string,
+  issues?: string[],
+): GeneratedExamQuestion | null {
+  const fail = (reason: string): null => {
+    issues?.push(`Question ${index + 1}: ${reason}`);
+    return null;
+  };
+
   const row = toRecord(candidate);
-  if (!row) return null;
+  if (!row) return fail("item was not an object.");
 
   const typeRaw = asText(row.type).trim().toLowerCase();
-  const type = typeRaw === "saq" ? "saq" : typeRaw === "mcq" ? "mcq" : null;
-  if (!type) return null;
+  const type = typeRaw === "saq" ? "saq" : typeRaw === "mcq" || typeRaw === "msq" ? "mcq" : null;
+  if (!type) return fail(`unsupported question type \"${typeRaw || "(empty)"}\".`);
 
   const prompt = asText(row.prompt).trim();
-  if (!prompt) return null;
+  if (!prompt) return fail("prompt was empty.");
 
   const sourcePath = asText(row.sourcePath, fallbackPath).trim() || fallbackPath;
   const baseId = asText(row.id, `q${index + 1}`).trim();
@@ -196,28 +260,46 @@ function normaliseQuestion(candidate: unknown, index: number, fallbackPath: stri
 
   if (type === "mcq") {
     const options = asStringArray(row.options).slice(0, 6);
-    if (options.length < 2) return null;
+    if (options.length < 2) return fail("MCQ requires at least 2 options.");
     const explanation = asText(row.explanation).trim();
+    const selectionMode = typeRaw === "msq" ? "multiple" : getMcqSelectionMode(row);
+    const promptRequiresMultiSelect = promptSignalsMultiSelect(prompt);
 
-    // Multi-select MCQ: correctIndices is an array of correct option indices
     const rawIndices = Array.isArray(row.correctIndices) ? row.correctIndices : null;
-    if (rawIndices && rawIndices.length > 1) {
-      const correctIndices = rawIndices
+    const correctIndices = rawIndices
+      ? [...new Set(rawIndices
         .map((v: unknown) => Number(v))
         .filter((v: number) => Number.isFinite(v) && v >= 0 && v < options.length)
-        .map((v: number) => Math.floor(v));
-      const unique = [...new Set(correctIndices)];
-      if (unique.length > 1 && unique.length < options.length) {
-        return { id, type, prompt, sourcePath, options, correctIndices: unique, explanation };
+        .map((v: number) => Math.floor(v)))]
+      : [];
+
+    if (correctIndices.length > 1) {
+      if (correctIndices.length >= options.length) {
+        return fail("multi-select marked every option correct; include at least one wrong distractor.");
       }
+      return {
+        id,
+        type,
+        prompt: ensureExplicitMultiSelectPrompt(prompt),
+        sourcePath,
+        options,
+        correctIndices,
+        explanation,
+      };
     }
 
-    // Single-select MCQ (default)
+    if (selectionMode === "multiple" || promptRequiresMultiSelect) {
+      return fail("multi-select stem must use type \"msq\" or selectionMode \"multiple\" with 2+ correctIndices.");
+    }
+
+    if (correctIndices.length === 1) {
+      return { id, type, prompt, sourcePath, options, correctIndex: correctIndices[0], explanation };
+    }
+
     const idx = Number(row.correctIndex);
-    const correctIndex = Number.isFinite(idx) ? Math.max(0, Math.min(options.length - 1, Math.floor(idx))) : 0;
-    // Strip misleading "Select all that apply" prefix when question fell back to single-select
-    const cleanedPrompt = prompt.replace(/^select\s+all\s+that\s+apply\s*[:\-–—]?\s*/i, "").trim() || prompt;
-    return { id, type, prompt: cleanedPrompt, sourcePath, options, correctIndex, explanation };
+    if (!Number.isFinite(idx)) return fail("single-select MCQ requires correctIndex.");
+    const correctIndex = Math.max(0, Math.min(options.length - 1, Math.floor(idx)));
+    return { id, type, prompt, sourcePath, options, correctIndex, explanation };
   }
 
   const markingGuide = asStringArray(row.markingGuide).slice(0, 8);
@@ -240,25 +322,29 @@ function normaliseGeneratedQuestions(
   questionCount: number,
   fallbackPath: string,
   requestedType: "mcq" | "saq" | "mixed",
-): GeneratedExamQuestion[] {
+): { questions: GeneratedExamQuestion[]; issues: string[] } {
   const obj = toRecord(payload);
-  if (!obj || !Array.isArray(obj.questions)) return [];
+  if (!obj || !Array.isArray(obj.questions)) return { questions: [], issues: ["Response did not contain a questions array."] };
 
   const out: GeneratedExamQuestion[] = [];
+  const issues: string[] = [];
   const seen = new Set<string>();
   const allowedTypes = allowedQuestionTypesForRequest(requestedType);
 
   for (let i = 0; i < obj.questions.length; i += 1) {
-    const q = normaliseQuestion(obj.questions[i], i, fallbackPath);
+    const q = normaliseQuestion(obj.questions[i], i, fallbackPath, issues);
     if (!q) continue;
-    if (!allowedTypes.has(q.type)) continue;
+    if (!allowedTypes.has(q.type)) {
+      issues.push(`Question ${i + 1}: type \"${q.type}\" is not allowed for requested mode \"${requestedType}\".`);
+      continue;
+    }
     const uniqueId = seen.has(q.id) ? `${q.id}-${i + 1}` : q.id;
     seen.add(uniqueId);
     out.push({ ...q, id: uniqueId });
     if (out.length >= questionCount) break;
   }
 
-  return out;
+  return { questions: out, issues };
 }
 
 function splitIntoChunks<T>(arr: T[], size: number): T[][] {
@@ -332,7 +418,26 @@ async function requestExamChunk(params: {
         },
         strictRequirements: {
           exactQuestionCount: questionCount,
-          allowedQuestionTypes: requestedType === "mixed" ? ["mcq", "saq"] : [requestedType],
+          allowedQuestionTypes:
+            requestedType === "mixed"
+              ? ["mcq", "msq", "saq"]
+              : requestedType === "mcq"
+                ? ["mcq", "msq"]
+                : [requestedType],
+          mcqContract: {
+            singleSelect: {
+              type: "mcq",
+              requiredField: "correctIndex",
+              exactlyOneCorrectOption: true,
+            },
+            multiSelect: {
+              type: "msq",
+              requiredField: "correctIndices",
+              minCorrectOptions: 2,
+              requireAtLeastOneWrongOption: true,
+              promptMustClearlyIndicateMultipleAnswers: true,
+            },
+          },
           rejectMismatchedTypeOutput: true,
           rejectPartialOutput: true,
         },
@@ -367,7 +472,7 @@ async function requestExamChunk(params: {
       continue;
     }
 
-    const normalized = normaliseGeneratedQuestions(parsed, questionCount, fallbackPath, requestedType);
+    const { questions: normalized, issues } = normaliseGeneratedQuestions(parsed, questionCount, fallbackPath, requestedType);
     if (normalized.length >= questionCount) {
       return normalized.map((q, idx) => ({
         ...q,
@@ -375,7 +480,9 @@ async function requestExamChunk(params: {
       }));
     }
 
-    lastError = `Returned ${normalized.length}/${questionCount} valid questions after filtering.`;
+    lastError = issues.length > 0
+      ? issues.slice(0, 3).join(" ")
+      : `Returned ${normalized.length}/${questionCount} valid questions after filtering.`;
   }
 
   return [];
@@ -464,13 +571,17 @@ export async function generateExamQuestions(params: {
       ]
       : []),
     "Return valid JSON only with this schema:",
-    "{\"questions\":[{\"id\":\"q1\",\"type\":\"mcq|saq\",\"prompt\":\"...\",\"sourcePath\":\"...\",\"options\":[\"...\"],\"correctIndex\":0,\"correctIndices\":[0,2],\"explanation\":\"...\",\"markingGuide\":[\"...\"]}]}",
+    "{\"questions\":[{\"id\":\"q1\",\"type\":\"mcq|msq|saq\",\"prompt\":\"...\",\"sourcePath\":\"...\",\"options\":[\"...\"],\"correctIndex\":0,\"correctIndices\":[0,2],\"selectionMode\":\"single|multiple\",\"explanation\":\"...\",\"markingGuide\":[\"...\"]}]}",
     "Rules:",
     `- Return exactly ${config.questionCount} questions (no more, no fewer).`,
-    `- Requested question mode is "${requestedType}". ${requestedType === "mixed" ? "Mixed mode: include only mcq or saq types." : `Every question MUST have type "${requestedType}".`}`,
+    `- Requested question mode is \"${requestedType}\". ${requestedType === "mixed" ? "Mixed mode: include only mcq, msq, or saq types." : requestedType === "mcq" ? "MCQ mode may include single-select \"mcq\" items and multi-select \"msq\" items only." : `Every question MUST have type \"${requestedType}\".`}`,
     "- MCQ must have 4 options when possible.",
-    '- Most MCQs should be single-select with one correctIndex. Around 20-30% of MCQs should be multi-select ("Select all that apply") using correctIndices (an array of 2+ correct option indices). Multi-select prompts must include "Select all that apply" in the prompt text.',
-    "- For single-select MCQs, include correctIndex (a single number). For multi-select MCQs, include correctIndices (an array of numbers) instead.",
+    '- Use type "mcq" only for true single-best-answer questions with exactly one defensibly correct option and one correctIndex.',
+    '- Use type "msq" for any question with more than one correct answer. "msq" items must include correctIndices with 2+ correct option indices and at least one wrong distractor.',
+    '- If a stem naturally implies multiple answers, such as "Which of the following are...", "Which statements are...", "Identify all...", or "Select two...", it must be an "msq" item, not an "mcq" item.',
+    '- Never force a naturally multi-answer stem into single-select just to fit MCQ format. Rewrite it as "msq" or rewrite the stem so exactly one option is correct.',
+    '- For multi-select questions, make the multiple-answer instruction explicit. Prefix the prompt with "Select all that apply:" unless the stem already clearly says how many answers to choose.',
+    '- Never return a question where every option is correct. Multi-select questions must still include at least one wrong distractor.',
     "- SAQ must include concise markingGuide bullets.",
     "- Keep prompts clear and exam-like.",
     "- Any question with a mismatched type is invalid and must not be returned.",

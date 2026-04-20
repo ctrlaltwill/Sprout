@@ -40,6 +40,7 @@
 
   cursor: pointer;
   color: var(--text-muted);
+  transition: color 0.22s ease;
 }
 
 .learnkit .learnkit-deck-disclosure-btn {
@@ -71,7 +72,10 @@
 .learnkit .learnkit-deck-disclosure svg {
   width: 12.8px;
   height: 12.8px;
-  transition: transform 140ms ease;
+  transition:
+    transform 140ms ease,
+    color 0.22s ease,
+    stroke 0.22s ease;
   transform-origin: 50% 50%;
 }
 
@@ -346,6 +350,16 @@ body.is-mobile .learnkit .learnkit-deck-expand-buttons .learnkit-btn-toolbar {
 .learnkit .learnkit-deck-expand-icon svg {
   width: 12.8px;
   height: 12.8px;
+}
+
+.learnkit .learnkit-deck-expand-icon,
+.learnkit .learnkit-deck-control-icon {
+  transition: color 0.22s ease;
+}
+
+.learnkit .learnkit-deck-expand-icon svg,
+.learnkit .learnkit-deck-control-icon svg {
+  transition: color 0.22s ease, stroke 0.22s ease;
 }
 
 /* Deck Browser: scale down plus/minus icons by 20% */

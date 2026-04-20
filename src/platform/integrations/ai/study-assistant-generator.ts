@@ -4,6 +4,7 @@
  *
  * @exports
  *  - generateStudyAssistantSuggestions
+ *  - generateStudyAssistantSuggestionsStreaming
  *  - generateStudyAssistantChatReply
  *  - generateStudyAssistantChatReplyStreaming
  *  - classifyUserIntent
@@ -129,6 +130,46 @@ function extractFirstJsonObject(text: string): string {
   }
 
   return raw.trim();
+}
+
+const EDIT_PROPOSAL_START_TAG = "<learnkit-edit-proposal>";
+const EDIT_PROPOSAL_END_TAG = "</learnkit-edit-proposal>";
+
+function extractTaggedEditProposal(text: string): string {
+  const raw = String(text || "");
+  const start = raw.indexOf(EDIT_PROPOSAL_START_TAG);
+  if (start === -1) return "";
+
+  const bodyStart = start + EDIT_PROPOSAL_START_TAG.length;
+  const end = raw.indexOf(EDIT_PROPOSAL_END_TAG, bodyStart);
+  return (end === -1 ? raw.slice(bodyStart) : raw.slice(bodyStart, end)).trim();
+}
+
+function trimTrailingMarkerFragment(text: string, marker: string): string {
+  const value = String(text || "");
+  const maxFragmentLength = Math.min(marker.length - 1, value.length);
+
+  for (let size = maxFragmentLength; size > 0; size -= 1) {
+    if (marker.startsWith(value.slice(-size))) {
+      return value.slice(0, -size);
+    }
+  }
+
+  return value;
+}
+
+export function extractVisibleEditResponseText(rawText: string): string {
+  const raw = String(rawText || "");
+  const markerStart = raw.indexOf(EDIT_PROPOSAL_START_TAG);
+  let visible = markerStart >= 0 ? raw.slice(0, markerStart) : raw;
+  visible = trimTrailingMarkerFragment(visible, EDIT_PROPOSAL_START_TAG);
+
+  const trimmedStart = visible.trimStart();
+  if (markerStart === -1 && (/^```(?:json)?/i.test(trimmedStart) || trimmedStart.startsWith("{"))) {
+    return "";
+  }
+
+  return visible.trimEnd();
 }
 
 function coerceString(value: unknown): string {
@@ -970,6 +1011,116 @@ function parseSuggestions(rawText: string): StudyAssistantSuggestion[] {
   return normalizedSuggestions;
 }
 
+function findStreamingSuggestionArrayStart(rawText: string): number {
+  const value = String(rawText || "");
+  const keyPatterns = [
+    /"suggestions"\s*:\s*\[/,
+    /"flashcards"\s*:\s*\[/,
+    /"cards"\s*:\s*\[/,
+  ];
+
+  for (const pattern of keyPatterns) {
+    const match = pattern.exec(value);
+    if (!match) continue;
+    const bracketIndex = value.indexOf("[", match.index);
+    if (bracketIndex >= 0) return bracketIndex;
+  }
+
+  const firstNonWhitespace = value.search(/\S/);
+  if (firstNonWhitespace >= 0 && value[firstNonWhitespace] === "[") {
+    return firstNonWhitespace;
+  }
+
+  return -1;
+}
+
+function extractStreamingJsonArrayItems(rawText: string): string[] {
+  const value = String(rawText || "");
+  const arrayStart = findStreamingSuggestionArrayStart(value);
+  if (arrayStart < 0) return [];
+
+  const items: string[] = [];
+  let inString = false;
+  let escape = false;
+  let itemStart = -1;
+  let depth = 0;
+
+  for (let i = arrayStart + 1; i < value.length; i += 1) {
+    const ch = value[i];
+
+    if (inString) {
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (ch === "\\") {
+        escape = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (itemStart === -1) {
+      if (/\s/.test(ch) || ch === ",") continue;
+      if (ch === "]") break;
+
+      if (ch !== "{" && ch !== "[") {
+        let end = i + 1;
+        while (end < value.length && value[end] !== "," && value[end] !== "]") end += 1;
+        const candidate = value.slice(i, end).trim();
+        if (candidate) items.push(candidate);
+        i = end - 1;
+        continue;
+      }
+
+      itemStart = i;
+      depth = 1;
+      continue;
+    }
+
+    if (ch === "{" || ch === "[") {
+      depth += 1;
+      continue;
+    }
+
+    if (ch === "}" || ch === "]") {
+      depth -= 1;
+      if (depth === 0) {
+        items.push(value.slice(itemStart, i + 1).trim());
+        itemStart = -1;
+      }
+    }
+  }
+
+  return items;
+}
+
+function parseStreamingSuggestions(rawText: string): StudyAssistantSuggestion[] {
+  const items = extractStreamingJsonArrayItems(rawText);
+  if (!items.length) return [];
+
+  const suggestions: StudyAssistantSuggestion[] = [];
+  for (const item of items) {
+    try {
+      const parsed: unknown = JSON.parse(item);
+      const suggestion = sanitizeSuggestion(parsed);
+      if (suggestion) suggestions.push(suggestion);
+    } catch {
+      // Ignore incomplete or malformed partial items while streaming.
+    }
+  }
+
+  return suggestions;
+}
+
 function modelLikelySupportsVision(settings: SproutSettings["studyAssistant"]): boolean {
   const model = String(settings.model || "").toLowerCase();
   if (!model) return false;
@@ -1061,13 +1212,19 @@ function buildChatSystemPrompt(input: StudyAssistantChatInput): string {
     "",
     "Public-mode instructions:",
     input.mode === "edit"
-      ? "You are LearnKit Study Companion. Edit the note content as the user requested. Return a JSON object with a summary and edits array."
+      ? "You are LearnKit Study Companion. Edit the note content as the user requested."
       : input.mode === "ask"
         ? "You are LearnKit Study Companion. Answer with note context first, then supplement with external knowledge when needed."
         : "You are LearnKit Study Companion. Review the note content using both note evidence and subject knowledge to provide study-focused quality feedback.",
     "Use a warm, human tone when appropriate. Be motivating and supportive, especially when the user seems discouraged.",
     "Be concise, clear, and practical.",
     "When content is not supported by the note, state that it is external/background knowledge.",
+    input.mode === "edit"
+      ? `First, write a brief plain-text summary for the user. Then output ${EDIT_PROPOSAL_START_TAG} followed by strictly valid JSON and then ${EDIT_PROPOSAL_END_TAG}.`
+      : "",
+    input.mode === "edit"
+      ? "Inside the tagged block, output JSON only with exactly two keys: summary and edits. Do not use markdown code fences."
+      : "",
     input.mode === "edit" ? "" : "Use markdown formatting when useful.",
   ].filter(Boolean);
 
@@ -1105,7 +1262,12 @@ function buildChatUserPrompt(input: StudyAssistantChatInput): string {
 
   if (input.mode === "edit") {
     return [
-      "Edit the note content as requested by the user. Return strictly valid JSON with a summary (max 40 words) and an edits array.",
+      "Edit the note content as requested by the user.",
+      "Return two parts in this exact order:",
+      "1. A short plain-text summary for the user describing the changes you prepared.",
+      `2. ${EDIT_PROPOSAL_START_TAG}{"summary":"...","edits":[...]}${EDIT_PROPOSAL_END_TAG}`,
+      "The summary inside the tagged JSON must be at most 40 words and should match the visible summary.",
+      "Inside the tagged block, return strictly valid JSON only.",
       "Each edit must have an \"original\" field that is an exact verbatim substring of noteContent, and a \"replacement\" field with the new text.",
       JSON.stringify(payload, null, 2),
     ].join("\n\n");
@@ -1330,6 +1492,167 @@ export async function generateStudyAssistantSuggestions(params: {
   };
 }
 
+export async function generateStudyAssistantSuggestionsStreaming(params: {
+  settings: SproutSettings["studyAssistant"];
+  input: StudyAssistantGeneratorInput;
+  onSuggestion: (suggestion: StudyAssistantSuggestion) => void;
+  signal?: AbortSignal;
+}): Promise<StudyAssistantGeneratorResult> {
+  const { settings, input, onSuggestion, signal } = params;
+  const overrides = parseUserRequestOverrides(input.userRequestText || "");
+  const intent = buildGenerationIntent(input, overrides);
+  const exactRequested = overrides.exactCountRequested && overrides.count != null;
+  if (exactRequested && (overrides.count ?? 0) > 20) {
+    throw new Error("Requested flashcard count is too high. Please ask for 20 or fewer and break the request into smaller chunks by subtopic or card type.");
+  }
+  const baseTarget = Math.max(1, Math.min(10, Math.round(Number(input.targetSuggestionCount) || 5)));
+  const target = exactRequested ? Math.max(1, Math.min(20, overrides.count ?? 1)) : (overrides.count ?? baseTarget);
+  const maxAllowed = exactRequested ? target : Math.min(10, target + 1);
+  const effectiveTypes = overrides.types?.length
+    ? [...new Set(overrides.types)]
+    : input.enabledTypes;
+  const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
+  const attachedFileDataUrls = Array.isArray(input.attachedFileDataUrls) ? input.attachedFileDataUrls.filter(Boolean) : [];
+  const canUseVisionForIo = !!input.includeImages && imageDataUrls.length > 0 && modelLikelySupportsVision(settings);
+  const systemPrompt = buildSystemPrompt(input.customInstructions || settings.prompts.assistant || "", canUseVisionForIo);
+  const userPrompt = buildUserPrompt(input, canUseVisionForIo, overrides);
+  const payloadPreview = `System prompt:\n${systemPrompt}\n\nUser prompt:\n${userPrompt}`;
+
+  let resolvedConversationId = input.conversationId;
+  let attachmentRoute: StudyAssistantAttachmentRoute = "none";
+  let emittedSuggestionCount = 0;
+
+  const filterSuggestions = (suggestions: StudyAssistantSuggestion[]): StudyAssistantSuggestion[] => suggestions
+    .filter((suggestion) => canUseVisionForIo || suggestion.type !== "io")
+    .filter((suggestion) => effectiveTypes.includes(suggestion.type));
+
+  const emitResolvedSuggestions = (
+    baseSuggestions: StudyAssistantSuggestion[],
+    streamedSuggestions: StudyAssistantSuggestion[],
+    limit: number,
+  ): void => {
+    const resolved = resolveSuggestionsWithFallback(
+      intent,
+      [...baseSuggestions, ...filterSuggestions(streamedSuggestions)],
+      input.noteContent,
+    ).slice(0, limit);
+
+    for (let i = emittedSuggestionCount; i < resolved.length; i += 1) {
+      onSuggestion(resolved[i]);
+    }
+    emittedSuggestionCount = Math.max(emittedSuggestionCount, resolved.length);
+  };
+
+  const runStreamingPass = async (args: {
+    systemPrompt: string;
+    userPrompt: string;
+    baseSuggestions: StudyAssistantSuggestion[];
+    limit: number;
+  }): Promise<{
+    rawResponseText: string;
+    suggestions: StudyAssistantSuggestion[];
+  }> => {
+    let streamedRawText = "";
+
+    const response = await requestStudyAssistantStreamingCompletion({
+      settings,
+      systemPrompt: args.systemPrompt,
+      userPrompt: args.userPrompt,
+      mode: "json",
+      imageDataUrls: canUseVisionForIo ? imageDataUrls : [],
+      attachedFileDataUrls,
+      documentAttachmentMode: input.documentAttachmentMode,
+      conversationId: resolvedConversationId,
+      signal,
+      onChunk: (token) => {
+        streamedRawText += token;
+        emitResolvedSuggestions(args.baseSuggestions, parseStreamingSuggestions(streamedRawText), args.limit);
+      },
+    });
+
+    resolvedConversationId = response.conversationId ?? resolvedConversationId;
+    attachmentRoute = combineAttachmentRoutes(attachmentRoute, response.attachmentRoute);
+
+    const resolvedSuggestions = resolveSuggestionsWithFallback(
+      intent,
+      [...args.baseSuggestions, ...filterSuggestions(parseSuggestions(response.text))],
+      input.noteContent,
+    ).slice(0, args.limit);
+
+    for (let i = emittedSuggestionCount; i < resolvedSuggestions.length; i += 1) {
+      onSuggestion(resolvedSuggestions[i]);
+    }
+    emittedSuggestionCount = Math.max(emittedSuggestionCount, resolvedSuggestions.length);
+
+    return {
+      rawResponseText: response.text,
+      suggestions: resolvedSuggestions,
+    };
+  };
+
+  const firstPass = await runStreamingPass({
+    systemPrompt,
+    userPrompt,
+    baseSuggestions: [],
+    limit: maxAllowed,
+  });
+
+  let suggestions = firstPass.suggestions;
+  const rawResponseText = firstPass.rawResponseText;
+  let refillRawResponseText = "";
+
+  if (intent.exactCountRequested && suggestions.length < target) {
+    const remaining = target - suggestions.length;
+    const existingGeneratedTopics = suggestions
+      .flatMap((suggestion) => extractSuggestionTopics(suggestion))
+      .filter(Boolean)
+      .slice(0, 25);
+
+    const refillInput: StudyAssistantGeneratorInput = {
+      ...input,
+      targetSuggestionCount: remaining,
+      customInstructions: [
+        input.customInstructions,
+        `Refill mode: Generate exactly ${remaining} additional suggestions to satisfy the requested exact count.`,
+        "Do not repeat or paraphrase topics already generated in this request.",
+        existingGeneratedTopics.length
+          ? `Already generated topics to avoid:\n${existingGeneratedTopics.map((topic, idx) => `${idx + 1}. ${topic}`).join("\n")}`
+          : "",
+      ].filter(Boolean).join("\n\n"),
+    };
+
+    const refillOverrides: UserRequestOverrides = {
+      ...overrides,
+      count: remaining,
+      exactCountRequested: true,
+    };
+    const refillSystemPrompt = buildSystemPrompt(refillInput.customInstructions || settings.prompts.assistant || "", canUseVisionForIo);
+    const refillUserPrompt = buildUserPrompt(refillInput, canUseVisionForIo, refillOverrides);
+
+    const refillPass = await runStreamingPass({
+      systemPrompt: refillSystemPrompt,
+      userPrompt: refillUserPrompt,
+      baseSuggestions: suggestions,
+      limit: target,
+    });
+
+    suggestions = refillPass.suggestions;
+    refillRawResponseText = refillPass.rawResponseText;
+  }
+
+  const calibratedSuggestions = assignDifficultyLevels(suggestions);
+
+  return {
+    suggestions: calibratedSuggestions,
+    payloadPreview,
+    attachmentRoute,
+    conversationId: resolvedConversationId,
+    rawResponseText: refillRawResponseText
+      ? `${rawResponseText}\n\n--- refill ---\n${refillRawResponseText}`
+      : rawResponseText,
+  };
+}
+
 // ── Intent classification ──
 
 export type UserIntentClassification = "edit" | "review" | "ask" | "generate";
@@ -1458,7 +1781,7 @@ export async function generateStudyAssistantChatReplyStreaming(params: {
 // ── Edit proposal parsing ──
 
 export function parseEditProposal(rawText: string): StudyAssistantEditProposal | null {
-  const jsonSource = extractFirstJsonObject(rawText);
+  const jsonSource = extractTaggedEditProposal(rawText) || extractFirstJsonObject(rawText);
   if (!jsonSource) return null;
 
   let parsed: unknown;

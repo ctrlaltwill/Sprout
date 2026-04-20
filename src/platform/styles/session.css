@@ -907,15 +907,9 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 }
 
 .learnkit .learnkit-mcq-options .learnkit-btn-toolbar:hover {
-    background-color: var(--color-base-35) !important;
-      color: var(--color-base-100) !important;
-    border-color: var(--color-base-40) !important;}
-
-.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:is(:focus, :focus-within, :focus-visible, :active) {
-  background-color: var(--color-base-20) !important;
+  background-color: var(--color-base-30) !important;
   color: var(--color-base-100) !important;
-  border-color: var(--color-base-35) !important;
-  box-shadow: none !important;
+  border-color: var(--color-base-50) !important;
 }
 
 .learnkit .learnkit-mcq-options .learnkit-btn-toolbar > .inline-flex {
@@ -966,6 +960,18 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   background-color: rgba(239, 68, 68, 0.15) !important;
 }
 
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-mcq-correct-highlight, .learnkit-oq-correct-highlight) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--learnkit-good-bg) 50%, transparent) !important;
+  border-color: color-mix(in srgb, var(--learnkit-good-bg) 48%, transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--learnkit-good-bg) 12%) !important;
+}
+
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-mcq-wrong-highlight, .learnkit-oq-wrong-highlight) :is(kbd, .kbd) {
+  background: color-mix(in srgb, var(--destructive) 50%, transparent) !important;
+  border-color: color-mix(in srgb, var(--destructive) 48%, transparent) !important;
+  color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--destructive) 12%) !important;
+}
+
 .learnkit-mcq-option-text {
   line-height: 1.75;
   display: block;
@@ -980,10 +986,15 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 /* Use .learnkit .learnkit-btn-toolbar.learnkit-mcq-selected to beat .learnkit .learnkit-btn-toolbar specificity (0-3-0 > 0-2-0) */
 .learnkit .learnkit-btn-toolbar.learnkit-mcq-selected,
 .learnkit-mcq-selected {
-  border-color: var(--interactive-accent);
-  border-width: 2px;
-  border-style: solid;
-  background-color: rgba(var(--interactive-accent-rgb, 59, 130, 246), 0.08);
+  background-color: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-70) !important;
+  box-shadow: none !important;
+}
+
+.learnkit .learnkit-mcq-options .learnkit-btn-toolbar:focus {
+  border-color: var(--color-base-70) !important;
+  background-color: var(--color-base-30) !important;
 }
 
 /* Multi-answer MCQ: missed correct answer on reveal */
@@ -996,23 +1007,6 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .theme-dark .learnkit-mcq-missed-correct {
   border-color: rgba(34, 197, 94, 0.6);
-}
-
-/* Multi-answer MCQ submit button */
-.learnkit-mcq-submit-btn {
-  cursor: pointer;
-  font-weight: 500;
-  padding: 6px 16px;
-  border-radius: var(--radius-md);
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border: none;
-  box-shadow: none;
-  transition: opacity 0.15s;
-}
-
-.learnkit-mcq-submit-btn:hover {
-  opacity: 0.9;
 }
 
 /* OQ submit button — remove box shadow */
@@ -1230,14 +1224,14 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   border-radius: var(--radius-s, 4px);
   border: 0.5px solid var(--color-base-35) !important;
   background-color: var(--color-base-20);
-  color: var(--text-normal) !important;
+  color: var(--text-normal);
   box-shadow: none;
 }
 
 .learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .learnkit-btn-toolbar:not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy):is(:hover, :focus-visible, :active) {
   background-color: var(--color-base-30);
   border-color: var(--color-base-40) !important;
-  color: var(--color-base-100) !important;
+  color: var(--color-base-100);
 }
 
 .learnkit :is(.lk-session-card footer, .learnkit-gatekeeper-footer) .learnkit-btn-toolbar:not(.learnkit-btn-again):not(.learnkit-btn-hard):not(.learnkit-btn-good):not(.learnkit-btn-easy) :is(kbd, .kbd) {

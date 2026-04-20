@@ -1265,12 +1265,18 @@
   background-color: var(--learnkit-again-bg-light) !important;
 }
 
+.learnkit.learnkit-widget .learnkit-mcq-options .learnkit-btn-toolbar:hover {
+  background-color: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-50) !important;
+}
+
 /* MCQ multi-answer: selected toggle */
 .learnkit.learnkit-widget .learnkit-mcq-selected {
-  border-color: var(--interactive-accent) !important;
-  border-width: 0.5px !important;
-  border-style: solid !important;
-  background-color: rgba(var(--interactive-accent-rgb, 59, 130, 246), 0.08) !important;
+  background-color: var(--color-base-30) !important;
+  color: var(--color-base-100) !important;
+  border-color: var(--color-base-50) !important;
+  box-shadow: none !important;
 }
 
 /* MCQ multi-answer: missed correct on reveal */

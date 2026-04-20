@@ -43,6 +43,7 @@ import { mountSearchPopoverList, type SearchPopoverOption } from "../shared/sear
 import { collectVaultTagAndPropertyPairs, decodePropertyPair, extractFilePropertyPairs, extractFileTags } from "../shared/scope-metadata";
 import { formatAttachmentChipLabel } from "../shared/attachment-chip-label";
 import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
+import { formatAssistantError, logAssistantRequestError } from "../study-assistant/popup/assistant-popup-error";
 import {
   rowToSavedScopePreset,
   selectionMatchesPreset,
@@ -142,6 +143,7 @@ export class SproutExamGeneratorView extends ItemView {
   private _reviewWrongOnly = true;
 
   private _attachedFiles: AttachedFile[] = [];
+  private _takingKeydownHandler: ((evt: KeyboardEvent) => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: LearnKitPlugin) {
     super(leaf);
@@ -181,6 +183,7 @@ export class SproutExamGeneratorView extends ItemView {
 
     this._reloadNotes();
     this._applyMaxWidth();
+    this._installTakingKeydownHandler();
     this._render();
   }
 
@@ -188,6 +191,7 @@ export class SproutExamGeneratorView extends ItemView {
     this._stopTimer();
     this._stopLoadingWordAnimation();
     this._clearAutoSubmitGrace();
+    this._uninstallTakingKeydownHandler();
     this._savedTestsPopoverCleanup?.();
     this._savedTestsPopoverCleanup = null;
     if (this._testsDb) {
@@ -2464,7 +2468,8 @@ export class SproutExamGeneratorView extends ItemView {
       this._startTimer();
       this._render();
     } catch (err) {
-      const message = err instanceof Error ? err.message : (typeof err === "string" ? err : "Unknown error");
+      const message = formatAssistantError(err, (token, fallback, vars) => this._tx(token, fallback, vars));
+      logAssistantRequestError("test-generation", err, message);
       new Notice(this._tx("ui.view.examGenerator.notice.generationFailed", "Test generation failed: {message}", { message }));
       this._mode = "setup";
       this._setupStage = "config";
@@ -2769,6 +2774,101 @@ export class SproutExamGeneratorView extends ItemView {
     return Math.max(0, this._config.durationMinutes * 60 - this._elapsedSec);
   }
 
+  private _installTakingKeydownHandler(): void {
+    if (this._takingKeydownHandler) return;
+
+    this._takingKeydownHandler = (evt: KeyboardEvent) => {
+      if (this._mode !== "taking") return;
+      if (evt.defaultPrevented || evt.isComposing || evt.altKey || evt.ctrlKey || evt.metaKey || evt.shiftKey) return;
+      if (evt.key !== "ArrowLeft" && evt.key !== "ArrowRight") return;
+
+      const rootEl = this._rootEl;
+      if (!rootEl) return;
+
+      const targetEl = evt.target instanceof HTMLElement ? evt.target : null;
+      const activeEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const focusEl = activeEl ?? targetEl;
+      const eventInView = !!(targetEl && rootEl.contains(targetEl));
+      const focusInView = !!(focusEl && rootEl.contains(focusEl));
+      const activeLeafMatches = this.app.workspace.getActiveViewOfType(SproutExamGeneratorView) === this;
+      const isDocumentLevelTarget = !targetEl || targetEl === document.body || targetEl === document.documentElement;
+
+      if (!eventInView && !focusInView && (!activeLeafMatches || !isDocumentLevelTarget)) return;
+      if (this._isTakingTextEntryElement(focusEl) || (targetEl && this._isTakingTextEntryElement(targetEl))) return;
+
+      if (evt.key === "ArrowLeft") {
+        if (!this._canGoToPreviousExamQuestion()) return;
+        evt.preventDefault();
+        this._goToPreviousExamQuestion();
+        return;
+      }
+
+      if (!this._canGoToNextExamQuestion()) return;
+      evt.preventDefault();
+      this._goToNextExamQuestion();
+    };
+
+    document.addEventListener("keydown", this._takingKeydownHandler, true);
+  }
+
+  private _uninstallTakingKeydownHandler(): void {
+    if (!this._takingKeydownHandler) return;
+    document.removeEventListener("keydown", this._takingKeydownHandler, true);
+    this._takingKeydownHandler = null;
+  }
+
+  private _isTakingTextEntryElement(el: HTMLElement): boolean {
+    return !!el.closest("textarea, input, [contenteditable=\"true\"], [contenteditable=\"\"], .cm-editor, .cm-content");
+  }
+
+  private _canGoToPreviousExamQuestion(): boolean {
+    return this._currentIndex > 0;
+  }
+
+  private _canGoToNextExamQuestion(): boolean {
+    return this._currentIndex < this._questions.length - 1;
+  }
+
+  private _goToPreviousExamQuestion(): void {
+    if (!this._canGoToPreviousExamQuestion()) return;
+    this._currentIndex = Math.max(0, this._currentIndex - 1);
+    this._render();
+  }
+
+  private _goToNextExamQuestion(): void {
+    if (!this._canGoToNextExamQuestion()) return;
+    this._currentIndex = Math.min(this._questions.length - 1, this._currentIndex + 1);
+    this._render();
+  }
+
+  private _createTakingLabelRow(label: string): HTMLDivElement {
+    const row = document.createElement("div");
+    row.className = "flex items-center justify-between learnkit-label-row";
+
+    const labelEl = document.createElement("div");
+    labelEl.className = "bc text-muted-foreground text-sm font-medium";
+    labelEl.textContent = label;
+    row.appendChild(labelEl);
+
+    return row;
+  }
+
+  private _renderTakingMarkdownBlock(cls: string, markdown: string): HTMLDivElement {
+    const block = document.createElement("div");
+    block.className = `bc ${cls} whitespace-pre-wrap break-words learnkit-md-block`;
+    renderMarkdownPreviewInElement(block, markdown);
+    return block;
+  }
+
+  private _appendTakingHotkeyKbd(host: HTMLElement, iconName: "arrow-left" | "arrow-right"): void {
+    const hotkey = host.createEl("kbd", {
+      cls: "kbd ml-2 learnkit-exam-generator-runner-kbd",
+      attr: { "aria-hidden": "true" },
+    });
+    const iconWrap = hotkey.createSpan({ cls: "inline-flex items-center justify-center" });
+    setIcon(iconWrap, iconName);
+  }
+
   private _renderExamRunner(host: HTMLElement): void {
     if (this._questions.length === 0) {
       this._mode = "setup";
@@ -2777,11 +2877,24 @@ export class SproutExamGeneratorView extends ItemView {
     }
 
     const q = this._questions[this._currentIndex];
-    const card = host.createDiv({ cls: "card learnkit-exam-generator-card learnkit-exam-generator-card" });
+    const card = host.createDiv({
+      cls: "card w-full learnkit-session-card lk-session-card m-0 learnkit-exam-generator-card learnkit-exam-generator-runner-card",
+    });
+
+    const header = card.createEl("header", { cls: "learnkit-session-topbar learnkit-exam-generator-runner-header" });
+    header.createDiv({
+      cls: "learnkit-session-topbar-title learnkit-question-title learnkit-exam-generator-runner-title",
+      text: this._tx("ui.view.examGenerator.taking.questionOf", "Question {current} of {total}", {
+        current: this._currentIndex + 1,
+        total: this._questions.length,
+      }),
+    });
+
+    const section = card.createEl("section", { cls: "flex flex-col gap-3 learnkit-exam-generator-runner-body" });
 
     // Auto-submit warning banner (shown when timed grace period is active)
     if (this._autoSubmitGrace !== null) {
-      const banner = card.createDiv({ cls: "learnkit-exam-autosubmit-warning learnkit-exam-autosubmit-warning" });
+      const banner = section.createDiv({ cls: "learnkit-exam-autosubmit-warning learnkit-exam-autosubmit-warning" });
       const messageEl = banner.createDiv({ cls: "learnkit-exam-autosubmit-message learnkit-exam-autosubmit-message" });
       messageEl.createEl("strong", { text: this._tx("ui.view.examGenerator.taking.timesUp", "Time's up!") + " " });
       const countdownSpan = messageEl.createSpan({ text: String(this._autoSubmitGrace) });
@@ -2819,43 +2932,20 @@ export class SproutExamGeneratorView extends ItemView {
       });
     }
 
-    const top = card.createDiv({ cls: "learnkit-exam-generator-topline learnkit-exam-generator-topline" });
-    top.createDiv({
-      text: this._tx("ui.view.examGenerator.taking.questionOf", "Question {current} of {total}", {
-        current: this._currentIndex + 1,
-        total: this._questions.length,
-      }),
-    });
-
-    const topRight = top.createDiv({ cls: "learnkit-exam-generator-topline-right learnkit-exam-generator-topline-right" });
-
-    const quitBtn = topRight.createEl("button", {
-      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-scope-clear-btn learnkit-scope-clear-btn",
-      attr: {
-        type: "button",
-        "aria-label": this._coachScopePrefilled
-          ? this._tx("ui.view.examGenerator.taking.backToCoach", "Back to Coach")
-          : this._tx("ui.view.examGenerator.taking.quit", "Quit test"),
-      },
-    });
-    quitBtn.setAttr("data-tooltip-position", "top");
-    const quitIconWrap = quitBtn.createSpan({ cls: "inline-flex items-center justify-center" });
-    setIcon(quitIconWrap, "x");
-    quitBtn.addEventListener("click", () => {
-      if (this._coachScopePrefilled) {
-        void this.plugin.openCoachTab(false, { suppressEntranceAos: true, refresh: false }, this.leaf);
-        return;
-      }
-      this._resetToSetup();
-    });
-
-    const promptEl = card.createEl("h3", { cls: "learnkit-exam-generator-question-prompt learnkit-exam-generator-question-prompt" });
-    renderMarkdownPreviewInElement(promptEl, q.prompt);
+    const questionGroup = section.createDiv({ cls: "flex flex-col gap-2 learnkit-exam-generator-runner-field" });
+    questionGroup.appendChild(this._createTakingLabelRow(this._tx("ui.view.examGenerator.taking.questionLabel", "Question")));
+    questionGroup.appendChild(this._renderTakingMarkdownBlock("learnkit-q learnkit-exam-generator-question-prompt", q.prompt));
 
     if (q.type === "mcq") {
       const options = q.options || [];
       const isMultiSelect = Array.isArray(q.correctIndices) && q.correctIndices.length > 1;
-      const optionList = card.createDiv({ cls: "learnkit-mcq-options learnkit-mcq-options" });
+      const responseGroup = section.createDiv({ cls: "flex flex-col gap-2 learnkit-exam-generator-runner-field" });
+      responseGroup.appendChild(this._createTakingLabelRow(
+        isMultiSelect
+          ? this._tx("ui.view.examGenerator.taking.optionsMultipleLabel", "Options (select all correct answers)")
+          : this._tx("ui.view.examGenerator.taking.optionsLabel", "Options"),
+      ));
+      const optionList = responseGroup.createDiv({ cls: "flex flex-col gap-2 learnkit-mcq-options learnkit-exam-generator-runner-options" });
 
       if (isMultiSelect) {
         // Multi-select: toggle each option independently
@@ -2864,11 +2954,14 @@ export class SproutExamGeneratorView extends ItemView {
         );
 
         for (let i = 0; i < options.length; i += 1) {
-          const btn = optionList.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
+          const btn = optionList.createEl("button", {
+            cls: "learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 learnkit-exam-generator-option-button",
+            type: "button",
+          });
           if (currentSelections.has(i)) btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
           const left = btn.createSpan({ cls: "inline-flex items-center gap-2 min-w-0" });
           left.createEl("kbd", { cls: "kbd", text: String(i + 1) });
-          const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text learnkit-mcq-option-text" });
+          const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text" });
           renderMarkdownPreviewInElement(optionText, options[i]);
           btn.addEventListener("click", () => {
             const selection = window.getSelection();
@@ -2888,24 +2981,30 @@ export class SproutExamGeneratorView extends ItemView {
         const selected = this._answers.has(q.id) ? Number(this._answers.get(q.id)) : -1;
 
         for (let i = 0; i < options.length; i += 1) {
-          const btn = optionList.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 mb-2", type: "button" });
+          const btn = optionList.createEl("button", {
+            cls: "learnkit-btn-toolbar w-full justify-start text-left h-auto py-2 learnkit-exam-generator-option-button",
+            type: "button",
+          });
           if (selected === i) btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
           const left = btn.createSpan({ cls: "inline-flex items-center gap-2 min-w-0" });
           left.createEl("kbd", { cls: "kbd", text: String(i + 1) });
-          const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text learnkit-mcq-option-text" });
+          const optionText = left.createSpan({ cls: "min-w-0 whitespace-pre-wrap break-words learnkit-mcq-option-text" });
           renderMarkdownPreviewInElement(optionText, options[i]);
           btn.addEventListener("click", () => {
             const selection = window.getSelection();
             if (selection && selection.toString().trim().length > 0) return;
             this._answers.set(q.id, i);
-            optionList.querySelectorAll(".learnkit-btn-toolbar").forEach((el) => el.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected"));
+            optionList.querySelectorAll(".learnkit-exam-generator-option-button").forEach((el) => el.classList.remove("learnkit-mcq-selected", "learnkit-mcq-selected"));
             btn.classList.add("learnkit-mcq-selected", "learnkit-mcq-selected");
           });
         }
       }
     } else {
-      const area = card.createEl("textarea", {
-        cls: "learnkit-exam-generator-textarea learnkit-exam-generator-textarea",
+      const responseGroup = section.createDiv({ cls: "flex flex-col gap-2 learnkit-exam-generator-runner-field" });
+      responseGroup.appendChild(this._createTakingLabelRow(this._tx("ui.view.examGenerator.taking.answerLabel", "Answer")));
+      const answerWrap = responseGroup.createDiv({ cls: "learnkit-exam-generator-answer-wrap" });
+      const area = answerWrap.createEl("textarea", {
+        cls: "learnkit-exam-generator-textarea learnkit-exam-generator-runner-textarea",
       });
       area.value = String(this._answers.get(q.id) || "");
       area.placeholder = this._tx("ui.view.examGenerator.taking.answerPlaceholder", "Write your answer...");
@@ -2914,55 +3013,56 @@ export class SproutExamGeneratorView extends ItemView {
       });
     }
 
-    const actions = card.createDiv({ cls: "learnkit-exam-generator-actions learnkit-exam-generator-actions" });
-    const prev = actions.createEl("button", {
-      cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2",
-      attr: {
-        type: "button",
-        "aria-label": this._tx("ui.common.previous", "Previous"),
-        "data-tooltip-position": "top",
-      },
-    });
-    const prevIcon = prev.createSpan({ cls: "inline-flex items-center justify-center" });
-    setIcon(prevIcon, "chevron-left");
-    prev.createSpan({ cls: "", text: this._tx("ui.common.previous", "Previous") });
-    prev.disabled = this._currentIndex <= 0;
-    prev.addEventListener("click", () => {
-      this._currentIndex = Math.max(0, this._currentIndex - 1);
-      this._render();
-    });
+    const footer = card.createEl("footer", { cls: "learnkit-session-study-dock learnkit-exam-generator-runner-footer" });
+    const footerLeft = footer.createDiv({ cls: "flex items-center gap-2 learnkit-session-study-dock-left" });
+    footer.createDiv({ cls: "flex flex-wrap gap-2 items-center justify-center learnkit-session-study-dock-center" });
+    const footerRight = footer.createDiv({ cls: "flex items-center gap-2 learnkit-session-study-dock-right" });
+
+    if (this._canGoToPreviousExamQuestion()) {
+      const prev = footerLeft.createEl("button", {
+        cls: "learnkit-btn-toolbar learnkit-btn-filter learnkit-exam-generator-runner-nav-btn",
+        attr: {
+          type: "button",
+          "aria-label": this._tx("ui.common.previous", "Previous"),
+          "data-tooltip-position": "top",
+        },
+      });
+      prev.appendText(this._tx("ui.common.previous", "Previous"));
+      this._appendTakingHotkeyKbd(prev, "arrow-left");
+      prev.addEventListener("click", () => {
+        this._goToPreviousExamQuestion();
+      });
+    }
 
     const isLastQuestion = this._currentIndex >= this._questions.length - 1;
     if (isLastQuestion) {
-      const submit = actions.createEl("button", {
-        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent h-9 inline-flex items-center gap-2 learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
+      const submit = footerRight.createEl("button", {
+        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-accent learnkit-btn-accent learnkit-exam-generator-runner-nav-btn",
         attr: {
           type: "button",
           "aria-label": this._tx("ui.view.examGenerator.submit", "Submit exam"),
           "data-tooltip-position": "top",
         },
       });
-      submit.createSpan({ text: this._tx("ui.view.examGenerator.submit", "Submit exam") });
-      const submitIcon = submit.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5" });
+      submit.appendText(this._tx("ui.view.examGenerator.submit", "Submit exam"));
+      const submitIcon = submit.createSpan({ cls: "inline-flex items-center justify-center [&_svg]:size-3.5 ml-2" });
       setIcon(submitIcon, "arrow-right");
       submit.addEventListener("click", () => {
         void this._submitExam(false);
       });
     } else {
-      const next = actions.createEl("button", {
-        cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-filter learnkit-btn-filter h-7 px-3 text-sm inline-flex items-center gap-2 learnkit-exam-generator-actions-advance learnkit-exam-generator-actions-advance",
+      const next = footerRight.createEl("button", {
+        cls: "learnkit-btn-toolbar learnkit-btn-filter learnkit-exam-generator-runner-nav-btn",
         attr: {
           type: "button",
           "aria-label": this._tx("ui.common.next", "Next"),
           "data-tooltip-position": "top",
         },
       });
-      next.createSpan({ text: this._tx("ui.common.next", "Next") });
-      const nextIcon = next.createSpan({ cls: "inline-flex items-center justify-center" });
-      setIcon(nextIcon, "chevron-right");
+      next.appendText(this._tx("ui.common.next", "Next"));
+      this._appendTakingHotkeyKbd(next, "arrow-right");
       next.addEventListener("click", () => {
-        this._currentIndex = Math.min(this._questions.length - 1, this._currentIndex + 1);
-        this._render();
+        this._goToNextExamQuestion();
       });
     }
   }
@@ -3080,7 +3180,8 @@ export class SproutExamGeneratorView extends ItemView {
             saq,
           });
         } catch (err) {
-          const message = err instanceof Error ? err.message : (typeof err === "string" ? err : "Failed to grade");
+          const message = formatAssistantError(err, (token, fallback, vars) => this._tx(token, fallback, vars));
+          logAssistantRequestError("test-grading", err, message);
           results.push({
             questionId: q.id,
             prompt: q.prompt,

@@ -1861,7 +1861,7 @@ export class SproutReviewerView extends ItemView {
             if (buttons[displayIdx]) {
               buttons[displayIdx].classList.toggle("learnkit-mcq-selected", this._mcqMultiSelected.has(origIdx));
             }
-            const submitBtnEl = optionList.querySelector<HTMLButtonElement>("button.btn-primary");
+            const submitBtnEl = this.contentEl.querySelector<HTMLButtonElement>(".learnkit-mcq-submit-btn");
             if (submitBtnEl) {
               submitBtnEl.disabled = this._mcqMultiSelected.size === 0;
               submitBtnEl.classList.toggle("opacity-50", this._mcqMultiSelected.size === 0);

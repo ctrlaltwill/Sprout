@@ -781,51 +781,41 @@ function renderMcqContent(ctx: CardRenderCtx): void {
     optionList.appendChild(btn);
   });
 
-  // Multi-answer: show Submit button when not yet graded
+  // Multi-answer: create the Submit button here, then move it into the footer action row later.
   if (multiAnswer && !reveal) {
-    const submitRow = document.createElement("div");
-    submitRow.className = "flex justify-end mt-2";
-    submitBtn = document.createElement("button");
-    submitBtn.type = "button";
-    submitBtn.className = "btn-primary px-4 py-2 text-sm learnkit-mcq-submit-btn";
-
-    const submitLabel = document.createElement("span");
-    submitLabel.textContent = t(args.interfaceLanguage, "ui.reviewer.submit", "Submit");
-    submitBtn.appendChild(submitLabel);
-
-    const submitKbd = document.createElement("kbd");
-    submitKbd.className = "kbd ml-2 text-xs";
-    submitKbd.textContent = "\u21B5";
-    submitBtn.appendChild(submitKbd);
+    submitBtn = makeTextButton({
+      label: t(args.interfaceLanguage, "ui.reviewer.submit", "Submit"),
+      title: t(args.interfaceLanguage, "ui.reviewer.submit", "Submit"),
+      className: "learnkit-btn-toolbar learnkit-mcq-submit-btn",
+      onClick: () => {
+        if (multiSelected.size > 0 && args.answerMcqMulti) {
+          void args.answerMcqMulti([...multiSelected]);
+        } else if (multiSelected.size === 0 && submitBtn) {
+          submitBtn.classList.add("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
+          submitBtn.addEventListener("animationend", () => {
+            submitBtn!.classList.remove("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
+          }, { once: true });
+          // Show tooltip on second empty attempt
+          if (submitBtn.dataset.emptyAttempt === "1") {
+            submitBtn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.mcq.chooseOne", "Choose at least one answer to proceed"));
+            submitBtn.setAttribute("data-tooltip-position", "top");
+            submitBtn.classList.add("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
+            setTimeout(() => {
+              submitBtn!.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
+            }, 2500);
+          }
+          submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
+        }
+      },
+      kbd: "\u21B5",
+    });
 
     submitBtn.disabled = multiSelected.size === 0;
     if (multiSelected.size === 0) {
       submitBtn.classList.add("opacity-50", "cursor-not-allowed");
     }
-    submitBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (multiSelected.size > 0 && args.answerMcqMulti) {
-        void args.answerMcqMulti([...multiSelected]);
-      } else if (multiSelected.size === 0 && submitBtn) {
-        submitBtn.classList.add("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
-        submitBtn.addEventListener("animationend", () => {
-          submitBtn!.classList.remove("learnkit-mcq-submit-shake", "learnkit-mcq-submit-shake");
-        }, { once: true });
-        // Show tooltip on second empty attempt
-        if (submitBtn.dataset.emptyAttempt === "1") {
-          submitBtn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.mcq.chooseOne", "Choose at least one answer to proceed"));
-          submitBtn.setAttribute("data-tooltip-position", "top");
-          submitBtn.classList.add("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
-          setTimeout(() => {
-            submitBtn!.classList.remove("learnkit-mcq-submit-tooltip-visible", "learnkit-mcq-submit-tooltip-visible");
-          }, 2500);
-        }
-        submitBtn.dataset.emptyAttempt = String(Number(submitBtn.dataset.emptyAttempt || "0") + 1);
-      }
-    });
-    submitRow.appendChild(submitBtn);
-    optionList.appendChild(submitRow);
+
+    optionList.appendChild(submitBtn);
   }
 
   // Do not render separate Answer subtitle/content for MCQ.
@@ -1533,9 +1523,19 @@ export function renderSessionMode(args: Args) {
         mainRow.appendChild(skipBtn);
       }
     } else if (card.type === "mcq") {
-      const optCount = (card.options || []).length;
-      mainRow.appendChild(h("div", "text-muted-foreground text-sm", `Choose 1–${optCount}.`));
-      hasMainRowContent = true;
+      const multiAnswerMcq = isMultiAnswerMcq(card);
+      const mcqSubmitBtn = multiAnswerMcq && !graded && !args.showAnswer
+        ? section.querySelector<HTMLButtonElement>(".learnkit-mcq-submit-btn")
+        : null;
+
+      if (mcqSubmitBtn) {
+        mainRow.appendChild(mcqSubmitBtn);
+        hasMainRowContent = true;
+      } else if (!multiAnswerMcq) {
+        const optCount = (card.options || []).length;
+        mainRow.appendChild(h("div", "text-muted-foreground text-sm", `Choose 1–${optCount}.`));
+        hasMainRowContent = true;
+      }
     } else if (card.type === "oq") {
       const steps = Array.isArray(card.oqSteps) ? card.oqSteps : [];
       const n = steps.length;

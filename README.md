@@ -9,9 +9,9 @@
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
 > [!IMPORTANT]
-> **Latest release: 1.3.0** — all core learning features are now in place. This release adds agentic Companion editing, quick flashcard shorthand, and external TTS support. I am now focusing on stability and hotfixes. New feature requests are welcome but are lower priority.
+> **Latest release: 1.3.0** — all core learning features are now in place. This release adds agentic Companion editing, quick flashcard shorthand, and external TTS support. I am now focusing on stability and hotfixes. New feature requests are welcome but are lower priority. If you run into a Companion AI issue, please [file an AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yml) so we can track problematic models and providers. For Text-to-Speech problems, please [file a TTS issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=tts_issue.yml).
 >
-> **Companion** – if you run into a Companion issue, please [open the issue chooser and select the Companion AI issue form](https://github.com/ctrlaltwill/LearnKit/issues/new/choose) so we can track problematic models and providers. There is also now a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
+> We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
 
 LearnKit helps you remember what you write. It brings flashcards, note review, tests, and AI-assisted study tools into Obsidian, so your vault becomes a place to learn, not just store information.
 
@@ -49,7 +49,7 @@ LearnKit is easiest to understand once you use it. Install it, create a flashcar
 
 💡 Need help in-app? Open the built-in LearnKit guide inside Obsidian.
 
-🌐 Want to contribute translations or Companion compatibility test results? See the **[Contributing Guide →](CONTRIBUTING.md)**
+🌐 Want to contribute or help translate LearnKit? See the **[Contributing Guide →](CONTRIBUTING.md)**
 
 ## Key features
 
@@ -109,7 +109,9 @@ See the [full license](LICENSE.md) for more details.
 ### Credits
 FSRS scheduling in LearnKit is powered by FSRS-6 via [open-spaced-repetition/ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs).
 
-See [NOTICES.md](NOTICES.md) for the complete list of third-party dependencies, bundled assets, and license notices.
+This project also uses Circle Flags assets from [HatScripts/circle-flags](https://github.com/HatScripts/circle-flags), licensed under MIT.
+
+See [here](NOTICES.md) for additional third-party attributions and license notices.
 
 ### Our Commitment
 

@@ -272,22 +272,34 @@ export async function buildStudyAssistantNoteContext(params: {
   settings: SproutSettings["studyAssistant"];
   mode: StudyAssistantContextMode;
   explicitAttachedFileDataUrls?: string[];
+  noteContentOverride?: string;
 }): Promise<StudyAssistantBuiltNoteContext> {
-  const { app, file, settings, mode, explicitAttachedFileDataUrls = [] } = params;
-  const noteContent = String(await app.vault.read(file) || "");
+  const {
+    app,
+    file,
+    settings,
+    mode,
+    explicitAttachedFileDataUrls = [],
+    noteContentOverride,
+  } = params;
+  const noteContent = noteContentOverride !== undefined
+    ? String(noteContentOverride || "")
+    : String(await app.vault.read(file) || "");
   const imageRefs = extractStudyAssistantImageRefs(noteContent);
   const includeImages = studyAssistantIncludesImages(settings, mode);
   const includeCompanionContext = mode !== "edit";
-  const imageDataUrls = includeImages ? await buildVisionImageDataUrls(app, file, imageRefs) : [];
-  const noteEmbedUrls = includeCompanionContext && settings.privacy.includeAttachmentsInCompanion
-    ? await buildNoteEmbedNonImageAttachmentUrls(app, file, imageRefs)
-    : [];
-  const linkedAttachmentUrls = includeCompanionContext && settings.privacy.includeLinkedAttachmentsInCompanion
-    ? await buildNoteLinkedAttachmentUrls(app, file, noteContent)
-    : [];
-  const linkedContext = includeCompanionContext && settings.privacy.includeLinkedNotesInCompanion
-    ? await buildLinkedNotesTextContext(app, file, noteContent, settings.privacy.linkedContextLimit)
-    : { text: "", stats: { included: 0, skipped: 0, truncatedNotes: 0 } };
+  const [imageDataUrls, noteEmbedUrls, linkedAttachmentUrls, linkedContext] = await Promise.all([
+    includeImages ? buildVisionImageDataUrls(app, file, imageRefs) : Promise.resolve([]),
+    includeCompanionContext && settings.privacy.includeAttachmentsInCompanion
+      ? buildNoteEmbedNonImageAttachmentUrls(app, file, imageRefs)
+      : Promise.resolve([]),
+    includeCompanionContext && settings.privacy.includeLinkedAttachmentsInCompanion
+      ? buildNoteLinkedAttachmentUrls(app, file, noteContent)
+      : Promise.resolve([]),
+    includeCompanionContext && settings.privacy.includeLinkedNotesInCompanion
+      ? buildLinkedNotesTextContext(app, file, noteContent, settings.privacy.linkedContextLimit)
+      : Promise.resolve({ text: "", stats: { included: 0, skipped: 0, truncatedNotes: 0 } }),
+  ]);
 
   const noteContentWithLinked = linkedContext.text
     ? `${noteContent}\n\n${linkedContext.text}`

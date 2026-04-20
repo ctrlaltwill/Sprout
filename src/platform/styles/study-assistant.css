@@ -1466,7 +1466,7 @@
 .learnkit-assistant-popup-composer-shell {
   position: relative;
   border: 0.5px solid var(--background-modifier-border, rgba(0, 0, 0, 0.12));
-  border-radius: 999px;
+  border-radius: 25px;
   padding: 5px 0px;
   background: var(--background-primary, #fff);
   display: flex;

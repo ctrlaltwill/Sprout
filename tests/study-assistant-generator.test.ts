@@ -8,15 +8,24 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { generateStudyAssistantSuggestions, parseUserRequestOverrides } from "../src/platform/integrations/ai/study-assistant-generator";
+import {
+  generateStudyAssistantSuggestions,
+  generateStudyAssistantSuggestionsStreaming,
+  parseUserRequestOverrides,
+} from "../src/platform/integrations/ai/study-assistant-generator";
 import type { SproutSettings } from "../src/platform/types/settings";
-import { requestStudyAssistantCompletionDetailed } from "../src/platform/integrations/ai/study-assistant-provider";
+import {
+  requestStudyAssistantCompletionDetailed,
+  requestStudyAssistantStreamingCompletion,
+} from "../src/platform/integrations/ai/study-assistant-provider";
 
 vi.mock("../src/platform/integrations/ai/study-assistant-provider", () => ({
   requestStudyAssistantCompletionDetailed: vi.fn(),
+  requestStudyAssistantStreamingCompletion: vi.fn(),
 }));
 
 const mockedCompletion = vi.mocked(requestStudyAssistantCompletionDetailed);
+const mockedStreamingCompletion = vi.mocked(requestStudyAssistantStreamingCompletion);
 
 function makeSettings(): SproutSettings["studyAssistant"] {
   return {
@@ -74,9 +83,16 @@ function makeSettings(): SproutSettings["studyAssistant"] {
 describe("study assistant generator", () => {
   beforeEach(() => {
     mockedCompletion.mockReset();
+    mockedStreamingCompletion.mockReset();
     mockedCompletion.mockResolvedValue({
       text: JSON.stringify({ suggestions: [] }),
       conversationId: "fallback",
+      attachmentRoute: "none",
+    });
+    mockedStreamingCompletion.mockResolvedValue({
+      text: JSON.stringify({ suggestions: [] }),
+      conversationId: "fallback",
+      attachmentRoute: "none",
     });
   });
 
@@ -226,6 +242,62 @@ describe("study assistant generator", () => {
 
     expect(result.suggestions.length).toBeGreaterThan(0);
     expect(result.suggestions[0]?.type).toBe("basic");
+  });
+
+  it("streams suggestions as complete JSON items arrive", async () => {
+    const streamedPrompts: string[] = [];
+    const chunks = [
+      '{"suggestions":[{"type":"basic","difficulty":2,"question":"What is acute stress disorder?"',
+      ',"answer":"A trauma-related condition after a stressor"},{"type":"cloze","difficulty":2',
+      ',"clozeText":"Symptoms can include {{c1::intrusive memories}}."}]}',
+    ];
+
+    mockedStreamingCompletion.mockImplementationOnce(async ({ onChunk }) => {
+      onChunk(chunks[0]);
+      expect(streamedPrompts).toEqual([]);
+
+      onChunk(chunks[1]);
+      expect(streamedPrompts).toEqual(["What is acute stress disorder?"]);
+
+      onChunk(chunks[2]);
+      expect(streamedPrompts).toEqual([
+        "What is acute stress disorder?",
+        "Symptoms can include {{c1::intrusive memories}}.",
+      ]);
+
+      return {
+        text: chunks.join(""),
+        conversationId: "stream-1",
+        attachmentRoute: "native",
+      };
+    });
+
+    const result = await generateStudyAssistantSuggestionsStreaming({
+      settings: makeSettings(),
+      input: {
+        notePath: "Acute Stress Disorder.md",
+        noteContent: "",
+        imageRefs: [],
+        includeImages: false,
+        enabledTypes: ["basic", "cloze"],
+        targetSuggestionCount: 2,
+        includeTitle: false,
+        includeInfo: false,
+        includeGroups: false,
+        customInstructions: "",
+        userRequestText: "generate 2 flashcards",
+      },
+      onSuggestion: (suggestion) => {
+        streamedPrompts.push(String(suggestion.question || suggestion.clozeText || ""));
+      },
+    });
+
+    expect(streamedPrompts).toEqual([
+      "What is acute stress disorder?",
+      "Symptoms can include {{c1::intrusive memories}}.",
+    ]);
+    expect(result.suggestions).toHaveLength(2);
+    expect(result.suggestions.map((suggestion) => suggestion.type)).toEqual(expect.arrayContaining(["basic", "cloze"]));
   });
 });
 

@@ -17,12 +17,16 @@ import { insertTextAtCursorOrAppend } from "../../../platform/image-occlusion/io
 import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
 import { bestEffortAttachmentPath, normaliseVaultPath, writeBinaryToVault } from "../../../platform/modals/modal-utils";
 import {
-  generateStudyAssistantChatReply,
   generateStudyAssistantChatReplyStreaming,
   generateStudyAssistantSuggestions,
+  generateStudyAssistantSuggestionsStreaming,
+  extractVisibleEditResponseText,
   parseEditProposal,
   classifyUserIntent,
+  parseUserRequestOverrides,
+  type UserIntentClassification,
 } from "../../../platform/integrations/ai/study-assistant-generator";
+import { buildStudyAssistantNoteContext } from "../../../platform/integrations/ai/study-assistant-note-context";
 import { generateExamQuestions, gradeFullTest } from "../../../platform/integrations/ai/exam-generator-ai";
 import type { GeneratedExamQuestion, ExamGeneratorConfig } from "../../exam-generator/exam-generator-types";
 import { deleteStudyAssistantConversation } from "../../../platform/integrations/ai/study-assistant-provider";
@@ -67,6 +71,7 @@ import {
   isTestGenerationRequest,
   parseTestConfigFromRequest,
 } from "../chat/generation-helpers";
+import { inferStudyAssistantIntentHeuristically } from "../chat/intent-routing";
 import { validateEditProposal, mentionsFrontmatter } from "../chat/edit-helpers";
 import { setEditProposals, clearEditProposals } from "../editor/edit-decorations";
 import {
@@ -108,10 +113,28 @@ import {
 import { formatAttachmentChipLabel } from "../../shared/attachment-chip-label";
 
 const ASSISTANT_POPUP_SIZE_STORAGE_KEY = "learnkit.assistant.popup.size.v1";
+const CHAT_AUTO_FOLLOW_THRESHOLD_PX = 24;
 
 type CodeMirrorDispatchTarget = {
   dispatch?: (transaction: { effects: unknown }) => void;
   state?: { doc?: { toString?: () => string } };
+};
+
+type AssistantAskLatencyTrace = {
+  startedAt: number;
+  route: UserIntentClassification;
+  notePath: string;
+  attachmentCount: number;
+  contextStartedAt?: number;
+  contextReadyAt?: number;
+  requestStartedAt?: number;
+  firstTokenAt?: number;
+  firstRenderAt?: number;
+  completedAt?: number;
+  outcome?: "success" | "error" | "aborted";
+  linkedNotesIncluded?: number;
+  linkedNotesSkipped?: number;
+  linkedNotesTruncated?: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -148,6 +171,7 @@ export class SproutAssistantPopup {
   // Streaming state
   private _streamingReplyText = "";
   private _isStreaming = false;
+  private _activeStreamingMode: AssistantMode | null = null;
   private _streamAbort: AbortController | null = null;
   private _streamRenderTimer: number | null = null;
 
@@ -170,6 +194,11 @@ export class SproutAssistantPopup {
   private insertingSuggestionKey: string | null = null;
   private isInsertingSuggestion = false;
   private _lastAnchoredResponseKeyByMode: Partial<Record<AssistantMode, string>> = {};
+  private _autoFollowChatByMode: Record<AssistantMode, boolean> = {
+    assistant: true,
+    review: true,
+    generate: true,
+  };
 
   // Bound handlers for cleanup
   private _onClickOutside: ((e: MouseEvent) => void) | null = null;
@@ -525,6 +554,7 @@ export class SproutAssistantPopup {
     field: "messages" | "reviewMessages",
     ...newMessages: ChatMessage[]
   ): Promise<void> {
+    if (!this.plugin.settings?.studyAssistant?.privacy?.saveChatHistory) return;
     const adapter = this.plugin.app?.vault?.adapter;
     const chatPath = this._getChatFilePath(file);
     const chatsFolder = this._getChatsFolderPath();
@@ -548,6 +578,59 @@ export class SproutAssistantPopup {
       this._emitChatLogSynced(file.path);
     } catch (e) {
       log.swallow("append response to persisted chat", e);
+    }
+  }
+
+  private async _appendGeneratedResponseToPersistedChat(
+    file: TFile,
+    field: "messages" | "generateMessages",
+    message: ChatMessage,
+    batch?: { source: "assistant" | "generate"; suggestions: StudyAssistantSuggestion[] },
+  ): Promise<void> {
+    if (!this.plugin.settings?.studyAssistant?.privacy?.saveChatHistory) return;
+    const adapter = this.plugin.app?.vault?.adapter;
+    const chatPath = this._getChatFilePath(file);
+    const chatsFolder = this._getChatsFolderPath();
+    if (!adapter || !chatPath || !chatsFolder) return;
+
+    try {
+      let data: Record<string, unknown> = {};
+      if (await adapter.exists(chatPath)) {
+        const raw = await adapter.read(chatPath);
+        const parsed: unknown = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          data = parsed as Record<string, unknown>;
+        }
+      }
+
+      const messages = Array.isArray(data[field]) ? (data[field] as ChatMessage[]) : [];
+      const assistantMessageIndex = messages.length;
+      messages.push(message);
+      data[field] = messages;
+
+      if (batch?.suggestions.length) {
+        const suggestionBatches = Array.isArray(data.generateSuggestionBatches)
+          ? (data.generateSuggestionBatches as GenerateSuggestionBatch[])
+          : [];
+        suggestionBatches.push({
+          source: batch.source,
+          assistantMessageIndex,
+          suggestions: [...batch.suggestions],
+        });
+        data.generateSuggestionBatches = suggestionBatches;
+      }
+
+      if (Object.keys(this.remoteConversationsByMode).length) {
+        data.remoteConversationsByMode = { ...this.remoteConversationsByMode };
+      }
+
+      if (!(await adapter.exists(chatsFolder))) {
+        await (adapter as { mkdir?: (p: string) => Promise<void> }).mkdir?.(chatsFolder);
+      }
+      await adapter.write(chatPath, JSON.stringify(data, null, 2));
+      this._emitChatLogSynced(file.path);
+    } catch (e) {
+      log.swallow("append generated response to persisted chat", e);
     }
   }
 
@@ -981,7 +1064,13 @@ export class SproutAssistantPopup {
       this._streamAbort = null;
     }
     this._isStreaming = false;
+    this._activeStreamingMode = null;
     this._streamingReplyText = "";
+    this._autoFollowChatByMode = {
+      assistant: true,
+      review: true,
+      generate: true,
+    };
 
     if (this._streamRenderTimer != null) {
       cancelAnimationFrame(this._streamRenderTimer);
@@ -1373,6 +1462,25 @@ export class SproutAssistantPopup {
     return isTestGenerationRequest(text);
   }
 
+  private _logAskLatency(trace: AssistantAskLatencyTrace): void {
+    const delta = (value?: number, start: number = trace.startedAt): number | undefined =>
+      Number.isFinite(value) ? Math.max(0, Math.round(Number(value) - start)) : undefined;
+
+    log.debug("[Study Companion] ask latency", {
+      route: trace.route,
+      notePath: trace.notePath || undefined,
+      attachmentCount: trace.attachmentCount,
+      contextMs: delta(trace.contextReadyAt, trace.contextStartedAt ?? trace.startedAt),
+      timeToFirstTokenMs: delta(trace.firstTokenAt),
+      timeToFirstRenderMs: delta(trace.firstRenderAt),
+      totalMs: delta(trace.completedAt),
+      linkedNotesIncluded: trace.linkedNotesIncluded,
+      linkedNotesSkipped: trace.linkedNotesSkipped,
+      linkedNotesTruncated: trace.linkedNotesTruncated,
+      outcome: trace.outcome,
+    });
+  }
+
   /**
    * Heuristic: a review reply is an assistant message immediately preceded by
    * a user message that triggered a review (e.g. "Review this note",
@@ -1413,6 +1521,43 @@ export class SproutAssistantPopup {
       .replace(/^[-_]+|[-_]+$/g, "");
     return normalized || "generated-note";
   }
+  private _resolveRequestedGenerateCount(userMessage: string, fallbackCount: number): number {
+    const overrides = parseUserRequestOverrides(userMessage);
+    if (overrides.count != null) {
+      return Math.max(1, Math.min(20, Math.round(Number(overrides.count) || fallbackCount)));
+    }
+    return Math.max(1, Math.min(20, Math.round(Number(fallbackCount) || 1)));
+  }
+
+  private _formatGeneratingSuggestionsMessage(count: number): string {
+    return this._tx(
+      "ui.studyAssistant.generator.creatingSummary",
+      "Creating {count} flashcard{suffix}. Use + to insert.",
+      {
+        count,
+        suffix: count === 1 ? "" : "s",
+      },
+    );
+  }
+
+  private _suggestionStreamKey(suggestion: StudyAssistantSuggestion): string {
+    return JSON.stringify({
+      type: suggestion.type,
+      title: suggestion.title || "",
+      question: suggestion.question || "",
+      answer: suggestion.answer || "",
+      clozeText: suggestion.clozeText || "",
+      info: suggestion.info || "",
+      groups: Array.isArray(suggestion.groups) ? suggestion.groups : [],
+      options: Array.isArray(suggestion.options) ? suggestion.options : [],
+      correctOptionIndexes: Array.isArray(suggestion.correctOptionIndexes) ? suggestion.correctOptionIndexes : [],
+      steps: Array.isArray(suggestion.steps) ? suggestion.steps : [],
+      ioSrc: suggestion.ioSrc || "",
+      ioMaskMode: suggestion.ioMaskMode || "",
+      ioOcclusions: Array.isArray(suggestion.ioOcclusions) ? suggestion.ioOcclusions : [],
+      noteRows: Array.isArray(suggestion.noteRows) ? suggestion.noteRows : [],
+    });
+  }
 
   private _formatGeneratedSuggestionsAsJsonMessage(suggestions: StudyAssistantSuggestion[]): string {
     const count = Array.isArray(suggestions) ? suggestions.length : 0;
@@ -1423,8 +1568,8 @@ export class SproutAssistantPopup {
       );
     }
     return this._tx(
-      "ui.studyAssistant.generator.generatedSummary",
-      "Generated {count} flashcard{suffix}. Use + to insert.",
+      "ui.studyAssistant.generator.createdSummary",
+      "Created {count} flashcard{suffix}. Use + to insert.",
       {
         count,
         suffix: count === 1 ? "" : "s",
@@ -1530,6 +1675,34 @@ export class SproutAssistantPopup {
     return this.isSendingChat || this.isReviewingNote || this.isGenerating || this._isClassifyingIntent;
   }
 
+  private _isChatWrapNearBottom(chatWrap: HTMLElement): boolean {
+    const remainingScroll = chatWrap.scrollHeight - chatWrap.clientHeight - chatWrap.scrollTop;
+    return remainingScroll <= CHAT_AUTO_FOLLOW_THRESHOLD_PX;
+  }
+
+  private _captureVisibleChatScrollTop(mode: AssistantMode): number | null {
+    const chatWrap = this.popupEl?.querySelector(".learnkit-assistant-popup-chat-wrap");
+    if (!(chatWrap instanceof HTMLElement)) return null;
+    this._autoFollowChatByMode[mode] = this._isChatWrapNearBottom(chatWrap);
+    return chatWrap.scrollTop;
+  }
+
+  private _bindChatAutoFollowTracking(chatWrap: HTMLElement, mode: AssistantMode): void {
+    this._autoFollowChatByMode[mode] = this._isChatWrapNearBottom(chatWrap);
+    chatWrap.addEventListener("scroll", () => {
+      this._autoFollowChatByMode[mode] = this._isChatWrapNearBottom(chatWrap);
+    }, { passive: true });
+  }
+
+  private _beginStreaming(mode: AssistantMode): void {
+    this._activeStreamingMode = mode;
+    this._captureVisibleChatScrollTop(mode);
+  }
+
+  private _shouldAutoFollowChat(mode: AssistantMode): boolean {
+    return this._autoFollowChatByMode[mode];
+  }
+
   private _scheduleStreamRender(): void {
     if (this._streamRenderTimer != null) return;
     this._streamRenderTimer = requestAnimationFrame(() => {
@@ -1549,9 +1722,11 @@ export class SproutAssistantPopup {
     ) as HTMLElement | null;
     if (bubbleEl) {
       this.renderMarkdownMessage(bubbleEl, this._streamingReplyText);
-      // Auto-scroll to bottom
       const chatWrap = bubbleEl.closest(".learnkit-assistant-popup-chat-wrap");
-      if (chatWrap) chatWrap.scrollTop = chatWrap.scrollHeight;
+      const streamingMode = this._activeStreamingMode ?? this.mode;
+      if (chatWrap instanceof HTMLElement && this._shouldAutoFollowChat(streamingMode)) {
+        chatWrap.scrollTop = chatWrap.scrollHeight;
+      }
     }
   }
 
@@ -2666,9 +2841,11 @@ export class SproutAssistantPopup {
 
   private async sendChatMessage(): Promise<void> {
     if (this._isAssistantBusy()) return;
+    const sendStartedAt = performance.now();
     const draft = this.chatDraft.trim();
     const hasAttachments = this._attachedFiles.length > 0;
     if (!draft && !hasAttachments) return;
+    let intent: UserIntentClassification = "ask";
 
     const originFile = this.activeFile;
     const originPath = originFile?.path ?? "";
@@ -2686,32 +2863,37 @@ export class SproutAssistantPopup {
       return;
     }
 
-    // --- AI-based intent classification (single-word response, hidden from user) ---
+    // --- Lightweight local intent routing ---
     if (draft) {
       const chatMsg: ChatMessage = { role: "user", text: draft };
       const pendingAttachmentNames = this._attachedFiles.map(f => f.name);
       if (pendingAttachmentNames.length) chatMsg.attachmentNames = pendingAttachmentNames;
       this.chatMessages.push(chatMsg);
+      const priorMessages = this.chatMessages.slice(0, -1);
       this.chatDraft = "";
       this._scheduleSave();
-      this._isClassifyingIntent = true;
       this.chatError = "";
-      this.render();
+      const routing = inferStudyAssistantIntentHeuristically({
+        text: draft,
+        recentMessages: priorMessages,
+        hasPriorGenerateContext: priorMessages.length > 0 || this.generateSuggestionBatches.length > 0,
+      });
+      intent = routing.intent;
 
-      let intent: Awaited<ReturnType<typeof classifyUserIntent>>;
-      try {
-        const settings = this.plugin.settings.studyAssistant;
-        intent = await classifyUserIntent({ settings, userMessage: draft, recentMessages: this.chatMessages });
-      } catch {
-        // Classification failed — fall through to default ask mode
-        intent = "ask";
+      if (routing.requiresClassifierFallback) {
+        this._isClassifyingIntent = true;
+        this.render();
+        try {
+          const settings = this.plugin.settings.studyAssistant;
+          intent = await classifyUserIntent({ settings, userMessage: draft, recentMessages: priorMessages });
+        } catch {
+          intent = routing.intent;
+        } finally {
+          this._isClassifyingIntent = false;
+        }
+
+        if (this.activeFile?.path !== originPath) return;
       }
-
-      this._isClassifyingIntent = false;
-
-      // If the user switched notes during intent classification, bail —
-      // the request is stale and sub-methods have their own file-switch guards.
-      if (this.activeFile?.path !== originPath) return;
 
       switch (intent) {
         case "generate": {
@@ -2761,6 +2943,12 @@ export class SproutAssistantPopup {
     this.chatDraft = "";
     const attachmentNames = this._attachedFiles.map(f => f.name);
     const attachedFileDataUrls = this._collectAttachedFileDataUrls();
+    const askLatency: AssistantAskLatencyTrace = {
+      startedAt: sendStartedAt,
+      route: intent,
+      notePath: file?.path || "",
+      attachmentCount: attachedFileDataUrls.length,
+    };
     this._clearAttachments();
     const chatMsg: ChatMessage = { role: "user", text: displayText };
     if (attachmentNames.length) chatMsg.attachmentNames = attachmentNames;
@@ -2779,30 +2967,39 @@ export class SproutAssistantPopup {
     let placeholderPushed = false;
 
     try {
-      const noteContent = file ? await this.readActiveMarkdown(file) : "";
-      const imageRefs = file ? this.extractImageRefs(noteContent) : [];
       const settings = this.plugin.settings.studyAssistant;
-      const includeImages = !!settings.privacy.includeImagesInAsk;
-      const imageDataUrls = includeImages && file ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
-      const noteEmbedUrls = settings.privacy.includeAttachmentsInCompanion && file
-        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, imageRefs)
-        : [];
-      const linkedAttachmentUrls = settings.privacy.includeLinkedAttachmentsInCompanion && file
-        ? await this.buildNoteLinkedAttachmentUrls(file, noteContent)
-        : [];
-      const linkedNotesContext = settings.privacy.includeLinkedNotesInCompanion && file
-        ? await this.buildLinkedNotesTextContext(file, noteContent)
-        : "";
+      askLatency.contextStartedAt = performance.now();
+      const context = file
+        ? await buildStudyAssistantNoteContext({
+          app: this.plugin.app,
+          file,
+          settings,
+          mode: "ask",
+          explicitAttachedFileDataUrls: attachedFileDataUrls,
+          noteContentOverride: await this.readActiveMarkdown(file),
+        })
+        : {
+          noteContent: "",
+          noteContentForAi: this._appendPlainTextCustomInstructions(
+            "",
+            settings.prompts.assistant,
+            "Companion",
+          ),
+          imageRefs: [] as string[],
+          imageDataUrls: [] as string[],
+          noteEmbedUrls: [] as string[],
+          linkedAttachmentUrls: [] as string[],
+          linkedNotesContext: "",
+          attachedFileDataUrls: this._dedupeDataUrls(attachedFileDataUrls),
+          includeImages: !!settings.privacy.includeImagesInAsk,
+          linkedContextStats: { included: 0, skipped: 0, truncatedNotes: 0 },
+        };
+      askLatency.contextReadyAt = performance.now();
+      this._lastLinkedContextStats = { ...context.linkedContextStats };
+      askLatency.linkedNotesIncluded = context.linkedContextStats.included;
+      askLatency.linkedNotesSkipped = context.linkedContextStats.skipped;
+      askLatency.linkedNotesTruncated = context.linkedContextStats.truncatedNotes;
       this._emitLinkedContextTruncationNotice();
-      const noteContentWithLinked = linkedNotesContext
-        ? `${noteContent}\n\n${linkedNotesContext}`
-        : noteContent;
-      const noteContentForAi = this._appendPlainTextCustomInstructions(
-        noteContentWithLinked,
-        settings.prompts.assistant,
-        "Companion",
-      );
-      const allAttachmentUrls = this._dedupeDataUrls([...attachedFileDataUrls, ...noteEmbedUrls, ...linkedAttachmentUrls]);
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "assistant")?.conversationId;
 
       // Streaming placeholder – deferred until the first token arrives so
@@ -2810,23 +3007,26 @@ export class SproutAssistantPopup {
       const streamingMsg: ChatMessage = { role: "assistant", text: "" };
       this._streamingReplyText = "";
       this._streamAbort = new AbortController();
+      this._beginStreaming("assistant");
 
+      askLatency.requestStartedAt = performance.now();
       const result = await generateStudyAssistantChatReplyStreaming({
         settings,
         input: {
           mode: "ask" as StudyAssistantChatMode,
           notePath: file?.path || "",
-          noteContent: noteContentForAi,
-          imageRefs,
-          imageDataUrls,
-          attachedFileDataUrls: allAttachmentUrls,
-          includeImages,
+          noteContent: context.noteContentForAi,
+          imageRefs: context.imageRefs,
+          imageDataUrls: context.imageDataUrls,
+          attachedFileDataUrls: context.attachedFileDataUrls,
+          includeImages: context.includeImages,
           userMessage,
           customInstructions: settings.prompts.assistant,
           conversationId,
           conversationHistory: this.chatMessages,
         },
         onChunk: (token) => {
+          if (askLatency.firstTokenAt == null) askLatency.firstTokenAt = performance.now();
           this._streamingReplyText += token;
           streamingMsg.text = this._streamingReplyText;
           if (!placeholderPushed) {
@@ -2834,6 +3034,7 @@ export class SproutAssistantPopup {
             placeholderPushed = true;
             this._isStreaming = true;
             this.render();
+            if (askLatency.firstRenderAt == null) askLatency.firstRenderAt = performance.now();
           } else {
             this._scheduleStreamRender();
           }
@@ -2851,15 +3052,19 @@ export class SproutAssistantPopup {
       if (!placeholderPushed) this.chatMessages.push(streamingMsg);
       streamingMsg.text = reply;
       setRemoteConversationForMode(this.remoteConversationsByMode, "assistant", result.conversationId, this.plugin.settings.studyAssistant);
+      askLatency.completedAt = performance.now();
+      askLatency.outcome = "success";
 
       // File-switch guard: route response to originating note if user switched away
       if (this.activeFile?.path !== originPath && originFile) {
+        this._logAskLatency(askLatency);
         await this._appendResponseToPersistedChat(originFile, "messages", { role: "assistant", text: reply });
         return;
       }
 
       this._notifyIncomingAssistantReply("assistant");
       this._speakReply(reply, this.chatMessages.length - 1);
+      this._logAskLatency(askLatency);
     } catch (e) {
       this._isStreaming = false;
       this._streamAbort = null;
@@ -2872,9 +3077,17 @@ export class SproutAssistantPopup {
           this.chatMessages.pop();
         }
       }
-      if ((e as Error)?.name === "AbortError") return;
+      if ((e as Error)?.name === "AbortError") {
+        askLatency.completedAt = performance.now();
+        askLatency.outcome = "aborted";
+        this._logAskLatency(askLatency);
+        return;
+      }
       const userMessage = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("ask", e, userMessage);
+      askLatency.completedAt = performance.now();
+      askLatency.outcome = "error";
+      this._logAskLatency(askLatency);
       this.chatError = userMessage;
     } finally {
       this.isSendingChat = false;
@@ -2882,6 +3095,7 @@ export class SproutAssistantPopup {
         this._scheduleSave();
         this.render();
       }
+      this._activeStreamingMode = null;
     }
   }
 
@@ -2910,58 +3124,96 @@ export class SproutAssistantPopup {
     this.chatDraft = "";
     this.render();
 
+    let placeholderPushed = false;
+
     try {
       const noteContent = await this.readActiveMarkdown(file);
-      const imageRefs = this.extractImageRefs(noteContent);
       const settings = this.plugin.settings.studyAssistant;
-      const includeImages = !!settings.privacy.includeImagesInAsk;
-      const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "assistant")?.conversationId;
+      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
+      let streamingRawReplyText = "";
+      this._streamingReplyText = "";
+      this._streamAbort = new AbortController();
+      this._beginStreaming("assistant");
 
-      const result = await generateStudyAssistantChatReply({
+      const result = await generateStudyAssistantChatReplyStreaming({
         settings,
         input: {
           mode: "edit" as StudyAssistantChatMode,
           notePath: file.path,
           noteContent,
-          imageRefs,
-          imageDataUrls,
-          includeImages,
+          imageRefs: [],
+          imageDataUrls: [],
+          includeImages: false,
           userMessage: draft,
           customInstructions: settings.prompts.assistant,
           conversationId,
           conversationHistory: this.chatMessages,
         },
+        onChunk: (token) => {
+          streamingRawReplyText += token;
+          const previewText = extractVisibleEditResponseText(streamingRawReplyText);
+          this._streamingReplyText = previewText;
+          streamingMsg.text = previewText;
+
+          if (!previewText.trim()) return;
+
+          if (!placeholderPushed) {
+            this.chatMessages.push(streamingMsg);
+            placeholderPushed = true;
+            this._isStreaming = true;
+            this.render();
+          } else {
+            this._scheduleStreamRender();
+          }
+        },
+        signal: this._streamAbort.signal,
       });
 
+      this._isStreaming = false;
+      this._streamAbort = null;
+
       setRemoteConversationForMode(this.remoteConversationsByMode, "assistant", result.conversationId, this.plugin.settings.studyAssistant);
+      const proposal = parseEditProposal(result.reply);
+      const streamedSummary = extractVisibleEditResponseText(result.reply).trim();
+      const fallbackText = proposal?.summary || streamedSummary || this._tx("ui.studyAssistant.edit.noChanges", "No changes could be made to the note.");
 
       // File-switch guard: if user moved to another note, persist reply to originating file
       if (this.activeFile?.path !== originPath) {
-        const proposal = parseEditProposal(result.reply);
-        const fallback = proposal?.summary || result.reply || this._tx("ui.studyAssistant.edit.noChanges", "No changes could be made to the note.");
-        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: fallback });
+        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: fallbackText });
         return;
       }
 
-      const proposal = parseEditProposal(result.reply);
       if (!proposal || !proposal.edits.length) {
-        const fallback = proposal?.summary || this._tx("ui.studyAssistant.edit.noChanges", "No changes could be made to the note.");
-        this.chatMessages.push({ role: "assistant", text: fallback });
+        if (!placeholderPushed) {
+          this.chatMessages.push({ role: "assistant", text: fallbackText });
+        } else {
+          streamingMsg.text = fallbackText;
+        }
       } else {
         const allowFm = mentionsFrontmatter(draft);
         const validation = validateEditProposal(proposal.edits, noteContent, allowFm);
 
         if (!validation.validEdits.length) {
           const reason = validation.rejectionReasons[0] || "All proposed edits could not be applied.";
-          this.chatMessages.push({ role: "assistant", text: `${proposal.summary}\n\n⚠️ ${reason}` });
+          const rejectionText = `${proposal.summary}\n\n⚠️ ${reason}`;
+          if (!placeholderPushed) {
+            this.chatMessages.push({ role: "assistant", text: rejectionText });
+          } else {
+            streamingMsg.text = rejectionText;
+          }
         } else {
           const editProposal: ChatMessageEditProposal = {
             summary: proposal.summary,
             edits: validation.validEdits.map(e => ({ ...e, status: "pending" as const })),
             status: "pending",
           };
-          this.chatMessages.push({ role: "assistant", text: proposal.summary, editProposal });
+          if (!placeholderPushed) {
+            this.chatMessages.push({ role: "assistant", text: proposal.summary, editProposal });
+          } else {
+            streamingMsg.text = proposal.summary;
+            streamingMsg.editProposal = editProposal;
+          }
 
           // Dispatch to CM6 edit decorations
           this._dispatchEditDecorationsToEditor(validation.validEdits, noteContent);
@@ -2970,6 +3222,15 @@ export class SproutAssistantPopup {
 
       this._notifyIncomingAssistantReply("assistant");
     } catch (e) {
+      this._isStreaming = false;
+      this._streamAbort = null;
+      if (placeholderPushed) {
+        const lastMsg = this.chatMessages[this.chatMessages.length - 1];
+        if (lastMsg?.role === "assistant" && !lastMsg.text.trim()) {
+          this.chatMessages.pop();
+        }
+      }
+      if ((e as Error)?.name === "AbortError") return;
       const errMsg = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("edit", e, errMsg);
       this.chatError = errMsg;
@@ -2979,6 +3240,7 @@ export class SproutAssistantPopup {
         this._scheduleSave();
         this.render();
       }
+      this._activeStreamingMode = null;
     }
   }
 
@@ -3175,6 +3437,7 @@ export class SproutAssistantPopup {
       const streamingMsg: ChatMessage = { role: "assistant", text: "" };
       this._streamingReplyText = "";
       this._streamAbort = new AbortController();
+      this._beginStreaming("assistant");
 
       const result = await generateStudyAssistantChatReplyStreaming({
         settings,
@@ -3245,6 +3508,7 @@ export class SproutAssistantPopup {
         this._scheduleSave();
         this.render();
       }
+      this._activeStreamingMode = null;
     }
   }
 
@@ -3508,6 +3772,7 @@ export class SproutAssistantPopup {
       const streamingMsg: ChatMessage = { role: "assistant", text: "" };
       this._streamingReplyText = "";
       this._streamAbort = new AbortController();
+      this._beginStreaming("review");
 
       const result = await generateStudyAssistantChatReplyStreaming({
         settings,
@@ -3578,6 +3843,7 @@ export class SproutAssistantPopup {
         this._scheduleSave();
         this.render();
       }
+      this._activeStreamingMode = null;
     }
   }
 
@@ -4090,6 +4356,10 @@ export class SproutAssistantPopup {
     this._clearAttachments();
     this.render();
 
+    let streamingSummaryMessage: ChatMessage | null = null;
+    let liveSuggestionBatch: GenerateSuggestionBatch | null = null;
+    let streamingMessageIndex = -1;
+
     try {
       const noteContent = await this.readActiveMarkdown(file);
       const imageRefs = this.extractImageRefs(noteContent);
@@ -4146,37 +4416,79 @@ export class SproutAssistantPopup {
       };
 
       const invalidRetryThreshold = 0.5;
+      const requestedSuggestionCount = this._resolveRequestedGenerateCount(extraRequest, targetSuggestionCount);
+      const streamedSuggestions: StudyAssistantSuggestion[] = [];
+      const streamedSuggestionKeys = new Set<string>();
+      let detachedFromLiveView = false;
 
-      let result = await generateStudyAssistantSuggestions({
+      streamingSummaryMessage = {
+        role: "assistant",
+        text: this._formatGeneratingSuggestionsMessage(requestedSuggestionCount),
+      };
+      this.chatMessages.push(streamingSummaryMessage);
+      streamingMessageIndex = this.chatMessages.length - 1;
+      liveSuggestionBatch = {
+        source: "assistant",
+        assistantMessageIndex: streamingMessageIndex,
+        suggestions: [],
+      };
+      this.generateSuggestionBatches.push(liveSuggestionBatch);
+      this.render();
+
+      const syncLiveSuggestionState = (): void => {
+        if (!liveSuggestionBatch) return;
+        if (this.activeFile?.path !== originPath) {
+          detachedFromLiveView = true;
+          return;
+        }
+        liveSuggestionBatch.suggestions = [...streamedSuggestions];
+        this.render();
+      };
+
+      const collectValidSuggestions = (candidates: StudyAssistantSuggestion[]): void => {
+        if (!Array.isArray(candidates) || !candidates.length) return;
+        if (streamedSuggestions.length >= requestedSuggestionCount) return;
+
+        const { validSuggestions } = this.validateSuggestionsForDisplay(file, candidates);
+        let changed = false;
+        for (const suggestion of validSuggestions) {
+          const key = this._suggestionStreamKey(suggestion);
+          if (streamedSuggestionKeys.has(key)) continue;
+          streamedSuggestionKeys.add(key);
+          streamedSuggestions.push(suggestion);
+          changed = true;
+          if (streamedSuggestions.length >= requestedSuggestionCount) break;
+        }
+
+        if (changed && !detachedFromLiveView) {
+          syncLiveSuggestionState();
+        }
+      };
+
+      let result = await generateStudyAssistantSuggestionsStreaming({
         settings,
         input: {
           ...generationInputBase,
           customInstructions,
           conversationId,
         },
+        onSuggestion: (suggestion) => {
+          collectValidSuggestions([suggestion]);
+        },
       });
       setRemoteConversationForMode(this.remoteConversationsByMode, "generate", result.conversationId, this.plugin.settings.studyAssistant);
 
       let generatedSuggestionsRaw = Array.isArray(result.suggestions) ? result.suggestions : [];
       let { validSuggestions: generatedSuggestions, rejectedReasons } = this.validateSuggestionsForDisplay(file, generatedSuggestionsRaw);
+      collectValidSuggestions(generatedSuggestions);
 
       const firstAttemptTotal = generatedSuggestionsRaw.length;
       const firstAttemptRejected = rejectedReasons.length;
       const firstAttemptInvalidRatio = firstAttemptTotal > 0 ? firstAttemptRejected / firstAttemptTotal : 0;
-      const shouldRetryForFormat = firstAttemptTotal === 0 || (firstAttemptTotal > 0 && firstAttemptInvalidRatio > invalidRetryThreshold);
+      const shouldRetryForFormat = streamedSuggestions.length < requestedSuggestionCount
+        && (firstAttemptTotal === 0 || (firstAttemptTotal > 0 && firstAttemptInvalidRatio > invalidRetryThreshold));
 
       if (shouldRetryForFormat) {
-        const retryStatus = this._tx(
-          "ui.studyAssistant.generator.retryingFormat",
-          "AI returned too many formatting errors, retrying with stricter card formatting. This may take a little longer.",
-        );
-        // Only push to live array if still on the same note
-        if (this.activeFile?.path === originPath) {
-          this.chatMessages.push({ role: "assistant", text: retryStatus });
-          this._scheduleSave();
-          this.render();
-        }
-
         const reasonLines = rejectedReasons
           .slice(0, 5)
           .map((reason, idx) => `${idx + 1}. ${reason}`)
@@ -4195,40 +4507,65 @@ export class SproutAssistantPopup {
             : "",
         ].filter(Boolean).join("\n\n");
 
-        result = await generateStudyAssistantSuggestions({
+        result = await generateStudyAssistantSuggestionsStreaming({
           settings,
           input: {
             ...generationInputBase,
             customInstructions: retryInstructions,
             conversationId: result.conversationId,
           },
+          onSuggestion: (suggestion) => {
+            collectValidSuggestions([suggestion]);
+          },
         });
         setRemoteConversationForMode(this.remoteConversationsByMode, "generate", result.conversationId, this.plugin.settings.studyAssistant);
 
         generatedSuggestionsRaw = Array.isArray(result.suggestions) ? result.suggestions : [];
         ({ validSuggestions: generatedSuggestions, rejectedReasons } = this.validateSuggestionsForDisplay(file, generatedSuggestionsRaw));
+        collectValidSuggestions(generatedSuggestions);
       }
 
       const rejectedCount = rejectedReasons.length;
-      const assistantJson = this._formatGeneratedSuggestionsAsJsonMessage(generatedSuggestions);
+      const finalSuggestions = streamedSuggestions.slice(0, requestedSuggestionCount);
+      const assistantJson = this._formatGeneratedSuggestionsAsJsonMessage(finalSuggestions);
+      const liveMessagePresent = !!streamingSummaryMessage
+        && this.activeFile?.path === originPath
+        && this.chatMessages[streamingMessageIndex] === streamingSummaryMessage;
 
-      // File-switch guard: if user moved to another note, persist reply to originating file
-      if (this.activeFile?.path !== originPath) {
-        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: assistantJson });
+      if (liveMessagePresent && streamingSummaryMessage && liveSuggestionBatch) {
+        streamingSummaryMessage.text = assistantJson;
+        if (finalSuggestions.length) {
+          liveSuggestionBatch.suggestions = [...finalSuggestions];
+        } else {
+          this.generateSuggestionBatches = this.generateSuggestionBatches.filter((batch) => batch !== liveSuggestionBatch);
+        }
+        this._notifyIncomingAssistantReply("assistant");
+      } else if (this.activeFile?.path === originPath) {
+        if (liveSuggestionBatch) {
+          this.generateSuggestionBatches = this.generateSuggestionBatches.filter((batch) => batch !== liveSuggestionBatch);
+        }
+        this.chatMessages.push({ role: "assistant", text: assistantJson });
+        this._notifyIncomingAssistantReply("assistant");
+        if (finalSuggestions.length) {
+          this.generateSuggestionBatches.push({
+            source: "assistant",
+            assistantMessageIndex: this.chatMessages.length - 1,
+            suggestions: [...finalSuggestions],
+          });
+        }
+      } else {
+        await this._appendGeneratedResponseToPersistedChat(
+          file,
+          "messages",
+          { role: "assistant", text: assistantJson },
+          finalSuggestions.length
+            ? { source: "assistant", suggestions: [...finalSuggestions] }
+            : undefined,
+        );
         return;
       }
 
-      this.chatMessages.push({ role: "assistant", text: assistantJson });
-      this._notifyIncomingAssistantReply("assistant");
-      const assistantMessageIndex = this.chatMessages.length - 1;
-      if (generatedSuggestions.length) {
-        this.generateSuggestionBatches.push({
-          source: "assistant",
-          assistantMessageIndex,
-          suggestions: generatedSuggestions,
-        });
-      }
-      if (!generatedSuggestions.length) {
+      if (!finalSuggestions.length) {
         this.chatError = rejectedCount > 0
           ? this._tx(
             "ui.studyAssistant.generator.emptyAfterValidation",
@@ -4251,6 +4588,12 @@ export class SproutAssistantPopup {
 
       this._scheduleSave();
     } catch (e) {
+      if (streamingSummaryMessage) {
+        this.chatMessages = this.chatMessages.filter((message) => message !== streamingSummaryMessage);
+      }
+      if (liveSuggestionBatch) {
+        this.generateSuggestionBatches = this.generateSuggestionBatches.filter((batch) => batch !== liveSuggestionBatch);
+      }
       const userMessageText = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("generate", e, userMessageText);
       this.chatError = userMessageText;
@@ -4845,7 +5188,7 @@ export class SproutAssistantPopup {
     this._teardownHeaderMenuPortal();
 
     const root = this.popupEl;
-    const preservedAssistantScrollTop = (root.querySelector(".learnkit-assistant-popup-chat-wrap"))?.scrollTop ?? null;
+    const preservedAssistantScrollTop = this._captureVisibleChatScrollTop(this.mode);
     root.empty();
 
     // ---- Header ----
@@ -5178,6 +5521,7 @@ export class SproutAssistantPopup {
 
   private renderAssistantMode(parent: HTMLElement, preservedScrollTop: number | null = null): void {
     const chatWrap = parent.createDiv({ cls: "learnkit-assistant-popup-chat-wrap learnkit-assistant-popup-chat-wrap" });
+    this._bindChatAutoFollowTracking(chatWrap, "assistant");
     const userInitial = this.getUserAvatarInitial();
 
     const messages = this.chatMessages;
@@ -5389,8 +5733,20 @@ export class SproutAssistantPopup {
 
     const surfacedError = this.chatError || this.reviewError || this.generatorError;
     if (surfacedError) this.renderAssistantErrorBubble(chatWrap, surfacedError);
-    const anchoredToNewest = this.anchorToNewestAssistantMessage(chatWrap, messages, "assistant", this._isAssistantBusy());
-    if (!anchoredToNewest && preservedScrollTop != null) {
+    const shouldAutoFollow = this._shouldAutoFollowChat("assistant");
+    const shouldStickToStreamingBottom = shouldAutoFollow && this._activeStreamingMode === "assistant";
+    const anchoredToNewest = this.anchorToNewestAssistantMessage(
+      chatWrap,
+      messages,
+      "assistant",
+      this._isAssistantBusy(),
+      shouldStickToStreamingBottom ? false : shouldAutoFollow,
+    );
+    if (shouldStickToStreamingBottom || (!anchoredToNewest && shouldAutoFollow)) {
+      requestAnimationFrame(() => {
+        chatWrap.scrollTop = chatWrap.scrollHeight;
+      });
+    } else if (!anchoredToNewest && preservedScrollTop != null) {
       requestAnimationFrame(() => {
         chatWrap.scrollTop = preservedScrollTop;
       });
@@ -5733,6 +6089,7 @@ export class SproutAssistantPopup {
     messages: ChatMessage[],
     mode: AssistantMode,
     fallbackToBottom = false,
+    shouldAutoFollow = true,
   ): boolean {
     let lastAssistantIdx = -1;
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -5743,7 +6100,7 @@ export class SproutAssistantPopup {
     }
 
     if (lastAssistantIdx < 0) {
-      if (fallbackToBottom) {
+      if (shouldAutoFollow && fallbackToBottom) {
         requestAnimationFrame(() => {
           chatWrap.scrollTop = chatWrap.scrollHeight;
         });
@@ -5754,7 +6111,12 @@ export class SproutAssistantPopup {
 
     const msg = messages[lastAssistantIdx];
     const key = `${lastAssistantIdx}:${String(msg?.text || "").slice(0, 80)}:${String(msg?.text || "").length}`;
-    if (this._lastAnchoredResponseKeyByMode[mode] === key) {
+    const wasAlreadyAnchored = this._lastAnchoredResponseKeyByMode[mode] === key;
+    this._lastAnchoredResponseKeyByMode[mode] = key;
+
+    if (!shouldAutoFollow) return false;
+
+    if (wasAlreadyAnchored) {
       if (fallbackToBottom) {
         requestAnimationFrame(() => {
           chatWrap.scrollTop = chatWrap.scrollHeight;
@@ -5763,7 +6125,6 @@ export class SproutAssistantPopup {
       }
       return false;
     }
-    this._lastAnchoredResponseKeyByMode[mode] = key;
 
     const target = chatWrap.querySelector<HTMLElement>(
       `.learnkit-assistant-popup-message-row[data-msg-idx="${lastAssistantIdx}"][data-msg-role="assistant"]`,

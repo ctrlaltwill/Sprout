@@ -273,14 +273,14 @@ describe("multi-select MCQ generation", () => {
     mockedCompletion.mockReset();
   });
 
-  it("normalises multi-select MCQs with correctIndices", async () => {
+  it("normalises msq questions with correctIndices", async () => {
     mockedCompletion.mockResolvedValueOnce(
       JSON.stringify({
         questions: [
           {
             id: "q1",
-            type: "mcq",
-            prompt: "Select ALL that apply: which are fruits?",
+            type: "msq",
+            prompt: "Which of the following are fruits?",
             sourcePath: "Food.md",
             options: ["Apple", "Carrot", "Banana", "Potato"],
             correctIndices: [0, 2],
@@ -323,6 +323,7 @@ describe("multi-select MCQ generation", () => {
     const q1 = result[0];
     expect(q1.correctIndices).toEqual([0, 2]);
     expect(q1.correctIndex).toBeUndefined();
+    expect(q1.prompt.startsWith("Select all that apply:")).toBe(true);
 
     // Single-select question
     const q2 = result[1];
@@ -330,28 +331,42 @@ describe("multi-select MCQ generation", () => {
     expect(q2.correctIndices).toBeUndefined();
   });
 
-  it("falls back to single-select when correctIndices has only one entry", async () => {
-    mockedCompletion.mockResolvedValueOnce(
-      JSON.stringify({
-        questions: [
-          {
-            id: "q1",
-            type: "mcq",
-            prompt: "Select ALL: which is blue?",
-            sourcePath: "Colors.md",
-            options: ["Red", "Blue", "Green", "Yellow"],
-            correctIndices: [1],
-            correctIndex: 1,
-          },
-        ],
-      }),
-    );
+  it("retries when a plural stem is incorrectly emitted as single-select", async () => {
+    mockedCompletion
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          questions: [
+            {
+              id: "q1",
+              type: "mcq",
+              prompt: "Which of the following are key time-critical differential diagnoses for chest pain?",
+              sourcePath: "Medicine.md",
+              options: ["Aortic dissection", "Myocardial infarction", "Pneumothorax", "Pulmonary embolism"],
+              correctIndex: 0,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          questions: [
+            {
+              id: "q1",
+              type: "msq",
+              prompt: "Which of the following are key time-critical differential diagnoses for chest pain?",
+              sourcePath: "Medicine.md",
+              options: ["Aortic dissection", "Myocardial infarction", "Pulmonary embolism", "Gastroesophageal reflux disease"],
+              correctIndices: [0, 1, 2],
+            },
+          ],
+        }),
+      );
 
     const result = await generateExamQuestions({
       settings: makeSettings(),
-      notes: [{ path: "Colors.md", title: "Colors", content: "Color theory." }],
+      notes: [{ path: "Medicine.md", title: "Medicine", content: "Time-critical differentials for chest pain include aortic dissection, myocardial infarction, and pulmonary embolism." }],
       config: {
-        difficulty: "easy",
+        difficulty: "medium",
         questionMode: "mcq",
         questionCount: 1,
         testName: "",
@@ -367,9 +382,11 @@ describe("multi-select MCQ generation", () => {
       },
     });
 
+    expect(mockedCompletion).toHaveBeenCalledTimes(2);
     expect(result).toHaveLength(1);
-    expect(result[0].correctIndex).toBe(1);
-    expect(result[0].correctIndices).toBeUndefined();
+    expect(result[0].correctIndex).toBeUndefined();
+    expect(result[0].correctIndices).toEqual([0, 1, 2]);
+    expect(result[0].prompt.startsWith("Select all that apply:")).toBe(true);
   });
 
   it("rejects multi-select where all options are correct", async () => {
@@ -379,7 +396,7 @@ describe("multi-select MCQ generation", () => {
           questions: [
             {
               id: "q1",
-              type: "mcq",
+              type: "msq",
               prompt: "Select ALL that apply",
               sourcePath: "Test.md",
               options: ["A", "B", "C"],
@@ -423,9 +440,65 @@ describe("multi-select MCQ generation", () => {
       },
     });
 
-    // First attempt had all-correct (invalid), falls back to single-select from correctIndex
-    // The all-correct multi-select should fall back to single-select (correctIndex defaults to 0)
+    expect(mockedCompletion).toHaveBeenCalledTimes(2);
     expect(result).toHaveLength(1);
     expect(result[0].correctIndex).toBeDefined();
+  });
+
+  it("retries when msq only provides one correct answer", async () => {
+    mockedCompletion
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          questions: [
+            {
+              id: "q1",
+              type: "msq",
+              prompt: "Select all that apply: which colour is blue?",
+              sourcePath: "Colors.md",
+              options: ["Red", "Blue", "Green", "Yellow"],
+              correctIndices: [1],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          questions: [
+            {
+              id: "q1",
+              type: "mcq",
+              prompt: "Which colour is blue?",
+              sourcePath: "Colors.md",
+              options: ["Red", "Blue", "Green", "Yellow"],
+              correctIndex: 1,
+            },
+          ],
+        }),
+      );
+
+    const result = await generateExamQuestions({
+      settings: makeSettings(),
+      notes: [{ path: "Colors.md", title: "Colors", content: "Blue is a colour." }],
+      config: {
+        difficulty: "easy",
+        questionMode: "mcq",
+        questionCount: 1,
+        testName: "",
+        appliedScenarios: false,
+        timed: false,
+        durationMinutes: 20,
+        customInstructions: "",
+        includeFlashcards: false,
+        sourceMode: "selected",
+        folderPath: "",
+        includeSubfolders: true,
+        maxFolderNotes: 20,
+      },
+    });
+
+    expect(mockedCompletion).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(1);
+    expect(result[0].correctIndex).toBe(1);
+    expect(result[0].correctIndices).toBeUndefined();
   });
 });
