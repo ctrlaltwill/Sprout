@@ -93,11 +93,8 @@ If you are deciding whether LearnKit fits your workflow, start here.
 - **How does Companion work?** Companion uses your own API key, so there are no subscriptions or markups from LearnKit. It works with providers including Google, OpenRouter, Anthropic, OpenAI, and Perplexity.
 - **Can Companion access my whole vault by default?** No. Companion only receives the note content you send in a given workflow, such as asking about a note, generating flashcards, or generating a test. Depending on the feature and your settings, that can also include extra context such as note attachments or linked notes for context.
 - **Do all AI models support every Companion feature?** No. Free models are a good way to get started, but capability varies by model. Premium models generally perform better for more demanding tasks such as working with attachments.
-
-> [!NOTE]
-> If you run into a Companion AI issue, please [file an AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yml) so we can track problematic models and providers.
->
-> We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
+- **How do I report a Companion issue?** If you run into a Companion issue, please [file an AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yml) so we can track problematic models and providers.
+- **Where can I check which models support each Companion feature?** We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
 
 
 ## License & Credits
