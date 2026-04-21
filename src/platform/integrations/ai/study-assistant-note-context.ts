@@ -16,7 +16,7 @@ import { type App, TFile } from "obsidian";
 import { resolveImageFile } from "../../image-occlusion/io-helpers";
 import type { SproutSettings } from "../../types/settings";
 import { type AttachedFile, isImageExt, isSupportedAttachmentExt, readVaultFileAsAttachment } from "./attachment-helpers";
-import { getLinkedContextLimits } from "./study-assistant-types";
+import { getLinkedContextLimits, type StudyAssistantImageDescriptor } from "./study-assistant-types";
 
 export type StudyAssistantContextMode = "ask" | "review" | "generate" | "edit";
 
@@ -35,6 +35,7 @@ export type StudyAssistantBuiltNoteContext = {
   noteContent: string;
   noteContentForAi: string;
   imageRefs: string[];
+  imageDescriptors: StudyAssistantImageDescriptor[];
   imageDataUrls: string[];
   noteEmbedUrls: string[];
   linkedAttachmentUrls: string[];
@@ -44,25 +45,140 @@ export type StudyAssistantBuiltNoteContext = {
   linkedContextStats: StudyAssistantLinkedContextStats;
 };
 
-export function extractStudyAssistantImageRefs(markdown: string): string[] {
-  const refs = new Set<string>();
+type ParsedImageRefOccurrence = {
+  ref: string;
+  start: number;
+};
+
+function extractImageRefOccurrences(text: string): ParsedImageRefOccurrence[] {
+  const refs: ParsedImageRefOccurrence[] = [];
   const wikiRe = /!\[\[([^\]]+)\]\]/g;
   let match: RegExpExecArray | null;
-  while ((match = wikiRe.exec(markdown)) !== null) {
+  while ((match = wikiRe.exec(text)) !== null) {
     const raw = String(match[1] || "").trim();
     if (!raw) continue;
     const filePart = raw.split("|")[0]?.split("#")[0]?.trim();
-    if (filePart) refs.add(filePart);
+    if (!filePart) continue;
+    refs.push({ ref: filePart, start: match.index });
   }
 
   const mdRe = /!\[[^\]]*\]\(([^)]+)\)/g;
-  while ((match = mdRe.exec(markdown)) !== null) {
+  while ((match = mdRe.exec(text)) !== null) {
     const raw = String(match[1] || "").trim();
     if (!raw) continue;
-    refs.add(raw.replace(/^<|>$/g, ""));
+    refs.push({ ref: raw.replace(/^<|>$/g, ""), start: match.index });
   }
 
-  return Array.from(refs);
+  refs.sort((a, b) => a.start - b.start);
+  return refs;
+}
+
+function normalizeDescriptorText(text: string): string {
+  return text
+    .replace(/!\[\[[^\]]+\]\]/g, " ")
+    .replace(/!\[[^\]]*\]\(([^)]+)\)/g, " ")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+    .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, path, label) => String(label || path || ""))
+    .replace(/[*_`>#~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isEligibleImageContextLine(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (/^#{1,6}\s/.test(trimmed)) return false;
+  return !!normalizeDescriptorText(trimmed);
+}
+
+function buildHeadingPath(headings: string[]): string | undefined {
+  const parts = headings.map((heading) => heading.trim()).filter(Boolean);
+  return parts.length ? parts.join(" > ") : undefined;
+}
+
+function buildImageContextSnippet(lines: string[], lineIndex: number): string | undefined {
+  const parts: string[] = [];
+
+  const pushLine = (raw: string, toFront = false) => {
+    if (!isEligibleImageContextLine(raw)) return;
+    const normalized = normalizeDescriptorText(raw);
+    if (!normalized) return;
+    if (parts.includes(normalized)) return;
+    if (toFront) parts.unshift(normalized);
+    else parts.push(normalized);
+  };
+
+  pushLine(lines[lineIndex] || "");
+
+  for (let offset = 1; offset <= 4; offset += 1) {
+    pushLine(lines[lineIndex - offset] || "", true);
+    pushLine(lines[lineIndex + offset] || "");
+    if (parts.join(" ").length >= 180) break;
+  }
+
+  const combined = parts.join(" ").replace(/\s+/g, " ").trim();
+  return combined ? combined.slice(0, 220) : undefined;
+}
+
+export function extractStudyAssistantImageDescriptors(markdown: string): StudyAssistantImageDescriptor[] {
+  const lines = String(markdown || "").split(/\r?\n/);
+  const headings: string[] = [];
+  const descriptors: StudyAssistantImageDescriptor[] = [];
+  const seenRefs = new Set<string>();
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex] || "";
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const depth = headingMatch[1]?.length ?? 1;
+      headings.length = Math.max(0, depth - 1);
+      headings[depth - 1] = String(headingMatch[2] || "").trim();
+    }
+
+    const refs = extractImageRefOccurrences(line);
+    if (!refs.length) continue;
+
+    for (const refEntry of refs) {
+      const ref = String(refEntry.ref || "").trim();
+      if (!ref || seenRefs.has(ref)) continue;
+      seenRefs.add(ref);
+      descriptors.push({
+        ref,
+        order: descriptors.length + 1,
+        heading: headings[headings.length - 1]?.trim() || undefined,
+        headingPath: buildHeadingPath(headings),
+        contextSnippet: buildImageContextSnippet(lines, lineIndex),
+      });
+    }
+  }
+
+  return descriptors;
+}
+
+export function extractStudyAssistantImageRefs(markdown: string): string[] {
+  return extractStudyAssistantImageDescriptors(markdown).map((descriptor) => descriptor.ref);
+}
+
+async function filterVisionImageDescriptors(
+  app: App,
+  file: TFile,
+  descriptors: StudyAssistantImageDescriptor[],
+): Promise<StudyAssistantImageDescriptor[]> {
+  const out: StudyAssistantImageDescriptor[] = [];
+
+  for (const descriptor of descriptors) {
+    const resolved = resolveImageFile(app, file.path, descriptor.ref);
+    if (!(resolved instanceof TFile)) continue;
+    const ext = String(resolved.extension || "").toLowerCase();
+    if (!isImageExt(ext)) continue;
+    out.push({
+      ...descriptor,
+      order: out.length + 1,
+    });
+    if (out.length >= 4) break;
+  }
+
+  return out;
 }
 
 export function extractStudyAssistantLinkedRefs(markdown: string): string[] {
@@ -285,13 +401,15 @@ export async function buildStudyAssistantNoteContext(params: {
   const noteContent = noteContentOverride !== undefined
     ? String(noteContentOverride || "")
     : String(await app.vault.read(file) || "");
-  const imageRefs = extractStudyAssistantImageRefs(noteContent);
+  const embedRefs = extractStudyAssistantImageRefs(noteContent);
   const includeImages = studyAssistantIncludesImages(settings, mode);
+  const imageDescriptors = await filterVisionImageDescriptors(app, file, extractStudyAssistantImageDescriptors(noteContent));
+  const imageRefs = imageDescriptors.map((descriptor) => descriptor.ref);
   const includeCompanionContext = mode !== "edit";
   const [imageDataUrls, noteEmbedUrls, linkedAttachmentUrls, linkedContext] = await Promise.all([
     includeImages ? buildVisionImageDataUrls(app, file, imageRefs) : Promise.resolve([]),
     includeCompanionContext && settings.privacy.includeAttachmentsInCompanion
-      ? buildNoteEmbedNonImageAttachmentUrls(app, file, imageRefs)
+      ? buildNoteEmbedNonImageAttachmentUrls(app, file, embedRefs)
       : Promise.resolve([]),
     includeCompanionContext && settings.privacy.includeLinkedAttachmentsInCompanion
       ? buildNoteLinkedAttachmentUrls(app, file, noteContent)
@@ -323,6 +441,7 @@ export async function buildStudyAssistantNoteContext(params: {
     noteContent,
     noteContentForAi,
     imageRefs,
+    imageDescriptors,
     imageDataUrls,
     noteEmbedUrls,
     linkedAttachmentUrls,

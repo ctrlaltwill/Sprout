@@ -11,6 +11,15 @@
 
 import type { ClipboardImage, IORect } from "./io-types";
 
+export type OcrTextRegion = {
+  text: string;
+  confidence: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
 export type AutoMaskOptions = {
   stageW: number;
   stageH: number;
@@ -25,6 +34,7 @@ export type AutoMaskOptions = {
 
 type PxRect = { x: number; y: number; w: number; h: number };
 type OcrWord = PxRect & { confidence: number; text: string };
+type OcrRegion = PxRect & { confidence: number; text: string };
 
 type RecognizeFn = (
   image: Blob | HTMLImageElement | HTMLCanvasElement,
@@ -180,6 +190,10 @@ function toPxRectFromWord(raw: {
 }
 
 function lineMerge(words: OcrWord[]): PxRect[] {
+  return lineMergeWithText(words).map(({ x, y, w, h }) => ({ x, y, w, h }));
+}
+
+function lineMergeWithText(words: OcrWord[]): OcrRegion[] {
   if (!words.length) return [];
 
   const sorted = [...words].sort((a, b) => {
@@ -206,19 +220,53 @@ function lineMerge(words: OcrWord[]): PxRect[] {
 
   return lines
     .map((line) => {
-      const minX = Math.min(...line.map((w) => w.x));
-      const minY = Math.min(...line.map((w) => w.y));
-      const maxX = Math.max(...line.map((w) => w.x + w.w));
-      const maxY = Math.max(...line.map((w) => w.y + w.h));
-      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+      const sortedLine = [...line].sort((a, b) => a.x - b.x);
+      const minX = Math.min(...sortedLine.map((w) => w.x));
+      const minY = Math.min(...sortedLine.map((w) => w.y));
+      const maxX = Math.max(...sortedLine.map((w) => w.x + w.w));
+      const maxY = Math.max(...sortedLine.map((w) => w.y + w.h));
+      const confidence = sortedLine.reduce((sum, word) => sum + word.confidence, 0) / Math.max(1, sortedLine.length);
+      const text = sortedLine.map((word) => word.text.trim()).filter(Boolean).join(" ").trim();
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY, text, confidence };
     })
-    .filter((r) => r.w >= 4 && r.h >= 4);
+    .filter((r) => r.w >= 4 && r.h >= 4 && !!r.text);
 }
 
 function verticalMerge(rects: PxRect[], factor: number): PxRect[] {
+  return verticalMergeWithText(
+    rects.map((rect) => ({ ...rect, text: "", confidence: 0 })),
+    factor,
+  ).map(({ x, y, w, h }) => ({ x, y, w, h }));
+}
+
+function shouldVerticallyMergeOcrRegions(a: OcrRegion, b: OcrRegion, factor: number): boolean {
+  const horizontalOverlap = Math.max(
+    0,
+    Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x),
+  );
+  const minWidth = Math.min(a.w, b.w);
+  const hasHorizontalTie = minWidth > 0 && horizontalOverlap / minWidth >= 0.2;
+
+  const gap = b.y - (a.y + a.h);
+  const mergeGap = Math.max(2, Math.min(a.h, b.h) * factor);
+  if (!hasHorizontalTie || gap > mergeGap) return false;
+
+  const centerA = a.x + a.w / 2;
+  const centerB = b.x + b.w / 2;
+  const centerDelta = Math.abs(centerA - centerB);
+  const maxWidth = Math.max(a.w, b.w);
+  const centerAligned = centerDelta <= Math.max(12, maxWidth * 0.28);
+  if (!centerAligned) return false;
+
+  const mergedWidth = Math.max(a.x + a.w, b.x + b.w) - Math.min(a.x, b.x);
+  const widthExpansionOk = mergedWidth <= maxWidth * 1.35;
+  return widthExpansionOk;
+}
+
+function verticalMergeWithText(rects: OcrRegion[], factor: number): OcrRegion[] {
   if (rects.length < 2) return rects;
   const sorted = [...rects].sort((a, b) => a.y - b.y || a.x - b.x);
-  const merged: PxRect[] = [];
+  const merged: OcrRegion[] = [];
 
   for (const current of sorted) {
     const last = merged[merged.length - 1];
@@ -227,25 +275,18 @@ function verticalMerge(rects: PxRect[], factor: number): PxRect[] {
       continue;
     }
 
-    const horizontalOverlap = Math.max(
-      0,
-      Math.min(last.x + last.w, current.x + current.w) - Math.max(last.x, current.x),
-    );
-    const minWidth = Math.min(last.w, current.w);
-    const hasHorizontalTie = minWidth > 0 && horizontalOverlap / minWidth >= 0.2;
-
-    const gap = current.y - (last.y + last.h);
-    const mergeGap = Math.max(2, Math.min(last.h, current.h) * factor);
-
-    if (hasHorizontalTie && gap <= mergeGap) {
+    if (shouldVerticallyMergeOcrRegions(last, current, factor)) {
       const x = Math.min(last.x, current.x);
       const y = Math.min(last.y, current.y);
       const maxX = Math.max(last.x + last.w, current.x + current.w);
       const maxY = Math.max(last.y + last.h, current.y + current.h);
+      const ordered = [last, current].sort((a, b) => a.y - b.y || a.x - b.x);
       last.x = x;
       last.y = y;
       last.w = maxX - x;
       last.h = maxY - y;
+      last.text = ordered.map((item) => item.text.trim()).filter(Boolean).join(" ").trim();
+      last.confidence = Math.max(last.confidence, current.confidence);
       continue;
     }
 
@@ -253,6 +294,17 @@ function verticalMerge(rects: PxRect[], factor: number): PxRect[] {
   }
 
   return merged;
+}
+
+function toNormalizedTextRegion(rect: OcrRegion, stageW: number, stageH: number): OcrTextRegion {
+  return {
+    text: rect.text,
+    confidence: rect.confidence,
+    x: clamp01(rect.x / stageW),
+    y: clamp01(rect.y / stageH),
+    w: clamp01(rect.w / stageW),
+    h: clamp01(rect.h / stageH),
+  };
 }
 
 function toNormRect(rect: PxRect, stageW: number, stageH: number, rectId: string, groupKey: string): IORect {
@@ -308,11 +360,62 @@ function expandRect(rect: PxRect, bufferPx: number, stageW: number, stageH: numb
 export const __test = {
   toPxRectFromWord,
   lineMerge,
+  lineMergeWithText,
   verticalMerge,
+  verticalMergeWithText,
+  shouldVerticallyMergeOcrRegions,
   iou,
   expandRect,
   preprocessRgbaInPlace,
 };
+
+async function collectOcrTextRegions(imageData: ClipboardImage, opts: AutoMaskOptions): Promise<OcrRegion[]> {
+  const stageW = Math.max(1, Number(opts.stageW || 1));
+  const stageH = Math.max(1, Number(opts.stageH || 1));
+  const imageArea = stageW * stageH;
+
+  const minConfidence = Number.isFinite(opts.minConfidence) ? Number(opts.minConfidence) : DEFAULT_MIN_CONFIDENCE;
+  const minAreaPercent = Number.isFinite(opts.minAreaPercent) ? Number(opts.minAreaPercent) : DEFAULT_MIN_AREA_PERCENT;
+  const verticalMergeFactor = Number.isFinite(opts.verticalMergeFactor)
+    ? Number(opts.verticalMergeFactor)
+    : DEFAULT_VERTICAL_MERGE_FACTOR;
+  const maskBufferPx = Number.isFinite(opts.maskBufferPx) ? Number(opts.maskBufferPx) : DEFAULT_MASK_BUFFER_PX;
+  const language = String(opts.language || "eng").trim() || "eng";
+
+  const words = await runTesseractWords(imageData, language);
+  const filteredWords = words.filter((w) => {
+    if (w.confidence < minConfidence) return false;
+    const areaPct = rectArea(w) / imageArea;
+    return areaPct >= minAreaPercent;
+  });
+
+  if (!filteredWords.length) return [];
+
+  const lineRects = lineMergeWithText(filteredWords);
+  const mergedRects = verticalMergeWithText(lineRects, Math.max(0, verticalMergeFactor));
+
+  return mergedRects
+    .map((rect) => {
+      const buffered = expandRect(rect, maskBufferPx, stageW, stageH);
+      return {
+        ...buffered,
+        text: rect.text,
+        confidence: rect.confidence,
+      };
+    })
+    .filter((rect) => {
+      if (rect.w < 5 || rect.h < 5) return false;
+      const areaPct = rectArea(rect) / imageArea;
+      return areaPct >= minAreaPercent && !!String(rect.text || "").trim();
+    });
+}
+
+export async function detectOcrTextRegions(imageData: ClipboardImage, opts: AutoMaskOptions): Promise<OcrTextRegion[]> {
+  const stageW = Math.max(1, Number(opts.stageW || 1));
+  const stageH = Math.max(1, Number(opts.stageH || 1));
+  const regions = await collectOcrTextRegions(imageData, opts);
+  return regions.map((rect) => toNormalizedTextRegion(rect, stageW, stageH));
+}
 
 async function runTesseractWords(imageData: ClipboardImage, lang: string): Promise<OcrWord[]> {
   const hasWorkerSupport = typeof Worker !== "undefined";
@@ -344,44 +447,19 @@ async function runTesseractWords(imageData: ClipboardImage, lang: string): Promi
 export async function autoDetectTextMasks(imageData: ClipboardImage, opts: AutoMaskOptions): Promise<IORect[]> {
   const stageW = Math.max(1, Number(opts.stageW || 1));
   const stageH = Math.max(1, Number(opts.stageH || 1));
-  const imageArea = stageW * stageH;
-
-  const minConfidence = Number.isFinite(opts.minConfidence) ? Number(opts.minConfidence) : DEFAULT_MIN_CONFIDENCE;
-  const minAreaPercent = Number.isFinite(opts.minAreaPercent) ? Number(opts.minAreaPercent) : DEFAULT_MIN_AREA_PERCENT;
-  const verticalMergeFactor = Number.isFinite(opts.verticalMergeFactor)
-    ? Number(opts.verticalMergeFactor)
-    : DEFAULT_VERTICAL_MERGE_FACTOR;
-  const maskBufferPx = Number.isFinite(opts.maskBufferPx) ? Number(opts.maskBufferPx) : DEFAULT_MASK_BUFFER_PX;
-  const language = String(opts.language || "eng").trim() || "eng";
-
-  const words = await runTesseractWords(imageData, language);
-  const filteredWords = words.filter((w) => {
-    if (w.confidence < minConfidence) return false;
-    const areaPct = rectArea(w) / imageArea;
-    return areaPct >= minAreaPercent;
-  });
-
-  if (!filteredWords.length) return [];
-
-  const lineRects = lineMerge(filteredWords);
-  const mergedRects = verticalMerge(lineRects, Math.max(0, verticalMergeFactor));
+  const mergedRects = await collectOcrTextRegions(imageData, opts);
 
   const existingPx = (opts.existingRects || []).map((r) => normToPxRect(r, stageW, stageH));
   const accepted: PxRect[] = [];
 
   for (const rect of mergedRects) {
-    const bufferedRect = expandRect(rect, maskBufferPx, stageW, stageH);
-    if (bufferedRect.w < 5 || bufferedRect.h < 5) continue;
-    const areaPct = rectArea(bufferedRect) / imageArea;
-    if (areaPct < minAreaPercent) continue;
-
-    const collidesExisting = existingPx.some((existing) => iou(existing, bufferedRect) >= 0.5);
+    const collidesExisting = existingPx.some((existing) => iou(existing, rect) >= 0.5);
     if (collidesExisting) continue;
 
-    const collidesAccepted = accepted.some((existing) => iou(existing, bufferedRect) >= 0.5);
+    const collidesAccepted = accepted.some((existing) => iou(existing, rect) >= 0.5);
     if (collidesAccepted) continue;
 
-    accepted.push(bufferedRect);
+    accepted.push({ x: rect.x, y: rect.y, w: rect.w, h: rect.h });
   }
 
   const startGroup = Math.max(1, Number(opts.startGroupNumber ?? 1));

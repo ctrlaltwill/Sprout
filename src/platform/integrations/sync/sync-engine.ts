@@ -28,6 +28,7 @@ import { expandGroupPrefixes, normaliseGroupPath } from "../../../engine/indexin
 import { log } from "../../../platform/core/logger";
 import { stableIoChildId, normaliseGroupKey } from "../../../platform/image-occlusion/mask-tool";
 import type { StoredIORect } from "../../../platform/image-occlusion/image-occlusion-types";
+import { resolveImageFile, selectPreferredIoImageRef } from "../../../platform/image-occlusion/io-helpers";
 import {
   buildPrimaryCardAnchor,
   extractCardAnchorId,
@@ -392,10 +393,17 @@ function quarantineIoCardsWithMissingImages(plugin: LearnKitPlugin): number {
   for (const [id, rec] of Object.entries(cards)) {
     if (!rec || String(rec.type) !== "io") continue;
 
-    const imageRef = normalizeIoImageRef(rec.imageRef || (rec as unknown as Record<string, unknown>).ioSrc as string | undefined);
+    const sourceNotePath = String(rec.sourceNotePath || "");
+    const legacyIoSrc = (rec as unknown as Record<string, unknown>).ioSrc;
+    const rawImageRef = typeof rec.imageRef === "string"
+      ? rec.imageRef
+      : typeof legacyIoSrc === "string"
+        ? legacyIoSrc
+        : "";
+    const imageRef = selectPreferredIoImageRef(plugin.app, sourceNotePath, rawImageRef);
     if (!imageRef) continue;
 
-    const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
+    const imageFile = resolveImageFile(plugin.app, sourceNotePath, rawImageRef || imageRef);
     if (!imageFile || !(imageFile instanceof TFile)) {
       plugin.store.data.quarantine[id] = {
         id,
@@ -504,16 +512,15 @@ function applyEditsToLines(lines: string[], edits: TextEdit[]): string[] {
 // ────────────────────────────────────────────
 
 /** Deletes the image file associated with an IO card. */
-async function deleteIoImage(plugin: LearnKitPlugin, imageRef: string): Promise<void> {
-  const normalized = normalizeIoImageRef(imageRef);
-  if (!normalized) return;
+async function deleteIoImage(plugin: LearnKitPlugin, imageRef: string, sourceNotePath: string): Promise<void> {
+  const preferredRef = selectPreferredIoImageRef(plugin.app, sourceNotePath, imageRef);
+  if (!preferredRef) return;
 
   try {
-    const vault = plugin.app.vault;
-    const file = vault.getAbstractFileByPath(normalized);
+    const file = resolveImageFile(plugin.app, sourceNotePath, imageRef);
     if (file && file instanceof TFile) await plugin.app.fileManager.trashFile(file);
   } catch (e) {
-    log.warn(`Failed to delete IO image ${normalized}:`, e);
+    log.warn(`Failed to delete IO image ${preferredRef}:`, e);
   }
 }
 
@@ -1062,7 +1069,10 @@ function normalizeIoImageRef(raw: string | null | undefined): string | null {
 }
 
 /** Extracts IO-specific fields from a parsed card. */
-function ioFieldsFromParsed(c: ParsedCard): { imageRef: string | null; occlusions: unknown[] | null; maskMode: "solo" | "all" | null } {
+function ioFieldsFromParsed(
+  plugin: LearnKitPlugin,
+  c: ParsedCard,
+): { imageRef: string | null; occlusions: unknown[] | null; maskMode: "solo" | "all" | null } {
   const legacy = c as unknown as Record<string, unknown>;
   const rawImageRef =
     typeof legacy?.imageRef === "string"
@@ -1071,7 +1081,8 @@ function ioFieldsFromParsed(c: ParsedCard): { imageRef: string | null; occlusion
         ? c.ioSrc
         : null;
 
-  const imageRef = normalizeIoImageRef(rawImageRef);
+  const imageRef = selectPreferredIoImageRef(plugin.app, c.sourceNotePath, rawImageRef ?? "")
+    ?? normalizeIoImageRef(rawImageRef);
 
   const occlusionsRaw = c?.occlusions ?? null;
   const occlusions = Array.isArray(occlusionsRaw) ? occlusionsRaw : null;
@@ -1346,7 +1357,7 @@ export async function syncOneFile(
 
         ...(c.type === "io"
           ? (() => {
-              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
+              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(plugin, c);
               return {
                 imageRef: imageRef ?? null,
                 occlusions: occlusions ?? null,
@@ -1398,7 +1409,7 @@ export async function syncOneFile(
         let ioQuarantined = false;
         const imageRef = normalizeIoImageRef(record.imageRef);
         if (imageRef) {
-          const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
+          const imageFile = resolveImageFile(plugin.app, c.sourceNotePath, record.imageRef || imageRef);
           if (!imageFile || !(imageFile instanceof TFile)) {
             plugin.store.data.quarantine[id] = {
               id,
@@ -1424,7 +1435,7 @@ export async function syncOneFile(
 
     // 5) Remove stale cards/quarantine entries no longer present in this note
     let removed = 0;
-    const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
+    const removedIoParentData: Array<{ id: string; imageRef: string | null; sourceNotePath: string }> = [];
     const removedClozeParents: string[] = [];
     const removedReversedParents: string[] = [];
 
@@ -1435,7 +1446,7 @@ export async function syncOneFile(
       if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
 
       if (rec.lastSeenAt === 0) {
-        if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null });
+        if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null, sourceNotePath: String(rec.sourceNotePath || "") });
         if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
         if (String(rec.type) === "reversed") removedReversedParents.push(String(id));
 
@@ -1447,7 +1458,7 @@ export async function syncOneFile(
 
     for (const ioData of removedIoParentData) {
       removed += deleteIoChildren(plugin, ioData.id);
-      if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
+      if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
       const ioMap = plugin.store.data.io || {};
       if (ioMap[ioData.id]) delete ioMap[ioData.id];
     }
@@ -1735,7 +1746,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
 
         ...(c.type === "io"
           ? (() => {
-              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(c);
+              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(plugin, c);
               return {
                 imageRef: imageRef ?? null,
                 occlusions: occlusions ?? null,
@@ -1786,7 +1797,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
         let ioQuarantined = false;
         const imageRef = normalizeIoImageRef(record.imageRef);
         if (imageRef) {
-          const imageFile = plugin.app.vault.getAbstractFileByPath(imageRef);
+          const imageFile = resolveImageFile(plugin.app, c.sourceNotePath, record.imageRef || imageRef);
           if (!imageFile || !(imageFile instanceof TFile)) {
             plugin.store.data.quarantine[id] = {
               id,
@@ -1810,7 +1821,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       }
     }
 
-    const removedIoParentData: Array<{ id: string; imageRef: string | null }> = [];
+    const removedIoParentData: Array<{ id: string; imageRef: string | null; sourceNotePath: string }> = [];
     const removedClozeParents: string[] = [];
     const removedReversedParents: string[] = [];
 
@@ -1821,7 +1832,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       if (String(card.type) === "io-child" || String(card.type) === "cloze-child" || String(card.type) === "reversed-child") continue;
 
       if (card.lastSeenAt !== now) {
-        if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null });
+        if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null, sourceNotePath: String(card.sourceNotePath || "") });
         if (String(card.type) === "cloze") removedClozeParents.push(String(id));
         if (String(card.type) === "reversed") removedReversedParents.push(String(id));
 
@@ -1833,7 +1844,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
 
     for (const ioData of removedIoParentData) {
       removed += deleteIoChildren(plugin, ioData.id);
-      if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef);
+      if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
       const ioMap = plugin.store.data.io || {};
       if (ioMap[ioData.id]) delete ioMap[ioData.id];
     }

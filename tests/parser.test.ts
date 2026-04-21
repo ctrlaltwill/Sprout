@@ -277,6 +277,14 @@ describe("IO cards", () => {
     expect(card.errors).toHaveLength(0);
   });
 
+  it("parses an IO card whose filename contains spaces", () => {
+    const card = parseOne(`IO | ![[Ankylosing Spondylitis - Schrober Test.png]] |`);
+
+    expect(card.type).toBe("io");
+    expect(card.ioSrc).toContain("Ankylosing Spondylitis - Schrober Test.png");
+    expect(card.errors).toHaveLength(0);
+  });
+
   it("errors when no image embed is present", () => {
     const card = parseOne(`IO | just some text |`);
 

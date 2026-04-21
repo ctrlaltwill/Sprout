@@ -12,6 +12,7 @@
  */
 
 import type { SproutSettings } from "../../types/settings";
+import { extractIoImageRefs } from "../../image-occlusion/io-helpers";
 import { requestStudyAssistantCompletionDetailed, requestStudyAssistantStreamingCompletion } from "./study-assistant-provider";
 import { buildStudyAssistantHiddenPrompt } from "./study-assistant-hidden-prompts";
 import type {
@@ -712,6 +713,21 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
+const MIN_IO_PLACEMENT_CONFIDENCE = 0.72;
+const MIN_IO_OCR_LABEL_MATCH_SCORE = 0.78;
+const MAX_IO_OCR_REGION_WIDTH = 0.65;
+const MAX_IO_OCR_REGION_HEIGHT = 0.35;
+const MAX_IO_OCR_REGION_AREA = 0.12;
+const LOW_VALUE_IO_IMAGE_KINDS = new Set([
+  "photo",
+  "decorative-photo",
+  "generic-photo",
+  "clinical-photo",
+  "screenshot",
+  "scan",
+  "other",
+]);
+
 function normalizeIoMaskMode(value: unknown): "solo" | "all" | undefined {
   const v = coerceString(value).toLowerCase();
   if (v === "solo" || v === "all") return v;
@@ -728,9 +744,398 @@ function normalizeIoGroupKey(value: unknown, fallbackIndex: number): string {
   return String(fallbackIndex);
 }
 
+function normalizeIoAssessmentImageRef(value: unknown): string | undefined {
+  const raw = coerceString(value);
+  if (!raw) return undefined;
+  const refs = extractIoImageRefs(raw);
+  return refs[0] || raw;
+}
+
+function normalizeIoImageKind(value: unknown): string | undefined {
+  const raw = coerceString(value).toLowerCase().replace(/[\s_]+/g, "-");
+  if (!raw) return undefined;
+  if (raw.includes("annotated") && raw.includes("photo")) return "annotated-photo";
+  if (raw.includes("diagram") || raw.includes("schematic") || raw.includes("illustration") || raw.includes("anatomy")) return "diagram";
+  if (raw.includes("flow") || raw.includes("pathway")) return "flowchart";
+  if (raw.includes("chart") || raw.includes("graph")) return "chart";
+  if (raw.includes("table")) return "table";
+  if (raw.includes("map")) return "map";
+  if (raw.includes("screen") || raw.includes("screenshot") || raw.includes("ui")) return "screenshot";
+  if (raw.includes("scan") || raw.includes("xray") || raw.includes("ct") || raw.includes("mri") || raw.includes("ultrasound")) return "clinical-photo";
+  if (raw.includes("photo") || raw.includes("picture") || raw.includes("image")) return "photo";
+  return raw;
+}
+
+function normalizeIoStudyValue(value: unknown): "high" | "medium" | "low" | "none" | undefined {
+  const raw = coerceString(value).toLowerCase().replace(/[\s_]+/g, "-");
+  if (!raw) return undefined;
+  if (["high", "high-yield", "strong", "useful", "study-worthy"].includes(raw)) return "high";
+  if (["medium", "moderate", "possible", "borderline"].includes(raw)) return "medium";
+  if (["low", "weak"].includes(raw)) return "low";
+  if (["none", "decorative", "skip", "not-useful", "not-study-worthy"].includes(raw)) return "none";
+  return undefined;
+}
+
+function normalizeIoPlacementConfidence(value: unknown): number | undefined {
+  const parsed = toFiniteNumber(value);
+  if (parsed === null) return undefined;
+  const normalized = parsed > 1 && parsed <= 100 ? parsed / 100 : parsed;
+  return clamp01(normalized);
+}
+
+function normalizeIoAssessment(value: unknown): StudyAssistantSuggestion["ioAssessment"] | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const rec = value as Record<string, unknown>;
+  const targetLabels = toStringArray(rec.targetLabels ?? rec.targets ?? rec.labels)
+    .map((label) => label.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  const assessment: NonNullable<StudyAssistantSuggestion["ioAssessment"]> = {
+    imageRef: normalizeIoAssessmentImageRef(rec.imageRef ?? rec.ref ?? rec.image ?? rec.ioSrc),
+    imageKind: normalizeIoImageKind(rec.imageKind ?? rec.kind ?? rec.imageType ?? rec.visualType),
+    studyValue: normalizeIoStudyValue(rec.studyValue ?? rec.usefulness ?? rec.yield ?? rec.studyUsefulness),
+    placementConfidence: normalizeIoPlacementConfidence(
+      rec.placementConfidence ?? rec.confidence ?? rec.maskConfidence ?? rec.localizationConfidence,
+    ),
+    targetLabels: targetLabels.length ? targetLabels : undefined,
+    usefulnessReason: coerceString(rec.usefulnessReason ?? rec.reason ?? rec.justification) || undefined,
+  };
+
+  if (!assessment.imageRef && !assessment.imageKind && !assessment.studyValue && assessment.placementConfidence === undefined && !assessment.targetLabels?.length && !assessment.usefulnessReason) {
+    return undefined;
+  }
+
+  return assessment;
+}
+
+function isHighYieldIoAssessment(value: StudyAssistantSuggestion["ioAssessment"] | undefined): value is NonNullable<StudyAssistantSuggestion["ioAssessment"]> {
+  if (!value) return false;
+  if (value.studyValue !== "high") return false;
+  if ((value.placementConfidence ?? 0) < MIN_IO_PLACEMENT_CONFIDENCE) return false;
+  if (!Array.isArray(value.targetLabels) || value.targetLabels.length === 0) return false;
+  if (value.imageKind && LOW_VALUE_IO_IMAGE_KINDS.has(value.imageKind)) return false;
+  return true;
+}
+
+function normalizeAllowedIoImageRefs(input: StudyAssistantGeneratorInput): Set<string> {
+  const maxVisionRefs = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean).length : 0;
+  const candidateRefs = maxVisionRefs > 0
+    ? input.imageRefs.slice(0, maxVisionRefs)
+    : input.imageRefs;
+
+  const normalized = candidateRefs
+    .map((ref) => normalizeIoAssessmentImageRef(ref))
+    .filter((ref): ref is string => !!ref);
+
+  return new Set(normalized);
+}
+
+function normalizeIoTargetLabel(value: string): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[-_]+/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeIoTargetLabel(value: string): string[] {
+  const normalized = normalizeIoTargetLabel(value);
+  return normalized ? normalized.split(" ").filter(Boolean) : [];
+}
+
+type OcrIoRegion = {
+  text: string;
+  confidence?: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+function normalizeOcrIoRegion(value: unknown): OcrIoRegion | null {
+  if (!value || typeof value !== "object") return null;
+  const rec = value as Record<string, unknown>;
+  const text = coerceString(rec.text).trim();
+  const x = toFiniteNumber(rec.x);
+  const y = toFiniteNumber(rec.y);
+  const w = toFiniteNumber(rec.w);
+  const h = toFiniteNumber(rec.h);
+  if (!text || x === null || y === null || w === null || h === null) return null;
+  if (w <= 0 || h <= 0) return null;
+  const confidence = toFiniteNumber(rec.confidence ?? rec.score);
+  return {
+    text,
+    confidence: confidence === null ? undefined : clamp01(confidence > 1 && confidence <= 100 ? confidence / 100 : confidence),
+    x: clamp01(x),
+    y: clamp01(y),
+    w: clamp01(w),
+    h: clamp01(h),
+  };
+}
+
+function buildIoOcrRegionMap(input: StudyAssistantGeneratorInput): Map<string, OcrIoRegion[]> {
+  const descriptors = Array.isArray(input.imageDescriptors) ? input.imageDescriptors : [];
+  const out = new Map<string, OcrIoRegion[]>();
+  const seenByRef = new Map<string, Set<string>>();
+
+  for (const descriptor of descriptors) {
+    const imageRef = normalizeIoAssessmentImageRef(descriptor?.ref);
+    if (!imageRef) continue;
+    const rawRegions = Array.isArray(descriptor?.ocrTextRegions) ? descriptor.ocrTextRegions : [];
+    if (!rawRegions.length) continue;
+
+    let regions = out.get(imageRef);
+    if (!regions) {
+      regions = [];
+      out.set(imageRef, regions);
+    }
+
+    let seen = seenByRef.get(imageRef);
+    if (!seen) {
+      seen = new Set<string>();
+      seenByRef.set(imageRef, seen);
+    }
+
+    for (const rawRegion of rawRegions) {
+      const region = normalizeOcrIoRegion(rawRegion);
+      if (!region) continue;
+      const key = [
+        normalizeIoTargetLabel(region.text),
+        region.x.toFixed(4),
+        region.y.toFixed(4),
+        region.w.toFixed(4),
+        region.h.toFixed(4),
+      ].join("|");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      regions.push(region);
+    }
+  }
+
+  return out;
+}
+
+function scoreIoTargetLabelMatch(label: string, regionText: string): number {
+  const normalizedLabel = normalizeIoTargetLabel(label);
+  const normalizedRegion = normalizeIoTargetLabel(regionText);
+  if (!normalizedLabel || !normalizedRegion) return 0;
+  if (normalizedLabel === normalizedRegion) return 1;
+
+  const labelTokens = tokenizeIoTargetLabel(normalizedLabel);
+  const regionTokens = tokenizeIoTargetLabel(normalizedRegion);
+  if (!labelTokens.length || !regionTokens.length) return 0;
+
+  const regionTokenSet = new Set(regionTokens);
+  const overlapCount = labelTokens.filter((token) => regionTokenSet.has(token)).length;
+  if (!overlapCount) return 0;
+
+  const recall = overlapCount / labelTokens.length;
+  const precision = overlapCount / regionTokens.length;
+  const f1 = (precision + recall) > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+
+  let score = f1;
+  if (normalizedRegion.includes(normalizedLabel)) score = Math.min(0.96, score + 0.04);
+  else if (normalizedLabel.includes(normalizedRegion)) score = Math.min(0.9, score + 0.02);
+
+  return clamp01(score);
+}
+
+function ocrRegionArea(region: OcrIoRegion): number {
+  return Math.max(0, region.w) * Math.max(0, region.h);
+}
+
+function isPlausibleIoOcrRegion(region: OcrIoRegion): boolean {
+  const area = ocrRegionArea(region);
+  if (region.w > MAX_IO_OCR_REGION_WIDTH || region.h > MAX_IO_OCR_REGION_HEIGHT || area > MAX_IO_OCR_REGION_AREA) {
+    return false;
+  }
+
+  const touchesEdge = region.x <= 0.01 || region.y <= 0.01 || (region.x + region.w) >= 0.99 || (region.y + region.h) >= 0.99;
+  if (touchesEdge && (region.w > 0.28 || region.h > 0.16)) return false;
+
+  return true;
+}
+
+function dedupeIoOcclusions(
+  rects: NonNullable<StudyAssistantSuggestion["ioOcclusions"]>,
+): NonNullable<StudyAssistantSuggestion["ioOcclusions"]> {
+  const seen = new Set<string>();
+  const out: NonNullable<StudyAssistantSuggestion["ioOcclusions"]> = [];
+
+  for (const rect of rects) {
+    const normalized = {
+      ...rect,
+      x: clamp01(rect.x),
+      y: clamp01(rect.y),
+      w: clamp01(rect.w),
+      h: clamp01(rect.h),
+      shape: rect.shape === "circle" ? "circle" : "rect",
+    };
+    const key = [
+      normalized.x.toFixed(4),
+      normalized.y.toFixed(4),
+      normalized.w.toFixed(4),
+      normalized.h.toFixed(4),
+      normalized.shape,
+    ].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+
+  return out.map((rect, idx) => ({
+    ...rect,
+    rectId: `r${idx + 1}`,
+    groupKey: String(idx + 1),
+  }));
+}
+
+function applyOcrTextRegionsToIoSuggestion(
+  suggestion: StudyAssistantSuggestion,
+  ocrRegionsByImageRef: Map<string, OcrIoRegion[]>,
+): StudyAssistantSuggestion | null {
+  if (suggestion.type !== "io") return suggestion;
+
+  const imageRef = normalizeIoAssessmentImageRef(extractIoImageKey(suggestion));
+  if (!imageRef) return suggestion;
+
+  const ocrRegions = ocrRegionsByImageRef.get(imageRef);
+  if (!ocrRegions?.length) return suggestion;
+
+  const targetLabels = Array.isArray(suggestion.ioAssessment?.targetLabels)
+    ? suggestion.ioAssessment.targetLabels.map((label) => String(label || "").trim()).filter(Boolean)
+    : [];
+  if (!targetLabels.length) return suggestion;
+
+  const labels = targetLabels
+    .map((label, originalIndex) => ({
+      label,
+      originalIndex,
+      tokenCount: Math.max(1, tokenizeIoTargetLabel(label).length),
+    }))
+    .sort((a, b) => b.tokenCount - a.tokenCount || a.originalIndex - b.originalIndex);
+
+  const usedRegionIndexes = new Set<number>();
+  const matches: Array<{ originalIndex: number; region: OcrIoRegion; score: number }> = [];
+
+  for (const label of labels) {
+    let bestIndex = -1;
+    let bestScore = 0;
+    for (let idx = 0; idx < ocrRegions.length; idx += 1) {
+      if (usedRegionIndexes.has(idx)) continue;
+      const region = ocrRegions[idx];
+      if (!isPlausibleIoOcrRegion(region)) continue;
+      const score = scoreIoTargetLabelMatch(label.label, region.text);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = idx;
+        continue;
+      }
+      if (score === bestScore && bestIndex >= 0) {
+        const regionArea = ocrRegionArea(region);
+        const currentBestArea = ocrRegionArea(ocrRegions[bestIndex]);
+        if (regionArea < currentBestArea - 0.0005) {
+          bestIndex = idx;
+          continue;
+        }
+        const regionConfidence = region.confidence ?? 0;
+        const currentBestConfidence = ocrRegions[bestIndex]?.confidence ?? 0;
+        if (regionConfidence > currentBestConfidence) {
+          bestIndex = idx;
+        }
+      }
+    }
+
+    if (bestIndex >= 0 && bestScore >= MIN_IO_OCR_LABEL_MATCH_SCORE) {
+      usedRegionIndexes.add(bestIndex);
+      matches.push({
+        originalIndex: label.originalIndex,
+        region: ocrRegions[bestIndex],
+        score: bestScore,
+      });
+    }
+  }
+
+  const requiredMatches = targetLabels.length <= 2 ? 1 : Math.ceil(targetLabels.length * 0.5);
+  if (matches.length < requiredMatches) return null;
+
+  matches.sort((a, b) => a.originalIndex - b.originalIndex);
+
+  const nextOcclusions = matches.map((match, idx) => ({
+    rectId: `r${idx + 1}`,
+    x: match.region.x,
+    y: match.region.y,
+    w: match.region.w,
+    h: match.region.h,
+    groupKey: String(idx + 1),
+    shape: "rect" as const,
+  }));
+  const averageScore = matches.reduce((sum, match) => sum + match.score, 0) / Math.max(1, matches.length);
+  const coverage = matches.length / Math.max(1, targetLabels.length);
+  const placementConfidence = Math.max(
+    suggestion.ioAssessment?.placementConfidence ?? 0,
+    clamp01(averageScore * 0.7 + coverage * 0.3),
+  );
+
+  const nextSuggestion: StudyAssistantSuggestion = {
+    ...suggestion,
+    ioOcclusions: nextOcclusions,
+    ioMaskMode: suggestion.ioMaskMode || "solo",
+    ioAssessment: suggestion.ioAssessment
+      ? {
+          ...suggestion.ioAssessment,
+          imageRef,
+          targetLabels: matches.map((match) => match.region.text),
+          placementConfidence,
+        }
+      : suggestion.ioAssessment,
+  };
+
+  if (Array.isArray(nextSuggestion.noteRows) && nextSuggestion.noteRows.length) {
+    nextSuggestion.noteRows = upsertIoRows(
+      nextSuggestion.noteRows,
+      extractIoImageKey(nextSuggestion),
+      nextOcclusions,
+      nextSuggestion.ioMaskMode,
+    );
+  }
+
+  return nextSuggestion;
+}
+
+function applyOcrTextRegionsToSuggestions(
+  suggestions: StudyAssistantSuggestion[],
+  input: StudyAssistantGeneratorInput,
+): StudyAssistantSuggestion[] {
+  const ocrRegionsByImageRef = buildIoOcrRegionMap(input);
+  if (!ocrRegionsByImageRef.size) return suggestions;
+
+  return suggestions
+    .map((suggestion) => applyOcrTextRegionsToIoSuggestion(suggestion, ocrRegionsByImageRef))
+    .filter((suggestion): suggestion is StudyAssistantSuggestion => !!suggestion);
+}
+
+function allowRuntimeSuggestion(
+  suggestion: StudyAssistantSuggestion,
+  canUseVisionForIo: boolean,
+  allowedIoImageRefs: Set<string>,
+): boolean {
+  if (suggestion.type !== "io") return true;
+  if (!canUseVisionForIo) return false;
+
+  const imageRef = normalizeIoAssessmentImageRef(extractIoImageKey(suggestion));
+  if (!imageRef) return false;
+  if (allowedIoImageRefs.size > 0 && !allowedIoImageRefs.has(imageRef)) return false;
+  return true;
+}
+
 function extractIoImageKey(suggestion: StudyAssistantSuggestion): string {
   const direct = coerceString(suggestion.ioSrc);
   if (direct) return direct;
+
+  const assessedRef = coerceString(suggestion.ioAssessment?.imageRef);
+  if (assessedRef) return assessedRef;
 
   const rows = Array.isArray(suggestion.noteRows) ? suggestion.noteRows : [];
   for (const rowText of rows) {
@@ -738,6 +1143,12 @@ function extractIoImageKey(suggestion: StudyAssistantSuggestion): string {
     if (row?.key === "IO") return coerceString(row.value);
   }
   return "";
+}
+
+function canonicalizeIoSuggestionSrc(raw: string): string | null {
+  const refs = extractIoImageRefs(raw);
+  if (refs.length !== 1) return null;
+  return `![[${refs[0]}]]`;
 }
 
 function upsertIoRows(
@@ -769,16 +1180,24 @@ function mergeIoSuggestionsByImage(suggestions: StudyAssistantSuggestion[]): Stu
     const imageKey = extractIoImageKey(suggestion) || `__io_image_${out.length}`;
     const existing = mergedByImage.get(imageKey);
     if (!existing) {
-      const normalizedOcclusions = (Array.isArray(suggestion.ioOcclusions) ? suggestion.ioOcclusions : [])
-        .map((rect, idx) => ({
-          ...rect,
-          rectId: coerceString(rect.rectId ?? rect.id) || `r${idx + 1}`,
-          groupKey: String(idx + 1),
-        }));
+      const normalizedOcclusions = dedupeIoOcclusions(
+        (Array.isArray(suggestion.ioOcclusions) ? suggestion.ioOcclusions : [])
+          .map((rect, idx) => ({
+            ...rect,
+            rectId: coerceString(rect.rectId ?? rect.id) || `r${idx + 1}`,
+            groupKey: String(idx + 1),
+          })),
+      );
 
       const nextSuggestion: StudyAssistantSuggestion = {
         ...suggestion,
         ioOcclusions: normalizedOcclusions,
+        ioAssessment: suggestion.ioAssessment
+          ? {
+              ...suggestion.ioAssessment,
+              imageRef: normalizeIoAssessmentImageRef(suggestion.ioAssessment.imageRef) || normalizeIoAssessmentImageRef(imageKey),
+            }
+          : suggestion.ioAssessment,
       };
 
       if (Array.isArray(nextSuggestion.noteRows) && nextSuggestion.noteRows.length) {
@@ -795,17 +1214,30 @@ function mergeIoSuggestionsByImage(suggestions: StudyAssistantSuggestion[]): Stu
       continue;
     }
 
-    const mergedOcclusions = [
+    const mergedOcclusions = dedupeIoOcclusions([
       ...(Array.isArray(existing.ioOcclusions) ? existing.ioOcclusions : []),
       ...(Array.isArray(suggestion.ioOcclusions) ? suggestion.ioOcclusions : []),
-    ].map((rect, idx) => ({
-      ...rect,
-      rectId: `r${idx + 1}`,
-      groupKey: String(idx + 1),
-    }));
+    ]);
 
     existing.ioOcclusions = mergedOcclusions;
     existing.ioMaskMode = existing.ioMaskMode || suggestion.ioMaskMode || (mergedOcclusions.length ? "solo" : undefined);
+    existing.ioAssessment = existing.ioAssessment || suggestion.ioAssessment
+      ? {
+          ...(existing.ioAssessment || {}),
+          ...(suggestion.ioAssessment || {}),
+          imageRef: normalizeIoAssessmentImageRef(existing.ioAssessment?.imageRef)
+            || normalizeIoAssessmentImageRef(suggestion.ioAssessment?.imageRef)
+            || normalizeIoAssessmentImageRef(imageKey),
+          placementConfidence: Math.max(
+            existing.ioAssessment?.placementConfidence ?? 0,
+            suggestion.ioAssessment?.placementConfidence ?? 0,
+          ) || undefined,
+          targetLabels: Array.from(new Set([
+            ...(existing.ioAssessment?.targetLabels || []),
+            ...(suggestion.ioAssessment?.targetLabels || []),
+          ])).filter(Boolean),
+        }
+      : undefined;
 
     if (Array.isArray(existing.noteRows) && existing.noteRows.length) {
       existing.noteRows = upsertIoRows(
@@ -836,7 +1268,7 @@ function toIoOcclusionsArray(value: unknown): NonNullable<StudyAssistantSuggesti
     if (wRaw <= 0 || hRaw <= 0) continue;
 
     const rectId = coerceString(rec.rectId ?? rec.id) || `r${i + 1}`;
-  const groupKey = normalizeIoGroupKey(rec.groupKey ?? rec.label ?? rec.name, i + 1);
+    const groupKey = normalizeIoGroupKey(rec.groupKey ?? rec.label ?? rec.name, i + 1);
     const shapeRaw = coerceString(rec.shape).toLowerCase();
     const shape: "rect" | "circle" | undefined = shapeRaw === "circle" ? "circle" : "rect";
 
@@ -903,6 +1335,7 @@ function sanitizeSuggestion(raw: unknown): StudyAssistantSuggestion | null {
     ioSrc: coerceString(rec.ioSrc),
     ioOcclusions: toIoOcclusionsArray(rec.ioOcclusions ?? rec.occlusions ?? rec.ioMasks ?? rec.masks),
     ioMaskMode: normalizeIoMaskMode(rec.ioMaskMode ?? rec.maskMode ?? rec.mode),
+    ioAssessment: normalizeIoAssessment(rec.ioAssessment ?? rec.imageAssessment ?? rec.ioAnalysis),
     noteRows: toStringArray(rec.noteRows),
     rationale: coerceString(rec.rationale),
     sourceOrigin: coerceString(rec.sourceOrigin) === "external" ? "external" : "note",
@@ -958,15 +1391,34 @@ function sanitizeSuggestion(raw: unknown): StudyAssistantSuggestion | null {
   }
 
   if (suggestion.type === "io") {
-    const src = String(suggestion.ioSrc || "").trim();
-    const hasEmbed = src.includes("![[") || src.includes("![");
-    const rowsContainIo = hasNoteRows && suggestion.noteRows!.some((line) => /^\s*IO\s*\|/i.test(line));
-    if (!rowsContainIo && !hasEmbed) return null;
+    const ioSrc = canonicalizeIoSuggestionSrc(extractIoImageKey(suggestion));
+    if (!ioSrc) return null;
+    if (!Array.isArray(suggestion.ioOcclusions) || suggestion.ioOcclusions.length === 0) return null;
+
+    const ioImageRef = normalizeIoAssessmentImageRef(ioSrc);
+    const ioAssessment = suggestion.ioAssessment;
+    if (!isHighYieldIoAssessment(ioAssessment)) return null;
+
+    if (ioAssessment.imageRef && normalizeIoAssessmentImageRef(ioAssessment.imageRef) !== ioImageRef) {
+      return null;
+    }
+
+    suggestion = {
+      ...suggestion,
+      ioSrc,
+      ioAssessment: {
+        ...ioAssessment,
+        imageRef: ioImageRef,
+        targetLabels: Array.from(new Set((ioAssessment.targetLabels || []).map((label) => label.trim()).filter(Boolean))),
+      },
+    };
+
     if (hasNoteRows) {
       suggestion = {
         ...suggestion,
-        noteRows: ensureIoMaskRows(
+        noteRows: upsertIoRows(
           suggestion.noteRows || [],
+          ioSrc,
           suggestion.ioOcclusions || [],
           suggestion.ioMaskMode,
         ),
@@ -1155,7 +1607,7 @@ function buildSystemPrompt(customInstructions: string, canUseVisionForIo: boolea
     "Return strictly valid JSON only with exactly one top-level object: {\"suggestions\":[...]}",
     "Do not output markdown, code fences, explanations, or extra keys outside the documented schema.",
     "Return valid JSON matching this schema:",
-    '{"suggestions":[{"type":"basic|reversed|cloze|mcq|oq|io","difficulty":1-3,"sourceOrigin":"note|external","title":"optional","question":"optional","answer":"optional","clozeText":"optional","options":["..."],"correctOptionIndexes":[0],"steps":["..."],"ioSrc":"optional","ioOcclusions":[{"rectId":"r1","x":0.1,"y":0.2,"w":0.2,"h":0.08,"groupKey":"1","shape":"rect"}],"ioMaskMode":"solo|all","info":"optional","groups":["optional/group"],"noteRows":["KIND | value |"],"rationale":"optional"}]}',
+    '{"suggestions":[{"type":"basic|reversed|cloze|mcq|oq|io","difficulty":1-3,"sourceOrigin":"note|external","title":"optional","question":"optional","answer":"optional","clozeText":"optional","options":["..."],"correctOptionIndexes":[0],"steps":["..."],"ioSrc":"optional","ioOcclusions":[{"rectId":"r1","x":0.1,"y":0.2,"w":0.2,"h":0.08,"groupKey":"1","shape":"rect"}],"ioMaskMode":"solo|all","ioAssessment":{"imageRef":"optional","imageKind":"diagram|annotated-photo|chart|table|map|flowchart|photo|clinical-photo|screenshot|other","studyValue":"high|medium|low|none","placementConfidence":0.0,"targetLabels":["..."],"usefulnessReason":"optional"},"info":"optional","groups":["optional/group"],"noteRows":["KIND | value |"],"rationale":"optional"}]}',
     "Prefer semantic fields (question/answer/clozeText/options/correctOptionIndexes/steps/ioSrc/ioOcclusions/ioMaskMode).",
     "Include noteRows only when you can guarantee exact parser-safe Sprout row syntax.",
     'Set sourceOrigin to "note" when the card tests content present in the note.',
@@ -1168,13 +1620,22 @@ function buildSystemPrompt(customInstructions: string, canUseVisionForIo: boolea
     "Grouped/shared cloze indices are allowed (e.g. {{c1::A}} and {{c1::B}} in the same card).",
     "Never label a question-answer fact card as type=cloze unless it contains explicit cloze deletion markup.",
     "IO rows must include embedded image syntax in IO | ... |.",
+    "For IO, ioSrc and any IO row must contain exactly one embedded image reference. Never place multiple images in one IO field.",
     "For IO, include O row with occlusions JSON and C row with mask mode (solo/all).",
     "For IO occlusions, use normalized coordinates x,y,w,h in [0,1] plus rectId and groupKey.",
     "For IO with visual input, emit at most one IO suggestion per image; include all masks for that image in that single suggestion.",
     "For IO groupKey values, use numeric strings only (\"1\", \"2\", \"3\", ...). Do not use prefixes like g1.",
     "For IO placement, each mask should tightly cover the full target label/text block (including multi-word labels), with slight padding and without covering nearby unrelated labels.",
+    "For IO, first decide what kind of image it is and whether it is genuinely high-yield for study on this page before creating any masks.",
+    "Only emit IO for clearly study-worthy visuals such as labeled diagrams, annotated figures, flowcharts, tables/charts with discrete labels, or annotated photos with explicit target labels.",
+    "Do not emit IO for decorative photos, generic unlabeled clinical photos, screenshots, scans, UI captures, or images where the intended labels/targets are ambiguous.",
+    "Every IO suggestion must include ioAssessment with imageRef, imageKind, studyValue, placementConfidence in [0,1], targetLabels, and usefulnessReason.",
+    "Set ioAssessment.studyValue to high only when the image is clearly worth studying and the intended targets are explicit.",
+    "If you cannot name the exact labels or targets you plan to occlude, do not emit IO.",
+    "If imageDescriptors include ocrTextRegions, treat those OCR text regions as authoritative label candidates with normalized geometry.",
+    "When ocrTextRegions are present, prefer targetLabels that exactly match those OCR texts and use them to ground IO masks rather than guessing freehand coordinates.",
     canUseVisionForIo
-      ? "Use OCR/vision reasoning on referenced images to locate labels and produce occlusion rectangles."
+      ? "Use OCR/vision reasoning on referenced images and imageDescriptors to decide whether each image is suitable for IO, then locate labels and produce occlusion rectangles only for the suitable images."
       : "Vision input is unavailable for this run, so do not emit IO suggestions or guessed occlusion coordinates.",
     "Use reversed cards only when both sides form a short, unambiguous two-way mapping; otherwise use basic cards.",
     "Flashcard quality rules (apply strictly):",
@@ -1302,10 +1763,22 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
   const existingFlashcardTopics = buildExistingFlashcardTopics(input.noteContent);
   const allowRepeatTopics = userExplicitlyAllowsRepeatTopics(input);
 
+  const imageDescriptors = Array.isArray(input.imageDescriptors)
+    ? input.imageDescriptors
+    : [];
+  const visionDescriptorRefs = new Set(
+    (Array.isArray(input.imageDataUrls) ? input.imageRefs.slice(0, input.imageDataUrls.filter(Boolean).length) : input.imageRefs)
+      .map((ref) => normalizeIoAssessmentImageRef(ref))
+      .filter((ref): ref is string => !!ref),
+  );
+
   const preview = {
     notePath: input.notePath,
     includeImages: input.includeImages,
     imageRefs: input.includeImages ? input.imageRefs : [],
+    imageDescriptors: input.includeImages
+      ? imageDescriptors.filter((descriptor) => !visionDescriptorRefs.size || visionDescriptorRefs.has(normalizeIoAssessmentImageRef(descriptor.ref) || ""))
+      : [],
     visionImageCount: canUseVisionForIo ? (Array.isArray(input.imageDataUrls) ? input.imageDataUrls.length : 0) : 0,
     enabledTypes: effectiveTypes,
     targetSuggestionCount: target,
@@ -1360,8 +1833,11 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
       ? "User explicitly requested repeats/variants of existing cards, so reusing existing flashcard topics is allowed."
       : "The note already contains flashcards. Avoid proposing cards that test the same topic/question intent as existing cards unless the user explicitly asks for repeats.",
     canUseVisionForIo
-      ? "For IO cards, use provided image inputs for precise occlusion placement. Emit one IO suggestion per image with multiple masks as needed; do not split one image into multiple single-mask IO suggestions."
+      ? "For IO cards, use the provided image inputs and imageDescriptors to decide whether an image is high-yield enough for IO. Emit IO only for clearly suitable images, and emit one IO suggestion per image with multiple masks as needed; do not split one image into multiple single-mask IO suggestions."
       : "Do not generate IO cards in this run because image vision input is unavailable.",
+    canUseVisionForIo
+      ? "If none of the referenced images is clearly high-yield and targetable, do not emit IO suggestions and spend the output budget on the other enabled card types."
+      : "",
     "For cloze requests, return only true cloze cards with {{cN::...}} deletions and CQ rows.",
     "When the user asks for a single cloze card with multiple deletions, return one CQ row containing all requested deletions, and grouped/shared indices are allowed.",
     ...optionalRowsInstructions,
@@ -1397,6 +1873,7 @@ export async function generateStudyAssistantSuggestions(params: {
     ? [...new Set(overrides.types)]
     : input.enabledTypes;
   const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
+  const allowedIoImageRefs = normalizeAllowedIoImageRefs(input);
   const attachedFileDataUrls = Array.isArray(input.attachedFileDataUrls) ? input.attachedFileDataUrls.filter(Boolean) : [];
   const canUseVisionForIo = !!input.includeImages && imageDataUrls.length > 0 && modelLikelySupportsVision(settings);
   const systemPrompt = buildSystemPrompt(input.customInstructions || settings.prompts.assistant || "", canUseVisionForIo);
@@ -1419,8 +1896,8 @@ export async function generateStudyAssistantSuggestions(params: {
   resolvedConversationId = firstResponse.conversationId ?? resolvedConversationId;
   let attachmentRoute = firstResponse.attachmentRoute;
 
-  let suggestions = parseSuggestions(rawResponseText)
-    .filter((s) => canUseVisionForIo || s.type !== "io")
+  let suggestions = applyOcrTextRegionsToSuggestions(parseSuggestions(rawResponseText), input)
+    .filter((s) => allowRuntimeSuggestion(s, canUseVisionForIo, allowedIoImageRefs))
     .filter((s) => effectiveTypes.includes(s.type));
 
   suggestions = resolveSuggestionsWithFallback(intent, suggestions, input.noteContent).slice(0, maxAllowed);
@@ -1468,8 +1945,8 @@ export async function generateStudyAssistantSuggestions(params: {
     resolvedConversationId = refillResponse.conversationId ?? resolvedConversationId;
     attachmentRoute = combineAttachmentRoutes(attachmentRoute, refillResponse.attachmentRoute);
 
-    const refillSuggestions = parseSuggestions(refillRawResponseText)
-      .filter((s) => canUseVisionForIo || s.type !== "io")
+    const refillSuggestions = applyOcrTextRegionsToSuggestions(parseSuggestions(refillRawResponseText), refillInput)
+      .filter((s) => allowRuntimeSuggestion(s, canUseVisionForIo, allowedIoImageRefs))
       .filter((s) => effectiveTypes.includes(s.type));
 
     suggestions = resolveSuggestionsWithFallback(
@@ -1512,6 +1989,7 @@ export async function generateStudyAssistantSuggestionsStreaming(params: {
     ? [...new Set(overrides.types)]
     : input.enabledTypes;
   const imageDataUrls = Array.isArray(input.imageDataUrls) ? input.imageDataUrls.filter(Boolean) : [];
+  const allowedIoImageRefs = normalizeAllowedIoImageRefs(input);
   const attachedFileDataUrls = Array.isArray(input.attachedFileDataUrls) ? input.attachedFileDataUrls.filter(Boolean) : [];
   const canUseVisionForIo = !!input.includeImages && imageDataUrls.length > 0 && modelLikelySupportsVision(settings);
   const systemPrompt = buildSystemPrompt(input.customInstructions || settings.prompts.assistant || "", canUseVisionForIo);
@@ -1522,8 +2000,8 @@ export async function generateStudyAssistantSuggestionsStreaming(params: {
   let attachmentRoute: StudyAssistantAttachmentRoute = "none";
   let emittedSuggestionCount = 0;
 
-  const filterSuggestions = (suggestions: StudyAssistantSuggestion[]): StudyAssistantSuggestion[] => suggestions
-    .filter((suggestion) => canUseVisionForIo || suggestion.type !== "io")
+  const filterSuggestions = (suggestions: StudyAssistantSuggestion[]): StudyAssistantSuggestion[] => applyOcrTextRegionsToSuggestions(suggestions, input)
+    .filter((suggestion) => allowRuntimeSuggestion(suggestion, canUseVisionForIo, allowedIoImageRefs))
     .filter((suggestion) => effectiveTypes.includes(suggestion.type));
 
   const emitResolvedSuggestions = (

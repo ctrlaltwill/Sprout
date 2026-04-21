@@ -63,12 +63,50 @@ class MemoryVault {
   }
 }
 
+function resolveRelativePath(sourceNotePath: string, link: string): string[] {
+  const normalizedLink = String(link || "").replace(/\\/g, "/").replace(/^\.\//, "").trim();
+  if (!normalizedLink) return [];
+
+  const sourceParts = sourceNotePath.split("/");
+  sourceParts.pop();
+
+  const resolvedParts = [...sourceParts];
+  for (const segment of normalizedLink.split("/")) {
+    if (!segment || segment === ".") continue;
+    if (segment === "..") {
+      resolvedParts.pop();
+      continue;
+    }
+    resolvedParts.push(segment);
+  }
+
+  const candidates = new Set<string>([normalizedLink, resolvedParts.join("/")]);
+  return Array.from(candidates).filter(Boolean);
+}
+
 function makePlugin(vault: MemoryVault) {
   const fileManager = {
     trashFile: vi.fn(async () => {}),
   };
+  const metadataCache = {
+    getFirstLinkpathDest: vi.fn((link: string, sourceNotePath: string) => {
+      for (const candidate of resolveRelativePath(sourceNotePath, link)) {
+        const file = vault.getAbstractFileByPath(candidate);
+        if (file instanceof TFile) return file;
+      }
+
+      const basename = String(link || "").replace(/\\/g, "/").split("/").pop() || "";
+      if (!basename) return null;
+
+      for (const entry of vault.files.values()) {
+        if (entry.file.name === basename) return entry.file;
+      }
+
+      return null;
+    }),
+  };
   const plugin: any = {
-    app: { vault, fileManager },
+    app: { vault, fileManager, metadataCache },
     manifest: { id: "" },
     settings: {
       indexing: { ignoreInCodeFences: false },
@@ -333,6 +371,67 @@ describe("sync engine", () => {
 
     expect(plugin.store.data.quarantine["333333333"]).toBeDefined();
     expect(plugin.store.data.cards["333333333"]).toBeUndefined();
+  });
+
+  it("keeps IO cards when the image resolves by bare filename", async () => {
+    const vault = new MemoryVault();
+    await vault.create("Attachments/Ankylosing Spondylitis - Schrober Test.png", "");
+    const file = await vault.create(
+      "Notes/AS.md",
+      [
+        "IO | ![[Ankylosing Spondylitis - Schrober Test.png]] |",
+        "O | [] |",
+        "C | all |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+
+    expect(plugin.store.data.cards["100000000"]).toBeDefined();
+    expect(plugin.store.data.quarantine["100000000"]).toBeUndefined();
+  });
+
+  it("keeps IO cards when the image resolves relative to the source note", async () => {
+    const vault = new MemoryVault();
+    await vault.create("Notes/Images/local-figure.png", "");
+    const file = await vault.create(
+      "Notes/Card.md",
+      [
+        "IO | ![[Images/local-figure.png]] |",
+        "O | [] |",
+        "C | solo |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+
+    expect(plugin.store.data.cards["100000000"]).toBeDefined();
+    expect(plugin.store.data.quarantine["100000000"]).toBeUndefined();
+  });
+
+  it("stores the first resolvable image for legacy multi-image IO fields", async () => {
+    const vault = new MemoryVault();
+    await vault.create("Attachments/Faber Test.png", "");
+    const file = await vault.create(
+      "Notes/Legacy.md",
+      [
+        "IO | ![[Missing.png]] ![[Attachments/Faber Test.png]] |",
+        "O | [] |",
+        "C | all |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+
+    expect(plugin.store.data.cards["100000000"]).toBeDefined();
+    expect(plugin.store.data.cards["100000000"].imageRef).toBe("Attachments/Faber Test.png");
+    expect(plugin.store.data.quarantine["100000000"]).toBeUndefined();
   });
 
   // ── syncOneFile: stale removal ──────────────────────────────────────────

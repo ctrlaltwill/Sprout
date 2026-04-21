@@ -13,6 +13,8 @@ import { joinPath } from "../../../platform/integrations/sync/backup";
 import type LearnKitPlugin from "../../../main";
 import { placePopover, replaceChildrenWithHTML, setCssProps } from "../../../platform/core/ui";
 import { mimeFromExt, resolveImageFile } from "../../../platform/image-occlusion/io-helpers";
+import { detectOcrTextRegions } from "../../../platform/image-occlusion/io-ocr";
+import { loadImageElement } from "../../../platform/image-occlusion/io-image-ops";
 import { insertTextAtCursorOrAppend } from "../../../platform/image-occlusion/io-save";
 import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
 import { bestEffortAttachmentPath, normaliseVaultPath, writeBinaryToVault } from "../../../platform/modals/modal-utils";
@@ -26,7 +28,7 @@ import {
   parseUserRequestOverrides,
   type UserIntentClassification,
 } from "../../../platform/integrations/ai/study-assistant-generator";
-import { buildStudyAssistantNoteContext } from "../../../platform/integrations/ai/study-assistant-note-context";
+import { buildStudyAssistantNoteContext, extractStudyAssistantImageDescriptors } from "../../../platform/integrations/ai/study-assistant-note-context";
 import { generateExamQuestions, gradeFullTest } from "../../../platform/integrations/ai/exam-generator-ai";
 import type { GeneratedExamQuestion, ExamGeneratorConfig } from "../../exam-generator/exam-generator-types";
 import { deleteStudyAssistantConversation } from "../../../platform/integrations/ai/study-assistant-provider";
@@ -34,6 +36,8 @@ import type {
   StudyAssistantCardType,
   StudyAssistantChatMode,
   StudyAssistantConversationRef,
+  StudyAssistantImageDescriptor,
+  StudyAssistantOcrTextRegion,
   StudyAssistantReviewDepth,
   StudyAssistantSuggestion,
 } from "../../../platform/integrations/ai/study-assistant-types";
@@ -193,7 +197,6 @@ export class SproutAssistantPopup {
   private remoteConversationsByMode: ModeConversationRefs = {};
   private insertingSuggestionKey: string | null = null;
   private isInsertingSuggestion = false;
-  private _lastAnchoredResponseKeyByMode: Partial<Record<AssistantMode, string>> = {};
   private _autoFollowChatByMode: Record<AssistantMode, boolean> = {
     assistant: true,
     review: true,
@@ -1688,7 +1691,6 @@ export class SproutAssistantPopup {
   }
 
   private _bindChatAutoFollowTracking(chatWrap: HTMLElement, mode: AssistantMode): void {
-    this._autoFollowChatByMode[mode] = this._isChatWrapNearBottom(chatWrap);
     chatWrap.addEventListener("scroll", () => {
       this._autoFollowChatByMode[mode] = this._isChatWrapNearBottom(chatWrap);
     }, { passive: true });
@@ -1701,6 +1703,25 @@ export class SproutAssistantPopup {
 
   private _shouldAutoFollowChat(mode: AssistantMode): boolean {
     return this._autoFollowChatByMode[mode];
+  }
+
+  private _restoreChatScrollAfterRender(
+    chatWrap: HTMLElement,
+    mode: AssistantMode,
+    preservedScrollTop: number | null,
+    options: { forceBottom?: boolean } = {},
+  ): void {
+    const shouldAutoFollow = options.forceBottom || this._shouldAutoFollowChat(mode);
+    requestAnimationFrame(() => {
+      if (shouldAutoFollow) {
+        chatWrap.scrollTop = chatWrap.scrollHeight;
+        return;
+      }
+
+      if (preservedScrollTop == null) return;
+      const maxScrollTop = Math.max(0, chatWrap.scrollHeight - chatWrap.clientHeight);
+      chatWrap.scrollTop = Math.min(maxScrollTop, Math.max(0, preservedScrollTop));
+    });
   }
 
   private _scheduleStreamRender(): void {
@@ -2165,20 +2186,100 @@ export class SproutAssistantPopup {
     const out: string[] = [];
 
     for (const ref of imageRefs.slice(0, maxImages)) {
+      const imageData = await this.readVisionClipboardImage(file, ref, maxBytesPerImage);
+      if (!imageData) continue;
+      const base64 = this.arrayBufferToBase64(imageData.data);
+      if (!base64) continue;
+      out.push(`data:${imageData.mime};base64,${base64}`);
+    }
+
+    return out;
+  }
+
+  private async readVisionClipboardImage(file: TFile, ref: string, maxBytes = 5 * 1024 * 1024): Promise<{ mime: string; data: ArrayBuffer } | null> {
+    const imageFile = resolveImageFile(this.plugin.app, file.path, ref);
+    if (!(imageFile instanceof TFile)) return null;
+
+    const mimeType = mimeFromExt(String(imageFile.extension || ""));
+    if (!mimeType.startsWith("image/")) return null;
+
+    try {
+      const data = await this.readVaultBinary(imageFile);
+      if (!data.byteLength || data.byteLength > maxBytes) return null;
+      return { mime: mimeType, data };
+    } catch {
+      return null;
+    }
+  }
+
+  private async detectOcrTextRegionsForImage(file: TFile, ref: string): Promise<StudyAssistantOcrTextRegion[]> {
+    const imageData = await this.readVisionClipboardImage(file, ref);
+    if (!imageData) return [];
+
+    try {
+      const imageEl = await loadImageElement(imageData);
+      if (!imageEl) return [];
+
+      const regions = await detectOcrTextRegions(imageData, {
+        stageW: Math.max(1, imageEl.naturalWidth || imageEl.width || 1),
+        stageH: Math.max(1, imageEl.naturalHeight || imageEl.height || 1),
+      });
+
+      return regions
+        .map((region) => ({
+          text: String(region.text || "").trim(),
+          confidence: region.confidence,
+          x: region.x,
+          y: region.y,
+          w: region.w,
+          h: region.h,
+        }))
+        .filter((region) => !!region.text)
+        .slice(0, 24);
+    } catch {
+      return [];
+    }
+  }
+
+  private async buildVisionImageDescriptors(
+    file: TFile,
+    noteContent: string,
+    imageRefs: string[],
+    includeOcrTargets: boolean,
+  ): Promise<StudyAssistantImageDescriptor[]> {
+    const descriptors = extractStudyAssistantImageDescriptors(noteContent)
+      .filter((descriptor) => imageRefs.includes(descriptor.ref))
+      .map((descriptor, index) => ({ ...descriptor, order: index + 1 }));
+
+    if (!includeOcrTargets || !descriptors.length) return descriptors;
+
+    const ocrEntries = await Promise.all(
+      imageRefs.map(async (ref) => [ref, await this.detectOcrTextRegionsForImage(file, ref)] as const),
+    );
+    const ocrByRef = new Map<string, StudyAssistantOcrTextRegion[]>(
+      ocrEntries.filter((entry) => entry[1].length > 0),
+    );
+
+    return descriptors.map((descriptor) => {
+      const ocrTextRegions = ocrByRef.get(descriptor.ref);
+      return ocrTextRegions?.length
+        ? { ...descriptor, ocrTextRegions }
+        : descriptor;
+    });
+  }
+
+  private async resolveVisionImageRefs(file: TFile, refs: string[]): Promise<string[]> {
+    if (!Array.isArray(refs) || !refs.length) return [];
+
+    const maxImages = 4;
+    const out: string[] = [];
+    for (const ref of refs) {
       const imageFile = resolveImageFile(this.plugin.app, file.path, ref);
       if (!(imageFile instanceof TFile)) continue;
-
-      try {
-        const data = await this.readVaultBinary(imageFile);
-        if (!data.byteLength || data.byteLength > maxBytesPerImage) continue;
-
-        const mimeType = mimeFromExt(String(imageFile.extension || ""));
-        const base64 = this.arrayBufferToBase64(data);
-        if (!base64) continue;
-        out.push(`data:${mimeType};base64,${base64}`);
-      } catch {
-        // Ignore unreadable image refs and continue with any remaining images.
-      }
+      const mimeType = mimeFromExt(String(imageFile.extension || ""));
+      if (!mimeType.startsWith("image/")) continue;
+      out.push(ref);
+      if (out.length >= maxImages) break;
     }
 
     return out;
@@ -4120,9 +4221,12 @@ export class SproutAssistantPopup {
     this.render();
     try {
       const noteContent = await this.readActiveMarkdown(file);
-      const imageRefs = this.extractImageRefs(noteContent);
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInFlashcard;
+      const embedRefs = this.extractImageRefs(noteContent);
+      const imageRefs = includeImages ? await this.resolveVisionImageRefs(file, embedRefs) : [];
+      const includeOcrTargets = includeImages && enabledTypes.includes("io");
+      const imageDescriptors = await this.buildVisionImageDescriptors(file, noteContent, imageRefs, includeOcrTargets);
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
       const targetSuggestionCount = Math.max(1, Math.min(10, Math.round(Number(settings.generatorTargetCount) || 5)));
       const extraRequest = String(userMessage || "").trim();
@@ -4143,6 +4247,7 @@ export class SproutAssistantPopup {
         notePath: file.path,
         noteContent,
         imageRefs,
+        imageDescriptors,
         imageDataUrls,
         attachedFileDataUrls: genAttachedUrls,
         includeImages,
@@ -4228,12 +4333,13 @@ export class SproutAssistantPopup {
         });
       }
       if (!generatedSuggestions.length) {
+        const firstRejectedReason = rejectedReasons[0] ? ` ${rejectedReasons[0]}` : "";
         this.generatorError = rejectedCount > 0
           ? this._tx(
             "ui.studyAssistant.generator.emptyAfterValidation",
             "No parser-valid suggestions were returned. {count} suggestion(s) were filtered before display. Try adjusting your model, prompt, or enabled card types.",
             { count: rejectedCount },
-          )
+          ) + firstRejectedReason
           : this._tx("ui.studyAssistant.generator.empty", "No valid suggestions were returned. Try adjusting your model, prompt, or enabled card types.");
       }
 
@@ -4362,12 +4468,15 @@ export class SproutAssistantPopup {
 
     try {
       const noteContent = await this.readActiveMarkdown(file);
-      const imageRefs = this.extractImageRefs(noteContent);
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInFlashcard;
+      const embedRefs = this.extractImageRefs(noteContent);
+      const imageRefs = includeImages ? await this.resolveVisionImageRefs(file, embedRefs) : [];
+      const includeOcrTargets = includeImages && enabledTypes.includes("io");
+      const imageDescriptors = await this.buildVisionImageDescriptors(file, noteContent, imageRefs, includeOcrTargets);
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
       const noteEmbedUrls = settings.privacy.includeAttachmentsInCompanion
-        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, imageRefs)
+        ? await this.buildNoteEmbedNonImageAttachmentUrls(file, embedRefs)
         : [];
       const linkedAttachmentUrls = settings.privacy.includeLinkedAttachmentsInCompanion
         ? await this.buildNoteLinkedAttachmentUrls(file, noteContent)
@@ -4404,6 +4513,7 @@ export class SproutAssistantPopup {
         notePath: file.path,
         noteContent: noteContentForAi,
         imageRefs,
+        imageDescriptors,
         imageDataUrls,
         attachedFileDataUrls: allAttachmentUrls,
         includeImages,
@@ -4566,12 +4676,13 @@ export class SproutAssistantPopup {
       }
 
       if (!finalSuggestions.length) {
+        const firstRejectedReason = rejectedReasons[0] ? ` ${rejectedReasons[0]}` : "";
         this.chatError = rejectedCount > 0
           ? this._tx(
             "ui.studyAssistant.generator.emptyAfterValidation",
             "No parser-valid suggestions were returned. {count} suggestion(s) were filtered before display. Try adjusting your model, prompt, or enabled card types.",
             { count: rejectedCount },
-          )
+          ) + firstRejectedReason
           : this._tx("ui.studyAssistant.generator.empty", "No valid suggestions were returned. Try adjusting your model, prompt, or enabled card types.");
       }
 
@@ -5188,7 +5299,7 @@ export class SproutAssistantPopup {
     this._teardownHeaderMenuPortal();
 
     const root = this.popupEl;
-    const preservedAssistantScrollTop = this._captureVisibleChatScrollTop(this.mode);
+    const preservedScrollTop = this._captureVisibleChatScrollTop(this.mode);
     root.empty();
 
     // ---- Header ----
@@ -5507,7 +5618,7 @@ export class SproutAssistantPopup {
 
     // ---- Content ----
     const content = root.createDiv({ cls: "learnkit-assistant-popup-content learnkit-assistant-popup-content" });
-    this.renderAssistantMode(content, preservedAssistantScrollTop);
+    this.renderAssistantMode(content, preservedScrollTop);
 
     // ---- Resize handles (top / left / corner) ----
     this._initResizeHandles(root);
@@ -5735,22 +5846,9 @@ export class SproutAssistantPopup {
     if (surfacedError) this.renderAssistantErrorBubble(chatWrap, surfacedError);
     const shouldAutoFollow = this._shouldAutoFollowChat("assistant");
     const shouldStickToStreamingBottom = shouldAutoFollow && this._activeStreamingMode === "assistant";
-    const anchoredToNewest = this.anchorToNewestAssistantMessage(
-      chatWrap,
-      messages,
-      "assistant",
-      this._isAssistantBusy(),
-      shouldStickToStreamingBottom ? false : shouldAutoFollow,
-    );
-    if (shouldStickToStreamingBottom || (!anchoredToNewest && shouldAutoFollow)) {
-      requestAnimationFrame(() => {
-        chatWrap.scrollTop = chatWrap.scrollHeight;
-      });
-    } else if (!anchoredToNewest && preservedScrollTop != null) {
-      requestAnimationFrame(() => {
-        chatWrap.scrollTop = preservedScrollTop;
-      });
-    }
+    this._restoreChatScrollAfterRender(chatWrap, "assistant", preservedScrollTop, {
+      forceBottom: shouldStickToStreamingBottom,
+    });
 
     // ---- Composer ----
     const composer = parent.createDiv({ cls: "learnkit-assistant-popup-composer learnkit-assistant-popup-composer" });
@@ -5802,8 +5900,9 @@ export class SproutAssistantPopup {
   //  Review mode
   // ---------------------------------------------------------------------------
 
-  private renderReviewMode(parent: HTMLElement): void {
+  private renderReviewMode(parent: HTMLElement, preservedScrollTop: number | null = null): void {
     const chatWrap = parent.createDiv({ cls: "learnkit-assistant-popup-chat-wrap learnkit-assistant-popup-chat-wrap" });
+    this._bindChatAutoFollowTracking(chatWrap, "review");
     const userInitial = this.getUserAvatarInitial();
 
     if (!this.reviewMessages.length) {
@@ -5860,7 +5959,9 @@ export class SproutAssistantPopup {
     }
 
     if (this.reviewError) this.renderAssistantErrorBubble(chatWrap, this.reviewError);
-    this.anchorToNewestAssistantMessage(chatWrap, this.reviewMessages, "review", this.isReviewingNote);
+    this._restoreChatScrollAfterRender(chatWrap, "review", preservedScrollTop, {
+      forceBottom: this.isReviewingNote && this._activeStreamingMode === "review",
+    });
 
     const composer = parent.createDiv({ cls: "learnkit-assistant-popup-composer learnkit-assistant-popup-composer" });
     const shell = composer.createDiv({ cls: "learnkit-assistant-popup-composer-shell learnkit-assistant-popup-composer-shell" });
@@ -5941,8 +6042,9 @@ export class SproutAssistantPopup {
   //  Generate mode
   // ---------------------------------------------------------------------------
 
-  private renderGenerateMode(parent: HTMLElement): void {
+  private renderGenerateMode(parent: HTMLElement, preservedScrollTop: number | null = null): void {
     const chatWrap = parent.createDiv({ cls: "learnkit-assistant-popup-chat-wrap learnkit-assistant-popup-chat-wrap" });
+    this._bindChatAutoFollowTracking(chatWrap, "generate");
     const userInitial = this.getUserAvatarInitial();
     const activeNoteName = this.getActiveNoteDisplayName();
     const generateTooltip = activeNoteName
@@ -6052,7 +6154,9 @@ export class SproutAssistantPopup {
     }
 
     if (this.generatorError) this.renderAssistantErrorBubble(chatWrap, this.generatorError);
-    this.anchorToNewestAssistantMessage(chatWrap, this.generateMessages, "generate", this.isGenerating);
+    this._restoreChatScrollAfterRender(chatWrap, "generate", preservedScrollTop, {
+      forceBottom: this.isGenerating && this._activeStreamingMode === "generate",
+    });
 
     const composer = parent.createDiv({ cls: "learnkit-assistant-popup-composer learnkit-assistant-popup-composer" });
     const shell = composer.createDiv({ cls: "learnkit-assistant-popup-composer-shell learnkit-assistant-popup-composer-shell" });
@@ -6084,72 +6188,6 @@ export class SproutAssistantPopup {
     this._bindComposerFocusOnExplicitClick(composer, shell, input);
   }
 
-  private anchorToNewestAssistantMessage(
-    chatWrap: HTMLElement,
-    messages: ChatMessage[],
-    mode: AssistantMode,
-    fallbackToBottom = false,
-    shouldAutoFollow = true,
-  ): boolean {
-    let lastAssistantIdx = -1;
-    for (let i = messages.length - 1; i >= 0; i -= 1) {
-      if (messages[i]?.role === "assistant") {
-        lastAssistantIdx = i;
-        break;
-      }
-    }
-
-    if (lastAssistantIdx < 0) {
-      if (shouldAutoFollow && fallbackToBottom) {
-        requestAnimationFrame(() => {
-          chatWrap.scrollTop = chatWrap.scrollHeight;
-        });
-        return true;
-      }
-      return false;
-    }
-
-    const msg = messages[lastAssistantIdx];
-    const key = `${lastAssistantIdx}:${String(msg?.text || "").slice(0, 80)}:${String(msg?.text || "").length}`;
-    const wasAlreadyAnchored = this._lastAnchoredResponseKeyByMode[mode] === key;
-    this._lastAnchoredResponseKeyByMode[mode] = key;
-
-    if (!shouldAutoFollow) return false;
-
-    if (wasAlreadyAnchored) {
-      if (fallbackToBottom) {
-        requestAnimationFrame(() => {
-          chatWrap.scrollTop = chatWrap.scrollHeight;
-        });
-        return true;
-      }
-      return false;
-    }
-
-    const target = chatWrap.querySelector<HTMLElement>(
-      `.learnkit-assistant-popup-message-row[data-msg-idx="${lastAssistantIdx}"][data-msg-role="assistant"]`,
-    );
-    if (!target) {
-      if (fallbackToBottom) {
-        requestAnimationFrame(() => {
-          chatWrap.scrollTop = chatWrap.scrollHeight;
-        });
-        return true;
-      }
-      return false;
-    }
-
-    requestAnimationFrame(() => {
-      // Keep anchoring scoped to the chat viewport; scrollIntoView can choose broader ancestors.
-      const wrapRect = chatWrap.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const deltaToTop = targetRect.top - wrapRect.top;
-      const maxScrollTop = Math.max(0, chatWrap.scrollHeight - chatWrap.clientHeight);
-      const nextScrollTop = Math.min(maxScrollTop, Math.max(0, chatWrap.scrollTop + deltaToTop));
-      chatWrap.scrollTop = nextScrollTop;
-    });
-    return true;
-  }
 }
 
 // ---------------------------------------------------------------------------

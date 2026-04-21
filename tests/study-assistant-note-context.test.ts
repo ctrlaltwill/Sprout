@@ -197,6 +197,16 @@ describe("study assistant note context", () => {
 
     expect(context.linkedNotesContext).toContain("Linked note");
     expect(context.linkedContextStats.included).toBe(1);
+    expect(context.imageRefs).toEqual(["test.jpg"]);
+    expect(context.imageDescriptors).toEqual([
+      expect.objectContaining({
+        ref: "test.jpg",
+        order: 1,
+        heading: "Test note",
+        headingPath: "Test note",
+      }),
+    ]);
+    expect(context.imageDescriptors[0]?.contextSnippet).toContain("Related material:");
     expect(context.imageDataUrls).toHaveLength(1);
     expect(context.attachedFileDataUrls).toHaveLength(3);
     expect(context.noteContentForAi).toContain("Additional Companion custom instructions");

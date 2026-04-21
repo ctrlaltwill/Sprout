@@ -4,6 +4,8 @@
  *
  * @exports
  *   - normaliseVaultPath — normalises a vault-relative path (forward slashes, no leading slash)
+ *   - extractIoImageRefs — extracts embedded IO image refs from a raw IO field in source order
+ *   - selectPreferredIoImageRef — chooses the first resolvable IO image ref, else the first extracted ref
  *   - stripEmbedSyntax — strips ![[…]] embed syntax and optional |size suffix from a string
  *   - resolveImageFile — resolves an IO image reference to a vault TFile
  *   - mimeFromExt — maps a file extension to its MIME type
@@ -35,13 +37,82 @@ export function normaliseVaultPath(p: string): string {
   return s;
 }
 
+function normalizePlainIoImageRef(raw: string): string {
+  return normaliseVaultPath(String(raw ?? "").trim());
+}
+
+function extractMarkdownImagePath(raw: string): string {
+  let s = String(raw ?? "").trim();
+  if (!s) return "";
+  if (s.startsWith("<") && s.endsWith(">")) s = s.slice(1, -1).trim();
+
+  const titledMatch = s.match(/^(.+?)(?:\s+(?:"[^"]*"|'[^']*'))$/);
+  if (titledMatch?.[1]) s = titledMatch[1].trim();
+
+  return normalizePlainIoImageRef(s);
+}
+
+export function extractIoImageRefs(raw: string): string[] {
+  const text = String(raw ?? "").trim();
+  if (!text) return [];
+
+  const refs: Array<{ ref: string; start: number }> = [];
+
+  const wikiRegex = /!\[\[([^\]]+)\]\]/g;
+  let wikiMatch: RegExpExecArray | null;
+  while ((wikiMatch = wikiRegex.exec(text)) !== null) {
+    const inside = String(wikiMatch[1] ?? "").trim();
+    const linkpath = normalizePlainIoImageRef(String(inside.split("|")[0] ?? ""));
+    if (!linkpath) continue;
+    refs.push({ ref: linkpath, start: wikiMatch.index });
+  }
+
+  const markdownRegex = /!\[[^\]]*\]\(([^)]+)\)/g;
+  let markdownMatch: RegExpExecArray | null;
+  while ((markdownMatch = markdownRegex.exec(text)) !== null) {
+    const linkpath = extractMarkdownImagePath(String(markdownMatch[1] ?? ""));
+    if (!linkpath) continue;
+    refs.push({ ref: linkpath, start: markdownMatch.index });
+  }
+
+  if (refs.length) {
+    refs.sort((a, b) => a.start - b.start);
+    return refs.map((entry) => entry.ref);
+  }
+
+  if (/!\[\[|!\[[^\]]*\]\(/.test(text)) return [];
+
+  const plain = normalizePlainIoImageRef(text);
+  return plain ? [plain] : [];
+}
+
 /** Strip `![[…]]` embed syntax and optional `|size` suffix. */
 export function stripEmbedSyntax(raw: string): string {
-  let s = String(raw ?? "").trim();
-  if (s.startsWith("![[") && s.endsWith("]]")) s = s.slice(3, -2).trim();
-  if (s.includes("|")) s = s.split("|")[0].trim();
-  s = normaliseVaultPath(s);
-  return s;
+  return extractIoImageRefs(raw)[0] ?? "";
+}
+
+function resolveSingleImageFile(app: App, sourceNotePath: string, imageRef: string): TFile | null {
+  const link = normalizePlainIoImageRef(imageRef);
+  if (!link) return null;
+
+  const dest = app.metadataCache.getFirstLinkpathDest(link, sourceNotePath);
+  if (dest instanceof TFile) return dest;
+
+  const af = app.vault.getAbstractFileByPath(link);
+  if (af instanceof TFile) return af;
+
+  return null;
+}
+
+export function selectPreferredIoImageRef(app: App, sourceNotePath: string, imageRef: string): string | null {
+  const refs = extractIoImageRefs(imageRef);
+  if (!refs.length) return null;
+
+  for (const ref of refs) {
+    if (resolveSingleImageFile(app, sourceNotePath, ref) instanceof TFile) return ref;
+  }
+
+  return refs[0] ?? null;
 }
 
 /**
@@ -51,14 +122,11 @@ export function stripEmbedSyntax(raw: string): string {
  * Canonical implementation – `modal-utils.resolveIoImageFile` is an alias.
  */
 export function resolveImageFile(app: App, sourceNotePath: string, imageRef: string): TFile | null {
-  const link = stripEmbedSyntax(imageRef);
-  if (!link) return null;
-
-  const dest = app.metadataCache.getFirstLinkpathDest(link, sourceNotePath);
-  if (dest instanceof TFile) return dest;
-
-  const af = app.vault.getAbstractFileByPath(link);
-  if (af instanceof TFile) return af;
+  const refs = extractIoImageRefs(imageRef);
+  for (const ref of refs) {
+    const file = resolveSingleImageFile(app, sourceNotePath, ref);
+    if (file instanceof TFile) return file;
+  }
 
   return null;
 }

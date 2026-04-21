@@ -45,6 +45,34 @@ describe("io ocr post-processing", () => {
     expect(merged[0]).toMatchObject({ x: 10, y: 10, w: 80, h: 34 });
   });
 
+  it("preserves merged OCR label text for stacked multi-line labels", () => {
+    const lines = __test.lineMergeWithText([
+      { text: "Pulmonary", confidence: 92, x: 100, y: 20, w: 90, h: 18 },
+      { text: "vein", confidence: 91, x: 118, y: 42, w: 42, h: 16 },
+    ]);
+    const merged = __test.verticalMergeWithText(lines, 0.8);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      text: "Pulmonary vein",
+      x: 100,
+      y: 20,
+      w: 90,
+      h: 38,
+    });
+  });
+
+  it("does not vertically merge nearby but laterally offset labels", () => {
+    const first = { text: "Pulmonary circuit", confidence: 94, x: 120, y: 30, w: 180, h: 20 };
+    const second = { text: "Pulmonary vein", confidence: 93, x: 255, y: 56, w: 118, h: 18 };
+
+    expect(__test.shouldVerticallyMergeOcrRegions(first, second, 0.8)).toBe(false);
+
+    const merged = __test.verticalMergeWithText([first, second], 0.8);
+    expect(merged).toHaveLength(2);
+    expect(merged.map((item) => item.text)).toEqual(["Pulmonary circuit", "Pulmonary vein"]);
+  });
+
   it("computes IoU correctly", () => {
     const val = __test.iou(
       { x: 0, y: 0, w: 10, h: 10 },

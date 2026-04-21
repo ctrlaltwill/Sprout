@@ -1098,6 +1098,7 @@ async function runScenarioPlan(params: {
           notePath: noteFile.path,
           noteContent: context.noteContentForAi,
           imageRefs: context.imageRefs,
+          imageDescriptors: context.imageDescriptors,
           imageDataUrls: context.imageDataUrls,
           attachedFileDataUrls: context.attachedFileDataUrls,
           documentAttachmentMode: plan.documentAttachmentMode,

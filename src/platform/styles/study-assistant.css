@@ -2225,7 +2225,7 @@
 }
 
 .learnkit-assistant-popup-generated-card {
-  --learnkit-assistant-insert-btn-size: 36px;
+  --learnkit-assistant-insert-btn-size: 32px;
   --learnkit-assistant-insert-btn-offset: 8px;
   --learnkit-assistant-insert-safe-area: calc(
     var(--learnkit-assistant-insert-btn-size) + var(--learnkit-assistant-insert-btn-offset) + 4px
@@ -2286,6 +2286,10 @@
   right: var(--learnkit-assistant-insert-btn-offset);
   width: var(--learnkit-assistant-insert-btn-size);
   height: var(--learnkit-assistant-insert-btn-size);
+  min-width: var(--learnkit-assistant-insert-btn-size);
+  max-width: var(--learnkit-assistant-insert-btn-size);
+  min-height: var(--learnkit-assistant-insert-btn-size);
+  max-height: var(--learnkit-assistant-insert-btn-size);
   border-radius: 50%;
   border: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.12));
   background: var(--background-primary, #fff);
@@ -2295,7 +2299,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.1s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 
 /* Beat global `.learnkit button` padding rules for the circular insert button. */
@@ -2312,7 +2316,7 @@
   background: var(--interactive-accent, #7c9dff);
   border-color: var(--interactive-accent, #7c9dff);
   color: var(--text-on-accent, #fff);
-  transform: scale(1.1);
+  transform: none;
 }
 
 .learnkit-assistant-popup-insert-btn:disabled {
@@ -2741,6 +2745,65 @@
 
 .learnkit-edit-proposal-original-line {
   background: color-mix(in srgb, var(--text-error, #b42318) 8%, transparent);
+}
+
+.learnkit-edit-inline-diff-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: baseline;
+  line-height: inherit;
+  font-size: inherit;
+}
+
+.learnkit-edit-inline-diff-content {
+  display: inline-flex;
+  align-items: baseline;
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.learnkit-edit-inline-diff-segment {
+  color: var(--text-normal);
+  white-space: break-spaces;
+  word-break: break-word;
+}
+
+.learnkit-edit-inline-diff-segment.is-delete,
+.learnkit-edit-inline-diff-segment.is-insert {
+  padding: 0 3px;
+  border-radius: 4px;
+  border: 0.5px solid transparent;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.learnkit-edit-inline-diff-segment.is-delete {
+  color: var(--text-error, #b42318);
+  background: color-mix(in srgb, var(--text-error, #b42318) 12%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--text-error, #b42318) 32%, transparent);
+  text-decoration: line-through;
+}
+
+.learnkit-edit-inline-diff-segment.is-insert {
+  color: var(--text-success, #16a34a);
+  background: color-mix(in srgb, var(--text-success, #16a34a) 12%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--text-success, #16a34a) 32%, transparent);
+}
+
+.learnkit-edit-inline-diff-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.learnkit-edit-inline-diff-actions .learnkit-edit-proposal-action-btn {
+  margin-top: 0;
 }
 
 .learnkit-edit-proposal-widget {

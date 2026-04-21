@@ -29,10 +29,38 @@ export type StudyAssistantConversationRef = {
 
 export type StudyAssistantCardType = keyof SproutSettings["studyAssistant"]["generatorTypes"];
 
+export type StudyAssistantImageDescriptor = {
+  ref: string;
+  order: number;
+  heading?: string;
+  headingPath?: string;
+  contextSnippet?: string;
+  ocrTextRegions?: StudyAssistantOcrTextRegion[];
+};
+
+export type StudyAssistantOcrTextRegion = {
+  text: string;
+  confidence?: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+export type StudyAssistantIoAssessment = {
+  imageRef?: string;
+  imageKind?: string;
+  studyValue?: "high" | "medium" | "low" | "none";
+  placementConfidence?: number;
+  targetLabels?: string[];
+  usefulnessReason?: string;
+};
+
 export type StudyAssistantGeneratorInput = {
   notePath: string;
   noteContent: string;
   imageRefs: string[];
+  imageDescriptors?: StudyAssistantImageDescriptor[];
   imageDataUrls?: string[];
   attachedFileDataUrls?: string[];
   documentAttachmentMode?: StudyAssistantDocumentAttachmentMode;
@@ -71,6 +99,7 @@ export type StudyAssistantSuggestion = {
     shape?: "rect" | "circle";
   }>;
   ioMaskMode?: "solo" | "all";
+  ioAssessment?: StudyAssistantIoAssessment;
   noteRows?: string[];
   rationale?: string;
   sourceOrigin?: "note" | "external";

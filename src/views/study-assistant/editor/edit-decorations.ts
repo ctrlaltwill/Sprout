@@ -25,6 +25,10 @@ import {
 import { StateField, StateEffect, type Extension, type Range } from "@codemirror/state";
 import { renderMarkdownPreviewInElement, setCssProps } from "../../../platform/core/ui";
 import { t } from "../../../platform/translations/translator";
+import {
+  classifyEditProposalRender,
+  type InlineDiffSegment,
+} from "./edit-diff-helpers";
 
 // ── Types ──
 
@@ -304,6 +308,89 @@ function joinClasses(classes: Array<string | undefined>): string {
 
 // ── Widget ──
 
+class EditInlineDiffWidget extends WidgetType {
+  constructor(
+    readonly segments: InlineDiffSegment[],
+    readonly from: number,
+    readonly to: number,
+    readonly original: string,
+    readonly replacement: string,
+  ) {
+    super();
+  }
+
+  eq(other: EditInlineDiffWidget): boolean {
+    return this.from === other.from && this.to === other.to
+      && this.original === other.original && this.replacement === other.replacement;
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const wrap = document.createElement("span");
+    wrap.className = "learnkit-edit-inline-diff-widget";
+
+    const contentEl = document.createElement("span");
+    contentEl.className = "learnkit-edit-inline-diff-content";
+
+    for (const segment of this.segments) {
+      const segmentEl = document.createElement("span");
+      segmentEl.className = `learnkit-edit-inline-diff-segment is-${segment.kind}`;
+      segmentEl.textContent = segment.text;
+      contentEl.appendChild(segmentEl);
+    }
+
+    wrap.appendChild(contentEl);
+
+    const actionsEl = document.createElement("span");
+    actionsEl.className = "learnkit-edit-inline-diff-actions";
+
+    const acceptBtn = document.createElement("button");
+    acceptBtn.className = "learnkit-edit-proposal-action-btn is-accept";
+    acceptBtn.type = "button";
+    acceptBtn.textContent = "✓";
+    acceptBtn.title = t("en", "ui.editProposal.accept", "Accept this change");
+    acceptBtn.setAttribute("aria-label", t("en", "ui.editProposal.accept", "Accept this change"));
+    acceptBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._accept(view);
+    });
+    actionsEl.appendChild(acceptBtn);
+
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "learnkit-edit-proposal-action-btn is-reject";
+    rejectBtn.type = "button";
+    rejectBtn.textContent = "✗";
+    rejectBtn.title = t("en", "ui.editProposal.discard", "Discard this change");
+    rejectBtn.setAttribute("aria-label", t("en", "ui.editProposal.discard", "Discard this change"));
+    rejectBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._reject(view);
+    });
+    actionsEl.appendChild(rejectBtn);
+
+    wrap.appendChild(actionsEl);
+    return wrap;
+  }
+
+  private _accept(view: EditorView): void {
+    view.dispatch({
+      changes: { from: this.from, to: this.to, insert: this.replacement },
+      effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "accept" }),
+    });
+  }
+
+  private _reject(view: EditorView): void {
+    view.dispatch({
+      effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "reject" }),
+    });
+  }
+
+  ignoreEvent(): boolean {
+    return false;
+  }
+}
+
 /** Single-line edit: shows replacement text + ✓/✗ inline below the original */
 class EditReplacementWidget extends WidgetType {
   constructor(
@@ -326,10 +413,7 @@ class EditReplacementWidget extends WidgetType {
     // Replacement text preview – render markdown so bold, links, lists etc. display naturally
     const replacementEl = document.createElement("span");
     replacementEl.className = "learnkit-edit-proposal-replacement";
-    const previewText = this.replacement.length > 200
-      ? `${this.replacement.slice(0, 200)}…`
-      : this.replacement;
-    bindProposalContentToEditorMode(wrap, replacementEl, view, previewText);
+    bindProposalContentToEditorMode(wrap, replacementEl, view, this.replacement);
     wrap.appendChild(replacementEl);
 
     // Accept button
@@ -518,9 +602,9 @@ function buildDecorations(entries: EditProposalEntry[], doc: import("@codemirror
   const decorations: Range<Decoration>[] = [];
 
   for (const entry of sorted) {
-    const isMultiLine = entry.original.includes("\n");
+    const renderPlan = classifyEditProposalRender(entry.original, entry.replacement);
 
-    if (isMultiLine) {
+    if (renderPlan.mode === "block-compare") {
       // Multi-line edit (e.g. tables): highlight every original line with a red
       // background (preserving native CM6 markdown rendering), then show the
       // replacement in a green block widget below.
@@ -540,7 +624,20 @@ function buildDecorations(entries: EditProposalEntry[], doc: import("@codemirror
           block: true,
         }).range(doc.lineAt(entry.to).to),
       );
-    } else {
+      continue;
+    }
+
+    if (renderPlan.mode === "inline-diff" && renderPlan.segments?.length) {
+      decorations.push(
+        Decoration.replace({
+          widget: new EditInlineDiffWidget(renderPlan.segments, entry.from, entry.to, entry.original, entry.replacement),
+          inclusive: false,
+        }).range(entry.from, entry.to),
+      );
+      continue;
+    }
+
+    {
       // Single-line edit: line highlight + inline widget below
       const startLine = doc.lineAt(entry.from).number;
       const endLine = doc.lineAt(entry.to).number;
