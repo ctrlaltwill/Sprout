@@ -964,7 +964,7 @@ function dedupeIoOcclusions(
   const out: NonNullable<StudyAssistantSuggestion["ioOcclusions"]> = [];
 
   for (const rect of rects) {
-    const normalized = {
+    const normalized: NonNullable<StudyAssistantSuggestion["ioOcclusions"]>[number] = {
       ...rect,
       x: clamp01(rect.x),
       y: clamp01(rect.y),
