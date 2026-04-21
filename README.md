@@ -9,9 +9,7 @@
 ![LearnKit Banner One - Welcome](site/branding/Banner%20One%20-%20Welcome.png)
 
 > [!IMPORTANT]
-> **Latest release: 1.3.1** — this release focuses on stability and polish after the initial 1.3.0 rollout. It tightens Companion AI compatibility workflows, improves release and documentation reliability, and smooths out UI consistency issues across key study surfaces. If you run into a Companion AI issue, please [file an AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yml) so we can track problematic models and providers. For Text-to-Speech problems, please [file a TTS issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=tts_issue.yml).
->
-> We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
+> **Latest release: 1.3.1** — this release focuses on stability and polish after the rollout of 1.3.0 rollout. 
 
 LearnKit helps you remember what you write. It brings flashcards, note review, tests, and AI-assisted study tools into Obsidian, so your vault becomes a place to learn, not just store information.
 
@@ -98,6 +96,11 @@ If you are deciding whether LearnKit fits your workflow, start here.
 - **How does Companion work?** Companion uses your own API key, so there are no subscriptions or markups from LearnKit. It works with providers including Google, OpenRouter, Anthropic, OpenAI, and Perplexity.
 - **Can Companion access my whole vault by default?** No. Companion only receives the note content you send in a given workflow, such as asking about a note, generating flashcards, or generating a test. Depending on the feature and your settings, that can also include extra context such as note attachments or linked notes for context.
 - **Do all AI models support every Companion feature?** No. Free models are a good way to get started, but capability varies by model. Premium models generally perform better for more demanding tasks such as working with attachments.
+
+> [!NOTE]
+> If you run into a Companion AI issue, please [file an AI issue report](https://github.com/ctrlaltwill/LearnKit/issues/new?template=ai_issue.yml) so we can track problematic models and providers.
+> We maintain a [Companion Model Compatibility](https://ctrlaltwill.github.io/LearnKit/Companion-Model-Compatibility/) table showing which AI features work on each provider and model. If you have tested a provider or model, please submit a PR to update the table and help other users.
+
 
 ## License & Credits
 
