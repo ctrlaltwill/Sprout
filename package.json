@@ -62,7 +62,7 @@
     "interactjs": "^1.10.27",
     "marked": "^17.0.4",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react-dom": "^19.2.5",
     "recharts": "^3.8.1",
     "soundtouchjs": "^0.3.0",
     "sql.js": "^1.14.1",
