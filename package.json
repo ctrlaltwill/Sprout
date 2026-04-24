@@ -41,6 +41,7 @@
     "eslint": "^9.39.3",
     "eslint-plugin-obsidianmd": "^0.1.9",
     "globals": "^17.4.0",
+    "jsdom": "^29.0.2",
     "obsidian": "^1.12.3",
     "postcss": "^8.5.8",
     "postcss-cli": "^11.0.1",

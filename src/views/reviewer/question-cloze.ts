@@ -76,10 +76,14 @@ function buildTypedClozeInput(
   input.setAttribute("data-cloze-index", String(clozeIndex));
   if (plainHint) input.placeholder = plainHint;
 
-  const ctx = document.createElement("canvas").getContext("2d")!;
-  ctx.font = `500 14px ${getComputedStyle(host).fontFamily}`;
   const widthSeed = plainHint || plainAns;
-  const textW = ctx.measureText(widthSeed).width;
+  const ctx = document.createElement("canvas").getContext("2d");
+  const textW = ctx
+    ? (() => {
+        ctx.font = `500 14px ${getComputedStyle(host).fontFamily}`;
+        return ctx.measureText(widthSeed).width;
+      })()
+    : widthSeed.length * 8;
   setCssProps(input, "width", `${Math.max(60, Math.ceil(textW) + 68)}px`);
 
   const prev = typedAnswers.get(answerKey);
