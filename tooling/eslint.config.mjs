@@ -14,6 +14,7 @@ export default defineConfig([
       "node_modules/**",
       "scripts/**",
       "tooling/**",
+      "src/**/*.js",
       "src/tailwind.config.js",
     ],
   },

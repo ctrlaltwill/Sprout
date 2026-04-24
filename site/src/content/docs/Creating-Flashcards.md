@@ -56,6 +56,14 @@ A | Paris |
 CQ | The capital of France is {{c1::Paris}} |
 ```
 
+You can add an optional hint after the answer:
+
+```
+CQ | The capital of France is {{c1::Paris::city}} |
+```
+
+That means `Paris` is the answer and `city` is the hidden-side hint.
+
 **MCQ**
 ```
 MCQ | What is the capital of France? |
@@ -93,6 +101,18 @@ CQ | The capital of {{c1::France}} is {{c2::Paris}} |
 
 Bare `{{tokens}}` are auto-numbered. If you already include a number like `{{c1::text}}`, it is preserved.
 
+Quick Cards also support hints inside bare cloze tokens:
+
+```
+cloze:::The capital of {{France::country}} is {{Paris::city}}
+```
+
+This expands to:
+
+```
+CQ | The capital of {{c1::France::country}} is {{c2::Paris::city}} |
+```
+
 ## After You Create Flashcards
 
 After writing or inserting new flashcards, [Sync](../Syncing) your database so LearnKit can detect them.
@@ -115,4 +135,4 @@ Do not delete or edit that anchor. It links the source note block to the flashca
 
 ---
 
-Last modified: 17/04/2026
+Last modified: 24/04/2026

@@ -25,8 +25,8 @@ describe("buildInlineDiffSegments", () => {
 });
 
 describe("classifyEditProposalRender", () => {
-  it("uses block compare for multiline edits", () => {
-    const result = classifyEditProposalRender("Line one\nLine two", "Line one\nLine three");
+  it("uses block compare for structured multiline markdown edits", () => {
+    const result = classifyEditProposalRender("- aspirin\n- nitrates", "- aspirin\n- sublingual nitrates");
     expect(result.mode).toBe("block-compare");
   });
 
@@ -47,6 +47,26 @@ describe("classifyEditProposalRender", () => {
 
     expect(result.mode).toBe("inline-diff");
     expect(result.segments?.some(segment => segment.kind === "insert" && segment.text.includes("or inflammatory"))).toBe(true);
+  });
+
+  it("uses inline diff for long single-line edits when only a small phrase changes", () => {
+    const original = "Troponin rises within hours of myocardial injury and stays elevated long enough to help with diagnosis when the clinical story already points toward acute coronary syndrome.";
+    const replacement = "Troponin rises within hours of myocardial injury and often stays elevated long enough to help with diagnosis when the clinical story already points toward acute coronary syndrome.";
+
+    const result = classifyEditProposalRender(original, replacement);
+
+    expect(result.mode).toBe("inline-diff");
+    expect(result.segments?.some(segment => segment.kind === "insert" && segment.text.includes("often"))).toBe(true);
+  });
+
+  it("uses inline diff for paragraph-style multiline edits when only a few words change", () => {
+    const original = "Troponin release starts soon after myocardial injury,\nand serial testing helps confirm the trend in the right clinical context.";
+    const replacement = "Troponin release starts soon after myocardial injury,\nand repeat serial testing helps confirm the trend in the right clinical context.";
+
+    const result = classifyEditProposalRender(original, replacement);
+
+    expect(result.mode).toBe("inline-diff");
+    expect(result.segments?.some(segment => segment.kind === "insert" && segment.text.includes("repeat"))).toBe(true);
   });
 
   it("falls back to the full inline preview for long single-line edits", () => {

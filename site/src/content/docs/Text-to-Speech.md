@@ -100,6 +100,8 @@ Image occlusion is a visual format, so it should not be treated as a full TTS-fi
 - `Just the answer` reads only the missing term.
 - `Full sentence` reads the sentence with the answer filled back in.
 
+If a cloze uses hint syntax such as `{{c1::Paris::city}}`, LearnKit reads the hint on the hidden side and the full answer on reveal.
+
 ## Flag-aware routing
 
 The `Flag-aware routing` section lets inline flags control language and accent during playback.
@@ -126,4 +128,4 @@ If the Audio tab shows no available system voices yet, reopen the tab and let th
 - Combine TTS with flags when a single card mixes languages or accents.
 - Keep group-limited TTS for language subsets if you do not want every card read aloud.
 
-Last modified: 30/03/2026
+Last modified: 24/04/2026

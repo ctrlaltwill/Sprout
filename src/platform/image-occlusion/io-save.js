@@ -1,0 +1,387 @@
+/**
+ * @file src/imageocclusion/io-save.ts
+ * @summary IO-card save logic for both creating new and editing existing Image Occlusion cards. Handles image writing to the vault, parent and child card upserts in the store, group-to-child mapping, stale child retirement, markdown block generation and insertion/update in the source note, and cursor-based or append-based text insertion.
+ *
+ * @exports
+ *   - insertTextAtCursorOrAppend — inserts text at the editor cursor or appends to the file
+ *   - IoSaveParams — interface describing all parameters needed to save an IO card
+ *   - saveIoCard — persists an IO card (new or edit) to the store, writes the image, and updates markdown
+ */
+import { Notice, MarkdownView, TFile } from "obsidian";
+import { log } from "../../platform/core/logger";
+import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
+import { findCardBlockRangeById } from "../../views/reviewer/markdown-block";
+import { normaliseVaultPath, reserveNewBcId, buildIoMarkdownWithAnchor, } from "./io-helpers";
+import { extFromMime, bestEffortAttachmentPath, writeBinaryToVault, } from "../../platform/modals/modal-utils";
+import { buildPrimaryCardAnchor } from "../../platform/core/identity";
+// ── Insert-at-cursor helper ─────────────────────────────────────────────────
+export async function insertTextAtCursorOrAppend(app, active, textToInsert, forcePersist = false, preferAppend = false) {
+    var _a;
+    const view = app.workspace.getActiveViewOfType(MarkdownView);
+    if (!preferAppend && ((_a = view === null || view === void 0 ? void 0 : view.file) === null || _a === void 0 ? void 0 : _a.path) === active.path && view.editor) {
+        const ed = view.editor;
+        const cur = ed.getCursor();
+        ed.replaceRange(textToInsert, cur);
+        if (forcePersist) {
+            try {
+                if (typeof view.save === "function")
+                    await view.save();
+            }
+            catch (_b) {
+                // ignore
+            }
+            try {
+                if (typeof ed.getValue === "function") {
+                    await app.vault.modify(active, ed.getValue());
+                }
+            }
+            catch (_c) {
+                // ignore
+            }
+        }
+    }
+    else {
+        const txt = await app.vault.read(active);
+        const existing = String(txt !== null && txt !== void 0 ? txt : "").replace(/\s+$/g, "");
+        const incoming = String(textToInsert !== null && textToInsert !== void 0 ? textToInsert : "")
+            .replace(/^\s+/g, "")
+            .replace(/\s+$/g, "");
+        const out = existing.length > 0
+            ? `${existing}\n\n${incoming}\n`
+            : `${incoming}\n`;
+        await app.vault.modify(active, out);
+    }
+}
+/**
+ * Persist an IO card to the store and write the markdown block.
+ * Returns `true` when the modal should close (success), `false` otherwise.
+ */
+export async function saveIoCard(params, maskMode) {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+    const { plugin, app, editParentId, editImageRef, titleVal, groupsVal, infoVal, getImageData, rects, hasTextBoxes, burnTextBoxes, } = params;
+    const isEdit = !!editParentId;
+    const groupsArr = groupsVal
+        ? groupsVal
+            .split(",")
+            .map((g) => g.trim())
+            .filter(Boolean)
+        : null;
+    // ── Edit existing IO card ─────────────────────────────────────────────────
+    if (isEdit) {
+        const parentId = String(editParentId || "");
+        const cardsMap = (((_b = (_a = plugin.store) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.cards) || {});
+        const parent = cardsMap[parentId];
+        if (!parent || String(parent.type) !== "io") {
+            new Notice(`Could not find image occlusion parent to edit.`);
+            return false;
+        }
+        // Burn text boxes into the image before saving
+        if (hasTextBoxes) {
+            await burnTextBoxes();
+        }
+        const ioMap = plugin.store.data.io || {};
+        plugin.store.data.io = ioMap;
+        const currentImageRef = String(parent.imageRef || ((_c = ioMap[parentId]) === null || _c === void 0 ? void 0 : _c.imageRef) || editImageRef || "").trim();
+        let imagePath = currentImageRef;
+        const ioImageData = getImageData();
+        if (ioImageData) {
+            const ext = extFromMime(ioImageData.mime);
+            if (!imagePath) {
+                const baseName = `sprout-io-${parentId}.${ext}`;
+                const srcFile = app.vault.getAbstractFileByPath(String(parent.sourceNotePath || ""));
+                if (srcFile instanceof TFile)
+                    imagePath = bestEffortAttachmentPath(plugin, srcFile, baseName);
+                else {
+                    const activeFile = app.workspace.getActiveFile();
+                    if (activeFile instanceof TFile)
+                        imagePath = bestEffortAttachmentPath(plugin, activeFile, baseName);
+                }
+            }
+            try {
+                await writeBinaryToVault(app, imagePath, ioImageData.data);
+            }
+            catch (e) {
+                new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
+                return false;
+            }
+        }
+        if (!imagePath) {
+            new Notice(`Image occlusion card is missing an image.`);
+            return false;
+        }
+        const now = Date.now();
+        const mask = rects.length > 0 ? maskMode : null;
+        const parentRec = {
+            ...parent,
+            id: parentId,
+            type: "io",
+            title: titleVal || parent.title || null,
+            prompt: (_d = parent.prompt) !== null && _d !== void 0 ? _d : null,
+            info: infoVal || null,
+            groups: groupsArr && groupsArr.length ? groupsArr : null,
+            imageRef: normaliseVaultPath(imagePath),
+            maskMode: mask,
+            updatedAt: now,
+            lastSeenAt: now,
+        };
+        plugin.store.upsertCard(parentRec);
+        const normRects = rects.map((r) => ({
+            rectId: String(r.rectId),
+            x: Math.max(0, Math.min(1, r.normX)),
+            y: Math.max(0, Math.min(1, r.normY)),
+            w: Math.max(0, Math.min(1, r.normW)),
+            h: Math.max(0, Math.min(1, r.normH)),
+            groupKey: normaliseGroupKey(r.groupKey),
+            shape: r.shape || "rect",
+        }));
+        ioMap[parentId] = {
+            imageRef: normaliseVaultPath(imagePath),
+            maskMode: mask,
+            rects: normRects,
+        };
+        // Create/update child IO cards per group
+        const groupToRectIds = new Map();
+        for (const r of normRects) {
+            const g = normaliseGroupKey(r.groupKey);
+            const arr = (_e = groupToRectIds.get(g)) !== null && _e !== void 0 ? _e : [];
+            arr.push(String(r.rectId));
+            groupToRectIds.set(g, arr);
+        }
+        const cards = (plugin.store.data.cards || {});
+        const keepChildIds = new Set();
+        const titleBase = String((_f = parentRec.title) !== null && _f !== void 0 ? _f : "").trim();
+        for (const [groupKey, rectIds] of groupToRectIds.entries()) {
+            const childId = stableIoChildId(parentId, groupKey);
+            keepChildIds.add(childId);
+            const rec = {
+                id: childId,
+                type: "io-child",
+                title: titleBase || null,
+                parentId,
+                groupKey,
+                rectIds: rectIds.slice(),
+                retired: false,
+                prompt: null,
+                info: parentRec.info,
+                groups: parentRec.groups || null,
+                sourceNotePath: String(parentRec.sourceNotePath || ""),
+                sourceStartLine: Number((_g = parentRec.sourceStartLine) !== null && _g !== void 0 ? _g : 0) || 0,
+                imageRef: normaliseVaultPath(imagePath),
+                maskMode: mask,
+                createdAt: Number((_j = (_h = (cards[childId])) === null || _h === void 0 ? void 0 : _h.createdAt) !== null && _j !== void 0 ? _j : now),
+                updatedAt: now,
+                lastSeenAt: now,
+            };
+            const prev = cards[childId];
+            if (prev && typeof prev === "object") {
+                cards[childId] = { ...prev, ...rec };
+                plugin.store.upsertCard(cards[childId]);
+            }
+            else {
+                cards[childId] = rec;
+                plugin.store.upsertCard(rec);
+            }
+            plugin.store.ensureState(childId, now, 2.5);
+        }
+        // Delete stale children that no longer have a matching group
+        for (const c of Object.values(cards)) {
+            if (!c || c.type !== "io-child")
+                continue;
+            if (String(c.parentId) !== parentId)
+                continue;
+            const cid = String(c.id);
+            if (keepChildIds.has(cid))
+                continue;
+            delete cards[cid];
+            if (plugin.store.data.states)
+                delete plugin.store.data.states[cid];
+        }
+        await plugin.store.persist();
+        // Update the markdown block in the note
+        try {
+            let fileToSync = null;
+            const srcPath = String(parentRec.sourceNotePath || "");
+            const file = app.vault.getAbstractFileByPath(srcPath);
+            if (file instanceof TFile) {
+                fileToSync = file;
+                const text = await app.vault.read(file);
+                const lines = text.split(/\r?\n/);
+                const { start, end } = findCardBlockRangeById(lines, parentId);
+                const embed = `![[${normaliseVaultPath(imagePath)}]]`;
+                const ioBlock = [
+                    buildPrimaryCardAnchor(parentId),
+                    ...buildIoMarkdownWithAnchor({
+                        id: parentId,
+                        title: titleVal || parentRec.title || undefined,
+                        groups: groupsVal || undefined,
+                        ioEmbed: embed,
+                        info: infoVal || undefined,
+                    }),
+                ];
+                lines.splice(start, end - start, ...ioBlock);
+                await app.vault.modify(file, lines.join("\n"));
+            }
+            void fileToSync;
+        }
+        catch (e) {
+            log.warn("Failed to update IO markdown", e);
+        }
+        new Notice(`Image occlusion updated.`);
+        return true;
+    }
+    // ── New IO card (not editing) ─────────────────────────────────────────────
+    const active = app.workspace.getActiveFile();
+    if (!(active instanceof TFile)) {
+        new Notice("Open a Markdown note first");
+        return false;
+    }
+    if (!getImageData()) {
+        new Notice(`Paste an image to create an image occlusion card`);
+        return false;
+    }
+    if (hasTextBoxes) {
+        await burnTextBoxes();
+    }
+    const ioImageData = getImageData();
+    if (!ioImageData) {
+        new Notice(`Paste an image to create an image occlusion card`);
+        return false;
+    }
+    // Save image to vault
+    const id = await reserveNewBcId(plugin, active);
+    const ext = extFromMime(ioImageData.mime);
+    const baseName = `sprout-io-${id}.${ext}`;
+    const vaultPath = bestEffortAttachmentPath(plugin, active, baseName);
+    try {
+        await writeBinaryToVault(app, vaultPath, ioImageData.data);
+    }
+    catch (e) {
+        new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
+        return false;
+    }
+    const imagePath = normaliseVaultPath(vaultPath);
+    const now = Date.now();
+    const mask = rects.length > 0 ? maskMode : null;
+    // Persist parent IO card in store
+    const parentRec = {
+        id,
+        type: "io",
+        title: titleVal || null,
+        prompt: null,
+        info: infoVal || null,
+        groups: groupsArr && groupsArr.length ? groupsArr : null,
+        imageRef: imagePath,
+        maskMode: mask,
+        sourceNotePath: active.path,
+        sourceStartLine: 0,
+        createdAt: now,
+        updatedAt: now,
+        lastSeenAt: now,
+    };
+    plugin.store.upsertCard(parentRec);
+    // Persist IO definition in store.io
+    const ioMap = plugin.store.data.io || {};
+    plugin.store.data.io = ioMap;
+    const normRects = rects.map((r) => ({
+        rectId: String(r.rectId),
+        x: Math.max(0, Math.min(1, r.normX)),
+        y: Math.max(0, Math.min(1, r.normY)),
+        w: Math.max(0, Math.min(1, r.normW)),
+        h: Math.max(0, Math.min(1, r.normH)),
+        groupKey: normaliseGroupKey(r.groupKey),
+        shape: r.shape || "rect",
+    }));
+    ioMap[id] = {
+        imageRef: imagePath,
+        maskMode: mask,
+        rects: normRects,
+    };
+    // Create child IO cards per group
+    const groupToRectIds = new Map();
+    for (const r of normRects) {
+        const g = normaliseGroupKey(r.groupKey);
+        const arr = (_k = groupToRectIds.get(g)) !== null && _k !== void 0 ? _k : [];
+        arr.push(String(r.rectId));
+        groupToRectIds.set(g, arr);
+    }
+    const cards = (plugin.store.data.cards || {});
+    const keepChildIds = new Set();
+    const titleBase = String((_l = parentRec.title) !== null && _l !== void 0 ? _l : "").trim();
+    for (const [groupKey, rectIds] of groupToRectIds.entries()) {
+        const childId = stableIoChildId(id, groupKey);
+        keepChildIds.add(childId);
+        const rec = {
+            id: childId,
+            type: "io-child",
+            title: titleBase || null,
+            parentId: id,
+            groupKey,
+            rectIds: rectIds.slice(),
+            retired: false,
+            prompt: null,
+            info: parentRec.info,
+            groups: parentRec.groups || null,
+            sourceNotePath: active.path,
+            sourceStartLine: 0,
+            imageRef: imagePath,
+            maskMode: mask,
+            createdAt: now,
+            updatedAt: now,
+            lastSeenAt: now,
+        };
+        const prev = cards[childId];
+        if (prev && typeof prev === "object") {
+            cards[childId] = { ...prev, ...rec };
+            plugin.store.upsertCard(cards[childId]);
+        }
+        else {
+            cards[childId] = rec;
+            plugin.store.upsertCard(rec);
+        }
+        plugin.store.ensureState(childId, now, 2.5);
+    }
+    // Delete stale children
+    for (const c of Object.values(cards)) {
+        if (!c || c.type !== "io-child")
+            continue;
+        if (String(c.parentId) !== id)
+            continue;
+        const cid = String(c.id);
+        if (keepChildIds.has(cid))
+            continue;
+        delete cards[cid];
+        if (plugin.store.data.states)
+            delete plugin.store.data.states[cid];
+    }
+    await plugin.store.persist();
+    // Write markdown block to the note
+    const embed = `![[${imagePath}]]`;
+    const occlusionsJson = normRects.length > 0
+        ? JSON.stringify(normRects.map((r) => ({
+            rectId: r.rectId,
+            x: r.x,
+            y: r.y,
+            w: r.w,
+            h: r.h,
+            groupKey: r.groupKey,
+            shape: r.shape || "rect",
+        })))
+        : null;
+    const ioBlock = buildIoMarkdownWithAnchor({
+        id,
+        title: titleVal || undefined,
+        groups: groupsVal || undefined,
+        ioEmbed: embed,
+        occlusionsJson,
+        maskMode: mask,
+        info: infoVal || undefined,
+    });
+    try {
+        await insertTextAtCursorOrAppend(app, active, ioBlock.join("\n"), true);
+    }
+    catch (e) {
+        log.warn("Failed to insert IO markdown, but card saved to store", e);
+    }
+    new Notice(`Image occlusion saved.`);
+    return true;
+}

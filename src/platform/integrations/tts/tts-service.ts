@@ -14,9 +14,11 @@ import { detectLanguage, getBlankWord } from "./language-detect";
 import { requestExternalTts } from "./tts-provider";
 import { ttsCacheKey, getCachedAudio, cacheAudio } from "./tts-cache";
 import { Platform, setIcon } from "obsidian";
+import { PitchShifter } from "soundtouchjs";
 import { log } from "../../core/logger";
 import { t } from "../../translations/translator";
 import type { SproutSettings } from "../../types/settings";
+import { splitClozeAnswerAndHint } from "../../core/shared-utils";
 import { getCircleFlagTokenMatches, stripCircleFlagTokens } from "../../../platform/flags/flag-tokens";
 
 // ── TTS debug mode ─────────────────────────────────────────────
@@ -27,6 +29,74 @@ let _ttsDebug = false;
 
 function ttsLog(...args: unknown[]) {
   if (_ttsDebug) log.debug("[TTS]", ...args);
+}
+
+type PitchAwareAudioElement = HTMLAudioElement & {
+  preservesPitch?: boolean;
+  mozPreservesPitch?: boolean;
+  webkitPreservesPitch?: boolean;
+};
+
+type ExternalPlaybackProfile = {
+  playbackRate: number;
+  pitch: number;
+};
+
+type AudioContextConstructor = new () => AudioContext;
+
+function clampSpeechValue(value: number | null | undefined): number {
+  return Math.max(0.5, Math.min(2.0, Number.isFinite(value) ? (value as number) : 1.0));
+}
+
+function getExternalPlaybackProfile(settings: SproutSettings["audio"]): ExternalPlaybackProfile {
+  return {
+    playbackRate: clampSpeechValue(settings.rate),
+    pitch: clampSpeechValue(settings.pitch),
+  };
+}
+
+function getAudioContextConstructor(): AudioContextConstructor | null {
+  if (typeof window === "undefined") return null;
+  const webkitWindow = window as Window & typeof globalThis & {
+    webkitAudioContext?: AudioContextConstructor;
+  };
+  return webkitWindow.AudioContext ?? webkitWindow.webkitAudioContext ?? null;
+}
+
+/**
+ * Apply fallback playback tuning for externally generated audio.
+ *
+ * HTMLAudioElement can change playback speed, but it cannot independently retune
+ * pitch while preserving duration. Keep the browser's pitch preservation enabled
+ * so fallback playback does not distort the clip when local Web Audio processing
+ * is unavailable.
+ */
+export function applyExternalPlaybackSettings(
+  audioEl: HTMLAudioElement,
+  settings: SproutSettings["audio"],
+): ExternalPlaybackProfile {
+  const profile = getExternalPlaybackProfile(settings);
+
+  audioEl.playbackRate = profile.playbackRate;
+
+  const pitchAware = audioEl as PitchAwareAudioElement;
+  try {
+    pitchAware.preservesPitch = true;
+  } catch {
+    // Ignore platforms that expose preservesPitch as read-only or unsupported.
+  }
+  try {
+    pitchAware.mozPreservesPitch = true;
+  } catch {
+    // Ignore Firefox-only property on other engines.
+  }
+  try {
+    pitchAware.webkitPreservesPitch = true;
+  } catch {
+    // Ignore WebKit-only property on other engines.
+  }
+
+  return profile;
 }
 
 /** Ensure voices are loaded (Electron/Chrome load them async). */
@@ -1107,15 +1177,14 @@ export function prepareClozeTextForTts(
   const result = clozeText.replace(re, (_match, idxStr: string, content: string) => {
     const idx = Number(idxStr);
     const isTarget = targetIndex === null || idx === targetIndex;
-    // Strip hint: "answer::hint" → "answer"
-    const answer = content.split("::")[0];
+    const { answer, hint } = splitClozeAnswerAndHint(content);
 
     if (reveal) {
       return answer;
     }
 
     if (isTarget) {
-      return blankWord;
+      return hint || blankWord;
     }
 
     return answer;
@@ -1145,8 +1214,7 @@ export function extractClozeAnswerForTts(
 
   while ((match = re.exec(clozeText)) !== null) {
     const idx = Number(match[1]);
-    // Strip hint: "answer::hint" → "answer"
-    const answer = match[2].split("::")[0];
+    const { answer } = splitClozeAnswerAndHint(match[2]);
     const isTarget = targetIndex === null || idx === targetIndex;
     if (isTarget && answer.trim()) {
       answers.push(answer.trim());
@@ -1162,6 +1230,9 @@ export class TtsService {
   private _speaking = false;
   private _speakSession = 0;
   private _resumeKeepAliveInterval: ReturnType<typeof setInterval> | null = null;
+  private _activeAudioContext: AudioContext | null = null;
+  private _activePitchShifter: PitchShifter | null = null;
+  private _activeGainNode: GainNode | null = null;
   private _activeAudioElement: HTMLAudioElement | null = null;
   private _activeObjectUrl: string | null = null;
   private _speakingListeners = new Set<(speaking: boolean) => void>();
@@ -1199,7 +1270,39 @@ export class TtsService {
     }
   }
 
+  private _stopAudioGraph(): void {
+    const pitchShifter = this._activePitchShifter;
+    const gainNode = this._activeGainNode;
+    const audioContext = this._activeAudioContext;
+
+    this._activePitchShifter = null;
+    this._activeGainNode = null;
+    this._activeAudioContext = null;
+
+    if (pitchShifter) {
+      try {
+        pitchShifter.disconnect();
+      } catch {
+        // Ignore disconnect failures during teardown.
+      }
+    }
+
+    if (gainNode) {
+      try {
+        gainNode.disconnect();
+      } catch {
+        // Ignore disconnect failures during teardown.
+      }
+    }
+
+    if (audioContext) {
+      void audioContext.close().catch(() => undefined);
+    }
+  }
+
   private _stopAudioElement(): void {
+    this._stopAudioGraph();
+
     if (this._activeAudioElement) {
       this._activeAudioElement.pause();
       this._activeAudioElement.removeAttribute("src");
@@ -1243,6 +1346,97 @@ export class TtsService {
   /** Set a callback to run when the current speech finishes. Cleared on stop(). */
   setContinuation(fn: (() => void) | null): void {
     this._pendingContinuation = fn;
+  }
+
+  private async _playExternalAudioElement(
+    audioData: ArrayBuffer,
+    settings: SproutSettings["audio"],
+  ): Promise<ExternalPlaybackProfile> {
+    const blob = new Blob([audioData], { type: "audio/mpeg" });
+    const objectUrl = URL.createObjectURL(blob);
+    const audioEl = new Audio(objectUrl);
+    const profile = applyExternalPlaybackSettings(audioEl, settings);
+
+    this._activeAudioElement = audioEl;
+    this._activeObjectUrl = objectUrl;
+
+    audioEl.onended = () => {
+      this._setSpeaking(false);
+      this._stopAudioElement();
+      ttsLog("⏹ External TTS playback ended.");
+      this._runContinuation();
+    };
+
+    audioEl.onerror = () => {
+      this._setSpeaking(false);
+      this._stopAudioElement();
+      ttsLog("External TTS audio element error.");
+    };
+
+    await audioEl.play();
+    return profile;
+  }
+
+  private async _playExternalAudioLocally(
+    audioData: ArrayBuffer,
+    settings: SproutSettings["audio"],
+    session: number,
+  ): Promise<ExternalPlaybackProfile> {
+    const profile = getExternalPlaybackProfile(settings);
+    const AudioContextCtor = getAudioContextConstructor();
+    if (!AudioContextCtor) {
+      return this._playExternalAudioElement(audioData, settings);
+    }
+
+    let audioContext: AudioContext | null = null;
+
+    try {
+      audioContext = new AudioContextCtor();
+      const decoded = await audioContext.decodeAudioData(audioData.slice(0));
+
+      if (session !== this._speakSession) {
+        void audioContext.close().catch(() => undefined);
+        return profile;
+      }
+
+      try {
+        await audioContext.resume();
+      } catch {
+        // Resume failures are non-fatal; playback may still proceed.
+      }
+
+      const gainNode = audioContext.createGain();
+      const pitchShifter = new PitchShifter(audioContext, decoded, 1024, () => {
+        if (session !== this._speakSession) {
+          this._stopAudioElement();
+          return;
+        }
+
+        this._setSpeaking(false);
+        this._stopAudioElement();
+        ttsLog("⏹ External TTS playback ended.");
+        this._runContinuation();
+      });
+
+      pitchShifter.tempo = profile.playbackRate;
+      pitchShifter.pitch = profile.pitch;
+
+      this._activeAudioContext = audioContext;
+      this._activePitchShifter = pitchShifter;
+      this._activeGainNode = gainNode;
+
+      pitchShifter.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      return profile;
+    } catch (error) {
+      if (audioContext) {
+        void audioContext.close().catch(() => undefined);
+      }
+      this._stopAudioGraph();
+      ttsLog("Local external-TTS pitch/tempo playback failed; falling back to HTML audio element.", error);
+      return this._playExternalAudioElement(audioData, settings);
+    }
   }
 
   private shouldAutoDetectLanguage(settings: SproutSettings["audio"]): boolean {
@@ -1316,8 +1510,8 @@ export class TtsService {
 
     if (!segments.length) return;
 
-    const rate = Math.max(0.5, Math.min(2.0, settings.rate ?? 1.0));
-    const pitch = Math.max(0.5, Math.min(2.0, settings.pitch ?? 1.0));
+    const rate = clampSpeechValue(settings.rate);
+    const pitch = clampSpeechValue(settings.pitch);
     const preferredVoiceURI = settings.preferredVoiceURI || undefined;
     const session = this._speakSession;
 
@@ -1490,29 +1684,12 @@ export class TtsService {
         // Check session is still current
         if (session !== this._speakSession) return;
 
-        // Play via HTMLAudioElement
-        const blob = new Blob([audioData], { type: "audio/mpeg" });
-        const objectUrl = URL.createObjectURL(blob);
-        const audioEl = new Audio(objectUrl);
+        const profile = await this._playExternalAudioLocally(audioData, settings, session);
+        if (session !== this._speakSession) return;
 
-        this._activeAudioElement = audioEl;
-        this._activeObjectUrl = objectUrl;
-
-        audioEl.onended = () => {
-          this._setSpeaking(false);
-          this._stopAudioElement();
-          ttsLog("⏹ External TTS playback ended.");
-          this._runContinuation();
-        };
-
-        audioEl.onerror = () => {
-          this._setSpeaking(false);
-          this._stopAudioElement();
-          ttsLog("External TTS audio element error.");
-        };
-
-        await audioEl.play();
-        ttsLog(`▶ Playing external TTS audio (${(audioData.byteLength / 1024).toFixed(1)} KB)`);
+        ttsLog(
+          `▶ Playing external TTS audio (${(audioData.byteLength / 1024).toFixed(1)} KB, rate=${profile.playbackRate.toFixed(2)}, pitch=${profile.pitch.toFixed(2)})`,
+        );
       } catch (e) {
         if (session !== this._speakSession) return;
         this._setSpeaking(false);

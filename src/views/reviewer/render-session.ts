@@ -18,7 +18,7 @@ import type { Scope, Session, Rating } from "./types";
 import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions } from "../../platform/core/store";
 import { getCorrectIndices, isMultiAnswerMcq } from "../../platform/types/card";
-import type { ClozeRenderOptions } from "./question-cloze";
+import { hydrateRenderedMathCloze, type ClozeRenderOptions } from "./question-cloze";
 import { openCardAnchorInNote } from "../../platform/core/open-card-anchor";
 import { processClozeForMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../../platform/core/shared-utils";
 import { hydrateCircleFlagsInElement, processCircleFlagsInMarkdown } from "../../platform/flags/flag-tokens";
@@ -86,6 +86,7 @@ type Args = {
   startCountdown: (nextDue: number, lineEl: HTMLElement) => void;
 
   // cloze rendering
+  getClozeRenderOptions: () => ClozeRenderOptions;
   renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null, opts?: ClozeRenderOptions) => HTMLElement;
 
   // markdown rendering
@@ -1290,8 +1291,15 @@ export function renderSessionMode(args: Args) {
     const clozContainer = document.createElement("div");
     clozContainer.className = "learnkit-cloze whitespace-pre-wrap break-words learnkit-md-block";
     if (text.includes("$") || text.includes("\\(") || text.includes("\\[") || text.includes("[[")) {
-      const processedText = processClozeForMath(text, reveal, targetIndex);
-      void args.renderMarkdownInto(clozContainer, processedText, sourcePath).then(() => setupLinkHandlers(clozContainer, sourcePath));
+      const clozeOpts = args.getClozeRenderOptions();
+      const processedText = processClozeForMath(text, reveal, targetIndex, {
+        blankClassName: "learnkit-cloze-blank hidden-cloze",
+        useHintText: clozeOpts.mode !== "typed",
+      });
+      void args.renderMarkdownInto(clozContainer, processedText, sourcePath).then(() => {
+        setupLinkHandlers(clozContainer, sourcePath);
+        hydrateRenderedMathCloze(clozContainer, text, reveal, targetIndex, clozeOpts);
+      });
     } else {
       const clozeContent = args.renderClozeFront(text, reveal, targetIndex, undefined);
       if (reveal) {

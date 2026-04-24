@@ -1,0 +1,658 @@
+/**
+ * @file src/reviewer/card-editor.ts
+ * @summary Provides the in-reviewer card editing modal and the logic to persist card edits back to the source Markdown note. Supports editing basic, cloze, and MCQ card types with field-aware block rewriting using pipe-delimited format.
+ *
+ * @exports
+ *   - CardEditPayload — Type describing the editable fields of a card (title, Q/A, cloze text, MCQ stem/options, info)
+ *   - CardEditModal — Modal class that renders a quick-edit form for a flashcard and invokes a save callback
+ *   - saveCardEdits — Async function that writes edited card fields back to the source Markdown file and re-syncs
+ */
+import { Modal, Notice, TFile, setIcon } from "obsidian";
+import { normalizeCardOptions } from "../../platform/core/store";
+import { queryFirst } from "../../platform/core/ui";
+import { handleTabInTextarea, attachFlagPreviewOverlay } from "../../platform/card-editor/card-editor";
+import { setModalTitle, scopeModalToWorkspace } from "../../platform/modals/modal-utils";
+import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
+import { log } from "../../platform/core/logger";
+import { escapeDelimiterRe } from "../../platform/core/delimiter";
+import { CARD_ANCHOR_LINE_RE } from "../../platform/core/identity";
+import { findCardBlockRangeById } from "./markdown-block";
+import { t } from "../../platform/translations/translator";
+const ANCHOR_RE = CARD_ANCHOR_LINE_RE;
+const ID_COMMENT_RE = /^<!--ID:(\d{9})-->$/;
+// Recognised field starts for "continuation line" handling (supports both pipe and legacy colon)
+const FIELD_START_PIPE_RE = /^(T|Title|Q|Question|A|Answer|I|Info|MCQ|O|Options|CQ|Cloze|C|K|IO|OQ|\d{1,2})\s*\|/;
+const FIELD_START_COLON_RE = /^(T|Title|Q|Question|A|Answer|I|Info|MCQ|O|Options|CQ|Cloze|C|K|IO|OQ|\d{1,2}):/;
+function isMarkerLine(line) {
+    const t = (line || "").trim();
+    return ANCHOR_RE.test(t) || ID_COMMENT_RE.test(t);
+}
+function isFieldStart(line) {
+    const t = (line || "").trim();
+    return isMarkerLine(t) || FIELD_START_PIPE_RE.test(t) || FIELD_START_COLON_RE.test(t);
+}
+function normaliseNewlines(s) {
+    const raw = String(s !== null && s !== void 0 ? s : "");
+    const lines = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    // Keep intentional blank lines; trim only trailing whitespace
+    return lines.map((x) => x.replace(/\s+$/g, ""));
+}
+function setTaggedSection(block, tagCandidates, newValue) {
+    var _a, _b, _c, _d, _e, _f;
+    const valueLines = newValue === undefined ? null : normaliseNewlines(newValue);
+    // Match both delimiter and colon formats when finding existing fields
+    const delimEsc = escapeDelimiterRe();
+    const tagResPipe = tagCandidates.map((t) => new RegExp(`^${t}\\s*${delimEsc}`, "i"));
+    const tagResColon = tagCandidates.map((t) => new RegExp(`^${t}:\\s*`, "i"));
+    let tagIdx = -1;
+    let usedTag = tagCandidates[0];
+    for (let i = 0; i < block.length; i++) {
+        const line = (block[i] || "").trim();
+        if (isMarkerLine(line))
+            continue;
+        // Check pipe format first (preferred)
+        for (let k = 0; k < tagResPipe.length; k++) {
+            if (tagResPipe[k].test(block[i] || "")) {
+                tagIdx = i;
+                usedTag = tagCandidates[k];
+                break;
+            }
+        }
+        if (tagIdx >= 0)
+            break;
+        // Check colon format (legacy)
+        for (let k = 0; k < tagResColon.length; k++) {
+            if (tagResColon[k].test(block[i] || "")) {
+                tagIdx = i;
+                usedTag = tagCandidates[k];
+                break;
+            }
+        }
+        if (tagIdx >= 0)
+            break;
+    }
+    // If no change requested, return block unchanged
+    if (valueLines === null)
+        return block;
+    // If value is empty -> remove the section if present
+    const shouldRemove = valueLines.join("\n").trim() === "";
+    if (tagIdx < 0) {
+        if (shouldRemove)
+            return block;
+        // Insert after initial marker stack (anchors/comments)
+        let insertAt = 0;
+        while (insertAt < block.length &&
+            isMarkerLine((block[insertAt] || "").trim()))
+            insertAt++;
+        // Always use pipe format for new fields
+        const isSingleLine = valueLines.length === 1;
+        let toInsert;
+        if (isSingleLine) {
+            // Single line: KEY | value |
+            const head = `${usedTag} | ${(_a = valueLines[0]) !== null && _a !== void 0 ? _a : ""} |`.replace(/\s+\|$/g, " |");
+            toInsert = [head];
+        }
+        else {
+            // Multi-line: KEY | first line
+            //             continuation lines
+            //             last line |
+            const head = `${usedTag} | ${(_b = valueLines[0]) !== null && _b !== void 0 ? _b : ""}`;
+            const middle = valueLines.slice(1, -1);
+            const last = `${(_c = valueLines[valueLines.length - 1]) !== null && _c !== void 0 ? _c : ""} |`;
+            toInsert = [head, ...middle, last];
+        }
+        return [...block.slice(0, insertAt), ...toInsert, ...block.slice(insertAt)];
+    }
+    // Identify section end (continuation lines until next field/marker)
+    let end = tagIdx + 1;
+    while (end < block.length) {
+        const t = (block[end] || "").trim();
+        if (isFieldStart(t))
+            break;
+        end++;
+    }
+    if (shouldRemove) {
+        return [...block.slice(0, tagIdx), ...block.slice(end)];
+    }
+    // Always output in pipe format (convert from colon if needed)
+    const isSingleLine = valueLines.length === 1;
+    let replacement;
+    if (isSingleLine) {
+        // Single line: KEY | value |
+        const head = `${usedTag} | ${(_d = valueLines[0]) !== null && _d !== void 0 ? _d : ""} |`.replace(/\s+\|$/g, " |");
+        replacement = [head];
+    }
+    else {
+        // Multi-line: KEY | first line
+        //             continuation lines
+        //             last line |
+        const head = `${usedTag} | ${(_e = valueLines[0]) !== null && _e !== void 0 ? _e : ""}`;
+        const middle = valueLines.slice(1, -1);
+        const last = `${(_f = valueLines[valueLines.length - 1]) !== null && _f !== void 0 ? _f : ""} |`;
+        replacement = [head, ...middle, last];
+    }
+    return [...block.slice(0, tagIdx), ...replacement, ...block.slice(end)];
+}
+function mkSectionTitle(parent, text) {
+    parent.createEl("label", { text, cls: "text-sm font-medium" });
+}
+const tx = (token, fallback, vars) => t(undefined, token, fallback, vars);
+export class CardEditModal extends Modal {
+    constructor(app, card, onSave) {
+        super(app);
+        this.card = card;
+        this.onSave = onSave;
+    }
+    onOpen() {
+        scopeModalToWorkspace(this);
+        this.containerEl.addClass("lk-modal-container", "lk-modal-dim", "learnkit");
+        this.modalEl.addClass("lk-modals", "learnkit-edit-modal");
+        setModalTitle(this, tx("ui.reviewer.cardEditor.title", "Quick edit flashcard"));
+        const { contentEl } = this;
+        contentEl.empty();
+        const headerEl = this.modalEl.querySelector(":scope > .modal-header");
+        const closeBtn = this.modalEl.querySelector(":scope > .modal-close-button");
+        if (headerEl) {
+            if (closeBtn)
+                headerEl.appendChild(closeBtn);
+            contentEl.appendChild(headerEl);
+        }
+        const type = String((this.card).type || "basic");
+        const id = String((this.card).id || "");
+        const mkInput = (value) => {
+            const input = contentEl.createEl("input");
+            input.type = "text";
+            input.value = value || "";
+            input.classList.add("input", "w-full");
+            return input;
+        };
+        const mkTextarea = (value, rows = 4, extraClass = "") => {
+            const ta = contentEl.createEl("textarea");
+            ta.value = value || "";
+            ta.rows = rows;
+            ta.classList.add("textarea", "w-full", "learnkit-textarea-fixed", "learnkit-textarea-fixed");
+            if (extraClass)
+                ta.classList.add(extraClass);
+            ta.addEventListener("keydown", (ev) => {
+                handleTabInTextarea(ta, ev);
+            });
+            return ta;
+        };
+        /** Wrap a textarea with click-to-edit markdown preview overlay. */
+        const mkPreviewTextarea = (value, rows = 4, extraClass = "") => {
+            const ta = mkTextarea(value, rows, extraClass);
+            const wrap = attachFlagPreviewOverlay(ta);
+            return { ta, wrap };
+        };
+        // ---- Title (always first) ----
+        mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.title", "Title"));
+        const titleEl = mkInput(String((this.card).title || ""));
+        titleEl.classList.add("learnkit-edit-field-title", "learnkit-edit-field-title");
+        contentEl.appendChild(attachFlagPreviewOverlay(titleEl));
+        // ---- Per-type fields ----
+        let qEl = null;
+        let aEl = null;
+        let clozeEl = null;
+        // MCQ UI state
+        let mcqStemEl = null;
+        const optionRows = [];
+        let correctIndex = -1;
+        const addMcqOptionRow = (initialValue = "", makeCorrect = false) => {
+            const idx = optionRows.length;
+            const row = contentEl.createDiv({ cls: "learnkit-edit-mcq-option-row learnkit-edit-mcq-option-row" });
+            row.createEl("div", { text: tx("ui.reviewer.cardEditor.field.optionN", "Option {index}", { index: idx + 1 }), cls: "learnkit-muted learnkit-muted learnkit-edit-mcq-option-label learnkit-edit-mcq-option-label" });
+            const input = row.createEl("input");
+            input.type = "text";
+            input.value = initialValue || "";
+            input.classList.add("learnkit-edit-mcq-option-input", "learnkit-edit-mcq-option-input");
+            const radio = row.createEl("input");
+            radio.type = "radio";
+            radio.name = `sprout-mcq-correct-${id}`;
+            radio.title = tx("ui.reviewer.cardEditor.correctAnswer", "Correct answer");
+            radio.checked = makeCorrect;
+            const delBtn = row.createEl("button", { text: "−", attr: { "aria-label": tx("ui.reviewer.cardEditor.remove", "Remove") } });
+            delBtn.type = "button";
+            const rec = { wrap: row, input, radio, delBtn };
+            optionRows.push(rec);
+            const syncCorrectFromRadios = () => {
+                correctIndex = optionRows.findIndex((r) => r.radio.checked);
+            };
+            radio.addEventListener("change", () => {
+                // native radios already enforce single selection, but keep state mirrored
+                syncCorrectFromRadios();
+            });
+            delBtn.addEventListener("click", () => {
+                const pos = optionRows.indexOf(rec);
+                if (pos < 0)
+                    return;
+                // Remove DOM + array entry
+                rec.wrap.remove();
+                optionRows.splice(pos, 1);
+                // If we deleted the selected one, clear selection
+                const prevCorrect = correctIndex;
+                syncCorrectFromRadios();
+                if (prevCorrect === pos) {
+                    correctIndex = optionRows.findIndex((r) => r.radio.checked);
+                }
+                // Renumber option labels
+                optionRows.forEach((r, i) => {
+                    const labelEl = queryFirst(r.wrap, "div");
+                    if (labelEl)
+                        labelEl.textContent = tx("ui.reviewer.cardEditor.field.optionN", "Option {index}", { index: i + 1 });
+                });
+            });
+            if (makeCorrect) {
+                correctIndex = idx;
+            }
+        };
+        if (type === "cloze") {
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.cloze", "Cloze"));
+            {
+                const r = mkPreviewTextarea(String((this.card).clozeText || ""), 5, "sprout-edit-field-question");
+                clozeEl = r.ta;
+                contentEl.appendChild(r.wrap);
+            }
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.extraInfo", "Extra information"));
+            const { ta: infoEl, wrap: infoWrap } = mkPreviewTextarea(String((this.card).info || ""), 4, "sprout-edit-field-info");
+            contentEl.appendChild(infoWrap);
+            this.renderButtons(type, titleEl, {
+                clozeEl,
+                infoEl,
+                getMcq: () => null,
+                qEl: null,
+                aEl: null,
+            });
+            return;
+        }
+        if (type === "basic" || type === "reversed") {
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.question", "Question"));
+            {
+                const r = mkPreviewTextarea(String((this.card).q || ""), 4, "sprout-edit-field-question");
+                qEl = r.ta;
+                contentEl.appendChild(r.wrap);
+            }
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.answer", "Answer"));
+            {
+                const r = mkPreviewTextarea(String((this.card).a || ""), 4, "sprout-edit-field-answer");
+                aEl = r.ta;
+                contentEl.appendChild(r.wrap);
+            }
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.extraInfo", "Extra information"));
+            const { ta: infoEl, wrap: infoWrap } = mkPreviewTextarea(String((this.card).info || ""), 4, "sprout-edit-field-info");
+            contentEl.appendChild(infoWrap);
+            this.renderButtons(type, titleEl, {
+                qEl,
+                aEl,
+                infoEl,
+                getMcq: () => null,
+                clozeEl: null,
+            });
+            return;
+        }
+        if (type === "oq") {
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.question", "Question"));
+            {
+                const r = mkPreviewTextarea(String((this.card).q || ""), 4, "sprout-edit-field-question");
+                qEl = r.ta;
+                contentEl.appendChild(r.wrap);
+            }
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.stepsCorrectOrder", "Steps (correct order)"));
+            const oqHint = contentEl.createDiv({ cls: "text-xs text-muted-foreground" });
+            oqHint.textContent = tx("ui.reviewer.cardEditor.oq.dragHint", "Drag the grip handles to reorder steps. Steps are shuffled during review.");
+            const oqListContainer = contentEl.createDiv({ cls: "learnkit-oq-editor-list learnkit-oq-editor-list" });
+            const oqStepRows = [];
+            const oqRenumber = () => {
+                oqStepRows.forEach((entry, i) => {
+                    entry.badge.textContent = String(i + 1);
+                });
+            };
+            const oqUpdateRemove = () => {
+                const disable = oqStepRows.length <= 2;
+                for (const entry of oqStepRows) {
+                    const btn = entry.row.querySelector(".learnkit-oq-del-btn");
+                    if (btn) {
+                        btn.disabled = disable;
+                        btn.classList.toggle("is-disabled", disable);
+                    }
+                }
+            };
+            const addOqStepRow = (value) => {
+                const row = contentEl.createDiv({ cls: "learnkit-edit-mcq-option-row learnkit-edit-mcq-option-row" });
+                row.draggable = true;
+                // Grip handle
+                const grip = document.createElement("span");
+                grip.className = "inline-flex items-center justify-center text-muted-foreground cursor-grab learnkit-oq-grip";
+                setIcon(grip, "grip-vertical");
+                row.appendChild(grip);
+                // Number badge
+                const badge = document.createElement("span");
+                badge.className = "inline-flex items-center justify-center text-xs font-medium text-muted-foreground w-5 shrink-0";
+                badge.textContent = String(oqStepRows.length + 1);
+                row.appendChild(badge);
+                const input = row.createEl("input");
+                input.type = "text";
+                input.value = value || "";
+                input.classList.add("learnkit-edit-mcq-option-input", "learnkit-edit-mcq-option-input");
+                input.placeholder = tx("ui.reviewer.cardEditor.field.stepN", "Step {index}", { index: oqStepRows.length + 1 });
+                const delBtn = row.createEl("button", { text: "−", cls: "learnkit-oq-del-btn learnkit-oq-del-btn", attr: { "aria-label": tx("ui.reviewer.cardEditor.remove", "Remove") } });
+                delBtn.type = "button";
+                delBtn.addEventListener("click", () => {
+                    if (oqStepRows.length <= 2)
+                        return;
+                    const pos = oqStepRows.findIndex((e) => e.input === input);
+                    if (pos < 0)
+                        return;
+                    oqStepRows[pos].row.remove();
+                    oqStepRows.splice(pos, 1);
+                    oqRenumber();
+                    oqUpdateRemove();
+                });
+                // DnD reorder
+                row.addEventListener("dragstart", (ev) => {
+                    var _a;
+                    const idx = oqStepRows.findIndex((e) => e.row === row);
+                    (_a = ev.dataTransfer) === null || _a === void 0 ? void 0 : _a.setData("text/plain", String(idx));
+                    row.classList.add("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
+                });
+                row.addEventListener("dragend", () => {
+                    row.classList.remove("learnkit-oq-row-dragging", "learnkit-oq-row-dragging");
+                });
+                row.addEventListener("dragover", (ev) => {
+                    ev.preventDefault();
+                    ev.dataTransfer.dropEffect = "move";
+                });
+                row.addEventListener("drop", (ev) => {
+                    var _a;
+                    ev.preventDefault();
+                    const fromIdx = parseInt(((_a = ev.dataTransfer) === null || _a === void 0 ? void 0 : _a.getData("text/plain")) || "-1", 10);
+                    const toIdx = oqStepRows.findIndex((e) => e.row === row);
+                    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx)
+                        return;
+                    const [moved] = oqStepRows.splice(fromIdx, 1);
+                    oqStepRows.splice(toIdx, 0, moved);
+                    oqListContainer.innerHTML = "";
+                    for (const entry of oqStepRows)
+                        oqListContainer.appendChild(entry.row);
+                    oqRenumber();
+                });
+                oqListContainer.appendChild(row);
+                const entry = { row, input, badge };
+                oqStepRows.push(entry);
+                oqUpdateRemove();
+                return entry;
+            };
+            const currentSteps = Array.isArray((this.card).oqSteps) ? (this.card).oqSteps : [];
+            const seedSteps = currentSteps.length >= 2 ? currentSteps : ["", ""];
+            for (const s of seedSteps)
+                addOqStepRow(s);
+            oqRenumber();
+            oqUpdateRemove();
+            // Add step button
+            const oqAddRow = contentEl.createDiv({ cls: "learnkit-edit-mcq-add-row learnkit-edit-mcq-add-row" });
+            const oqPlusBtn = oqAddRow.createEl("button", { text: "+" });
+            oqPlusBtn.type = "button";
+            oqPlusBtn.onclick = () => {
+                if (oqStepRows.length >= 20) {
+                    new Notice(tx("ui.common.maxSteps20", "Maximum 20 steps."));
+                    return;
+                }
+                addOqStepRow("");
+                oqRenumber();
+            };
+            mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.extraInfo", "Extra information"));
+            const { ta: infoEl, wrap: infoWrap } = mkPreviewTextarea(String((this.card).info || ""), 4, "sprout-edit-field-info");
+            contentEl.appendChild(infoWrap);
+            this.renderButtons(type, titleEl, {
+                qEl,
+                aEl: null,
+                clozeEl: null,
+                infoEl,
+                getMcq: () => null,
+                getOqSteps: () => oqStepRows.map((r) => (r.input.value || "").trim()).filter(Boolean),
+            });
+            return;
+        }
+        // MCQ
+        mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.question", "Question"));
+        {
+            const r = mkPreviewTextarea(String((this.card).stem || ""), 4, "sprout-edit-field-question");
+            mcqStemEl = r.ta;
+            contentEl.appendChild(r.wrap);
+        }
+        mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.options", "Options"));
+        // Seed options + correct
+        const currentOpts = normalizeCardOptions((this.card).options);
+        const currentCorrect = Number.isFinite((this.card).correctIndex)
+            ? Number((this.card).correctIndex)
+            : -1;
+        // default to at least 2 options if none
+        const seedOpts = currentOpts.length ? currentOpts : ["", ""];
+        seedOpts.forEach((opt, i) => addMcqOptionRow(opt, i === currentCorrect));
+        correctIndex = currentCorrect;
+        // + button row
+        const addRow = contentEl.createDiv({ cls: "learnkit-edit-mcq-add-row learnkit-edit-mcq-add-row" });
+        const plusBtn = addRow.createEl("button", { text: tx("ui.reviewer.cardEditor.add", "+") });
+        plusBtn.type = "button";
+        plusBtn.onclick = () => addMcqOptionRow("", false);
+        mkSectionTitle(contentEl, tx("ui.reviewer.cardEditor.field.extraInfo", "Extra information"));
+        const { ta: infoEl, wrap: infoWrap } = mkPreviewTextarea(String((this.card).info || ""), 4, "sprout-edit-field-info");
+        contentEl.appendChild(infoWrap);
+        this.renderButtons(type, titleEl, {
+            qEl: null,
+            aEl: null,
+            clozeEl: null,
+            infoEl,
+            getMcq: () => {
+                var _a;
+                const options = optionRows.map((r) => (r.input.value || "").trim()).filter(Boolean);
+                const rowCorrect = optionRows.findIndex((r) => r.radio.checked);
+                const finalCorrect = rowCorrect >= 0 ? rowCorrect : -1;
+                return {
+                    stem: (_a = mcqStemEl === null || mcqStemEl === void 0 ? void 0 : mcqStemEl.value) !== null && _a !== void 0 ? _a : "",
+                    options,
+                    correctIndex: finalCorrect,
+                };
+            },
+        });
+    }
+    onClose() {
+        this.contentEl.empty();
+    }
+    renderButtons(type, titleEl, args) {
+        const { contentEl } = this;
+        const footer = contentEl.createDiv({ cls: "flex items-center justify-end gap-4 lk-modal-footer" });
+        const cancel = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-outline-muted learnkit-btn-outline-muted inline-flex items-center gap-2 h-9 px-3 text-sm" });
+        cancel.type = "button";
+        const cancelIcon = cancel.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
+        setIcon(cancelIcon, "x");
+        cancel.createSpan({ text: tx("ui.common.cancel", "Cancel") });
+        cancel.onclick = () => this.close();
+        const save = footer.createEl("button", { cls: "learnkit-btn-toolbar learnkit-btn-toolbar learnkit-btn-primary-action learnkit-btn-primary-action inline-flex items-center gap-2 h-9 px-3 text-sm" });
+        save.type = "button";
+        const saveIcon = save.createEl("span", { cls: "inline-flex items-center justify-center [&_svg]:size-4" });
+        setIcon(saveIcon, "save");
+        save.createSpan({ text: tx("ui.common.save", "Save") });
+        save.onclick = async () => {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+            try {
+                const payload = {
+                    title: (_a = titleEl.value) !== null && _a !== void 0 ? _a : "",
+                    info: (_b = args.infoEl.value) !== null && _b !== void 0 ? _b : "",
+                };
+                if (type === "basic" || type === "reversed") {
+                    payload.q = (_d = (_c = args.qEl) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : "";
+                    payload.a = (_f = (_e = args.aEl) === null || _e === void 0 ? void 0 : _e.value) !== null && _f !== void 0 ? _f : "";
+                }
+                else if (type === "cloze") {
+                    payload.clozeText = (_h = (_g = args.clozeEl) === null || _g === void 0 ? void 0 : _g.value) !== null && _h !== void 0 ? _h : "";
+                }
+                else if (type === "mcq") {
+                    const m = args.getMcq();
+                    payload.stem = (_j = m === null || m === void 0 ? void 0 : m.stem) !== null && _j !== void 0 ? _j : "";
+                    payload.options = (_k = m === null || m === void 0 ? void 0 : m.options) !== null && _k !== void 0 ? _k : [];
+                    payload.correctIndex = (_l = m === null || m === void 0 ? void 0 : m.correctIndex) !== null && _l !== void 0 ? _l : -1;
+                }
+                else if (type === "oq") {
+                    payload.q = (_o = (_m = args.qEl) === null || _m === void 0 ? void 0 : _m.value) !== null && _o !== void 0 ? _o : "";
+                    payload.oqSteps = (_q = (_p = args.getOqSteps) === null || _p === void 0 ? void 0 : _p.call(args)) !== null && _q !== void 0 ? _q : [];
+                }
+                await this.onSave(payload);
+                this.close();
+            }
+            catch (e) {
+                log.error("edit failed", e);
+                new Notice(tx("ui.reviewer.notice.editFailed", "Edit failed ({error})", { error: e instanceof Error ? e.message : String(e) }));
+            }
+        };
+    }
+}
+export async function saveCardEdits(plugin, card, payload) {
+    const id = String((card).id || "");
+    const path = String((card).sourceNotePath || "");
+    const type = String((card).type || "basic");
+    if (!id || !path)
+        throw new Error("Missing card id or sourceNotePath.");
+    const af = plugin.app.vault.getAbstractFileByPath(path);
+    if (!(af instanceof TFile))
+        throw new Error(`Note not found: ${path}`);
+    const txt = await plugin.app.vault.read(af);
+    const lines = txt.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    const { start, end } = findCardBlockRangeById(lines, id);
+    let block = lines.slice(start, end);
+    // Ensure we have an anchor line at/near the start; if not, do nothing risky.
+    if (!block.some((l) => (l || "").trim() === `^sprout-${id}`) &&
+        !block.some((l) => (l || "").trim() === `<!--ID:${id}-->`)) {
+        throw new Error(`Block found for ${id} does not contain anchor/comment marker; aborting.`);
+    }
+    const norm = (v) => String(v !== null && v !== void 0 ? v : "").trim();
+    // Apply canonical fields, per card type
+    block = setTaggedSection(block, ["T", "Title"], norm(payload.title));
+    block = setTaggedSection(block, ["I", "Info"], norm(payload.info));
+    if (type === "basic" || type === "reversed") {
+        block = setTaggedSection(block, [type === "reversed" ? "RQ" : "Q", "Question"], norm(payload.q));
+        block = setTaggedSection(block, ["A", "Answer"], norm(payload.a));
+    }
+    else if (type === "cloze") {
+        block = setTaggedSection(block, ["CQ", "Cloze", "C"], norm(payload.clozeText));
+    }
+    else if (type === "mcq") {
+        block = setTaggedSection(block, ["MCQ"], norm(payload.stem));
+        const opts = Array.isArray(payload.options) ? payload.options : [];
+        const correctIndex = Number.isFinite(payload.correctIndex)
+            ? Number(payload.correctIndex)
+            : -1;
+        // Replace all existing O lines with new format
+        // First, remove all existing O/Options lines
+        block = block.filter((line) => {
+            const trimmed = line.trim();
+            return !(/^O\s*\|/.test(trimmed) || /^O:/.test(trimmed) || /^Options\s*\|/.test(trimmed) || /^Options:/.test(trimmed));
+        });
+        // Then insert new O | option | lines after MCQ line
+        if (opts.length > 0) {
+            let mcqIdx = -1;
+            for (let i = 0; i < block.length; i++) {
+                if (/^MCQ\s*\|/.test(block[i]) || /^MCQ:/.test(block[i])) {
+                    mcqIdx = i;
+                    break;
+                }
+            }
+            // Find end of MCQ field (including continuation lines)
+            let insertIdx = mcqIdx + 1;
+            if (mcqIdx >= 0) {
+                while (insertIdx < block.length) {
+                    const t = block[insertIdx].trim();
+                    if (isFieldStart(t) || isMarkerLine(t))
+                        break;
+                    insertIdx++;
+                }
+            }
+            else {
+                // MCQ not found, insert after markers
+                insertIdx = 0;
+                while (insertIdx < block.length && isMarkerLine(block[insertIdx].trim())) {
+                    insertIdx++;
+                }
+            }
+            // Insert O | option | lines
+            const oLines = opts.map((opt, idx) => {
+                const content = idx === correctIndex ? opt : opt;
+                return `O | ${content} |`;
+            });
+            // Insert A | correctOption | after O lines
+            if (correctIndex >= 0 && correctIndex < opts.length) {
+                oLines.push(`A | ${opts[correctIndex]} |`);
+            }
+            block = [...block.slice(0, insertIdx), ...oLines, ...block.slice(insertIdx)];
+        }
+    }
+    else if (type === "oq") {
+        block = setTaggedSection(block, ["OQ"], norm(payload.q));
+        const steps = Array.isArray(payload.oqSteps) ? payload.oqSteps : [];
+        // Remove all existing numbered step lines (1-20)
+        block = block.filter((line) => {
+            const trimmed = line.trim();
+            return !/^\d{1,2}\s*\|/.test(trimmed);
+        });
+        // Insert new numbered step lines after OQ field
+        if (steps.length > 0) {
+            let oqIdx = -1;
+            for (let i = 0; i < block.length; i++) {
+                if (/^OQ\s*\|/.test(block[i])) {
+                    oqIdx = i;
+                    break;
+                }
+            }
+            let insertIdx = oqIdx + 1;
+            if (oqIdx >= 0) {
+                while (insertIdx < block.length) {
+                    const t = block[insertIdx].trim();
+                    if (isFieldStart(t) || isMarkerLine(t))
+                        break;
+                    insertIdx++;
+                }
+            }
+            else {
+                insertIdx = 0;
+                while (insertIdx < block.length && isMarkerLine(block[insertIdx].trim())) {
+                    insertIdx++;
+                }
+            }
+            const stepLines = steps.map((step, idx) => `${idx + 1} | ${step} |`);
+            block = [...block.slice(0, insertIdx), ...stepLines, ...block.slice(insertIdx)];
+        }
+    }
+    const outLines = [...lines.slice(0, start), ...block, ...lines.slice(end)];
+    const out = outLines.join("\n");
+    await plugin.app.vault.modify(af, out);
+    const updatedCard = {
+        ...card,
+        title: norm(payload.title) || null,
+        info: norm(payload.info) || null,
+    };
+    if (type === "basic" || type === "reversed") {
+        updatedCard.q = norm(payload.q) || null;
+        updatedCard.a = norm(payload.a) || null;
+    }
+    else if (type === "cloze") {
+        updatedCard.clozeText = norm(payload.clozeText) || null;
+    }
+    else if (type === "mcq") {
+        const options = (Array.isArray(payload.options) ? payload.options : [])
+            .map((x) => String(x || "").trim())
+            .filter(Boolean);
+        const correctIndex = Number.isFinite(payload.correctIndex) ? Number(payload.correctIndex) : -1;
+        const correctIndices = correctIndex >= 0 && correctIndex < options.length ? [correctIndex] : [];
+        updatedCard.stem = norm(payload.stem) || null;
+        updatedCard.options = options;
+        updatedCard.correctIndex = correctIndices.length ? correctIndices[0] : null;
+        updatedCard.correctIndices = correctIndices;
+    }
+    else if (type === "oq") {
+        updatedCard.q = norm(payload.q) || null;
+        updatedCard.oqSteps = (Array.isArray(payload.oqSteps) ? payload.oqSteps : [])
+            .map((x) => String(x || "").trim())
+            .filter(Boolean);
+    }
+    await persistEditedCardAndSiblings(plugin, updatedCard);
+    new Notice(tx("ui.reviewer.notice.saved", "Saved changes to flashcard"));
+}

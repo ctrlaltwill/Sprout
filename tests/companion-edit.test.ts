@@ -5,7 +5,13 @@ import {
   parseEditProposal,
   parseIntentResponse,
 } from "../src/platform/integrations/ai/study-assistant-generator";
+import { buildStudyAssistantHiddenPrompt } from "../src/platform/integrations/ai/study-assistant-hidden-prompts";
 import { validateEditProposal, mentionsFrontmatter } from "../src/views/study-assistant/chat/edit-helpers";
+import {
+  countPendingEditProposalEdits,
+  deriveEditProposalStatusFromEdits,
+  getEditProposalBulkActionCopy,
+} from "../src/views/study-assistant/popup/assistant-popup-helpers";
 
 // ── parseIntentResponse ─────────────────────────────────────────────────────
 
@@ -157,6 +163,16 @@ describe("extractVisibleEditResponseText", () => {
   });
 });
 
+describe("buildStudyAssistantHiddenPrompt", () => {
+  it("uses the summary-first tagged edit contract in edit mode", () => {
+    const prompt = buildStudyAssistantHiddenPrompt("edit");
+
+    expect(prompt).toContain("Return two parts in this exact order");
+    expect(prompt).toContain("<learnkit-edit-proposal>");
+    expect(prompt).not.toContain("Output MUST be strictly valid JSON only.");
+  });
+});
+
 // ── validateEditProposal ────────────────────────────────────────────────────
 
 describe("validateEditProposal", () => {
@@ -274,5 +290,58 @@ describe("mentionsFrontmatter", () => {
 
   it("returns false for normal text", () => {
     expect(mentionsFrontmatter("Fix the grammar")).toBe(false);
+  });
+});
+
+describe("edit proposal bulk action copy", () => {
+  it("shows accept changes while pending edits remain", () => {
+    const editProposal = {
+      summary: "Tightened wording",
+      status: "pending" as const,
+      edits: [
+        { original: "alpha", replacement: "beta", status: "pending" as const },
+        { original: "gamma", replacement: "delta", status: "pending" as const },
+      ],
+    };
+
+    expect(countPendingEditProposalEdits(editProposal)).toBe(2);
+    expect(getEditProposalBulkActionCopy(editProposal)).toMatchObject({
+      showBulkActions: true,
+      acceptFallback: "Accept changes",
+      rejectFallback: "Reject changes",
+    });
+  });
+
+  it("keeps the same labels after some inline decisions", () => {
+    const editProposal = {
+      summary: "Tightened wording",
+      status: "partial" as const,
+      edits: [
+        { original: "alpha", replacement: "beta", status: "accepted" as const },
+        { original: "gamma", replacement: "delta", status: "pending" as const },
+      ],
+    };
+
+    expect(getEditProposalBulkActionCopy(editProposal)).toMatchObject({
+      showBulkActions: true,
+      acceptFallback: "Accept changes",
+      rejectFallback: "Reject changes",
+    });
+    expect(deriveEditProposalStatusFromEdits(editProposal)).toBe("partial");
+  });
+
+  it("hides bulk action buttons once no pending edits remain", () => {
+    const editProposal = {
+      summary: "Tightened wording",
+      status: "partial" as const,
+      edits: [
+        { original: "alpha", replacement: "beta", status: "accepted" as const },
+        { original: "gamma", replacement: "delta", status: "rejected" as const },
+      ],
+    };
+
+    expect(countPendingEditProposalEdits(editProposal)).toBe(0);
+    expect(getEditProposalBulkActionCopy(editProposal).showBulkActions).toBe(false);
+    expect(deriveEditProposalStatusFromEdits(editProposal)).toBe("accepted");
   });
 });

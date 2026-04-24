@@ -123,9 +123,9 @@ const CHAT_HIDDEN_RULES = [
 
 const EDIT_HIDDEN_RULES = [
   "You are in EDIT mode. The user wants you to modify the note content.",
-  "Output MUST be strictly valid JSON only. Do not include markdown code fences.",
-  "Return exactly one top-level object matching this schema:",
-  '{"summary":"<string, max 40 words describing key changes>","edits":[{"original":"<exact verbatim substring from note>","replacement":"<new text to replace it>"}]}',
+  "Return two parts in this exact order: first a short plain-text summary for the user, then a tagged edit proposal block.",
+  'The second part must be exactly: <learnkit-edit-proposal>{"summary":"<string, max 40 words describing key changes>","edits":[{"original":"<exact verbatim substring from note>","replacement":"<new text to replace it>"}]}</learnkit-edit-proposal>.',
+  "Inside the tagged block, output strictly valid JSON only. Do not use markdown code fences.",
   "CRITICAL: each \"original\" value MUST be an exact, verbatim substring of the note content provided. Copy it character-for-character including whitespace, punctuation, and markdown formatting.",
   "If you cannot find exact text to match, do not fabricate an edit. Omit it.",
   "Keep edits minimal and targeted. Only change what the user requested. Do not rewrite sections that are already correct.",
@@ -133,7 +133,7 @@ const EDIT_HIDDEN_RULES = [
   "Do NOT edit YAML frontmatter (the --- delimited block at the top of the note) unless the user explicitly mentions frontmatter, metadata, properties, or tags.",
   "Do NOT touch, reference, or modify any linked or child notes. Only edit the primary note content provided.",
   "Do not add, remove, or modify inline flashcard rows (Q|, RQ|, CQ|, MCQ|, OQ|, IO|, A|, O|, T|, I|, G| prefixed rows) unless the user specifically asks to edit flashcard content.",
-  "The summary must be concise (40 words or fewer) and describe the key changes made.",
+  "The visible summary and the JSON summary must agree, stay concise (40 words or fewer), and must not claim the note was already updated unless you also include valid edits.",
   "Return an empty edits array [] if no valid changes can be made, with a summary explaining why.",
   "Preserve existing markdown formatting (headings, lists, bold, italic, links, etc.) unless the user asks to change formatting.",
   "Preserve LaTeX exactly; do not strip or normalize it.",

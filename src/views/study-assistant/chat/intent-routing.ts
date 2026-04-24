@@ -27,20 +27,44 @@ function looksLikeReviewRequest(value: string): boolean {
 
 function looksLikeEditRequest(value: string): boolean {
   if (!value) return false;
+  if (/\b(?:edit|rewrite|rephrase|change|update|fix|modify|revise)\b[\s\S]{0,20}\b(?:flashcards?|cards?|mcqs?|clozes?|tests?|quiz|settings?|preferences?|config)\b/.test(value)) {
+    return false;
+  }
   if (/\b(?:apply|make|do|implement|use)\b[\s\S]{0,40}\b(?:changes|edits|suggestions|recommendations|revisions)\b/.test(value)) {
+    return true;
+  }
+  if (/\b(?:add|insert|put)\b[\s\S]{0,30}\b(?:it|this|that|them|these|those|summary|key points|bullets?|section|sections)\b[\s\S]{0,20}\b(?:to|in|into|onto)\b[\s\S]{0,20}\b(?:(?:my|the)\s+)?(?:page|note|draft|document|doc|text|content)\b/.test(value)) {
+    return true;
+  }
+  if (/\b(?:edit|work)\b[\s\S]{0,20}\b(?:it|this|that|them|these|those)\b[\s\S]{0,20}\b(?:in|into)\b/.test(value)) {
     return true;
   }
   if (/\bmake\s+(?:it|this|that|them)\s+(?:shorter|longer|clearer|cleaner|better|more concise|more detailed|more formal)\b/.test(value)) {
     return true;
   }
+  if (/\bmake\b[\s\S]{0,30}\b(?:key points|summary|bullets?|section|sections|intro|introduction|conclusion)\b[\s\S]{0,20}\b(?:shorter|longer|clearer|cleaner|better|more concise|more detailed|more formal)\b/.test(value)) {
+    return true;
+  }
 
   const hasEditVerb = /\b(?:rewrite|rephrase|edit|fix|correct|polish|refine|tighten|shorten|expand|clarify|improve|update|change)\b/.test(value);
   if (!hasEditVerb) return false;
-  if (/(?:\b(?:note|draft|paragraph|section|sentence|wording|text|content|summary|intro|introduction|conclusion|bullet|bullets)\b)/.test(value)) {
+  if (/(?:\b(?:note|draft|paragraph|section|sentence|wording|text|content|summary|intro|introduction|conclusion|bullet|bullets|page|document|doc|key points)\b)/.test(value)) {
     return true;
   }
 
   return /^(?:rewrite|rephrase|edit|fix|correct|polish|refine|tighten|shorten|expand|clarify|improve|update|change)\b[\s\S]{0,40}\b(?:this|my|it)\b/.test(value);
+}
+
+function assistantRecentlyOfferedNoteEdits(recentMessages: StudyAssistantIntentContextMessage[]): boolean {
+  return recentMessages
+    .slice(-4)
+    .some((message) => message.role === "assistant" && /\b(?:if you want|i can|i could|want me to|shall i|should i|here is|here's)\b[\s\S]{0,80}\b(?:rewrite|rephrase|revise|refine|edit|implement|apply|add|insert|put)\b/.test(String(message.text || "").toLowerCase()));
+}
+
+function looksLikeContextualEditFollowUp(value: string, recentMessages: StudyAssistantIntentContextMessage[]): boolean {
+  if (!value || !assistantRecentlyOfferedNoteEdits(recentMessages)) return false;
+
+  return /^(?:please|yes|yes please|yeah|yep|sure|ok(?:ay)?|alright|go ahead|do it|edit it in|add it(?: to my note)?|add that(?: to my note)?|put (?:it|that)(?: (?:in|into|onto|to))?(?: (?:my|the))? note|implement (?:it|that|them)|apply (?:it|that|them)|use that|make the changes)\b/.test(value);
 }
 
 function needsIntentClassifierFallback(value: string, recentMessages: StudyAssistantIntentContextMessage[]): boolean {
@@ -55,9 +79,13 @@ function needsIntentClassifierFallback(value: string, recentMessages: StudyAssis
     return true;
   }
 
+  if (/^(?:please|yes|yeah|yep|sure|ok(?:ay)?|alright|sounds good|that works|looks good)\b/.test(compact)) {
+    return true;
+  }
+
   return words.length <= 7
     && /\b(?:it|that|this|them|those)\b/.test(compact)
-    && /\b(?:apply|do|implement|make|fix|rewrite|rephrase|shorten|expand|clarify|improve|review|generate|turn|change|update)\b/.test(compact);
+    && /\b(?:apply|add|insert|put|do|implement|make|fix|rewrite|rephrase|shorten|expand|clarify|improve|review|generate|turn|change|update)\b/.test(compact);
 }
 
 export function inferStudyAssistantIntentHeuristically(params: {
@@ -70,11 +98,12 @@ export function inferStudyAssistantIntentHeuristically(params: {
   const hasPriorGenerateContext = !!params.hasPriorGenerateContext;
 
   if (!value) return { intent: "ask", requiresClassifierFallback: false };
+  if (looksLikeContextualEditFollowUp(value, recentMessages)) return { intent: "edit", requiresClassifierFallback: false };
+  if (looksLikeEditRequest(value)) return { intent: "edit", requiresClassifierFallback: false };
   if (isTestGenerationRequest(value) || isGenerateFlashcardRequest(value, hasPriorGenerateContext)) {
     return { intent: "generate", requiresClassifierFallback: false };
   }
   if (looksLikeReviewRequest(value)) return { intent: "review", requiresClassifierFallback: false };
-  if (looksLikeEditRequest(value)) return { intent: "edit", requiresClassifierFallback: false };
 
   return {
     intent: "ask",

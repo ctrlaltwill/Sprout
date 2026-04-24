@@ -633,6 +633,17 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   border-radius: 0;
 }
 
+.learnkit .learnkit-cloze-hint {
+  border-bottom: 0.5px solid var(--foreground);
+  display: inline-block;
+  min-height: 1em;
+  margin-left: 0;
+  margin-right: 4px;
+  padding-bottom: 1px;
+  border-radius: 0;
+  font-weight: 600;
+}
+
 /* ---- Ensure session cards stay content-sized ---- */
 
 .learnkit .lk-session-card.card {
@@ -966,10 +977,20 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--learnkit-good-bg) 12%) !important;
 }
 
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-mcq-correct-highlight, .learnkit-oq-correct-highlight) :is(.learnkit-mcq-option-text, .learnkit-mcq-option-line, .learnkit-oq-step-text) {
+  color: var(--learnkit-good-bg) !important;
+  font-weight: 600;
+}
+
 .learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-mcq-wrong-highlight, .learnkit-oq-wrong-highlight) :is(kbd, .kbd) {
   background: color-mix(in srgb, var(--destructive) 50%, transparent) !important;
   border-color: color-mix(in srgb, var(--destructive) 48%, transparent) !important;
   color: color-mix(in srgb, rgb(255, 255, 255) 88%, var(--destructive) 12%) !important;
+}
+
+.learnkit :is(.lk-session-card, .learnkit-gatekeeper-modal, .learnkit-widget, .learnkit-widget-card-body) :is(.learnkit-mcq-wrong-highlight, .learnkit-oq-wrong-highlight) :is(.learnkit-mcq-option-text, .learnkit-mcq-option-line, .learnkit-oq-step-text) {
+  color: var(--learnkit-again-bg) !important;
+  font-weight: 600;
 }
 
 .learnkit-mcq-option-text {

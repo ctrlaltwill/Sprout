@@ -20,7 +20,6 @@ import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
 import { bestEffortAttachmentPath, normaliseVaultPath, writeBinaryToVault } from "../../../platform/modals/modal-utils";
 import {
   generateStudyAssistantChatReplyStreaming,
-  generateStudyAssistantSuggestions,
   generateStudyAssistantSuggestionsStreaming,
   extractVisibleEditResponseText,
   parseEditProposal,
@@ -77,7 +76,12 @@ import {
 } from "../chat/generation-helpers";
 import { inferStudyAssistantIntentHeuristically } from "../chat/intent-routing";
 import { validateEditProposal, mentionsFrontmatter } from "../chat/edit-helpers";
-import { setEditProposals, clearEditProposals } from "../editor/edit-decorations";
+import {
+  setEditProposals,
+  clearEditProposals,
+  EDIT_PROPOSAL_RESOLVED_EVENT_NAME,
+  type EditProposalResolvedEventDetail,
+} from "../editor/edit-decorations";
 import {
   ASSISTANT_MODES,
   CHAT_LOG_SYNC_EVENT_NAME,
@@ -98,6 +102,11 @@ import {
 } from "./assistant-popup-suggestion-rows";
 import { validateGeneratedCardBlock } from "./assistant-popup-validation";
 import { formatAssistantError, logAssistantRequestError } from "./assistant-popup-error";
+import {
+  countPendingEditProposalEdits,
+  deriveEditProposalStatusFromEdits,
+  getEditProposalBulkActionCopy,
+} from "./assistant-popup-helpers";
 import {
   bestEffortDeleteRemoteConversation,
   clearRemoteConversationForMode,
@@ -177,6 +186,7 @@ export class SproutAssistantPopup {
   private _isStreaming = false;
   private _activeStreamingMode: AssistantMode | null = null;
   private _streamAbort: AbortController | null = null;
+  private _streamAbortRequestedByUser = false;
   private _streamRenderTimer: number | null = null;
 
   // Review state
@@ -261,6 +271,7 @@ export class SproutAssistantPopup {
   private _leafSessions = new WeakMap<WorkspaceLeaf, AssistantLeafSession>();
 
   private _onChatLogSynced: ((e: Event) => void) | null = null;
+  private _onEditProposalResolved: ((e: Event) => void) | null = null;
 
   constructor(plugin: LearnKitPlugin) {
     this.plugin = plugin;
@@ -321,6 +332,46 @@ export class SproutAssistantPopup {
       this._onChatLogSynced as EventListener,
     );
     this._onChatLogSynced = null;
+  }
+
+  private _registerEditProposalResolutionListener(): void {
+    if (this._onEditProposalResolved) return;
+    this._onEditProposalResolved = (event: Event) => {
+      const custom = event as CustomEvent<EditProposalResolvedEventDetail>;
+      const detail = custom?.detail;
+      if (!detail) return;
+      if (!this._applyInlineEditProposalResolution(detail)) return;
+      this._scheduleSave();
+      if (this.isOpen) this.render();
+    };
+    window.addEventListener(
+      EDIT_PROPOSAL_RESOLVED_EVENT_NAME,
+      this._onEditProposalResolved as EventListener,
+    );
+  }
+
+  private _unregisterEditProposalResolutionListener(): void {
+    if (!this._onEditProposalResolved) return;
+    window.removeEventListener(
+      EDIT_PROPOSAL_RESOLVED_EVENT_NAME,
+      this._onEditProposalResolved as EventListener,
+    );
+    this._onEditProposalResolved = null;
+  }
+
+  private _applyInlineEditProposalResolution(detail: EditProposalResolvedEventDetail): boolean {
+    for (const message of this.chatMessages) {
+      const editProposal = message.editProposal;
+      if (!editProposal || editProposal.status === "expired") continue;
+      const edit = editProposal.edits.find((candidate) => candidate.status === "pending"
+        && candidate.original === detail.original
+        && candidate.replacement === detail.replacement);
+      if (!edit) continue;
+      edit.status = detail.action === "accept" ? "accepted" : "rejected";
+      editProposal.status = deriveEditProposalStatusFromEdits(editProposal);
+      return true;
+    }
+    return false;
   }
 
   private _emitChatLogSynced(filePath: string): void {
@@ -836,6 +887,7 @@ export class SproutAssistantPopup {
 
     this._syncSessionForActiveLeaf();
     this._registerChatLogSyncListener();
+    this._registerEditProposalResolutionListener();
 
     // Trigger button
     const btn = document.createElement("button");
@@ -925,6 +977,7 @@ export class SproutAssistantPopup {
     this.embeddedHost = host;
     this._syncSessionForActiveLeaf();
     this._registerChatLogSyncListener();
+    this._registerEditProposalResolutionListener();
 
     this.triggerBtn?.remove();
     this.triggerBtn = null;
@@ -984,6 +1037,7 @@ export class SproutAssistantPopup {
     }
     this._captureCurrentLeafSession();
     this._unregisterChatLogSyncListener();
+    this._unregisterEditProposalResolutionListener();
     this.popupEl?.remove();
     this.popupEl = null;
     this.triggerBtn?.remove();
@@ -1444,8 +1498,13 @@ export class SproutAssistantPopup {
     return shouldShowAskSwitch((token, fallback, vars) => this._tx(token, fallback, vars), text);
   }
 
+  private _hasPriorGenerateContext(messages: ChatMessage[] = this.chatMessages): boolean {
+    if (this.generateSuggestionBatches.length > 0) return true;
+    return messages.slice(-6).some((message) => message.role === "user" && isGenerateFlashcardRequest(message.text, false));
+  }
+
   private _isGenerateFlashcardRequest(text: string): boolean {
-    const hasPriorGenerateContext = this.chatMessages.length > 0 || this.generateSuggestionBatches.length > 0;
+    const hasPriorGenerateContext = this._hasPriorGenerateContext();
     return isGenerateFlashcardRequest(text, hasPriorGenerateContext);
   }
 
@@ -1697,8 +1756,93 @@ export class SproutAssistantPopup {
   }
 
   private _beginStreaming(mode: AssistantMode): void {
+    this._streamAbortRequestedByUser = false;
     this._activeStreamingMode = mode;
     this._captureVisibleChatScrollTop(mode);
+  }
+
+  private _isStopActionAvailable(mode: AssistantMode): boolean {
+    return this._activeStreamingMode === mode && !!this._streamAbort;
+  }
+
+  private _requestStopActiveStream(mode: AssistantMode): void {
+    if (!this._isStopActionAvailable(mode)) return;
+    this._streamAbortRequestedByUser = true;
+    this._streamAbort?.abort();
+  }
+
+  private _consumeUserStopRequest(): boolean {
+    const requested = this._streamAbortRequestedByUser;
+    this._streamAbortRequestedByUser = false;
+    return requested;
+  }
+
+  private _stoppedReplyStatusText(): string {
+    return this._tx("ui.studyAssistant.chat.stoppedReply", "Response stopped.");
+  }
+
+  private _stoppedPartialReplyStatusText(): string {
+    return this._tx("ui.studyAssistant.chat.stoppedReplyPartial", "Response stopped early.");
+  }
+
+  private _stoppedGenerationStatusText(generatedCount = 0): string {
+    if (generatedCount > 0) {
+      return this._tx(
+        "ui.studyAssistant.generator.stoppedAfterCount",
+        "Stopped after generating {count} flashcard{suffix}. Use + to insert.",
+        {
+          count: generatedCount,
+          suffix: generatedCount === 1 ? "" : "s",
+        },
+      );
+    }
+    return this._tx("ui.studyAssistant.generator.stopped", "Generation stopped.");
+  }
+
+  private _finalizeStoppedAssistantMessage(messages: ChatMessage[], streamingMsg: ChatMessage, placeholderPushed: boolean): void {
+    const replyText = String(streamingMsg.text || "").trim();
+    const stoppedText = replyText
+      ? `${replyText}\n\n_${this._stoppedPartialReplyStatusText()}_`
+      : this._stoppedReplyStatusText();
+
+    if (!placeholderPushed) {
+      messages.push({ role: "assistant", text: stoppedText });
+      return;
+    }
+
+    streamingMsg.text = stoppedText;
+  }
+
+  private _configureComposerSendButton(
+    button: HTMLButtonElement,
+    options: {
+      mode: AssistantMode;
+      busy: boolean;
+      sendLabel: string;
+      stopLabel: string;
+      onSend: () => void;
+    },
+  ): void {
+    const applyState = (): void => {
+      const canStop = this._isStopActionAvailable(options.mode);
+      const showStopIcon = canStop && button.matches(":hover");
+      button.disabled = options.busy && !canStop;
+      button.toggleClass("is-stop-enabled", canStop);
+      button.setAttribute("aria-label", showStopIcon ? options.stopLabel : options.sendLabel);
+      setIcon(button, showStopIcon ? "square" : (options.busy ? "loader-2" : "arrow-up"));
+    };
+
+    applyState();
+    button.addEventListener("mouseenter", applyState);
+    button.addEventListener("mouseleave", applyState);
+    button.addEventListener("click", () => {
+      if (this._isStopActionAvailable(options.mode)) {
+        this._requestStopActiveStream(options.mode);
+        applyState();
+        return;
+      }
+      options.onSend();
+    });
   }
 
   private _shouldAutoFollowChat(mode: AssistantMode): boolean {
@@ -2977,7 +3121,7 @@ export class SproutAssistantPopup {
       const routing = inferStudyAssistantIntentHeuristically({
         text: draft,
         recentMessages: priorMessages,
-        hasPriorGenerateContext: priorMessages.length > 0 || this.generateSuggestionBatches.length > 0,
+        hasPriorGenerateContext: this._hasPriorGenerateContext(priorMessages),
       });
       intent = routing.intent;
 
@@ -3066,6 +3210,7 @@ export class SproutAssistantPopup {
     this.render();
 
     let placeholderPushed = false;
+    const streamingMsg: ChatMessage = { role: "assistant", text: "" };
 
     try {
       const settings = this.plugin.settings.studyAssistant;
@@ -3105,7 +3250,6 @@ export class SproutAssistantPopup {
 
       // Streaming placeholder – deferred until the first token arrives so
       // the typing indicator stays visible and no empty bubble is shown.
-      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
       this._streamingReplyText = "";
       this._streamAbort = new AbortController();
       this._beginStreaming("assistant");
@@ -3179,11 +3323,14 @@ export class SproutAssistantPopup {
         }
       }
       if ((e as Error)?.name === "AbortError") {
+        const wasStoppedByUser = this._consumeUserStopRequest();
+        if (wasStoppedByUser) this._finalizeStoppedAssistantMessage(this.chatMessages, streamingMsg, placeholderPushed);
         askLatency.completedAt = performance.now();
         askLatency.outcome = "aborted";
         this._logAskLatency(askLatency);
         return;
       }
+      this._streamAbortRequestedByUser = false;
       const userMessage = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("ask", e, userMessage);
       askLatency.completedAt = performance.now();
@@ -3191,6 +3338,7 @@ export class SproutAssistantPopup {
       this._logAskLatency(askLatency);
       this.chatError = userMessage;
     } finally {
+      this._streamAbortRequestedByUser = false;
       this.isSendingChat = false;
       if (this.activeFile?.path === originPath) {
         this._scheduleSave();
@@ -3226,12 +3374,12 @@ export class SproutAssistantPopup {
     this.render();
 
     let placeholderPushed = false;
+    const streamingMsg: ChatMessage = { role: "assistant", text: "" };
 
     try {
       const noteContent = await this.readActiveMarkdown(file);
       const settings = this.plugin.settings.studyAssistant;
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "assistant")?.conversationId;
-      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
       let streamingRawReplyText = "";
       this._streamingReplyText = "";
       this._streamAbort = new AbortController();
@@ -3273,19 +3421,30 @@ export class SproutAssistantPopup {
 
       this._isStreaming = false;
       this._streamAbort = null;
+      this._streamAbortRequestedByUser = false;
 
       setRemoteConversationForMode(this.remoteConversationsByMode, "assistant", result.conversationId, this.plugin.settings.studyAssistant);
       const proposal = parseEditProposal(result.reply);
       const streamedSummary = extractVisibleEditResponseText(result.reply).trim();
       const fallbackText = proposal?.summary || streamedSummary || this._tx("ui.studyAssistant.edit.noChanges", "No changes could be made to the note.");
+      const invalidProposalText = this._tx(
+        "ui.studyAssistant.edit.invalidProposal",
+        "I couldn't prepare an editable note update this time, so nothing was written to the note. Please try again with a direct instruction like 'rewrite this section and add it to my note'.",
+      );
 
       // File-switch guard: if user moved to another note, persist reply to originating file
       if (this.activeFile?.path !== originPath) {
-        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: fallbackText });
+        await this._appendResponseToPersistedChat(file, "messages", { role: "assistant", text: proposal ? fallbackText : invalidProposalText });
         return;
       }
 
-      if (!proposal || !proposal.edits.length) {
+      if (!proposal) {
+        if (!placeholderPushed) {
+          this.chatMessages.push({ role: "assistant", text: invalidProposalText });
+        } else {
+          streamingMsg.text = invalidProposalText;
+        }
+      } else if (!proposal.edits.length) {
         if (!placeholderPushed) {
           this.chatMessages.push({ role: "assistant", text: fallbackText });
         } else {
@@ -3331,11 +3490,17 @@ export class SproutAssistantPopup {
           this.chatMessages.pop();
         }
       }
-      if ((e as Error)?.name === "AbortError") return;
+      if ((e as Error)?.name === "AbortError") {
+        const wasStoppedByUser = this._consumeUserStopRequest();
+        if (wasStoppedByUser) this._finalizeStoppedAssistantMessage(this.chatMessages, streamingMsg, placeholderPushed);
+        return;
+      }
+      this._streamAbortRequestedByUser = false;
       const errMsg = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("edit", e, errMsg);
       this.chatError = errMsg;
     } finally {
+      this._streamAbortRequestedByUser = false;
       this.isSendingChat = false;
       if (this.activeFile?.path === originPath) {
         this._scheduleSave();
@@ -3426,12 +3591,7 @@ export class SproutAssistantPopup {
     }
 
     // Update proposal status
-    const allResolved = editProposal.edits.every(e => e.status !== "pending");
-    if (allResolved) {
-      editProposal.status = editProposal.edits.some(e => e.status === "accepted") ? "accepted" : "rejected";
-    } else {
-      editProposal.status = "partial";
-    }
+    editProposal.status = deriveEditProposalStatusFromEdits(editProposal);
 
     // Clear CM6 decorations
     this._clearEditDecorations();
@@ -3443,7 +3603,7 @@ export class SproutAssistantPopup {
     for (const edit of editProposal.edits) {
       if (edit.status === "pending") edit.status = "rejected";
     }
-    editProposal.status = "rejected";
+    editProposal.status = deriveEditProposalStatusFromEdits(editProposal);
 
     this._clearEditDecorations();
     this._scheduleSave();
@@ -3453,7 +3613,7 @@ export class SproutAssistantPopup {
   private _expireStaleEditProposals(): void {
     let changed = false;
     for (const msg of this.chatMessages) {
-      if (msg.editProposal && msg.editProposal.status === "pending") {
+      if (msg.editProposal && msg.editProposal.status !== "expired" && countPendingEditProposalEdits(msg.editProposal) > 0) {
         for (const edit of msg.editProposal.edits) {
           if (edit.status === "pending") edit.status = "rejected";
         }
@@ -3463,6 +3623,7 @@ export class SproutAssistantPopup {
     }
     if (changed) {
       this._clearEditDecorations();
+      this._scheduleSave();
     }
   }
 
@@ -3573,6 +3734,7 @@ export class SproutAssistantPopup {
 
       this._isStreaming = false;
       this._streamAbort = null;
+      this._streamAbortRequestedByUser = false;
 
       const reply = String(result.reply || "").trim() || this._tx(
         "ui.studyAssistant.chat.emptyReply",
@@ -3841,6 +4003,7 @@ export class SproutAssistantPopup {
     this.render();
 
     let placeholderPushed = false;
+    const streamingMsg: ChatMessage = { role: "assistant", text: "" };
 
     try {
       const noteContent = await this.readActiveMarkdown(file);
@@ -3870,7 +4033,6 @@ export class SproutAssistantPopup {
       const conversationId = getRemoteConversationForMode(this.remoteConversationsByMode, "review")?.conversationId;
 
       // Streaming placeholder – deferred until the first token arrives
-      const streamingMsg: ChatMessage = { role: "assistant", text: "" };
       this._streamingReplyText = "";
       this._streamAbort = new AbortController();
       this._beginStreaming("review");
@@ -3934,11 +4096,17 @@ export class SproutAssistantPopup {
           this.reviewMessages.pop();
         }
       }
-      if ((e as Error)?.name === "AbortError") return;
+      if ((e as Error)?.name === "AbortError") {
+        const wasStoppedByUser = this._consumeUserStopRequest();
+        if (wasStoppedByUser) this._finalizeStoppedAssistantMessage(this.reviewMessages, streamingMsg, placeholderPushed);
+        return;
+      }
+      this._streamAbortRequestedByUser = false;
       const userMessage = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("review", e, userMessage);
       this.reviewError = userMessage;
     } finally {
+      this._streamAbortRequestedByUser = false;
       this.isReviewingNote = false;
       if (this.activeFile?.path === originPath) {
         this._scheduleSave();
@@ -4219,6 +4387,9 @@ export class SproutAssistantPopup {
     const genAttachedUrls = this._collectAttachedFileDataUrls();
     this._clearAttachments();
     this.render();
+    let requestedSuggestionCount = 0;
+    const streamedSuggestions: StudyAssistantSuggestion[] = [];
+    const streamedSuggestionKeys = new Set<string>();
     try {
       const noteContent = await this.readActiveMarkdown(file);
       const settings = this.plugin.settings.studyAssistant;
@@ -4261,23 +4432,49 @@ export class SproutAssistantPopup {
 
       const invalidRetryThreshold = 0.5;
 
-      let result = await generateStudyAssistantSuggestions({
+      requestedSuggestionCount = this._resolveRequestedGenerateCount(extraRequest, targetSuggestionCount);
+
+      const collectValidSuggestions = (candidates: StudyAssistantSuggestion[]): void => {
+        if (!Array.isArray(candidates) || !candidates.length) return;
+        if (streamedSuggestions.length >= requestedSuggestionCount) return;
+
+        const { validSuggestions } = this.validateSuggestionsForDisplay(file, candidates);
+        for (const suggestion of validSuggestions) {
+          const key = this._suggestionStreamKey(suggestion);
+          if (streamedSuggestionKeys.has(key)) continue;
+          streamedSuggestionKeys.add(key);
+          streamedSuggestions.push(suggestion);
+          if (streamedSuggestions.length >= requestedSuggestionCount) break;
+        }
+      };
+
+      this._streamAbort = new AbortController();
+      this._beginStreaming("generate");
+      let result = await generateStudyAssistantSuggestionsStreaming({
         settings,
         input: {
           ...generationInputBase,
           customInstructions,
           conversationId,
         },
+        signal: this._streamAbort.signal,
+        onSuggestion: (suggestion) => {
+          collectValidSuggestions([suggestion]);
+        },
       });
+      this._streamAbort = null;
+      this._streamAbortRequestedByUser = false;
       setRemoteConversationForMode(this.remoteConversationsByMode, "generate", result.conversationId, this.plugin.settings.studyAssistant);
 
       let generatedSuggestionsRaw = Array.isArray(result.suggestions) ? result.suggestions : [];
       let { validSuggestions: generatedSuggestions, rejectedReasons } = this.validateSuggestionsForDisplay(file, generatedSuggestionsRaw);
+      collectValidSuggestions(generatedSuggestions);
 
       const firstAttemptTotal = generatedSuggestionsRaw.length;
       const firstAttemptRejected = rejectedReasons.length;
       const firstAttemptInvalidRatio = firstAttemptTotal > 0 ? firstAttemptRejected / firstAttemptTotal : 0;
-      const shouldRetryForFormat = firstAttemptTotal === 0 || (firstAttemptTotal > 0 && firstAttemptInvalidRatio > invalidRetryThreshold);
+      const shouldRetryForFormat = streamedSuggestions.length < requestedSuggestionCount
+        && (firstAttemptTotal === 0 || (firstAttemptTotal > 0 && firstAttemptInvalidRatio > invalidRetryThreshold));
 
       if (shouldRetryForFormat) {
         const retryStatus = this._tx(
@@ -4306,33 +4503,43 @@ export class SproutAssistantPopup {
             : "",
         ].filter(Boolean).join("\n\n");
 
-        result = await generateStudyAssistantSuggestions({
+        this._streamAbort = new AbortController();
+        this._beginStreaming("generate");
+        result = await generateStudyAssistantSuggestionsStreaming({
           settings,
           input: {
             ...generationInputBase,
             customInstructions: retryInstructions,
             conversationId: result.conversationId,
           },
+          signal: this._streamAbort.signal,
+          onSuggestion: (suggestion) => {
+            collectValidSuggestions([suggestion]);
+          },
         });
+        this._streamAbort = null;
+        this._streamAbortRequestedByUser = false;
         setRemoteConversationForMode(this.remoteConversationsByMode, "generate", result.conversationId, this.plugin.settings.studyAssistant);
 
         generatedSuggestionsRaw = Array.isArray(result.suggestions) ? result.suggestions : [];
         ({ validSuggestions: generatedSuggestions, rejectedReasons } = this.validateSuggestionsForDisplay(file, generatedSuggestionsRaw));
+        collectValidSuggestions(generatedSuggestions);
       }
 
       const rejectedCount = rejectedReasons.length;
-      const assistantJson = this._formatGeneratedSuggestionsAsJsonMessage(generatedSuggestions);
+      const finalSuggestions = streamedSuggestions.slice(0, requestedSuggestionCount);
+      const assistantJson = this._formatGeneratedSuggestionsAsJsonMessage(finalSuggestions);
       this.generateMessages.push({ role: "assistant", text: assistantJson });
       this._notifyIncomingAssistantReply("generate");
       const assistantMessageIndex = this.generateMessages.length - 1;
-      if (generatedSuggestions.length) {
+      if (finalSuggestions.length) {
         this.generateSuggestionBatches.push({
           source: "generate",
           assistantMessageIndex,
-          suggestions: generatedSuggestions,
+          suggestions: finalSuggestions,
         });
       }
-      if (!generatedSuggestions.length) {
+      if (!finalSuggestions.length) {
         const firstRejectedReason = rejectedReasons[0] ? ` ${rejectedReasons[0]}` : "";
         this.generatorError = rejectedCount > 0
           ? this._tx(
@@ -4356,11 +4563,29 @@ export class SproutAssistantPopup {
 
       this._scheduleSave();
     } catch (e) {
+      this._streamAbort = null;
+      const wasStoppedByUser = (e as Error)?.name === "AbortError" && this._consumeUserStopRequest();
+      if (wasStoppedByUser) {
+        const partialSuggestions = streamedSuggestions.slice(0, requestedSuggestionCount || streamedSuggestions.length);
+        this.generateMessages.push({ role: "assistant", text: this._stoppedGenerationStatusText(partialSuggestions.length) });
+        if (partialSuggestions.length) {
+          this.generateSuggestionBatches.push({
+            source: "generate",
+            assistantMessageIndex: this.generateMessages.length - 1,
+            suggestions: partialSuggestions,
+          });
+        }
+        return;
+      }
+      this._streamAbortRequestedByUser = false;
       const userMessage = formatAssistantError(e, (token, fallback, vars) => this._tx(token, fallback, vars));
       logAssistantRequestError("generate", e, userMessage);
       this.generatorError = userMessage;
     } finally {
+      this._streamAbort = null;
+      this._streamAbortRequestedByUser = false;
       this.isGenerating = false;
+      this._activeStreamingMode = null;
       this._scheduleSave();
       this.render();
     }
@@ -4575,6 +4800,8 @@ export class SproutAssistantPopup {
         }
       };
 
+      this._streamAbort = new AbortController();
+      this._beginStreaming("assistant");
       let result = await generateStudyAssistantSuggestionsStreaming({
         settings,
         input: {
@@ -4582,10 +4809,13 @@ export class SproutAssistantPopup {
           customInstructions,
           conversationId,
         },
+        signal: this._streamAbort.signal,
         onSuggestion: (suggestion) => {
           collectValidSuggestions([suggestion]);
         },
       });
+      this._streamAbort = null;
+      this._streamAbortRequestedByUser = false;
       setRemoteConversationForMode(this.remoteConversationsByMode, "generate", result.conversationId, this.plugin.settings.studyAssistant);
 
       let generatedSuggestionsRaw = Array.isArray(result.suggestions) ? result.suggestions : [];
@@ -4617,6 +4847,8 @@ export class SproutAssistantPopup {
             : "",
         ].filter(Boolean).join("\n\n");
 
+        this._streamAbort = new AbortController();
+        this._beginStreaming("assistant");
         result = await generateStudyAssistantSuggestionsStreaming({
           settings,
           input: {
@@ -4624,10 +4856,13 @@ export class SproutAssistantPopup {
             customInstructions: retryInstructions,
             conversationId: result.conversationId,
           },
+          signal: this._streamAbort.signal,
           onSuggestion: (suggestion) => {
             collectValidSuggestions([suggestion]);
           },
         });
+        this._streamAbort = null;
+        this._streamAbortRequestedByUser = false;
         setRemoteConversationForMode(this.remoteConversationsByMode, "generate", result.conversationId, this.plugin.settings.studyAssistant);
 
         generatedSuggestionsRaw = Array.isArray(result.suggestions) ? result.suggestions : [];
@@ -4699,6 +4934,17 @@ export class SproutAssistantPopup {
 
       this._scheduleSave();
     } catch (e) {
+      this._streamAbort = null;
+      const wasStoppedByUser = (e as Error)?.name === "AbortError" && this._consumeUserStopRequest();
+      if (wasStoppedByUser) {
+        const generatedCount = liveSuggestionBatch?.suggestions.length ?? 0;
+        if (streamingSummaryMessage) streamingSummaryMessage.text = this._stoppedGenerationStatusText(generatedCount);
+        if (liveSuggestionBatch && generatedCount <= 0) {
+          this.generateSuggestionBatches = this.generateSuggestionBatches.filter((batch) => batch !== liveSuggestionBatch);
+        }
+        return;
+      }
+      this._streamAbortRequestedByUser = false;
       if (streamingSummaryMessage) {
         this.chatMessages = this.chatMessages.filter((message) => message !== streamingSummaryMessage);
       }
@@ -4709,7 +4955,10 @@ export class SproutAssistantPopup {
       logAssistantRequestError("generate", e, userMessageText);
       this.chatError = userMessageText;
     } finally {
+      this._streamAbort = null;
+      this._streamAbortRequestedByUser = false;
       this.isGenerating = false;
+      this._activeStreamingMode = null;
       if (this.activeFile?.path === originPath) {
         this._scheduleSave();
         this.render();
@@ -5770,12 +6019,13 @@ export class SproutAssistantPopup {
       // Render edit proposal Accept/Reject buttons
       if (msg.role === "assistant" && msg.editProposal) {
         const ep = msg.editProposal;
+        const bulkActionCopy = getEditProposalBulkActionCopy(ep);
 
-        if (ep.status === "pending") {
+        if (bulkActionCopy.showBulkActions) {
           const editActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-edit-actions" });
           const acceptBtn = editActions.createEl("button", {
             cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-accept-btn",
-            text: this._tx("ui.studyAssistant.edit.acceptAll", "Accept all changes"),
+            text: this._tx(bulkActionCopy.acceptToken, bulkActionCopy.acceptFallback),
           });
           acceptBtn.type = "button";
           acceptBtn.addEventListener("click", () => {
@@ -5784,28 +6034,12 @@ export class SproutAssistantPopup {
 
           const rejectBtn = editActions.createEl("button", {
             cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-reject-btn",
-            text: this._tx("ui.studyAssistant.edit.reject", "Reject changes"),
+            text: this._tx(bulkActionCopy.rejectToken, bulkActionCopy.rejectFallback),
           });
           rejectBtn.type = "button";
           rejectBtn.addEventListener("click", () => {
             this._rejectAllPendingEdits(ep);
           });
-        } else if (ep.status === "accepted" || ep.status === "partial") {
-          const editActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-edit-actions" });
-          const doneBtn = editActions.createEl("button", {
-            cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-accept-btn is-clicked",
-            text: this._tx("ui.studyAssistant.edit.acceptAll", "Accept all changes"),
-          });
-          doneBtn.type = "button";
-          doneBtn.disabled = true;
-        } else if (ep.status === "rejected") {
-          const editActions = chatWrap.createDiv({ cls: "learnkit-assistant-popup-review-starters learnkit-assistant-popup-review-starters learnkit-assistant-popup-edit-actions" });
-          const doneBtn = editActions.createEl("button", {
-            cls: "learnkit-assistant-popup-btn learnkit-assistant-popup-btn learnkit-assistant-popup-edit-reject-btn is-clicked",
-            text: this._tx("ui.studyAssistant.edit.reject", "Reject changes"),
-          });
-          doneBtn.type = "button";
-          doneBtn.disabled = true;
         }
         // expired: show nothing – buttons disappear when user types a new message
       }
@@ -5883,10 +6117,16 @@ export class SproutAssistantPopup {
 
     const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
-    sendBtn.disabled = this._isAssistantBusy();
-    sendBtn.setAttribute("aria-label", this._tx("ui.assistant.send", "Send"));
-    setIcon(sendBtn, this._isAssistantBusy() ? "loader-2" : "arrow-up");
-    sendBtn.addEventListener("click", () => void this.sendChatMessage());
+    sendBtn.setAttribute("data-tooltip-position", "top");
+    this._configureComposerSendButton(sendBtn, {
+      mode: "assistant",
+      busy: this._isAssistantBusy(),
+      sendLabel: this._tx("ui.assistant.send", "Send"),
+      stopLabel: this._tx("ui.studyAssistant.chat.stop", "Stop response"),
+      onSend: () => {
+        void this.sendChatMessage();
+      },
+    });
 
     this._bindComposerFocusOnExplicitClick(composer, shell, input);
     this._suppressAssistantComposerFocusOnce = false;
@@ -5987,15 +6227,18 @@ export class SproutAssistantPopup {
 
     const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
-    sendBtn.disabled = this.isReviewingNote;
-    sendBtn.setAttribute("aria-label", this._tx("ui.studyAssistant.chat.send", "Send"));
     sendBtn.setAttribute("data-tooltip-position", "top");
-    setIcon(sendBtn, this.isReviewingNote ? "loader-2" : "arrow-up");
-    sendBtn.addEventListener("click", () => {
-      const draft = this.reviewDraft.trim();
-      this.reviewDraft = "";
-      input.value = "";
-      void this.sendReviewMessage(draft);
+    this._configureComposerSendButton(sendBtn, {
+      mode: "review",
+      busy: this.isReviewingNote,
+      sendLabel: this._tx("ui.studyAssistant.chat.send", "Send"),
+      stopLabel: this._tx("ui.studyAssistant.chat.stop", "Stop response"),
+      onSend: () => {
+        const draft = this.reviewDraft.trim();
+        this.reviewDraft = "";
+        input.value = "";
+        void this.sendReviewMessage(draft);
+      },
     });
 
     this._bindComposerFocusOnExplicitClick(composer, shell, input);
@@ -6179,11 +6422,16 @@ export class SproutAssistantPopup {
 
     const sendBtn = shell.createEl("button", { cls: "learnkit-assistant-popup-send learnkit-assistant-popup-send" });
     sendBtn.type = "button";
-    sendBtn.disabled = this.isGenerating;
-    sendBtn.setAttribute("aria-label", this._tx("ui.studyAssistant.chat.send", "Send"));
     sendBtn.setAttribute("data-tooltip-position", "top");
-    setIcon(sendBtn, this.isGenerating ? "loader-2" : "arrow-up");
-    sendBtn.addEventListener("click", () => void this.sendGenerateMessage());
+    this._configureComposerSendButton(sendBtn, {
+      mode: "generate",
+      busy: this.isGenerating,
+      sendLabel: this._tx("ui.studyAssistant.chat.send", "Send"),
+      stopLabel: this._tx("ui.studyAssistant.generator.stop", "Stop generation"),
+      onSend: () => {
+        void this.sendGenerateMessage();
+      },
+    });
 
     this._bindComposerFocusOnExplicitClick(composer, shell, input);
   }

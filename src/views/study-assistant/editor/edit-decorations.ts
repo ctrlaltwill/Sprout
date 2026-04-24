@@ -39,15 +39,27 @@ export type EditProposalEntry = {
   replacement: string;
 };
 
+export type EditProposalResolvedEventDetail = {
+  original: string;
+  replacement: string;
+  action: "accept" | "reject";
+};
+
 // ── State effects ──
 
 export const setEditProposals = StateEffect.define<EditProposalEntry[]>();
 export const clearEditProposals = StateEffect.define<null>();
+export const EDIT_PROPOSAL_RESOLVED_EVENT_NAME = "sprout-study-assistant-edit-proposal-resolved";
 export const resolveEditProposal = StateEffect.define<{
   from: number;
   to: number;
   action: "accept" | "reject";
 }>();
+
+function emitEditProposalResolved(detail: EditProposalResolvedEventDetail): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<EditProposalResolvedEventDetail>(EDIT_PROPOSAL_RESOLVED_EVENT_NAME, { detail }));
+}
 
 type ProposalRenderMode = "source" | "live-preview";
 
@@ -378,12 +390,14 @@ class EditInlineDiffWidget extends WidgetType {
       changes: { from: this.from, to: this.to, insert: this.replacement },
       effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "accept" }),
     });
+    emitEditProposalResolved({ original: this.original, replacement: this.replacement, action: "accept" });
   }
 
   private _reject(view: EditorView): void {
     view.dispatch({
       effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "reject" }),
     });
+    emitEditProposalResolved({ original: this.original, replacement: this.replacement, action: "reject" });
   }
 
   ignoreEvent(): boolean {
@@ -453,6 +467,7 @@ class EditReplacementWidget extends WidgetType {
       changes: { from: this.from, to: this.to, insert: this.replacement },
       effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "accept" }),
     });
+    emitEditProposalResolved({ original: this.original, replacement: this.replacement, action: "accept" });
   }
 
   private _reject(view: EditorView): void {
@@ -460,6 +475,7 @@ class EditReplacementWidget extends WidgetType {
     view.dispatch({
       effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "reject" }),
     });
+    emitEditProposalResolved({ original: this.original, replacement: this.replacement, action: "reject" });
   }
 
   ignoreEvent(): boolean {
@@ -514,6 +530,7 @@ class EditBlockCompareWidget extends WidgetType {
         changes: { from: this.from, to: this.to, insert: this.replacement },
         effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "accept" }),
       });
+      emitEditProposalResolved({ original: this.original, replacement: this.replacement, action: "accept" });
     });
     btnRow.appendChild(acceptBtn);
 
@@ -529,6 +546,7 @@ class EditBlockCompareWidget extends WidgetType {
       view.dispatch({
         effects: resolveEditProposal.of({ from: this.from, to: this.to, action: "reject" }),
       });
+      emitEditProposalResolved({ original: this.original, replacement: this.replacement, action: "reject" });
     });
     btnRow.appendChild(rejectBtn);
 

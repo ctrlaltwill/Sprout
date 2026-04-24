@@ -1,0 +1,223 @@
+/**
+ * @file src/core/tooltip-positioner.ts
+ * @summary Runtime tooltip clamping for header tooltips to prevent overflow
+ * outside the workspace leaf in split-pane layouts.
+ *
+ * @exports
+ *   - TooltipPositioner — class that observes tooltip-bearing elements and adjusts placement
+ */
+export function initTooltipPositioner() {
+    if (typeof document === "undefined")
+        return () => { };
+    if (typeof window === "undefined")
+        return () => { };
+    const WORKSPACE_DARK_LEARNKIT_SELECTOR = ".workspace-leaf-content.learnkit.theme-dark";
+    const WORKSPACE_LEARNKIT_SELECTOR = ".workspace-leaf-content.learnkit";
+    const WORKSPACE_SELECTOR = ".workspace-leaf-content";
+    const TOOLTIP_SELECTOR = "[aria-label]";
+    const MARGIN_PX = 60;
+    const GAP_PX = 6;
+    const FADE_OUT_CLEAR_DELAY_MS = 220;
+    let measureEl = null;
+    let activeTarget = null;
+    const clearTimers = new WeakMap();
+    const getMeasureEl = () => {
+        if (measureEl && measureEl.isConnected)
+            return measureEl;
+        const el = document.createElement("div");
+        el.className = "learnkit-tooltip-measure";
+        document.body.appendChild(el);
+        measureEl = el;
+        return el;
+    };
+    const clearVars = (el) => {
+        el.style.removeProperty("--learnkit-tooltip-shift-x");
+        el.style.removeProperty("--learnkit-tooltip-max-width");
+    };
+    const cancelScheduledClear = (el) => {
+        const tid = clearTimers.get(el);
+        if (typeof tid === "number")
+            window.clearTimeout(tid);
+        clearTimers.delete(el);
+    };
+    const restoreOriginalPosition = (el) => {
+        const orig = el.dataset.learnkitTooltipOrigPos;
+        if (orig === undefined)
+            return;
+        // Restore original value (or remove attribute if it was missing)
+        if (orig === "")
+            el.removeAttribute("data-tooltip-position");
+        else
+            el.setAttribute("data-tooltip-position", orig);
+        delete el.dataset.learnkitTooltipOrigPos;
+    };
+    const setEffectivePosition = (el, pos) => {
+        var _a;
+        // Capture the original position only once per hover/focus lifecycle
+        if (el.dataset.learnkitTooltipOrigPos === undefined) {
+            el.dataset.learnkitTooltipOrigPos = (_a = el.getAttribute("data-tooltip-position")) !== null && _a !== void 0 ? _a : "";
+        }
+        el.setAttribute("data-tooltip-position", pos);
+    };
+    const scheduleClear = (el) => {
+        cancelScheduledClear(el);
+        const tid = window.setTimeout(() => {
+            clearVars(el);
+            restoreOriginalPosition(el);
+            clearTimers.delete(el);
+        }, FADE_OUT_CLEAR_DELAY_MS);
+        clearTimers.set(el, tid);
+    };
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const update = (el) => {
+        var _a, _b, _c, _d;
+        cancelScheduledClear(el);
+        const tooltip = ((_a = el.getAttribute("aria-label")) !== null && _a !== void 0 ? _a : "").trim();
+        if (!tooltip) {
+            clearVars(el);
+            restoreOriginalPosition(el);
+            return;
+        }
+        const boundsEl = (_c = (_b = el.closest(WORKSPACE_DARK_LEARNKIT_SELECTOR)) !== null && _b !== void 0 ? _b : el.closest(WORKSPACE_LEARNKIT_SELECTOR)) !== null && _c !== void 0 ? _c : el.closest(WORKSPACE_SELECTOR);
+        const boundsRect = (boundsEl !== null && boundsEl !== void 0 ? boundsEl : document.documentElement).getBoundingClientRect();
+        const boundsWidth = boundsRect.width;
+        if (!Number.isFinite(boundsWidth) || boundsWidth <= 0) {
+            clearVars(el);
+            restoreOriginalPosition(el);
+            return;
+        }
+        const maxWidthAllowed = Math.max(0, boundsWidth - MARGIN_PX * 2);
+        // If we have no space to work with, don't try to position.
+        if (maxWidthAllowed <= 0) {
+            clearVars(el);
+            restoreOriginalPosition(el);
+            return;
+        }
+        const capPx = Math.min(300, maxWidthAllowed);
+        el.style.setProperty("--learnkit-tooltip-max-width", `${capPx}px`);
+        // Measure tooltip size at the capped width.
+        const measurer = getMeasureEl();
+        measurer.textContent = tooltip;
+        measurer.style.maxWidth = `${capPx}px`;
+        measurer.style.minWidth = `${Math.min(160, capPx)}px`;
+        const tooltipRect = measurer.getBoundingClientRect();
+        const tooltipWidth = tooltipRect.width;
+        if (!Number.isFinite(tooltipWidth) || tooltipWidth <= 0) {
+            clearVars(el);
+            restoreOriginalPosition(el);
+            return;
+        }
+        const triggerRect = el.getBoundingClientRect();
+        const centerX = triggerRect.left + triggerRect.width / 2;
+        const minX = boundsRect.left + MARGIN_PX;
+        const maxX = boundsRect.right - MARGIN_PX;
+        const requestedPos = ((_d = el.getAttribute("data-tooltip-position")) !== null && _d !== void 0 ? _d : "bottom").toLowerCase();
+        // If a left/right tooltip would violate the horizontal margin, force it to bottom.
+        let effectivePos = requestedPos;
+        if (requestedPos === "right") {
+            const tooltipLeft = triggerRect.right + GAP_PX;
+            const tooltipRight = tooltipLeft + tooltipWidth;
+            if (tooltipRight > maxX)
+                effectivePos = "bottom";
+        }
+        else if (requestedPos === "left") {
+            const tooltipRight = triggerRect.left - GAP_PX;
+            const tooltipLeft = tooltipRight - tooltipWidth;
+            if (tooltipLeft < minX)
+                effectivePos = "bottom";
+        }
+        // Apply effective position (temporarily), while preserving the original for restore.
+        // We only override when needed or when we need stable measurements/clamping.
+        if (effectivePos !== requestedPos)
+            setEffectivePosition(el, effectivePos);
+        // Horizontal clamp for top/bottom tooltips (including forced-bottom from left/right).
+        if (effectivePos === "bottom" || effectivePos === "top") {
+            const defaultLeft = centerX - tooltipWidth / 2;
+            const minLeft = boundsRect.left + MARGIN_PX;
+            const maxLeft = boundsRect.right - MARGIN_PX - tooltipWidth;
+            const clampedLeft = maxLeft < minLeft ? minLeft : clamp(defaultLeft, minLeft, maxLeft);
+            const shiftX = clampedLeft - defaultLeft;
+            el.style.setProperty("--learnkit-tooltip-shift-x", `${Math.round(shiftX)}px`);
+        }
+        else {
+            // Left/right tooltips: ensure we don't carry over a stale X shift.
+            el.style.removeProperty("--learnkit-tooltip-shift-x");
+        }
+    };
+    const setActive = (el) => {
+        if (activeTarget && activeTarget !== el)
+            scheduleClear(activeTarget);
+        activeTarget = el;
+        if (activeTarget)
+            update(activeTarget);
+    };
+    const findTooltipTarget = (start) => {
+        const node = start instanceof Element ? start : null;
+        if (!node)
+            return null;
+        const el = node.closest(TOOLTIP_SELECTOR);
+        return el instanceof HTMLElement ? el : null;
+    };
+    const onPointerOver = (ev) => {
+        const el = findTooltipTarget(ev.target);
+        if (!el)
+            return;
+        setActive(el);
+    };
+    const onPointerOut = (ev) => {
+        const leavingCandidate = ev.target instanceof Element ? ev.target.closest(TOOLTIP_SELECTOR) : null;
+        const leaving = leavingCandidate instanceof HTMLElement ? leavingCandidate : null;
+        if (!leaving)
+            return;
+        const next = ev.relatedTarget instanceof Node ? ev.relatedTarget : null;
+        if (next && leaving.contains(next))
+            return;
+        // If this is the currently active tooltip, clear it after fade-out.
+        if (activeTarget && leaving === activeTarget) {
+            activeTarget = null;
+        }
+        scheduleClear(leaving);
+    };
+    const onFocusIn = (ev) => {
+        const el = findTooltipTarget(ev.target);
+        if (!el)
+            return;
+        setActive(el);
+    };
+    const onFocusOut = (ev) => {
+        const leavingCandidate = ev.target instanceof Element ? ev.target.closest(TOOLTIP_SELECTOR) : null;
+        const leaving = leavingCandidate instanceof HTMLElement ? leavingCandidate : null;
+        if (!leaving)
+            return;
+        const next = ev.relatedTarget instanceof Node ? ev.relatedTarget : null;
+        if (next && leaving.contains(next))
+            return;
+        if (activeTarget && leaving === activeTarget) {
+            activeTarget = null;
+        }
+        scheduleClear(leaving);
+    };
+    const onScrollOrResize = () => {
+        if (!activeTarget)
+            return;
+        update(activeTarget);
+    };
+    document.addEventListener("pointerover", onPointerOver, true);
+    document.addEventListener("pointerout", onPointerOut, true);
+    document.addEventListener("focusin", onFocusIn, true);
+    document.addEventListener("focusout", onFocusOut, true);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize, true);
+    return () => {
+        document.removeEventListener("pointerover", onPointerOver, true);
+        document.removeEventListener("pointerout", onPointerOut, true);
+        document.removeEventListener("focusin", onFocusIn, true);
+        document.removeEventListener("focusout", onFocusOut, true);
+        window.removeEventListener("scroll", onScrollOrResize, true);
+        window.removeEventListener("resize", onScrollOrResize, true);
+        activeTarget = null;
+        if (measureEl === null || measureEl === void 0 ? void 0 : measureEl.isConnected)
+            measureEl.remove();
+        measureEl = null;
+    };
+}

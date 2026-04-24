@@ -1,0 +1,181 @@
+/**
+ * @file src/core/mobile-keyboard-handler.ts
+ * @summary Detects keyboard open/close on mobile devices and applies adaptive padding
+ * to prevent content from being hidden behind the keyboard. Uses visualViewport API
+ * to detect height changes and applies device-specific padding (adaptive between
+ * iPhone, iPad, Android).
+ *
+ * @exports
+ *   - initMobileKeyboardHandler — initializes keyboard detection and padding management
+ *   - cleanupMobileKeyboardHandler — cleanup function
+ */
+import { Platform } from "obsidian";
+import { log } from "./logger";
+import { setCssProps } from "./ui";
+// Store keyboard and cache state
+let keyboardHeightCache = 0;
+let isKeyboardOpen = false;
+/**
+ * Get device type based on view port and device metrics
+ * Returns: 'iphone' | 'ipad' | 'android' | 'unknown'
+ */
+function getDeviceType() {
+    if (!Platform.isMobileApp)
+        return "unknown";
+    if (Platform.isIosApp) {
+        return Platform.isTablet ? "ipad" : "iphone";
+    }
+    if (Platform.isAndroidApp) {
+        return "android";
+    }
+    return "unknown";
+}
+/**
+ * Calculate adaptive bottom padding based on device type and keyboard height
+ * iPhone: smaller keyboard, needs less padding
+ * iPad: larger keyboard, needs adaptive approach (landscape vs portrait)
+ * Android: varies by device
+ */
+function calculateAdaptivePadding(keyboardHeight) {
+    const deviceType = getDeviceType();
+    if (keyboardHeight === 0) {
+        return 0;
+    }
+    switch (deviceType) {
+        case "iphone":
+            // iPhone keyboard is typically 216-260px
+            // Add 20-30px buffer for safety margin
+            return Math.min(keyboardHeight + 20, 300);
+        case "ipad":
+            // iPad keyboard varies: ~352px (portrait), ~350px (landscape)
+            // But we want to be conservative and not over-pad on iPad
+            return Math.min(keyboardHeight + 15, 400);
+        case "android":
+            // Android keyboards vary widely, use middle ground
+            return Math.min(keyboardHeight + 25, 350);
+        default:
+            return keyboardHeight + 20;
+    }
+}
+/**
+ * Update padding on the main content view based on keyboard visibility
+ */
+function updateContentPadding() {
+    var _a;
+    if (!Platform.isMobileApp)
+        return;
+    const viewContent = document.querySelector(".learnkit .learnkit-view-content");
+    if (!viewContent)
+        return;
+    const vv = window.visualViewport;
+    if (!vv)
+        return;
+    const currentViewportHeight = (_a = vv.height) !== null && _a !== void 0 ? _a : window.innerHeight;
+    const windowHeight = window.innerHeight;
+    // Detect if keyboard is open by comparing heights
+    const heightDifference = windowHeight - currentViewportHeight;
+    if (heightDifference > 50) {
+        // Keyboard is open
+        isKeyboardOpen = true;
+        if (heightDifference !== keyboardHeightCache) {
+            keyboardHeightCache = heightDifference;
+            log.debug(`[Keyboard] Detected keyboard open, height: ${heightDifference}px, device: ${getDeviceType()}`);
+        }
+        const adaptivePadding = calculateAdaptivePadding(keyboardHeightCache);
+        const totalPadding = 40 + 50 + adaptivePadding; // 40px base + 50px buffer + keyboard padding
+        if (viewContent)
+            setCssProps(viewContent, "--kb-padding", `${totalPadding}px`);
+    }
+    else {
+        // Keyboard is closed
+        if (isKeyboardOpen) {
+            isKeyboardOpen = false;
+            log.debug("[Keyboard] Keyboard closed");
+        }
+        // Reset to default mobile padding
+        if (viewContent)
+            setCssProps(viewContent, "--kb-padding", "0px");
+        keyboardHeightCache = 0;
+    }
+}
+let cleanupFunctions = [];
+/**
+ * Initialize mobile keyboard detection and padding handler
+ * Should be called once during plugin onload
+ */
+export function initMobileKeyboardHandler() {
+    // Only initialize on mobile
+    if (!Platform.isMobileApp) {
+        log.debug("[Keyboard] Platform not mobile, skipping keyboard handler");
+        return;
+    }
+    // Verify visualViewport is supported
+    if (!window.visualViewport) {
+        log.warn("[Keyboard] visualViewport not supported on this device");
+        return;
+    }
+    log.debug("[Keyboard] Initializing keyboard handler");
+    // Initialize keyboard detection
+    // Handle visualViewport resize (keyboard open/close, orientation change)
+    const handleViewportResize = () => {
+        updateContentPadding();
+    };
+    // Handle window resize (orientation change, etc)
+    const handleWindowResize = () => {
+        updateContentPadding();
+    };
+    const handleOrientationChange = () => {
+        keyboardHeightCache = 0;
+        isKeyboardOpen = false;
+        debouncedUpdate();
+    };
+    // Debounce to avoid excessive updates
+    let resizeTimeout = null;
+    const debouncedUpdate = () => {
+        if (resizeTimeout)
+            clearTimeout(resizeTimeout);
+        resizeTimeout = window.setTimeout(() => {
+            updateContentPadding();
+            resizeTimeout = null;
+        }, 50);
+    };
+    window.visualViewport.addEventListener("resize", handleViewportResize);
+    window.visualViewport.addEventListener("scroll", debouncedUpdate);
+    window.addEventListener("resize", handleWindowResize);
+    window.addEventListener("orientationchange", handleOrientationChange);
+    // Store cleanup functions
+    cleanupFunctions = [
+        () => { var _a; return (_a = window.visualViewport) === null || _a === void 0 ? void 0 : _a.removeEventListener("resize", handleViewportResize); },
+        () => { var _a; return (_a = window.visualViewport) === null || _a === void 0 ? void 0 : _a.removeEventListener("scroll", debouncedUpdate); },
+        () => window.removeEventListener("resize", handleWindowResize),
+        () => window.removeEventListener("orientationchange", handleOrientationChange),
+        () => {
+            if (resizeTimeout)
+                clearTimeout(resizeTimeout);
+        },
+    ];
+    // Initial update
+    updateContentPadding();
+    log.debug(`[Keyboard] Handler initialized for device: ${getDeviceType()}`);
+}
+/**
+ * Cleanup mobile keyboard handler
+ * Should be called during plugin unload
+ */
+export function cleanupMobileKeyboardHandler() {
+    log.debug("[Keyboard] Cleaning up keyboard handler");
+    cleanupFunctions.forEach((cleanup) => {
+        try {
+            cleanup();
+        }
+        catch (e) {
+            log.swallow("cleanup keyboard handler", e);
+        }
+    });
+    cleanupFunctions = [];
+    // Reset padding
+    const viewContent = document.querySelector(".learnkit .learnkit-view-content");
+    if (viewContent) {
+        setCssProps(viewContent, "--kb-padding", "");
+    }
+}

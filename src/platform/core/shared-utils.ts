@@ -137,6 +137,35 @@ export function groupsToInput(groups: unknown): string {
     .join(", ");
 }
 
+export function splitClozeAnswerAndHint(content: string): {
+  answer: string;
+  hint: string | null;
+} {
+  const raw = String(content ?? "");
+  const hintSeparator = raw.indexOf("::");
+
+  if (hintSeparator === -1) {
+    return { answer: raw, hint: null };
+  }
+
+  const answer = raw.slice(0, hintSeparator);
+  const hintRaw = raw.slice(hintSeparator + 2);
+  return {
+    answer,
+    hint: hintRaw.trim() ? hintRaw : null,
+  };
+}
+
+function stripInlineMarkdownMarkers(text: string): string {
+  return String(text ?? "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/_(.+?)_/g, "$1")
+    .replace(/~~(.+?)~~/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .trim();
+}
+
 // ────────────────────────────────────────────
 // Math-aware cloze helpers
 // ────────────────────────────────────────────
@@ -152,6 +181,15 @@ interface ClozeTokenMatch {
   fullMatch: string;
   clozeIndex: number;
   content: string;
+}
+
+export interface ClozeRenderOccurrence {
+  clozeIndex: number;
+  occurrence: number;
+  answer: string;
+  hint: string | null;
+  inMath: boolean;
+  isTarget: boolean;
 }
 
 /**
@@ -214,6 +252,31 @@ function matchClozeTokensBraceAware(source: string): ClozeTokenMatch[] {
   return out;
 }
 
+export function getClozeRenderOccurrences(
+  text: string,
+  targetIndex: number | null | undefined,
+): ClozeRenderOccurrence[] {
+  const isInsideMath = buildMathRangeChecker(text);
+  const clozeOccurrences = new Map<number, number>();
+
+  return matchClozeTokensBraceAware(text).map((match) => {
+    const occurrence = (clozeOccurrences.get(match.clozeIndex) ?? 0) + 1;
+    clozeOccurrences.set(match.clozeIndex, occurrence);
+
+    const { answer, hint } = splitClozeAnswerAndHint(match.content);
+    const isTarget = targetIndex != null ? match.clozeIndex === Number(targetIndex) : true;
+
+    return {
+      clozeIndex: match.clozeIndex,
+      occurrence,
+      answer,
+      hint,
+      inMath: isInsideMath(match.index),
+      isTarget,
+    };
+  });
+}
+
 /**
  * Process cloze tokens in text that may contain math delimiters.
  *
@@ -238,11 +301,13 @@ export function processClozeForMath(
   targetIndex: number | null | undefined,
   options?: {
     blankClassName?: string;
+    useHintText?: boolean;
   },
 ): string {
   const isInsideMath = buildMathRangeChecker(text);
   const clozeMatches = matchClozeTokensBraceAware(text);
   const blankClassName = (options?.blankClassName || "sprout-cloze-blank hidden-cloze").trim();
+  const useHintText = options?.useHintText !== false;
 
   const buildBlankHtml = (content: string): string => {
     const w = Math.max(4, Math.min(40, (content || "").trim().length || 6));
@@ -257,17 +322,20 @@ export function processClozeForMath(
     result += text.slice(lastIdx, match.index);
     const idx = match.clozeIndex;
     const content = match.content;
+    const { answer, hint } = splitClozeAnswerAndHint(content);
     const isTarget = targetIndex != null ? idx === Number(targetIndex) : true;
 
     if (!isTarget) {
-      result += content;
+      result += answer;
     } else {
       const inMath = isInsideMath(match.index);
       if (reveal) {
-        result += inMath ? `${content}` : `**${content}**`;
+        result += inMath ? `${answer}` : `**${answer}**`;
+      } else if (hint && useHintText) {
+        result += inMath ? stripInlineMarkdownMarkers(hint) : hint;
       } else {
-        const placeholderSeed = (content || '').trim() || 'x';
-        result += inMath ? `\\underline{\\phantom{${placeholderSeed}}}` : buildBlankHtml(content);
+        const placeholderSeed = (answer || '').trim() || 'x';
+        result += inMath ? `\\underline{\\phantom{${placeholderSeed}}}` : buildBlankHtml(answer);
       }
     }
 

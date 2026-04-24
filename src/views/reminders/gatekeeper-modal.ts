@@ -12,7 +12,7 @@ import type LearnKitPlugin from "../../main";
 import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import { createOqReorderPreviewController } from "../../platform/core/oq-reorder-preview";
 import { replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
-import { renderClozeFront } from "../../views/reviewer/question-cloze";
+import { hydrateRenderedMathCloze, renderClozeFront } from "../../views/reviewer/question-cloze";
 import { SproutMarkdownHelper } from "../../views/reviewer/markdown-render";
 import { openSproutImageZoom } from "../../views/reviewer/zoom";
 import { gradeCard } from "../../platform/services/grading-service";
@@ -21,7 +21,7 @@ import { logFsrsIfNeeded } from "../../views/reviewer/fsrs-log";
 import { log } from "../../platform/core/logger";
 import { processMarkdownFeatures, setupInternalLinkHandlers } from "../../views/widget/view/markdown";
 import { getRatingIntervalPreview } from "../../platform/core/grade-intervals";
-import { processClozeForMath, textContainsMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../../platform/core/shared-utils";
+import { processClozeForMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../../platform/core/shared-utils";
 import { processCircleFlagsInMarkdown, hydrateCircleFlagsInElement } from "../../platform/flags/flag-tokens";
 import { getCorrectIndices, isMultiAnswerMcq, normalizeCardOptions } from "../../platform/types/card";
 import { renderImageOcclusionReviewInto } from "../../platform/image-occlusion/image-occlusion-review-render";
@@ -650,18 +650,29 @@ export class GatekeeperModal extends Modal {
       const clozeEl = document.createElement("div");
       clozeEl.className = "learnkit-widget-cloze learnkit-widget-text w-full whitespace-pre-wrap break-words";
       const sourcePath = String(card.sourceNotePath || "");
-      const processedText = processClozeForMath(text, this.reveal, targetIndex);
-      void this.renderMarkdownInto(clozeEl, processedText, sourcePath);
+      const clozeMode = this.plugin.settings.cards?.clozeMode ?? "standard";
+      const clozeBgColor = this.plugin.settings.cards?.clozeBgColor ?? "";
+      const clozeTextColor = this.plugin.settings.cards?.clozeTextColor ?? "";
+      const clozeOpts = {
+        mode: clozeMode,
+        clozeBgColor,
+        clozeTextColor,
+      };
+      const processedText = processClozeForMath(text, this.reveal, targetIndex, {
+        blankClassName: "learnkit-cloze-blank hidden-cloze",
+        useHintText: clozeMode !== "typed",
+      });
+      void this.renderMarkdownInto(clozeEl, processedText, sourcePath).then(() => {
+        hydrateRenderedMathCloze(clozeEl, text, this.reveal, targetIndex, clozeOpts);
+      });
       body.appendChild(clozeEl);
     } else {
       const clozeMode = this.plugin.settings.cards?.clozeMode ?? "standard";
       const clozeBgColor = this.plugin.settings.cards?.clozeBgColor ?? "";
       const clozeTextColor = this.plugin.settings.cards?.clozeTextColor ?? "";
 
-      const hasMath = textContainsMath(text);
-
       const clozeEl = renderClozeFront(text, this.reveal, targetIndex, {
-        mode: hasMath ? "standard" : clozeMode,
+        mode: clozeMode,
         clozeBgColor,
         clozeTextColor,
       });

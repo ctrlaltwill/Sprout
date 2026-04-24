@@ -2210,6 +2210,27 @@ export class SproutReviewerView extends ItemView {
     const canStartPractice = !this._isCoachSession && !practiceMode && !activeCard && this.canStartPractice(this.session.scope);
     const hasCardsInScope = !this._isCoachSession && !practiceMode && !activeCard && this.hasCardsInScope(this.session.scope);
 
+    const buildClozeRenderOptions = (): ClozeRenderOptions => {
+      const clozeSettings = this.plugin.settings?.cards;
+      return {
+        mode: clozeSettings?.clozeMode ?? "standard",
+        clozeBgColor: clozeSettings?.clozeBgColor || "",
+        clozeTextColor: clozeSettings?.clozeTextColor || "",
+        typedAnswers: this._typedClozeAnswers,
+        onTypedInput: (answerKey, _idx, val) => {
+          this._typedClozeAnswers.set(answerKey, val);
+        },
+        onTypedSubmit: () => {
+          if (!this.showAnswer) {
+            this.showAnswer = true;
+            const typedCard = this.currentCard();
+            if (typedCard) this._speakCardBack(typedCard);
+            this.render();
+          }
+        },
+      };
+    };
+
     renderSessionMode({
       container: sessionColumn ?? contentHost,
       interfaceLanguage: this.plugin.settings?.general?.interfaceLanguage,
@@ -2280,25 +2301,12 @@ export class SproutReviewerView extends ItemView {
       getNextDueInScope: (scope: Scope) => this.getNextDueInScope(scope),
       startCountdown: (nextDue: number, lineEl: HTMLElement) => this.startCountdown(nextDue, lineEl),
 
-      renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null) => {
-        const clozeSettings = this.plugin.settings?.cards;
-        const clozeOpts: ClozeRenderOptions = {
-          mode: clozeSettings?.clozeMode ?? "standard",
-          clozeBgColor: clozeSettings?.clozeBgColor || "",
-          clozeTextColor: clozeSettings?.clozeTextColor || "",
-          typedAnswers: this._typedClozeAnswers,
-          onTypedInput: (answerKey, _idx, val) => {
-            this._typedClozeAnswers.set(answerKey, val);
-          },
-          onTypedSubmit: () => {
-            if (!this.showAnswer) {
-              this.showAnswer = true;
-              // TTS: speak back of card when answer is revealed via typed cloze submit
-              const typedCard = this.currentCard();
-              if (typedCard) this._speakCardBack(typedCard);
-              this.render();
-            }
-          },
+      getClozeRenderOptions: buildClozeRenderOptions,
+
+      renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null, opts?: ClozeRenderOptions) => {
+        const clozeOpts = {
+          ...buildClozeRenderOptions(),
+          ...opts,
         };
         return renderClozeFront(text, reveal, targetIndex, clozeOpts);
       },

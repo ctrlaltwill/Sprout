@@ -1,0 +1,138 @@
+/**
+ * @file src/home/home-helpers.ts
+ * @summary Pure helper functions and constants used by the Home view. All functions are side-effect-free with no Obsidian dependencies, covering date/time formatting, scope construction from deck paths, and deck-label formatting for the dashboard UI.
+ *
+ * @exports
+ *  - MS_DAY                    — re-exported constant for milliseconds in one day
+ *  - localDayIndex             — returns a zero-based day index anchored to local midnight
+ *  - formatTimeAgo             — formats a timestamp as a human-readable "time ago" string
+ *  - formatCountdownToMidnight — formats the remaining time until local midnight
+ *  - scopeFromDeckPath         — constructs a Scope object from a deck path string
+ *  - formatDeckLabel           — formats a deck path into a short display label
+ *  - formatPinnedDeckLabel     — formats a pinned deck path into a display label with folder context
+ *  - getDeckLeafName           — extracts only the file/folder leaf name from a deck path
+ */
+// ─── Constants ───────────────────────────────────────────────────────
+import { MS_DAY } from "../../platform/core/constants";
+export { MS_DAY };
+// ─── Date / time helpers ─────────────────────────────────────────────
+/**
+ * Return a UTC-based day index for a given timestamp, respecting the
+ * user's timezone.  Two timestamps on the same calendar day (in the
+ * given timezone) produce the same index.
+ */
+export function localDayIndex(ts, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(new Date(ts));
+    const map = new Map(parts.map((p) => [p.type, p.value]));
+    const year = Number(map.get("year"));
+    const month = Number(map.get("month"));
+    const day = Number(map.get("day"));
+    return Math.floor(Date.UTC(year, month - 1, day) / MS_DAY);
+}
+/**
+ * Format a timestamp as a human-readable relative string
+ * (e.g. "Just now", "5m ago", "2h ago", "3d ago").
+ */
+export function formatTimeAgo(ts) {
+    if (!Number.isFinite(ts))
+        return "Unknown";
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1)
+        return "Just now";
+    if (mins < 60)
+        return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24)
+        return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+}
+/**
+ * Build a countdown string to the next local midnight.
+ * Returns "HH:MM:SS".
+ */
+export function formatCountdownToMidnight(now) {
+    const next = new Date(now);
+    next.setHours(24, 0, 0, 0);
+    const diff = Math.max(0, next.getTime() - now);
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+// ─── Deck / scope helpers ────────────────────────────────────────────
+/**
+ * Convert a vault-relative deck path to a Scope descriptor.
+ * Paths ending in `.md` are treated as single-note scopes;
+ * everything else becomes a folder scope.
+ */
+export function scopeFromDeckPath(path) {
+    const clean = String(path || "").trim();
+    const name = clean.split("/").pop() || clean;
+    if (clean.toLowerCase().endsWith(".md")) {
+        return { type: "note", key: clean, name };
+    }
+    return { type: "folder", key: clean.replace(/\/+$/, ""), name };
+}
+/**
+ * Truncate a deck label for display.
+ * Shows at most the last two path segments, trimmed to `tailChars`.
+ */
+export function formatDeckLabel(label, tailChars = 36) {
+    const parts = label
+        .replace(/\.md$/i, "")
+        .split("/")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    if (!parts.length)
+        return "";
+    const child = parts[parts.length - 1];
+    const parent = parts.length > 1 ? parts[parts.length - 2] : "";
+    const cleaned = parent ? `${parent} / ${child}` : child;
+    if (cleaned.length <= tailChars)
+        return cleaned;
+    if (!parent) {
+        return `...${child.slice(-tailChars)}`;
+    }
+    const availableForParent = tailChars - (child.length + 3); // " / "
+    if (availableForParent <= 3)
+        return `... / ${child}`;
+    const parentTail = parent.slice(-(availableForParent - 3));
+    return `...${parentTail} / ${child}`;
+}
+/**
+ * Format a pinned-deck label: strip `.md`, split by `/`,
+ * and rejoin with ` / ` separators.
+ */
+export function formatPinnedDeckLabel(label) {
+    return label
+        .replace(/\.md$/i, "")
+        .split("/")
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .join(" / ");
+}
+/**
+ * Extract the leaf file/folder name from a deck path.
+ * Removes trailing slashes and a trailing `.md` extension.
+ */
+export function getDeckLeafName(path) {
+    var _a;
+    const clean = String(path || "").trim().replace(/\/+$/, "");
+    if (!clean)
+        return "";
+    const leaf = (_a = clean
+        .split("/")
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .pop()) !== null && _a !== void 0 ? _a : clean;
+    return leaf.replace(/\.md$/i, "");
+}

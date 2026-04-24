@@ -3,7 +3,7 @@ title: "Cloze Flashcards"
 ---
 
 
-Last modified: 30/03/2026
+Last modified: 24/04/2026
 
 ## Purpose
 
@@ -20,10 +20,23 @@ I | Located on the River Seine |
 G | Geography |
 ```
 
+You can also add an optional hint after the answer with a second `::`:
+
+```
+CQ | The seronegative spondyloarthropathies may be remembered with {{c1::Psoriatic arthritis::P}} |
+```
+
+In that form:
+
+- `Psoriatic arthritis` is the answer.
+- `P` is the hint shown only while the cloze is hidden.
+- When the answer is revealed, LearnKit shows only the full answer.
+
 ## Numbering Rules
 
 - Different numbers (`c1`, `c2`) create separate flashcards.
 - Same number hides multiple parts on the same flashcard.
+- Hints do not change numbering.
 
 Example with two flashcards:
 
@@ -52,6 +65,7 @@ See [Grading](../Grading).
 ## Limits
 
 - Invalid cloze syntax can stop a flashcard from rendering correctly.
+- Hint syntax must follow the pattern `{{cN::answer::hint}}`.
 - Overlapping or inconsistent numbering can create unexpected flashcard counts.
 - Very large numbers of deletions in one sentence can hurt readability and recall quality.
 

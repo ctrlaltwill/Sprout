@@ -10,7 +10,7 @@ import { setIcon } from "obsidian";
 
 import { createOqReorderPreviewController } from "../../../platform/core/oq-reorder-preview";
 import { el, replaceChildrenWithHTML, setCssProps } from "../../../platform/core/ui";
-import { renderClozeFront } from "../../reviewer/question-cloze";
+import { hydrateRenderedMathCloze, renderClozeFront } from "../../reviewer/question-cloze";
 
 import { getWidgetMcqDisplayOrder, isClozeLike } from "../core/widget-helpers";
 import type { WidgetViewLike, ReviewMeta } from "../core/widget-helpers";
@@ -25,7 +25,7 @@ import {
 } from "../ui/widget-buttons";
 import { processMarkdownFeatures, setupInternalLinkHandlers } from "./markdown";
 import { openCardAnchorInNote } from "../../../platform/core/open-card-anchor";
-import { processClozeForMath, textContainsMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../../../platform/core/shared-utils";
+import { processClozeForMath, convertInlineDisplayMath, forceSingleLineDisplayMathInline } from "../../../platform/core/shared-utils";
 import { MarkdownView } from "obsidian";
 import { getTtsService, bindTtsPlayingState, markTtsButtonActive } from "../../../platform/integrations/tts/tts-service";
 import { shouldSkipBackAutoplay } from "../../../platform/integrations/tts/autoplay-policy";
@@ -411,18 +411,39 @@ function renderClozeCard(
     applySectionStyles(clozeEl);
 
     const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
-    const processedText = processClozeForMath(text, reveal, targetIndex);
+    const clozeMode = view.plugin.settings.cards?.clozeMode ?? "standard";
+    const clozeBgColor = view.plugin.settings.cards?.clozeBgColor ?? "";
+    const clozeTextColor = view.plugin.settings.cards?.clozeTextColor ?? "";
+    const clozeOpts = {
+      mode: clozeMode,
+      clozeBgColor,
+      clozeTextColor,
+      typedAnswers: view._typedClozeAnswers,
+      onTypedInput: (answerKey: string, _clozeIndex: number, value: string) => {
+        view._typedClozeAnswers.set(answerKey, value);
+      },
+      onTypedSubmit: () => {
+        if (!view.showAnswer) {
+          view.showAnswer = true;
+          view.render();
+        }
+      },
+    };
+    const processedText = processClozeForMath(text, reveal, targetIndex, {
+      blankClassName: "learnkit-cloze-blank hidden-cloze",
+      useHintText: clozeMode !== "typed",
+    });
 
-    void view.renderMarkdownInto(clozeContent, processedText, sourcePath);
+    void view.renderMarkdownInto(clozeContent, processedText, sourcePath).then(() => {
+      hydrateRenderedMathCloze(clozeContent, text, reveal, targetIndex, clozeOpts);
+    });
     body.appendChild(clozeEl);
   } else {
     const clozeMode = view.plugin.settings.cards?.clozeMode ?? "standard";
     const clozeBgColor = view.plugin.settings.cards?.clozeBgColor ?? "";
     const clozeTextColor = view.plugin.settings.cards?.clozeTextColor ?? "";
-    const hasMath = textContainsMath(text);
-
     const clozeEl = renderClozeFront(text, reveal, targetIndex, {
-      mode: hasMath ? "standard" : clozeMode,
+      mode: clozeMode,
       clozeBgColor,
       clozeTextColor,
       typedAnswers: view._typedClozeAnswers,

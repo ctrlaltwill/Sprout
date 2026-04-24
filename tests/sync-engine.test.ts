@@ -810,4 +810,20 @@ describe("sync engine", () => {
     expect(content).toContain("CQ | {{c2::second}} then {{c1::first}} |");
     expect(content).not.toContain("CQ:::");
   });
+
+  it("normalizes cloze shorthand with hint syntax", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/ClozeHint.md",
+      "cloze:::The capital of {{France::country}} is {{Paris::city}}",
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(content).toContain("CQ | The capital of {{c1::France::country}} is {{c2::Paris::city}} |");
+    expect(content).not.toContain("cloze:::");
+  });
 });

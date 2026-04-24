@@ -40,6 +40,16 @@ describe("processClozeForMath", () => {
     expect(back).toBe("The identity is **true**.");
   });
 
+  it("shows the hint instead of a blank outside math", () => {
+    const input = "Mnemonic: {{c1::Psoriatic arthritis::**P**}}.";
+
+    const front = processClozeForMath(input, false, null);
+    const back = processClozeForMath(input, true, null);
+
+    expect(front).toBe("Mnemonic: **P**.");
+    expect(back).toBe("Mnemonic: **Psoriatic arthritis**.");
+  });
+
   it("converts inline $$...$$ to $...$ when line has surrounding text", () => {
     const input = "Identity: $$\\sin^2 x + \\cos^2 x = {{c1::1}}$$ always.";
     const front = processClozeForMath(input, false, null);

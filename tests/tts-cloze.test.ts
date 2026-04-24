@@ -39,9 +39,17 @@ describe("prepareClozeTextForTts", () => {
     it("handles hint syntax: strips hint from non-target answer", () => {
       const input = "{{c1::answer1::hint1}} and {{c2::answer2::hint2}}";
       const result = prepareClozeTextForTts(input, false, 1, "en-US");
-      expect(result).toBe("blank and answer2");
-      expect(result).not.toContain("hint");
+      expect(result).toBe("hint1 and answer2");
       expect(result).not.toContain("::");
+    });
+
+    it("uses the hint on the hidden side instead of saying blank", () => {
+      const input = "Mnemonic: {{c1::Psoriatic arthritis::**P**}}.";
+      const result = prepareClozeTextForTts(input, false, 1, "en-US");
+
+      expect(result).toBe("Mnemonic: P.");
+      expect(result).not.toContain("blank");
+      expect(result).not.toContain("Psoriatic arthritis");
     });
 
     it("uses localised blank word for non-English languages", () => {

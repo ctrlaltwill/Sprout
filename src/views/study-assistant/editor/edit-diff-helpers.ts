@@ -10,8 +10,12 @@ export type EditProposalRenderPlan = {
 
 const INLINE_DIFF_SHORT_MAX_CHARS = 48;
 const INLINE_DIFF_MEDIUM_MAX_CHARS = 140;
+const INLINE_DIFF_LONG_MAX_CHARS = 320;
 const INLINE_DIFF_MAX_CHANGE_CLUSTERS = 2;
 const INLINE_DIFF_MIN_SHARED_CONTEXT_CHARS = 12;
+const INLINE_DIFF_LONG_MIN_SHARED_CONTEXT_CHARS = 24;
+const INLINE_DIFF_LONG_MAX_CHANGED_CHARS = 56;
+const INLINE_DIFF_MAX_MULTILINE_INLINE_LINES = 4;
 const INLINE_DIFF_MAX_TOKEN_PRODUCT = 4096;
 const TOKEN_RE = /(\s+|[^\p{L}\p{N}_\s]+|[\p{L}\p{N}_]+)/gu;
 
@@ -19,17 +23,20 @@ export function classifyEditProposalRender(
   original: string,
   replacement: string,
 ): EditProposalRenderPlan {
-  if (original.includes("\n") || replacement.includes("\n")) {
+  const isMultiline = original.includes("\n") || replacement.includes("\n");
+
+  if (isMultiline && isStructuredMultilineEdit(original, replacement)) {
     return { mode: "block-compare" };
   }
 
   const maxLength = Math.max(original.length, replacement.length);
-  if (maxLength > INLINE_DIFF_MEDIUM_MAX_CHARS) {
+  if (maxLength > INLINE_DIFF_LONG_MAX_CHARS) {
     return { mode: "full-inline-preview" };
   }
 
   const segments = buildInlineDiffSegments(original, replacement);
   const metrics = measureInlineDiffSegments(segments);
+  const lineCount = Math.max(countLines(original), countLines(replacement));
 
   if (!metrics.hasChanges) {
     return { mode: "full-inline-preview" };
@@ -42,7 +49,13 @@ export function classifyEditProposalRender(
     && metrics.changeClusters <= INLINE_DIFF_MAX_CHANGE_CLUSTERS
     && metrics.sharedChars >= INLINE_DIFF_MIN_SHARED_CONTEXT_CHARS;
 
-  if (qualifiesAsShortInline || qualifiesAsMediumInline) {
+  const qualifiesAsLongInline = maxLength <= INLINE_DIFF_LONG_MAX_CHARS
+    && metrics.changeClusters <= INLINE_DIFF_MAX_CHANGE_CLUSTERS
+    && metrics.sharedChars >= INLINE_DIFF_LONG_MIN_SHARED_CONTEXT_CHARS
+    && metrics.changedChars <= INLINE_DIFF_LONG_MAX_CHANGED_CHARS
+    && (!isMultiline || lineCount <= INLINE_DIFF_MAX_MULTILINE_INLINE_LINES);
+
+  if (qualifiesAsShortInline || qualifiesAsMediumInline || qualifiesAsLongInline) {
     return { mode: "inline-diff", segments };
   }
 
@@ -145,10 +158,12 @@ function measureInlineDiffSegments(segments: InlineDiffSegment[]): {
   hasChanges: boolean;
   sharedChars: number;
   changeClusters: number;
+  changedChars: number;
 } {
   let hasChanges = false;
   let sharedChars = 0;
   let changeClusters = 0;
+  let changedChars = 0;
   let inChangeCluster = false;
 
   for (const segment of segments) {
@@ -159,6 +174,7 @@ function measureInlineDiffSegments(segments: InlineDiffSegment[]): {
     }
 
     hasChanges = true;
+    changedChars += segment.text.replace(/\s+/g, "").length;
     if (!inChangeCluster) {
       changeClusters += 1;
       inChangeCluster = true;
@@ -169,5 +185,24 @@ function measureInlineDiffSegments(segments: InlineDiffSegment[]): {
     hasChanges,
     sharedChars,
     changeClusters,
+    changedChars,
   };
+}
+
+function countLines(text: string): number {
+  return text.length ? text.split(/\r?\n/).length : 1;
+}
+
+function isStructuredMultilineEdit(original: string, replacement: string): boolean {
+  return [original, replacement].some((value) => value.split(/\r?\n/).some(isStructuredMarkdownLine));
+}
+
+function isStructuredMarkdownLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+
+  return /^(?:#{1,6}\s|>\s|```|~~~|(?:[-*+]\s)(?:\[[ xX]\]\s)?|\d+[.)]\s)/.test(trimmed)
+    || /^\|(?:[^\n|]*\|)+\s*$/.test(trimmed)
+    || /^\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*$/.test(trimmed)
+    || /^(?:-{3,}|\*{3,}|_{3,})$/.test(trimmed);
 }

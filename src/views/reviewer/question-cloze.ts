@@ -9,6 +9,7 @@
  */
 
 import { el, setCssProps } from "../../platform/core/ui";
+import { getClozeRenderOccurrences, splitClozeAnswerAndHint } from "../../platform/core/shared-utils";
 import { applyInlineMarkdown } from "../../platform/integrations/anki/anki-mapper";
 import { hydrateCircleFlagsInElement, processCircleFlagsInMarkdown } from "../../platform/flags/flag-tokens";
 
@@ -47,6 +48,112 @@ function stripInlineMarkdown(s: string): string {
     .replace(/~~(.+?)~~/g, "$1")
     .replace(/`(.+?)`/g, "$1")
     .trim();
+}
+
+function buildTypedClozeInput(
+  host: HTMLElement,
+  clozeIndex: number,
+  occurrence: number,
+  answer: string,
+  hint: string | null,
+  opts?: ClozeRenderOptions,
+): HTMLSpanElement {
+  const typedAnswers = opts?.typedAnswers ?? new Map<string, string>();
+  const plainAns = stripInlineMarkdown(answer);
+  const plainHint = stripInlineMarkdown(hint || "");
+  const answerKey = makeTypedAnswerKey(clozeIndex, occurrence);
+
+  const wrap = document.createElement("span");
+  wrap.className = "learnkit-cloze-typed-wrap";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "learnkit-cloze-typed-input";
+  input.setAttribute("autocomplete", "off");
+  input.setAttribute("autocorrect", "off");
+  input.setAttribute("autocapitalize", "off");
+  input.setAttribute("spellcheck", "false");
+  input.setAttribute("data-cloze-index", String(clozeIndex));
+  if (plainHint) input.placeholder = plainHint;
+
+  const ctx = document.createElement("canvas").getContext("2d")!;
+  ctx.font = `500 14px ${getComputedStyle(host).fontFamily}`;
+  const widthSeed = plainHint || plainAns;
+  const textW = ctx.measureText(widthSeed).width;
+  setCssProps(input, "width", `${Math.max(60, Math.ceil(textW) + 68)}px`);
+
+  const prev = typedAnswers.get(answerKey);
+  if (prev) {
+    input.value = prev;
+    updateTypedInputState(input, prev, plainAns);
+  }
+
+  input.addEventListener("input", () => {
+    const v = input.value;
+    typedAnswers.set(answerKey, v);
+    opts?.onTypedInput?.(answerKey, clozeIndex, v);
+    updateTypedInputState(input, v, plainAns);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      opts?.onTypedSubmit?.();
+    }
+  });
+
+  wrap.appendChild(input);
+  return wrap;
+}
+
+export function hydrateRenderedMathCloze(
+  container: HTMLElement,
+  text: string,
+  reveal: boolean,
+  targetIndex?: number | null,
+  opts?: ClozeRenderOptions,
+): void {
+  if (reveal || (opts?.mode ?? "standard") !== "typed") {
+    return;
+  }
+
+  const placeholders = Array.from(
+    container.querySelectorAll<HTMLElement>(".learnkit-cloze-blank.hidden-cloze"),
+  );
+  if (!placeholders.length) {
+    return;
+  }
+
+  const targets = getClozeRenderOccurrences(text, targetIndex).filter(
+    (occurrence) => occurrence.isTarget && !occurrence.inMath,
+  );
+
+
+  targets.forEach((occurrence, index) => {
+    const placeholder = placeholders[index];
+    if (!placeholder) {
+      return;
+    }
+
+    const host = placeholder.parentElement instanceof HTMLElement ? placeholder.parentElement : container;
+    const typedWrap = buildTypedClozeInput(
+      host,
+      occurrence.clozeIndex,
+      occurrence.occurrence,
+      occurrence.answer,
+      occurrence.hint,
+      opts,
+    );
+
+    placeholder.replaceWith(typedWrap);
+  });
+
+    const firstInput = container.querySelector<HTMLInputElement>(".learnkit-cloze-typed-input");
+  if (firstInput) {
+      const inputToFocus = firstInput;
+    setTimeout(() => inputToFocus.focus(), 50);
+  }
 }
 
 export function renderClozeFront(
@@ -118,8 +225,9 @@ export function renderClozeFront(
     }
 
     const idx = Number(m[1]);
-    const ans = m[2] ?? "";
-    const plainAns = stripInlineMarkdown(ans);
+    const rawContent = m[2] ?? "";
+    const { answer, hint } = splitClozeAnswerAndHint(rawContent);
+    const plainAns = stripInlineMarkdown(answer);
     const occurrence = (clozeOccurrences.get(idx) ?? 0) + 1;
     clozeOccurrences.set(idx, occurrence);
     const answerKey = makeTypedAnswerKey(idx, occurrence);
@@ -127,7 +235,7 @@ export function renderClozeFront(
 
     if (!isTarget) {
       // Non-target clozes: always show answer text inline
-      appendFormattedText(p, ans);
+      appendFormattedText(p, answer);
     } else if (reveal) {
       // ── BACK (revealed) ──────────────────────────────
 
@@ -140,7 +248,7 @@ export function renderClozeFront(
           // Correct: green pill with answer text
           const span = document.createElement("span");
           span.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
-          applyInlineMarkdownWithFlags(span, ans);
+          applyInlineMarkdownWithFlags(span, answer);
           p.appendChild(span);
         } else {
           // Wrong (or blank): always show a red pill first, then the green correct answer.
@@ -152,14 +260,14 @@ export function renderClozeFront(
 
           const correctSpan = document.createElement("span");
           correctSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
-          applyInlineMarkdownWithFlags(correctSpan, ans);
+          applyInlineMarkdownWithFlags(correctSpan, answer);
           p.appendChild(correctSpan);
         }
       } else {
         // Standard mode back: normal accent-coloured reveal
         const answerSpan = document.createElement("span");
         answerSpan.className = "learnkit-cloze-revealed";
-        applyInlineMarkdownWithFlags(answerSpan, ans);
+        applyInlineMarkdownWithFlags(answerSpan, answer);
 
         // Apply custom colours if provided (standard mode only)
         if (opts?.clozeBgColor) {
@@ -184,64 +292,25 @@ export function renderClozeFront(
     } else {
       // ── FRONT (unrevealed) ───────────────────────────
 
-      ensureSpaceBeforeBlank();
-
       if (mode === "typed") {
-        // Typed mode: render a text input
-        const wrap = document.createElement("span");
-        wrap.className = "learnkit-cloze-typed-wrap";
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "learnkit-cloze-typed-input";
-        input.setAttribute("autocomplete", "off");
-        input.setAttribute("autocorrect", "off");
-        input.setAttribute("autocapitalize", "off");
-        input.setAttribute("spellcheck", "false");
-        input.setAttribute("data-cloze-index", String(idx));
-
-        // Size input to match the revealed back span exactly.
-        // Use Canvas measureText — reliable regardless of DOM layout state.
-        const ctx = document.createElement("canvas").getContext("2d")!;
-        ctx.font = `500 14px ${getComputedStyle(p).fontFamily}`;
-        const textW = ctx.measureText(plainAns).width;
-        // Answer width + padding/border + 50px extra so length doesn't reveal the answer
-        setCssProps(input, "width", `${Math.max(60, Math.ceil(textW) + 68)}px`);
-
-        // Restore any previously typed value
-        const prev = typedAnswers.get(answerKey);
-        if (prev) {
-          input.value = prev;
-          updateTypedInputState(input, prev, plainAns);
-        }
-
-        // Live validation as user types
-        input.addEventListener("input", () => {
-          const v = input.value;
-          typedAnswers.set(answerKey, v);
-          opts?.onTypedInput?.(answerKey, idx, v);
-          updateTypedInputState(input, v, plainAns);
-        });
-
-        // Enter key to reveal
-        input.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            e.stopPropagation();
-            opts?.onTypedSubmit?.();
-          }
-        });
-
-        wrap.appendChild(input);
+        ensureSpaceBeforeBlank();
+        const wrap = buildTypedClozeInput(p, idx, occurrence, answer, hint, opts);
         p.appendChild(wrap);
 
-        if (!firstTypedInput) firstTypedInput = input;
+        if (!firstTypedInput) firstTypedInput = wrap.querySelector("input");
+      } else if (hint) {
+        const hintSpan = document.createElement("span");
+        hintSpan.className = "learnkit-cloze-hint";
+        applyInlineMarkdownWithFlags(hintSpan, hint);
+        p.appendChild(hintSpan);
       } else {
+        ensureSpaceBeforeBlank();
+
         // Standard mode: blank underline
         const blank = document.createElement("span");
         blank.className = "learnkit-cloze-blank hidden-cloze";
 
-        const w = Math.max(4, Math.min(40, ans.length));
+        const w = Math.max(4, Math.min(40, answer.length));
         const wAdj = Math.max(1, w - subtractCh);
         blank.textContent = "";
         setCssProps(blank, "--learnkit-cloze-width", `${Math.max(30, wAdj * chPx)}px`);

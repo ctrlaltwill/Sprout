@@ -586,6 +586,7 @@
 
 /* ---- Popup panel ---- */
 .learnkit-assistant-popup {
+  --learnkit-assistant-popup-assistant-surface: var(--background-secondary, #f5f5f5);
   position: absolute;
   bottom: 84px; /* trigger bottom (24) + trigger height (48) + gap (12) */
   right: 24px;
@@ -622,6 +623,7 @@
 
 /* Modal Companion only: glass panel treatment (do not affect embedded/sidebar mode). */
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) {
+  --learnkit-assistant-popup-assistant-surface: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
   border: 0.5px solid color-mix(in srgb, var(--color-base-70) 18%, transparent 82%);
   background: var(--color-base-00) !important;
   -webkit-backdrop-filter: blur(16px) saturate(125%);
@@ -675,6 +677,7 @@
 }
 
 .learnkit-assistant-popup.learnkit-assistant-popup-embedded {
+  --learnkit-assistant-popup-assistant-surface: var(--background);
   position: relative;
   right: auto;
   bottom: auto;
@@ -977,21 +980,22 @@
 }
 
 .learnkit-assistant-popup-header-menu-item {
-  display: flex;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  min-height: 32px;
+  color: var(--text-normal);
+  border-radius: 8px;
+  outline: none;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
   padding: 6px 8px;
-  border-radius: 8px;
-  border: 0.5px solid transparent !important;
-  cursor: pointer;
-  user-select: none;
-  outline: none;
-  color: var(--text-normal);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   line-height: 1.2;
-  background-color: transparent !important;
-  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  transition: background-color 0.14s, color 0.14s, border-color 0.14s;
+  display: flex;
+  background-color: #0000 !important;
+  border: 0.5px solid #0000 !important;
 }
 
 .learnkit-assistant-popup-header-menu-item:hover,
@@ -1219,6 +1223,10 @@
   margin-top: 2px;
 }
 
+.learnkit-assistant-popup-message-avatar.is-assistant {
+  background: var(--learnkit-assistant-popup-assistant-surface);
+}
+
 .learnkit-assistant-popup-message-avatar.is-assistant .svg-icon {
   width: 14px;
   height: 14px;
@@ -1290,7 +1298,7 @@
 
 .learnkit-assistant-popup-message-bubble.is-assistant {
   border-top-left-radius: 1px;
-  background: var(--background-secondary, #f5f5f5);
+  background: var(--learnkit-assistant-popup-assistant-surface);
   border: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.06));
   color: var(--text-normal);
 }
@@ -1556,6 +1564,10 @@
   color: var(--text-normal);
 }
 
+.learnkit-assistant-popup-send.is-stop-enabled:hover:not(:disabled) {
+  color: var(--text-normal);
+}
+
 .learnkit-assistant-popup-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1564,6 +1576,11 @@
 .learnkit-assistant-popup-send .svg-icon {
   width: 16px;
   height: 16px;
+}
+
+.learnkit-assistant-popup-send.is-stop-enabled:hover:not(:disabled) .svg-icon.lucide-square {
+  width: 14.4px;
+  height: 14.4px;
 }
 
 .learnkit-assistant-popup-send .svg-icon.lucide-loader-2 {
@@ -1730,7 +1747,7 @@
 
 /* Modal Companion: subtle transparent internals (single outer glass panel remains the primary effect). */
 .learnkit-assistant-popup.is-modal-location:not(.learnkit-assistant-popup-embedded) .learnkit-assistant-popup-message-bubble.is-assistant {
-  background: color-mix(in srgb, var(--color-base-05) 95%, transparent 05%);
+  background: var(--learnkit-assistant-popup-assistant-surface);
   border-color: color-mix(in srgb, var(--color-base-70) 16%, transparent 84%);
 }
 
@@ -2225,7 +2242,7 @@
 }
 
 .learnkit-assistant-popup-generated-card {
-  --learnkit-assistant-insert-btn-size: 32px;
+  --learnkit-assistant-insert-btn-size: 36px;
   --learnkit-assistant-insert-btn-offset: 8px;
   --learnkit-assistant-insert-safe-area: calc(
     var(--learnkit-assistant-insert-btn-size) + var(--learnkit-assistant-insert-btn-offset) + 4px
@@ -2286,10 +2303,6 @@
   right: var(--learnkit-assistant-insert-btn-offset);
   width: var(--learnkit-assistant-insert-btn-size);
   height: var(--learnkit-assistant-insert-btn-size);
-  min-width: var(--learnkit-assistant-insert-btn-size);
-  max-width: var(--learnkit-assistant-insert-btn-size);
-  min-height: var(--learnkit-assistant-insert-btn-size);
-  max-height: var(--learnkit-assistant-insert-btn-size);
   border-radius: 50%;
   border: 0.5px solid var(--color-base-40, rgba(0, 0, 0, 0.12));
   background: var(--background-primary, #fff);
@@ -2299,7 +2312,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.1s;
 }
 
 /* Beat global `.learnkit button` padding rules for the circular insert button. */
@@ -2316,7 +2329,7 @@
   background: var(--interactive-accent, #7c9dff);
   border-color: var(--interactive-accent, #7c9dff);
   color: var(--text-on-accent, #fff);
-  transform: none;
+  transform: scale(1.1);
 }
 
 .learnkit-assistant-popup-insert-btn:disabled {
@@ -2749,61 +2762,39 @@
 
 .learnkit-edit-inline-diff-widget {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   flex-wrap: wrap;
-  min-width: 0;
   max-width: 100%;
-  vertical-align: baseline;
-  line-height: inherit;
-  font-size: inherit;
+  vertical-align: top;
 }
 
 .learnkit-edit-inline-diff-content {
-  display: inline-flex;
-  align-items: baseline;
-  flex: 0 1 auto;
   min-width: 0;
-  flex-wrap: wrap;
-}
-
-.learnkit-edit-inline-diff-segment {
-  color: var(--text-normal);
-  white-space: break-spaces;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
-.learnkit-edit-inline-diff-segment.is-delete,
-.learnkit-edit-inline-diff-segment.is-insert {
-  padding: 0 3px;
-  border-radius: 4px;
-  border: 0.5px solid transparent;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+.learnkit-edit-inline-diff-segment {
+  white-space: inherit;
 }
 
 .learnkit-edit-inline-diff-segment.is-delete {
   color: var(--text-error, #b42318);
-  background: color-mix(in srgb, var(--text-error, #b42318) 12%, var(--background-primary));
-  border-color: color-mix(in srgb, var(--text-error, #b42318) 32%, transparent);
+  background: color-mix(in srgb, var(--text-error, #b42318) 10%, transparent);
   text-decoration: line-through;
 }
 
 .learnkit-edit-inline-diff-segment.is-insert {
   color: var(--text-success, #16a34a);
-  background: color-mix(in srgb, var(--text-success, #16a34a) 12%, var(--background-primary));
-  border-color: color-mix(in srgb, var(--text-success, #16a34a) 32%, transparent);
+  background: color-mix(in srgb, var(--text-success, #16a34a) 12%, transparent);
 }
 
 .learnkit-edit-inline-diff-actions {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 2px;
-  flex-shrink: 0;
-}
-
-.learnkit-edit-inline-diff-actions .learnkit-edit-proposal-action-btn {
-  margin-top: 0;
+  flex: 0 0 auto;
 }
 
 .learnkit-edit-proposal-widget {

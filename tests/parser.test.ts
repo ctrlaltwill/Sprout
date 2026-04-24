@@ -196,6 +196,16 @@ describe("cloze cards", () => {
     expect(card.errors).toHaveLength(0);
   });
 
+  it("parses a cloze deletion with hint syntax", () => {
+    const card = parseOne(
+      `CQ | {{c1::Psoriatic arthritis::**P**}} is one item in PEAR. |`
+    );
+
+    expect(card.type).toBe("cloze");
+    expect(card.clozeText).toContain("{{c1::Psoriatic arthritis::**P**}}");
+    expect(card.errors).toHaveLength(0);
+  });
+
   it("errors when no cloze tokens are present", () => {
     const card = parseOne(`CQ | No cloze here. |`);
 
