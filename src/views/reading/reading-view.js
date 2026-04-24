@@ -17,8 +17,8 @@ import { DEFAULT_SETTINGS } from "../../platform/core/default-settings";
 import { resolveImageFile } from "../../platform/image-occlusion/io-helpers";
 import { ANCHOR_RE, clean, escapeHtml, extractRawTextFromParagraph, extractTextWithLaTeX, extractCardFromSource, parseSproutCard, normalizeMathSignature, processMarkdownFeatures, buildCardContentHTML, } from "./reading-helpers";
 import { getTtsService } from "../../platform/integrations/tts/tts-service";
-import { processClozeForMath } from "../../platform/core/shared-utils";
 import { hasCardAnchorForId } from "../../platform/core/identity";
+import { buildReadingFlashcardCloze } from "./reading-flashcard-cloze";
 /* -----------------------
    Module-level mutable state
    ----------------------- */
@@ -2025,34 +2025,7 @@ function normalizeGroupsForDisplay(groupsField) {
     return splitGroups;
 }
 function buildFlashcardCloze(text, mode) {
-    const source = String(text || '');
-    if (source.includes('$') || source.includes('\\(') || source.includes('\\[')) {
-        const reveal = mode === 'back';
-        return processMarkdownFeatures(processClozeForMath(source, reveal, null, { blankClassName: 'learnkit-flashcard-blank' }));
-    }
-    const clozeMatches = matchClozeTokensBraceAware(source);
-    const isInsideMath = buildLatexMathRangeChecker(source);
-    let out = '';
-    let last = 0;
-    for (const cm of clozeMatches) {
-        if (cm.index > last)
-            out += renderMarkdownTextWithExplicitBreaks(source.slice(last, cm.index));
-        const ans = cm.content.trim();
-        const inMath = isInsideMath(cm.index);
-        if (mode === 'front') {
-            const placeholderSeed = ans || 'x';
-            out += inMath ? `\\boxed{\\phantom{${placeholderSeed}}}` : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
-        }
-        else {
-            out += inMath
-                ? `\\boxed{${ans}}`
-                : `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${renderMarkdownTextWithExplicitBreaks(ans)}</span></span>`;
-        }
-        last = cm.index + cm.fullMatch.length;
-    }
-    if (last < source.length)
-        out += renderMarkdownTextWithExplicitBreaks(source.slice(last));
-    return out;
+    return buildReadingFlashcardCloze(text, mode);
 }
 function buildFlashcardContentHTML(card, options) {
     const idSeed = Math.random().toString(36).slice(2, 8);

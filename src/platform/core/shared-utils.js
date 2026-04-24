@@ -162,6 +162,14 @@ function stripInlineMarkdownMarkers(text) {
         .replace(/`(.+?)`/g, "$1")
         .trim();
 }
+function escapeHtml(text) {
+    return String(text !== null && text !== void 0 ? text : "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
 // ────────────────────────────────────────────
 // Math-aware cloze helpers
 // ────────────────────────────────────────────
@@ -269,9 +277,13 @@ export function processClozeForMath(text, reveal, targetIndex, options) {
     const clozeMatches = matchClozeTokensBraceAware(text);
     const blankClassName = ((options === null || options === void 0 ? void 0 : options.blankClassName) || "sprout-cloze-blank hidden-cloze").trim();
     const useHintText = (options === null || options === void 0 ? void 0 : options.useHintText) !== false;
-    const buildBlankHtml = (content) => {
-        const w = Math.max(4, Math.min(40, (content || "").trim().length || 6));
+    const buildBlankHtml = (content, hintText) => {
+        const plainContent = stripInlineMarkdownMarkers(content || "");
+        const w = Math.max(4, Math.min(40, plainContent.length || 6));
         const widthPx = Math.max(30, (w * 8) - 20);
+        if (hintText) {
+            return `<span class="learnkit-cloze-hint" style="width:${widthPx}px">${escapeHtml(stripInlineMarkdownMarkers(hintText))}</span>`;
+        }
         return `<span class="${blankClassName}" style="--learnkit-cloze-width:${widthPx}px"></span>`;
     };
     let result = '';
@@ -291,7 +303,7 @@ export function processClozeForMath(text, reveal, targetIndex, options) {
                 result += inMath ? `${answer}` : `**${answer}**`;
             }
             else if (hint && useHintText) {
-                result += inMath ? stripInlineMarkdownMarkers(hint) : hint;
+                result += inMath ? stripInlineMarkdownMarkers(hint) : buildBlankHtml(answer, hint);
             }
             else {
                 const placeholderSeed = (answer || '').trim() || 'x';

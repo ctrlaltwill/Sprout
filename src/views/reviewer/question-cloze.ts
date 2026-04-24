@@ -50,6 +50,17 @@ function stripInlineMarkdown(s: string): string {
     .trim();
 }
 
+function measureClozeTextWidthPx(host: HTMLElement, text: string): number {
+  const normalizedText = text.trim();
+  if (!normalizedText) return 0;
+
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!ctx) return normalizedText.length * 8;
+
+  ctx.font = `500 14px ${getComputedStyle(host).fontFamily}`;
+  return ctx.measureText(normalizedText).width;
+}
+
 function buildTypedClozeInput(
   host: HTMLElement,
   clozeIndex: number,
@@ -76,14 +87,10 @@ function buildTypedClozeInput(
   input.setAttribute("data-cloze-index", String(clozeIndex));
   if (plainHint) input.placeholder = plainHint;
 
-  const widthSeed = plainHint || plainAns;
-  const ctx = document.createElement("canvas").getContext("2d");
-  const textW = ctx
-    ? (() => {
-        ctx.font = `500 14px ${getComputedStyle(host).fontFamily}`;
-        return ctx.measureText(widthSeed).width;
-      })()
-    : widthSeed.length * 8;
+  const textW = Math.max(
+    measureClozeTextWidthPx(host, plainAns),
+    measureClozeTextWidthPx(host, plainHint),
+  );
   setCssProps(input, "width", `${Math.max(60, Math.ceil(textW) + 68)}px`);
 
   const prev = typedAnswers.get(answerKey);
@@ -196,6 +203,12 @@ export function renderClozeFront(
 
   const chPx = measureChPx();
   const subtractCh = Math.max(0, Math.round(20 / chPx)); // ~20px in ch units
+  const computeBlankWidthPx = (content: string): number => {
+    const plainContent = stripInlineMarkdown(content);
+    const widthChars = Math.max(4, Math.min(40, plainContent.length || 6));
+    const widthAdjusted = Math.max(1, widthChars - subtractCh);
+    return Math.max(30, widthAdjusted * chPx);
+  };
 
   const ensureSpaceBeforeBlank = () => {
     const lastNode = p.lastChild;
@@ -232,6 +245,7 @@ export function renderClozeFront(
     const rawContent = m[2] ?? "";
     const { answer, hint } = splitClozeAnswerAndHint(rawContent);
     const plainAns = stripInlineMarkdown(answer);
+    const plainHint = stripInlineMarkdown(hint || "");
     const occurrence = (clozeOccurrences.get(idx) ?? 0) + 1;
     clozeOccurrences.set(idx, occurrence);
     const answerKey = makeTypedAnswerKey(idx, occurrence);
@@ -306,6 +320,7 @@ export function renderClozeFront(
         const hintSpan = document.createElement("span");
         hintSpan.className = "learnkit-cloze-hint";
         applyInlineMarkdownWithFlags(hintSpan, hint);
+        setCssProps(hintSpan, "width", `${computeBlankWidthPx(plainAns || plainHint)}px`);
         p.appendChild(hintSpan);
       } else {
         ensureSpaceBeforeBlank();
@@ -313,11 +328,8 @@ export function renderClozeFront(
         // Standard mode: blank underline
         const blank = document.createElement("span");
         blank.className = "learnkit-cloze-blank hidden-cloze";
-
-        const w = Math.max(4, Math.min(40, answer.length));
-        const wAdj = Math.max(1, w - subtractCh);
         blank.textContent = "";
-        setCssProps(blank, "--learnkit-cloze-width", `${Math.max(30, wAdj * chPx)}px`);
+        setCssProps(blank, "--learnkit-cloze-width", `${computeBlankWidthPx(plainAns)}px`);
 
         p.appendChild(blank);
       }

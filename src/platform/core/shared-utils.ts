@@ -177,6 +177,15 @@ function stripInlineMarkdownMarkers(text: string): string {
     .trim();
 }
 
+function escapeHtml(text: string): string {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ────────────────────────────────────────────
 // Math-aware cloze helpers
 // ────────────────────────────────────────────
@@ -320,9 +329,13 @@ export function processClozeForMath(
   const blankClassName = (options?.blankClassName || "sprout-cloze-blank hidden-cloze").trim();
   const useHintText = options?.useHintText !== false;
 
-  const buildBlankHtml = (content: string): string => {
-    const w = Math.max(4, Math.min(40, (content || "").trim().length || 6));
+  const buildBlankHtml = (content: string, hintText?: string | null): string => {
+    const plainContent = stripInlineMarkdownMarkers(content || "");
+    const w = Math.max(4, Math.min(40, plainContent.length || 6));
     const widthPx = Math.max(30, (w * 8) - 20);
+    if (hintText) {
+      return `<span class="learnkit-cloze-hint" style="width:${widthPx}px">${escapeHtml(stripInlineMarkdownMarkers(hintText))}</span>`;
+    }
     return `<span class="${blankClassName}" style="--learnkit-cloze-width:${widthPx}px"></span>`;
   };
 
@@ -343,7 +356,7 @@ export function processClozeForMath(
       if (reveal) {
         result += inMath ? `${answer}` : `**${answer}**`;
       } else if (hint && useHintText) {
-        result += inMath ? stripInlineMarkdownMarkers(hint) : hint;
+        result += inMath ? stripInlineMarkdownMarkers(hint) : buildBlankHtml(answer, hint);
       } else {
         const placeholderSeed = (answer || '').trim() || 'x';
         result += inMath ? `\\underline{\\phantom{${placeholderSeed}}}` : buildBlankHtml(answer);

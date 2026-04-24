@@ -46,7 +46,7 @@ describe("processClozeForMath", () => {
     const front = processClozeForMath(input, false, null);
     const back = processClozeForMath(input, true, null);
 
-    expect(front).toBe("Mnemonic: **P**.");
+    expect(front).toBe("Mnemonic: <span class=\"learnkit-cloze-hint\" style=\"width:132px\">P</span>.");
     expect(back).toBe("Mnemonic: **Psoriatic arthritis**.");
   });
 

@@ -35,8 +35,8 @@ import {
   type SproutCard,
 } from "./reading-helpers";
 import { getTtsService } from "../../platform/integrations/tts/tts-service";
-import { processClozeForMath } from "../../platform/core/shared-utils";
 import { hasCardAnchorForId } from "../../platform/core/identity";
+import { buildReadingFlashcardCloze } from "./reading-flashcard-cloze";
 
 /* -----------------------
    Module-level mutable state
@@ -2480,34 +2480,11 @@ function normalizeGroupsForDisplay(groupsField: string | string[] | undefined): 
 }
 
 function buildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
-  const source = String(text || '');
-  if (source.includes('$') || source.includes('\\(') || source.includes('\\[')) {
-    const reveal = mode === 'back';
-    return processMarkdownFeatures(
-      processClozeForMath(source, reveal, null, { blankClassName: 'learnkit-flashcard-blank' }),
-    );
-  }
+  return buildReadingFlashcardCloze(text, mode);
+}
 
-  const clozeMatches = matchClozeTokensBraceAware(source);
-  const isInsideMath = buildLatexMathRangeChecker(source);
-  let out = '';
-  let last = 0;
-  for (const cm of clozeMatches) {
-    if (cm.index > last) out += renderMarkdownTextWithExplicitBreaks(source.slice(last, cm.index));
-    const ans = cm.content.trim();
-    const inMath = isInsideMath(cm.index);
-    if (mode === 'front') {
-      const placeholderSeed = ans || 'x';
-      out += inMath ? `\\boxed{\\phantom{${placeholderSeed}}}` : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
-    } else {
-      out += inMath
-        ? `\\boxed{${ans}}`
-        : `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${renderMarkdownTextWithExplicitBreaks(ans)}</span></span>`;
-    }
-    last = cm.index + cm.fullMatch.length;
-  }
-  if (last < source.length) out += renderMarkdownTextWithExplicitBreaks(source.slice(last));
-  return out;
+export function __testBuildFlashcardCloze(text: string, mode: 'front' | 'back'): string {
+  return buildFlashcardCloze(text, mode);
 }
 
 function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerButton: boolean; includeEditButton: boolean }): string {
@@ -2562,9 +2539,7 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
       .map((s) => s.trim())
       .filter(Boolean);
 
-    // Build a lowercase set of correct answers for fast lookup
     const answersLower = new Set(answers.map((a) => a.toLowerCase()));
-
     const seen = new Set<string>();
     const allOptions = [...answers, ...wrongOptions]
       .map((s) => String(s).trim())
@@ -2585,8 +2560,6 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
     const optionsListHtml = allOptions.length
       ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => `<li><span${mdSourceAttr(opt)}>${renderMarkdownLineWithClozeSpans(String(opt))}</span></li>`).join('')}</ul>`
       : '';
-    // Back: same question + same randomised list with correct answer(s) bolded.
-    // Wrap the entire <li> content (including any LaTeX) in <strong> for correct answers.
     const backOptionsListHtml = allOptions.length
       ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${allOptions.map((opt) => {
           const rendered = renderMarkdownLineWithClozeSpans(String(opt));
@@ -2602,7 +2575,6 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
   } else if (card.type === 'oq') {
     const q = toTextField(card.fields.OQ);
     const steps = getOqSteps();
-    // Front: question + shuffled unordered list of steps (no order hints)
     const shuffledSteps = [...steps];
     for (let i = shuffledSteps.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

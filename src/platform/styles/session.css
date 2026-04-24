@@ -634,6 +634,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 }
 
 .learnkit .learnkit-cloze-hint {
+  width: var(--learnkit-cloze-width, auto);
   border-bottom: 0.5px solid var(--foreground);
   display: inline-block;
   min-height: 1em;
