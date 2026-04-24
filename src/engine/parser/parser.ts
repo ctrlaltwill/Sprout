@@ -144,6 +144,7 @@ function normaliseGroupPathLocal(raw: string): string | null {
   if (!t) return null;
 
   t = t.replace(/\\/g, "/");
+  t = t.replace(/::/g, "/");
   t = t.replace(/^\/+/, "").replace(/\/+$/, "");
   t = t.replace(/\/{2,}/g, "/");
 

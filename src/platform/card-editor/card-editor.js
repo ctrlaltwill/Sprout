@@ -15,7 +15,7 @@ import { getCorrectIndices } from "../../platform/types/card";
 import { buildAnswerOrOptionsFor, escapePipes } from "../../views/reviewer/fields";
 import { escapeDelimiterText, getDelimiter } from "../../platform/core/delimiter";
 import { renderMarkdownPreviewInElement, setCssProps } from "../../platform/core/ui";
-import { clearNode, titleCaseGroupPath, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, groupsToInput, } from "../../platform/core/shared-utils";
+import { clearNode, titleCaseGroupPath, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, sortGroupPathsForDisplay, groupsToInput, } from "../../platform/core/shared-utils";
 const CLOZE_TOOLTIP = "Use cloze syntax to hide text in your prompt.\n{{c1::text}} creates the first blank.\nUse {{c2::text}} for a different blank, or reuse {{c1::text}} to reveal together.\nShortcuts: Cmd/Ctrl+Shift+C (new blank), Cmd/Ctrl+Shift+Alt/Option+C (same blank number).";
 const FORMAT_TOOLTIP = "Formatting: Cmd+B (bold), Cmd+I (italic).";
 const PLACEHOLDER_TITLE = "Enter a descriptive title for this flashcard";
@@ -919,7 +919,7 @@ export function createGroupPickerField(initialValue, cardsCount, plugin) {
         overwriteNotice.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
         container.appendChild(overwriteNotice);
     }
-    let selected = parseGroupsInput(initialValue);
+    let selected = sortGroupPathsForDisplay(parseGroupsInput(initialValue));
     const optionSet = new Set();
     for (const c of plugin.store.getAllCards() || []) {
         const groups = Array.isArray(c === null || c === void 0 ? void 0 : c.groups) ? c.groups : [];
@@ -978,7 +978,7 @@ export function createGroupPickerField(initialValue, cardsCount, plugin) {
             removeBtn.addEventListener("click", (ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
-                selected = selected.filter((t) => t !== tag);
+                selected = sortGroupPathsForDisplay(selected.filter((t) => t !== tag));
                 renderBadges();
                 renderList();
                 commit();
@@ -1001,9 +1001,9 @@ export function createGroupPickerField(initialValue, cardsCount, plugin) {
         if (!next)
             return;
         if (selected.includes(next))
-            selected = selected.filter((t) => t !== next);
+            selected = sortGroupPathsForDisplay(selected.filter((t) => t !== next));
         else
-            selected = [...selected, next];
+            selected = sortGroupPathsForDisplay([...selected, next]);
         renderBadges();
         renderList();
         commit();
@@ -1113,14 +1113,16 @@ export function createGroupPickerField(initialValue, cardsCount, plugin) {
     };
     document.addEventListener("pointerdown", onDocPointerDown);
     const cleanup = () => {
-        document.removeEventListener("pointerdown", onDocPointerDown);
+        if (typeof document !== "undefined") {
+            document.removeEventListener("pointerdown", onDocPointerDown);
+        }
         detachObserver.disconnect();
     };
     const detachObserver = new MutationObserver(() => {
         if (!container.isConnected)
             cleanup();
     });
-    if (document.body) {
+    if (typeof document !== "undefined" && document.body) {
         detachObserver.observe(document.body, { childList: true, subtree: true });
     }
     container.addEventListener("click", (ev) => {

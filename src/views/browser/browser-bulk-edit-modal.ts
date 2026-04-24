@@ -32,6 +32,7 @@ import {
   formatGroupDisplay,
   expandGroupAncestors,
   parseGroupsInput,
+  sortGroupPathsForDisplay,
   groupsToInput,
 } from "./browser-helpers";
 import { setModalTitle, scopeModalToWorkspace } from "../../platform/modals/modal-utils";
@@ -408,7 +409,7 @@ export class BulkEditModal extends Modal {
       container.appendChild(overwriteNotice);
     }
 
-    let selected = parseGroupsInput(initialValue);
+    let selected = sortGroupPathsForDisplay(parseGroupsInput(initialValue));
     if (!selected) selected = [];
 
     const optionSet = new Set<string>();
@@ -503,7 +504,7 @@ export class BulkEditModal extends Modal {
         removeBtn.addEventListener("click", (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
-          selected = selected.filter((t) => t !== tag);
+          selected = sortGroupPathsForDisplay(selected.filter((t) => t !== tag));
           renderBadges();
           renderList();
           commit();
@@ -518,8 +519,8 @@ export class BulkEditModal extends Modal {
     const toggleTag = (tag: string) => {
       const next = titleCaseGroupPath(tag);
       if (!next) return;
-      if (selected.includes(next)) selected = selected.filter((t) => t !== next);
-      else selected = [...selected, next];
+      if (selected.includes(next)) selected = sortGroupPathsForDisplay(selected.filter((t) => t !== next));
+      else selected = sortGroupPathsForDisplay([...selected, next]);
       renderBadges();
       renderList();
       commit();

@@ -13,4 +13,5 @@ LearnKit 1.3.2 makes Companion feel smoother and introduces cloze hints to make 
 - Companion is better at understanding short follow-up requests, so messages like "do it" or "add it to my note" behave more predictably.
 - Companion edit suggestions are easier to review, with clearer inline change previews and a smoother accept or reject flow.
 - Quick Cards now supports cloze hints too, so shorthand like `cloze:::The capital of {{France::country}} is {{Paris::city}}` expands correctly.
-- Sync now rewrites flashcard group rows into alphabetical order, so comma-separated `G | ... |` lists stay normalized after sync.
+- **Organising groups is now easier** – sync now keeps your flashcard group rows in alphabetical order, and saving an edited card now resyncs that note immediately so comma-separated `G | ... |` lists stay alphabetised without a manual sync.
+- **Parent/child groups behave consistently** – LearnKit now treats `Parent/Child` and `Parent::Child` as the same hierarchy in edit fields and study scopes, so child groups stay nested correctly without collapsing separate groups into one path.

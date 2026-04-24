@@ -14,7 +14,7 @@
 // src/views/browser/card-browser-view.ts
 import { ItemView, Notice, TFile, setIcon } from "obsidian";
 import { AOS_DURATION, MAX_CONTENT_WIDTH_PX, VIEW_TYPE_ANALYTICS, VIEW_TYPE_BROWSER, VIEW_TYPE_REVIEWER, VIEW_TYPE_WIDGET } from "../../platform/core/constants";
-import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
+import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
 import { unsuspendCard, suspendCard } from "../../engine/scheduler/scheduler";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
 import { initAOS, resetAOS } from "../../platform/core/aos-loader";
@@ -614,7 +614,7 @@ export class SproutCardBrowserView extends ItemView {
         const block = buildCardBlockPipeMarkdown(card.id, card);
         lines.splice(start, end - start, ...block);
         await this.app.vault.modify(file, lines.join("\n"));
-        await persistEditedCardAndSiblings(this.plugin, card);
+        await syncOneFile(this.plugin, file, { pruneGlobalOrphans: false });
         new Notice(this._tx("ui.browser.notice.saved", "Saved changes to flashcards"));
         this.refreshTable();
         const refreshLeaves = (leaves, skipLeaf) => {

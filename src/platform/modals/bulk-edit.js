@@ -16,7 +16,7 @@ import { normalizeCardOptions, getCorrectIndices } from "../core/store";
 import { buildAnswerOrOptionsFor, escapePipes, parseMcqOptionsFromCell, } from "../../views/reviewer/fields";
 import { stageLabel } from "../../views/reviewer/labels";
 import { createGroupPickerField as createGroupPickerFieldImpl } from "../card-editor/card-editor";
-import { typeLabelBrowser, fmtDue, fmtLocation, parseGroupsInput, createThemedDropdown, setModalTitle, scopeModalToWorkspace, } from "./modal-utils";
+import { typeLabelBrowser, fmtDue, fmtLocation, parseGroupsInput, groupsToInput, createThemedDropdown, setModalTitle, scopeModalToWorkspace, } from "./modal-utils";
 import { coerceGroups } from "../../engine/indexing/group-format";
 import { renderMarkdownPreviewInElement, setCssProps } from "../core/ui";
 import { handleTabInTextarea } from "../card-editor/card-editor";
@@ -30,7 +30,7 @@ const OQ_TOOLTIP = "Write the steps in the correct order.\nYou must have at leas
 function formatGroupsForInput(groups) {
     if (!groups || !groups.length)
         return "";
-    return groups.join(" / ");
+    return groupsToInput(groups);
 }
 function fieldMinHeightPx(field) {
     return 50;

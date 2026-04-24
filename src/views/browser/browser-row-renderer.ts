@@ -40,6 +40,7 @@ import {
   formatGroupDisplay,
   expandGroupAncestors,
   parseGroupsInput,
+  sortGroupPathsForDisplay,
   groupsToInput,
   buildIoImgHtml,
   buildIoOccludedHtml,
@@ -1171,9 +1172,11 @@ function makeGroupsEditorCell(
 
   const key = `${card.id}:groups`;
   let baseline = groupsToInput(card.groups);
-  let selected = coerceGroups(card.groups)
-    .map((g) => titleCaseGroupPath(String(g).trim()))
-    .filter(Boolean);
+  let selected = sortGroupPathsForDisplay(
+    coerceGroups(card.groups)
+      .map((g) => titleCaseGroupPath(String(g).trim()))
+      .filter(Boolean),
+  );
 
   const tagBox = document.createElement("div");
   tagBox.className = `textarea w-full ${ctx.cellTextClass} lk-browser-tag-box`;
@@ -1226,7 +1229,7 @@ function makeGroupsEditorCell(
       removeBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        selected = selected.filter((t) => t !== tag);
+        selected = sortGroupPathsForDisplay(selected.filter((t) => t !== tag));
         renderBadges();
         renderList();
         void commit();
@@ -1250,7 +1253,7 @@ function makeGroupsEditorCell(
       baseline = nextVal;
     } catch (err: unknown) {
       new Notice(`${err instanceof Error ? err.message : String(err)}`);
-      selected = parseGroupsInput(baseline);
+      selected = sortGroupPathsForDisplay(parseGroupsInput(baseline));
       renderBadges();
     } finally {
       ctx.saving.delete(key);
@@ -1310,8 +1313,8 @@ function makeGroupsEditorCell(
   const toggleTag = (tag: string) => {
     const next = titleCaseGroupPath(tag);
     if (!next) return;
-    if (selected.includes(next)) selected = selected.filter((t) => t !== next);
-    else selected = [...selected, next];
+    if (selected.includes(next)) selected = sortGroupPathsForDisplay(selected.filter((t) => t !== next));
+    else selected = sortGroupPathsForDisplay([...selected, next]);
     renderBadges();
     renderList();
   };

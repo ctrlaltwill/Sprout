@@ -21,7 +21,7 @@ import { deepClone, clampInt } from "../../reviewer/utilities";
 import { openBulkEditModalForCards } from "../../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../../platform/modals/image-occlusion-creator-modal";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "../../reviewer/markdown-block";
-import { persistEditedCardAndSiblings } from "../../../platform/core/targeted-card-persist";
+import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
 
 import type { UndoFrame, WidgetViewLike, ReviewMeta } from "../core/widget-helpers";
 import type { CardRecord } from "../../../platform/types/card";
@@ -447,13 +447,14 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
       lines.splice(start, end - start, ...block);
 
       await view.app.vault.modify(file, lines.join("\n"));
-
-      await persistEditedCardAndSiblings(view.plugin as unknown as LearnKitPlugin, updatedCard);
+      await syncOneFile(view.plugin as unknown as LearnKitPlugin, file, { pruneGlobalOrphans: false });
       new Notice(tx(view, "ui.widget.notice.saved", "Saved changes to flashcard"));
 
-      // If we edited a cloze or reversed parent, refresh the current child from the store
-      if (view.session && (cardType === "cloze-child" || cardType === "reversed-child")) {
-        const refreshed = (view.plugin.store.data.cards || {})[String(card.id)];
+      if (view.session) {
+        const refreshId = cardType === "cloze-child" || cardType === "reversed-child"
+          ? String(card.id)
+          : String(updatedCard.id);
+        const refreshed = (view.plugin.store.data.cards || {})[refreshId];
         if (refreshed) view.session.queue[view.session.index] = refreshed;
       }
 

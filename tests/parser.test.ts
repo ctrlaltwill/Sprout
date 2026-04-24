@@ -104,6 +104,16 @@ G | Rheumatology, Musculoskeletal, Clinical Tests, Rheumatology |`
 
     expect(card.groups).toEqual(["Clinical Tests", "Musculoskeletal", "Rheumatology"]);
   });
+
+  it("normalizes :: group hierarchies to slash-delimited paths", () => {
+    const card = parseOne(
+      `Q | Question |
+A | Answer |
+G | A/B, A::C |`
+    );
+
+    expect(card.groups).toEqual(["A/B", "A/C"]);
+  });
 });
 
 // ── MCQ cards ───────────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ import { stageLabel } from "../reviewer/labels";
 import { t } from "../../platform/translations/translator";
 import { handleTabInTextarea } from "../../platform/card-editor/card-editor";
 import { buildPrimaryCardAnchor } from "../../platform/core/identity";
-import { CLOZE_ANSWER_HELP, clearNode, forceWrapStyles, forceCellClip, fmtDue, fmtLocation, typeLabelBrowser, titleCaseGroupPath, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, groupsToInput, buildIoImgHtml, buildIoOccludedHtml, getIoResolvedImage, extractImageRefs, renderMarkdownWithImages, } from "./browser-helpers";
+import { CLOZE_ANSWER_HELP, clearNode, forceWrapStyles, forceCellClip, fmtDue, fmtLocation, typeLabelBrowser, titleCaseGroupPath, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, sortGroupPathsForDisplay, groupsToInput, buildIoImgHtml, buildIoOccludedHtml, getIoResolvedImage, extractImageRefs, renderMarkdownWithImages, } from "./browser-helpers";
 // ── Helpers (module-private) ──────────────────────────────
 const setColAttr = (td, col) => {
     td.setAttribute("data-col", col);
@@ -1000,9 +1000,9 @@ function makeGroupsEditorCell(card, isQuarantined, rowIndex, pageRowCount, _page
     setColAttr(td, "groups");
     const key = `${card.id}:groups`;
     let baseline = groupsToInput(card.groups);
-    let selected = coerceGroups(card.groups)
+    let selected = sortGroupPathsForDisplay(coerceGroups(card.groups)
         .map((g) => titleCaseGroupPath(String(g).trim()))
-        .filter(Boolean);
+        .filter(Boolean));
     const tagBox = document.createElement("div");
     tagBox.className = `textarea w-full ${ctx.cellTextClass} lk-browser-tag-box`;
     setCssProps(tagBox, "--learnkit-editor-height", `${ctx.editorHeightPx}px`);
@@ -1049,7 +1049,7 @@ function makeGroupsEditorCell(card, isQuarantined, rowIndex, pageRowCount, _page
             removeBtn.addEventListener("click", (ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
-                selected = selected.filter((t) => t !== tag);
+                selected = sortGroupPathsForDisplay(selected.filter((t) => t !== tag));
                 renderBadges();
                 renderList();
                 void commit();
@@ -1073,7 +1073,7 @@ function makeGroupsEditorCell(card, isQuarantined, rowIndex, pageRowCount, _page
         }
         catch (err) {
             new Notice(`${err instanceof Error ? err.message : String(err)}`);
-            selected = parseGroupsInput(baseline);
+            selected = sortGroupPathsForDisplay(parseGroupsInput(baseline));
             renderBadges();
         }
         finally {
@@ -1125,9 +1125,9 @@ function makeGroupsEditorCell(card, isQuarantined, rowIndex, pageRowCount, _page
         if (!next)
             return;
         if (selected.includes(next))
-            selected = selected.filter((t) => t !== next);
+            selected = sortGroupPathsForDisplay(selected.filter((t) => t !== next));
         else
-            selected = [...selected, next];
+            selected = sortGroupPathsForDisplay([...selected, next]);
         renderBadges();
         renderList();
     };

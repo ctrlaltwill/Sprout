@@ -131,7 +131,7 @@ export function fmtLocation(path) {
     const noExt = p.replace(/\.md$/i, "");
     return noExt.split("/").filter(Boolean).join(" / ");
 }
-export { titleCaseToken, titleCaseSegment, titleCaseGroupPath, normalizeGroupPathInput, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, groupsToInput, } from "../../platform/core/shared-utils";
+export { titleCaseToken, titleCaseSegment, titleCaseGroupPath, normalizeGroupPathInput, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, sortGroupPathsForDisplay, groupsToInput, } from "../../platform/core/shared-utils";
 // ─── Delimited card block building ───────────────────────────────────
 /** Escape delimiter characters for delimited card block syntax. */
 export function escapePipeText(s) {

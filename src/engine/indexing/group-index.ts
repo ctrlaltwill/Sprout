@@ -22,6 +22,7 @@ export function normalizeGroupPath(raw: string): string | null {
 
   // Convert backslashes to slashes (helps if pasted from Windows-y paths)
   normalizedPath = normalizedPath.replace(/\\/g, "/");
+  normalizedPath = normalizedPath.replace(/::/g, "/");
 
   // Trim outer slashes
   normalizedPath = normalizedPath.replace(/^\/+/, "").replace(/\/+$/, "");

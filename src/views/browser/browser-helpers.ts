@@ -187,6 +187,7 @@ export {
   formatGroupDisplay,
   expandGroupAncestors,
   parseGroupsInput,
+  sortGroupPathsForDisplay,
   groupsToInput,
 } from "../../platform/core/shared-utils";
 

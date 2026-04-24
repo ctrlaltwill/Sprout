@@ -15,7 +15,7 @@ import { normalizeCardOptions } from "../../platform/core/store";
 import { queryFirst } from "../../platform/core/ui";
 import { handleTabInTextarea, attachFlagPreviewOverlay } from "../../platform/card-editor/card-editor";
 import { setModalTitle, scopeModalToWorkspace } from "../../platform/modals/modal-utils";
-import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
+import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
 import { log } from "../../platform/core/logger";
 import { escapeDelimiterRe } from "../../platform/core/delimiter";
 import { CARD_ANCHOR_LINE_RE } from "../../platform/core/identity";
@@ -751,35 +751,6 @@ export async function saveCardEdits(
   const out = outLines.join("\n");
 
   await plugin.app.vault.modify(af, out);
-
-  const updatedCard: CardRecord = {
-    ...card,
-    title: norm(payload.title) || null,
-    info: norm(payload.info) || null,
-  };
-
-  if (type === "basic" || type === "reversed") {
-    updatedCard.q = norm(payload.q) || null;
-    updatedCard.a = norm(payload.a) || null;
-  } else if (type === "cloze") {
-    updatedCard.clozeText = norm(payload.clozeText) || null;
-  } else if (type === "mcq") {
-    const options = (Array.isArray(payload.options) ? payload.options : [])
-      .map((x) => String(x || "").trim())
-      .filter(Boolean);
-    const correctIndex = Number.isFinite(payload.correctIndex) ? Number(payload.correctIndex) : -1;
-    const correctIndices = correctIndex >= 0 && correctIndex < options.length ? [correctIndex] : [];
-    updatedCard.stem = norm(payload.stem) || null;
-    updatedCard.options = options;
-    updatedCard.correctIndex = correctIndices.length ? correctIndices[0] : null;
-    updatedCard.correctIndices = correctIndices;
-  } else if (type === "oq") {
-    updatedCard.q = norm(payload.q) || null;
-    updatedCard.oqSteps = (Array.isArray(payload.oqSteps) ? payload.oqSteps : [])
-      .map((x) => String(x || "").trim())
-      .filter(Boolean);
-  }
-
-  await persistEditedCardAndSiblings(plugin, updatedCard);
+  await syncOneFile(plugin, af, { pruneGlobalOrphans: false });
   new Notice(tx("ui.reviewer.notice.saved", "Saved changes to flashcard"));
 }

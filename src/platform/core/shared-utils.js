@@ -65,6 +65,8 @@ export function normalizeGroupPathInput(path) {
     if (!path)
         return "";
     return path
+        .replace(/\\/g, "/")
+        .replace(/::/g, "/")
         .split("/")
         .map((seg) => seg.trim())
         .filter(Boolean)
@@ -122,18 +124,21 @@ export function parseGroupsInput(raw) {
         .map((s) => titleCaseGroupPath(s.trim()))
         .filter(Boolean);
 }
+export function sortGroupPathsForDisplay(groups) {
+    if (!Array.isArray(groups))
+        return [];
+    const canonical = groups
+        .map((g) => titleCaseGroupPath(String(g).trim()))
+        .filter(Boolean);
+    return Array.from(new Set(canonical)).sort((a, b) => formatGroupDisplay(a).localeCompare(formatGroupDisplay(b)));
+}
 /**
  * Convert an array of group paths into a comma-separated display string.
  *
  * @example groupsToInput(["foo", "bar/baz"]) // "Foo, Bar/Baz"
  */
 export function groupsToInput(groups) {
-    if (!Array.isArray(groups))
-        return "";
-    return groups
-        .map((g) => titleCaseGroupPath(String(g).trim()))
-        .filter(Boolean)
-        .join(", ");
+    return sortGroupPathsForDisplay(groups).join(", ");
 }
 export function splitClozeAnswerAndHint(content) {
     const raw = String(content !== null && content !== void 0 ? content : "");

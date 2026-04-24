@@ -18,7 +18,7 @@ import { normalizeCardOptions, getCorrectIndices } from "../../platform/core/sto
 import { attachClozeShortcuts, createMobileClozeButtons, shouldShowMobileClozeButtons, } from "../../platform/card-editor/card-editor";
 import { buildAnswerOrOptionsFor, escapePipes } from "../reviewer/fields";
 import { getDelimiter } from "../../platform/core/delimiter";
-import { clearNode, titleCaseGroupPath, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, groupsToInput, } from "./browser-helpers";
+import { clearNode, titleCaseGroupPath, formatGroupDisplay, expandGroupAncestors, parseGroupsInput, sortGroupPathsForDisplay, groupsToInput, } from "./browser-helpers";
 import { setModalTitle, scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import { renderMarkdownPreviewInElement, setCssProps } from "../../platform/core/ui";
 import { handleTabInTextarea } from "../../platform/card-editor/card-editor";
@@ -342,7 +342,7 @@ export class BulkEditModal extends Modal {
                 overwriteNotice.classList.add("learnkit-is-hidden", "learnkit-is-hidden");
                 container.appendChild(overwriteNotice);
             }
-            let selected = parseGroupsInput(initialValue);
+            let selected = sortGroupPathsForDisplay(parseGroupsInput(initialValue));
             if (!selected)
                 selected = [];
             const optionSet = new Set();
@@ -423,7 +423,7 @@ export class BulkEditModal extends Modal {
                     removeBtn.addEventListener("click", (ev) => {
                         ev.preventDefault();
                         ev.stopPropagation();
-                        selected = selected.filter((t) => t !== tag);
+                        selected = sortGroupPathsForDisplay(selected.filter((t) => t !== tag));
                         renderBadges();
                         renderList();
                         commit();
@@ -438,9 +438,9 @@ export class BulkEditModal extends Modal {
                 if (!next)
                     return;
                 if (selected.includes(next))
-                    selected = selected.filter((t) => t !== next);
+                    selected = sortGroupPathsForDisplay(selected.filter((t) => t !== next));
                 else
-                    selected = [...selected, next];
+                    selected = sortGroupPathsForDisplay([...selected, next]);
                 renderBadges();
                 renderList();
                 commit();

@@ -11,7 +11,7 @@ import { escapeDelimiterRe } from "../../platform/core/delimiter";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
-import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
+import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
 import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
 import { DEFAULT_SETTINGS } from "../../platform/core/default-settings";
 import { resolveImageFile } from "../../platform/image-occlusion/io-helpers";
@@ -2539,8 +2539,7 @@ function enhanceCardElement(el, card, originalContentOverride, cardRawText, skip
                     lines.splice(start, end - start, ...block);
                     const updatedSource = lines.join("\n");
                     await plugin.app.vault.modify(file, updatedSource);
-                    // Persist only this edited card (plus required siblings), avoiding full bank sync.
-                    await persistEditedCardAndSiblings(plugin, updatedCard);
+                    await syncOneFile(plugin, file, { pruneGlobalOrphans: false });
                     if (typeof plugin.refreshAllViews === "function") {
                         plugin.refreshAllViews();
                     }

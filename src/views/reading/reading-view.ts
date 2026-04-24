@@ -13,7 +13,7 @@ import { escapeDelimiterRe } from "../../platform/core/delimiter";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
 import { buildCardBlockMarkdown, findCardBlockRangeById } from "../reviewer/markdown-block";
-import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
+import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
 import type { CardRecord } from "../../platform/core/store";
 import type LearnKitPlugin from "../../main";
 import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../../platform/core/ui";
@@ -3040,9 +3040,7 @@ function enhanceCardElement(
           const updatedSource = lines.join("\n");
 
           await plugin.app.vault.modify(file, updatedSource);
-
-          // Persist only this edited card (plus required siblings), avoiding full bank sync.
-          await persistEditedCardAndSiblings(plugin as unknown as LearnKitPlugin, updatedCard);
+          await syncOneFile(plugin as unknown as LearnKitPlugin, file, { pruneGlobalOrphans: false });
           if (typeof plugin.refreshAllViews === "function") {
             plugin.refreshAllViews();
           }

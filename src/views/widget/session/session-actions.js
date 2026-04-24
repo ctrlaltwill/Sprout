@@ -20,7 +20,7 @@ import { deepClone, clampInt } from "../../reviewer/utilities";
 import { openBulkEditModalForCards } from "../../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../../platform/modals/image-occlusion-creator-modal";
 import { findCardBlockRangeById, buildCardBlockMarkdown } from "../../reviewer/markdown-block";
-import { persistEditedCardAndSiblings } from "../../../platform/core/targeted-card-persist";
+import { syncOneFile } from "../../../platform/integrations/sync/sync-engine";
 import { getCorrectIndices, isMultiAnswerMcq } from "../../../platform/types/card";
 import { t } from "../../../platform/translations/translator";
 const tx = (view, token, fallback, vars) => { var _a, _b; return t((_b = (_a = view.plugin.settings) === null || _a === void 0 ? void 0 : _a.general) === null || _b === void 0 ? void 0 : _b.interfaceLanguage, token, fallback, vars); };
@@ -403,11 +403,13 @@ export function openEditModalForCurrentCard(view) {
             const block = buildCardBlockMarkdown(updatedCard.id, updatedCard);
             lines.splice(start, end - start, ...block);
             await view.app.vault.modify(file, lines.join("\n"));
-            await persistEditedCardAndSiblings(view.plugin, updatedCard);
+            await syncOneFile(view.plugin, file, { pruneGlobalOrphans: false });
             new Notice(tx(view, "ui.widget.notice.saved", "Saved changes to flashcard"));
-            // If we edited a cloze or reversed parent, refresh the current child from the store
-            if (view.session && (cardType === "cloze-child" || cardType === "reversed-child")) {
-                const refreshed = (view.plugin.store.data.cards || {})[String(card.id)];
+            if (view.session) {
+                const refreshId = cardType === "cloze-child" || cardType === "reversed-child"
+                    ? String(card.id)
+                    : String(updatedCard.id);
+                const refreshed = (view.plugin.store.data.cards || {})[refreshId];
                 if (refreshed)
                     view.session.queue[view.session.index] = refreshed;
             }

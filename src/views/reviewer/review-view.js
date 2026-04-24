@@ -15,7 +15,6 @@ import { gradeCard } from "../../platform/services/grading-service";
 import { undoGrade } from "../../platform/services/undo-service";
 import { buryCardAction, suspendCardAction } from "../../platform/services/card-action-service";
 import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
-import { persistEditedCardAndSiblings } from "../../platform/core/targeted-card-persist";
 import { ParseErrorModal } from "../../platform/modals/parse-error-modal";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
@@ -1097,12 +1096,13 @@ export class SproutReviewerView extends ItemView {
                 const block = buildCardBlockMarkdown(updatedCard.id, updatedCard);
                 lines.splice(start, end - start, ...block);
                 await this.app.vault.modify(file, lines.join("\n"));
-                // Persist only this edited card (and required siblings), no full file sync.
-                await persistEditedCardAndSiblings(this.plugin, updatedCard);
+                await syncOneFile(this.plugin, file, { pruneGlobalOrphans: false });
                 new Notice(this.tx("ui.reviewer.notice.saved", "Saved changes to flashcard"));
-                // If we edited a cloze or reversed parent, refresh the current child from the store so session stays in sync
-                if (this.session && (cardType === "cloze-child" || cardType === "reversed-child")) {
-                    const refreshed = (this.plugin.store.data.cards || {})[String(card.id)];
+                if (this.session) {
+                    const refreshId = cardType === "cloze-child" || cardType === "reversed-child"
+                        ? String(card.id)
+                        : String(updatedCard.id);
+                    const refreshed = (this.plugin.store.data.cards || {})[refreshId];
                     if (refreshed)
                         this.session.queue[this.session.index] = refreshed;
                 }

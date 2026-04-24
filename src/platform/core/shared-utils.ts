@@ -14,6 +14,7 @@
  * @exports formatGroupDisplay — Format a group path for user-facing display ("A / B / C").
  * @exports expandGroupAncestors — Return all ancestor paths for a group ("A", "A/B", "A/B/C").
  * @exports parseGroupsInput   — Split a comma-separated string into an array of canonical group paths.
+ * @exports sortGroupPathsForDisplay — Sort canonical group paths by their display labels.
  * @exports groupsToInput      — Convert an array of group paths into a comma-separated display string.
  */
 
@@ -66,6 +67,8 @@ export function titleCaseSegment(seg: string): string {
 export function normalizeGroupPathInput(path: string): string {
   if (!path) return "";
   return path
+    .replace(/\\/g, "/")
+    .replace(/::/g, "/")
     .split("/")
     .map((seg) => seg.trim())
     .filter(Boolean)
@@ -124,17 +127,25 @@ export function parseGroupsInput(raw: string): string[] {
     .filter(Boolean);
 }
 
+export function sortGroupPathsForDisplay(groups: unknown): string[] {
+  if (!Array.isArray(groups)) return [];
+
+  const canonical = groups
+    .map((g) => titleCaseGroupPath(String(g).trim()))
+    .filter(Boolean);
+
+  return Array.from(new Set(canonical)).sort((a, b) =>
+    formatGroupDisplay(a).localeCompare(formatGroupDisplay(b)),
+  );
+}
+
 /**
  * Convert an array of group paths into a comma-separated display string.
  *
  * @example groupsToInput(["foo", "bar/baz"]) // "Foo, Bar/Baz"
  */
 export function groupsToInput(groups: unknown): string {
-  if (!Array.isArray(groups)) return "";
-  return groups
-    .map((g: unknown) => titleCaseGroupPath(String(g).trim()))
-    .filter(Boolean)
-    .join(", ");
+  return sortGroupPathsForDisplay(groups).join(", ");
 }
 
 export function splitClozeAnswerAndHint(content: string): {

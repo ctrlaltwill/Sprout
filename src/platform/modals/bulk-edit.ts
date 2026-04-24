@@ -30,6 +30,7 @@ import {
   fmtDue,
   fmtLocation,
   parseGroupsInput,
+  groupsToInput,
   createThemedDropdown,
   setModalTitle,
   scopeModalToWorkspace,
@@ -57,7 +58,7 @@ const OQ_TOOLTIP =
 /** Convert a groups value (string | string[] | null) to a display string. */
 function formatGroupsForInput(groups: string[]): string {
   if (!groups || !groups.length) return "";
-  return groups.join(" / ");
+  return groupsToInput(groups);
 }
 
 type EditableField = "title" | "question" | "answer" | "info" | "groups";

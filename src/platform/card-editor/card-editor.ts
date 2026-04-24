@@ -24,6 +24,7 @@ import {
   formatGroupDisplay,
   expandGroupAncestors,
   parseGroupsInput,
+  sortGroupPathsForDisplay,
   groupsToInput,
 } from "../../platform/core/shared-utils";
 
@@ -1054,7 +1055,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
     container.appendChild(overwriteNotice);
   }
 
-  let selected = parseGroupsInput(initialValue);
+  let selected = sortGroupPathsForDisplay(parseGroupsInput(initialValue));
 
   const optionSet = new Set<string>();
   for (const c of plugin.store.getAllCards() || []) {
@@ -1124,7 +1125,7 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
       removeBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        selected = selected.filter((t) => t !== tag);
+        selected = sortGroupPathsForDisplay(selected.filter((t) => t !== tag));
         renderBadges();
         renderList();
         commit();
@@ -1147,8 +1148,8 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   const toggleTag = (tag: string) => {
     const next = titleCaseGroupPath(tag);
     if (!next) return;
-    if (selected.includes(next)) selected = selected.filter((t) => t !== next);
-    else selected = [...selected, next];
+    if (selected.includes(next)) selected = sortGroupPathsForDisplay(selected.filter((t) => t !== next));
+    else selected = sortGroupPathsForDisplay([...selected, next]);
     renderBadges();
     renderList();
     commit();
@@ -1273,14 +1274,16 @@ export function createGroupPickerField(initialValue: string, cardsCount: number,
   document.addEventListener("pointerdown", onDocPointerDown);
 
   const cleanup = () => {
-    document.removeEventListener("pointerdown", onDocPointerDown);
+    if (typeof document !== "undefined") {
+      document.removeEventListener("pointerdown", onDocPointerDown);
+    }
     detachObserver.disconnect();
   };
 
   const detachObserver = new MutationObserver(() => {
     if (!container.isConnected) cleanup();
   });
-  if (document.body) {
+  if (typeof document !== "undefined" && document.body) {
     detachObserver.observe(document.body, { childList: true, subtree: true });
   }
 
