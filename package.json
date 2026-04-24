@@ -67,7 +67,7 @@
     "soundtouchjs": "^0.3.0",
     "sql.js": "^1.14.1",
     "tailwind-merge": "^3.5.0",
-    "tesseract.js": "^5.1.1",
+    "tesseract.js": "^7.0.0",
     "ts-fsrs": "^5.2.3"
   }
 }
