@@ -13,6 +13,7 @@
 
 import { pushDelimitedField } from "../../../platform/core/delimiter";
 import type { StudyAssistantSuggestion } from "../../../platform/integrations/ai/study-assistant-types";
+import { normalizeGroups } from "../../../engine/indexing/group-format";
 import { trimLine, trimList } from "./assistant-popup-text";
 
 export type GeneratorOutputOptions = {
@@ -134,10 +135,10 @@ export function normalizeOptionalGeneratorRows(
 
   const title = trimLine(suggestion.title || titleFromRows);
   const info = trimLine(suggestion.info || infoFromRows);
-  const groups = trimList(
+  const groups = normalizeGroups(trimList(
     (Array.isArray(suggestion.groups) && suggestion.groups.length ? suggestion.groups : groupsFromRows)
       .map((item) => trimLine(item)),
-  );
+  ));
 
   const out: string[] = [];
   if (options.includeTitle && title) pushDelimitedField(out, "T", title);
@@ -203,9 +204,7 @@ export function buildSuggestionMarkdownLines(
     pushDelimitedField(lines, "I", info);
   }
   if (options.includeGroups) {
-    const groups = Array.isArray(suggestion.groups)
-      ? suggestion.groups.map((g) => String(g || "").trim()).filter(Boolean)
-      : [];
+    const groups = normalizeGroups(suggestion.groups);
     if (groups.length) pushDelimitedField(lines, "G", groups.join(", "));
   }
   lines.push("");

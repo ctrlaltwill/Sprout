@@ -21,6 +21,8 @@ import {
   CLOZE_SHORTHAND_RE,
   getDelimiter,
   escapeDelimiterText,
+  formatDelimitedField,
+  stripClosingDelimiter,
 } from "../../../platform/core/delimiter";
 import type { CardState } from "../../types/scheduler";
 import { loadSchedulingFromDataJson } from "../../../platform/core/store";
@@ -505,6 +507,67 @@ function applyEditsToLines(lines: string[], edits: TextEdit[]): string[] {
   }
 
   return lines;
+}
+
+function findDelimitedFieldRange(
+  lines: string[],
+  startLine: number,
+  endLine: number,
+  key: string,
+): { start: number; end: number; prefix: string } | null {
+  const upperKey = key.toUpperCase();
+  const lastLine = Math.min(endLine, lines.length - 1);
+
+  for (let lineIndex = Math.max(0, startLine); lineIndex <= lastLine; lineIndex++) {
+    const { prefix, rest } = splitMdPrefix(lines[lineIndex] || "");
+    const match = rest.match(FLASHCARD_HEADER_FIELD_RE());
+    if (!match || match[1]?.toUpperCase() !== upperKey) continue;
+
+    let end = lineIndex;
+    const headerRemainder = rest.slice(match[0].length);
+    if (!stripClosingDelimiter(headerRemainder).closed) {
+      for (let cursor = lineIndex + 1; cursor <= lastLine; cursor++) {
+        const continuation = splitMdPrefix(lines[cursor] || "").rest;
+        end = cursor;
+        if (stripClosingDelimiter(continuation).closed) break;
+        if (FLASHCARD_HEADER_CARD_RE().test(continuation) || FLASHCARD_HEADER_FIELD_RE().test(continuation)) break;
+      }
+    }
+
+    return { start: lineIndex, end, prefix };
+  }
+
+  return null;
+}
+
+function findAnchoredCardSearchEndLine(lines: string[], startLine: number): number {
+  const start = Math.max(0, Math.min(lines.length - 1, startLine));
+
+  for (let lineIndex = start + 1; lineIndex < lines.length; lineIndex++) {
+    const trimmed = (lines[lineIndex] || "").trim();
+    if (!trimmed) return lineIndex - 1;
+    if (matchAnchorId(lines[lineIndex] || "")) return lineIndex - 1;
+  }
+
+  return lines.length - 1;
+}
+
+function queueCanonicalGroupFieldEdit(lines: string[], edits: TextEdit[], card: ParsedCard): void {
+  const groups = Array.isArray(card.groups) ? card.groups : [];
+  if (!groups.length) return;
+
+  const fieldRange = findDelimitedFieldRange(lines, card.sourceStartLine, findAnchoredCardSearchEndLine(lines, card.sourceStartLine), "G");
+  if (!fieldRange) return;
+
+  const canonicalLines = formatDelimitedField("G", groups.join(", "));
+  const prefixedCanonicalLines = canonicalLines.map((line) => `${fieldRange.prefix}${line}`);
+  const existingLines = lines.slice(fieldRange.start, fieldRange.end + 1);
+  if (existingLines.join("\n") === prefixedCanonicalLines.join("\n")) return;
+
+  for (let lineIndex = fieldRange.end; lineIndex >= fieldRange.start; lineIndex--) {
+    edits.push({ lineIndex, deleteLine: true });
+  }
+  edits.push({ lineIndex: fieldRange.start, insertText: prefixedCanonicalLines.join("\n") });
 }
 
 // ────────────────────────────────────────────
@@ -1258,6 +1321,8 @@ export async function syncOneFile(
         edits.push({ lineIndex: insertAt, insertText: `${prefix}${buildPrimaryCardAnchor(id)}` });
         idsInserted += 1;
         existingAnchorIds.add(id);
+      } else {
+        queueCanonicalGroupFieldEdit(lines, edits, c);
       }
     }
 
@@ -1657,6 +1722,8 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
           edits.push({ lineIndex: insertAt, insertText: `${prefix}${buildPrimaryCardAnchor(id)}` });
           planInserted += 1;
           existingAnchorIds.add(id);
+        } else {
+          queueCanonicalGroupFieldEdit(lines, edits, c);
         }
       }
 

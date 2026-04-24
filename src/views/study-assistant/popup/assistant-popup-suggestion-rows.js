@@ -11,6 +11,7 @@
  *  - rewriteIoNoteRows
  */
 import { pushDelimitedField } from "../../../platform/core/delimiter";
+import { normalizeGroups } from "../../../engine/indexing/group-format";
 import { trimLine, trimList } from "./assistant-popup-text";
 export function parseSuggestionRows(suggestion) {
     const out = {
@@ -121,8 +122,8 @@ export function normalizeOptionalGeneratorRows(suggestion, explicitRows, options
     }
     const title = trimLine(suggestion.title || titleFromRows);
     const info = trimLine(suggestion.info || infoFromRows);
-    const groups = trimList((Array.isArray(suggestion.groups) && suggestion.groups.length ? suggestion.groups : groupsFromRows)
-        .map((item) => trimLine(item)));
+    const groups = normalizeGroups(trimList((Array.isArray(suggestion.groups) && suggestion.groups.length ? suggestion.groups : groupsFromRows)
+        .map((item) => trimLine(item))));
     const out = [];
     if (options.includeTitle && title)
         pushDelimitedField(out, "T", title);
@@ -195,9 +196,7 @@ export function buildSuggestionMarkdownLines(suggestion, options) {
         pushDelimitedField(lines, "I", info);
     }
     if (options.includeGroups) {
-        const groups = Array.isArray(suggestion.groups)
-            ? suggestion.groups.map((g) => String(g || "").trim()).filter(Boolean)
-            : [];
+        const groups = normalizeGroups(suggestion.groups);
         if (groups.length)
             pushDelimitedField(lines, "G", groups.join(", "));
     }

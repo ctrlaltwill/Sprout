@@ -224,6 +224,7 @@ export function focusFirstField(el) {
 // Delimiter-format helpers (must match parser delimiter semantics)
 // ──────────────────────────────────────────────────────────────────────────────
 import { escapeDelimiterText, formatDelimitedField } from "../core/delimiter";
+import { normalizeGroups } from "../../engine/indexing/group-format";
 /** Escape delimiter characters for the Sprout delimited format. */
 export function escapePipeText(s) {
     return escapeDelimiterText(s);
@@ -233,6 +234,10 @@ export function escapePipeText(s) {
  * multiple output lines (the closing delimiter is on the last line).
  */
 export function formatPipeField(key, value) {
+    if (key === "G") {
+        const normalizedValue = normalizeGroups(value).join(", ");
+        return normalizedValue ? formatDelimitedField(key, normalizedValue) : [];
+    }
     return formatDelimitedField(key, value);
 }
 /** Map an image MIME type to a file extension. */

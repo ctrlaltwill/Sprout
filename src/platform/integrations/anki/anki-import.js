@@ -17,6 +17,7 @@ import { ankiNoteToCardRecord, ankiCardToCardState } from "./anki-mapper";
 import { deckToFolderAndFile } from "./anki-utils";
 import { rewriteFieldForSprout, saveMediaToVault } from "./anki-media";
 import { unpackApkg } from "./anki-zip";
+import { normalizeGroups } from "../../../engine/indexing/group-format";
 import { syncOneFile } from "../sync/sync-engine";
 import { log } from "../../core/logger";
 // ── Preview ───────────────────────────────────────────────────────────────────
@@ -318,8 +319,9 @@ function buildCardBlock(card) {
     }
     if (card.info)
         out.push(`I| ${escapePipe(card.info)} |`);
-    if (card.groups && card.groups.length > 0) {
-        out.push(`G| ${card.groups.join(", ")} |`);
+    const groups = normalizeGroups(card.groups);
+    if (groups.length > 0) {
+        out.push(`G| ${groups.join(", ")} |`);
     }
     return out;
 }

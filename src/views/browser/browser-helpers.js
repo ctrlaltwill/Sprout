@@ -62,7 +62,7 @@ import { TFile } from "obsidian";
 import { log } from "../../platform/core/logger";
 import { cssClassForProps, setCssProps } from "../../platform/core/ui";
 import { normaliseGroupPath } from "../../engine/indexing/group-index";
-import { fmtGroups, coerceGroups } from "../../engine/indexing/group-format";
+import { fmtGroups, coerceGroups, normalizeGroups } from "../../engine/indexing/group-format";
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { escapeTextWithCircleFlags } from "../../platform/flags/flag-tokens";
 import { escapeDelimiterText, pushDelimitedField, } from "../../platform/core/delimiter";
@@ -194,11 +194,7 @@ export function buildCardBlockPipeMarkdown(id, rec) {
     const info = (rec.info || "").trim();
     if (info)
         pushPipeField(out, "I", info);
-    const groups = Array.isArray(rec.groups)
-        ? rec.groups
-            .map((g) => normaliseGroupPath(g) || null)
-            .filter((x) => !!x)
-        : [];
+    const groups = normalizeGroups(rec.groups);
     if (groups.length)
         pushPipeField(out, "G", groups.join(", "));
     out.push("");

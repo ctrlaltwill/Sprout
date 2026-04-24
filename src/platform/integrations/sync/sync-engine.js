@@ -11,7 +11,7 @@ import { TFile } from "obsidian";
 import { parseCardsFromText } from "../../../engine/parser/parser";
 import { generateUniqueId } from "../../../platform/core/ids";
 import { normalizeCardOptions } from "../../../platform/types/card";
-import { FLASHCARD_HEADER_CARD_RE, FLASHCARD_HEADER_FIELD_RE, BASIC_SHORTHAND_RE, CLOZE_SHORTHAND_RE, getDelimiter, escapeDelimiterText, } from "../../../platform/core/delimiter";
+import { FLASHCARD_HEADER_CARD_RE, FLASHCARD_HEADER_FIELD_RE, BASIC_SHORTHAND_RE, CLOZE_SHORTHAND_RE, getDelimiter, escapeDelimiterText, formatDelimitedField, stripClosingDelimiter, } from "../../../platform/core/delimiter";
 import { loadSchedulingFromDataJson } from "../../../platform/core/store";
 import { expandGroupPrefixes, normaliseGroupPath } from "../../../engine/indexing/group-index";
 import { log } from "../../../platform/core/logger";
@@ -437,6 +437,59 @@ function applyEditsToLines(lines, edits) {
         }
     }
     return lines;
+}
+function findDelimitedFieldRange(lines, startLine, endLine, key) {
+    var _a;
+    const upperKey = key.toUpperCase();
+    const lastLine = Math.min(endLine, lines.length - 1);
+    for (let lineIndex = Math.max(0, startLine); lineIndex <= lastLine; lineIndex++) {
+        const { prefix, rest } = splitMdPrefix(lines[lineIndex] || "");
+        const match = rest.match(FLASHCARD_HEADER_FIELD_RE());
+        if (!match || (((_a = match[1]) === null || _a === void 0 ? void 0 : _a.toUpperCase()) !== upperKey))
+            continue;
+        let end = lineIndex;
+        const headerRemainder = rest.slice(match[0].length);
+        if (!stripClosingDelimiter(headerRemainder).closed) {
+            for (let cursor = lineIndex + 1; cursor <= lastLine; cursor++) {
+                const continuation = splitMdPrefix(lines[cursor] || "").rest;
+                end = cursor;
+                if (stripClosingDelimiter(continuation).closed)
+                    break;
+                if (FLASHCARD_HEADER_CARD_RE().test(continuation) || FLASHCARD_HEADER_FIELD_RE().test(continuation))
+                    break;
+            }
+        }
+        return { start: lineIndex, end, prefix };
+    }
+    return null;
+}
+function findAnchoredCardSearchEndLine(lines, startLine) {
+    const start = Math.max(0, Math.min(lines.length - 1, startLine));
+    for (let lineIndex = start + 1; lineIndex < lines.length; lineIndex++) {
+        const trimmed = (lines[lineIndex] || "").trim();
+        if (!trimmed)
+            return lineIndex - 1;
+        if (matchAnchorId(lines[lineIndex] || ""))
+            return lineIndex - 1;
+    }
+    return lines.length - 1;
+}
+function queueCanonicalGroupFieldEdit(lines, edits, card) {
+    const groups = Array.isArray(card.groups) ? card.groups : [];
+    if (!groups.length)
+        return;
+    const fieldRange = findDelimitedFieldRange(lines, card.sourceStartLine, findAnchoredCardSearchEndLine(lines, card.sourceStartLine), "G");
+    if (!fieldRange)
+        return;
+    const canonicalLines = formatDelimitedField("G", groups.join(", "));
+    const prefixedCanonicalLines = canonicalLines.map((line) => `${fieldRange.prefix}${line}`);
+    const existingLines = lines.slice(fieldRange.start, fieldRange.end + 1);
+    if (existingLines.join("\n") === prefixedCanonicalLines.join("\n"))
+        return;
+    for (let lineIndex = fieldRange.end; lineIndex >= fieldRange.start; lineIndex--) {
+        edits.push({ lineIndex, deleteLine: true });
+    }
+    edits.push({ lineIndex: fieldRange.start, insertText: prefixedCanonicalLines.join("\n") });
 }
 // ────────────────────────────────────────────
 // IO cleanup helpers
@@ -1141,6 +1194,9 @@ export async function syncOneFile(plugin, file, options) {
                 idsInserted += 1;
                 existingAnchorIds.add(id);
             }
+            else {
+                queueCanonicalGroupFieldEdit(lines, edits, c);
+            }
         }
         // 2) Remove orphan anchors
         const orphanLineIdxs = collectAnchorLineIndicesToDelete(lines, keepIds);
@@ -1509,6 +1565,9 @@ export async function syncQuestionBank(plugin) {
                     edits.push({ lineIndex: insertAt, insertText: `${prefix}${buildPrimaryCardAnchor(id)}` });
                     planInserted += 1;
                     existingAnchorIds.add(id);
+                }
+                else {
+                    queueCanonicalGroupFieldEdit(lines, edits, c);
                 }
             }
             const orphanIdxs = collectAnchorLineIndicesToDelete(lines, keepIds);

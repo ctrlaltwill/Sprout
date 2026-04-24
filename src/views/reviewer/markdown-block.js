@@ -8,7 +8,7 @@
  *   - buildCardBlockMarkdown — Generates an array of Markdown lines representing a card in canonical pipe-delimited format
  */
 import { getCorrectIndices } from "../../platform/core/store";
-import { normaliseGroupPath } from "../../engine/indexing/group-index";
+import { normalizeGroups } from "../../engine/indexing/group-format";
 import { CARD_ANCHOR_LINE_RE, buildPrimaryCardAnchor, extractCardAnchorId, } from "../../platform/core/identity";
 import { escapePipes } from "./fields";
 /**
@@ -127,11 +127,7 @@ export function buildCardBlockMarkdown(id, rec) {
     if (info)
         pushPipeField("I", info);
     // Preserve groups (always last)
-    const groups = Array.isArray(rec.groups)
-        ? rec.groups
-            .map((g) => normaliseGroupPath(g) || null)
-            .filter((x) => !!x)
-        : [];
+    const groups = normalizeGroups(rec.groups);
     if (groups.length)
         pushPipeField("G", groups.join(", "));
     out.push(""); // blank line terminator

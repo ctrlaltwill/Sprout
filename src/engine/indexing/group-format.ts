@@ -29,10 +29,16 @@ export function coerceGroups(raw: unknown): string[] {
   return [];
 }
 
-export function formatGroups(groups: unknown): string {
-  const normalizedGroups = coerceGroups(groups)
+export function normalizeGroups(raw: unknown): string[] {
+  const normalizedGroups = coerceGroups(raw)
     .map((g) => normaliseGroupPath(g) || null)
     .filter((x): x is string => !!x);
+
+  return Array.from(new Set(normalizedGroups)).sort((a, b) => a.localeCompare(b));
+}
+
+export function formatGroups(groups: unknown): string {
+  const normalizedGroups = normalizeGroups(groups);
 
   if (!normalizedGroups.length) return "—";
   return normalizedGroups.join(", ");

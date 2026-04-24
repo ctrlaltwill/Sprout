@@ -74,4 +74,22 @@ describe("browser helpers markdown builder", () => {
     expect(lines).toContain("2 | First |");
     expect(lines).toContain("3 | Second |");
   });
+
+  it("serializes groups alphabetically", () => {
+    const card: CardRecord = {
+      id: "basic-1",
+      type: "basic",
+      title: null,
+      q: "Question",
+      a: "Answer",
+      info: null,
+      groups: ["Rheumatology", "Musculoskeletal", "Clinical Tests"],
+      sourceNotePath: "note.md",
+      sourceStartLine: 1,
+    } as CardRecord;
+
+    const lines = buildCardBlockPipeMarkdown(card.id, card);
+
+    expect(lines).toContain("G | Clinical Tests, Musculoskeletal, Rheumatology |");
+  });
 });

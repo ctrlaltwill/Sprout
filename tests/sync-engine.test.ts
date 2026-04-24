@@ -287,6 +287,27 @@ describe("sync engine", () => {
     expect(res2.updatedCount).toBe(0);
   });
 
+  it("rewrites group rows into alphabetical order during sync", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/Test.md",
+      [
+        "^learnkit-503032449",
+        "T | Clinical Examinations and Tests |",
+        "CQ | The {{c1::Faber Test}} is used to test for {{c2::SI dysfunction}}. It is useful for assessing patients with {{c1::Ankylosing Spondylitis}} |",
+        "G | Rheumatology, Musculoskeletal, Clinical Tests |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+
+    const res = await syncOneFile(plugin, file);
+    const content = await vault.read(file);
+
+    expect(res.newCount).toBe(1);
+    expect(content).toContain("G | Clinical Tests, Musculoskeletal, Rheumatology |");
+    expect(content).not.toContain("G | Rheumatology, Musculoskeletal, Clinical Tests |");
+  });
+
   // ── syncOneFile: cloze children ─────────────────────────────────────────
 
   it("creates cloze-child records from cloze card", async () => {

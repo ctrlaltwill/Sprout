@@ -271,6 +271,7 @@ export function focusFirstField(el: HTMLElement) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { escapeDelimiterText, formatDelimitedField } from "../core/delimiter";
+import { normalizeGroups } from "../../engine/indexing/group-format";
 
 /** Escape delimiter characters for the Sprout delimited format. */
 export function escapePipeText(s: string): string {
@@ -299,6 +300,10 @@ export type PipeKey =
  * multiple output lines (the closing delimiter is on the last line).
  */
 export function formatPipeField(key: PipeKey, value: string): string[] {
+  if (key === "G") {
+    const normalizedValue = normalizeGroups(value).join(", ");
+    return normalizedValue ? formatDelimitedField(key, normalizedValue) : [];
+  }
   return formatDelimitedField(key, value);
 }
 

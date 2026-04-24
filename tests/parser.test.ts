@@ -94,6 +94,16 @@ G | Math/Algebra, Science |`
 
     expect(card.groups).toEqual(["Math/Algebra", "Science"]);
   });
+
+  it("sorts and deduplicates groups alphabetically", () => {
+    const card = parseOne(
+      `Q | Question |
+A | Answer |
+G | Rheumatology, Musculoskeletal, Clinical Tests, Rheumatology |`
+    );
+
+    expect(card.groups).toEqual(["Clinical Tests", "Musculoskeletal", "Rheumatology"]);
+  });
 });
 
 // ── MCQ cards ───────────────────────────────────────────────────────────────
