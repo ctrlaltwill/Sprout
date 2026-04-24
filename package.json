@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "@codemirror/state": "^6.5.0",
-    "@codemirror/view": "^6.38.6",
+    "@codemirror/view": "^6.41.1",
     "aos": "^2.3.4",
     "basecoat-css": "^0.3.10",
     "class-variance-authority": "^0.7.1",
