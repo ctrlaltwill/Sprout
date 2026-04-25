@@ -478,6 +478,7 @@ export function syncReadingViewStyles(): void {
     css += `}\n`;
     css += `.markdown-preview-section.learnkit-layout-masonry > .learnkit-reading-card-run:has(.learnkit-pretty-card.learnkit-macro-flashcards) > .learnkit-pretty-card.learnkit-macro-flashcards {\n`;
     css += `  margin-top: 0 !important;\n`;
+    css += `  padding-top: 0 !important;\n`;
     css += `  margin-bottom: 16px !important;\n`;
     css += `}\n`;
   }

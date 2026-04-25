@@ -1004,7 +1004,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-line-block {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-inline,
