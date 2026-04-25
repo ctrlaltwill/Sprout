@@ -736,6 +736,10 @@ mjx-container[jax="CHTML"][display="true"] {
   color: inherit;
 }
 
+.learnkit-reading-view-cloze .learnkit-reading-view-cloze {
+  background-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .22);
+}
+
 .learnkit-pretty-card.learnkit-macro-markdown .learnkit-clean-markdown-cloze {
   font-weight: inherit;
   background: none;

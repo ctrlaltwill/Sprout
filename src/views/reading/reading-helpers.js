@@ -36,7 +36,7 @@
  */
 import { log } from "../../platform/core/logger";
 import { queryFirst } from "../../platform/core/ui";
-import { convertInlineDisplayMath, parseClozeTokens, resolveNestedClozeAnswers } from "../../platform/core/shared-utils";
+import { convertInlineDisplayMath, parseClozeTokens } from "../../platform/core/shared-utils";
 import { replaceCircleFlagTokens } from "../../platform/flags/flag-tokens";
 import { FIELD_START_READING_RE, unescapeDelimiterText, splitAtDelimiterTerminator, escapeDelimiterRe, } from "../../platform/core/delimiter";
 import { CARD_ANCHOR_INLINE_RE } from "../../platform/core/identity";
@@ -590,6 +590,31 @@ export function buildCardContentHTML(card) {
     return contentHTML;
 }
 export function buildClozeSectionHTML(clozeContent) {
+    function renderNestedReadingViewClozeHtml(answer) {
+        const source = String(answer !== null && answer !== void 0 ? answer : "").trim();
+        if (!source)
+            return "";
+        const clozeMatches = parseClozeTokens(source).tokens;
+        if (!clozeMatches.length) {
+            return processMarkdownFeatures(source);
+        }
+        let out = "";
+        let last = 0;
+        for (const match of clozeMatches) {
+            if (match.start > last) {
+                out += processMarkdownFeatures(source.slice(last, match.start));
+            }
+            const nestedHtml = renderNestedReadingViewClozeHtml(match.answer);
+            out += nestedHtml
+                ? `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${nestedHtml}</span></span>`
+                : `<span class="learnkit-cloze-blank"></span>`;
+            last = match.end;
+        }
+        if (last < source.length) {
+            out += processMarkdownFeatures(source.slice(last));
+        }
+        return out;
+    }
     let lastIndex = 0;
     let processedHtml = '';
     const clozeMatches = parseClozeTokens(clozeContent).tokens;
@@ -598,9 +623,9 @@ export function buildClozeSectionHTML(clozeContent) {
             const nonCloze = clozeContent.slice(lastIndex, cm.start) || '';
             processedHtml += `<span class="learnkit-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
         }
-        const answer = resolveNestedClozeAnswers(cm.answer);
+        const answer = renderNestedReadingViewClozeHtml(cm.answer);
         if (answer && answer.trim().length > 0) {
-            processedHtml += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${processMarkdownFeatures(answer)}</span></span>`;
+            processedHtml += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${answer}</span></span>`;
         }
         else {
             processedHtml += `<span class="learnkit-cloze-blank"></span>`;

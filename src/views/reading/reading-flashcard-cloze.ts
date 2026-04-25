@@ -29,6 +29,37 @@ function renderMarkdownTextWithExplicitBreaks(value: string): string {
     .join("<br>");
 }
 
+function renderNestedReadingViewClozeHtml(answer: string): string {
+  const source = String(answer ?? "").trim();
+  if (!source) return "";
+
+  const clozeMatches = parseClozeTokens(source).tokens;
+  if (!clozeMatches.length) {
+    return renderMarkdownTextWithExplicitBreaks(source);
+  }
+
+  let out = "";
+  let last = 0;
+
+  for (const match of clozeMatches) {
+    if (match.start > last) {
+      out += renderMarkdownTextWithExplicitBreaks(source.slice(last, match.start));
+    }
+
+    const nestedHtml = renderNestedReadingViewClozeHtml(match.answer);
+    out += nestedHtml
+      ? `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${nestedHtml}</span></span>`
+      : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
+    last = match.end;
+  }
+
+  if (last < source.length) {
+    out += renderMarkdownTextWithExplicitBreaks(source.slice(last));
+  }
+
+  return out;
+}
+
 export function buildReadingFlashcardCloze(text: string, mode: "front" | "back"): string {
   const source = String(text || "");
   if (source.includes("$") || source.includes("\\(") || source.includes("\\[")) {
@@ -55,7 +86,10 @@ export function buildReadingFlashcardCloze(text: string, mode: "front" | "back")
         ? buildReadingViewHintHtml(resolvedAnswer, hint)
         : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
     } else {
-      out += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${renderMarkdownTextWithExplicitBreaks(resolvedAnswer)}</span></span>`;
+      const nestedHtml = renderNestedReadingViewClozeHtml(match.answer);
+      out += nestedHtml
+        ? `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${nestedHtml}</span></span>`
+        : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
     }
 
     last = match.end;
