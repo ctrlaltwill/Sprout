@@ -11,6 +11,7 @@
  *   - buildAnswerOrOptionsFor — Returns the answer or serialised MCQ options string for a card
  */
 import { normalizeCardOptions } from "../../platform/core/store";
+import { parseClozeTokens } from "../../platform/core/shared-utils";
 import { getCorrectIndices } from "../../platform/types/card";
 import { escapeDelimiterText, splitUnescapedDelimiters, getDelimiter, } from "../../platform/core/delimiter";
 export function escapePipes(s) {
@@ -55,7 +56,7 @@ export function validateClozeText(text) {
     const t = (text || "").trim();
     if (!t)
         throw new Error("Cloze question (CQ) is required.");
-    if (!/\{\{c\d+::[\s\S]*?\}\}/.test(t))
+    if (parseClozeTokens(t).tokens.length === 0)
         throw new Error("Cloze must include at least one {{cN::...}} token.");
 }
 export function buildQuestionFor(card) {

@@ -20,6 +20,8 @@ import {
   escapeDelimiterRe,
 } from "../../platform/core/delimiter";
 import { CARD_ANCHOR_LINE_RE } from "../../platform/core/identity";
+import { validateClozeTextCompat } from "../../platform/core/shared-utils";
+import { normalizeGroups } from "../indexing/group-format";
 
 const ANCHOR_RE = CARD_ANCHOR_LINE_RE;
 
@@ -139,24 +141,6 @@ const stripClosingPipe = stripClosingDelimiter;
 const unescapePipeText = unescapeDelimiterText;
 
 
-function normaliseGroupPathLocal(raw: string): string | null {
-  let t = String(raw ?? "").trim();
-  if (!t) return null;
-
-  t = t.replace(/\\/g, "/");
-  t = t.replace(/::/g, "/");
-  t = t.replace(/^\/+/, "").replace(/\/+$/, "");
-  t = t.replace(/\/{2,}/g, "/");
-
-  const parts = t
-    .split("/")
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  if (!parts.length) return null;
-  return parts.join("/");
-}
-
 function parseGroups(raw: string | null): string[] | null {
   if (!raw) return null;
   const flat = raw.replace(/\r?\n/g, " ").trim();
@@ -164,35 +148,12 @@ function parseGroups(raw: string | null): string[] | null {
 
   // Split on comma and the active delimiter
   const delimRe = new RegExp(`[,${escapeDelimiterRe()}]`, "g");
-  const parts = flat
-    .split(delimRe)
-    .map((s) => normaliseGroupPathLocal(s))
-    .filter((x): x is string => !!x);
-
-  if (!parts.length) return null;
-
-  const uniq = Array.from(new Set(parts));
-  uniq.sort((a, b) => a.localeCompare(b));
-  return uniq.length ? uniq : null;
+  const groups = normalizeGroups(flat.split(delimRe));
+  return groups.length ? groups : null;
 }
 
 function validateClozeText(text: string): string[] {
-  const errors: string[] = [];
-  const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
-
-  let m: RegExpExecArray | null;
-  let count = 0;
-
-  while ((m = re.exec(text)) !== null) {
-    count += 1;
-    const n = Number(m[1]);
-    const content = (m[2] || "").trim();
-    if (!Number.isFinite(n) || n <= 0) errors.push("Cloze token has invalid number.");
-    if (!content) errors.push("Cloze token content is empty.");
-  }
-
-  if (count === 0) errors.push("Cloze card requires at least one {{cN::...}} token.");
-  return errors;
+  return validateClozeTextCompat(text);
 }
 
 /**

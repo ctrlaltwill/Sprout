@@ -138,12 +138,13 @@ export function attachWidgetMoreMenu(opts) {
     menu.setAttribute("role", "menu");
     menu.id = `${id}-menu`;
     panel.appendChild(menu);
-    const addItem = (label, hotkey, onClick, disabled = false) => {
+    const addItem = (label, hotkey, onClick, disabled = false, ariaLabel) => {
         const item = document.createElement("div");
         item.className =
             "group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
         item.setAttribute("role", "menuitem");
         item.tabIndex = disabled ? -1 : 0;
+        item.setAttribute("aria-label", ariaLabel ?? label);
         if (disabled) {
             item.classList.add("learnkit-menu-item--disabled", "learnkit-menu-item--disabled");
             item.setAttribute("aria-disabled", "true");
@@ -185,14 +186,14 @@ export function attachWidgetMoreMenu(opts) {
         menu.appendChild(item);
     };
     if (typeof opts.openNote === "function") {
-        addItem("Open in Note", "O", opts.openNote, false);
+        addItem("Open in Note", "O", opts.openNote, false, "Open flashcard in parent note");
     }
-    addItem("Bury", "B", opts.onBury, !opts.canBurySuspend);
-    addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend);
+    addItem("Bury", "B", opts.onBury, !opts.canBurySuspend, "Bury flashcard");
+    addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend, "Suspend flashcard");
     if (typeof opts.openStudy === "function") {
         addItem("Transfer to Study", "T", opts.openStudy, false);
     }
-    addItem("Undo last grade", "U", opts.onUndo, !opts.canUndo);
+    addItem("Undo last grade", "U", opts.onUndo, !opts.canUndo, "Undo previous review and grading");
     let cleanup = null;
     const place = () => placePopover({ trigger, panel, popoverEl: popover, align: "right" });
     const close = () => {

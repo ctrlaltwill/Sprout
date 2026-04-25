@@ -354,6 +354,45 @@ describe("sync engine", () => {
     expect(plugin.store.data.cards["111111111::cloze::c3"]).toBeUndefined();
   });
 
+  it("reports only cloze children in the user-facing deleted count", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/Cloze.md",
+      "^sprout-111111111\nCQ | {{c1::A}} and {{c2::B}}. |",
+    );
+    const plugin = makePlugin(vault);
+
+    await syncOneFile(plugin, file);
+
+    vault.files.set(file.path, {
+      file,
+      content: "Just text now",
+    });
+
+    const res = await syncOneFile(plugin, file);
+
+    expect(res.removed).toBe(3);
+    expect(res.deletedDisplayCount).toBe(2);
+  });
+
+  it("preserves sparse and malformed cloze child ids during sync", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/Cloze.md",
+      "^sprout-111111111\nCQ | {{c1::Paris}} and {{c3::France}} and {{c2::open |",
+    );
+    const plugin = makePlugin(vault);
+
+    await syncOneFile(plugin, file);
+
+    expect(plugin.store.data.cards["111111111::cloze::c1"]).toBeDefined();
+    expect(plugin.store.data.cards["111111111::cloze::c2"]).toBeDefined();
+    expect(plugin.store.data.cards["111111111::cloze::c3"]).toBeDefined();
+    expect(plugin.store.data.states["111111111::cloze::c1"]).toBeDefined();
+    expect(plugin.store.data.states["111111111::cloze::c2"]).toBeDefined();
+    expect(plugin.store.data.states["111111111::cloze::c3"]).toBeDefined();
+  });
+
   // ── syncOneFile: reversed children ──────────────────────────────────────
 
   it("creates reversed-child records (forward + back)", async () => {

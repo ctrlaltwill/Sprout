@@ -105,6 +105,16 @@ G | Rheumatology, Musculoskeletal, Clinical Tests, Rheumatology |`
     expect(card.groups).toEqual(["Clinical Tests", "Musculoskeletal", "Rheumatology"]);
   });
 
+  it("deduplicates groups case-insensitively using the most common casing", () => {
+    const card = parseOne(
+      `Q | Question |
+A | Answer |
+G | anking, AnKing, Anking, AnKing, Emergency medicine, Emergency Medicine, Emergency Medicine |`
+    );
+
+    expect(card.groups).toEqual(["AnKing", "Emergency Medicine"]);
+  });
+
   it("normalizes :: group hierarchies to slash-delimited paths", () => {
     const card = parseOne(
       `Q | Question |
@@ -237,6 +247,12 @@ describe("cloze cards", () => {
     const card = parseOne(`CQ | The {{c1::}} is empty. |`);
 
     expect(card.errors.length).toBeGreaterThan(0);
+  });
+
+  it("keeps malformed unclosed clozes on the legacy generic error path", () => {
+    const card = parseOne(`CQ | The {{c1::sun rises in the east. |`);
+
+    expect(card.errors).toContain("Cloze card requires at least one {{cN::...}} token.");
   });
 
   it("parses a multi-line cloze deletion", () => {

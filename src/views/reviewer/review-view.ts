@@ -299,7 +299,7 @@ export class SproutReviewerView extends ItemView {
 
     const total = Math.max(0, Number(this.session?.stats?.total ?? 0));
     const done = Math.max(0, Number(this.session?.stats?.done ?? 0));
-    const remaining = Math.max(0, total - done);
+    const remaining = Math.max(0, total - done + this._pendingSameDayRequeueCount());
 
     if (remaining === 0) {
       return this.tx("ui.reviewer.title.noneDue", "No flashcards are currently due!");
@@ -309,6 +309,59 @@ export class SproutReviewerView extends ItemView {
       count: remaining,
       suffix: remaining === 1 ? "" : "s",
     });
+  }
+
+  private _startOfTomorrowMs(now: number): number {
+    const date = new Date(now);
+    date.setHours(24, 0, 0, 0);
+    return date.getTime();
+  }
+
+  private _isPendingSameDayRequeue(meta: Record<string, unknown> | undefined): boolean {
+    return meta?.sameDayRequeue === true;
+  }
+
+  private _pendingSameDayRequeueCount(): number {
+    const graded = this.session?.graded ?? {};
+    let count = 0;
+    for (const entry of Object.values(graded)) {
+      if (entry && this._isPendingSameDayRequeue(entry.meta)) count += 1;
+    }
+    return count;
+  }
+
+  private _shouldRequeueSameDayAgain(rating: Rating, nextDue: number | undefined, now: number): boolean {
+    return rating === "again"
+      && Number.isFinite(nextDue)
+      && Number(nextDue) < this._startOfTomorrowMs(now);
+  }
+
+  private _requeueCurrentCardToEnd(id: string): number | null {
+    if (!this.session) return null;
+
+    const queue = this.session.queue ?? [];
+    const index = Number(this.session.index ?? 0);
+
+    delete this.session.graded[id];
+    this.session.stats.done = Object.keys(this.session.graded || {}).length;
+
+    if (queue.length === 0) return null;
+    if (index < 0 || index >= queue.length) return Math.min(index, queue.length - 1);
+    if (queue.length === 1) return index;
+
+    const originalLastIndex = queue.length - 1;
+    const [current] = queue.splice(index, 1);
+    if (!current) return Math.min(index, queue.length - 1);
+    queue.push(current);
+
+    if (index < originalLastIndex) return index;
+
+    const nextUngradedIndex = queue.findIndex((queuedCard) => {
+      const queuedId = String(queuedCard?.id ?? "");
+      return queuedId !== id && !this.session?.graded?.[queuedId];
+    });
+
+    return nextUngradedIndex >= 0 ? nextUngradedIndex : queue.length - 1;
   }
 
   private _ensureTitleStrip(root: HTMLElement): void {
@@ -1333,7 +1386,16 @@ export class SproutReviewerView extends ItemView {
         await this.plugin.recordCoachProgressForScope(this.session.scope, "flashcard", 1);
       }
 
-      this.session.graded[id] = { rating, at: now, meta: meta || undefined };
+      const shouldRequeueSameDay = this.mode === "session"
+        && this._shouldRequeueSameDayAgain(rating, nextDue, now);
+      let gradeMeta = meta && typeof meta === "object" && !Array.isArray(meta)
+        ? { ...meta }
+        : undefined;
+      if (shouldRequeueSameDay) {
+        gradeMeta = { ...(gradeMeta || {}), sameDayRequeue: true };
+      }
+
+      this.session.graded[id] = { rating, at: now, meta: gradeMeta };
       this.session.stats.done = Object.keys(this.session.graded).length;
 
       this.showAnswer = true;
@@ -1517,11 +1579,25 @@ export class SproutReviewerView extends ItemView {
     this._ttsLastSpokenKey = "";
 
     const card = this.currentCard();
+    let requeueTargetIndex: number | null = null;
     if (card) {
       const id = String(card.id);
       if (!this.session.graded[id]) {
         await this.gradeCurrentRating("again", { auto: true });
       }
+
+      const gradedEntry = this.session.graded[id];
+      if (gradedEntry && this._isPendingSameDayRequeue(gradedEntry.meta)) {
+        requeueTargetIndex = this._requeueCurrentCardToEnd(id);
+      }
+    }
+
+    if (requeueTargetIndex !== null) {
+      this.session.index = requeueTargetIndex;
+      this.showAnswer = false;
+      this.resetTiming();
+      this.render();
+      return;
     }
 
     if (this.session.index < this.session.queue.length - 1) {

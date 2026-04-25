@@ -288,14 +288,14 @@ export class GatekeeperModal extends Modal {
     const gradeRow = footer.createDiv({ cls: fourButtonMode ? "grid grid-cols-2 gap-2 w-full" : "flex flex-wrap justify-center gap-2 w-full" });
     const grades = fourButtonMode
       ? ([
-          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Grade question as again (1)", cls: "btn-destructive learnkit-btn-again learnkit-btn-again learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
-          { rating: "hard", label: "Hard", subtitle: getSubtitle("hard"), kbd: "2", tooltip: "Grade question as hard (2)", cls: "btn learnkit-btn-hard learnkit-btn-hard learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
-          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "3", tooltip: "Grade question as good (3)", cls: "btn learnkit-btn-good learnkit-btn-good learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
-          { rating: "easy", label: "Easy", subtitle: getSubtitle("easy"), kbd: "4", tooltip: "Grade question as easy (4)", cls: "btn learnkit-btn-easy learnkit-btn-easy learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Not recalled easily (1)", cls: "btn-destructive learnkit-btn-again learnkit-btn-again learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "hard", label: "Hard", subtitle: getSubtitle("hard"), kbd: "2", tooltip: "Recalled with difficulty (2)", cls: "btn learnkit-btn-hard learnkit-btn-hard learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "3", tooltip: "Recalled with effort (3)", cls: "btn learnkit-btn-good learnkit-btn-good learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "easy", label: "Easy", subtitle: getSubtitle("easy"), kbd: "4", tooltip: "Recalled easily (4)", cls: "btn learnkit-btn-easy learnkit-btn-easy learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
         ] as const)
       : ([
-          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Grade question as again (1)", cls: "btn-destructive learnkit-btn-again learnkit-btn-again learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
-          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "2", tooltip: "Grade question as good (2)", cls: "btn learnkit-btn-good learnkit-btn-good learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "again", label: "Again", subtitle: getSubtitle("again"), kbd: "1", tooltip: "Not recalled easily (1)", cls: "btn-destructive learnkit-btn-again learnkit-btn-again learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
+          { rating: "good", label: "Good", subtitle: getSubtitle("good"), kbd: "2", tooltip: "Recalled easily (2)", cls: "btn learnkit-btn-good learnkit-btn-good learnkit-grade-btn-with-interval learnkit-grade-btn-with-interval" },
         ] as const);
 
     for (const grade of grades) {

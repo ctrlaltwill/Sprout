@@ -36,7 +36,7 @@
  */
 import { log } from "../../platform/core/logger";
 import { queryFirst } from "../../platform/core/ui";
-import { convertInlineDisplayMath } from "../../platform/core/shared-utils";
+import { convertInlineDisplayMath, parseClozeTokens, resolveNestedClozeAnswers } from "../../platform/core/shared-utils";
 import { replaceCircleFlagTokens } from "../../platform/flags/flag-tokens";
 import { FIELD_START_READING_RE, unescapeDelimiterText, splitAtDelimiterTerminator, escapeDelimiterRe, } from "../../platform/core/delimiter";
 import { CARD_ANCHOR_INLINE_RE } from "../../platform/core/identity";
@@ -592,20 +592,20 @@ export function buildCardContentHTML(card) {
 export function buildClozeSectionHTML(clozeContent) {
     let lastIndex = 0;
     let processedHtml = '';
-    const clozeMatches = matchClozeTokensBraceAware(clozeContent);
+    const clozeMatches = parseClozeTokens(clozeContent).tokens;
     for (const cm of clozeMatches) {
-        if (cm.index > lastIndex) {
-            const nonCloze = clozeContent.slice(lastIndex, cm.index) || '';
+        if (cm.start > lastIndex) {
+            const nonCloze = clozeContent.slice(lastIndex, cm.start) || '';
             processedHtml += `<span class="learnkit-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
         }
-        const answer = cm.content;
+        const answer = resolveNestedClozeAnswers(cm.answer);
         if (answer && answer.trim().length > 0) {
             processedHtml += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${processMarkdownFeatures(answer)}</span></span>`;
         }
         else {
             processedHtml += `<span class="learnkit-cloze-blank"></span>`;
         }
-        lastIndex = cm.index + cm.fullMatch.length;
+        lastIndex = cm.end;
     }
     if (lastIndex < clozeContent.length) {
         const nonCloze = clozeContent.slice(lastIndex) || '';

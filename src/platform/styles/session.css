@@ -291,7 +291,7 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 .learnkit .lk-session-card > header.learnkit-session-topbar {
   margin: 1.2rem 1.2rem 0rem 1.2rem;
-  padding: 1.2rem;
+  padding: 1.2rem 0.6rem;
   min-height: 40px;
   border: 0.5px solid var(--color-base-35);
   border-radius: var(--radius-md);
@@ -552,7 +552,8 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
   margin-top: 0.3rem;
   margin-bottom: 0.3rem;
   padding-inline-start: 1.5em;
-  line-height: 1.15;
+  font-size: var(--lk-session-body-font-size);
+  line-height: 1.75;
 }
 
 .lk-session-card ul {
@@ -566,7 +567,8 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 .lk-session-card li {
   margin: 0.3rem 0;
   padding: 0;
-  line-height: 1.15;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .lk-session-card li > p {
@@ -581,11 +583,11 @@ body.is-phone .learnkit .lk-review-title-strip-session .lk-review-title-timer-ho
 
 /* Override .learnkit-md-block line-height for list content specifically. */
 .lk-session-card .learnkit-md-block :is(ul, ol, li) {
-  line-height: 1.15;
+  line-height: 1.75;
 }
 
 .lk-session-card .learnkit-md-block :is(ul, ol) {
-  margin-block: 0.3rem;
+  margin-block: 0.7rem;
 }
 
 /* ---- Markdown heading scale inside session cards ---- */

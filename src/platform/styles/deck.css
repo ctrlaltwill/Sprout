@@ -58,11 +58,6 @@
   color: var(--color-base-100);
 }
 
-.learnkit .learnkit-deck-disclosure:hover svg,
-.learnkit .learnkit-deck-disclosure:focus-visible svg {
-  color: var(--color-base-100);
-}
-
 .learnkit .learnkit-deck-disclosure:focus-visible {
   outline: 2px solid rgba(var(--interactive-accent-rgb), 0.45);
   outline-offset: 2px;
@@ -72,10 +67,9 @@
 .learnkit .learnkit-deck-disclosure svg {
   width: 12.8px;
   height: 12.8px;
-  transition:
-    transform 140ms ease,
-    color 0.22s ease,
-    stroke 0.22s ease;
+  color: currentColor;
+  stroke: currentColor;
+  transition: transform 140ms ease;
   transform-origin: 50% 50%;
 }
 

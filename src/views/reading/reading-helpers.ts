@@ -37,7 +37,7 @@
 
 import { log } from "../../platform/core/logger";
 import { queryFirst } from "../../platform/core/ui";
-import { convertInlineDisplayMath } from "../../platform/core/shared-utils";
+import { convertInlineDisplayMath, parseClozeTokens, resolveNestedClozeAnswers } from "../../platform/core/shared-utils";
 import { replaceCircleFlagTokens } from "../../platform/flags/flag-tokens";
 import {
   FIELD_START_READING_RE,
@@ -585,57 +585,6 @@ export function renderMathInElement(el: HTMLElement) {
   }
 }
 
-/* -----------------------
-   Brace-aware cloze matching
-   ----------------------- */
-
-interface ClozeMatchResult {
-  index: number;
-  fullMatch: string;
-  content: string;
-}
-
-/**
- * Brace-aware cloze token matcher.
- * Unlike `/\{\{c\d+::([\s\S]*?)\}\}/g`, this correctly handles LaTeX
- * with nested braces (e.g. `\frac{a}{b}`) by tracking brace depth.
- */
-function matchClozeTokensBraceAware(source: string): ClozeMatchResult[] {
-  const results: ClozeMatchResult[] = [];
-  const opener = /\{\{c\d+::/g;
-  let m: RegExpExecArray | null;
-
-  while ((m = opener.exec(source)) !== null) {
-    const startIdx = m.index;
-    const contentStart = startIdx + m[0].length;
-    let depth = 0;
-    let i = contentStart;
-    let found = false;
-
-    while (i < source.length) {
-      if (source[i] === '{') {
-        depth++;
-      } else if (source[i] === '}') {
-        if (depth > 0) {
-          depth--;
-        } else if (i + 1 < source.length && source[i + 1] === '}') {
-          const content = source.slice(contentStart, i);
-          const fullMatch = source.slice(startIdx, i + 2);
-          results.push({ index: startIdx, fullMatch, content });
-          opener.lastIndex = i + 2;
-          found = true;
-          break;
-        }
-      }
-      i++;
-    }
-
-    if (!found) { /* malformed cloze — skip */ }
-  }
-
-  return results;
-}
-
 export function buildCardContentHTML(card: SproutCard): string {
   let contentHTML = '';
   if (card.type === "cloze" && card.fields.CQ) {
@@ -682,19 +631,19 @@ export function buildCardContentHTML(card: SproutCard): string {
 export function buildClozeSectionHTML(clozeContent: string): string {
   let lastIndex = 0;
   let processedHtml = '';
-  const clozeMatches = matchClozeTokensBraceAware(clozeContent);
+  const clozeMatches = parseClozeTokens(clozeContent).tokens;
   for (const cm of clozeMatches) {
-    if (cm.index > lastIndex) {
-      const nonCloze = clozeContent.slice(lastIndex, cm.index) || '';
+    if (cm.start > lastIndex) {
+      const nonCloze = clozeContent.slice(lastIndex, cm.start) || '';
       processedHtml += `<span class="learnkit-text-muted">${processMarkdownFeatures(nonCloze)}</span>`;
     }
-    const answer = cm.content;
+    const answer = resolveNestedClozeAnswers(cm.answer);
     if (answer && answer.trim().length > 0) {
       processedHtml += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${processMarkdownFeatures(answer)}</span></span>`;
     } else {
       processedHtml += `<span class="learnkit-cloze-blank"></span>`;
     }
-    lastIndex = cm.index + cm.fullMatch.length;
+    lastIndex = cm.end;
   }
   if (lastIndex < clozeContent.length) {
     const nonCloze = clozeContent.slice(lastIndex) || '';

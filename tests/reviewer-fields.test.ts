@@ -47,6 +47,7 @@ describe("reviewer fields utilities", () => {
   it("validates cloze text", () => {
     expect(() => validateClozeText("{{c1::ok}}")).not.toThrow();
     expect(() => validateClozeText("No cloze here")).toThrow();
+    expect(() => validateClozeText("{{c0::ok}}")) .not.toThrow();
   });
 
   it("builds question and answer strings", () => {

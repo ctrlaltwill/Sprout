@@ -8,7 +8,7 @@
  *   - ClozeRenderOptions — Options for cloze rendering (mode, colours, typed-answer state)
  */
 import { el, setCssProps } from "../../platform/core/ui";
-import { getClozeRenderOccurrences, splitClozeAnswerAndHint } from "../../platform/core/shared-utils";
+import { getClozeRenderOccurrences, parseClozeTokens, resolveNestedClozeAnswers } from "../../platform/core/shared-utils";
 import { applyInlineMarkdown } from "../../platform/integrations/anki/anki-mapper";
 import { hydrateCircleFlagsInElement, processCircleFlagsInMarkdown } from "../../platform/flags/flag-tokens";
 function makeTypedAnswerKey(clozeIndex, occurrence) {
@@ -116,10 +116,7 @@ export function renderClozeFront(text, reveal, targetIndex, opts) {
     p.setAttribute("dir", "auto");
     p.className = "whitespace-pre-wrap break-words";
     container.appendChild(p);
-    const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
     const clozeOccurrences = new Map();
-    let last = 0;
-    let m;
     const measureChPx = () => {
         const probe = document.createElement("span");
         probe.className = "learnkit-cloze-probe";
@@ -138,13 +135,12 @@ export function renderClozeFront(text, reveal, targetIndex, opts) {
         return Math.max(30, widthAdjusted * chPx);
     };
     const ensureSpaceBeforeBlank = () => {
-        var _a;
         const lastNode = p.lastChild;
+        const lastText = (lastNode === null || lastNode === void 0 ? void 0 : lastNode.textContent) || "";
+        if (/\s$/.test(lastText))
+            return;
         if (lastNode && lastNode.nodeType === Node.TEXT_NODE) {
-            const t = (_a = lastNode.textContent) !== null && _a !== void 0 ? _a : "";
-            if (/\s$/.test(t))
-                return;
-            lastNode.textContent = t + " ";
+            lastNode.textContent = lastText + " ";
             return;
         }
         if (lastNode)
@@ -162,108 +158,103 @@ export function renderClozeFront(text, reveal, targetIndex, opts) {
     };
     /** Track first typed input for auto-focus */
     let firstTypedInput = null;
-    while ((m = re.exec(text))) {
-        if (m.index > last) {
-            appendFormattedText(p, text.slice(last, m.index));
-        }
-        const idx = Number(m[1]);
-        const rawContent = (_c = m[2]) !== null && _c !== void 0 ? _c : "";
-        const { answer, hint } = splitClozeAnswerAndHint(rawContent);
-        const plainAns = stripInlineMarkdown(answer);
-        const plainHint = stripInlineMarkdown(hint || "");
-        const occurrence = ((_d = clozeOccurrences.get(idx)) !== null && _d !== void 0 ? _d : 0) + 1;
-        clozeOccurrences.set(idx, occurrence);
-        const answerKey = makeTypedAnswerKey(idx, occurrence);
-        const isTarget = typeof targetIndex === "number" ? idx === targetIndex : true;
-        if (!isTarget) {
-            // Non-target clozes: always show answer text inline
-            appendFormattedText(p, answer);
-        }
-        else if (reveal) {
-            // ── BACK (revealed) ──────────────────────────────
-            if (mode === "typed") {
-                // Typed mode back: compare what was typed to the expected answer
-                const typed = ((_e = typedAnswers.get(answerKey)) !== null && _e !== void 0 ? _e : "").trim();
-                const isCorrect = typed.toLowerCase() === plainAns.toLowerCase();
-                if (isCorrect) {
-                    // Correct: green pill with answer text
-                    const span = document.createElement("span");
-                    span.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
-                    applyInlineMarkdownWithFlags(span, answer);
-                    p.appendChild(span);
+    const appendRenderedSegment = (parent, source, activeTargetIndex) => {
+        let last = 0;
+        for (const token of parseClozeTokens(source).tokens) {
+            if (token.start > last) {
+                appendFormattedText(parent, source.slice(last, token.start));
+            }
+            const idx = token.clozeIndex;
+            const answer = token.answer;
+            const resolvedAnswer = resolveNestedClozeAnswers(answer);
+            const hint = token.hint;
+            const plainAns = stripInlineMarkdown(resolvedAnswer);
+            const plainHint = stripInlineMarkdown(hint || "");
+            const occurrence = (clozeOccurrences.get(idx) || 0) + 1;
+            clozeOccurrences.set(idx, occurrence);
+            const answerKey = makeTypedAnswerKey(idx, occurrence);
+            const isTarget = typeof activeTargetIndex === "number" ? idx === activeTargetIndex : true;
+            if (!isTarget) {
+                appendRenderedSegment(parent, answer, activeTargetIndex);
+            }
+            else if (reveal) {
+                if (mode === "typed") {
+                    const typed = ((_e = typedAnswers.get(answerKey)) !== null && _e !== void 0 ? _e : "").trim();
+                    const isCorrect = typed.toLowerCase() === plainAns.toLowerCase();
+                    if (isCorrect) {
+                        const span = document.createElement("span");
+                        span.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
+                        applyInlineMarkdownWithFlags(span, resolvedAnswer);
+                        parent.appendChild(span);
+                    }
+                    else {
+                        const wrongSpan = document.createElement("span");
+                        wrongSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-wrong";
+                        wrongSpan.textContent = typed || "\u00A0\u00A0\u00A0";
+                        parent.appendChild(wrongSpan);
+                        parent.appendChild(document.createTextNode(" "));
+                        const correctSpan = document.createElement("span");
+                        correctSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
+                        applyInlineMarkdownWithFlags(correctSpan, resolvedAnswer);
+                        parent.appendChild(correctSpan);
+                    }
                 }
                 else {
-                    // Wrong (or blank): always show a red pill first, then the green correct answer.
-                    const wrongSpan = document.createElement("span");
-                    wrongSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-wrong";
-                    wrongSpan.textContent = typed || "\u00A0\u00A0\u00A0";
-                    p.appendChild(wrongSpan);
-                    p.appendChild(document.createTextNode(" "));
-                    const correctSpan = document.createElement("span");
-                    correctSpan.className = "learnkit-cloze-revealed learnkit-cloze-typed-correct";
-                    applyInlineMarkdownWithFlags(correctSpan, answer);
-                    p.appendChild(correctSpan);
+                    const answerSpan = document.createElement("span");
+                    answerSpan.className = "learnkit-cloze-revealed";
+                    applyInlineMarkdownWithFlags(answerSpan, resolvedAnswer);
+                    if (opts === null || opts === void 0 ? void 0 : opts.clozeBgColor) {
+                        setCssProps(answerSpan, "background-color", opts.clozeBgColor);
+                    }
+                    if (opts === null || opts === void 0 ? void 0 : opts.clozeTextColor) {
+                        setCssProps(answerSpan, "--learnkit-cloze-color", opts.clozeTextColor);
+                    }
+                    else {
+                        setTimeout(() => {
+                            var _a;
+                            const bg = getComputedStyle(answerSpan).backgroundColor;
+                            const rgb = (_a = bg.match(/\d+/g)) === null || _a === void 0 ? void 0 : _a.map(Number);
+                            if (rgb && rgb.length >= 3) {
+                                const [r, g, b] = rgb;
+                                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                                setCssProps(answerSpan, "--learnkit-cloze-color", luminance > 0.7 ? "#111" : "#fff");
+                            }
+                        }, 0);
+                    }
+                    parent.appendChild(answerSpan);
                 }
             }
             else {
-                // Standard mode back: normal accent-coloured reveal
-                const answerSpan = document.createElement("span");
-                answerSpan.className = "learnkit-cloze-revealed";
-                applyInlineMarkdownWithFlags(answerSpan, answer);
-                // Apply custom colours if provided (standard mode only)
-                if (opts === null || opts === void 0 ? void 0 : opts.clozeBgColor) {
-                    setCssProps(answerSpan, "background-color", opts.clozeBgColor);
+                if (mode === "typed") {
+                    ensureSpaceBeforeBlank();
+                    const wrap = buildTypedClozeInput(parent, idx, occurrence, resolvedAnswer, hint, opts);
+                    parent.appendChild(wrap);
+                    if (!firstTypedInput)
+                        firstTypedInput = wrap.querySelector("input");
                 }
-                if (opts === null || opts === void 0 ? void 0 : opts.clozeTextColor) {
-                    setCssProps(answerSpan, "--learnkit-cloze-color", opts.clozeTextColor);
+                else if (hint) {
+                    const hintSpan = document.createElement("span");
+                    hintSpan.className = "learnkit-cloze-hint";
+                    applyInlineMarkdownWithFlags(hintSpan, hint);
+                    setCssProps(hintSpan, "width", `${computeBlankWidthPx(plainAns || plainHint)}px`);
+                    parent.appendChild(hintSpan);
                 }
                 else {
-                    // Auto-contrast detection
-                    setTimeout(() => {
-                        var _a;
-                        const bg = getComputedStyle(answerSpan).backgroundColor;
-                        const rgb = (_a = bg.match(/\d+/g)) === null || _a === void 0 ? void 0 : _a.map(Number);
-                        if (rgb && rgb.length >= 3) {
-                            const [r, g, b] = rgb;
-                            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                            setCssProps(answerSpan, "--learnkit-cloze-color", luminance > 0.7 ? "#111" : "#fff");
-                        }
-                    }, 0);
+                    ensureSpaceBeforeBlank();
+                    const blank = document.createElement("span");
+                    blank.className = "learnkit-cloze-blank hidden-cloze";
+                    blank.textContent = "";
+                    setCssProps(blank, "--learnkit-cloze-width", `${computeBlankWidthPx(plainAns)}px`);
+                    parent.appendChild(blank);
                 }
-                p.appendChild(answerSpan);
             }
+            last = token.end;
         }
-        else {
-            // ── FRONT (unrevealed) ───────────────────────────
-            if (mode === "typed") {
-                ensureSpaceBeforeBlank();
-                const wrap = buildTypedClozeInput(p, idx, occurrence, answer, hint, opts);
-                p.appendChild(wrap);
-                if (!firstTypedInput)
-                    firstTypedInput = wrap.querySelector("input");
-            }
-            else if (hint) {
-                const hintSpan = document.createElement("span");
-                hintSpan.className = "learnkit-cloze-hint";
-                applyInlineMarkdownWithFlags(hintSpan, hint);
-                setCssProps(hintSpan, "width", `${computeBlankWidthPx(plainAns || plainHint)}px`);
-                p.appendChild(hintSpan);
-            }
-            else {
-                ensureSpaceBeforeBlank();
-                // Standard mode: blank underline
-                const blank = document.createElement("span");
-                blank.className = "learnkit-cloze-blank hidden-cloze";
-                blank.textContent = "";
-                setCssProps(blank, "--learnkit-cloze-width", `${computeBlankWidthPx(plainAns)}px`);
-                p.appendChild(blank);
-            }
+        if (last < source.length) {
+            appendFormattedText(parent, source.slice(last));
         }
-        last = m.index + m[0].length;
-    }
-    if (last < text.length) {
-        appendFormattedText(p, text.slice(last));
-    }
+    };
+    appendRenderedSegment(p, text, targetIndex);
     // Auto-focus the first typed input when in typed mode
     if (firstTypedInput) {
         const inputToFocus = firstTypedInput;

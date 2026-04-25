@@ -1,3 +1,4 @@
+import { buildCanonicalGroupCaseMap, normalizeGroupPath, normaliseGroupPath } from "./group-normalization";
 /**
  * @file src/indexes/group-index.ts
  * @summary Maintains a cached index of card groups (decks/tags) with per-group card counts and scheduling-state breakdowns. Provides group-path normalisation, prefix expansion for nested groups, and a singleton GroupIndex class that rebuilds on demand when the store changes.
@@ -11,30 +12,7 @@
  *  - getGroupIndex         — returns the singleton GroupIndex instance, rebuilding if invalidated
  *  - invalidateGroupIndex  — marks the cached GroupIndex as stale so it rebuilds on next access
  */
-/** Normalise a group path like " /a//b/ c / " -> "a/b/c" */
-export function normalizeGroupPath(raw) {
-    let normalizedPath = String(raw !== null && raw !== void 0 ? raw : "").trim();
-    if (!normalizedPath)
-        return null;
-    // Convert backslashes to slashes (helps if pasted from Windows-y paths)
-    normalizedPath = normalizedPath.replace(/\\/g, "/");
-    normalizedPath = normalizedPath.replace(/::/g, "/");
-    // Trim outer slashes
-    normalizedPath = normalizedPath.replace(/^\/+/, "").replace(/\/+$/, "");
-    // Collapse repeated slashes
-    normalizedPath = normalizedPath.replace(/\/{2,}/g, "/");
-    // Split/trim segments and drop empties
-    const segments = normalizedPath
-        .split("/")
-        .map((segment) => segment.trim())
-        .filter(Boolean);
-    if (!segments.length)
-        return null;
-    return segments.join("/");
-}
-export function normaliseGroupPath(raw) {
-    return normalizeGroupPath(raw);
-}
+export { normalizeGroupPath, normaliseGroupPath };
 /** Expand "a/b/c" -> ["a", "a/b", "a/b/c"] */
 export function expandGroupPrefixes(path) {
     const normalizedPath = normalizeGroupPath(path);
@@ -72,7 +50,7 @@ export class GroupIndex {
     build(cards) {
         var _a;
         this.groupToIds.clear();
-        const originalCaseKeys = new Map();
+        const observedGroupKeys = [];
         for (const card of cards) {
             const id = String((_a = card === null || card === void 0 ? void 0 : card.id) !== null && _a !== void 0 ? _a : "");
             if (!id)
@@ -85,9 +63,7 @@ export class GroupIndex {
                 const prefixes = expandGroupPrefixes(normalizedGroup);
                 for (const groupKey of prefixes) {
                     const lowerKey = groupKey.toLowerCase();
-                    if (!originalCaseKeys.has(lowerKey)) {
-                        originalCaseKeys.set(lowerKey, groupKey);
-                    }
+                    observedGroupKeys.push(groupKey);
                     let cardIds = this.groupToIds.get(lowerKey);
                     if (!cardIds) {
                         cardIds = new Set();
@@ -97,7 +73,7 @@ export class GroupIndex {
                 }
             }
         }
-        this.keys = Array.from(originalCaseKeys.values()).sort((a, b) => a.localeCompare(b));
+        this.keys = Array.from(buildCanonicalGroupCaseMap(observedGroupKeys).values()).sort((a, b) => a.localeCompare(b));
         this.keysLower = this.keys.map((k) => k.toLowerCase());
         return this;
     }

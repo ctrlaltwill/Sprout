@@ -1,45 +1,5 @@
-import { processClozeForMath, splitClozeAnswerAndHint } from "../../platform/core/shared-utils";
+import { parseClozeTokens, processClozeForMath, resolveNestedClozeAnswers } from "../../platform/core/shared-utils";
 import { escapeHtml, processMarkdownFeatures } from "./reading-helpers";
-
-interface ClozeMatch {
-  index: number;
-  fullMatch: string;
-  content: string;
-}
-
-function matchClozeTokensBraceAware(source: string): ClozeMatch[] {
-  const results: ClozeMatch[] = [];
-  const opener = /\{\{c\d+::/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = opener.exec(source)) !== null) {
-    const startIdx = match.index;
-    const contentStart = startIdx + match[0].length;
-    let depth = 0;
-    let index = contentStart;
-
-    while (index < source.length) {
-      if (source[index] === "{") {
-        depth++;
-      } else if (source[index] === "}") {
-        if (depth > 0) {
-          depth--;
-        } else if (index + 1 < source.length && source[index + 1] === "}") {
-          results.push({
-            index: startIdx,
-            fullMatch: source.slice(startIdx, index + 2),
-            content: source.slice(contentStart, index),
-          });
-          opener.lastIndex = index + 2;
-          break;
-        }
-      }
-      index++;
-    }
-  }
-
-  return results;
-}
 
 function stripInlineMarkdownMarkers(text: string): string {
   return String(text ?? "")
@@ -78,27 +38,27 @@ export function buildReadingFlashcardCloze(text: string, mode: "front" | "back")
     );
   }
 
-  const clozeMatches = matchClozeTokensBraceAware(source);
+  const clozeMatches = parseClozeTokens(source).tokens;
   let out = "";
   let last = 0;
 
   for (const match of clozeMatches) {
-    if (match.index > last) {
-      out += renderMarkdownTextWithExplicitBreaks(source.slice(last, match.index));
+    if (match.start > last) {
+      out += renderMarkdownTextWithExplicitBreaks(source.slice(last, match.start));
     }
 
-    const { answer, hint } = splitClozeAnswerAndHint(match.content.trim());
-    const trimmedAnswer = answer.trim();
+    const resolvedAnswer = resolveNestedClozeAnswers(match.answer).trim();
+    const hint = match.hint;
 
     if (mode === "front") {
       out += hint
-        ? buildReadingViewHintHtml(trimmedAnswer, hint)
+        ? buildReadingViewHintHtml(resolvedAnswer, hint)
         : `<span class="learnkit-flashcard-blank">&nbsp;</span>`;
     } else {
-      out += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${renderMarkdownTextWithExplicitBreaks(trimmedAnswer)}</span></span>`;
+      out += `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${renderMarkdownTextWithExplicitBreaks(resolvedAnswer)}</span></span>`;
     }
 
-    last = match.index + match.fullMatch.length;
+    last = match.end;
   }
 
   if (last < source.length) {

@@ -225,7 +225,7 @@ export class SproutReviewerView extends ItemView {
         }
         const total = Math.max(0, Number((_m = (_l = (_k = this.session) === null || _k === void 0 ? void 0 : _k.stats) === null || _l === void 0 ? void 0 : _l.total) !== null && _m !== void 0 ? _m : 0));
         const done = Math.max(0, Number((_q = (_p = (_o = this.session) === null || _o === void 0 ? void 0 : _o.stats) === null || _p === void 0 ? void 0 : _p.done) !== null && _q !== void 0 ? _q : 0));
-        const remaining = Math.max(0, total - done);
+        const remaining = Math.max(0, total - done + this._pendingSameDayRequeueCount());
         if (remaining === 0) {
             return this.tx("ui.reviewer.title.noneDue", "No flashcards are currently due!");
         }
@@ -233,6 +233,57 @@ export class SproutReviewerView extends ItemView {
             count: remaining,
             suffix: remaining === 1 ? "" : "s",
         });
+    }
+    _startOfTomorrowMs(now) {
+        const date = new Date(now);
+        date.setHours(24, 0, 0, 0);
+        return date.getTime();
+    }
+    _isPendingSameDayRequeue(meta) {
+        return (meta === null || meta === void 0 ? void 0 : meta.sameDayRequeue) === true;
+    }
+    _pendingSameDayRequeueCount() {
+        var _a;
+        const graded = ((_a = this.session) === null || _a === void 0 ? void 0 : _a.graded) ?? {};
+        let count = 0;
+        for (const entry of Object.values(graded)) {
+            if (entry && this._isPendingSameDayRequeue(entry.meta))
+                count += 1;
+        }
+        return count;
+    }
+    _shouldRequeueSameDayAgain(rating, nextDue, now) {
+        return rating === "again"
+            && Number.isFinite(nextDue)
+            && Number(nextDue) < this._startOfTomorrowMs(now);
+    }
+    _requeueCurrentCardToEnd(id) {
+        var _a;
+        if (!this.session)
+            return null;
+        const queue = this.session.queue ?? [];
+        const index = Number(((_a = this.session) === null || _a === void 0 ? void 0 : _a.index) ?? 0);
+        delete this.session.graded[id];
+        this.session.stats.done = Object.keys(this.session.graded || {}).length;
+        if (queue.length === 0)
+            return null;
+        if (index < 0 || index >= queue.length)
+            return Math.min(index, queue.length - 1);
+        if (queue.length === 1)
+            return index;
+        const originalLastIndex = queue.length - 1;
+        const [current] = queue.splice(index, 1);
+        if (!current)
+            return Math.min(index, queue.length - 1);
+        queue.push(current);
+        if (index < originalLastIndex)
+            return index;
+        const nextUngradedIndex = queue.findIndex((queuedCard) => {
+            var _a, _b;
+            const queuedId = String(((_a = queuedCard) === null || _a === void 0 ? void 0 : _a.id) ?? "");
+            return queuedId !== id && !((_b = this.session) === null || _b === void 0 ? void 0 : _b.graded[queuedId]);
+        });
+        return nextUngradedIndex >= 0 ? nextUngradedIndex : queue.length - 1;
     }
     _ensureTitleStrip(root) {
         var _a;
@@ -1213,7 +1264,15 @@ export class SproutReviewerView extends ItemView {
             if (this._isCoachSession && this._trackCoachProgress && !this.isPracticeSession()) {
                 await this.plugin.recordCoachProgressForScope(this.session.scope, "flashcard", 1);
             }
-            this.session.graded[id] = { rating, at: now, meta: meta || undefined };
+            const shouldRequeueSameDay = this.mode === "session"
+                && this._shouldRequeueSameDayAgain(rating, nextDue, now);
+            let gradeMeta = meta && typeof meta === "object" && !Array.isArray(meta)
+                ? { ...meta }
+                : undefined;
+            if (shouldRequeueSameDay) {
+                gradeMeta = { ...(gradeMeta || {}), sameDayRequeue: true };
+            }
+            this.session.graded[id] = { rating, at: now, meta: gradeMeta };
             this.session.stats.done = Object.keys(this.session.graded).length;
             this.showAnswer = true;
             this._timing.startedAt = 0;
@@ -1370,11 +1429,23 @@ export class SproutReviewerView extends ItemView {
         getTtsService().stop();
         this._ttsLastSpokenKey = "";
         const card = this.currentCard();
+        let requeueTargetIndex = null;
         if (card) {
             const id = String(card.id);
             if (!this.session.graded[id]) {
                 await this.gradeCurrentRating("again", { auto: true });
             }
+            const gradedEntry = this.session.graded[id];
+            if (gradedEntry && this._isPendingSameDayRequeue(gradedEntry.meta)) {
+                requeueTargetIndex = this._requeueCurrentCardToEnd(id);
+            }
+        }
+        if (requeueTargetIndex !== null) {
+            this.session.index = requeueTargetIndex;
+            this.showAnswer = false;
+            this.resetTiming();
+            this.render();
+            return;
         }
         if (this.session.index < this.session.queue.length - 1) {
             this.session.index += 1;

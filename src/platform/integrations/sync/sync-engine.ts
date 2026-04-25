@@ -26,6 +26,7 @@ import {
 } from "../../../platform/core/delimiter";
 import type { CardState } from "../../types/scheduler";
 import { loadSchedulingFromDataJson } from "../../../platform/core/store";
+import { extractCompatibilityClozeIndices } from "../../../platform/core/shared-utils";
 import { expandGroupPrefixes, normaliseGroupPath } from "../../../engine/indexing/group-index";
 import { log } from "../../../platform/core/logger";
 import { stableIoChildId, normaliseGroupKey } from "../../../platform/image-occlusion/mask-tool";
@@ -59,6 +60,7 @@ type SyncNoticeCounts = {
   sameCount?: number;
   idsInserted?: number;
   removed?: number;
+  deletedDisplayCount?: number;
   tagsDeleted?: number;
 };
 
@@ -136,7 +138,7 @@ async function withVaultSyncLock<T>(fn: () => Promise<T>): Promise<T> {
 export function formatSyncNotice(prefix: string, res: SyncNoticeCounts, options: SyncNoticeOptions = {}): string {
   const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
   const parts: string[] = [];
-  const deletedCount = Number(res.removed ?? 0);
+  const deletedCount = Number(res.deletedDisplayCount ?? res.removed ?? 0);
   const idsInserted = Number(res.idsInserted ?? 0);
 
   if (res.newCount > 0) parts.push(`${res.newCount} ${plural(res.newCount, "new card", "new cards")}`);
@@ -734,21 +736,17 @@ function deleteOrphanIoChildren(plugin: LearnKitPlugin): number { return deleteO
 function deleteOrphanClozeChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "cloze", "cloze-child"); }
 function deleteOrphanReversedChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "reversed", "reversed-child"); }
 
+function countsAsStudyCardDeletion(cardType: string): boolean {
+  return cardType !== "cloze" && cardType !== "io" && cardType !== "reversed";
+}
+
 // ────────────────────────────────────────────
 // Child-type-specific utilities
 // ────────────────────────────────────────────
 
 /** Extracts cloze deletion indices (e.g. `{{c1::…}}`) from raw text. */
 function extractClozeIndices(text: string): number[] {
-  const raw = String(text ?? "");
-  const re = /\{\{c(\d+)::/gi;
-  const out = new Set<number>();
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(raw))) {
-    const n = Number(m[1]);
-    if (Number.isFinite(n) && n > 0) out.add(n);
-  }
-  return Array.from(out).sort((a, b) => a - b);
+  return extractCompatibilityClozeIndices(text);
 }
 
 /** Stable deterministic ID for a cloze child: `${parentId}::cloze::c${idx}`. */
@@ -1500,6 +1498,7 @@ export async function syncOneFile(
 
     // 5) Remove stale cards/quarantine entries no longer present in this note
     let removed = 0;
+    let deletedDisplayCount = 0;
     const removedIoParentData: Array<{ id: string; imageRef: string | null; sourceNotePath: string }> = [];
     const removedClozeParents: string[] = [];
     const removedReversedParents: string[] = [];
@@ -1511,25 +1510,37 @@ export async function syncOneFile(
       if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
 
       if (rec.lastSeenAt === 0) {
-        if (String(rec.type) === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null, sourceNotePath: String(rec.sourceNotePath || "") });
-        if (String(rec.type) === "cloze") removedClozeParents.push(String(id));
-        if (String(rec.type) === "reversed") removedReversedParents.push(String(id));
+        const cardType = String(rec.type);
+        if (cardType === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null, sourceNotePath: String(rec.sourceNotePath || "") });
+        if (cardType === "cloze") removedClozeParents.push(String(id));
+        if (cardType === "reversed") removedReversedParents.push(String(id));
 
         delete plugin.store.data.cards[id];
         if (plugin.store.data.states) delete (plugin.store.data.states)[id];
         removed += 1;
+        if (countsAsStudyCardDeletion(cardType)) deletedDisplayCount += 1;
       }
     }
 
     for (const ioData of removedIoParentData) {
-      removed += deleteIoChildren(plugin, ioData.id);
+      const childRemoved = deleteIoChildren(plugin, ioData.id);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
       if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
       const ioMap = plugin.store.data.io || {};
       if (ioMap[ioData.id]) delete ioMap[ioData.id];
     }
 
-    for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
-    for (const parentId of removedReversedParents) removed += deleteReversedChildren(plugin, parentId);
+    for (const parentId of removedClozeParents) {
+      const childRemoved = deleteClozeChildren(plugin, parentId);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
+    }
+    for (const parentId of removedReversedParents) {
+      const childRemoved = deleteReversedChildren(plugin, parentId);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
+    }
 
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
       const q = plugin.store.data.quarantine[id];
@@ -1541,9 +1552,11 @@ export async function syncOneFile(
     }
 
     if (pruneGlobalOrphans) {
-      removed += deleteOrphanIoChildren(plugin);
-      removed += deleteOrphanClozeChildren(plugin);
-      removed += deleteOrphanReversedChildren(plugin);
+      const orphanIoRemoved = deleteOrphanIoChildren(plugin);
+      const orphanClozeRemoved = deleteOrphanClozeChildren(plugin);
+      const orphanReversedRemoved = deleteOrphanReversedChildren(plugin);
+      removed += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
+      deletedDisplayCount += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
       const sanitizedStates = sanitizeOrphanStates(plugin);
       if (sanitizedStates > 0) {
         log.info(`syncOneFile: pruned ${sanitizedStates} orphaned scheduling state(s)`);
@@ -1572,6 +1585,7 @@ export async function syncOneFile(
       quarantinedCount,
       quarantinedIds,
       removed,
+      deletedDisplayCount,
       tagsDeleted,
     };
   });
@@ -1625,6 +1639,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
     const updatedCardIds: string[] = [];
 
     let removed = 0;
+    let deletedDisplayCount = 0;
 
     const usedIds = new Set<string>([
       ...Object.keys(plugin.store.data.cards || {}),
@@ -1899,25 +1914,37 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       if (String(card.type) === "io-child" || String(card.type) === "cloze-child" || String(card.type) === "reversed-child") continue;
 
       if (card.lastSeenAt !== now) {
-        if (String(card.type) === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null, sourceNotePath: String(card.sourceNotePath || "") });
-        if (String(card.type) === "cloze") removedClozeParents.push(String(id));
-        if (String(card.type) === "reversed") removedReversedParents.push(String(id));
+        const cardType = String(card.type);
+        if (cardType === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null, sourceNotePath: String(card.sourceNotePath || "") });
+        if (cardType === "cloze") removedClozeParents.push(String(id));
+        if (cardType === "reversed") removedReversedParents.push(String(id));
 
         delete plugin.store.data.cards[id];
         if (plugin.store.data.states) delete (plugin.store.data.states)[id];
         removed += 1;
+        if (countsAsStudyCardDeletion(cardType)) deletedDisplayCount += 1;
       }
     }
 
     for (const ioData of removedIoParentData) {
-      removed += deleteIoChildren(plugin, ioData.id);
+      const childRemoved = deleteIoChildren(plugin, ioData.id);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
       if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
       const ioMap = plugin.store.data.io || {};
       if (ioMap[ioData.id]) delete ioMap[ioData.id];
     }
 
-    for (const parentId of removedClozeParents) removed += deleteClozeChildren(plugin, parentId);
-    for (const parentId of removedReversedParents) removed += deleteReversedChildren(plugin, parentId);
+    for (const parentId of removedClozeParents) {
+      const childRemoved = deleteClozeChildren(plugin, parentId);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
+    }
+    for (const parentId of removedReversedParents) {
+      const childRemoved = deleteReversedChildren(plugin, parentId);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
+    }
 
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
       const q = plugin.store.data.quarantine[id];
@@ -1928,9 +1955,11 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       }
     }
 
-    removed += deleteOrphanIoChildren(plugin);
-    removed += deleteOrphanClozeChildren(plugin);
-    removed += deleteOrphanReversedChildren(plugin);
+    const orphanIoRemoved = deleteOrphanIoChildren(plugin);
+    const orphanClozeRemoved = deleteOrphanClozeChildren(plugin);
+    const orphanReversedRemoved = deleteOrphanReversedChildren(plugin);
+    removed += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
+    deletedDisplayCount += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
     const sanitizedStates = sanitizeOrphanStates(plugin);
     if (sanitizedStates > 0) {
       log.info(`syncQuestionBank: pruned ${sanitizedStates} orphaned scheduling state(s)`);
@@ -1962,6 +1991,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       quarantinedCount,
       quarantinedIds,
       removed,
+      deletedDisplayCount,
       tagsDeleted,
     };
   });

@@ -12,4 +12,14 @@ describe("reading view flashcard cloze hints", () => {
     expect(back).toBe('Mnemonic: <span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">Psoriatic arthritis</span></span>.');
     expect(back).not.toContain("::");
   });
+
+  it("reveals nested cloze answers without leaving raw nested syntax", () => {
+    const input = "Nested {{c3::cloze {{c1::test}}}}";
+
+    const back = buildReadingFlashcardCloze(input, "back");
+
+    expect(back).toContain("Nested");
+    expect(back).toContain("cloze test");
+    expect(back).not.toContain("{{c1::test}}");
+  });
 });

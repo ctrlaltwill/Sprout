@@ -177,8 +177,8 @@ export function injectMoreMenu(view: SproutReviewerView) {
   moreBtn.setAttribute("aria-controls", menuId);
   moreBtn.setAttribute("aria-expanded", "false");
   moreBtn.setAttribute("popovertarget", popoverId);
-  moreBtn.setAttribute("title", tx("ui.reviewer.more.tooltip", "More actions"));
-  moreBtn.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "More actions"));
+  moreBtn.setAttribute("title", tx("ui.reviewer.more.tooltip", "Open menu"));
+  moreBtn.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "Open menu"));
   moreBtn.textContent = tx("ui.reviewer.more.label", "More");
 
   const kbd = document.createElement("kbd");
@@ -225,10 +225,12 @@ export function injectMoreMenu(view: SproutReviewerView) {
     hotkey: string,
     onClick: () => void,
     disabled?: boolean,
+    ariaLabel?: string,
   ) => {
     const item = document.createElement("div");
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
+    item.setAttribute("aria-label", ariaLabel ?? label);
 
     item.className = disabled
       ? "group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm select-none opacity-50 cursor-not-allowed pointer-events-none"
@@ -272,11 +274,11 @@ export function injectMoreMenu(view: SproutReviewerView) {
 
   const showUndoHere = !!canUndoNow && !!undoFrame && String(undoFrame.id ?? "") !== String(id);
 
-  const buryItem = createMenuItem(tx("ui.reviewer.more.bury", "Bury"), "B", () => void view.buryCurrentCard(), graded);
+  const buryItem = createMenuItem(tx("ui.reviewer.more.bury", "Bury"), "B", () => void view.buryCurrentCard(), graded, "Bury flashcard");
   buryItem.dataset.sproutAction = "bury-card";
   menu.appendChild(buryItem);
 
-  const suspendItem = createMenuItem(tx("ui.reviewer.more.suspend", "Suspend"), "S", () => void view.suspendCurrentCard(), graded);
+  const suspendItem = createMenuItem(tx("ui.reviewer.more.suspend", "Suspend"), "S", () => void view.suspendCurrentCard(), graded, "Suspend flashcard");
   suspendItem.dataset.sproutAction = "suspend-card";
   menu.appendChild(suspendItem);
 
@@ -288,16 +290,16 @@ export function injectMoreMenu(view: SproutReviewerView) {
 
     const undoItem = createMenuItem(tx("ui.reviewer.more.undo", "Undo"), "U", () => {
       void view.undoLastGrade?.();
-    });
+    }, false, "Undo previous review and grading");
     undoItem.dataset.sproutAction = "undo-grade";
     menu.appendChild(undoItem);
   }
 
-  const openItem = createMenuItem(tx("ui.reviewer.more.openInNote", "Open in Note"), "O", () => void view.openCurrentCardInNote());
+  const openItem = createMenuItem(tx("ui.reviewer.more.openInNote", "Open in Note"), "O", () => void view.openCurrentCardInNote(), false, "Open flashcard in parent note");
   openItem.dataset.sproutAction = "open-note";
   menu.appendChild(openItem);
 
-  const editItem = createMenuItem(tx("ui.reviewer.more.edit", "Edit"), "E", () => view.openEditModalForCurrentCard());
+  const editItem = createMenuItem(tx("ui.reviewer.more.edit", "Edit"), "E", () => view.openEditModalForCurrentCard(), false, "Edit flashcard");
   editItem.dataset.sproutAction = "edit-card";
   menu.appendChild(editItem);
 

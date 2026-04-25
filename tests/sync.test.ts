@@ -94,6 +94,16 @@ describe("formatSyncNotice", () => {
     expect(result).toBe("Sync complete - 1 new card; 3 cards deleted");
   });
 
+  it("prefers the display deleted count when provided", () => {
+    const result = formatSyncNotice(
+      "Sync complete",
+      { newCount: 0, updatedCount: 0, removed: 3, deletedDisplayCount: 2 },
+      { includeDeleted: true },
+    );
+
+    expect(result).toBe("Sync complete - 2 cards deleted");
+  });
+
   it("shows singular deleted form", () => {
     const result = formatSyncNotice(
       "Sync complete",

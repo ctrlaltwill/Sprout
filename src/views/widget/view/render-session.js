@@ -887,6 +887,7 @@ function renderScheduledFooter(view, footer, card, graded, ioLike) {
     if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
         const revealBtn = makeTextButton({
             label: tx(view, "ui.widget.revealAnswer", "Reveal Answer"),
+            title: "Reveal answer",
             className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
             onClick: () => {
                 view.showAnswer = true;
@@ -929,7 +930,7 @@ function renderScheduledFooter(view, footer, card, graded, ioLike) {
             const againBtn = makeTextButton({
                 label: tx(view, "ui.widget.grade.again", "Again"),
                 subtitle: getSubtitle("again"),
-                title: tx(view, "ui.widget.grade.againTooltip", "Grade question as again (1)"),
+                title: tx(view, "ui.widget.grade.againTooltip", "Not recalled easily (1)"),
                 className: fourButton
                     ? "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full"
                     : "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half",
@@ -947,7 +948,7 @@ function renderScheduledFooter(view, footer, card, graded, ioLike) {
                 const hardBtn = makeTextButton({
                     label: tx(view, "ui.widget.grade.hard", "Hard"),
                     subtitle: getSubtitle("hard"),
-                    title: tx(view, "ui.widget.grade.hardTooltip", "Grade question as hard (2)"),
+                    title: tx(view, "ui.widget.grade.hardTooltip", "Recalled with difficulty (2)"),
                     className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
                     onClick: () => {
                         void (async () => {
@@ -965,8 +966,8 @@ function renderScheduledFooter(view, footer, card, graded, ioLike) {
                 label: tx(view, "ui.widget.grade.good", "Good"),
                 subtitle: getSubtitle("good"),
                 title: fourButton
-                    ? tx(view, "ui.widget.grade.goodTooltipFour", "Grade question as good (3)")
-                    : tx(view, "ui.widget.grade.goodTooltipTwo", "Grade question as good (2)"),
+                    ? tx(view, "ui.widget.grade.goodTooltipFour", "Recalled with effort (3)")
+                    : tx(view, "ui.widget.grade.goodTooltipTwo", "Recalled easily (2)"),
                 className: fourButton
                     ? "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full"
                     : "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half",
@@ -984,7 +985,7 @@ function renderScheduledFooter(view, footer, card, graded, ioLike) {
                 const easyBtn = makeTextButton({
                     label: tx(view, "ui.widget.grade.easy", "Easy"),
                     subtitle: getSubtitle("easy"),
-                    title: tx(view, "ui.widget.grade.easyTooltip", "Grade question as easy (4)"),
+                    title: tx(view, "ui.widget.grade.easyTooltip", "Recalled easily (4)"),
                     className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
                     onClick: () => {
                         void (async () => {
@@ -1113,6 +1114,7 @@ function renderActionRow(view, footer, card, graded) {
     const actionRow = el("div", "sprout-widget-action-row");
     const editBtn = makeTextButton({
         label: tx(view, "ui.widget.edit", "Edit"),
+        title: "Edit flashcard",
         className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half",
         onClick: () => view.openEditModalForCurrentCard(),
         kbd: "E",
@@ -1122,7 +1124,7 @@ function renderActionRow(view, footer, card, graded) {
     const moreBtn = document.createElement("button");
     moreBtn.type = "button";
     moreBtn.className = "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-half";
-    moreBtn.setAttribute("aria-label", tx(view, "ui.widget.more.tooltip", "More actions (M)"));
+    moreBtn.setAttribute("aria-label", tx(view, "ui.widget.more.tooltip", "Open menu"));
     moreBtn.setAttribute("data-tooltip-position", "top");
     applyWidgetHoverDarken(moreBtn);
     const moreText = document.createElement("span");

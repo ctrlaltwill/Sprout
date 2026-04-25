@@ -451,10 +451,10 @@ function makeHeaderMenu(opts: {
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-controls", `${id}-menu`);
   trigger.setAttribute("aria-expanded", "false");
-  trigger.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "More actions"));
+  trigger.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "Open menu"));
   if (opts.compactTrigger) {
     trigger.classList.add("lk-review-more-icon-btn");
-    trigger.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "More actions"));
+    trigger.setAttribute("aria-label", tx("ui.reviewer.more.tooltip", "Open menu"));
     const iconWrap = document.createElement("span");
     iconWrap.className = "inline-flex items-center justify-center";
     setIcon(iconWrap, "menu");
@@ -482,12 +482,13 @@ function makeHeaderMenu(opts: {
   
   panel.appendChild(menu);
 
-  const addItem = (label: string, hotkey: string | null, onClick: () => void, disabled = false) => {
+  const addItem = (label: string, hotkey: string | null, onClick: () => void, disabled = false, ariaLabel?: string) => {
     const item = document.createElement("div");
     item.className =
       "group learnkit-session-more-item flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer select-none outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
     item.setAttribute("role", "menuitem");
     item.tabIndex = disabled ? -1 : 0;
+    item.setAttribute("aria-label", ariaLabel ?? label);
     if (disabled) {
       item.classList.add("learnkit-menu-item--disabled", "learnkit-menu-item--disabled");
       item.setAttribute("aria-disabled", "true");
@@ -536,12 +537,12 @@ function makeHeaderMenu(opts: {
 
   // Open Note button
   if (window.sproutOpenCurrentCardNote) {
-    addItem("Open in Note", "O", window.sproutOpenCurrentCardNote, false);
+    addItem("Open in Note", "O", window.sproutOpenCurrentCardNote, false, "Open flashcard in parent note");
   }
-  addItem("Bury", "B", opts.onBury, !opts.canBurySuspend);
-  addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend);
-  addItem("Undo last grade", "U", opts.onUndo, !opts.canUndo);
-  addItem("Exit to Decks", "Q", opts.onExit);
+  addItem("Bury", "B", opts.onBury, !opts.canBurySuspend, "Bury flashcard");
+  addItem("Suspend", "S", opts.onSuspend, !opts.canBurySuspend, "Suspend flashcard");
+  addItem("Undo last grade", "U", opts.onUndo, !opts.canUndo, "Undo previous review and grading");
+  addItem("Exit to Decks", "Q", opts.onExit, false, "Exit back to deck selector");
   if (opts.canSkip) addItem("Skip card", "K", opts.onSkip);
 
   let cleanup: (() => void) | null = null;
@@ -1357,7 +1358,7 @@ export function renderSessionMode(args: Args) {
   const editBtn = isPhoneMobile
     ? makeTextButton({
       label: "",
-      title: t(args.interfaceLanguage, "ui.reviewer.edit", "Edit"),
+      title: "Edit flashcard",
       className: "learnkit-btn-toolbar lk-review-edit-icon-btn",
       onClick: () => {
         args.openEditModal?.();
@@ -1365,6 +1366,7 @@ export function renderSessionMode(args: Args) {
     })
     : makeTextButton({
       label: t(args.interfaceLanguage, "ui.reviewer.edit", "Edit"),
+      title: "Edit flashcard",
       className: "learnkit-btn-toolbar",
       onClick: () => {
         args.openEditModal?.();
@@ -1372,7 +1374,7 @@ export function renderSessionMode(args: Args) {
       kbd: "E",
     });
   if (isPhoneMobile) {
-    editBtn.setAttribute("aria-label", t(args.interfaceLanguage, "ui.reviewer.edit", "Edit"));
+    editBtn.setAttribute("aria-label", "Edit flashcard");
     const iconWrap = document.createElement("span");
     iconWrap.className = "inline-flex items-center justify-center";
     setIcon(iconWrap, "pencil");
@@ -1410,6 +1412,7 @@ export function renderSessionMode(args: Args) {
     mainRow.appendChild(
       makeTextButton({
         label: "Reveal",
+        title: "Reveal answer",
         className: "learnkit-btn-toolbar",
         onClick: () => {
           args.setShowAnswer(true);
@@ -1464,7 +1467,7 @@ export function renderSessionMode(args: Args) {
         const againBtn = makeTextButton({
           label: "Again",
           subtitle: getSubtitle("again"),
-          title: "Grade question as again (1)",
+          title: "Not recalled easily (1)",
           className: "btn-destructive",
           onClick: () => void args.gradeCurrentRating("again", {}).then(goNext),
           kbd: "1",
@@ -1476,7 +1479,7 @@ export function renderSessionMode(args: Args) {
           const hardBtn = makeTextButton({
             label: "Hard",
             subtitle: getSubtitle("hard"),
-            title: "Grade question as hard (2)",
+            title: "Recalled with difficulty (2)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("hard", {}).then(goNext),
             kbd: "2",
@@ -1487,7 +1490,7 @@ export function renderSessionMode(args: Args) {
           const goodBtn = makeTextButton({
             label: "Good",
             subtitle: getSubtitle("good"),
-            title: "Grade question as good (3)",
+            title: "Recalled with effort (3)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "3",
@@ -1498,7 +1501,7 @@ export function renderSessionMode(args: Args) {
           const easyBtn = makeTextButton({
             label: "Easy",
             subtitle: getSubtitle("easy"),
-            title: "Grade question as easy (4)",
+            title: "Recalled easily (4)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("easy", {}).then(goNext),
             kbd: "4",
@@ -1509,7 +1512,7 @@ export function renderSessionMode(args: Args) {
           const goodBtn = makeTextButton({
             label: "Good",
             subtitle: getSubtitle("good"),
-            title: "Grade question as good (2)",
+            title: "Recalled easily (2)",
             className: "btn",
             onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
             kbd: "2",

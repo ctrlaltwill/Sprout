@@ -9,6 +9,8 @@
  */
 import { CARD_START_DELIM_RE, FIELD_DELIM_RE, TITLE_OUTSIDE_DELIM_RE, ANY_HEADER_DELIM_RE, BASIC_SHORTHAND_RE, CLOZE_SHORTHAND_RE, stripClosingDelimiter, unescapeDelimiterText, escapeDelimiterRe, } from "../../platform/core/delimiter";
 import { CARD_ANCHOR_LINE_RE } from "../../platform/core/identity";
+import { validateClozeTextCompat } from "../../platform/core/shared-utils";
+import { normalizeGroups } from "../indexing/group-format";
 const ANCHOR_RE = CARD_ANCHOR_LINE_RE;
 function computeFenceMask(lines) {
     const inside = new Array(lines.length).fill(false);
@@ -42,22 +44,6 @@ function normaliseMultiline(s) {
 // stripClosingPipe and unescapePipeText are now in core/delimiter.ts
 const stripClosingPipe = stripClosingDelimiter;
 const unescapePipeText = unescapeDelimiterText;
-function normaliseGroupPathLocal(raw) {
-    let t = String(raw !== null && raw !== void 0 ? raw : "").trim();
-    if (!t)
-        return null;
-    t = t.replace(/\\/g, "/");
-    t = t.replace(/::/g, "/");
-    t = t.replace(/^\/+/, "").replace(/\/+$/, "");
-    t = t.replace(/\/{2,}/g, "/");
-    const parts = t
-        .split("/")
-        .map((p) => p.trim())
-        .filter(Boolean);
-    if (!parts.length)
-        return null;
-    return parts.join("/");
-}
 function parseGroups(raw) {
     if (!raw)
         return null;
@@ -66,33 +52,11 @@ function parseGroups(raw) {
         return null;
     // Split on comma and the active delimiter
     const delimRe = new RegExp(`[,${escapeDelimiterRe()}]`, "g");
-    const parts = flat
-        .split(delimRe)
-        .map((s) => normaliseGroupPathLocal(s))
-        .filter((x) => !!x);
-    if (!parts.length)
-        return null;
-    const uniq = Array.from(new Set(parts));
-    uniq.sort((a, b) => a.localeCompare(b));
-    return uniq.length ? uniq : null;
+    const groups = normalizeGroups(flat.split(delimRe));
+    return groups.length ? groups : null;
 }
 function validateClozeText(text) {
-    const errors = [];
-    const re = /\{\{c(\d+)::([\s\S]*?)\}\}/g;
-    let m;
-    let count = 0;
-    while ((m = re.exec(text)) !== null) {
-        count += 1;
-        const n = Number(m[1]);
-        const content = (m[2] || "").trim();
-        if (!Number.isFinite(n) || n <= 0)
-            errors.push("Cloze token has invalid number.");
-        if (!content)
-            errors.push("Cloze token content is empty.");
-    }
-    if (count === 0)
-        errors.push("Cloze card requires at least one {{cN::...}} token.");
-    return errors;
+    return validateClozeTextCompat(text);
 }
 /**
  * Auto-number bare `{{text}}` tokens into `{{c1::text}}`, `{{c2::text}}`, etc.

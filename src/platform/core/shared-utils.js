@@ -142,7 +142,23 @@ export function groupsToInput(groups) {
 }
 export function splitClozeAnswerAndHint(content) {
     const raw = String(content !== null && content !== void 0 ? content : "");
-    const hintSeparator = raw.indexOf("::");
+    let hintSeparator = -1;
+    let braceDepth = 0;
+    for (let index = 0; index < raw.length - 1; index++) {
+        const ch = raw[index];
+        if (ch === "{") {
+            braceDepth += 1;
+            continue;
+        }
+        if (ch === "}") {
+            braceDepth = Math.max(0, braceDepth - 1);
+            continue;
+        }
+        if (braceDepth === 0 && ch === ":" && raw[index + 1] === ":") {
+            hintSeparator = index;
+            break;
+        }
+    }
     if (hintSeparator === -1) {
         return { answer: raw, hint: null };
     }
@@ -234,6 +250,151 @@ function matchClozeTokensBraceAware(source) {
         }
     }
     return out;
+}
+function matchClozeOpeners(source) {
+    const out = [];
+    const opener = /\{\{c(\d+)::/gi;
+    let m;
+    while ((m = opener.exec(source)) !== null) {
+        out.push({
+            index: m.index,
+            clozeIndex: Number(m[1]),
+        });
+    }
+    return out;
+}
+function collectDistinctPositiveClozeIndices(indices) {
+    const out = new Set();
+    for (const index of indices) {
+        if (Number.isFinite(index) && index > 0)
+            out.add(index);
+    }
+    return Array.from(out).sort((a, b) => a - b);
+}
+function buildNonContiguousNumberingDiagnostic(distinctIndices) {
+    if (distinctIndices.length < 2)
+        return null;
+    const expectedCount = distinctIndices[distinctIndices.length - 1] - distinctIndices[0] + 1;
+    if (expectedCount === distinctIndices.length)
+        return null;
+    return {
+        code: "non-contiguous-numbering",
+        message: "Cloze numbering is non-contiguous; compatibility mode preserves only the indices currently present.",
+        level: "warning",
+    };
+}
+export function parseClozeTokens(text) {
+    const source = String(text !== null && text !== void 0 ? text : "");
+    const tokenMatches = matchClozeTokensBraceAware(source);
+    const openers = matchClozeOpeners(source);
+    const matchedStartIndices = new Set(tokenMatches.map((match) => match.index));
+    const diagnostics = [];
+    const occurrences = new Map();
+    const tokens = tokenMatches.map((match) => {
+        var _a;
+        const occurrence = ((_a = occurrences.get(match.clozeIndex)) !== null && _a !== void 0 ? _a : 0) + 1;
+        occurrences.set(match.clozeIndex, occurrence);
+        const { answer, hint } = splitClozeAnswerAndHint(match.content);
+        return {
+            fullMatch: match.fullMatch,
+            start: match.index,
+            end: match.index + match.fullMatch.length,
+            clozeIndex: match.clozeIndex,
+            rawContent: match.content,
+            answer,
+            hint,
+            occurrence,
+        };
+    });
+    if (!openers.length) {
+        diagnostics.push({
+            code: "missing-token",
+            message: "Cloze card requires at least one {{cN::...}} token.",
+            level: "error",
+        });
+    }
+    for (const opener of openers) {
+        if (!Number.isFinite(opener.clozeIndex) || opener.clozeIndex <= 0) {
+            diagnostics.push({
+                code: "invalid-index",
+                message: "Cloze token has invalid number.",
+                level: "error",
+                start: opener.index,
+                clozeIndex: opener.clozeIndex,
+            });
+        }
+        if (!matchedStartIndices.has(opener.index)) {
+            diagnostics.push({
+                code: "unclosed-token",
+                message: "Cloze token is not closed with }}.",
+                level: "error",
+                start: opener.index,
+                clozeIndex: opener.clozeIndex,
+            });
+        }
+    }
+    for (const token of tokens) {
+        if (!token.answer.trim()) {
+            diagnostics.push({
+                code: "empty-answer",
+                message: "Cloze token content is empty.",
+                level: "error",
+                start: token.start,
+                end: token.end,
+                clozeIndex: token.clozeIndex,
+            });
+        }
+    }
+    const distinctIndices = collectDistinctPositiveClozeIndices(tokens.map((token) => token.clozeIndex));
+    const nonContiguousNumberingDiagnostic = buildNonContiguousNumberingDiagnostic(distinctIndices);
+    if (nonContiguousNumberingDiagnostic)
+        diagnostics.push(nonContiguousNumberingDiagnostic);
+    return {
+        tokens,
+        diagnostics,
+        distinctIndices,
+    };
+}
+export function resolveNestedClozeAnswers(text) {
+    const source = String(text !== null && text !== void 0 ? text : "");
+    const tokens = parseClozeTokens(source).tokens;
+    if (!tokens.length)
+        return source;
+    let resolved = "";
+    let last = 0;
+    for (const token of tokens) {
+        if (token.start > last) {
+            resolved += source.slice(last, token.start);
+        }
+        resolved += resolveNestedClozeAnswers(token.answer);
+        last = token.end;
+    }
+    if (last < source.length) {
+        resolved += source.slice(last);
+    }
+    return resolved;
+}
+/**
+ * Compatibility extractor for current cloze child identity semantics.
+ * This intentionally tracks every detected opener, even if the token is malformed.
+ */
+export function extractCompatibilityClozeIndices(text) {
+    return collectDistinctPositiveClozeIndices(matchClozeOpeners(String(text !== null && text !== void 0 ? text : "")).map((opener) => opener.clozeIndex));
+}
+export function validateClozeTextCompat(text) {
+    const { tokens } = parseClozeTokens(text);
+    const errors = [];
+    for (const token of tokens) {
+        if (!Number.isFinite(token.clozeIndex) || token.clozeIndex <= 0) {
+            errors.push("Cloze token has invalid number.");
+        }
+        if (!token.answer.trim()) {
+            errors.push("Cloze token content is empty.");
+        }
+    }
+    if (tokens.length === 0)
+        errors.push("Cloze card requires at least one {{cN::...}} token.");
+    return errors;
 }
 export function getClozeRenderOccurrences(text, targetIndex) {
     var _a;

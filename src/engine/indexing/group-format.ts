@@ -8,7 +8,7 @@
  *  - fmtGroups    — compatibility alias for formatGroups
  */
 
-import { normaliseGroupPath } from "./group-index";
+import { canonicalizeGroups, normaliseGroupPath } from "./group-normalization";
 import { escapeDelimiterRe } from "../../platform/core/delimiter";
 
 /**
@@ -30,11 +30,11 @@ export function coerceGroups(raw: unknown): string[] {
 }
 
 export function normalizeGroups(raw: unknown): string[] {
-  const normalizedGroups = coerceGroups(raw)
-    .map((g) => normaliseGroupPath(g) || null)
-    .filter((x): x is string => !!x);
-
-  return Array.from(new Set(normalizedGroups)).sort((a, b) => a.localeCompare(b));
+  return canonicalizeGroups(
+    coerceGroups(raw)
+      .map((g) => normaliseGroupPath(g) || null)
+      .filter((x): x is string => !!x),
+  );
 }
 
 export function formatGroups(groups: unknown): string {

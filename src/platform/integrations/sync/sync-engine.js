@@ -13,6 +13,7 @@ import { generateUniqueId } from "../../../platform/core/ids";
 import { normalizeCardOptions } from "../../../platform/types/card";
 import { FLASHCARD_HEADER_CARD_RE, FLASHCARD_HEADER_FIELD_RE, BASIC_SHORTHAND_RE, CLOZE_SHORTHAND_RE, getDelimiter, escapeDelimiterText, formatDelimitedField, stripClosingDelimiter, } from "../../../platform/core/delimiter";
 import { loadSchedulingFromDataJson } from "../../../platform/core/store";
+import { extractCompatibilityClozeIndices } from "../../../platform/core/shared-utils";
 import { expandGroupPrefixes, normaliseGroupPath } from "../../../engine/indexing/group-index";
 import { log } from "../../../platform/core/logger";
 import { stableIoChildId, normaliseGroupKey } from "../../../platform/image-occlusion/mask-tool";
@@ -68,18 +69,18 @@ async function withVaultSyncLock(fn) {
  * Example output: "Sync complete - 3 new cards; 1 updated card; 2 cards deleted"
  */
 export function formatSyncNotice(prefix, res, options = {}) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const plural = (n, one, many) => (n === 1 ? one : many);
     const parts = [];
-    const deletedCount = Number((_a = res.removed) !== null && _a !== void 0 ? _a : 0);
-    const idsInserted = Number((_b = res.idsInserted) !== null && _b !== void 0 ? _b : 0);
+    const deletedCount = Number((_a = res.deletedDisplayCount) !== null && _a !== void 0 ? _a : (_b = res.removed) !== null && _b !== void 0 ? _b : 0);
+    const idsInserted = Number((_c = res.idsInserted) !== null && _c !== void 0 ? _c : 0);
     if (res.newCount > 0)
         parts.push(`${res.newCount} ${plural(res.newCount, "new card", "new cards")}`);
     if (res.updatedCount > 0)
         parts.push(`${res.updatedCount} ${plural(res.updatedCount, "updated card", "updated cards")}`);
     if (options.includeDeleted && deletedCount > 0)
         parts.push(`${deletedCount} ${plural(deletedCount, "card deleted", "cards deleted")}`);
-    if (((_c = options.includeIdsInserted) !== null && _c !== void 0 ? _c : true) && idsInserted > 0)
+    if (((_d = options.includeIdsInserted) !== null && _d !== void 0 ? _d : true) && idsInserted > 0)
         parts.push(`${idsInserted} ${plural(idsInserted, "ID inserted", "IDs inserted")}`);
     if (!parts.length)
         return `${prefix} - no changes`;
@@ -658,21 +659,15 @@ function deleteReversedChildren(plugin, parentId) { return deleteChildrenByType(
 function deleteOrphanIoChildren(plugin) { return deleteOrphanChildren(plugin, "io", "io-child"); }
 function deleteOrphanClozeChildren(plugin) { return deleteOrphanChildren(plugin, "cloze", "cloze-child"); }
 function deleteOrphanReversedChildren(plugin) { return deleteOrphanChildren(plugin, "reversed", "reversed-child"); }
+function countsAsStudyCardDeletion(cardType) {
+    return cardType !== "cloze" && cardType !== "io" && cardType !== "reversed";
+}
 // ────────────────────────────────────────────
 // Child-type-specific utilities
 // ────────────────────────────────────────────
 /** Extracts cloze deletion indices (e.g. `{{c1::…}}`) from raw text. */
 function extractClozeIndices(text) {
-    const raw = String(text !== null && text !== void 0 ? text : "");
-    const re = /\{\{c(\d+)::/gi;
-    const out = new Set();
-    let m;
-    while ((m = re.exec(raw))) {
-        const n = Number(m[1]);
-        if (Number.isFinite(n) && n > 0)
-            out.add(n);
-    }
-    return Array.from(out).sort((a, b) => a - b);
+    return extractCompatibilityClozeIndices(text);
 }
 /** Stable deterministic ID for a cloze child: `${parentId}::cloze::c${idx}`. */
 function stableClozeChildId(parentId, idx) {
@@ -1357,6 +1352,7 @@ export async function syncOneFile(plugin, file, options) {
         }
         // 5) Remove stale cards/quarantine entries no longer present in this note
         let removed = 0;
+        let deletedDisplayCount = 0;
         const removedIoParentData = [];
         const removedClozeParents = [];
         const removedReversedParents = [];
@@ -1369,30 +1365,41 @@ export async function syncOneFile(plugin, file, options) {
             if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child")
                 continue;
             if (rec.lastSeenAt === 0) {
-                if (String(rec.type) === "io")
+                const cardType = String(rec.type);
+                if (cardType === "io")
                     removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null, sourceNotePath: String(rec.sourceNotePath || "") });
-                if (String(rec.type) === "cloze")
+                if (cardType === "cloze")
                     removedClozeParents.push(String(id));
-                if (String(rec.type) === "reversed")
+                if (cardType === "reversed")
                     removedReversedParents.push(String(id));
                 delete plugin.store.data.cards[id];
                 if (plugin.store.data.states)
                     delete (plugin.store.data.states)[id];
                 removed += 1;
+                if (countsAsStudyCardDeletion(cardType))
+                    deletedDisplayCount += 1;
             }
         }
         for (const ioData of removedIoParentData) {
-            removed += deleteIoChildren(plugin, ioData.id);
+            const childRemoved = deleteIoChildren(plugin, ioData.id);
+            removed += childRemoved;
+            deletedDisplayCount += childRemoved;
             if (ioData.imageRef)
                 await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
             const ioMap = plugin.store.data.io || {};
             if (ioMap[ioData.id])
                 delete ioMap[ioData.id];
         }
-        for (const parentId of removedClozeParents)
-            removed += deleteClozeChildren(plugin, parentId);
-        for (const parentId of removedReversedParents)
-            removed += deleteReversedChildren(plugin, parentId);
+        for (const parentId of removedClozeParents) {
+            const childRemoved = deleteClozeChildren(plugin, parentId);
+            removed += childRemoved;
+            deletedDisplayCount += childRemoved;
+        }
+        for (const parentId of removedReversedParents) {
+            const childRemoved = deleteReversedChildren(plugin, parentId);
+            removed += childRemoved;
+            deletedDisplayCount += childRemoved;
+        }
         for (const id of Object.keys(plugin.store.data.quarantine || {})) {
             const q = plugin.store.data.quarantine[id];
             if (q && q.notePath === file.path && q.lastSeenAt === 0) {
@@ -1403,9 +1410,11 @@ export async function syncOneFile(plugin, file, options) {
             }
         }
         if (pruneGlobalOrphans) {
-            removed += deleteOrphanIoChildren(plugin);
-            removed += deleteOrphanClozeChildren(plugin);
-            removed += deleteOrphanReversedChildren(plugin);
+            const orphanIoRemoved = deleteOrphanIoChildren(plugin);
+            const orphanClozeRemoved = deleteOrphanClozeChildren(plugin);
+            const orphanReversedRemoved = deleteOrphanReversedChildren(plugin);
+            removed += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
+            deletedDisplayCount += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
             const sanitizedStates = sanitizeOrphanStates(plugin);
             if (sanitizedStates > 0) {
                 log.info(`syncOneFile: pruned ${sanitizedStates} orphaned scheduling state(s)`);
@@ -1431,6 +1440,7 @@ export async function syncOneFile(plugin, file, options) {
             quarantinedCount,
             quarantinedIds,
             removed,
+            deletedDisplayCount,
             tagsDeleted,
         };
     });
@@ -1718,6 +1728,7 @@ export async function syncQuestionBank(plugin) {
                 }
             }
         }
+        let deletedDisplayCount = 0;
         const removedIoParentData = [];
         const removedClozeParents = [];
         const removedReversedParents = [];
@@ -1728,30 +1739,41 @@ export async function syncQuestionBank(plugin) {
             if (String(card.type) === "io-child" || String(card.type) === "cloze-child" || String(card.type) === "reversed-child")
                 continue;
             if (card.lastSeenAt !== now) {
-                if (String(card.type) === "io")
+                const cardType = String(card.type);
+                if (cardType === "io")
                     removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null, sourceNotePath: String(card.sourceNotePath || "") });
-                if (String(card.type) === "cloze")
+                if (cardType === "cloze")
                     removedClozeParents.push(String(id));
-                if (String(card.type) === "reversed")
+                if (cardType === "reversed")
                     removedReversedParents.push(String(id));
                 delete plugin.store.data.cards[id];
                 if (plugin.store.data.states)
                     delete (plugin.store.data.states)[id];
                 removed += 1;
+                if (countsAsStudyCardDeletion(cardType))
+                    deletedDisplayCount += 1;
             }
         }
         for (const ioData of removedIoParentData) {
-            removed += deleteIoChildren(plugin, ioData.id);
+            const childRemoved = deleteIoChildren(plugin, ioData.id);
+            removed += childRemoved;
+            deletedDisplayCount += childRemoved;
             if (ioData.imageRef)
                 await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
             const ioMap = plugin.store.data.io || {};
             if (ioMap[ioData.id])
                 delete ioMap[ioData.id];
         }
-        for (const parentId of removedClozeParents)
-            removed += deleteClozeChildren(plugin, parentId);
-        for (const parentId of removedReversedParents)
-            removed += deleteReversedChildren(plugin, parentId);
+        for (const parentId of removedClozeParents) {
+            const childRemoved = deleteClozeChildren(plugin, parentId);
+            removed += childRemoved;
+            deletedDisplayCount += childRemoved;
+        }
+        for (const parentId of removedReversedParents) {
+            const childRemoved = deleteReversedChildren(plugin, parentId);
+            removed += childRemoved;
+            deletedDisplayCount += childRemoved;
+        }
         for (const id of Object.keys(plugin.store.data.quarantine || {})) {
             const q = plugin.store.data.quarantine[id];
             if (q && q.lastSeenAt !== now) {
@@ -1761,9 +1783,11 @@ export async function syncQuestionBank(plugin) {
                 removed += 1;
             }
         }
-        removed += deleteOrphanIoChildren(plugin);
-        removed += deleteOrphanClozeChildren(plugin);
-        removed += deleteOrphanReversedChildren(plugin);
+        const orphanIoRemoved = deleteOrphanIoChildren(plugin);
+        const orphanClozeRemoved = deleteOrphanClozeChildren(plugin);
+        const orphanReversedRemoved = deleteOrphanReversedChildren(plugin);
+        removed += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
+        deletedDisplayCount += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
         const sanitizedStates = sanitizeOrphanStates(plugin);
         if (sanitizedStates > 0) {
             log.info(`syncQuestionBank: pruned ${sanitizedStates} orphaned scheduling state(s)`);
@@ -1792,6 +1816,7 @@ export async function syncQuestionBank(plugin) {
             quarantinedCount,
             quarantinedIds,
             removed,
+            deletedDisplayCount,
             tagsDeleted,
         };
     });

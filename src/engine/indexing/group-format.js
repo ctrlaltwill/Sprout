@@ -7,7 +7,7 @@
  *  - formatGroups — formats an array of group paths into a human-readable display string
  *  - fmtGroups    — compatibility alias for formatGroups
  */
-import { normaliseGroupPath } from "./group-index";
+import { canonicalizeGroups, normaliseGroupPath } from "./group-normalization";
 import { escapeDelimiterRe } from "../../platform/core/delimiter";
 /**
  * Accept groups as:
@@ -29,10 +29,9 @@ export function coerceGroups(raw) {
     return [];
 }
 export function normalizeGroups(raw) {
-    const normalizedGroups = coerceGroups(raw)
+    return canonicalizeGroups(coerceGroups(raw)
         .map((g) => normaliseGroupPath(g) || null)
-        .filter((x) => !!x);
-    return Array.from(new Set(normalizedGroups)).sort((a, b) => a.localeCompare(b));
+        .filter((x) => !!x));
 }
 export function formatGroups(groups) {
     const normalizedGroups = normalizeGroups(groups);

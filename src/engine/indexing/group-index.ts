@@ -14,35 +14,9 @@
 
 import type { CardRecord, CardState } from "../../platform/core/store";
 import type LearnKitPlugin from "../../main";
+import { buildCanonicalGroupCaseMap, normalizeGroupPath, normaliseGroupPath } from "./group-normalization";
 
-/** Normalise a group path like " /a//b/ c / " -> "a/b/c" */
-export function normalizeGroupPath(raw: string): string | null {
-  let normalizedPath = String(raw ?? "").trim();
-  if (!normalizedPath) return null;
-
-  // Convert backslashes to slashes (helps if pasted from Windows-y paths)
-  normalizedPath = normalizedPath.replace(/\\/g, "/");
-  normalizedPath = normalizedPath.replace(/::/g, "/");
-
-  // Trim outer slashes
-  normalizedPath = normalizedPath.replace(/^\/+/, "").replace(/\/+$/, "");
-
-  // Collapse repeated slashes
-  normalizedPath = normalizedPath.replace(/\/{2,}/g, "/");
-
-  // Split/trim segments and drop empties
-  const segments = normalizedPath
-    .split("/")
-    .map((segment) => segment.trim())
-    .filter(Boolean);
-
-  if (!segments.length) return null;
-  return segments.join("/");
-}
-
-export function normaliseGroupPath(raw: string): string | null {
-  return normalizeGroupPath(raw);
-}
+export { normalizeGroupPath, normaliseGroupPath };
 
 /** Expand "a/b/c" -> ["a", "a/b", "a/b/c"] */
 export function expandGroupPrefixes(path: string): string[] {
@@ -81,7 +55,7 @@ export class GroupIndex {
 
   build(cards: CardRecord[]): this {
     this.groupToIds.clear();
-    const originalCaseKeys = new Map<string, string>();
+    const observedGroupKeys: string[] = [];
 
     for (const card of cards) {
       const id = String(card?.id ?? "");
@@ -95,9 +69,7 @@ export class GroupIndex {
         const prefixes = expandGroupPrefixes(normalizedGroup);
         for (const groupKey of prefixes) {
           const lowerKey = groupKey.toLowerCase();
-          if (!originalCaseKeys.has(lowerKey)) {
-            originalCaseKeys.set(lowerKey, groupKey);
-          }
+          observedGroupKeys.push(groupKey);
           let cardIds = this.groupToIds.get(lowerKey);
           if (!cardIds) {
             cardIds = new Set<string>();
@@ -108,7 +80,7 @@ export class GroupIndex {
       }
     }
 
-    this.keys = Array.from(originalCaseKeys.values()).sort((a, b) => a.localeCompare(b));
+    this.keys = Array.from(buildCanonicalGroupCaseMap(observedGroupKeys).values()).sort((a, b) => a.localeCompare(b));
     this.keysLower = this.keys.map((k) => k.toLowerCase());
     return this;
   }
