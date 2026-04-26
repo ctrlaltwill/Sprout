@@ -25,9 +25,6 @@ export type SessionBuildOptions = {
   practiceMode?: boolean;
 };
 
-const SIBLING_UNLOCK_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-
 /** Scope predicate used by deck/session logic (note-path based scopes). */
 export function inScope(scope: Scope | null, notePath: string) {
   if (!scope) return true;
@@ -317,14 +314,10 @@ function isTemporarilyBuried(st: CardState | undefined, now: number): boolean {
 function isSiblingStillActive(st: CardState | undefined, now: number): boolean {
   if (!st) return false;
   if (st.stage === "suspended") return false;
+  void now;
 
-  if (st.stage === "new" || st.stage === "learning" || st.stage === "relearning") {
+  if (st.stage === "new") {
     return true;
-  }
-
-  if (st.stage === "review") {
-    if (typeof st.due !== "number" || !Number.isFinite(st.due)) return true;
-    return st.due <= now + SIBLING_UNLOCK_WINDOW_MS;
   }
 
   return false;
@@ -359,7 +352,7 @@ function compareSiblingPriority(a: CardRecord, b: CardRecord, states: Record<str
 
 /**
  * Bury mode collapses each sibling family to a single active child until the
- * current child has progressed far enough that it is no longer due soon.
+ * current child is no longer new, then the next sibling can appear.
  */
 function collapseSiblingFamilies(
   cardsInScope: CardRecord[],

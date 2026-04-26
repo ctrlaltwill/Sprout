@@ -271,13 +271,9 @@ function isSiblingStillActive(st, now) {
         return false;
     if (st.stage === "suspended")
         return false;
-    if (st.stage === "new" || st.stage === "learning" || st.stage === "relearning") {
+    void now;
+    if (st.stage === "new") {
         return true;
-    }
-    if (st.stage === "review") {
-        if (typeof st.due !== "number" || !Number.isFinite(st.due))
-            return true;
-        return st.due <= now + SIBLING_UNLOCK_WINDOW_MS;
     }
     return false;
 }
@@ -312,7 +308,7 @@ function compareSiblingPriority(a, b, states) {
 }
 /**
  * Bury mode collapses each sibling family to a single active child until the
- * current child has progressed far enough that it is no longer due soon.
+ * current child is no longer new, then the next sibling can appear.
  */
 function collapseSiblingFamilies(cardsInScope, queueCards, states, now) {
     const blockedParents = new Set();

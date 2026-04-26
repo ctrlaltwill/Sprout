@@ -685,12 +685,12 @@ describe("siblingMode", () => {
       }
     });
 
-    it("keeps the family collapsed while the current sibling is still due soon", () => {
+    it("keeps only one new sibling visible while the family is still new", () => {
       const fam = clozeFamily("P1", 3);
       const basics = [card("B1", "basic"), card("B2", "basic")];
       const allCards = [...fam.children, ...basics];
       const states: Record<string, CardState> = {
-        "P1::cloze::c1": state("P1::cloze::c1", "review", NOW + 30 * 60 * 1000),
+        "P1::cloze::c1": state("P1::cloze::c1", "new", 0),
         "P1::cloze::c2": state("P1::cloze::c2", "new", 0),
         "P1::cloze::c3": state("P1::cloze::c3", "new", 0),
         B1: state("B1", "review", NOW - 1000),
@@ -700,13 +700,33 @@ describe("siblingMode", () => {
       const plugin = makePlugin(allCards, states, [], { study: { siblingMode: "bury" } });
       const session = buildSession(plugin, vaultScope);
 
-      expect(session.queue.map((c) => c.id)).toEqual(["B1", "B2"]);
+      expect(session.queue.map((c) => c.id)).toEqual(["B1", "B2", "P1::cloze::c1"]);
     });
 
-    it("unlocks the next sibling after the current one is no longer due soon", () => {
+    it("unlocks the next sibling after the current one is no longer new", () => {
       const fam = clozeFamily("P1", 3);
       const states: Record<string, CardState> = {
         "P1::cloze::c1": state("P1::cloze::c1", "review", NOW + 25 * 60 * 60 * 1000),
+        "P1::cloze::c2": state("P1::cloze::c2", "new", 0),
+        "P1::cloze::c3": state("P1::cloze::c3", "new", 0),
+      };
+
+      const plugin = makePlugin(
+        [...fam.children],
+        states,
+        [],
+        { study: { siblingMode: "bury" } },
+      );
+      const session = buildSession(plugin, vaultScope);
+
+      expect(session.queue.length).toBe(1);
+      expect(session.queue[0].id).toBe("P1::cloze::c2");
+    });
+
+    it("unlocks the next sibling when the current sibling is learning", () => {
+      const fam = clozeFamily("P1", 3);
+      const states: Record<string, CardState> = {
+        "P1::cloze::c1": state("P1::cloze::c1", "learning", NOW + 36 * 60 * 60 * 1000),
         "P1::cloze::c2": state("P1::cloze::c2", "new", 0),
         "P1::cloze::c3": state("P1::cloze::c3", "new", 0),
       };

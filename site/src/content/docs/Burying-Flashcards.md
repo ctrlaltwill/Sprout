@@ -28,7 +28,7 @@ Buried flashcards return to the review queue 24 hours after they were buried.
 This page describes the manual **Bury** action during review.
 
 - Manual **Bury** hides the current flashcard for 24 hours.
-- **Sibling card management: Bury** is different. It keeps one sibling active at a time and unlocks the next sibling after the current one is no longer due soon.
+- **Sibling card management: Bury** is different. It keeps one new sibling active at a time and unlocks the next sibling once the current one is no longer new.
 
 ## Find Buried
 

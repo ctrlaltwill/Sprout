@@ -47,7 +47,7 @@ Sibling handling depends on your **Sibling card management** setting:
 
 - **Standard** leaves siblings in the natural queue order.
 - **Disperse** keeps eligible siblings in the queue but spreads them apart.
-- **Bury** keeps one sibling active at a time and unlocks the next sibling only after the current one is no longer due soon.
+- **Bury** keeps one new sibling active at a time and unlocks the next sibling once the current one is no longer new.
 
 This is separate from the manual **Bury** action during review, which hides the current card for 24 hours.
 
