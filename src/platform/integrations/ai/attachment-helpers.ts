@@ -12,7 +12,7 @@
  */
 
 import type { App, TFile } from "obsidian";
-import { strFromU8, unzipSync, unzlibSync } from "fflate/browser";
+import { strFromU8, unzipSync, unzlibSync } from "fflate";
 
 /** MIME types we support as native AI attachments. */
 const EXT_MIME: Record<string, string> = {
