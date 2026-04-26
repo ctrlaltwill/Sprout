@@ -12,7 +12,7 @@
  *  - unpackApkg — extract SQLite bytes + media from a .apkg
  */
 
-import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
+import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate/browser";
 
 /**
  * Pack an Anki .apkg file from SQLite database bytes and optional media files.
