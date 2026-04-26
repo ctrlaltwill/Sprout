@@ -10,7 +10,7 @@
  *  - isImageExt
  *  - isPdfExt
  */
-import { strFromU8, unzipSync, unzlibSync } from "fflate";
+import { strFromU8, unzipSync, unzlibSync } from "fflate/browser";
 /** MIME types we support as native AI attachments. */
 const EXT_MIME = {
     png: "image/png",
