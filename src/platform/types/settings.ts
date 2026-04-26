@@ -66,7 +66,7 @@ export type LearnKitSettings = {
      * How sibling child cards (from the same parent note) are handled during a session.
      * - "standard"  — no special sibling logic; cards appear in natural order
      * - "disperse"  — siblings are spread evenly across the queue at session build time
-     * - "bury"      — only one sibling per parent is shown; the rest are buried until tomorrow
+      * - "bury"      — only one sibling per parent stays active; the next sibling unlocks after the current one is no longer due soon
      */
     siblingMode: "standard" | "disperse" | "bury";
 

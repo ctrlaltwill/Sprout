@@ -23,6 +23,13 @@ If you skip the same flashcard three times in one session, LearnKit offers a **B
 
 Buried flashcards return to the review queue 24 hours after they were buried.
 
+## Manual Bury Versus Sibling Bury
+
+This page describes the manual **Bury** action during review.
+
+- Manual **Bury** hides the current flashcard for 24 hours.
+- **Sibling card management: Bury** is different. It keeps one sibling active at a time and unlocks the next sibling after the current one is no longer due soon.
+
 ## Find Buried
 
 Open [Flashcard Library](../Flashcard-Library) and filter Stage = Buried.
@@ -32,3 +39,7 @@ Open [Flashcard Library](../Flashcard-Library) and filter Stage = Buried.
 - Burying is temporary (24 hours).
 - Burying does not delete flashcards.
 - For long-term removal from review, use [Suspending Flashcards](../Suspending-Flashcards).
+
+---
+
+Last modified: 26/04/2026

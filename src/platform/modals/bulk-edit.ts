@@ -263,30 +263,56 @@ export class BulkEditCardModal extends Modal {
       window.setTimeout(syncPreviewHeight, 80);
     };
 
-    const focusEditorFromPreview = (ev: Event) => {
-      control.focus({ preventScroll: true });
+    const focusEditorFromPreview = () => {
+      try {
+        control.focus({ preventScroll: true });
+      } catch {
+        control.focus();
+      }
       if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) {
         const end = control.value.length;
         control.setSelectionRange(end, end);
       }
     };
 
-    wrap.addEventListener("pointerdown", (ev: PointerEvent) => {
+    const handlePreviewPointerDown = (ev: PointerEvent) => {
       if (ev.button !== 0) return;
       if (document.activeElement === control) return;
-      focusEditorFromPreview(ev);
-    });
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
+    };
 
-    overlay.addEventListener("pointerdown", (ev: PointerEvent) => {
+    const handlePreviewMouseDown = (ev: MouseEvent) => {
       if (ev.button !== 0) return;
       if (document.activeElement === control) return;
-      focusEditorFromPreview(ev);
-    }, true);
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
+    };
+
+    wrap.addEventListener("pointerdown", handlePreviewPointerDown);
+
+    overlay.addEventListener("pointerdown", handlePreviewPointerDown);
+    wrap.addEventListener("mousedown", handlePreviewMouseDown);
+    overlay.addEventListener("mousedown", handlePreviewMouseDown, true);
 
     overlay.addEventListener("click", (ev: MouseEvent) => {
       if (document.activeElement === control) return;
-      focusEditorFromPreview(ev);
+      ev.preventDefault();
+      ev.stopPropagation();
+      focusEditorFromPreview();
     });
+
+    const handleDocumentPointerDown = (ev: PointerEvent) => {
+      const target = ev.target;
+      if (!(target instanceof Node)) return;
+      if (wrap.contains(target)) return;
+      if (document.activeElement === control) {
+        control.blur();
+      }
+    };
+    document.addEventListener("pointerdown", handleDocumentPointerDown, true);
 
     control.addEventListener("focus", () => {
       wrap.classList.add("learnkit-flag-editor--focused", "learnkit-flag-editor--focused");
@@ -315,11 +341,16 @@ export class BulkEditCardModal extends Modal {
       });
       ro.observe(overlay);
       registerCloseCleanup(() => {
+        document.removeEventListener("pointerdown", handleDocumentPointerDown, true);
         if (pendingSyncRaf) {
           window.cancelAnimationFrame(pendingSyncRaf);
           pendingSyncRaf = 0;
         }
         ro.disconnect();
+      });
+    } else {
+      registerCloseCleanup(() => {
+        document.removeEventListener("pointerdown", handleDocumentPointerDown, true);
       });
     }
 

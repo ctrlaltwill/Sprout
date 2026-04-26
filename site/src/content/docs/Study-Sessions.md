@@ -43,7 +43,13 @@ LearnKit normally queues cards in this order:
 
 **learning → relearning → review → new**
 
-Related siblings are spaced apart so you do not immediately see near-duplicate prompts back to back.
+Sibling handling depends on your **Sibling card management** setting:
+
+- **Standard** leaves siblings in the natural queue order.
+- **Disperse** keeps eligible siblings in the queue but spreads them apart.
+- **Bury** keeps one sibling active at a time and unlocks the next sibling only after the current one is no longer due soon.
+
+This is separate from the manual **Bury** action during review, which hides the current card for 24 hours.
 
 ## Daily Limits
 
@@ -91,4 +97,4 @@ These controls are useful, but the main thing to understand first is the normal 
 
 ---
 
-Last modified: 30/03/2026
+Last modified: 26/04/2026

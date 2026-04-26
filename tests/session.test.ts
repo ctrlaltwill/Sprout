@@ -633,7 +633,7 @@ describe("siblingMode", () => {
   });
 
   describe("bury mode", () => {
-    it("keeps only one child per parent in the queue", () => {
+    it("keeps only one active child per parent in the queue", () => {
       const fam = clozeFamily("P1", 4);
       const states: Record<string, CardState> = {};
       for (const c of fam.children) states[c.id] = state(c.id, "review", NOW - 1000);
@@ -648,7 +648,7 @@ describe("siblingMode", () => {
       expect(session.queue.length).toBe(1);
     });
 
-    it("keeps the most overdue sibling", () => {
+    it("keeps the most overdue sibling when the family is open", () => {
       const fam = clozeFamily("P1", 3);
       const states: Record<string, CardState> = {
         "P1::cloze::c1": state("P1::cloze::c1", "review", NOW - 100),
@@ -667,7 +667,7 @@ describe("siblingMode", () => {
       expect(session.queue[0].id).toBe("P1::cloze::c2");
     });
 
-    it("sets buriedUntil on buried siblings", () => {
+    it("does not write buriedUntil when collapsing sibling families", () => {
       const fam = clozeFamily("P1", 3);
       const states: Record<string, CardState> = {};
       for (const c of fam.children) states[c.id] = state(c.id, "review", NOW - 1000);
@@ -678,21 +678,52 @@ describe("siblingMode", () => {
         [],
         { study: { siblingMode: "bury" } },
       );
-      const session = buildSession(plugin, vaultScope);
+      buildSession(plugin, vaultScope);
 
-      // The one in the queue should NOT be buried
-      const kept = session.queue[0].id;
-      expect(plugin.store.data.states[kept].buriedUntil).toBeUndefined();
-
-      // The other two should be buried until tomorrow
-      const tomorrow = startOfTodayMsTest(NOW) + 24 * 60 * 60 * 1000;
-      const buriedIds = fam.children.map((c) => c.id).filter((id) => id !== kept);
-      for (const id of buriedIds) {
-        expect(plugin.store.data.states[id].buriedUntil).toBe(tomorrow);
+      for (const c of fam.children) {
+        expect(plugin.store.data.states[c.id].buriedUntil).toBeUndefined();
       }
     });
 
-    it("buries new siblings too (only one new per parent)", () => {
+    it("keeps the family collapsed while the current sibling is still due soon", () => {
+      const fam = clozeFamily("P1", 3);
+      const basics = [card("B1", "basic"), card("B2", "basic")];
+      const allCards = [...fam.children, ...basics];
+      const states: Record<string, CardState> = {
+        "P1::cloze::c1": state("P1::cloze::c1", "review", NOW + 30 * 60 * 1000),
+        "P1::cloze::c2": state("P1::cloze::c2", "new", 0),
+        "P1::cloze::c3": state("P1::cloze::c3", "new", 0),
+        B1: state("B1", "review", NOW - 1000),
+        B2: state("B2", "review", NOW - 1000),
+      };
+
+      const plugin = makePlugin(allCards, states, [], { study: { siblingMode: "bury" } });
+      const session = buildSession(plugin, vaultScope);
+
+      expect(session.queue.map((c) => c.id)).toEqual(["B1", "B2"]);
+    });
+
+    it("unlocks the next sibling after the current one is no longer due soon", () => {
+      const fam = clozeFamily("P1", 3);
+      const states: Record<string, CardState> = {
+        "P1::cloze::c1": state("P1::cloze::c1", "review", NOW + 25 * 60 * 60 * 1000),
+        "P1::cloze::c2": state("P1::cloze::c2", "new", 0),
+        "P1::cloze::c3": state("P1::cloze::c3", "new", 0),
+      };
+
+      const plugin = makePlugin(
+        [...fam.children],
+        states,
+        [],
+        { study: { siblingMode: "bury" } },
+      );
+      const session = buildSession(plugin, vaultScope);
+
+      expect(session.queue.length).toBe(1);
+      expect(session.queue[0].id).toBe("P1::cloze::c2");
+    });
+
+    it("keeps one new sibling active when a family is brand new", () => {
       const fam = clozeFamily("P1", 3);
       const states: Record<string, CardState> = {};
       for (const c of fam.children) states[c.id] = state(c.id, "new", 0);
@@ -751,7 +782,7 @@ describe("siblingMode", () => {
       expect(session.queue.length).toBe(1);
     });
 
-    it("does not re-bury already-buried cards on second buildSession call", () => {
+    it("is stable across repeated buildSession calls", () => {
       const fam = clozeFamily("P1", 3);
       const states: Record<string, CardState> = {};
       for (const c of fam.children) states[c.id] = state(c.id, "review", NOW - 1000);
@@ -772,13 +803,6 @@ describe("siblingMode", () => {
     });
   });
 });
-
-// Helper for tests: mirrors startOfTodayMs in session.ts
-function startOfTodayMsTest(now: number): number {
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
 
 // ── isAvailableNow with buriedUntil ─────────────────────────────────────────
 

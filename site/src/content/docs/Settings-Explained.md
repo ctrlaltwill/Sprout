@@ -53,7 +53,7 @@ Use it when you know what you want to change, but not where LearnKit put that co
 | use LKRS instead of FSRS for note review | Notes | Scheduling algorithm |
 | change daily study load | Studying | Daily new limit and Daily review limit |
 | switch between two-button and four-button grading | Studying | Grading buttons |
-| bury or disperse sibling flashcards | Studying | Sibling card management |
+| bury or disperse sibling flashcards | Studying | Sibling card management. Standard leaves siblings alone. Disperse spreads them out. Bury unlocks one sibling at a time. |
 | change flashcard retention targets or learning steps | Studying | Preset, Learning steps, Relearning steps, Requested retention |
 | make Gatekeeper less aggressive | Reminders | Gatekeeper interval, Questions per popup, Gatekeeper scope, and Pause gatekeeper while studying |
 | clear analytics without deleting scheduling | Reset | Reset analytics |
@@ -69,4 +69,4 @@ Use it when you know what you want to change, but not where LearnKit put that co
 
 ---
 
-Last modified: 30/03/2026
+Last modified: 26/04/2026

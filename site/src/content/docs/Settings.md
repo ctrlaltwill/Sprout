@@ -264,7 +264,7 @@ Studying combines study-session defaults with flashcard scheduling.
 - **Skip button**
 - **Treat folder notes as decks**
 - **Hide card title bar**
-- **Sibling card management**
+- **Sibling card management**: Standard leaves siblings in natural order. Disperse spreads eligible siblings out. Bury keeps one sibling active until it is no longer due soon, then unlocks the next sibling.
 
 ### Flashcard Scheduling
 

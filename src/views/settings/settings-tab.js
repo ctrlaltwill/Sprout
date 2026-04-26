@@ -1842,7 +1842,7 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         });
         new Setting(wrapper)
             .setName(this._tx("ui.settings.study.siblingManagement.name", "Sibling card management"))
-            .setDesc(this._tx("ui.settings.study.siblingManagement.desc", "Control how sibling cards are queued during a session."))
+            .setDesc(this._tx("ui.settings.study.siblingManagement.desc", "Standard leaves siblings alone. Disperse spreads them out. Bury keeps one sibling active until it is no longer due soon."))
             .then((s) => {
             var _a;
             this._addSimpleSelect(s.controlEl, {

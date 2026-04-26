@@ -29,6 +29,7 @@ export function inScope(scope, notePath) {
     // Unknown scope type — fail closed
     return false;
 }
+const SIBLING_UNLOCK_WINDOW_MS = 24 * 60 * 60 * 1000;
 function startOfTodayMs(now) {
     const d = new Date(now);
     d.setHours(0, 0, 0, 0);
@@ -179,10 +180,6 @@ export function buildSession(plugin, scope, options) {
     const remainingReview = dailyReviewLimit === Number.POSITIVE_INFINITY
         ? Number.POSITIVE_INFINITY
         : Math.max(0, dailyReviewLimit - reviewDoneToday);
-    // ── Bury mode: bury extra siblings before filtering ────────────────────
-    if (siblingMode === "bury") {
-        burySiblings(plugin, cards, states, now);
-    }
     // Filter to available now (respects buriedUntil)
     const available = cards.filter((c) => {
         const st = states[c.id];
@@ -226,8 +223,11 @@ export function buildSession(plugin, scope, options) {
     if (siblingMode === "disperse") {
         queue = disperseSiblings([...dueTake, ...newTake]);
     }
+    else if (siblingMode === "bury") {
+        queue = collapseSiblingFamilies(cards, [...dueTake, ...newTake], states, now);
+    }
     else {
-        // "standard" and "bury" (bury already removed extras above)
+        // "standard"
         queue = [...dueTake, ...newTake];
     }
     return {
@@ -259,6 +259,98 @@ function getParentKey(card) {
     if (card.groupKey)
         return card.groupKey;
     return id;
+}
+function isTemporarilyBuried(st, now) {
+    return !!(st &&
+        typeof st.buriedUntil === "number" &&
+        Number.isFinite(st.buriedUntil) &&
+        st.buriedUntil > now);
+}
+function isSiblingStillActive(st, now) {
+    if (!st)
+        return false;
+    if (st.stage === "suspended")
+        return false;
+    if (st.stage === "new" || st.stage === "learning" || st.stage === "relearning") {
+        return true;
+    }
+    if (st.stage === "review") {
+        if (typeof st.due !== "number" || !Number.isFinite(st.due))
+            return true;
+        return st.due <= now + SIBLING_UNLOCK_WINDOW_MS;
+    }
+    return false;
+}
+function compareSiblingPriority(a, b, states) {
+    const sa = states[a.id];
+    const sb = states[b.id];
+    const rank = (st) => {
+        if (!st)
+            return 3;
+        if (st.stage === "learning" || st.stage === "relearning" || st.stage === "review")
+            return 0;
+        if (st.stage === "new")
+            return 1;
+        return 2;
+    };
+    const rankDiff = rank(sa) - rank(sb);
+    if (rankDiff !== 0)
+        return rankDiff;
+    const dueValue = (st) => {
+        if (!st)
+            return Number.POSITIVE_INFINITY;
+        if (st.stage === "new")
+            return Number.POSITIVE_INFINITY;
+        if (typeof st.due === "number" && Number.isFinite(st.due))
+            return st.due;
+        return Number.NEGATIVE_INFINITY;
+    };
+    const dueDiff = dueValue(sa) - dueValue(sb);
+    if (dueDiff !== 0)
+        return dueDiff;
+    return String(a.id).localeCompare(String(b.id));
+}
+/**
+ * Bury mode collapses each sibling family to a single active child until the
+ * current child has progressed far enough that it is no longer due soon.
+ */
+function collapseSiblingFamilies(cardsInScope, queueCards, states, now) {
+    const blockedParents = new Set();
+    for (const c of cardsInScope) {
+        if (!isChildCard(c))
+            continue;
+        const st = states[c.id];
+        if (!st)
+            continue;
+        if (st.stage === "suspended")
+            continue;
+        if (isTemporarilyBuried(st, now))
+            continue;
+        if (isAvailableNow(st, now))
+            continue;
+        if (!isSiblingStillActive(st, now))
+            continue;
+        blockedParents.add(getParentKey(c));
+    }
+    const groups = new Map();
+    for (const c of queueCards) {
+        if (!isChildCard(c))
+            continue;
+        const key = getParentKey(c);
+        if (blockedParents.has(key))
+            continue;
+        const existing = groups.get(key);
+        if (existing)
+            existing.push(c);
+        else
+            groups.set(key, [c]);
+    }
+    const keepIds = new Set();
+    for (const siblings of groups.values()) {
+        siblings.sort((a, b) => compareSiblingPriority(a, b, states));
+        keepIds.add(String(siblings[0].id));
+    }
+    return queueCards.filter((c) => !isChildCard(c) || keepIds.has(String(c.id)));
 }
 /**
  * Disperse mode: spreads sibling child cards evenly across the queue.
@@ -325,59 +417,6 @@ function disperseSiblings(cards) {
         }
     }
     return result;
-}
-/**
- * Bury mode: for each parent with multiple available children, keep the most
- * overdue child and set `buriedUntil` on the rest to start-of-tomorrow.
- *
- * Mutates the `states` object directly (caller's reference) and persists
- * the changes so buried cards are excluded from subsequent sessions today.
- */
-function burySiblings(plugin, cards, states, now) {
-    const tomorrow = startOfTodayMs(now) + 24 * 60 * 60 * 1000;
-    // Group available child cards by parent
-    const parentGroups = {};
-    for (const c of cards) {
-        if (!isChildCard(c))
-            continue;
-        const st = states[c.id];
-        if (!st)
-            continue;
-        // Skip already-buried or suspended cards
-        if (st.stage === "suspended")
-            continue;
-        if (typeof st.buriedUntil === "number" && Number.isFinite(st.buriedUntil) && st.buriedUntil > now)
-            continue;
-        const key = getParentKey(c);
-        if (!parentGroups[key])
-            parentGroups[key] = [];
-        parentGroups[key].push(c);
-    }
-    for (const key of Object.keys(parentGroups)) {
-        const group = parentGroups[key];
-        if (group.length <= 1)
-            continue;
-        // Pick the most overdue card (lowest due); for new cards use Infinity so they lose to due cards
-        group.sort((a, b) => {
-            const sa = states[a.id];
-            const sb = states[b.id];
-            const da = sa && sa.stage !== "new" && typeof sa.due === "number" && Number.isFinite(sa.due)
-                ? sa.due
-                : Infinity;
-            const db = sb && sb.stage !== "new" && typeof sb.due === "number" && Number.isFinite(sb.due)
-                ? sb.due
-                : Infinity;
-            return da - db;
-        });
-        // Keep the first (most overdue), bury the rest
-        for (let i = 1; i < group.length; i++) {
-            const id = group[i].id;
-            const st = states[id];
-            if (!st)
-                continue;
-            st.buriedUntil = tomorrow;
-        }
-    }
 }
 export function getNextDueInScope(plugin, scope) {
     const now = Date.now();

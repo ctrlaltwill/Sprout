@@ -2,7 +2,7 @@ import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { docsSchema } from "@astrojs/starlight/schema";
 
-function preserveDocsPath(entry) {
+function preserveDocsPath(entry: string) {
   const normalized = String(entry).replace(/\\/g, "/");
   const withoutExtension = normalized.replace(/\.(markdown|mdown|mkdn|mkd|mdwn|md|mdx)$/i, "");
   return withoutExtension.replace(/\/index$/i, "");
