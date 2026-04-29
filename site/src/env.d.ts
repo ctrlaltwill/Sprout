@@ -2,28 +2,30 @@
 
 export {};
 
+type StarlightComponent = import("astro/runtime/server/index.js").AstroComponentFactory;
+
 declare module "virtual:starlight/components/LanguageSelect" {
-	const Component: any;
+	const Component: StarlightComponent;
 	export default Component;
 }
 
 declare module "virtual:starlight/components/Search" {
-	const Component: any;
+	const Component: StarlightComponent;
 	export default Component;
 }
 
 declare module "virtual:starlight/components/SiteTitle" {
-	const Component: any;
+	const Component: StarlightComponent;
 	export default Component;
 }
 
 declare module "virtual:starlight/components/SocialIcons" {
-	const Component: any;
+	const Component: StarlightComponent;
 	export default Component;
 }
 
 declare module "virtual:starlight/components/ThemeSelect" {
-	const Component: any;
+	const Component: StarlightComponent;
 	export default Component;
 }
 
