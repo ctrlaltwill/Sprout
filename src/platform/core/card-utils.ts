@@ -23,6 +23,13 @@ export function ioChildKeyFromId(id: string): string | null {
   return k || null;
 }
 
+export function hqChildKeyFromId(id: string): string | null {
+  const m = String(id ?? "").match(/::hq::(.+)$/);
+  if (!m) return null;
+  const k = String(m[1] ?? "").trim();
+  return k || null;
+}
+
 /** Returns `true` if the card has an IO child key (groupKey field or `::io::` suffix in ID). */
 export function cardHasIoChildKey(card: CardRecord): boolean {
   if (!card) return false;
@@ -30,11 +37,24 @@ export function cardHasIoChildKey(card: CardRecord): boolean {
   return !!ioChildKeyFromId(String(card.id ?? ""));
 }
 
+export function cardHasHqChildKey(card: CardRecord): boolean {
+  if (!card) return false;
+  if (String(card.type ?? "") === "hq-child" && typeof card.groupKey === "string" && card.groupKey.trim()) return true;
+  return !!hqChildKeyFromId(String(card.id ?? ""));
+}
+
 /** Returns `true` if the card is an IO *parent* (not a child). */
 export function isIoParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t === "io-parent" || t === "io_parent" || t === "ioparent") return true;
   if (t === "io") return !cardHasIoChildKey(card);
+  return false;
+}
+
+export function isHqParentCard(card: CardRecord): boolean {
+  const t = String(card?.type ?? "").toLowerCase();
+  if (t === "hq-parent" || t === "hq_parent" || t === "hqparent") return true;
+  if (t === "hq") return !cardHasHqChildKey(card);
   return false;
 }
 
@@ -55,5 +75,5 @@ export function isClozeParentCard(card: CardRecord): boolean {
 export function isParentCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
   if (t === "cloze" || t === "reversed") return true;
-  return isIoParentCard(card) || isClozeParentCard(card);
+  return isIoParentCard(card) || isHqParentCard(card) || isClozeParentCard(card);
 }

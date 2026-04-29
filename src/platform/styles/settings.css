@@ -742,6 +742,19 @@
   margin-top: 0.3em;
 }
 
+.learnkit-guide-body img {
+  display: block;
+  width: min(100%, 760px);
+  height: auto;
+  margin: 1rem 0;
+  border-radius: var(--radius-m, 8px);
+  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
+}
+
+body.is-phone .learnkit-guide-body img {
+  width: 100%;
+}
+
 /* Tables — styled to match deck table look */
 .learnkit-guide-body table {
   width: 100%;

@@ -17,6 +17,7 @@ Use the guided method when you want speed. Use the Markdown method when you want
 This is usually the easiest path for:
 
 - [Image Occlusion](../Image-Occlusion)
+- [Hotspot Cards](../Hotspot-Cards)
 - [Multiple Choice Questions](../Multiple-Choice-Questions)
 - other flashcard types where structure is easier to manage through a form
 
@@ -36,6 +37,8 @@ By default, fields use the `|` delimiter unless you changed it in [Custom Delimi
 | `CQ` | Cloze text | Yes for cloze flashcards |
 | `MCQ` | MCQ stem | Yes for MCQs |
 | `O` | Incorrect MCQ option | At least one for MCQs |
+| `HQ` | Hotspot card image embed | Yes for hotspot cards |
+| `M` | Hotspot interaction mode (`click` or `drag-drop`) | No |
 | `OQ` | Ordered-question stem | Yes for ordered questions |
 | `1`, `2`, `3`, ... | Ordered items | At least two for ordered questions |
 | `I` | Extra info | No |
@@ -71,6 +74,29 @@ A | Paris |
 O | London |
 O | Berlin |
 ```
+
+**Hotspot**
+```
+HQ | ![[anatomy-diagram.png]] |
+Q | Click on the hippocampus. |
+M | click |
+```
+
+For hotspot cards, the editor flow is usually better than manual region JSON authoring.
+
+## Demo: Guided Creation Outputs
+
+![Basic card demo](../../../branding/Demo/Basic%20Card.png)
+
+_Basic card output from the guided flow._
+
+![Cloze in-progress demo](../../../branding/Demo/Typed%20Cloze%20-%20In%20Progress.png)
+
+_Cloze card authoring and review context._
+
+![Hotspot click demo](../../../branding/Demo/Hotspot%20-%20Click%20(Front).png)
+
+_Hotspot card ready for click-mode review._
 
 ## Method 3: Quick Cards
 
@@ -132,7 +158,8 @@ Do not delete or edit that anchor. It links the source note block to the flashca
 - [Flashcards](../Flashcards)
 - [Editing Flashcards](../Editing-Flashcards)
 - [Flashcard Formatting](../Flashcard-Formatting)
+- [Hotspot Cards](../Hotspot-Cards)
 
 ---
 
-Last modified: 24/04/2026
+Last modified: 28/04/2026

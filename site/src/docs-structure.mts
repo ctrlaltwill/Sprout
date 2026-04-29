@@ -23,7 +23,7 @@ export const pageTitleOverrides = new Map<string, string>([
   ["Import-From-Anki", "Import From Anki"],
   ["Language-Settings", "Language Options"],
   ["Flag-Codes", "Flag Codes"],
-  ["Study-Sessions", "Study Sessions"],
+  ["Study-Sessions", "Study Sessions"]
 ]);
 
 export function toTitle(page: string): string {
@@ -66,6 +66,7 @@ export const docsSidebarTree: DocsGroup[] = [
       { page: "Flashcard-Formatting" },
       { page: "Flashcards", text: "Overview" },
       { page: "Image-Occlusion" },
+      { page: "Hotspot-Cards" },
       { page: "Multiple-Choice-Questions" },
       { page: "Ordered-Questions" },
     ],

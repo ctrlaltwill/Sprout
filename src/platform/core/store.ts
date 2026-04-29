@@ -105,6 +105,7 @@ function storeWeight(d: Record<string, unknown> | StoreData | null | undefined):
   if (Array.isArray(d.reviewLog)) w += d.reviewLog.length;
   w += countKeys(d.quarantine);
   w += countKeys(d.io);
+  w += countKeys(d.hq);
   w += countAnalyticsEvents(d.analytics);
   return w;
 }
@@ -117,6 +118,7 @@ export function defaultStore(): StoreData {
     reviewLog: [],
     quarantine: {},
     io: {},
+    hq: {},
 
     analytics: {
       version: ANALYTICS_VERSION,
@@ -423,6 +425,7 @@ export class JsonStore {
     if (!this.data.reviewLog) this.data.reviewLog = [];
     if (!this.data.quarantine) this.data.quarantine = {};
     if (!this.data.io || typeof this.data.io !== "object") this.data.io = {};
+    if (!this.data.hq || typeof this.data.hq !== "object") this.data.hq = {};
     if (!Number.isFinite(this.data.version)) this.data.version = 0;
 
     // Analytics defaults + card createdAt best-effort fill

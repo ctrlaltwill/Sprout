@@ -29,7 +29,7 @@ import { loadSchedulingFromDataJson } from "../../../platform/core/store";
 import { extractCompatibilityClozeIndices } from "../../../platform/core/shared-utils";
 import { expandGroupPrefixes, normaliseGroupPath } from "../../../engine/indexing/group-index";
 import { log } from "../../../platform/core/logger";
-import { stableIoChildId, normaliseGroupKey } from "../../../platform/image-occlusion/mask-tool";
+import { stableHqChildId, stableIoChildId, normaliseGroupKey } from "../../../platform/image-occlusion/mask-tool";
 import type { StoredIORect } from "../../../platform/image-occlusion/image-occlusion-types";
 import { resolveImageFile, selectPreferredIoImageRef } from "../../../platform/image-occlusion/io-helpers";
 import {
@@ -341,12 +341,26 @@ function cardSignature(rec: CardRecord | null): string {
     base.imageRef = rec.imageRef ?? (legacy.ioSrc as string | undefined) ?? (legacy.src as string | undefined) ?? "";
     base.occlusions = (legacy.occlusions ?? legacy.rects ?? legacy.masks ?? []) as string[];
     base.maskMode = rec.maskMode ?? (legacy.mode as typeof rec.maskMode) ?? null;
+  } else if (rec.type === "hq") {
+    const legacy = rec as unknown as Record<string, unknown>;
+    base.imageRef = rec.imageRef ?? (legacy.hqSrc as string | undefined) ?? (legacy.src as string | undefined) ?? "";
+    base.regions = (legacy.hqRegions ?? legacy.occlusions ?? legacy.rects ?? []) as string[];
+    base.interactionMode = rec.interactionMode ?? null;
+    base.prompt = rec.prompt ?? null;
   } else if (rec.type === "io-child") {
     base.parentId = rec.parentId || "";
     base.groupKey = rec.groupKey || "";
     base.rectIds = Array.isArray(rec.rectIds) ? rec.rectIds : [];
     base.imageRef = rec.imageRef ?? "";
     base.maskMode = rec.maskMode ?? null;
+    base.retired = !!rec.retired;
+  } else if (rec.type === "hq-child") {
+    base.parentId = rec.parentId || "";
+    base.groupKey = rec.groupKey || "";
+    base.rectIds = Array.isArray(rec.rectIds) ? rec.rectIds : [];
+    base.imageRef = rec.imageRef ?? "";
+    base.interactionMode = rec.interactionMode ?? null;
+    base.prompt = rec.prompt ?? null;
     base.retired = !!rec.retired;
   } else if (rec.type === "cloze-child") {
     base.parentId = rec.parentId || "";
@@ -572,6 +586,27 @@ function queueCanonicalGroupFieldEdit(lines: string[], edits: TextEdit[], card: 
   edits.push({ lineIndex: fieldRange.start, insertText: prefixedCanonicalLines.join("\n") });
 }
 
+/**
+ * Strips hidden-storage fields from IO and HQ card blocks on sync.
+ * IO: removes O (occlusions) and C (maskMode) fields.
+ * HQ: removes O (regions) and M (interactionMode) fields.
+ * These fields are now stored in data.json only; the parser still reads them
+ * for backward-compat migration but new saves never write them.
+ */
+function queueStripHiddenFields(lines: string[], edits: TextEdit[], card: ParsedCard): void {
+  const keysToStrip = card.type === "hq" ? ["O", "M"] : card.type === "io" ? ["O", "C"] : [];
+  if (!keysToStrip.length) return;
+
+  const endLine = findAnchoredCardSearchEndLine(lines, card.sourceStartLine);
+  for (const key of keysToStrip) {
+    const fieldRange = findDelimitedFieldRange(lines, card.sourceStartLine, endLine, key);
+    if (!fieldRange) continue;
+    for (let lineIndex = fieldRange.end; lineIndex >= fieldRange.start; lineIndex--) {
+      edits.push({ lineIndex, deleteLine: true });
+    }
+  }
+}
+
 // ────────────────────────────────────────────
 // IO cleanup helpers
 // ────────────────────────────────────────────
@@ -730,14 +765,16 @@ function sanitizeOrphanStates(plugin: LearnKitPlugin): number {
 
 // Convenience wrappers (preserve call-site readability)
 function deleteIoChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "io-child"); }
+function deleteHqChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "hq-child"); }
 function deleteClozeChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "cloze-child"); }
 function deleteReversedChildren(plugin: LearnKitPlugin, parentId: string): number { return deleteChildrenByType(plugin, parentId, "reversed-child"); }
 function deleteOrphanIoChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "io", "io-child"); }
+function deleteOrphanHqChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "hq", "hq-child"); }
 function deleteOrphanClozeChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "cloze", "cloze-child"); }
 function deleteOrphanReversedChildren(plugin: LearnKitPlugin): number { return deleteOrphanChildren(plugin, "reversed", "reversed-child"); }
 
 function countsAsStudyCardDeletion(cardType: string): boolean {
-  return cardType !== "cloze" && cardType !== "io" && cardType !== "reversed";
+  return cardType !== "cloze" && cardType !== "io" && cardType !== "hq" && cardType !== "reversed";
 }
 
 // ────────────────────────────────────────────
@@ -1054,6 +1091,133 @@ function syncIoChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number,
   pruneStaleChildren(plugin, existingChildren, keepChildIds);
 }
 
+function formatHotspotPrompt(label: string): string {
+  const clean = String(label || "").trim();
+  if (!clean) return "Click on the hotspot location.";
+  const normalized = clean.replace(/\.+$/, "").trim();
+  if (!normalized) return "Click on the hotspot location.";
+  return `Click on ${normalized}.`;
+}
+
+function syncHqChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number, schedulingSnapshot?: StateMap | null) {
+  const parentId = String(parent?.id ?? "");
+  if (!parentId) return;
+
+  if (!plugin.store.data.hq) plugin.store.data.hq = {};
+  const hqMap = plugin.store.data.hq;
+
+  if (!hqMap[parentId]) {
+    const legacy = parent as unknown as Record<string, unknown>;
+    const rawRegions = legacy.hqRegions ?? legacy.regions ?? legacy.occlusions ?? legacy.rects;
+    const imageRef = normalizeIoImageRef(legacy.imageRef as string | null);
+    const interactionMode = (legacy.interactionMode as "click" | "drag-drop" | null) ?? null;
+    const prompt = (legacy.prompt as string | null) ?? null;
+
+    if (Array.isArray(rawRegions) && rawRegions.length > 0 && imageRef) {
+      const rects: StoredIORect[] = [];
+      for (const region of rawRegions) {
+        if (!region || typeof region !== "object") continue;
+        const rect = region as Record<string, unknown>;
+        const rectIdRaw = rect.rectId ?? rect.id;
+        let rectId: string;
+        if (typeof rectIdRaw === "string") {
+          rectId = rectIdRaw;
+        } else if (typeof rectIdRaw === "number" || typeof rectIdRaw === "boolean") {
+          rectId = String(rectIdRaw);
+        } else {
+          rectId = `r-${Math.random().toString(16).slice(2)}`;
+        }
+        const shape = rect.shape === "circle" ? "circle" : rect.shape === "polygon" ? "polygon" : "rect";
+        const points = shape === "polygon" && Array.isArray(rect.points)
+          ? rect.points
+              .map((p) => {
+                if (!p || typeof p !== "object") return null;
+                const point = p as Record<string, unknown>;
+                const x = Number(point.x ?? 0);
+                const y = Number(point.y ?? 0);
+                if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+                return { x, y };
+              })
+              .filter((p): p is { x: number; y: number } => !!p)
+          : [];
+        rects.push({
+          rectId,
+          x: Number(rect.x ?? 0),
+          y: Number(rect.y ?? 0),
+          w: Number(rect.w ?? rect.width ?? 0),
+          h: Number(rect.h ?? rect.height ?? 0),
+          groupKey: normaliseGroupKey(rect.groupKey as string | null),
+          label: typeof rect.label === "string" && rect.label.trim()
+            ? rect.label.trim()
+            : normaliseGroupKey(rect.groupKey as string | null),
+          shape,
+          points: points.length >= 3 ? points : undefined,
+        });
+      }
+      if (rects.length > 0) {
+        hqMap[parentId] = { imageRef, interactionMode, prompt, rects };
+      }
+    }
+  }
+
+  const hqDef = hqMap[parentId];
+  if (!hqDef || !Array.isArray(hqDef.rects) || hqDef.rects.length === 0) return;
+
+  const groupToRectIds = new Map<string, string[]>();
+  const groupToLabel = new Map<string, string>();
+  for (const r of hqDef.rects) {
+    const g = normaliseGroupKey(r.groupKey);
+    const arr = groupToRectIds.get(g) ?? [];
+    arr.push(String(r.rectId));
+    groupToRectIds.set(g, arr);
+    const labelValue = (r as { label?: unknown }).label;
+    let label: string;
+    if (typeof labelValue === 'string') {
+      label = labelValue;
+    } else if (typeof labelValue === 'number' || typeof labelValue === 'boolean') {
+      label = String(labelValue);
+    } else {
+      label = "";
+    }
+    label = label.trim();
+    if (label && !groupToLabel.has(g)) groupToLabel.set(g, label);
+  }
+
+  const existingChildren = collectExistingChildren(plugin, parentId, "hq-child");
+  const keepChildIds = new Set<string>();
+  const titleBase = String(parent?.title ?? "").trim();
+
+  for (const [groupKey, rectIds] of groupToRectIds.entries()) {
+    const childId = stableHqChildId(parentId, groupKey);
+    keepChildIds.add(childId);
+
+    const prev = plugin.store.data.cards?.[childId];
+    const rec: CardRecord = {
+      id: childId,
+      type: "hq-child",
+      title: titleBase || null,
+      parentId,
+      groupKey,
+      rectIds: rectIds.slice(),
+      retired: false,
+      prompt: formatHotspotPrompt(groupToLabel.get(groupKey) || groupKey),
+      interactionMode: hqDef.interactionMode ?? parent?.interactionMode ?? null,
+      info: parent?.info ?? null,
+      groups: parent?.groups ?? null,
+      sourceNotePath: String(parent?.sourceNotePath || ""),
+      sourceStartLine: Number(parent?.sourceStartLine ?? 0) || 0,
+      imageRef: hqDef.imageRef || null,
+      createdAt: resolveChildCreatedAt(prev, parent, now),
+      updatedAt: now,
+      lastSeenAt: now,
+    };
+
+    upsertChildRecord(plugin, childId, rec, now, schedulingSnapshot);
+  }
+
+  pruneStaleChildren(plugin, existingChildren, keepChildIds);
+}
+
 // ────────────────────────────────────────────
 // MCQ option conversion (parser → store legacy fields)
 // ────────────────────────────────────────────
@@ -1133,8 +1297,11 @@ function normalizeIoImageRef(raw: string | null | undefined): string | null {
 function ioFieldsFromParsed(
   plugin: LearnKitPlugin,
   c: ParsedCard,
+  resolvedId?: string,
 ): { imageRef: string | null; occlusions: unknown[] | null; maskMode: "solo" | "all" | null } {
   const legacy = c as unknown as Record<string, unknown>;
+  const cardId = String(resolvedId ?? c.id ?? "").trim();
+  const storedIoDef = cardId ? plugin.store.data.io?.[cardId] : undefined;
   const rawImageRef =
     typeof legacy?.imageRef === "string"
       ? legacy.imageRef
@@ -1145,12 +1312,32 @@ function ioFieldsFromParsed(
   const imageRef = selectPreferredIoImageRef(plugin.app, c.sourceNotePath, rawImageRef ?? "")
     ?? normalizeIoImageRef(rawImageRef);
 
-  const occlusionsRaw = c?.occlusions ?? null;
+  const occlusionsRaw = c?.occlusions ?? storedIoDef?.rects ?? null;
   const occlusions = Array.isArray(occlusionsRaw) ? occlusionsRaw : null;
 
-  const maskMode = (c?.maskMode ?? legacy?.mode ?? legacy?.ioMode ?? null) as "solo" | "all" | null;
+  const maskMode = (c?.maskMode ?? storedIoDef?.maskMode ?? legacy?.mode ?? legacy?.ioMode ?? null) as "solo" | "all" | null;
 
   return { imageRef, occlusions, maskMode };
+}
+
+function hqFieldsFromParsed(
+  plugin: LearnKitPlugin,
+  c: ParsedCard,
+  resolvedId?: string,
+): { imageRef: string | null; hqRegions: unknown[] | null; interactionMode: "click" | "drag-drop" | null } {
+  const rawImageRef = typeof c?.hqSrc === "string" ? c.hqSrc : null;
+
+  const imageRef = selectPreferredIoImageRef(plugin.app, c.sourceNotePath, rawImageRef ?? "")
+    ?? normalizeIoImageRef(rawImageRef);
+
+  const cardId = String(resolvedId ?? c.id ?? "").trim();
+  const storedHqDef = cardId ? plugin.store.data.hq?.[cardId] : undefined;
+
+  const hqRegions = Array.isArray(c?.hqRegions) ? c.hqRegions
+    : storedHqDef?.rects ?? null;
+  const interactionMode = (c?.interactionMode ?? storedHqDef?.interactionMode ?? null) as "click" | "drag-drop" | null;
+
+  return { imageRef, hqRegions, interactionMode };
 }
 
 /** Regex to extract a Sprout IO image ID from a filename. */
@@ -1246,7 +1433,7 @@ export async function syncOneFile(
       const rec = plugin.store.data.cards[id];
       if (!rec) continue;
       if (rec.sourceNotePath !== file.path) continue;
-      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "hq-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
       rec.lastSeenAt = 0;
     }
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
@@ -1321,6 +1508,7 @@ export async function syncOneFile(
         existingAnchorIds.add(id);
       } else {
         queueCanonicalGroupFieldEdit(lines, edits, c);
+        queueStripHiddenFields(lines, edits, c);
       }
     }
 
@@ -1420,7 +1608,7 @@ export async function syncOneFile(
 
         ...(c.type === "io"
           ? (() => {
-              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(plugin, c);
+              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(plugin, c, id);
               return {
                 imageRef: imageRef ?? null,
                 occlusions: occlusions ?? null,
@@ -1428,6 +1616,16 @@ export async function syncOneFile(
                 prompt: c.prompt ?? null,
               };
             })()
+          : c.type === "hq"
+            ? (() => {
+                const { imageRef, hqRegions, interactionMode } = hqFieldsFromParsed(plugin, c, id);
+                return {
+                  imageRef: imageRef ?? null,
+                  hqRegions: hqRegions ?? null,
+                  interactionMode: interactionMode ?? null,
+                  prompt: c.prompt ?? null,
+                };
+              })()
           : {}),
 
         oqSteps: c.type === "oq" ? (c.oqSteps ?? []) : undefined,
@@ -1494,12 +1692,39 @@ export async function syncOneFile(
           syncIoChildren(plugin, record, now, schedulingSnapshot);
         }
       }
+      if (c.type === "hq") {
+        let hqQuarantined = false;
+        const imageRef = normalizeIoImageRef(record.imageRef);
+        if (imageRef) {
+          const imageFile = resolveImageFile(plugin.app, c.sourceNotePath, record.imageRef || imageRef);
+          if (!imageFile || !(imageFile instanceof TFile)) {
+            plugin.store.data.quarantine[id] = {
+              id,
+              notePath: c.sourceNotePath,
+              sourceStartLine: c.sourceStartLine,
+              reason: `Image file not found: ${imageRef}`,
+              lastSeenAt: now,
+            };
+            delete plugin.store.data.cards[id];
+
+            quarantinedCount += 1;
+            quarantinedIds.push(id);
+            hqQuarantined = true;
+
+            ensureStateIfMissing(plugin, id, now, 2.5);
+          }
+        }
+        if (!hqQuarantined) {
+          syncHqChildren(plugin, record, now, schedulingSnapshot);
+        }
+      }
     }
 
     // 5) Remove stale cards/quarantine entries no longer present in this note
     let removed = 0;
     let deletedDisplayCount = 0;
     const removedIoParentData: Array<{ id: string; imageRef: string | null; sourceNotePath: string }> = [];
+    const removedHqParentIds: string[] = [];
     const removedClozeParents: string[] = [];
     const removedReversedParents: string[] = [];
 
@@ -1507,11 +1732,12 @@ export async function syncOneFile(
       const rec = plugin.store.data.cards[id];
       if (!rec) continue;
       if (rec.sourceNotePath !== file.path) continue;
-      if (String(rec.type) === "io-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "hq-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
 
       if (rec.lastSeenAt === 0) {
         const cardType = String(rec.type);
         if (cardType === "io") removedIoParentData.push({ id: String(id), imageRef: rec.imageRef || null, sourceNotePath: String(rec.sourceNotePath || "") });
+        if (cardType === "hq") removedHqParentIds.push(String(id));
         if (cardType === "cloze") removedClozeParents.push(String(id));
         if (cardType === "reversed") removedReversedParents.push(String(id));
 
@@ -1529,6 +1755,14 @@ export async function syncOneFile(
       if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
       const ioMap = plugin.store.data.io || {};
       if (ioMap[ioData.id]) delete ioMap[ioData.id];
+    }
+
+    for (const parentId of removedHqParentIds) {
+      const childRemoved = deleteHqChildren(plugin, parentId);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
+      const hqMap = plugin.store.data.hq || {};
+      if (hqMap[parentId]) delete hqMap[parentId];
     }
 
     for (const parentId of removedClozeParents) {
@@ -1553,10 +1787,11 @@ export async function syncOneFile(
 
     if (pruneGlobalOrphans) {
       const orphanIoRemoved = deleteOrphanIoChildren(plugin);
+      const orphanHqRemoved = deleteOrphanHqChildren(plugin);
       const orphanClozeRemoved = deleteOrphanClozeChildren(plugin);
       const orphanReversedRemoved = deleteOrphanReversedChildren(plugin);
-      removed += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
-      deletedDisplayCount += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
+      removed += orphanIoRemoved + orphanHqRemoved + orphanClozeRemoved + orphanReversedRemoved;
+      deletedDisplayCount += orphanIoRemoved + orphanHqRemoved + orphanClozeRemoved + orphanReversedRemoved;
       const sanitizedStates = sanitizeOrphanStates(plugin);
       if (sanitizedStates > 0) {
         log.info(`syncOneFile: pruned ${sanitizedStates} orphaned scheduling state(s)`);
@@ -1620,7 +1855,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
     for (const id of Object.keys(plugin.store.data.cards || {})) {
       const c = plugin.store.data.cards[id];
       if (!c) continue;
-      if (String(c.type) === "io-child" || String(c.type) === "cloze-child" || String(c.type) === "reversed-child") continue;
+      if (String(c.type) === "io-child" || String(c.type) === "hq-child" || String(c.type) === "cloze-child" || String(c.type) === "reversed-child") continue;
       c.lastSeenAt = 0;
     }
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {
@@ -1739,6 +1974,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
           existingAnchorIds.add(id);
         } else {
           queueCanonicalGroupFieldEdit(lines, edits, c);
+          queueStripHiddenFields(lines, edits, c);
         }
       }
 
@@ -1828,7 +2064,7 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
 
         ...(c.type === "io"
           ? (() => {
-              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(plugin, c);
+              const { imageRef, occlusions, maskMode } = ioFieldsFromParsed(plugin, c, id);
               return {
                 imageRef: imageRef ?? null,
                 occlusions: occlusions ?? null,
@@ -1836,6 +2072,16 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
                 prompt: c.prompt ?? null,
               };
             })()
+          : c.type === "hq"
+            ? (() => {
+                const { imageRef, hqRegions, interactionMode } = hqFieldsFromParsed(plugin, c, id);
+                return {
+                  imageRef: imageRef ?? null,
+                  hqRegions: hqRegions ?? null,
+                  interactionMode: interactionMode ?? null,
+                  prompt: c.prompt ?? null,
+                };
+              })()
           : {}),
 
         oqSteps: c.type === "oq" ? (c.oqSteps ?? []) : undefined,
@@ -1901,9 +2147,36 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
           syncIoChildren(plugin, record, now, schedulingSnapshot);
         }
       }
+      if (c.type === "hq") {
+        let hqQuarantined = false;
+        const imageRef = normalizeIoImageRef(record.imageRef);
+        if (imageRef) {
+          const imageFile = resolveImageFile(plugin.app, c.sourceNotePath, record.imageRef || imageRef);
+          if (!imageFile || !(imageFile instanceof TFile)) {
+            plugin.store.data.quarantine[id] = {
+              id,
+              notePath: c.sourceNotePath,
+              sourceStartLine: c.sourceStartLine,
+              reason: `Image file not found: ${imageRef}`,
+              lastSeenAt: now,
+            };
+            delete plugin.store.data.cards[id];
+
+            quarantinedCount += 1;
+            quarantinedIds.push(id);
+            hqQuarantined = true;
+
+            ensureStateIfMissing(plugin, id, now, 2.5);
+          }
+        }
+        if (!hqQuarantined) {
+          syncHqChildren(plugin, record, now, schedulingSnapshot);
+        }
+      }
     }
 
     const removedIoParentData: Array<{ id: string; imageRef: string | null; sourceNotePath: string }> = [];
+    const removedHqParentIds: string[] = [];
     const removedClozeParents: string[] = [];
     const removedReversedParents: string[] = [];
 
@@ -1911,11 +2184,12 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       const card = plugin.store.data.cards[id];
       if (!card) continue;
 
-      if (String(card.type) === "io-child" || String(card.type) === "cloze-child" || String(card.type) === "reversed-child") continue;
+      if (String(card.type) === "io-child" || String(card.type) === "hq-child" || String(card.type) === "cloze-child" || String(card.type) === "reversed-child") continue;
 
       if (card.lastSeenAt !== now) {
         const cardType = String(card.type);
         if (cardType === "io") removedIoParentData.push({ id: String(id), imageRef: card.imageRef || null, sourceNotePath: String(card.sourceNotePath || "") });
+        if (cardType === "hq") removedHqParentIds.push(String(id));
         if (cardType === "cloze") removedClozeParents.push(String(id));
         if (cardType === "reversed") removedReversedParents.push(String(id));
 
@@ -1933,6 +2207,14 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
       if (ioData.imageRef) await deleteIoImage(plugin, ioData.imageRef, ioData.sourceNotePath);
       const ioMap = plugin.store.data.io || {};
       if (ioMap[ioData.id]) delete ioMap[ioData.id];
+    }
+
+    for (const parentId of removedHqParentIds) {
+      const childRemoved = deleteHqChildren(plugin, parentId);
+      removed += childRemoved;
+      deletedDisplayCount += childRemoved;
+      const hqMap = plugin.store.data.hq || {};
+      if (hqMap[parentId]) delete hqMap[parentId];
     }
 
     for (const parentId of removedClozeParents) {
@@ -1956,10 +2238,11 @@ export async function syncQuestionBank(plugin: LearnKitPlugin) {
     }
 
     const orphanIoRemoved = deleteOrphanIoChildren(plugin);
+    const orphanHqRemoved = deleteOrphanHqChildren(plugin);
     const orphanClozeRemoved = deleteOrphanClozeChildren(plugin);
     const orphanReversedRemoved = deleteOrphanReversedChildren(plugin);
-    removed += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
-    deletedDisplayCount += orphanIoRemoved + orphanClozeRemoved + orphanReversedRemoved;
+    removed += orphanIoRemoved + orphanHqRemoved + orphanClozeRemoved + orphanReversedRemoved;
+    deletedDisplayCount += orphanIoRemoved + orphanHqRemoved + orphanClozeRemoved + orphanReversedRemoved;
     const sanitizedStates = sanitizeOrphanStates(plugin);
     if (sanitizedStates > 0) {
       log.info(`syncQuestionBank: pruned ${sanitizedStates} orphaned scheduling state(s)`);

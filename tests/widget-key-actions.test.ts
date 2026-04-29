@@ -148,4 +148,12 @@ describe("resolveWidgetKeyAction", () => {
   it("Enter advances IO card when answer shown", () => {
     expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "io-child", showingAnswer: true }))).toBe("next");
   });
+
+  it("Enter flips hotspot card", () => {
+    expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "hq-child" }))).toBe("flip");
+  });
+
+  it("Enter advances hotspot card when answer shown", () => {
+    expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "hq-child", showingAnswer: true }))).toBe("next");
+  });
 });

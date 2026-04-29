@@ -389,8 +389,8 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
   const cardType = String(card.type || "").toLowerCase();
 
   // IO cards use the same creator/editor modal as reading view.
-  if (["io", "io-child"].includes(cardType)) {
-    const parentId = cardType === "io" ? String(card.id || "") : String(card.parentId || "");
+  if (["io", "io-child", "hq", "hq-child"].includes(cardType)) {
+    const parentId = cardType === "io" || cardType === "hq" ? String(card.id || "") : String(card.parentId || "");
     if (!parentId) {
       new Notice(tx(view, "ui.widget.notice.editMissingParent", "Cannot edit {cardType} - missing parent card", { cardType }));
       return;

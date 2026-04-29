@@ -68,7 +68,6 @@ import { matchesScope } from "../../engine/indexing/scope-match";
 
 import * as IO from "../../platform/image-occlusion/image-occlusion-index";
 import {
-  isIoParentCard,
   isIoRevealableType,
   renderImageOcclusionReviewInto,
 } from "../../platform/image-occlusion/image-occlusion-review-render";
@@ -99,6 +98,16 @@ type UndoFrame = {
   analyticsLenBefore: number;
 
   prevState: CardState | null;
+};
+
+type HotspotAttemptState = {
+  cardId: string;
+  mode: "click" | "drag-drop";
+  x: number;
+  y: number;
+  correct: boolean;
+  label?: string;
+  removed?: boolean;
 };
 
 export type WidgetSessionHandoffPayload = {
@@ -166,6 +175,9 @@ export class SproutReviewerView extends ItemView {
   private _sessionPracticeMode = false;
   private _titleTimerHostEl: HTMLElement | null = null;
   private _suppressEntranceAosOnce = false;
+  private _pendingManualGrade: { cardId: string; meta: Record<string, unknown> } | null = null;
+  private _pendingHotspotAttempts = new Map<string, HotspotAttemptState[]>();
+  private _lastAppliedHotspotStudyMode: "individual" | "all" | "smart" = "smart";
 
   // Typed cloze state: stores what the user typed for each cloze occurrence on the current card
   private _typedClozeAnswers = new Map<string, string>();
@@ -186,6 +198,147 @@ export class SproutReviewerView extends ItemView {
     const audio = this.plugin.settings?.audio;
     if (!audio?.enabled) return false;
     return this._cardPassesTtsGroupFilter(card, audio.limitToGroup || "");
+  }
+
+  private _getNormalizedHotspotStudyMode(): "individual" | "all" | "smart" {
+    const rawStudyMode = String(this.plugin.settings?.cards?.hotspotSingleInteractionMode || "smart").trim().toLowerCase();
+    if (rawStudyMode === "click" || rawStudyMode === "individual") return "individual";
+    if (rawStudyMode === "drag-drop" || rawStudyMode === "all") return "all";
+    return "smart";
+  }
+
+  private _applyHotspotStudyModeToQueue(queue: CardRecord[]): CardRecord[] {
+    const normalizedStudyMode = this._getNormalizedHotspotStudyMode();
+    this._lastAppliedHotspotStudyMode = normalizedStudyMode;
+    const hqMap = this.plugin.store?.data?.hq || {};
+
+    const childCountByParent = new Map<string, number>();
+    const hqParentIdsInQueue = new Set<string>();
+    for (const card of queue) {
+      const type = String(card?.type || "").toLowerCase();
+      if (type === "hq") {
+        const parentId = String(card?.id || "");
+        if (parentId) hqParentIdsInQueue.add(parentId);
+        continue;
+      }
+      if (type !== "hq-child") continue;
+      const parentId = String(card?.parentId || "");
+      if (!parentId) continue;
+      childCountByParent.set(parentId, (childCountByParent.get(parentId) || 0) + 1);
+    }
+
+    const dragFallbackChildByParent = new Set<string>();
+
+    const resolveHotspotPromptLabel = (card: CardRecord): string => {
+      const type = String(card?.type || "").toLowerCase();
+      const parentId = type === "hq"
+        ? String(card?.id || "")
+        : type === "hq-child"
+          ? String(card?.parentId || "")
+          : "";
+      const def = parentId ? hqMap[parentId] : null;
+      const rects = Array.isArray(def?.rects) ? def.rects : [];
+      const rawRectIds = Array.isArray((card as { rectIds?: unknown }).rectIds)
+        ? (card as { rectIds?: unknown[] }).rectIds ?? []
+        : [];
+      const rectIdSet = new Set(rawRectIds.map((id) => {
+        if (typeof id === 'string') return id;
+        if (typeof id === 'number' || typeof id === 'boolean') return String(id);
+        return "";
+      }).filter(Boolean));
+      const candidates = rectIdSet.size > 0
+        ? rects.filter((rect) => rectIdSet.has(String(rect.rectId || "")))
+        : rects;
+      const labeled = candidates.find((rect) => {
+        const labelValue = (rect as { label?: unknown }).label;
+        let label: string;
+        if (typeof labelValue === 'string') {
+          label = labelValue;
+        } else if (typeof labelValue === 'number' || typeof labelValue === 'boolean') {
+          label = String(labelValue);
+        } else {
+          label = "";
+        }
+        return label.trim();
+      });
+      if (labeled) {
+        const labelValue = (labeled as { label?: unknown }).label;
+        let label: string;
+        if (typeof labelValue === 'string') {
+          label = labelValue;
+        } else if (typeof labelValue === 'number' || typeof labelValue === 'boolean') {
+          label = String(labelValue);
+        } else {
+          label = "";
+        }
+        return label.trim();
+      }
+      const grouped = candidates.find((rect) => String(rect?.groupKey || "").trim());
+      if (grouped) {
+        const groupKey = String(grouped.groupKey || "").trim();
+        return groupKey;
+      }
+      const cardGroupKey = String(card?.groupKey || "").trim();
+      return cardGroupKey;
+    };
+
+    const resolveHotspotMode = (card: CardRecord): "click" | "drag-drop" => {
+      if (normalizedStudyMode === "individual") return "click";
+      if (normalizedStudyMode === "all") return "drag-drop";
+      const type = String(card?.type || "").toLowerCase();
+      const parentId = type === "hq"
+        ? String(card?.id || "")
+        : type === "hq-child"
+          ? String(card?.parentId || "")
+          : "";
+      const siblingCount = parentId ? (childCountByParent.get(parentId) || 0) : 0;
+      return siblingCount > 1 ? "drag-drop" : "click";
+    };
+
+    return queue.filter((card) => {
+      if (!card) return false;
+      const type = String(card.type || "").toLowerCase();
+
+      if (type === "io") return false;
+
+      if (type === "hq") {
+        const mode = resolveHotspotMode(card);
+        (card as unknown as Record<string, unknown>).hotspotInteractionModeOverride = mode;
+        if (mode === "click") {
+          (card as unknown as Record<string, unknown>).hotspotPromptLabel = resolveHotspotPromptLabel(card);
+        } else {
+          delete (card as unknown as Record<string, unknown>).hotspotPromptLabel;
+        }
+        (card as unknown as Record<string, unknown>).hotspotTargetCount = Math.max(1, childCountByParent.get(String(card.id || "")) || 0);
+        if (mode === "drag-drop") return true;
+        // Fallback: keep parent if child cards are missing.
+        return (childCountByParent.get(String(card.id || "")) || 0) === 0;
+      }
+
+      if (type === "hq-child") {
+        const mode = resolveHotspotMode(card);
+        (card as unknown as Record<string, unknown>).hotspotInteractionModeOverride = mode;
+        if (mode === "click") {
+          (card as unknown as Record<string, unknown>).hotspotPromptLabel = resolveHotspotPromptLabel(card);
+        } else {
+          delete (card as unknown as Record<string, unknown>).hotspotPromptLabel;
+        }
+        const parentId = String(card.parentId || "");
+        (card as unknown as Record<string, unknown>).hotspotTargetCount = Math.max(1, childCountByParent.get(parentId) || 0);
+        if (mode !== "drag-drop") return true;
+
+        // Drag-drop mode normally uses the parent card (all hotspots together).
+        // If no parent card is queued, keep exactly one child as a proxy card and
+        // force rendering/all-target behavior from the parent definition.
+        if (!parentId || hqParentIdsInQueue.has(parentId)) return false;
+        if (dragFallbackChildByParent.has(parentId)) return false;
+        dragFallbackChildByParent.add(parentId);
+        (card as unknown as Record<string, unknown>).hotspotForceAllTargets = true;
+        return true;
+      }
+
+      return true;
+    });
   }
 
   // Multi-answer MCQ: tracks which options the user has toggled
@@ -331,8 +484,11 @@ export class SproutReviewerView extends ItemView {
   }
 
   private _shouldRequeueSameDayAgain(rating: Rating, nextDue: number | undefined, now: number): boolean {
+    // Only requeue in-session when the card is still due immediately.
+    // If Again schedules into the future (e.g. +10m), end the queue and let countdown/session restart handle it.
     return rating === "again"
       && Number.isFinite(nextDue)
+      && Number(nextDue) <= now
       && Number(nextDue) < this._startOfTomorrowMs(now);
   }
 
@@ -880,6 +1036,7 @@ export class SproutReviewerView extends ItemView {
 
     let queue = this.buildPracticeQueue(scope, exclude);
     if (!queue.length) queue = this.buildPracticeQueue(scope);
+    queue = this._applyHotspotStudyModeToQueue(queue);
 
     if (!queue.length) {
       new Notice(this.tx("ui.reviewer.notice.noPracticeCardsInScope", "No cards available for practice in this scope."));
@@ -1010,6 +1167,14 @@ export class SproutReviewerView extends ItemView {
     sourcePath: string,
     reveal: boolean,
   ) {
+    const cardId = String(card.id || "");
+    const hotspotAttempts = (card.type === "hq" || card.type === "hq-child")
+      ? this._peekPendingHotspotAttempts(cardId)
+      : null;
+    const hotspotAttempt = hotspotAttempts && hotspotAttempts.length > 0
+      ? hotspotAttempts[hotspotAttempts.length - 1]
+      : null;
+
     renderImageOcclusionReviewInto({
       app: this.app,
       plugin: this.plugin,
@@ -1019,6 +1184,17 @@ export class SproutReviewerView extends ItemView {
       reveal,
       ioModule: IO,
       renderMarkdownInto: (el2, md, sp) => this.renderMarkdownInto(el2, md, sp),
+      hotspotReview: card.type === "hq" || card.type === "hq-child"
+        ? {
+            attempt: hotspotAttempt,
+            attempts: hotspotAttempts || undefined,
+            // Inline drag hint is redundant; hotspot hint text is shown in the footer.
+            showDropLocationHint: false,
+            onAttempt: reveal || this.session?.graded[cardId]
+              ? undefined
+              : (attempt) => this.handleHotspotAttempt(card, attempt),
+          }
+        : undefined,
     });
     await Promise.resolve();
   }
@@ -1094,6 +1270,25 @@ export class SproutReviewerView extends ItemView {
   }
 
   onRefresh() {
+    if (this.mode === "session" && this.session) {
+      const latestMode = this._getNormalizedHotspotStudyMode();
+      if (latestMode !== this._lastAppliedHotspotStudyMode) {
+        const scope = this.session.scope;
+        const currentCardId = String(this.currentCard()?.id || "");
+        const keepShowAnswer = this.showAnswer;
+
+        this.openSession(scope);
+
+        if (this.session && currentCardId) {
+          const idx = this.session.queue.findIndex((card) => String(card?.id || "") === currentCardId);
+          if (idx >= 0) this.session.index = idx;
+          this.showAnswer = keepShowAnswer;
+          this.render();
+        }
+        return;
+      }
+    }
+
     this.render();
   }
 
@@ -1186,8 +1381,8 @@ export class SproutReviewerView extends ItemView {
     const cardType = String(card.type || "").toLowerCase();
     
     // Open the IO editor for image-occlusion cards
-    if (["io", "io-child"].includes(cardType)) {
-      const parentId = cardType === "io" ? card.id : String(card.parentId || "");
+    if (["io", "io-child", "hq", "hq-child"].includes(cardType)) {
+      const parentId = cardType === "io" || cardType === "hq" ? card.id : String(card.parentId || "");
       if (!parentId) {
         new Notice(this.tx("ui.reviewer.notice.editIoMissingParent", "Cannot edit image occlusion card - missing parent card"));
         return;
@@ -1491,11 +1686,21 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    await this.gradeCurrentRating(rating, {
+    const meta = {
       mcqChoice: choiceIdx,
       mcqCorrect: Number.isInteger(correctIdx) ? correctIdx : null,
       mcqPass: pass,
-    });
+    };
+
+    if (!this.isPracticeSession() && !this.isMcqAutoGradeEnabled()) {
+      this._setPendingManualGradeMeta(id, meta);
+      this.showAnswer = true;
+      this._speakCardBack(card);
+      this.render();
+      return;
+    }
+
+    await this.gradeCurrentRating(rating, meta);
 
     // TTS: speak correct answer after MCQ is answered
     this._speakCardBack(card);
@@ -1530,11 +1735,21 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    await this.gradeCurrentRating(rating, {
+    const meta = {
       mcqChoices: selectedIndices,
       mcqCorrectIndices: [...correctSet],
       mcqPass: pass,
-    });
+    };
+
+    if (!this.isPracticeSession() && !this.isMcqAutoGradeEnabled()) {
+      this._setPendingManualGradeMeta(id, meta);
+      this.showAnswer = true;
+      this._speakCardBack(card);
+      this.render();
+      return;
+    }
+
+    await this.gradeCurrentRating(rating, meta);
 
     this._speakCardBack(card);
     this.render();
@@ -1562,13 +1777,186 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    await this.gradeCurrentRating(rating, {
+    const meta = {
       oqUserOrder: userOrder,
       oqPass: pass,
-    });
+    };
+
+    if (!this.isPracticeSession() && !this.isOqAutoGradeEnabled()) {
+      this._setPendingManualGradeMeta(id, meta);
+      this.showAnswer = true;
+      this.render();
+      return;
+    }
+
+    await this.gradeCurrentRating(rating, meta);
 
     this.showAnswer = true;
     this.render();
+  }
+
+  private isMcqAutoGradeEnabled(): boolean {
+    return this.plugin.settings.cards?.multipleChoiceAutoGrade !== false;
+  }
+
+  private isOqAutoGradeEnabled(): boolean {
+    return this.plugin.settings.cards?.orderedQuestionsAutoGrade !== false;
+  }
+
+  private _setPendingManualGradeMeta(cardId: string, meta: Record<string, unknown>): void {
+    this._pendingManualGrade = { cardId, meta };
+  }
+
+  private _peekPendingManualGradeMeta(cardId: string): Record<string, unknown> | null {
+    if (!this._pendingManualGrade) return null;
+    if (this._pendingManualGrade.cardId !== String(cardId)) return null;
+    return this._pendingManualGrade.meta;
+  }
+
+  private _clearPendingManualGradeMeta(cardId?: string): void {
+    if (!this._pendingManualGrade) return;
+    if (cardId != null && this._pendingManualGrade.cardId !== String(cardId)) return;
+    this._pendingManualGrade = null;
+  }
+
+  private _setPendingHotspotAttempt(cardId: string, attempt: Omit<HotspotAttemptState, "cardId">): void {
+    const key = String(cardId);
+    const next: HotspotAttemptState = { cardId: key, ...attempt };
+
+    if (attempt.removed) {
+      const existing = this._pendingHotspotAttempts.get(key) || [];
+      const normalizedLabel = String(next.label || "").trim().toLowerCase();
+      const kept = normalizedLabel
+        ? existing.filter((entry) => String(entry.label || "").trim().toLowerCase() !== normalizedLabel)
+        : existing;
+      if (kept.length > 0) this._pendingHotspotAttempts.set(key, kept);
+      else this._pendingHotspotAttempts.delete(key);
+      return;
+    }
+
+    if (attempt.mode === "drag-drop") {
+      const existing = this._pendingHotspotAttempts.get(key) || [];
+      const normalizedLabel = String(next.label || "").trim().toLowerCase();
+      const merged = existing.slice();
+      if (normalizedLabel) {
+        const idx = merged.findIndex((entry) => String(entry.label || "").trim().toLowerCase() === normalizedLabel);
+        if (idx >= 0) merged[idx] = next;
+        else merged.push(next);
+      } else {
+        merged.push(next);
+      }
+      this._pendingHotspotAttempts.set(key, merged);
+      return;
+    }
+
+    this._pendingHotspotAttempts.set(key, [next]);
+  }
+
+  private _peekPendingHotspotAttempts(cardId: string): HotspotAttemptState[] | null {
+    const attempts = this._pendingHotspotAttempts.get(String(cardId)) || null;
+    if (!attempts || attempts.length === 0) return null;
+    return attempts;
+  }
+
+  private _peekPendingHotspotAttempt(cardId: string): HotspotAttemptState | null {
+    const attempts = this._peekPendingHotspotAttempts(cardId);
+    return attempts && attempts.length > 0 ? attempts[attempts.length - 1] : null;
+  }
+
+  private _getPendingHotspotPlacedCount(cardId: string): number {
+    const attempts = this._peekPendingHotspotAttempts(String(cardId || "")) || [];
+    if (attempts.length === 0) return 0;
+    const placed = new Set<string>();
+    for (const attempt of attempts) {
+      if (!attempt || attempt.mode !== "drag-drop" || attempt.removed) continue;
+      const label = String(attempt.label || "").trim().toLowerCase();
+      if (label) placed.add(label);
+    }
+    return placed.size;
+  }
+
+  private _getHotspotInteractionMode(card: CardRecord): "click" | "drag-drop" {
+    const overrideValue = (card as unknown as { hotspotInteractionModeOverride?: unknown })?.hotspotInteractionModeOverride;
+    let override: string;
+    if (typeof overrideValue === 'string') {
+      override = overrideValue;
+    } else if (typeof overrideValue === 'number' || typeof overrideValue === 'boolean') {
+      override = String(overrideValue);
+    } else {
+      override = "";
+    }
+    override = override.trim().toLowerCase();
+    if (override === "drag-drop") return "drag-drop";
+    if (override === "click") return "click";
+    const modeValue = (card as unknown as { interactionMode?: unknown })?.interactionMode;
+    let mode: string;
+    if (typeof modeValue === 'string') {
+      mode = modeValue;
+    } else if (typeof modeValue === 'number' || typeof modeValue === 'boolean') {
+      mode = String(modeValue);
+    } else {
+      mode = "";
+    }
+    mode = mode.trim().toLowerCase();
+    return mode === "drag-drop" ? "drag-drop" : "click";
+  }
+
+  private _isHotspotDragRevealReady(card: CardRecord): boolean {
+    if (this._getHotspotInteractionMode(card) !== "drag-drop") return true;
+    const rawTargetCount = Number((card as unknown as { hotspotTargetCount?: unknown })?.hotspotTargetCount ?? 0);
+    const targetCount = Number.isFinite(rawTargetCount) && rawTargetCount > 0 ? Math.floor(rawTargetCount) : 1;
+    return this._getPendingHotspotPlacedCount(String(card.id || "")) >= targetCount;
+  }
+
+  private _clearPendingHotspotAttempt(cardId?: string): void {
+    if (cardId != null) {
+      this._pendingHotspotAttempts.delete(String(cardId));
+      return;
+    }
+    this._pendingHotspotAttempts.clear();
+  }
+
+  private handleHotspotAttempt(
+    card: CardRecord,
+    attempt: Omit<HotspotAttemptState, "cardId">,
+  ): void {
+    const id = String(card.id || "");
+    if (!id) return;
+
+    this._setPendingHotspotAttempt(id, attempt);
+    const attempts = this._peekPendingHotspotAttempts(id) || [];
+    const latest = attempts.length > 0 ? attempts[attempts.length - 1] : { cardId: id, ...attempt };
+    this._setPendingManualGradeMeta(id, {
+      hotspotCorrect: latest.correct,
+      hotspotAttemptX: latest.x,
+      hotspotAttemptY: latest.y,
+      hotspotInteractionMode: latest.mode,
+      hotspotAttemptLabel: String(latest.label || "").trim(),
+      hotspotAttempts: attempts.map((entry) => ({
+        x: entry.x,
+        y: entry.y,
+        correct: entry.correct,
+        mode: entry.mode,
+        label: String(entry.label || "").trim(),
+      })),
+    });
+    if (attempt.mode === "drag-drop") {
+      // Keep hotspot drag mode on the front side until the user explicitly reveals/advances,
+      // but refresh controls so footer hint/reveal state reflects current placements.
+      this.render();
+      return;
+    }
+    this.showAnswer = true;
+    this._speakCardBack(card);
+    this.render();
+  }
+
+  private async _gradePendingManualRating(rating: Rating): Promise<void> {
+    const card = this.currentCard();
+    if (!card) return;
+    const meta = this._peekPendingManualGradeMeta(String(card.id)) ?? {};
+    this._clearPendingManualGradeMeta(String(card.id));
+    await this.gradeCurrentRating(rating, meta);
   }
 
   private async nextCard(_userInitiated: boolean) {
@@ -1582,6 +1970,8 @@ export class SproutReviewerView extends ItemView {
     let requeueTargetIndex: number | null = null;
     if (card) {
       const id = String(card.id);
+      this._clearPendingManualGradeMeta(id);
+      this._clearPendingHotspotAttempt(id);
       if (!this.session.graded[id]) {
         await this.gradeCurrentRating("again", { auto: true });
       }
@@ -1637,6 +2027,7 @@ export class SproutReviewerView extends ItemView {
 
     this.clearUndo();
     this.resetTiming();
+    this._clearPendingHotspotAttempt();
 
     this.clearTimer();
     this.clearCountdown();
@@ -1647,7 +2038,8 @@ export class SproutReviewerView extends ItemView {
     this.session = this.buildSession(scope);
 
     if (this.session) {
-      this.session.queue = (this.session.queue || []).filter((c) => !isIoParentCard(c));
+      const queue = this.session.queue || [];
+      this.session.queue = this._applyHotspotStudyModeToQueue(queue);
       this.session.stats.total = this.session.queue.length;
       this.session.index = clampInt(
         this.session.index ?? 0,
@@ -1712,6 +2104,7 @@ export class SproutReviewerView extends ItemView {
   private backToDecks() {
     this.clearUndo();
     this.resetTiming();
+    this._clearPendingHotspotAttempt();
     getTtsService().stop();
     this._ttsLastSpokenKey = "";
 
@@ -1899,6 +2292,38 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
+    const manualPendingGrade =
+      !graded &&
+      this.showAnswer &&
+      ((card.type === "mcq" && !this.isMcqAutoGradeEnabled()) ||
+        (card.type === "oq" && !this.isOqAutoGradeEnabled()));
+
+    if (manualPendingGrade) {
+      const four = isFourButtonMode(this.plugin);
+      const isGradeKey = four
+        ? ev.key === "1" || ev.key === "2" || ev.key === "3" || ev.key === "4"
+        : ev.key === "1" || ev.key === "2";
+
+      if (!isGradeKey) return;
+
+      ev.preventDefault();
+      ev.stopPropagation();
+      closeMoreMenuImpl(this);
+
+      let rating: Rating;
+      if (!four) {
+        rating = ev.key === "1" ? "again" : "good";
+      } else {
+        if (ev.key === "1") rating = "again";
+        else if (ev.key === "2") rating = "hard";
+        else if (ev.key === "3") rating = "good";
+        else rating = "easy";
+      }
+
+      void this._gradePendingManualRating(rating).then(() => void this.nextCard(true));
+      return;
+    }
+
     if (card.type === "mcq") {
       // Reset multi-select state if card changed
       if (this._mcqMultiCardId !== id) {
@@ -2042,6 +2467,75 @@ export class SproutReviewerView extends ItemView {
       card.type === "cloze" ||
       card.type === "cloze-child" ||
       isIoRevealableType(card);
+
+    const isHotspot = card.type === "hq" || card.type === "hq-child";
+
+    if (isHotspot) {
+      if (isEnter && !graded) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeMoreMenuImpl(this);
+
+        if (!this.showAnswer) {
+          if (this._getHotspotInteractionMode(card) === "drag-drop" && !this._isHotspotDragRevealReady(card)) {
+            return;
+          }
+          this.showAnswer = true;
+          const revealCard = this.currentCard();
+          if (revealCard) this._speakCardBack(revealCard);
+          this.render();
+          return;
+        }
+
+        if (this.showAnswer && this.isPracticeSession()) {
+          void this.nextCard(true);
+          return;
+        }
+
+        return;
+      }
+
+      if (isEnter && graded) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeMoreMenuImpl(this);
+        void this.nextCard(true);
+        return;
+      }
+
+      const four = isFourButtonMode(this.plugin);
+      const isGradeKey = four
+        ? ev.key === "1" || ev.key === "2" || ev.key === "3" || ev.key === "4"
+        : ev.key === "1" || ev.key === "2";
+
+      if (isGradeKey) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeMoreMenuImpl(this);
+
+        if (!this.showAnswer) return;
+
+        if (!graded) {
+          let rating: Rating;
+          if (!four) {
+            rating = ev.key === "1" ? "again" : "good";
+          } else {
+            if (ev.key === "1") rating = "again";
+            else if (ev.key === "2") rating = "hard";
+            else if (ev.key === "3") rating = "good";
+            else rating = "easy";
+          }
+
+          void this.gradeCurrentRating(rating, {}).then(() => void this.nextCard(true));
+          return;
+        }
+
+        void this.nextCard(true);
+        return;
+      }
+
+      return;
+    }
 
     if (isRevealable) {
       if (isEnter && !graded) {
@@ -2348,6 +2842,10 @@ export class SproutReviewerView extends ItemView {
         // updates the DOM in-place for instant feedback.
       },
       answerOq: (userOrder: number[]) => this.answerOq(userOrder),
+      autoGradeMcq: this.isMcqAutoGradeEnabled(),
+      autoGradeOq: this.isOqAutoGradeEnabled(),
+      gradePendingRating: (rating: Rating) => this._gradePendingManualRating(rating),
+      usePendingManualGrade: !!(activeCard && this._peekPendingManualGradeMeta(String(activeCard.id))),
 
       enableSkipButton: isSkipEnabled(this.plugin),
       skipCurrentCard: (meta?: Record<string, unknown>) => this.doSkipCurrentCard(meta),
@@ -2395,6 +2893,7 @@ export class SproutReviewerView extends ItemView {
         sourcePath2: string,
         reveal2: boolean,
       ) => this.renderImageOcclusionInto(containerEl, card2, sourcePath2, reveal2),
+      getHotspotPlacedCount: (cardId: string) => this._getPendingHotspotPlacedCount(cardId),
 
       randomizeMcqOptions: isMcqOptionRandomisationEnabled(this.plugin),
       randomizeOqOrder: this.plugin.settings.study?.randomizeOqOrder ?? true,

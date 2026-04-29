@@ -90,7 +90,10 @@ export function getCardsInActiveScope(store: { getAllCards(): CardRecord[] }, fi
 
   const prefix = folder.folderPath.endsWith("/") ? folder.folderPath : folder.folderPath + "/";
   return filterReviewableCards(
-    all.filter((c) => typeof c.sourceNotePath === "string" && c.sourceNotePath.startsWith(prefix)),
+    all.filter(
+      (c) => c.sourceNotePath === file.path ||
+        (typeof c.sourceNotePath === "string" && c.sourceNotePath.startsWith(prefix)),
+    ),
   );
 }
 

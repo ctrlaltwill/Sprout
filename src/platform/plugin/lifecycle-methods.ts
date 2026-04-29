@@ -105,6 +105,7 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
         { id: "add-multiple-choice-flashcard", name: "Add multiple choice flashcard to note", type: "mcq" },
         { id: "add-ordered-question-flashcard", name: "Add ordered question flashcard to note", type: "oq" },
         { id: "add-image-occlusion-flashcard", name: "Add image occlusion flashcard to note", type: "io" },
+        { id: "add-hotspot-flashcard", name: "Add hotspot flashcard to note", type: "hq" },
       ];
 
       for (const command of flashcardCommands) {

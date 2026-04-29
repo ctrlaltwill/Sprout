@@ -75,6 +75,16 @@ The [Study Widget](../Widget) is the lightweight way to start a session from the
 
 Use it when you want a quick local review burst or a practice run without opening a larger study surface.
 
+## Demo: Interactive Question Types In Session
+
+![Hotspot drag-drop in study session](../../../branding/Demo/Hotspot%20-%20Drag.png)
+
+_Hotspot drag-drop interaction during a study session._
+
+![Multiple choice in study session](../../../branding/Demo/Multiple%20Choice.png)
+
+_Multiple choice grading in session._
+
 ## Extra Session Controls
 
 Study Sessions also supports features such as:
@@ -94,7 +104,8 @@ These controls are useful, but the main thing to understand first is the normal 
 - [Scheduling](../Scheduling)
 - [Reminders](../Reminders)
 - [Gatekeeper](../Gatekeeper)
+- [Hotspot Cards](../Hotspot-Cards)
 
 ---
 
-Last modified: 26/04/2026
+Last modified: 28/04/2026

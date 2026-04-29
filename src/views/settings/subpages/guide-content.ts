@@ -17,22 +17,61 @@ import { t } from "../../../platform/translations/translator";
 
 const tx = (token: string, fallback: string) => t("en", token, fallback);
 
-function convertDocsLinksForObsidianGuide(markdown: string): string {
-  return String(markdown ?? "")
-    .replace(/\[([^\]]+)\]\(\.\/([^)#]+?)\.md(#[^)]+)?\)/g, (_m, text: string, target: string) => {
+const GUIDE_DEMO_RELATIVE_PREFIX_RE = /^\.\.\/\.\.\/\.\.\/branding\/(?:Demo|demo)\/(.+)$/i;
+const GUIDE_DEMO_RAW_BASE = "https://raw.githubusercontent.com/ctrlaltwill/LearnKit/main/site/branding/Demo/";
+
+function encodePathSegments(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => {
+      if (!segment) return segment;
+      try {
+        return encodeURIComponent(decodeURIComponent(segment));
+      } catch {
+        return encodeURIComponent(segment);
+      }
+    })
+    .join("/");
+}
+
+function rewriteGuideDemoImageLink(url: string): string {
+  const trimmed = String(url ?? "").trim();
+  const match = trimmed.match(GUIDE_DEMO_RELATIVE_PREFIX_RE);
+  if (!match) return trimmed;
+  const relativePath = String(match[1] ?? "").trim();
+  if (!relativePath) return trimmed;
+  return `${GUIDE_DEMO_RAW_BASE}${encodePathSegments(relativePath)}`;
+}
+
+function convertDocsLinksForObsidianGuide(markdown: string, options?: { rewriteDemoImagesToRaw?: boolean }): string {
+  const rewriteDemoImagesToRaw = !!options?.rewriteDemoImagesToRaw;
+
+  let converted = String(markdown ?? "")
+    .replace(/\[([^\]]+)\]\(\.\/([^)#]+?)\.md(#[^)]+)?\)/g, (_m, text: string, target: string, _hash: string, offset: number, full: string) => {
+      if (offset > 0 && full[offset - 1] === "!") return _m;
       const label = String(text ?? "").trim();
       const page = String(target ?? "").trim();
       if (!page) return _m;
       const defaultLabel = page.replace(/-/g, " ");
       return label && label !== defaultLabel ? `[[${page}|${label}]]` : `[[${page}]]`;
     })
-    .replace(/\[([^\]]+)\]\(\/([^)#]+?)(#[^)]+)?\)/g, (_m, text: string, target: string) => {
+    .replace(/\[([^\]]+)\]\(\/([^)#]+?)(#[^)]+)?\)/g, (_m, text: string, target: string, _hash: string, offset: number, full: string) => {
+      if (offset > 0 && full[offset - 1] === "!") return _m;
       const label = String(text ?? "").trim();
       const page = String(target ?? "").trim();
       if (!page || /^https?:\/\//i.test(page)) return _m;
       const defaultLabel = page.replace(/-/g, " ");
       return label && label !== defaultLabel ? `[[${page}|${label}]]` : `[[${page}]]`;
     });
+
+  if (rewriteDemoImagesToRaw) {
+    converted = converted.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt: string, src: string) => {
+      const rewritten = rewriteGuideDemoImageLink(src);
+      return `![${alt}](${rewritten})`;
+    });
+  }
+
+  return converted;
 }
 
 const PREFERRED_GUIDE_FILES = [
@@ -61,6 +100,7 @@ const PREFERRED_GUIDE_FILES = [
   "Basic-&-Reversed-Flashcards.md",
   "Cloze-Flashcards.md",
   "Image-Occlusion.md",
+  "Hotspot-Cards.md",
   "Multiple-Choice-Questions.md",
   "Ordered-Questions.md",
   "Flashcard-Library.md",
@@ -104,7 +144,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
       { pageKeys: ["Creating-Flashcards", "Decks-&-Organisation", "Editing-Flashcards", "Flashcard-Formatting", "Flashcards"] },
       {
         title: tx("ui.guide.sections.cardTypes", "Flashcard Types"),
-        pageKeys: ["Basic-&-Reversed-Flashcards", "Cloze-Flashcards", "Image-Occlusion", "Multiple-Choice-Questions", "Ordered-Questions"],
+        pageKeys: ["Basic-&-Reversed-Flashcards", "Cloze-Flashcards", "Image-Occlusion", "Hotspot-Cards", "Multiple-Choice-Questions", "Ordered-Questions"],
       },
       { title: tx("ui.guide.sections.flags", "Flags"), pageKeys: ["Flag-Codes", "Flags"] },
     ],
@@ -229,6 +269,7 @@ const GUIDE_ICON_MAP: Record<string, string> = {
   "Multiple-Choice-Questions": "list-checks",
   "Ordered-Questions": "list-ordered",
   "Image-Occlusion": "image",
+  "Hotspot-Cards": "map-pin",
   "Study-Sessions": "graduation-cap",
   Grading: "check-check",
   Scheduling: "calendar-clock",
@@ -270,7 +311,7 @@ export async function loadGuidePages(app: App, pluginDir?: string): Promise<Guid
       pagesFromRepoRaw.push({
         key,
         label: key.replace(/-/g, " "),
-        markdown: convertDocsLinksForObsidianGuide(res.text),
+        markdown: convertDocsLinksForObsidianGuide(res.text, { rewriteDemoImagesToRaw: true }),
         sourcePath: "",
       });
     } catch {
@@ -333,6 +374,7 @@ export async function loadGuidePages(app: App, pluginDir?: string): Promise<Guid
     "Basic-&-Reversed-Flashcards",
     "Cloze-Flashcards",
     "Image-Occlusion",
+    "Hotspot-Cards",
     "Multiple-Choice-Questions",
     "Ordered-Questions",
     "Flags",

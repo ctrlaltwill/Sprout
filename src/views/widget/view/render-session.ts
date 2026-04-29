@@ -49,6 +49,10 @@ function hasMarkdownList(text: string): boolean {
   return /^[ \t]*(?:[-+*]|\d+[.)])\s/m.test(text);
 }
 
+function isWidgetIoLikeType(type: string): boolean {
+  return type === "io" || type === "io-child" || type === "hq" || type === "hq-child";
+}
+
 const QUESTION_NUMBER_WORDS: string[] = [
   "Zero",
   "One",
@@ -200,7 +204,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   }
 
   const id = String(card.id);
-  const ioLike = card.type === "io" || card.type === "io-child";
+  const ioLike = isWidgetIoLikeType(card.type);
 
   // Track timing for this card
   if (!view._timing || view._timing.cardId !== id) {
@@ -243,7 +247,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
     renderClozeCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (card.type === "mcq") {
     renderMcqCard(view, body, card, graded, infoText, applySectionStyles);
-  } else if (card.type === "io" || card.type === "io-child") {
+  } else if (isWidgetIoLikeType(card.type)) {
     renderIoCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (card.type === "oq") {
     renderOqCard(view, body, card, graded, infoText, applySectionStyles);
@@ -1225,7 +1229,7 @@ function speakWidgetCard(
     return;
   }
 
-  if (card.type === "io" || card.type === "io-child") {
+  if (isWidgetIoLikeType(card.type)) {
     const qText = card.q || "";
     const aText = card.a || "";
     tts.speakBasicCard(reveal ? aText : qText, audio, cid);

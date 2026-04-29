@@ -10,6 +10,7 @@
  */
 
 export type IOMaskMode = "solo" | "all";
+export type HQInteractionMode = "click" | "drag-drop";
 
 export type StoredIORect = {
   rectId: string;
@@ -18,7 +19,9 @@ export type StoredIORect = {
   w: number;  // normalized 0-1
   h: number;  // normalized 0-1
   groupKey: string;
-  shape?: "rect" | "circle";
+  label?: string;
+  shape?: "rect" | "circle" | "polygon";
+  points?: Array<{ x: number; y: number }>;
 };
 
 export type IOParentDef = {
@@ -28,3 +31,12 @@ export type IOParentDef = {
 };
 
 export type IOMap = Record<string, IOParentDef>;
+
+export type HQParentDef = {
+  imageRef: string;
+  interactionMode: HQInteractionMode | null;
+  prompt: string | null;
+  rects: StoredIORect[];
+};
+
+export type HQMap = Record<string, HQParentDef>;

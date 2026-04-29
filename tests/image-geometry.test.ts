@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { clampRectPx, normToPxRect, pxToNormRect, rectPxFromPoints } from "../src/platform/image-occlusion/image-geometry";
+import { clampRectPx, normToPxRect, pointInPolygon, polygonClipPath, pxToNormRect, rectPxFromPoints } from "../src/platform/image-occlusion/image-geometry";
 
 describe("image geometry", () => {
   it("clamps a rect within bounds", () => {
@@ -29,5 +29,17 @@ describe("image geometry", () => {
   it("builds a rect from two points", () => {
     const rect = rectPxFromPoints({ x: 30, y: 10 }, { x: 10, y: 40 });
     expect(rect).toEqual({ x: 10, y: 10, w: 20, h: 30 });
+  });
+
+  it("builds a polygon clip-path and hit-tests points inside it", () => {
+    const polygon = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0.5, y: 1 },
+    ];
+
+    expect(polygonClipPath(polygon)).toBe("polygon(0% 0%, 100% 0%, 50% 100%)");
+    expect(pointInPolygon({ x: 0.5, y: 0.4 }, polygon)).toBe(true);
+    expect(pointInPolygon({ x: 0.95, y: 0.95 }, polygon)).toBe(false);
   });
 });

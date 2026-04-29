@@ -43,6 +43,7 @@ LearnKit Docs
 │  │  ├─ Basic & Reversed Flashcards
 │  │  ├─ Cloze Flashcards
 │  │  ├─ Image Occlusion
+│  │  ├─ Hotspot Cards
 │  │  ├─ Multiple Choice Questions
 │  │  └─ Ordered Questions
 │  └─ Flags
@@ -108,6 +109,7 @@ LearnKit Docs
 | Basic-&-Reversed-Flashcards.md | Flashcards |
 | Cloze-Flashcards.md | Flashcards |
 | Image-Occlusion.md | Flashcards |
+| Hotspot-Cards.md | Flashcards |
 | Multiple-Choice-Questions.md | Flashcards |
 | Ordered-Questions.md | Flashcards |
 | Flags.md | Flashcards |
@@ -136,4 +138,4 @@ LearnKit Docs
 
 ---
 
-Last modified: 30/03/2026
+Last modified: 28/04/2026

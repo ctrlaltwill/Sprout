@@ -13,7 +13,7 @@ import type { CardRecord } from "./card";
 import type { CardState } from "./scheduler";
 import type { ReviewLogEntry } from "./review";
 import type { AnalyticsData } from "./analytics";
-import type { IOMap } from "../../platform/image-occlusion/image-occlusion-types";
+import type { HQMap, IOMap } from "../../platform/image-occlusion/image-occlusion-types";
 
 /**
  * A card that failed parsing and has been quarantined.
@@ -40,6 +40,9 @@ export type StoreData = {
 
   /** Image-occlusion definitions keyed by parent card ID. */
   io: IOMap;
+
+  /** Hotspot-question definitions keyed by parent card ID. */
+  hq: HQMap;
 
   /** Analytics event storage (reviews, sessions). */
   analytics: AnalyticsData;

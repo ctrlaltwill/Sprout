@@ -9,6 +9,7 @@
 import type { App, Plugin, MarkdownPostProcessorContext } from "obsidian";
 import { Component, MarkdownRenderer, MarkdownView, Notice, setIcon, TFile, renderMath, finishRenderMath } from "obsidian";
 import { log } from "../../platform/core/logger";
+import { t } from "../../platform/translations/translator";
 import { escapeDelimiterRe } from "../../platform/core/delimiter";
 import { openBulkEditModalForCards } from "../../platform/modals/bulk-edit";
 import { ImageOcclusionCreatorModal } from "../../platform/modals/image-occlusion-creator-modal";
@@ -20,6 +21,8 @@ import { queryFirst, replaceChildrenWithHTML, setCssProps } from "../../platform
 import { DEFAULT_SETTINGS } from "../../platform/core/default-settings";
 import { resolveImageFile } from "../../platform/image-occlusion/io-helpers";
 import type { StoredIORect } from "../../platform/image-occlusion/image-occlusion-types";
+import { polygonClipPath } from "../../platform/image-occlusion/image-geometry";
+import { resolveAnchoredLabelCollisions } from "../../platform/image-occlusion/overlay-label-layout";
 
 import {
   ANCHOR_RE,
@@ -642,7 +645,10 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
     // Re-sync the dynamic <style> element (colours, fonts, layout, card mode)
     syncReadingViewStyles();
 
-    const stylesEnabled = !!getSproutPlugin()?.settings?.general?.enableReadingStyles;
+    const pluginState = getSproutPlugin();
+    const stylesEnabled = pluginState
+      ? !!pluginState.settings?.general?.enableReadingStyles
+      : true;
 
     const root = (e.currentTarget instanceof HTMLElement)
       ? e.currentTarget
@@ -688,8 +694,6 @@ function setupManualTrigger() {
     debugLog('[LearnKit] Received sprout-cards-inserted event — re-processing cards');
     window.sproutApplyMasonryGrid?.();
   });
-
-  debugLog('[LearnKit] Manual trigger and event hook installed');
 }
 
 async function getLiveMarkdownSourceContent(): Promise<string> {
@@ -845,9 +849,12 @@ function setupDebouncedMutationObserver() {
     // flicker when cards are already wrapped, and these sections have
     // unwrapped cards that need wrapping exactly once).
     if (sectionsNeedingLayout.size > 0) {
-      const stylesEnabled = !!getSproutPlugin()?.settings?.general?.enableReadingStyles;
+      const pluginState = getSproutPlugin();
+      const stylesEnabled = pluginState
+        ? !!pluginState.settings?.general?.enableReadingStyles
+        : true;
       if (stylesEnabled) {
-        const rvSettings = getSproutPlugin()?.settings?.readingView;
+        const rvSettings = pluginState?.settings?.readingView;
         applyLayoutToSections(sectionsNeedingLayout, rvSettings);
       }
     }
@@ -897,8 +904,12 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
   // Skip card prettification entirely when prettify is off
   try {
     const pluginCheck = getSproutPlugin();
-    const stylesEnabled = !!pluginCheck?.settings?.general?.enableReadingStyles;
-    if (!stylesEnabled) {
+    // If plugin state is transiently unavailable during startup/refresh,
+    // avoid destructive resets that can cause flash-then-disappear behavior.
+    const stylesEnabled = pluginCheck
+      ? !!pluginCheck.settings?.general?.enableReadingStyles
+      : true;
+    if (pluginCheck && !stylesEnabled) {
       debugLog('[LearnKit] Prettify cards is off — skipping card processing');
       resetCardsToNativeReading(container);
       return;
@@ -967,6 +978,7 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
       if (!card) continue;
 
       el.dataset.sproutProcessed = 'true';
+      el.setAttribute('data-learnkit-processed', 'true');
 
       enhanceCardElement(el, card, undefined, rawText);
     } catch (err) {
@@ -2326,7 +2338,7 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     if (/\{\{c\d+::/i.test(value)) return false;
     return /\\\(|\\\[|\$\$|(^|[^\\])\$(?!\$)/.test(value);
   };
-  type MarkdownQuestionLabelType = SproutCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child';
+  type MarkdownQuestionLabelType = SproutCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child' | 'hq-child';
   const questionLabelByType: Partial<Record<MarkdownQuestionLabelType, string>> = {
     basic: 'Basic Question',
     reversed: 'Reversed Question',
@@ -2337,6 +2349,8 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     'cloze-child': 'Cloze Question',
     io: 'Image Occlusion Question',
     'io-child': 'Image Occlusion Question',
+    hq: 'Hotspot Question',
+    'hq-child': 'Hotspot Question',
   };
   const questionLabel = questionLabelByType[card.type] ?? 'Question';
 
@@ -2451,8 +2465,11 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
   } else if (card.type === 'cloze') {
     addPlainField(questionLabel, toTextField(card.fields.CQ));
     addPlainField('Extra Information', toTextField(card.fields.I));
-  } else if (card.type === 'io') {
-    addPlainField(questionLabel, toTextField(card.fields.IO));
+  } else if (card.type === 'io' || card.type === 'hq' || card.type === 'io-child' || card.type === 'hq-child') {
+    const ioField = card.type === 'hq' || card.type === 'hq-child'
+      ? (card.fields.HQ ?? card.fields.IO)
+      : card.fields.IO;
+    addPlainField(questionLabel, toTextField(ioField));
     addPlainField('Answer', toTextField(card.fields.A));
     addPlainField('Extra Information', toTextField(card.fields.I));
   } else {
@@ -2528,7 +2545,7 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
     const cq = toTextField(card.fields.CQ);
     front = buildFlashcardCloze(cq, 'front');
     back = buildFlashcardCloze(cq, 'back');
-  } else if (card.type === 'io') {
+  } else if (card.type === 'io' || card.type === 'hq' || card.type === 'io-child' || card.type === 'hq-child') {
     front = `<div class="learnkit-flashcard-io" id="learnkit-io-question-${idSeed}"></div>`;
     back = `<div class="learnkit-flashcard-io" id="learnkit-io-answer-${idSeed}"></div>`;
   } else if (card.type === 'mcq') {
@@ -2816,8 +2833,10 @@ function enhanceCardElement(
   let markdownClozeStyle: CleanMarkdownClozeStyle | undefined;
   try {
     const activePlugin = getSproutPlugin();
-    const stylesEnabled = !!activePlugin?.settings?.general?.enableReadingStyles;
-    if (!stylesEnabled) {
+    const stylesEnabled = activePlugin
+      ? !!activePlugin.settings?.general?.enableReadingStyles
+      : true;
+    if (activePlugin && !stylesEnabled) {
       replaceChildrenWithHTML(el, originalContent);
       return;
     }
@@ -2983,8 +3002,15 @@ function enhanceCardElement(
       }
 
       // IO cards open the image occlusion editor instead of the generic editor
-      if (targetCard.type === "io") {
-        ImageOcclusionCreatorModal.openForParent(plugin as unknown as LearnKitPlugin, String(targetCard.id), {
+      if (targetCard.type === "io" || targetCard.type === "hq" || targetCard.type === "io-child" || targetCard.type === "hq-child") {
+        const parentId = targetCard.type.endsWith("-child")
+          ? String(targetCard.parentId || "")
+          : String(targetCard.id);
+        if (!parentId) {
+          new Notice(t(plugin?.settings?.general?.interfaceLanguage, "ui.reading.notice.cardParentNotFound", "Card parent not found."));
+          return;
+        }
+        ImageOcclusionCreatorModal.openForParent(plugin as unknown as LearnKitPlugin, parentId, {
           onClose: () => {
             if (typeof plugin.refreshAllViews === "function") {
               plugin.refreshAllViews();
@@ -3272,7 +3298,7 @@ async function renderMdInElements(el: HTMLElement, card: SproutCard) {
     }
 
     // Render IO cards: masked image (question) + full image (answer)
-    if (card.type === 'io') {
+    if (card.type === 'io' || card.type === 'hq' || card.type === 'io-child' || card.type === 'hq-child') {
       renderIoInReadingCard(el, card, plugin, sourcePath);
     }
     
@@ -3421,16 +3447,259 @@ function renderIoInReadingCard(
   plugin: SproutPluginLike,
   sourcePath: string,
 ) {
+  const toFieldText = (value: string | string[] | undefined): string =>
+    Array.isArray(value) ? value.join('\n') : String(value || '');
+
+  const extractImageRefFromField = (value: string | string[] | undefined): string => {
+    const raw = toFieldText(value).trim();
+    if (!raw) return '';
+
+    const embedMatch = raw.match(/!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/i);
+    if (embedMatch?.[1]) return String(embedMatch[1]).trim();
+
+    const internalEmbedMatch = raw.match(/<span[^>]*\b(?:src|alt)=['"]([^'"]+\.(?:png|jpe?g|gif|bmp|svg|webp|avif|tiff))['"][^>]*>/i);
+    if (internalEmbedMatch?.[1]) return String(internalEmbedMatch[1]).trim();
+
+    if (/\.(png|jpe?g|gif|bmp|svg|webp|avif|tiff)(?:\?.*)?$/i.test(raw)) {
+      return raw;
+    }
+    return '';
+  };
+
+  const normalizeImageRefKey = (value: string): string => {
+    const cleaned = String(value || '')
+      .trim()
+      .replace(/^!\[\[/, '')
+      .replace(/\]\]$/, '')
+      .replace(/[#?].*$/, '')
+      .replace(/^\/+/, '')
+      .replace(/\\/g, '/');
+    try {
+      return decodeURIComponent(cleaned).toLowerCase();
+    } catch {
+      return cleaned.toLowerCase();
+    }
+  };
+
+  const imageRefBaseName = (value: string): string => {
+    const key = normalizeImageRefKey(value);
+    const parts = key.split('/').filter(Boolean);
+    return parts.length > 0 ? parts[parts.length - 1] : key;
+  };
+
+  const imageRefsMatch = (left: string, right: string): boolean => {
+    const leftKey = normalizeImageRefKey(left);
+    const rightKey = normalizeImageRefKey(right);
+    if (!leftKey || !rightKey) return false;
+    if (leftKey === rightKey) return true;
+    const leftBase = imageRefBaseName(leftKey);
+    const rightBase = imageRefBaseName(rightKey);
+    return !!leftBase && leftBase === rightBase;
+  };
+
+  const mapRawOcclusionsToRects = (rawOcclusions: unknown[]): StoredIORect[] => {
+    const rects: StoredIORect[] = [];
+    for (const r of rawOcclusions) {
+      if (!r || typeof r !== 'object') continue;
+      const rect = r as Record<string, unknown>;
+
+      let rectId = '';
+      const rectIdRaw = rect.rectId ?? rect.id;
+      if (typeof rectIdRaw === 'string') {
+        rectId = rectIdRaw;
+      } else if (typeof rectIdRaw === 'number' || typeof rectIdRaw === 'boolean') {
+        rectId = String(rectIdRaw);
+      }
+
+      let groupKey = '1';
+      const groupKeyRaw = rect.groupKey;
+      if (typeof groupKeyRaw === 'string') {
+        groupKey = groupKeyRaw;
+      } else if (typeof groupKeyRaw === 'number' || typeof groupKeyRaw === 'boolean') {
+        groupKey = String(groupKeyRaw);
+      }
+
+      const shape = rect.shape === 'circle' ? 'circle' : rect.shape === 'polygon' ? 'polygon' : 'rect';
+      const points = shape === 'polygon' && Array.isArray(rect.points)
+        ? rect.points
+            .map((p) => {
+              if (!p || typeof p !== 'object') return null;
+              const point = p as Record<string, unknown>;
+              const x = Number(point.x ?? 0);
+              const y = Number(point.y ?? 0);
+              if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+              return { x, y };
+            })
+            .filter((p): p is { x: number; y: number } => !!p)
+        : [];
+
+      rects.push({
+        rectId,
+        x: Number(rect.x ?? 0),
+        y: Number(rect.y ?? 0),
+        w: Number(rect.w ?? rect.width ?? 0),
+        h: Number(rect.h ?? rect.height ?? 0),
+        groupKey,
+        shape,
+        points: points.length >= 3 ? points : undefined,
+      });
+    }
+    return rects;
+  };
+
+  const hashString = (value: string): number => {
+    let hash = 0;
+    for (let i = 0; i < value.length; i += 1) {
+      hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+    }
+    return hash;
+  };
+
+  const getMaskToneShift = (rect: StoredIORect, fallbackIndex: number): number => {
+    const rectId = String(rect.rectId || "");
+    const groupKey = String(rect.groupKey || "");
+    const labelValue = (rect as Record<string, unknown>).label;
+    let label: string;
+    if (typeof labelValue === 'string') {
+      label = labelValue;
+    } else if (typeof labelValue === 'number' || typeof labelValue === 'boolean') {
+      label = String(labelValue);
+    } else {
+      label = "";
+    }
+    const fallback = String(fallbackIndex + 1);
+    const key = rectId || groupKey || label || fallback;
+    const shifts = [-8, -4, 0, 4, 8];
+    return shifts[hashString(key) % shifts.length] || 0;
+  };
+
+  const applyMaskTone = (maskEl: HTMLElement, rect: StoredIORect, fallbackIndex: number): void => {
+    const delta = getMaskToneShift(rect, fallbackIndex);
+    const alpha = isHotspot ? 0.22 : 0.75;
+    const lExpr = delta >= 0
+      ? `calc(var(--accent-l) + ${delta}%)`
+      : `calc(var(--accent-l) - ${Math.abs(delta)}%)`;
+    maskEl.style.background = `hsl(var(--accent-h) var(--accent-s) ${lExpr} / ${alpha})`;
+  };
+
+  const getPolygonLabelAnchor = (
+    rect: StoredIORect,
+  ): { xNorm: number; yNorm: number } | null => {
+    if (rect.shape !== 'polygon' || !Array.isArray(rect.points) || rect.points.length < 3) return null;
+
+    const width = Number.isFinite(rect.w) ? Number(rect.w) : 0;
+    const height = Number.isFinite(rect.h) ? Number(rect.h) : 0;
+    const originX = Number.isFinite(rect.x) ? Number(rect.x) : 0;
+    const originY = Number.isFinite(rect.y) ? Number(rect.y) : 0;
+    if (width <= 0 || height <= 0) return null;
+
+    const points = rect.points
+      .map((point) => ({ x: Number(point.x), y: Number(point.y) }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (points.length < 3) return null;
+
+    const looksLocal = points.every((point) => point.x >= -0.001 && point.x <= 1.001 && point.y >= -0.001 && point.y <= 1.001);
+
+    const localPoints = points.map((point) => {
+      if (looksLocal) {
+        return {
+          x: Math.max(0, Math.min(1, point.x)),
+          y: Math.max(0, Math.min(1, point.y)),
+        };
+      }
+      return {
+        x: Math.max(0, Math.min(1, (point.x - originX) / width)),
+        y: Math.max(0, Math.min(1, (point.y - originY) / height)),
+      };
+    });
+
+    const yLocal = 0.5;
+    const intersections: number[] = [];
+    for (let i = 0; i < localPoints.length; i += 1) {
+      const a = localPoints[i];
+      const b = localPoints[(i + 1) % localPoints.length];
+      if (!a || !b) continue;
+
+      // Horizontal edges do not define a stable crossing for scanline anchoring.
+      if (Math.abs(a.y - b.y) < 1e-6) continue;
+
+      const minY = Math.min(a.y, b.y);
+      const maxY = Math.max(a.y, b.y);
+      if (!(yLocal >= minY && yLocal < maxY)) continue;
+
+      const t = (yLocal - a.y) / (b.y - a.y);
+      const x = a.x + t * (b.x - a.x);
+      if (Number.isFinite(x)) intersections.push(Math.max(0, Math.min(1, x)));
+    }
+
+    if (intersections.length < 2) return null;
+    intersections.sort((left, right) => left - right);
+
+    let bestCenter = intersections[0];
+    let bestWidth = -1;
+    for (let i = 0; i + 1 < intersections.length; i += 2) {
+      const left = intersections[i];
+      const right = intersections[i + 1];
+      const segmentWidth = right - left;
+      if (segmentWidth > bestWidth) {
+        bestWidth = segmentWidth;
+        bestCenter = (left + right) / 2;
+      }
+    }
+    if (bestWidth <= 0) return null;
+
+    return {
+      xNorm: originX + bestCenter * width,
+      yNorm: originY + yLocal * height,
+    };
+  };
+
   const app = plugin.app;
-  const anchorId = card.anchorId;
+  const anchorId = String(
+    card.anchorId ||
+      (card.type === 'io-child' || card.type === 'hq-child' ? card.parentId || '' : card.id || ''),
+  ).trim();
+  if (!anchorId) return;
+
+  const cardsById = plugin.store?.data?.cards ?? {};
+  const anchorCard = cardsById[anchorId] as Record<string, unknown> | undefined;
+  const anchorTypeValue = anchorCard?.type;
+  let anchorType: string;
+  if (typeof anchorTypeValue === 'string') {
+    anchorType = anchorTypeValue;
+  } else if (typeof anchorTypeValue === 'number' || typeof anchorTypeValue === 'boolean') {
+    anchorType = String(anchorTypeValue);
+  } else {
+    anchorType = "";
+  }
+  anchorType = anchorType.toLowerCase();
+  const isHotspot =
+    card.type === 'hq' ||
+    card.type === 'hq-child' ||
+    anchorType === 'hq' ||
+    anchorType === 'hq-child' ||
+    Array.isArray(anchorCard?.hqRegions);
 
   // Resolve IO data from store
-  const ioMap = (plugin.store?.data as unknown as { io?: Record<string, { imageRef: string; rects: StoredIORect[]; maskMode?: string }> })?.io ?? {};
-  let ioDef = ioMap[anchorId];
+  type HQDef = { imageRef: string; rects: StoredIORect[]; interactionMode?: "click" | "drag-drop"; prompt?: string };
+  type IODef = { imageRef: string; rects: StoredIORect[]; maskMode?: string };
+  
+  const ioMap: Record<string, HQDef | IODef> = isHotspot
+    ? ((plugin.store?.data as unknown as { hq?: Record<string, HQDef> })?.hq ?? {})
+    : ((plugin.store?.data as unknown as { io?: Record<string, IODef> })?.io ?? {});
+  let ioDef: HQDef | IODef | undefined = ioMap[anchorId];
+  const fieldImageRef = isHotspot
+    ? extractImageRefFromField(card.fields.HQ ?? card.fields.IO)
+    : extractImageRefFromField(card.fields.IO);
+
+  if (!ioDef && fieldImageRef) {
+    const matched = Object.values(ioMap).find((def) => imageRefsMatch(String(def?.imageRef || ''), fieldImageRef));
+    if (matched) ioDef = matched;
+  }
 
   // Fallback: if IO map entry is missing, rebuild from the card record's occlusions
   if (!ioDef) {
-    const cardRec = (plugin.store?.data?.cards ?? {})[anchorId] as Record<string, unknown> | undefined;
+    const cardRec = anchorCard;
     if (cardRec) {
       const rawImageRefVal = cardRec.imageRef;
       let rawImageRef = '';
@@ -3439,66 +3708,97 @@ function renderIoInReadingCard(
       } else if (typeof rawImageRefVal === 'number' || typeof rawImageRefVal === 'boolean') {
         rawImageRef = String(rawImageRefVal).trim();
       }
-      const rawOcclusions = cardRec.occlusions;
+      const rawOcclusions = isHotspot
+        ? (cardRec.hqRegions ?? cardRec.regions ?? cardRec.occlusions)
+        : cardRec.occlusions;
       if (rawImageRef && Array.isArray(rawOcclusions) && rawOcclusions.length > 0) {
-        const rects: StoredIORect[] = [];
-        for (const r of rawOcclusions) {
-          if (!r || typeof r !== 'object') continue;
-          const rect = r as Record<string, unknown>;
-          
-          let rectId = '';
-          const rectIdRaw = rect.rectId ?? rect.id;
-          if (typeof rectIdRaw === 'string') {
-            rectId = rectIdRaw;
-          } else if (typeof rectIdRaw === 'number' || typeof rectIdRaw === 'boolean') {
-            rectId = String(rectIdRaw);
-          }
-          
-          let groupKey = '1';
-          const groupKeyRaw = rect.groupKey;
-          if (typeof groupKeyRaw === 'string') {
-            groupKey = groupKeyRaw;
-          } else if (typeof groupKeyRaw === 'number' || typeof groupKeyRaw === 'boolean') {
-            groupKey = String(groupKeyRaw);
-          }
-          
-          rects.push({
-            rectId,
-            x: Number(rect.x ?? 0),
-            y: Number(rect.y ?? 0),
-            w: Number(rect.w ?? rect.width ?? 0),
-            h: Number(rect.h ?? rect.height ?? 0),
-            groupKey,
-            shape: (rect.shape === 'circle' ? 'circle' : 'rect'),
-          });
-        }
+        const rects = mapRawOcclusionsToRects(rawOcclusions);
         if (rects.length > 0) {
-          let maskMode = '';
-          const maskModeRaw = cardRec.maskMode;
-          if (typeof maskModeRaw === 'string') {
-            maskMode = maskModeRaw;
-          } else if (typeof maskModeRaw === 'number' || typeof maskModeRaw === 'boolean') {
-            maskMode = String(maskModeRaw);
+          if (isHotspot) {
+            const interactionMode = cardRec.interactionMode === 'drag-drop' ? 'drag-drop' : 'click';
+            const prompt = typeof cardRec.prompt === 'string' ? cardRec.prompt : '';
+            ioDef = { imageRef: rawImageRef, rects, interactionMode, prompt };
+          } else {
+            let maskMode = '';
+            const maskModeRaw = cardRec.maskMode;
+            if (typeof maskModeRaw === 'string') {
+              maskMode = maskModeRaw;
+            } else if (typeof maskModeRaw === 'number' || typeof maskModeRaw === 'boolean') {
+              maskMode = String(maskModeRaw);
+            }
+            ioDef = { imageRef: rawImageRef, rects, maskMode };
           }
-          ioDef = { imageRef: rawImageRef, rects, maskMode };
           // Also populate the IO map for future lookups
           if (plugin.store?.data) {
-            if (!(plugin.store.data as unknown as Record<string, unknown>).io) {
-              (plugin.store.data as unknown as Record<string, unknown>).io = {};
+            const mapKey = isHotspot ? 'hq' : 'io';
+            if (!(plugin.store.data as unknown as Record<string, unknown>)[mapKey]) {
+              (plugin.store.data as unknown as Record<string, unknown>)[mapKey] = {};
             }
-            ((plugin.store.data as unknown as Record<string, unknown>).io as Record<string, unknown>)[anchorId] = ioDef;
+            ((plugin.store.data as unknown as Record<string, unknown>)[mapKey] as Record<string, unknown>)[anchorId] = ioDef;
           }
         }
       }
     }
   }
+
+  if ((!ioDef || !Array.isArray(ioDef.rects) || ioDef.rects.length === 0) && fieldImageRef) {
+    const fieldKey = normalizeImageRefKey(fieldImageRef);
+    for (const candidate of Object.values(cardsById)) {
+      if (!candidate || typeof candidate !== 'object') continue;
+      const rec = candidate as Record<string, unknown>;
+      const imageRefVal = rec.imageRef;
+      let imageRefStr: string;
+      if (typeof imageRefVal === 'string') {
+        imageRefStr = imageRefVal;
+      } else if (typeof imageRefVal === 'number' || typeof imageRefVal === 'boolean') {
+        imageRefStr = String(imageRefVal);
+      } else {
+        imageRefStr = "";
+      }
+      const recImageRef = normalizeImageRefKey(imageRefStr);
+      if (!recImageRef || !imageRefsMatch(recImageRef, fieldKey)) continue;
+
+      const rawOcclusions = isHotspot
+        ? (rec.hqRegions ?? rec.regions ?? rec.occlusions)
+        : rec.occlusions;
+      if (!Array.isArray(rawOcclusions) || rawOcclusions.length === 0) continue;
+
+      const rects = mapRawOcclusionsToRects(rawOcclusions);
+      if (rects.length === 0) continue;
+
+      if (isHotspot) {
+        const interactionMode = rec.interactionMode === 'drag-drop' ? 'drag-drop' : 'click';
+        const prompt = typeof rec.prompt === 'string' ? rec.prompt : '';
+        ioDef = { imageRef: fieldImageRef, rects, interactionMode, prompt };
+      } else {
+        let maskMode = '';
+        const maskModeRaw = rec.maskMode;
+        if (typeof maskModeRaw === 'string') {
+          maskMode = maskModeRaw;
+        } else if (typeof maskModeRaw === 'number' || typeof maskModeRaw === 'boolean') {
+          maskMode = String(maskModeRaw);
+        }
+        ioDef = { imageRef: fieldImageRef, rects, maskMode };
+      }
+      break;
+    }
+  }
+  if (!ioDef && fieldImageRef) {
+    ioDef = {
+      imageRef: fieldImageRef,
+      rects: [],
+      ...(isHotspot ? { interactionMode: 'click' as const, prompt: '' } : { maskMode: '' }),
+    };
+  }
   if (!ioDef) return;
 
-  const imageRef = String(ioDef.imageRef || '').trim();
+  const imageRef = String(ioDef.imageRef || fieldImageRef || '').trim();
   if (!imageRef) return;
 
+  const resolvedSourcePath = String((anchorCard?.sourceNotePath as string | undefined) || sourcePath || '').trim();
+
   // Resolve image file to get a vault resource URL
-  const imageFile = resolveImageFile(app, sourcePath, imageRef);
+  const imageFile = resolveImageFile(app, resolvedSourcePath || sourcePath, imageRef);
   if (!imageFile) return;
   const imageSrc = app.vault.getResourcePath(imageFile);
 
@@ -3547,7 +3847,7 @@ function renderIoInReadingCard(
         new ResizeObserver(syncOverlay).observe(img);
       }
 
-      for (const rect of occlusions) {
+      occlusions.forEach((rect, index) => {
         const x = Number.isFinite(rect.x) ? Number(rect.x) : 0;
         const y = Number.isFinite(rect.y) ? Number(rect.y) : 0;
         const w = Number.isFinite(rect.w) ? Number(rect.w) : 0;
@@ -3555,14 +3855,27 @@ function renderIoInReadingCard(
 
         const mask = document.createElement('div');
         mask.className = 'learnkit-io-reading-mask learnkit-io-reading-mask-filled';
-        mask.classList.add(
-          rect.shape === 'circle' ? 'learnkit-io-reading-mask-circle' : 'learnkit-io-reading-mask-rect',
-        );
+        if (isHotspot) {
+          // Match answer-side visual treatment on front for hotspot cards.
+          mask.classList.add('learnkit-io-reading-mask-hotspot-answer', 'learnkit-io-reading-mask-no-border');
+        }
+        if (rect.shape === 'circle') {
+          mask.classList.add('learnkit-io-reading-mask-circle');
+          setCssProps(mask, { 'clip-path': '', '-webkit-clip-path': '' });
+        } else if (rect.shape === 'polygon' && Array.isArray(rect.points)) {
+          mask.classList.add('learnkit-io-reading-mask-rect', 'learnkit-io-reading-mask-polygon');
+          const clipPath = polygonClipPath(rect.points);
+          setCssProps(mask, { 'clip-path': clipPath, '-webkit-clip-path': clipPath });
+        } else {
+          mask.classList.add('learnkit-io-reading-mask-rect');
+          setCssProps(mask, { 'clip-path': '', '-webkit-clip-path': '' });
+        }
 
         setCssProps(mask, 'left', `${Math.max(0, Math.min(1, x)) * 100}%`);
         setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
         setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
         setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
+        applyMaskTone(mask, rect, index);
 
         const hint = document.createElement('span');
         hint.textContent = '?';
@@ -3570,7 +3883,7 @@ function renderIoInReadingCard(
         mask.appendChild(hint);
 
         overlay.appendChild(mask);
-      }
+      });
 
       container.appendChild(overlay);
     }
@@ -3590,6 +3903,96 @@ function renderIoInReadingCard(
     img.alt = card.title || 'Image Occlusion — Answer';
     img.className = 'learnkit-io-reading-img';
     container.appendChild(img);
+
+    if (isHotspot && occlusions.length > 0) {
+      const overlay = document.createElement('div');
+      overlay.className = 'learnkit-io-reading-overlay';
+
+      const syncOverlay = () => {
+        const w = img.offsetWidth;
+        const h = img.offsetHeight;
+        if (w === 0 && h === 0) return;
+        overlay.style.left = `${img.offsetLeft}px`;
+        overlay.style.top = `${img.offsetTop}px`;
+        overlay.style.width = `${w}px`;
+        overlay.style.height = `${h}px`;
+        resolveAnchoredLabelCollisions(overlay, {
+          selector: '.learnkit-io-reading-mask-label-floating',
+          anchorXDataKey: 'labelAnchorX',
+          anchorYDataKey: 'labelAnchorY',
+          edgeMarginPx: 2,
+          marginPx: 1,
+          maxShiftPx: 28,
+          maxIterations: 10,
+        });
+      };
+
+      const scheduleSync = () => requestAnimationFrame(syncOverlay);
+
+      if (img.complete && img.naturalWidth > 0) {
+        scheduleSync();
+      } else {
+        img.addEventListener('load', scheduleSync, { once: true });
+      }
+
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(syncOverlay).observe(img);
+      }
+
+      occlusions.forEach((rect, index) => {
+        const x = Number.isFinite(rect.x) ? Number(rect.x) : 0;
+        const y = Number.isFinite(rect.y) ? Number(rect.y) : 0;
+        const w = Number.isFinite(rect.w) ? Number(rect.w) : 0;
+        const h = Number.isFinite(rect.h) ? Number(rect.h) : 0;
+
+        const mask = document.createElement('div');
+        mask.className = 'learnkit-io-reading-mask learnkit-io-reading-mask-filled learnkit-io-reading-mask-hotspot-answer';
+        mask.classList.add('learnkit-io-reading-mask-no-border');
+        if (rect.shape === 'circle') {
+          mask.classList.add('learnkit-io-reading-mask-circle');
+          setCssProps(mask, { 'clip-path': '', '-webkit-clip-path': '' });
+        } else if (rect.shape === 'polygon' && Array.isArray(rect.points)) {
+          mask.classList.add('learnkit-io-reading-mask-rect', 'learnkit-io-reading-mask-polygon');
+          const clipPath = polygonClipPath(rect.points);
+          setCssProps(mask, { 'clip-path': clipPath, '-webkit-clip-path': clipPath });
+        } else {
+          mask.classList.add('learnkit-io-reading-mask-rect');
+          setCssProps(mask, { 'clip-path': '', '-webkit-clip-path': '' });
+        }
+
+        setCssProps(mask, 'left', `${Math.max(0, Math.min(1, x)) * 100}%`);
+        setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
+        setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
+        setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
+        applyMaskTone(mask, rect, index);
+
+        const rectLabel = (rect as Record<string, unknown>).label;
+        let labelStr: string;
+        if (typeof rectLabel === 'string') {
+          labelStr = rectLabel;
+        } else if (typeof rectLabel === 'number' || typeof rectLabel === 'boolean') {
+          labelStr = String(rectLabel);
+        } else {
+          labelStr = rect.groupKey ? String(rect.groupKey) : String(index + 1);
+        }
+        const label = labelStr.trim() || String(index + 1);
+        const labelEl = document.createElement('span');
+        labelEl.className = 'learnkit-io-reading-mask-label learnkit-io-reading-mask-label-floating';
+        labelEl.textContent = label;
+        const polygonAnchor = getPolygonLabelAnchor(rect);
+        const labelX = Math.max(0, Math.min(1, polygonAnchor ? polygonAnchor.xNorm : x + w / 2));
+        const labelY = Math.max(0, Math.min(1, polygonAnchor ? polygonAnchor.yNorm : y + h / 2));
+        labelEl.dataset.labelAnchorX = String(labelX);
+        labelEl.dataset.labelAnchorY = String(labelY);
+        setCssProps(labelEl, 'left', `${labelX * 100}%`);
+        setCssProps(labelEl, 'top', `${labelY * 100}%`);
+
+        overlay.appendChild(mask);
+        overlay.appendChild(labelEl);
+      });
+
+      container.appendChild(overlay);
+    }
 
     answerEl.appendChild(container);
   }

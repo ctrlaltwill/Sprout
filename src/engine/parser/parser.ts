@@ -25,7 +25,7 @@ import { normalizeGroups } from "../indexing/group-format";
 
 const ANCHOR_RE = CARD_ANCHOR_LINE_RE;
 
-type CardType = "basic" | "reversed" | "mcq" | "cloze" | "io" | "oq";
+type CardType = "basic" | "reversed" | "mcq" | "cloze" | "io" | "hq" | "oq";
 
 export type McqOption = { text: string; isCorrect: boolean };
 
@@ -70,6 +70,12 @@ export type ParsedCard = {
   occlusions: unknown[] | null; // parsed array, if valid
   maskMode: "solo" | "all" | null; // from C | solo/all |
 
+  // HQ: optional regions JSON + interaction mode
+  hqSrc: string | null;
+  hqRegionsRaw: string | null;
+  hqRegions: unknown[] | null;
+  interactionMode: "click" | "drag-drop" | null;
+
   // OQ: ordering question
   oqSteps: string[] | null; // ordered list of steps (correct order)
   /** @internal Parser-only: index of the step currently being accumulated. */
@@ -100,6 +106,9 @@ type CurrentFieldKey =
   | "prompt"
   | "ioSrc"
   | "ioOcclusionsRaw"
+  | "hqSrc"
+  | "hqRegionsRaw"
+  | "interactionMode"
   | "info";
 
 function computeFenceMask(lines: string[]): boolean[] {
@@ -174,9 +183,22 @@ function makeEmptyCard(
   startLine: number,
   pendingId: string | null,
   pendingTitle: string | null,
-  kind: "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "OQ",
+  kind: "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "HQ" | "OQ",
 ): ParsedCard {
-  const type: CardType = kind === "Q" ? "basic" : kind === "RQ" ? "reversed" : kind === "MCQ" ? "mcq" : kind === "CQ" ? "cloze" : kind === "OQ" ? "oq" : "io";
+  const type: CardType =
+    kind === "Q"
+      ? "basic"
+      : kind === "RQ"
+        ? "reversed"
+        : kind === "MCQ"
+          ? "mcq"
+          : kind === "CQ"
+            ? "cloze"
+            : kind === "IO"
+              ? "io"
+              : kind === "HQ"
+                ? "hq"
+                : "oq";
 
   return {
     id: pendingId || null,
@@ -204,6 +226,11 @@ function makeEmptyCard(
     ioOcclusionsRaw: null,
     occlusions: null,
     maskMode: null,
+
+    hqSrc: null,
+    hqRegionsRaw: null,
+    hqRegions: null,
+    interactionMode: null,
 
     oqSteps: null,
 
@@ -352,6 +379,28 @@ export function parseCardsFromText(
       // mask mode is optional; if present must be solo/all
       const mm = String(current.maskMode ?? "").trim();
       if (mm && mm !== "solo" && mm !== "all") current.errors.push('IO mask mode must be "solo" or "all".');
+    } else if (current.type === "hq") {
+      const src = String(current.hqSrc ?? "").trim();
+      if (!src) {
+        current.errors.push('HQ card requires: HQ | ![[image.png]] |');
+      } else {
+        const hasEmbed = src.includes("![[") || /!\[[^\]]*\]\([^)]+\)/.test(src);
+        if (!hasEmbed) current.errors.push('HQ card requires an embedded image, e.g.: HQ | ![[image.png]] |');
+      }
+
+      const rawRegions = String(current.hqRegionsRaw ?? "").trim();
+      if (rawRegions) {
+        const { arr, error } = tryParseJsonArray(rawRegions);
+        if (error) current.errors.push(error.replace(/^IO /, "HQ "));
+        current.hqRegions = arr;
+      } else {
+        current.hqRegions = null;
+      }
+
+      const mode = String(current.interactionMode ?? "").trim();
+      if (mode && mode !== "click" && mode !== "drag-drop") {
+        current.errors.push('HQ interaction mode must be "click" or "drag-drop".');
+      }
     } else if (current.type === "oq") {
       if (!current.q) current.errors.push("Missing OQ question.");
       // Clean up steps: trim whitespace, remove empty trailing entries
@@ -474,7 +523,7 @@ export function parseCardsFromText(
     }
 
     // --- IO prompt field inside IO card: "Q | ... |" must NOT start a new card ---
-    if (current && current.type === "io") {
+    if (current && (current.type === "io" || current.type === "hq")) {
       const qm = new RegExp(`^Q\\s*${escapeDelimiterRe()}\\s*(.*)$`).exec(line);
       if (qm) {
         const restRaw = qm[1] ?? "";
@@ -495,7 +544,7 @@ export function parseCardsFromText(
     if (sp) {
       flush();
 
-      const kind = sp[1] as "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "OQ";
+      const kind = sp[1] as "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "HQ" | "OQ";
       const startLine = pendingIdLine !== null ? pendingIdLine : i;
 
       current = makeEmptyCard(notePath, startLine, pendingId, pendingTitle, kind);
@@ -514,6 +563,7 @@ export function parseCardsFromText(
       if (kind === "MCQ") current.stem = "";
       if (kind === "CQ") current.clozeText = "";
       if (kind === "IO") current.ioSrc = "";
+      if (kind === "HQ") current.hqSrc = "";
       if (kind === "OQ") { current.q = ""; current.oqSteps = []; }
 
       const key: CurrentFieldKey =
@@ -523,7 +573,9 @@ export function parseCardsFromText(
             ? "stem"
             : kind === "CQ"
               ? "clozeText"
-              : "ioSrc";
+              : kind === "IO"
+                ? "ioSrc"
+                : "hqSrc";
 
       appendToField(current, key, first);
 
@@ -608,6 +660,59 @@ export function parseCardsFromText(
 
         // "Q |" inside IO is handled earlier (special-case), so anything else is invalid
         current.errors.push(`Unrecognised field in IO card: "${key} |" (allowed: T, Q, O, C, I, G)`);
+        pipeField = null;
+        currentField = null;
+        continue;
+      }
+
+      if (current.type === "hq") {
+        if (key === "O") {
+          current.hqRegionsRaw = current.hqRegionsRaw ?? null;
+          appendToField(current, "hqRegionsRaw", chunk);
+          pipeField = closed ? null : "hqRegionsRaw";
+          currentField = null;
+          continue;
+        }
+
+        if (key === "M") {
+          const v = String(chunk ?? "").trim();
+          if (!v) {
+            current.interactionMode = null;
+          } else if (v === "click" || v === "drag-drop") {
+            current.interactionMode = v;
+          } else {
+            current.errors.push('HQ interaction mode must be "click" or "drag-drop".');
+          }
+          pipeField = closed ? null : "interactionMode";
+          currentField = null;
+          continue;
+        }
+
+        if (key === "T") {
+          current.title = null;
+          appendToField(current, "title", chunk);
+          pipeField = closed ? null : "title";
+          currentField = null;
+          continue;
+        }
+
+        if (key === "G") {
+          current.groupsRaw = current.groupsRaw ?? null;
+          appendToField(current, "groupsRaw", chunk);
+          pipeField = closed ? null : "groupsRaw";
+          currentField = null;
+          continue;
+        }
+
+        if (key === "I") {
+          current.info = null;
+          appendToField(current, "info", chunk);
+          pipeField = closed ? null : "info";
+          currentField = null;
+          continue;
+        }
+
+        current.errors.push(`Unrecognised field in HQ card: "${key} |" (allowed: T, Q, O, M, I, G)`);
         pipeField = null;
         currentField = null;
         continue;

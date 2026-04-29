@@ -124,6 +124,16 @@ html {
   text-underline-offset: 0.18em;
 }
 
+.sl-markdown-content img {
+  display: block;
+  width: min(100%, 56rem);
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sl-color-gray-5);
+  box-shadow: var(--shadow-sm);
+}
+
 .expressive-code .frame.is-terminal .header {
   background: transparent !important;
   border: none !important;

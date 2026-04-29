@@ -39,6 +39,16 @@ import { renderWidgetSummary } from "./view/render-summary";
 import { renderWidgetSession } from "./view/render-session";
 import { t } from "../../platform/translations/translator";
 
+type HotspotAttemptState = {
+  cardId: string;
+  mode: "click" | "drag-drop";
+  x: number;
+  y: number;
+  correct: boolean;
+  label?: string;
+  removed?: boolean;
+};
+
 /* ================================================================== */
 /*  SproutWidgetView                                                   */
 /* ================================================================== */
@@ -57,6 +67,8 @@ export class SproutWidgetView extends ItemView {
   /** @internal */ _sessionStamp = 0;
   /** @internal */ _moreMenuToggle: (() => void) | null = null;
   private _mdHelper: SproutMarkdownHelper | null = null;
+  private _pendingManualGrade: { cardId: string; meta: ReviewMeta } | null = null;
+  private _pendingHotspotAttempts = new Map<string, HotspotAttemptState[]>();
 
   /** Stores user-typed cloze answers by cloze occurrence key for typed-mode cloze cards. */
   _typedClozeAnswers = new Map<string, string>();
@@ -226,6 +238,13 @@ export class SproutWidgetView extends ItemView {
     sourcePath: string,
     reveal: boolean,
   ) {
+    const cardId = String(card.id || "");
+    const isHotspot = card.type === "hq" || card.type === "hq-child";
+    const hotspotAttempts = isHotspot ? this._peekPendingHotspotAttempts(cardId) : null;
+    const hotspotAttempt = hotspotAttempts && hotspotAttempts.length > 0
+      ? hotspotAttempts[hotspotAttempts.length - 1]
+      : null;
+
     renderImageOcclusionReviewInto({
       app: this.app,
       plugin: this.plugin,
@@ -235,8 +254,155 @@ export class SproutWidgetView extends ItemView {
       reveal,
       ioModule: IO,
       renderMarkdownInto: (el2, md, sp) => this.renderMarkdownInto(el2, md, sp),
+      hotspotReview: isHotspot
+        ? {
+            attempt: hotspotAttempt
+              ? {
+                  mode: hotspotAttempt.mode,
+                  x: hotspotAttempt.x,
+                  y: hotspotAttempt.y,
+                  correct: hotspotAttempt.correct,
+                  label: String(hotspotAttempt.label || "").trim(),
+                  removed: !!hotspotAttempt.removed,
+                }
+              : null,
+            attempts: hotspotAttempts
+              ? hotspotAttempts.map((entry) => ({
+                  mode: entry.mode,
+                  x: entry.x,
+                  y: entry.y,
+                  correct: entry.correct,
+                  label: String(entry.label || "").trim(),
+                  removed: !!entry.removed,
+                }))
+              : undefined,
+            // Inline drag hint is redundant; hotspot hint text is shown in the footer.
+            showDropLocationHint: false,
+            onAttempt: reveal || !!this.session?.graded?.[cardId]
+              ? undefined
+              : (attempt) => this.handleHotspotAttempt(card, attempt),
+          }
+        : undefined,
     });
     await Promise.resolve();
+  }
+
+  private _setPendingManualGradeMeta(cardId: string, meta: ReviewMeta): void {
+    this._pendingManualGrade = { cardId: String(cardId), meta };
+  }
+
+  private _peekPendingManualGradeMeta(cardId: string): ReviewMeta | null {
+    if (!this._pendingManualGrade) return null;
+    if (this._pendingManualGrade.cardId !== String(cardId)) return null;
+    return this._pendingManualGrade.meta;
+  }
+
+  private _clearPendingManualGradeMeta(cardId?: string): void {
+    if (!this._pendingManualGrade) return;
+    if (cardId != null && this._pendingManualGrade.cardId !== String(cardId)) return;
+    this._pendingManualGrade = null;
+  }
+
+  private _setPendingHotspotAttempt(cardId: string, attempt: Omit<HotspotAttemptState, "cardId">): void {
+    const key = String(cardId);
+    const next: HotspotAttemptState = { cardId: key, ...attempt };
+
+    if (attempt.removed) {
+      const existing = this._pendingHotspotAttempts.get(key) || [];
+      const normalizedLabel = String(next.label || "").trim().toLowerCase();
+      const kept = normalizedLabel
+        ? existing.filter((entry) => String(entry.label || "").trim().toLowerCase() !== normalizedLabel)
+        : existing;
+      if (kept.length > 0) this._pendingHotspotAttempts.set(key, kept);
+      else this._pendingHotspotAttempts.delete(key);
+      return;
+    }
+
+    if (attempt.mode === "drag-drop") {
+      const existing = this._pendingHotspotAttempts.get(key) || [];
+      const normalizedLabel = String(next.label || "").trim().toLowerCase();
+      const merged = existing.slice();
+      if (normalizedLabel) {
+        const idx = merged.findIndex((entry) => String(entry.label || "").trim().toLowerCase() === normalizedLabel);
+        if (idx >= 0) merged[idx] = next;
+        else merged.push(next);
+      } else {
+        merged.push(next);
+      }
+      this._pendingHotspotAttempts.set(key, merged);
+      return;
+    }
+
+    this._pendingHotspotAttempts.set(key, [next]);
+  }
+
+  private _peekPendingHotspotAttempts(cardId: string): HotspotAttemptState[] | null {
+    const attempts = this._pendingHotspotAttempts.get(String(cardId)) || null;
+    if (!attempts || attempts.length === 0) return null;
+    return attempts;
+  }
+
+  private _peekPendingHotspotAttempt(cardId: string): HotspotAttemptState | null {
+    const attempts = this._peekPendingHotspotAttempts(cardId);
+    return attempts && attempts.length > 0 ? attempts[attempts.length - 1] : null;
+  }
+
+  private _clearPendingHotspotAttempt(cardId?: string): void {
+    if (cardId != null) {
+      this._pendingHotspotAttempts.delete(String(cardId));
+      return;
+    }
+    this._pendingHotspotAttempts.clear();
+  }
+
+  consumePendingManualGradeMeta(cardId: string): ReviewMeta | null {
+    const id = String(cardId || "");
+    const meta = this._peekPendingManualGradeMeta(id);
+    this._clearPendingManualGradeMeta(id);
+    return meta;
+  }
+
+  private handleHotspotAttempt(
+    card: CardRecord,
+    attempt: Omit<HotspotAttemptState, "cardId">,
+  ): void {
+    const id = String(card.id || "");
+    if (!id) return;
+
+    this._setPendingHotspotAttempt(id, attempt);
+    const attempts = this._peekPendingHotspotAttempts(id) || [];
+    const latest = attempts.length > 0 ? attempts[attempts.length - 1] : { cardId: id, ...attempt };
+    this._setPendingManualGradeMeta(id, {
+      hotspotCorrect: latest.correct,
+      hotspotAttemptX: latest.x,
+      hotspotAttemptY: latest.y,
+      hotspotInteractionMode: latest.mode,
+      hotspotAttemptLabel: String(latest.label || "").trim(),
+      hotspotAttempts: attempts.map((entry) => ({
+        x: entry.x,
+        y: entry.y,
+        correct: entry.correct,
+        mode: entry.mode,
+        label: String(entry.label || "").trim(),
+      })),
+    });
+    if (attempt.mode === "drag-drop") {
+      // Keep hotspot drag mode on the front until the user explicitly advances,
+      // but refresh controls so placement-dependent UI stays in sync.
+      this.render();
+      return;
+    }
+    this.showAnswer = true;
+    this.render();
+  }
+
+  private async gradePendingManualRating(rating: "again" | "hard" | "good" | "easy"): Promise<void> {
+    const card = this.currentCard();
+    if (!card) return;
+    const id = String(card.id || "");
+    const meta = this._peekPendingManualGradeMeta(id) ?? {};
+    this._clearPendingManualGradeMeta(id);
+    await this.gradeCurrentRating(rating, meta);
   }
 
   /* ---------------------------------------------------------------- */
@@ -293,6 +459,163 @@ export class SproutWidgetView extends ItemView {
     };
   }
 
+  private _getNormalizedHotspotStudyMode(): "individual" | "all" | "smart" {
+    const rawStudyMode = String(this.plugin.settings?.cards?.hotspotSingleInteractionMode || "smart").trim().toLowerCase();
+    if (rawStudyMode === "click" || rawStudyMode === "individual") return "individual";
+    if (rawStudyMode === "drag-drop" || rawStudyMode === "all") return "all";
+    return "smart";
+  }
+
+  private _normalizeHotspotQueue(queue: CardRecord[]): CardRecord[] {
+    const normalizedStudyMode = this._getNormalizedHotspotStudyMode();
+    const hqMap = this.plugin.store?.data?.hq || {};
+    const childCountByParent = new Map<string, number>();
+    const hqParentIdsInQueue = new Set<string>();
+    const storedHotspotChildCountByParent = new Map<string, number>();
+
+    const allCards = Object.values(this.plugin.store?.data?.cards || {});
+    for (const card of allCards) {
+      if (String(card?.type || "").toLowerCase() !== "hq-child") continue;
+      const parentId = String(card?.parentId || "");
+      if (!parentId) continue;
+      storedHotspotChildCountByParent.set(parentId, (storedHotspotChildCountByParent.get(parentId) || 0) + 1);
+    }
+
+    const hotspotChildCountForParent = (parentId: string): number => {
+      if (!parentId) return 0;
+      return Math.max(
+        childCountByParent.get(parentId) || 0,
+        storedHotspotChildCountByParent.get(parentId) || 0,
+      );
+    };
+
+    for (const card of queue) {
+      const type = String(card?.type || "").toLowerCase();
+      if (type === "hq") {
+        const parentId = String(card?.id || "");
+        if (parentId) hqParentIdsInQueue.add(parentId);
+        continue;
+      }
+      if (type !== "hq-child") continue;
+      const parentId = String(card?.parentId || "");
+      if (!parentId) continue;
+      childCountByParent.set(parentId, (childCountByParent.get(parentId) || 0) + 1);
+    }
+
+    const dragFallbackChildByParent = new Set<string>();
+
+    const resolveHotspotPromptLabel = (card: CardRecord): string => {
+      const type = String(card?.type || "").toLowerCase();
+      const parentId = type === "hq"
+        ? String(card?.id || "")
+        : type === "hq-child"
+          ? String(card?.parentId || "")
+          : "";
+      const def = parentId ? hqMap[parentId] : null;
+      const rects = Array.isArray(def?.rects) ? def.rects : [];
+      const rawRectIds = Array.isArray((card as { rectIds?: unknown }).rectIds)
+        ? (card as { rectIds?: unknown[] }).rectIds ?? []
+        : [];
+      const rectIdSet = new Set(rawRectIds.map((id) => {
+        if (typeof id === 'string') return id;
+        if (typeof id === 'number' || typeof id === 'boolean') return String(id);
+        return "";
+      }).filter(Boolean));
+      const candidates = rectIdSet.size > 0
+        ? rects.filter((rect) => rectIdSet.has(String(rect.rectId || "")))
+        : rects;
+      const labeled = candidates.find((rect) => {
+        const labelValue = (rect as { label?: unknown }).label;
+        let label: string;
+        if (typeof labelValue === 'string') {
+          label = labelValue;
+        } else if (typeof labelValue === 'number' || typeof labelValue === 'boolean') {
+          label = String(labelValue);
+        } else {
+          label = "";
+        }
+        return label.trim();
+      });
+      if (labeled) {
+        const labelValue = (labeled as { label?: unknown }).label;
+        let label: string;
+        if (typeof labelValue === 'string') {
+          label = labelValue;
+        } else if (typeof labelValue === 'number' || typeof labelValue === 'boolean') {
+          label = String(labelValue);
+        } else {
+          label = "";
+        }
+        return label.trim();
+      }
+      const grouped = candidates.find((rect) => String(rect?.groupKey || "").trim());
+      if (grouped) {
+        const groupKey = String(grouped.groupKey || "").trim();
+        return groupKey;
+      }
+      const cardGroupKey = String(card?.groupKey || "").trim();
+      return cardGroupKey;
+    };
+
+    const resolveHotspotMode = (card: CardRecord): "click" | "drag-drop" => {
+      if (normalizedStudyMode === "individual") return "click";
+      if (normalizedStudyMode === "all") return "drag-drop";
+      const type = String(card?.type || "").toLowerCase();
+      const parentId = type === "hq"
+        ? String(card?.id || "")
+        : type === "hq-child"
+          ? String(card?.parentId || "")
+          : "";
+      const siblingCount = parentId ? hotspotChildCountForParent(parentId) : 0;
+      return siblingCount > 1 ? "drag-drop" : "click";
+    };
+
+    return queue.filter((card) => {
+      if (!card) return false;
+      const type = String(card.type || "").toLowerCase();
+
+      if (type === "io") return false;
+
+      if (type === "hq") {
+        const mode = resolveHotspotMode(card);
+        (card as unknown as Record<string, unknown>).hotspotInteractionModeOverride = mode;
+        if (mode === "click") {
+          (card as unknown as Record<string, unknown>).hotspotPromptLabel = resolveHotspotPromptLabel(card);
+        } else {
+          delete (card as unknown as Record<string, unknown>).hotspotPromptLabel;
+        }
+        (card as unknown as Record<string, unknown>).hotspotTargetCount = Math.max(1, hotspotChildCountForParent(String(card.id || "")));
+        if (mode === "drag-drop") return true;
+        // Fallback: keep parent if child cards are missing.
+        return hotspotChildCountForParent(String(card.id || "")) === 0;
+      }
+
+      if (type === "hq-child") {
+        const mode = resolveHotspotMode(card);
+        (card as unknown as Record<string, unknown>).hotspotInteractionModeOverride = mode;
+        if (mode === "click") {
+          (card as unknown as Record<string, unknown>).hotspotPromptLabel = resolveHotspotPromptLabel(card);
+        } else {
+          delete (card as unknown as Record<string, unknown>).hotspotPromptLabel;
+        }
+        const parentId = String(card.parentId || "");
+        (card as unknown as Record<string, unknown>).hotspotTargetCount = Math.max(1, hotspotChildCountForParent(parentId));
+        if (mode !== "drag-drop") return true;
+
+        // Drag-drop mode normally uses the parent card (all hotspots together).
+        // If no parent card is queued, keep exactly one child as a proxy card and
+        // force rendering/all-target behavior from the parent definition.
+        if (!parentId || hqParentIdsInQueue.has(parentId)) return false;
+        if (dragFallbackChildByParent.has(parentId)) return false;
+        dragFallbackChildByParent.add(parentId);
+        (card as unknown as Record<string, unknown>).hotspotForceAllTargets = true;
+        return true;
+      }
+
+      return true;
+    });
+  }
+
   buildSessionForActiveNote(): Session | null {
     const f = this.activeFile;
     if (!f) return null;
@@ -301,7 +624,7 @@ export class SproutWidgetView extends ItemView {
     if (!scope) return null;
 
     const reviewSession = buildReviewerSession(this.plugin, scope);
-    const queue = reviewSession.queue || [];
+    const queue = this._normalizeHotspotQueue(reviewSession.queue || []);
 
     return {
       scopeName: scope.name || f.basename,
@@ -322,7 +645,7 @@ export class SproutWidgetView extends ItemView {
     if (!scope) return null;
 
     const cards = getCardsInActiveScope(this.plugin.store, f, this.plugin.settings);
-    const queue = filterReviewableCards(cards).sort((a, b) => {
+    const queue = this._normalizeHotspotQueue(filterReviewableCards(cards).sort((a, b) => {
       const pathA = String(a?.sourceNotePath ?? "");
       const pathB = String(b?.sourceNotePath ?? "");
       const pathCmp = pathA.localeCompare(pathB);
@@ -331,7 +654,7 @@ export class SproutWidgetView extends ItemView {
       const lineB = Number(b?.sourceStartLine ?? 0);
       if (lineA !== lineB) return lineA - lineB;
       return String(a?.id ?? "").localeCompare(String(b?.id ?? ""));
-    });
+    }));
 
     return {
       scopeName: scope.name || f.basename,
@@ -383,6 +706,12 @@ export class SproutWidgetView extends ItemView {
     return _answerOq(this, userOrder);
   }
   async nextCard() {
+    const card = this.currentCard();
+    if (card) {
+      const id = String(card.id || "");
+      this._clearPendingManualGradeMeta(id);
+      this._clearPendingHotspotAttempt(id);
+    }
     return _nextCard(this);
   }
   openEditModalForCurrentCard() {
@@ -400,6 +729,8 @@ export class SproutWidgetView extends ItemView {
     this.showAnswer = false;
     this._undoStack.length = 0;
     this._lastTtsKey = "";
+    this._pendingManualGrade = null;
+    this._pendingHotspotAttempts = new Map();
     this._sessionStamp = Date.now();
     this.render();
   }
@@ -411,6 +742,8 @@ export class SproutWidgetView extends ItemView {
     this.showAnswer = false;
     this._undoStack.length = 0;
     this._lastTtsKey = "";
+    this._pendingManualGrade = null;
+    this._pendingHotspotAttempts = new Map();
     this._sessionStamp = Date.now();
     this.render();
   }
@@ -422,6 +755,8 @@ export class SproutWidgetView extends ItemView {
     this.showAnswer = false;
     this._undoStack.length = 0;
     this._lastTtsKey = "";
+    this._pendingManualGrade = null;
+    this._pendingHotspotAttempts = new Map();
     this._moreMenuToggle = null;
     this.render();
   }
@@ -552,7 +887,8 @@ export class SproutWidgetView extends ItemView {
       return;
     }
 
-    const ioLike = card.type === "io" || card.type === "io-child";
+    const ioLike = card.type === "io" || card.type === "io-child" || card.type === "hq" || card.type === "hq-child";
+    const hotspotCard = card.type === "hq" || card.type === "hq-child";
 
     if (ev.key === "Enter" || ev.key === " " || ev.code === "Space" || ev.key === "ArrowRight") {
       ev.preventDefault();
@@ -592,6 +928,12 @@ export class SproutWidgetView extends ItemView {
         const oqCurrentOrder = oqMap[String(card.id)];
         if (Array.isArray(oqCurrentOrder) && oqCurrentOrder.length > 0) {
           void this.answerOq(oqCurrentOrder.slice());
+        }
+        return;
+      }
+      if (hotspotCard) {
+        if (graded) {
+          void this.nextCard();
         }
         return;
       }
@@ -635,6 +977,25 @@ export class SproutWidgetView extends ItemView {
         return;
       }
       if (isPractice) return;
+
+      if (hotspotCard) {
+        if (!this.showAnswer) return;
+        if (!graded) {
+          const ratingMap: Record<string, "again" | "hard" | "good" | "easy"> = {
+            "1": "again",
+            "2": "hard",
+            "3": "good",
+            "4": "easy",
+          };
+          const rating = ratingMap[ev.key];
+          if (rating) {
+            void this.gradePendingManualRating(rating).then(() => void this.nextCard());
+          }
+          return;
+        }
+        void this.nextCard();
+        return;
+      }
 
       if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) {
         if (!this.showAnswer) {
@@ -703,6 +1064,8 @@ export class SproutWidgetView extends ItemView {
     this._timing = null;
     this.session = null;
     this._undoStack.length = 0;
+    this._pendingManualGrade = null;
+    this._pendingHotspotAttempts = new Map();
     this._moreMenuToggle = null;
 
     // Remove global reference set in constructor

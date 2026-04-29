@@ -14,6 +14,7 @@
 // Geometry helpers for image occlusion
 
 export type RectPx = { x: number; y: number; w: number; h: number };
+export type NormPoint = { x: number; y: number };
 
 export type NormRect = {
   rectId: string;
@@ -76,4 +77,31 @@ export function rectPxFromPoints(
   const w = Math.abs(p2.x - p1.x);
   const h = Math.abs(p2.y - p1.y);
   return { x, y, w, h };
+}
+
+function clampUnit(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+export function polygonClipPath(points: NormPoint[] | null | undefined): string {
+  if (!Array.isArray(points) || points.length < 3) return "";
+  return `polygon(${points.map((point) => `${clampUnit(point.x) * 100}% ${clampUnit(point.y) * 100}%`).join(", ")})`;
+}
+
+export function pointInPolygon(point: NormPoint, polygon: NormPoint[] | null | undefined): boolean {
+  if (!Array.isArray(polygon) || polygon.length < 3) return false;
+
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = Number(polygon[i]?.x ?? 0);
+    const yi = Number(polygon[i]?.y ?? 0);
+    const xj = Number(polygon[j]?.x ?? 0);
+    const yj = Number(polygon[j]?.y ?? 0);
+    const intersects = ((yi > point.y) !== (yj > point.y))
+      && (point.x < ((xj - xi) * (point.y - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+
+    if (intersects) inside = !inside;
+  }
+
+  return inside;
 }

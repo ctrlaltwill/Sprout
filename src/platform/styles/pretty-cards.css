@@ -790,7 +790,7 @@ mjx-container[jax="CHTML"][display="true"] {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-md);
-  margin: 6px 0;
+  margin: 0;
   display: block;
 }
 
@@ -825,6 +825,7 @@ mjx-container[jax="CHTML"][display="true"] {
 .learnkit-pretty-card .learnkit-io-reading-container {
   position: relative;
   display: inline-block;
+  vertical-align: top;
   max-width: 100%;
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -869,9 +870,13 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 .learnkit-pretty-card .learnkit-io-reading-mask-filled {
-  border-radius: 4px;
   background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .75);
   border: 0.5px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-hotspot-answer {
+  background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .22);
+  border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .9);
 }
 
 .learnkit-pretty-card.theme .learnkit-io-reading-mask-filled {
@@ -879,8 +884,59 @@ mjx-container[jax="CHTML"][display="true"] {
   border: 0.5px solid var(--color);
 }
 
+.learnkit-pretty-card .learnkit-io-reading-mask-rect.learnkit-io-reading-mask-filled {
+  border-radius: var(--radius-s);
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-circle.learnkit-io-reading-mask-filled {
+  border-radius: 50%;
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-polygon.learnkit-io-reading-mask-filled {
+  border: 0;
+  border-radius: 0;
+  /* Keep a crisp 1px outline that follows the polygon clip edge. */
+  filter: drop-shadow(0 0 0 hsl(var(--accent-h), var(--accent-s), var(--accent-l), .95));
+}
+
+.learnkit-pretty-card.theme .learnkit-io-reading-mask-polygon.learnkit-io-reading-mask-filled {
+  filter: drop-shadow(0 0 0 var(--color));
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-no-border.learnkit-io-reading-mask-filled {
+  border: 0;
+  filter: none;
+}
+
 .learnkit-pretty-card .learnkit-io-reading-mask-hint {
   display: none;
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-label {
+  color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--color-accent);
+  border-radius: 3px;
+  justify-content: center;
+  align-items: center;
+  max-width: calc(100% - 6px);
+  padding: 1px 3px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-label-floating {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  max-width: calc(100% - 6px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 /* Clean markdown IO sizing: cap to 300px on first-hit dimension */

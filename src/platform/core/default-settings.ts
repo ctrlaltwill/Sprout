@@ -170,6 +170,10 @@ export const DEFAULT_SETTINGS: LearnKitSettings = {
     clozeMode: "standard",
     clozeBgColor: "",
     clozeTextColor: "",
+    multipleChoiceAutoGrade: true,
+    orderedQuestionsAutoGrade: true,
+    hotspotSingleInteractionMode: "smart",
+    hotspotShowDropLocationHint: true,
   },
 
   indexing: {
@@ -368,6 +372,7 @@ export const DEFAULT_SETTINGS: LearnKitSettings = {
 
   storage: {
     imageOcclusionFolderPath: "Attachments/Image Occlusion/",
+    hotspotFolderPath: "Attachments/Image Occlusion/",
     deleteOrphanedImages: true,
     cardAttachmentFolderPath: "Attachments/Cards/",
     vaultSync: {

@@ -36,4 +36,4 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 /** Supported flashcard types. */
-export type FlashcardType = "basic" | "reversed" | "cloze" | "mcq" | "oq" | "io";
+export type FlashcardType = "basic" | "reversed" | "cloze" | "mcq" | "oq" | "io" | "hq";

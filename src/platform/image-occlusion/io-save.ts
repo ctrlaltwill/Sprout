@@ -11,12 +11,14 @@
 import { Notice, MarkdownView, TFile, type App } from "obsidian";
 import type LearnKitPlugin from "../../main";
 import { log } from "../../platform/core/logger";
+import { t } from "../../platform/translations/translator";
 import type { CardRecord } from "../../platform/core/store";
-import { normaliseGroupKey, stableIoChildId } from "./mask-tool";
+import { normaliseGroupKey, stableHqChildId, stableIoChildId } from "./mask-tool";
 import { findCardBlockRangeById } from "../../views/reviewer/markdown-block";
 import {
   normaliseVaultPath,
   reserveNewBcId,
+  buildHqMarkdownWithAnchor,
   buildIoMarkdownWithAnchor,
 } from "./io-helpers";
 import {
@@ -27,6 +29,15 @@ import {
 } from "../../platform/modals/modal-utils";
 import { buildPrimaryCardAnchor } from "../../platform/core/identity";
 import type { IORect } from "./io-types";
+import { syncOneFile } from "../../platform/integrations/sync/sync-engine";
+
+function formatHotspotPrompt(label: string): string {
+  const clean = String(label || "").trim();
+  if (!clean) return "Click on the hotspot location.";
+  const normalized = clean.replace(/\.+$/, "").trim();
+  if (!normalized) return "Click on the hotspot location.";
+  return `Click on ${normalized}.`;
+}
 
 // ── Insert-at-cursor helper ─────────────────────────────────────────────────
 
@@ -75,11 +86,14 @@ export async function insertTextAtCursorOrAppend(
 export interface IoSaveParams {
   plugin: LearnKitPlugin;
   app: App;
+  cardKind?: "io" | "hq";
   editParentId: string | null;
   editImageRef: string | null;
   titleVal: string;
   groupsVal: string;
   infoVal: string;
+  promptVal?: string;
+  interactionMode?: "click" | "drag-drop" | null;
   /** Getter so we always read the latest data (burnTextBoxes mutates it). */
   getImageData: () => ClipboardImage | null;
   rects: IORect[];
@@ -95,62 +109,138 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
   const {
     plugin,
     app,
+    cardKind,
     editParentId,
     editImageRef,
     titleVal,
     groupsVal,
     infoVal,
+    promptVal,
+    interactionMode,
     getImageData,
     rects,
     hasTextBoxes,
     burnTextBoxes,
   } = params;
 
+  const isHotspot = cardKind === "hq";
+  const parentType = isHotspot ? "hq" : "io";
+  const childType = isHotspot ? "hq-child" : "io-child";
+  const childIdFactory = isHotspot ? stableHqChildId : stableIoChildId;
+  const cardLabel = isHotspot ? t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.hotspot", "hotspot") : t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.io", "image occlusion");
+  const noticeLabel = isHotspot ? t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.hotspotLabel", "Hotspot") : t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.ioLabel", "Image occlusion");
   const isEdit = !!editParentId;
-
   const groupsArr = groupsVal
     ? groupsVal
         .split(",")
         .map((g) => g.trim())
         .filter(Boolean)
     : null;
+  const legacyPrompt = isHotspot ? String(promptVal || "").trim() : "";
+  const effectiveInteractionMode: "click" | "drag-drop" | null = isHotspot
+    ? interactionMode === "drag-drop"
+      ? "drag-drop"
+      : "click"
+    : null;
 
-  // ── Edit existing IO card ─────────────────────────────────────────────────
+  if (isHotspot && rects.length === 0) {
+    new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.hotspotAtLeastOne", "Add at least one hotspot before saving."));
+    return false;
+  }
+
+  if (hasTextBoxes) {
+    await burnTextBoxes();
+  }
+
+  const normRects = rects.map((r) => ({
+    rectId: String(r.rectId),
+    x: Math.max(0, Math.min(1, r.normX)),
+    y: Math.max(0, Math.min(1, r.normY)),
+    w: Math.max(0, Math.min(1, r.normW)),
+    h: Math.max(0, Math.min(1, r.normH)),
+    groupKey: normaliseGroupKey(r.groupKey),
+    label: String(r.label || r.groupKey || "").trim() || normaliseGroupKey(r.groupKey),
+    shape: r.shape || "rect",
+    points: Array.isArray(r.points)
+      ? r.points.map((point) => ({
+          x: Math.max(0, Math.min(1, Number(point?.x ?? 0))),
+          y: Math.max(0, Math.min(1, Number(point?.y ?? 0))),
+        }))
+      : undefined,
+  }));
+
+  const occlusionsJson = JSON.stringify(
+    normRects.map((r) => ({
+      rectId: r.rectId,
+      x: r.x,
+      y: r.y,
+      w: r.w,
+      h: r.h,
+      groupKey: r.groupKey,
+      shape: r.shape || "rect",
+      points: Array.isArray(r.points) ? r.points.map((point) => ({ ...point })) : undefined,
+    })),
+  );
+
+  const hqRegionsJson = JSON.stringify(
+    normRects.map((r) => ({
+      rectId: r.rectId,
+      x: r.x,
+      y: r.y,
+      w: r.w,
+      h: r.h,
+      groupKey: r.groupKey,
+      label: r.label,
+      shape: r.shape || "rect",
+      points: Array.isArray(r.points) ? r.points.map((point) => ({ ...point })) : undefined,
+    })),
+  );
+
+  const groupToRectIds = new Map<string, string[]>();
+  const hotspotPromptByGroup = new Map<string, string>();
+  for (const r of normRects) {
+    const groupKey = normaliseGroupKey(r.groupKey);
+    const arr = groupToRectIds.get(groupKey) ?? [];
+    arr.push(String(r.rectId));
+    groupToRectIds.set(groupKey, arr);
+    if (isHotspot && !hotspotPromptByGroup.has(groupKey)) {
+      const label = String(r.label || groupKey).trim() || groupKey;
+      hotspotPromptByGroup.set(groupKey, formatHotspotPrompt(label));
+    }
+  }
+  if (isHotspot && hotspotPromptByGroup.size === 0 && legacyPrompt) {
+    hotspotPromptByGroup.set("1", legacyPrompt);
+  }
 
   if (isEdit) {
     const parentId = String(editParentId || "");
     const cardsMap = (plugin.store?.data?.cards || {});
     const parent = cardsMap[parentId];
-    if (!parent || String(parent.type) !== "io") {
-      new Notice(`Could not find image occlusion parent to edit.`);
+    if (!parent || String(parent.type) !== parentType) {
+      new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.parentNotFound", "Could not find {cardLabel} parent to edit.", { cardLabel }));
       return false;
     }
 
-    // Burn text boxes into the image before saving
-    if (hasTextBoxes) {
-      await burnTextBoxes();
-    }
-
-    const ioMap = plugin.store.data.io || {};
-    plugin.store.data.io = ioMap;
-
-    const currentImageRef = String(parent.imageRef || ioMap[parentId]?.imageRef || editImageRef || "").trim();
+    const currentDefs = isHotspot
+      ? (plugin.store.data.hq || {})
+      : (plugin.store.data.io || {});
+    const currentImageRef = String(parent.imageRef || currentDefs[parentId]?.imageRef || editImageRef || "").trim();
     let imagePath = currentImageRef;
 
-    const ioImageData = getImageData();
-    if (ioImageData) {
-      const ext = extFromMime(ioImageData.mime);
+    const imageData = getImageData();
+    if (imageData) {
+      const ext = extFromMime(imageData.mime);
       if (!imagePath) {
-        const baseName = `sprout-io-${parentId}.${ext}`;
+        const baseName = `sprout-${isHotspot ? "hq" : "io"}-${parentId}.${ext}`;
         const srcFile = app.vault.getAbstractFileByPath(String(parent.sourceNotePath || ""));
-        if (srcFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, srcFile, baseName);
+        if (srcFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, srcFile, baseName, isHotspot ? "hq" : "io");
         else {
           const activeFile = app.workspace.getActiveFile();
-          if (activeFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, activeFile, baseName);
+          if (activeFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, activeFile, baseName, isHotspot ? "hq" : "io");
         }
       }
       try {
-        await writeBinaryToVault(app, imagePath, ioImageData.data);
+        await writeBinaryToVault(app, imagePath, imageData.data);
       } catch (e: unknown) {
         new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
         return false;
@@ -158,81 +248,76 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     }
 
     if (!imagePath) {
-      new Notice(`Image occlusion card is missing an image.`);
+      new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.missingImage", "{cardLabel} card is missing an image.", { cardLabel: noticeLabel }));
       return false;
     }
 
     const now = Date.now();
-    const mask = rects.length > 0 ? maskMode : null;
-
+    const mask = normRects.length > 0 ? maskMode : null;
+    const normalisedImagePath = normaliseVaultPath(imagePath);
     const parentRec: CardRecord = {
       ...parent,
       id: parentId,
-      type: "io",
+      type: parentType,
       title: titleVal || parent.title || null,
-      prompt: parent.prompt ?? null,
+      prompt: isHotspot ? null : parent.prompt ?? null,
       info: infoVal || null,
       groups: groupsArr && groupsArr.length ? groupsArr : null,
-      imageRef: normaliseVaultPath(imagePath),
-      maskMode: mask,
+      imageRef: normalisedImagePath,
       updatedAt: now,
       lastSeenAt: now,
     };
-
+    if (isHotspot) parentRec.interactionMode = effectiveInteractionMode;
+    else parentRec.maskMode = mask;
     plugin.store.upsertCard(parentRec);
 
-    const normRects = rects.map((r) => ({
-      rectId: String(r.rectId),
-      x: Math.max(0, Math.min(1, r.normX)),
-      y: Math.max(0, Math.min(1, r.normY)),
-      w: Math.max(0, Math.min(1, r.normW)),
-      h: Math.max(0, Math.min(1, r.normH)),
-      groupKey: normaliseGroupKey(r.groupKey),
-      shape: r.shape || "rect",
-    }));
-
-    ioMap[parentId] = {
-      imageRef: normaliseVaultPath(imagePath),
-      maskMode: mask,
-      rects: normRects,
-    };
-
-    // Create/update child IO cards per group
-    const groupToRectIds = new Map<string, string[]>();
-    for (const r of normRects) {
-      const g = normaliseGroupKey(r.groupKey);
-      const arr = groupToRectIds.get(g) ?? [];
-      arr.push(String(r.rectId));
-      groupToRectIds.set(g, arr);
+    if (isHotspot) {
+      const hqMap = plugin.store.data.hq || {};
+      plugin.store.data.hq = hqMap;
+      hqMap[parentId] = {
+        imageRef: normalisedImagePath,
+        interactionMode: effectiveInteractionMode,
+        prompt: null,
+        rects: normRects,
+      };
+    } else {
+      const ioMap = plugin.store.data.io || {};
+      plugin.store.data.io = ioMap;
+      ioMap[parentId] = {
+        imageRef: normalisedImagePath,
+        maskMode: mask,
+        rects: normRects,
+      };
     }
 
     const cards = (plugin.store.data.cards || {});
     const keepChildIds = new Set<string>();
     const titleBase = String(parentRec.title ?? "").trim();
-
     for (const [groupKey, rectIds] of groupToRectIds.entries()) {
-      const childId = stableIoChildId(parentId, groupKey);
+      const childId = childIdFactory(parentId, groupKey);
       keepChildIds.add(childId);
-
       const rec: CardRecord = {
         id: childId,
-        type: "io-child",
+        type: childType,
         title: titleBase || null,
         parentId,
         groupKey,
         rectIds: rectIds.slice(),
         retired: false,
-        prompt: null,
+        prompt: isHotspot
+          ? hotspotPromptByGroup.get(groupKey) || formatHotspotPrompt(groupKey)
+          : null,
         info: parentRec.info,
         groups: parentRec.groups || null,
         sourceNotePath: String(parentRec.sourceNotePath || ""),
         sourceStartLine: Number(parentRec.sourceStartLine ?? 0) || 0,
-        imageRef: normaliseVaultPath(imagePath),
-        maskMode: mask,
+        imageRef: normalisedImagePath,
         createdAt: Number((cards[childId])?.createdAt ?? now),
         updatedAt: now,
         lastSeenAt: now,
       };
+      if (isHotspot) rec.interactionMode = effectiveInteractionMode;
+      else rec.maskMode = mask;
 
       const prev = cards[childId];
       if (prev && typeof prev === "object") {
@@ -242,13 +327,11 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
         cards[childId] = rec;
         plugin.store.upsertCard(rec);
       }
-
       plugin.store.ensureState(childId, now, 2.5);
     }
 
-    // Delete stale children that no longer have a matching group
     for (const c of Object.values(cards)) {
-      if (!c || c.type !== "io-child") continue;
+      if (!c || c.type !== childType) continue;
       if (String(c.parentId) !== parentId) continue;
       const cid = String(c.id);
       if (keepChildIds.has(cid)) continue;
@@ -258,41 +341,56 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
     await plugin.store.persist();
 
-    // Update the markdown block in the note
     try {
-      let fileToSync: TFile | null = null;
       const srcPath = String(parentRec.sourceNotePath || "");
       const file = app.vault.getAbstractFileByPath(srcPath);
       if (file instanceof TFile) {
-        fileToSync = file;
         const text = await app.vault.read(file);
         const lines = text.split(/\r?\n/);
         const { start, end } = findCardBlockRangeById(lines, parentId);
-        const embed = `![[${normaliseVaultPath(imagePath)}]]`;
-        const ioBlock = [
+        const embed = `![[${normalisedImagePath}]]`;
+        const block = [
           buildPrimaryCardAnchor(parentId),
-          ...buildIoMarkdownWithAnchor({
-            id: parentId,
-            title: titleVal || parentRec.title || undefined,
-            groups: groupsVal || undefined,
-            ioEmbed: embed,
-            info: infoVal || undefined,
-          }),
+          ...(isHotspot
+            ? buildHqMarkdownWithAnchor({
+                id: parentId,
+                title: titleVal || parentRec.title || undefined,
+                groups: groupsVal || undefined,
+                hqEmbed: embed,
+                hqRegionsJson,
+                interactionMode: effectiveInteractionMode,
+                info: infoVal || undefined,
+              })
+            : buildIoMarkdownWithAnchor({
+                id: parentId,
+                title: titleVal || parentRec.title || undefined,
+                groups: groupsVal || undefined,
+                ioEmbed: embed,
+                occlusionsJson,
+                maskMode: mask,
+                info: infoVal || undefined,
+              })),
         ];
-        lines.splice(start, end - start, ...ioBlock);
+        lines.splice(start, end - start, ...block);
         await app.vault.modify(file, lines.join("\n"));
       }
-
-      void fileToSync;
     } catch (e: unknown) {
-      log.warn("Failed to update IO markdown", e);
+      log.warn("Failed to update occlusion markdown", e);
     }
 
-    new Notice(`Image occlusion updated.`);
+    try {
+      const srcPath = String(parentRec.sourceNotePath || "");
+      const file = app.vault.getAbstractFileByPath(srcPath);
+      if (file instanceof TFile) {
+        await syncOneFile(plugin, file, { pruneGlobalOrphans: false });
+      }
+    } catch (e: unknown) {
+      log.warn(`Failed to run localized sync after ${cardLabel} edit`, e);
+    }
+
+    new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.updated", "{cardLabel} updated.", { cardLabel: noticeLabel }));
     return true;
   }
-
-  // ── New IO card (not editing) ─────────────────────────────────────────────
 
   const active = app.workspace.getActiveFile();
   if (!(active instanceof TFile)) {
@@ -300,29 +398,19 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     return false;
   }
 
-  if (!getImageData()) {
-    new Notice(`Paste an image to create an image occlusion card`);
+  const imageData = getImageData();
+  if (!imageData) {
+    new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.pasteImage", "Paste an image to create a {cardLabel} card", { cardLabel }));
     return false;
   }
 
-  if (hasTextBoxes) {
-    await burnTextBoxes();
-  }
-
-  const ioImageData = getImageData();
-  if (!ioImageData) {
-    new Notice(`Paste an image to create an image occlusion card`);
-    return false;
-  }
-
-  // Save image to vault
   const id = await reserveNewBcId(plugin, active);
-  const ext = extFromMime(ioImageData.mime);
-  const baseName = `sprout-io-${id}.${ext}`;
-  const vaultPath = bestEffortAttachmentPath(plugin, active, baseName);
+  const ext = extFromMime(imageData.mime);
+  const baseName = `sprout-${isHotspot ? "hq" : "io"}-${id}.${ext}`;
+  const vaultPath = bestEffortAttachmentPath(plugin, active, baseName, isHotspot ? "hq" : "io");
 
   try {
-    await writeBinaryToVault(app, vaultPath, ioImageData.data);
+    await writeBinaryToVault(app, vaultPath, imageData.data);
   } catch (e: unknown) {
     new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
     return false;
@@ -330,83 +418,72 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   const imagePath = normaliseVaultPath(vaultPath);
   const now = Date.now();
-  const mask = rects.length > 0 ? maskMode : null;
-
-  // Persist parent IO card in store
+  const mask = normRects.length > 0 ? maskMode : null;
   const parentRec: CardRecord = {
     id,
-    type: "io",
+    type: parentType,
     title: titleVal || null,
-    prompt: null,
+    prompt: isHotspot ? null : null,
     info: infoVal || null,
     groups: groupsArr && groupsArr.length ? groupsArr : null,
     imageRef: imagePath,
-    maskMode: mask,
     sourceNotePath: active.path,
     sourceStartLine: 0,
     createdAt: now,
     updatedAt: now,
     lastSeenAt: now,
   };
-
+  if (isHotspot) parentRec.interactionMode = effectiveInteractionMode;
+  else parentRec.maskMode = mask;
   plugin.store.upsertCard(parentRec);
 
-  // Persist IO definition in store.io
-  const ioMap = plugin.store.data.io || {};
-  plugin.store.data.io = ioMap;
-
-  const normRects = rects.map((r) => ({
-    rectId: String(r.rectId),
-    x: Math.max(0, Math.min(1, r.normX)),
-    y: Math.max(0, Math.min(1, r.normY)),
-    w: Math.max(0, Math.min(1, r.normW)),
-    h: Math.max(0, Math.min(1, r.normH)),
-    groupKey: normaliseGroupKey(r.groupKey),
-    shape: r.shape || "rect",
-  }));
-
-  ioMap[id] = {
-    imageRef: imagePath,
-    maskMode: mask,
-    rects: normRects,
-  };
-
-  // Create child IO cards per group
-  const groupToRectIds = new Map<string, string[]>();
-  for (const r of normRects) {
-    const g = normaliseGroupKey(r.groupKey);
-    const arr = groupToRectIds.get(g) ?? [];
-    arr.push(String(r.rectId));
-    groupToRectIds.set(g, arr);
+  if (isHotspot) {
+    const hqMap = plugin.store.data.hq || {};
+    plugin.store.data.hq = hqMap;
+    hqMap[id] = {
+      imageRef: imagePath,
+      interactionMode: effectiveInteractionMode,
+      prompt: null,
+      rects: normRects,
+    };
+  } else {
+    const ioMap = plugin.store.data.io || {};
+    plugin.store.data.io = ioMap;
+    ioMap[id] = {
+      imageRef: imagePath,
+      maskMode: mask,
+      rects: normRects,
+    };
   }
 
   const cards = (plugin.store.data.cards || {});
   const keepChildIds = new Set<string>();
   const titleBase = String(parentRec.title ?? "").trim();
-
   for (const [groupKey, rectIds] of groupToRectIds.entries()) {
-    const childId = stableIoChildId(id, groupKey);
+    const childId = childIdFactory(id, groupKey);
     keepChildIds.add(childId);
-
     const rec: CardRecord = {
       id: childId,
-      type: "io-child",
+      type: childType,
       title: titleBase || null,
       parentId: id,
       groupKey,
       rectIds: rectIds.slice(),
       retired: false,
-      prompt: null,
+      prompt: isHotspot
+        ? hotspotPromptByGroup.get(groupKey) || formatHotspotPrompt(groupKey)
+        : null,
       info: parentRec.info,
       groups: parentRec.groups || null,
       sourceNotePath: active.path,
       sourceStartLine: 0,
       imageRef: imagePath,
-      maskMode: mask,
       createdAt: now,
       updatedAt: now,
       lastSeenAt: now,
     };
+    if (isHotspot) rec.interactionMode = effectiveInteractionMode;
+    else rec.maskMode = mask;
 
     const prev = cards[childId];
     if (prev && typeof prev === "object") {
@@ -416,13 +493,11 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
       cards[childId] = rec;
       plugin.store.upsertCard(rec);
     }
-
     plugin.store.ensureState(childId, now, 2.5);
   }
 
-  // Delete stale children
   for (const c of Object.values(cards)) {
-    if (!c || c.type !== "io-child") continue;
+    if (!c || c.type !== childType) continue;
     if (String(c.parentId) !== id) continue;
     const cid = String(c.id);
     if (keepChildIds.has(cid)) continue;
@@ -432,39 +507,42 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   await plugin.store.persist();
 
-  // Write markdown block to the note
   const embed = `![[${imagePath}]]`;
-  const occlusionsJson =
-    normRects.length > 0
-      ? JSON.stringify(
-          normRects.map((r) => ({
-            rectId: r.rectId,
-            x: r.x,
-            y: r.y,
-            w: r.w,
-            h: r.h,
-            groupKey: r.groupKey,
-            shape: r.shape || "rect",
-          })),
-        )
-      : null;
-
-  const ioBlock = buildIoMarkdownWithAnchor({
-    id,
-    title: titleVal || undefined,
-    groups: groupsVal || undefined,
-    ioEmbed: embed,
-    occlusionsJson,
-    maskMode: mask,
-    info: infoVal || undefined,
-  });
+  const block = [
+    buildPrimaryCardAnchor(id),
+    ...(isHotspot
+      ? buildHqMarkdownWithAnchor({
+          id,
+          title: titleVal || undefined,
+          groups: groupsVal || undefined,
+          hqEmbed: embed,
+          hqRegionsJson,
+          interactionMode: effectiveInteractionMode,
+          info: infoVal || undefined,
+        })
+      : buildIoMarkdownWithAnchor({
+          id,
+          title: titleVal || undefined,
+          groups: groupsVal || undefined,
+          ioEmbed: embed,
+          occlusionsJson,
+          maskMode: mask,
+          info: infoVal || undefined,
+        })),
+  ];
 
   try {
-    await insertTextAtCursorOrAppend(app, active, ioBlock.join("\n"), true);
+    await insertTextAtCursorOrAppend(app, active, block.join("\n"), true);
   } catch (e: unknown) {
-    log.warn("Failed to insert IO markdown, but card saved to store", e);
+    log.warn("Failed to insert occlusion markdown, but card saved to store", e);
   }
 
-  new Notice(`Image occlusion saved.`);
+  try {
+    await syncOneFile(plugin, active, { pruneGlobalOrphans: false });
+  } catch (e: unknown) {
+    log.warn(`Failed to run localized sync after ${cardLabel} create`, e);
+  }
+
+  new Notice(t(plugin.settings?.general?.interfaceLanguage, "ui.cardCreator.notice.saved", "{cardLabel} saved.", { cardLabel: noticeLabel }));
   return true;
 }

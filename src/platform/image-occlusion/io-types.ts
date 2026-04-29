@@ -19,7 +19,9 @@ export type IORect = {
   normW: number;
   normH: number;
   groupKey: string;
-  shape?: "rect" | "circle";
+  label?: string;
+  shape?: "rect" | "circle" | "polygon";
+  points?: Array<{ x: number; y: number }>;
 };
 
 export type StageTransform = { scale: number; tx: number; ty: number };

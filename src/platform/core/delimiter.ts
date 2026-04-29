@@ -210,42 +210,42 @@ const ANCHOR_PREFIX_PATTERN = "(?:learnkit|sprout)";
 function _rebuildRegexes() {
   const d = escapeDelimiterRe(_delim);
 
-  // parser.ts — card start: ^(RQ|Q|MCQ|CQ|IO|OQ)\s*<d>\s*(.*)$
-  _CARD_START_DELIM_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|OQ)\\s*${d}\\s*(.*)$`);
+  // parser.ts — card start: ^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\s*<d>\s*(.*)$
+  _CARD_START_DELIM_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\\s*${d}\\s*(.*)$`);
 
-  // parser.ts — field: ^(T|A|O|I|G|C|\d{1,2})\s*<d>\s*(.*)$
-  _FIELD_DELIM_RE = new RegExp(`^(T|A|O|I|G|C|\\d{1,2})\\s*${d}\\s*(.*)$`);
+  // parser.ts — field: ^(T|A|O|I|G|C|M|\d{1,2})\s*<d>\s*(.*)$
+  _FIELD_DELIM_RE = new RegExp(`^(T|A|O|I|G|C|M|\\d{1,2})\\s*${d}\\s*(.*)$`);
 
   // parser.ts — title outside card: ^T\s*<d>\s*(.*)$
   _TITLE_OUTSIDE_DELIM_RE = new RegExp(`^T\\s*${d}\\s*(.*)$`);
 
-  // parser.ts — any header/anchor: ^(?:.learnkit-\d{9}|(?:RQ|Q|MCQ|CQ|IO|OQ|T|A|O|I|G|C|\d{1,2})\s*<d>)\s*
+  // parser.ts — any header/anchor: ^(?:.learnkit-\d{9}|(?:RQ|Q|MCQ|CQ|IO|HQ|OQ|T|A|O|I|G|C|M|\d{1,2})\s*<d>)\s*
   _ANY_HEADER_DELIM_RE = new RegExp(
-    `^(?:\\^${ANCHOR_PREFIX_PATTERN}-\\d{9}|(?:RQ|Q|MCQ|CQ|IO|OQ|T|A|O|I|G|C|\\d{1,2})\\s*${d})\\s*`,
+    `^(?:\\^${ANCHOR_PREFIX_PATTERN}-\\d{9}|(?:RQ|Q|MCQ|CQ|IO|HQ|OQ|T|A|O|I|G|C|M|\\d{1,2})\\s*${d})\\s*`,
   );
 
   // reading-helpers.ts — field start (relaxed): ^([A-Za-z]+|\d{1,2})\s*<d>\s*(.*)$
   _FIELD_START_READING_RE = new RegExp(`^([A-Za-z]+|\\d{1,2})\\s*${d}\\s*(.*)$`);
 
   // settings-utils.ts — card start (also accepts colon for legacy):
-  //   ^(RQ|Q|MCQ|CQ|OQ)\s*(?::|<d>)\s*.*$|^IO\s*<d>\s*.*$
+  //   ^(RQ|Q|MCQ|CQ|OQ)\s*(?::|<d>)\s*.*$|^(IO|HQ)\s*<d>\s*.*$
   _CARD_START_SETTINGS_RE = new RegExp(
-    `^(RQ|Q|MCQ|CQ|OQ)\\s*(?::|${d})\\s*.*$|^IO\\s*${d}\\s*.*$`,
+    `^(RQ|Q|MCQ|CQ|OQ)\\s*(?::|${d})\\s*.*$|^(IO|HQ)\\s*${d}\\s*.*$`,
   );
 
   // settings-utils.ts — field line:
-  //   ^(T|A|I|O|G|\d{1,2})\s*(?::|<d>)\s*.*$|^(C|K)\s*(?::|<d>)\s*.*$
+  //   ^(T|A|I|O|G|M|\d{1,2})\s*(?::|<d>)\s*.*$|^(C|K)\s*(?::|<d>)\s*.*$
   _FIELD_LINE_SETTINGS_RE = new RegExp(
-    `^(T|A|I|O|G|\\d{1,2})\\s*(?::|${d})\\s*.*$|^(C|K)\\s*(?::|${d})\\s*.*$`,
+    `^(T|A|I|O|G|M|\\d{1,2})\\s*(?::|${d})\\s*.*$|^(C|K)\\s*(?::|${d})\\s*.*$`,
   );
 
   // sync-engine.ts — flashcard header (card types):
-  //   ^(RQ|Q|MCQ|CQ|IO|OQ)\s*(?::|<d>)\s*
-  _FLASHCARD_HEADER_CARD_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|OQ)\\s*(?::|${d})\\s*`);
+  //   ^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\s*(?::|<d>)\s*
+  _FLASHCARD_HEADER_CARD_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\\s*(?::|${d})\\s*`);
 
   // sync-engine.ts — flashcard header (field types):
-  //   ^(T|A|O|I|G|C|K|L|\d{1,2})\s*(?::|<d>)\s*
-  _FLASHCARD_HEADER_FIELD_RE = new RegExp(`^(T|A|O|I|G|C|K|L|\\d{1,2})\\s*(?::|${d})\\s*`);
+  //   ^(T|A|O|I|G|C|M|K|L|\d{1,2})\s*(?::|<d>)\s*
+  _FLASHCARD_HEADER_FIELD_RE = new RegExp(`^(T|A|O|I|G|C|M|K|L|\\d{1,2})\\s*(?::|${d})\\s*`);
 }
 
 // Initial build with default delimiter

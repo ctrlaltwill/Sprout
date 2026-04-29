@@ -2,9 +2,6 @@
 title: "Basic & Reversed Flashcards"
 ---
 
-
-Last modified: 30/03/2026
-
 ## Purpose
 
 Basic flashcards show a question first, then an answer.
@@ -38,6 +35,12 @@ With reverse enabled, LearnKit creates:
 
 Use the reverse option in the modal to enable this.
 
+## Demo
+
+![Basic card demo](../../../branding/Demo/Basic%20Card.png)
+
+_Basic card question and answer flow._
+
 ## Grading
 
 After revealing the answer, grade your recall:
@@ -58,3 +61,8 @@ See [Grading](../Grading).
 
 - [Creating Flashcards](../Creating-Flashcards)
 - [Flashcards](../Flashcards)
+- [Hotspot Cards](../Hotspot-Cards)
+
+---
+
+Last modified: 28/04/2026

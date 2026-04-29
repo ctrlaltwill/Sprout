@@ -73,6 +73,16 @@ After you reveal the answer, the app can either:
 
 Configure that in `Settings -> Flashcards -> Image occlusion -> Reveal mode`.
 
+## Demo
+
+![Image occlusion question demo](../../../branding/Demo/Image%20Occlusion%20-%20Question.png)
+
+_Question side with masks active._
+
+![Image occlusion answer demo](../../../branding/Demo/Image%20Occlusion%20-%20Answer.png)
+
+_Answer side after reveal._
+
 ## Storage settings
 
 Image occlusion files are stored separately from the review setting above.
@@ -93,4 +103,6 @@ The default folder is `Attachments/Image Occlusion/`.
 
 If the content is mostly text and order matters more than location, [Ordered Questions](../Ordered-Questions) or [Multiple Choice Questions](../Multiple-Choice-Questions) are usually a better fit.
 
-Last modified: 30/03/2026
+If you want location-based interaction with click or drag behavior, use [Hotspot Cards](../Hotspot-Cards).
+
+Last modified: 28/04/2026

@@ -192,7 +192,8 @@ export function resolveWidgetKeyAction(ctx: WidgetKeyContext): WidgetKeyAction {
   const isBasicLike =
     cardType === "basic" || cardType === "reversed" || cardType === "reversed-child" ||
     cardType === "cloze" || cardType === "cloze-child" ||
-    cardType === "io" || cardType === "io-child";
+    cardType === "io" || cardType === "io-child" ||
+    cardType === "hq" || cardType === "hq-child";
 
   if (isFlip && isBasicLike) {
     if (!showingAnswer) return "flip";
@@ -338,7 +339,7 @@ export interface WidgetViewLike {
   nextCard(): Promise<void>;
   openEditModalForCurrentCard(): void;
   openCurrentInStudyView(): Promise<void>;
-
+  consumePendingManualGradeMeta?(cardId: string): ReviewMeta | null;
   renderMarkdownInto(containerEl: HTMLElement, md: string, sourcePath: string): Promise<void>;
   renderImageOcclusionInto(containerEl: HTMLElement, card: CardRecord, sourcePath: string, reveal: boolean): Promise<void>;
 

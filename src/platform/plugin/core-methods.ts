@@ -282,8 +282,8 @@ export function WithCoreMethods<T extends Constructor<LearnKitPluginBase>>(Base:
         return;
       }
 
-      if (forcedType === "io") {
-        new ImageOcclusionCreatorModal(this.app, this).open();
+      if (forcedType === "io" || forcedType === "hq") {
+        new ImageOcclusionCreatorModal(this.app, this, forcedType).open();
       } else {
         new CardCreatorModal(this.app, this, forcedType).open();
       }

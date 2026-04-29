@@ -11,6 +11,7 @@
 import interact from "interactjs";
 import type { IORect, IOTextBox } from "./io-types";
 import { textBgCss } from "./io-image-ops";
+import { pointInPolygon } from "./image-geometry";
 import { setCssProps } from "../../platform/core/ui";
 
 type DragMoveEvent = {
@@ -23,6 +24,10 @@ type ResizeMoveEvent = {
 };
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+function clampUnit(value: number): number {
+  return Math.max(0, Math.min(1, Number(value) || 0));
+}
 
 function createDeleteIcon(): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, "svg");
@@ -81,6 +86,7 @@ export interface RenderOverlayOptions {
   rects: readonly IORect[];
   textBoxes: readonly IOTextBox[];
   cb: OverlayCallbacks;
+  useHotspotLabels?: boolean;
 }
 
 // ── Main entry point ────────────────────────────────────────────────────────
@@ -98,6 +104,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     rects,
     textBoxes,
     cb,
+    useHotspotLabels = false,
   } = opts;
 
   const stageW = rawStageW || 1;
@@ -127,6 +134,49 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     setCssProps(el, "--learnkit-io-height", `${normH * stageH}px`);
   };
 
+  const getLocalPolygonPoints = (rect: IORect): Array<{ x: number; y: number }> | null => {
+    if (!Array.isArray(rect.points) || rect.points.length < 3) return null;
+
+    const rawPoints = rect.points
+      .map((point) => ({ x: Number(point.x), y: Number(point.y) }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (rawPoints.length < 3) return null;
+
+    // IO/HQ saved points are rect-local normalized points.
+    // Use them directly to keep editor borders aligned with persisted masks.
+    return rawPoints.map((point) => ({ x: clampUnit(point.x), y: clampUnit(point.y) }));
+  };
+
+  const buildPolygonShape = (rect: IORect): SVGSVGElement => {
+    const shape = document.createElementNS(SVG_NS, "svg");
+    shape.classList.add("learnkit-io-rect-polygon");
+    const widthPx = Math.max(1, (Number(rect.normW) || 0) * stageW);
+    const heightPx = Math.max(1, (Number(rect.normH) || 0) * stageH);
+    shape.setAttribute("viewBox", `0 0 ${widthPx} ${heightPx}`);
+    shape.setAttribute("preserveAspectRatio", "none");
+
+    const polygon = document.createElementNS(SVG_NS, "polygon");
+    const localPoints = getLocalPolygonPoints(rect) ?? [];
+    polygon.setAttribute(
+      "points",
+      localPoints
+        .map((point) => `${clampUnit(point.x) * widthPx},${clampUnit(point.y) * heightPx}`)
+        .join(" "),
+    );
+    shape.appendChild(polygon);
+    return shape;
+  };
+
+  const clickHitsPolygon = (event: MouseEvent, rect: IORect, targetEl: HTMLElement): boolean => {
+    const localPoints = getLocalPolygonPoints(rect);
+    if (!localPoints || localPoints.length < 3) return false;
+    const bounds = targetEl.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return false;
+    const relX = (event.clientX - bounds.left) / bounds.width;
+    const relY = (event.clientY - bounds.top) / bounds.height;
+    return pointInPolygon({ x: relX, y: relY }, localPoints);
+  };
+
   // ── Render occlusion rects ──────────────────────────────────────────────
 
   for (const rect of rects) {
@@ -135,25 +185,40 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     el.classList.toggle("learnkit-pointer-none", isCropTool);
     el.setAttribute("data-rect-id", rect.rectId);
     positionEl(el, rect.normX, rect.normY, rect.normW, rect.normH);
+    const isPolygon = rect.shape === "polygon" && Array.isArray(rect.points) && rect.points.length >= 3;
 
     if (rect.shape === "circle") {
       el.classList.add("is-circle");
+      setCssProps(el, "clipPath", "");
+    } else if (isPolygon) {
+      el.classList.add("is-polygon");
+      setCssProps(el, "clipPath", "");
+      el.appendChild(buildPolygonShape(rect));
+    } else {
+      setCssProps(el, "clipPath", "");
     }
 
     const isSelected = rect.rectId === selectedRectId;
     el.classList.toggle("is-selected", isSelected);
+    el.style.zIndex = isSelected ? "30" : "10";
 
     // GroupKey input controls (centered on rect, visually unscaled from canvas zoom)
     const inputUi = document.createElement("div");
     inputUi.className = "learnkit-io-group-ui";
+    inputUi.style.zIndex = isSelected ? "40" : "11";
     setCssProps(inputUi, "--learnkit-io-ui-inverse-scale", `${uiInverseScale}`);
 
     const groupInput = document.createElement("input");
     groupInput.type = "text";
-    groupInput.value = rect.groupKey || "1";
+    groupInput.value = useHotspotLabels ? String(rect.label || rect.groupKey || "1") : (rect.groupKey || "1");
     groupInput.className = "learnkit-io-group-input";
+    groupInput.classList.toggle("is-hotspot-label", useHotspotLabels);
     groupInput.classList.toggle("learnkit-pointer-none", isCropTool);
     groupInput.setAttribute("data-group-input", rect.rectId);
+
+    groupInput.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+    });
 
     groupInput.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -164,7 +229,9 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     groupInput.addEventListener("change", () => {
       const r = getRectRef();
       if (r) {
-        r.groupKey = groupInput.value.trim() || "1";
+        const nextValue = groupInput.value.trim() || "1";
+        if (useHotspotLabels) r.label = nextValue;
+        else r.groupKey = nextValue;
         cb.saveHistory();
       }
     });
@@ -172,7 +239,9 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     groupInput.addEventListener("input", () => {
       const r = getRectRef();
       if (r) {
-        r.groupKey = groupInput.value.trim() || "1";
+        const nextValue = groupInput.value.trim() || "1";
+        if (useHotspotLabels) r.label = nextValue;
+        else r.groupKey = nextValue;
       }
     });
 
@@ -201,7 +270,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     el.appendChild(inputUi);
 
     // Corner resize affordances (rectangles only)
-    if (rect.shape !== "circle") {
+    if (rect.shape === "rect") {
       const cornerSize = 10;
       const addCorner = (cx: string, cy: string) => {
         const c = document.createElement("div");
@@ -218,31 +287,34 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     }
 
     // Cursor hints near corners
-    el.addEventListener("mousemove", (evt) => {
-      const bounds = el.getBoundingClientRect();
-      const px = evt.clientX - bounds.left;
-      const py = evt.clientY - bounds.top;
-      const nearLeft = px <= 12;
-      const nearRight = px >= bounds.width - 12;
-      const nearTop = py <= 12;
-      const nearBottom = py >= bounds.height - 12;
-      if ((nearLeft && nearTop) || (nearRight && nearBottom)) {
-        el.classList.remove("learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-move", "learnkit-cursor-move");
-        el.classList.add("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize");
-      } else if ((nearRight && nearTop) || (nearLeft && nearBottom)) {
-        el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-move", "learnkit-cursor-move");
-        el.classList.add("learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
-      } else {
+    if (rect.shape === "rect") {
+      el.addEventListener("mousemove", (evt) => {
+        const bounds = el.getBoundingClientRect();
+        const px = evt.clientX - bounds.left;
+        const py = evt.clientY - bounds.top;
+        const nearLeft = px <= 12;
+        const nearRight = px >= bounds.width - 12;
+        const nearTop = py <= 12;
+        const nearBottom = py >= bounds.height - 12;
+        if ((nearLeft && nearTop) || (nearRight && nearBottom)) {
+          el.classList.remove("learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-move", "learnkit-cursor-move");
+          el.classList.add("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize");
+        } else if ((nearRight && nearTop) || (nearLeft && nearBottom)) {
+          el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-move", "learnkit-cursor-move");
+          el.classList.add("learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
+        } else {
+          el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
+          el.classList.add("learnkit-cursor-move", "learnkit-cursor-move");
+        }
+      });
+      el.addEventListener("mouseleave", () => {
         el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
         el.classList.add("learnkit-cursor-move", "learnkit-cursor-move");
-      }
-    });
-    el.addEventListener("mouseleave", () => {
-      el.classList.remove("learnkit-cursor-nwse-resize", "learnkit-cursor-nwse-resize", "learnkit-cursor-nesw-resize", "learnkit-cursor-nesw-resize");
-      el.classList.add("learnkit-cursor-move", "learnkit-cursor-move");
-    });
+      });
+    }
 
     el.addEventListener("click", (e) => {
+      if (isPolygon && !clickHitsPolygon(e, rect, el)) return;
       e.stopPropagation();
       cb.selectRect(rect.rectId);
     });
@@ -256,8 +328,9 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     };
 
     // Interactjs: drag + resize
-    interact(el)
+    const interaction = interact(el)
       .draggable({
+        allowFrom: isPolygon ? ".learnkit-io-rect-polygon polygon" : undefined,
         ignoreFrom: "input,textarea,button,select,.learnkit-io-corner,.learnkit-io-mask-delete",
         listeners: {
           move: (event: DragMoveEvent) => {
@@ -280,9 +353,11 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
             cb.rerender();
           },
         },
-      })
-      .resizable({
-        edges: rect.shape !== "circle"
+      });
+
+    if (!isPolygon) {
+      interaction.resizable({
+        edges: rect.shape === "rect"
           ? {
               left: ".learnkit-io-corner.is-left",
               right: ".learnkit-io-corner.is-right",
@@ -325,8 +400,10 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
             cb.rerender();
           },
         },
-      })
-      .styleCursor(false);
+      });
+    }
+
+    interaction.styleCursor(false);
   }
 
   // ── Render text boxes ───────────────────────────────────────────────────
@@ -339,6 +416,7 @@ export function renderOverlay(opts: RenderOverlayOptions): void {
     positionEl(el, textBox.normX, textBox.normY, textBox.normW, textBox.normH);
 
     const isSelected = textBox.textId === selectedTextId;
+    el.style.zIndex = isSelected ? "25" : "9";
     const bgCss = textBgCss(textBox.bgColor, textBox.bgOpacity ?? 1);
     const hasBg = bgCss !== "transparent";
     setCssProps(

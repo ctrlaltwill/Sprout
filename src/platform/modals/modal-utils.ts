@@ -287,6 +287,8 @@ export type PipeKey =
   | "MCQ"
   | "OQ"
   | "IO"
+  | "HQ"
+  | "M"
   | "I"
   | "O"
   | "G"
@@ -381,14 +383,18 @@ export async function writeBinaryToVault(app: App, vaultPath: string, data: Arra
  * Determine the best vault path for saving an attachment.
  *
  * For IO images: uses `plugin.settings.storage.imageOcclusionFolderPath`.
+ * For hotspot images: uses `plugin.settings.storage.hotspotFolderPath` with IO fallback.
  * For card attachments (Q/A/Info fields): uses `plugin.settings.storage.cardAttachmentFolderPath`.
  * Falls back to the Obsidian fileManager or the active note's parent folder.
  */
-export function bestEffortAttachmentPath(plugin: LearnKitPlugin, active: TFile, baseName: string, type: "io" | "card" = "io"): string {
-  const folderRaw = type === "card"
-    ? (plugin.settings.storage.cardAttachmentFolderPath ?? "")
-    : (plugin.settings.storage.imageOcclusionFolderPath ?? "");
-  const folder = normaliseFolderPath(folderRaw);
+export function bestEffortAttachmentPath(plugin: LearnKitPlugin, active: TFile, baseName: string, type: "io" | "hq" | "card" = "io"): string {
+  const ioFolder = normaliseFolderPath(plugin.settings.storage.imageOcclusionFolderPath ?? "");
+  const hotspotFolder = normaliseFolderPath(plugin.settings.storage.hotspotFolderPath ?? "");
+  const folder = type === "card"
+    ? normaliseFolderPath(plugin.settings.storage.cardAttachmentFolderPath ?? "")
+    : type === "hq"
+      ? (hotspotFolder || ioFolder)
+      : ioFolder;
 
   if (folder) return normaliseVaultPath(`${folder}${baseName}`);
 

@@ -31,6 +31,12 @@ export function stableIoChildId(parentId: string, groupKey: string): string {
   return `${pid}::io::${g}`;
 }
 
+export function stableHqChildId(parentId: string, groupKey: string): string {
+  const pid = String(parentId ?? "").trim();
+  const g = normaliseGroupKey(groupKey);
+  return `${pid}::hq::${g}`;
+}
+
 /**
  * Returns the next auto-incremented group key given existing rects.
  * Used for creating new masks with unique group identifiers.

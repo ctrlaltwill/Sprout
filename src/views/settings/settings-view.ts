@@ -1878,6 +1878,8 @@ export class LearnKitSettingsView extends ItemView {
         "Basic cards",
         "Cloze",
         "Image occlusion",
+        t(locale, "ui.settings.sections.hotspot", "Hotspot"),
+        "Hotspot",
         "Multiple choice",
         "Ordered questions",
         "Syncing",

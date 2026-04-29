@@ -54,6 +54,10 @@ type Args = {
   mcqMultiCardId?: string;
   syncMcqMultiSelect?: (origIdx: number, selected: boolean) => void;
   answerOq: (userOrder: number[]) => Promise<void>;
+  autoGradeMcq?: boolean;
+  autoGradeOq?: boolean;
+  gradePendingRating?: (rating: Rating) => Promise<void>;
+  usePendingManualGrade?: boolean;
 
   // skip (session-only postpone; no scheduling changes)
   enableSkipButton?: boolean;
@@ -99,6 +103,7 @@ type Args = {
     sourcePath: string,
     reveal: boolean,
   ) => Promise<void>;
+  getHotspotPlacedCount?: (cardId: string) => number;
 
   // MCQ option randomisation
   randomizeMcqOptions: boolean;
@@ -307,7 +312,73 @@ function makeTextButton(opts: {
 
 function isIoCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
-  return t === "io" || t === "io-child";
+  return t === "io" || t === "io-child" || t === "hq" || t === "hq-child";
+}
+
+function isHotspotCard(card: CardRecord): boolean {
+  const t = String(card?.type ?? "").toLowerCase();
+  return t === "hq" || t === "hq-child";
+}
+
+function getHotspotInteractionModeFromCard(card: CardRecord): "click" | "drag-drop" {
+  const overrideValue = (card as unknown as { hotspotInteractionModeOverride?: unknown })?.hotspotInteractionModeOverride;
+  let override: string;
+  if (typeof overrideValue === 'string') {
+    override = overrideValue;
+  } else if (typeof overrideValue === 'number' || typeof overrideValue === 'boolean') {
+    override = String(overrideValue);
+  } else {
+    override = "";
+  }
+  override = override.trim().toLowerCase();
+  if (override === "drag-drop") return "drag-drop";
+  if (override === "click") return "click";
+  const modeValue = (card as { interactionMode?: unknown })?.interactionMode;
+  let mode: string;
+  if (typeof modeValue === 'string') {
+    mode = modeValue;
+  } else if (typeof modeValue === 'number' || typeof modeValue === 'boolean') {
+    mode = String(modeValue);
+  } else {
+    mode = "";
+  }
+  mode = mode.trim().toLowerCase();
+  return mode === "drag-drop" ? "drag-drop" : "click";
+}
+
+function getHotspotTargetCount(card: CardRecord): number {
+  const rawCount = Number((card as unknown as { hotspotTargetCount?: unknown })?.hotspotTargetCount ?? 0);
+  return Number.isFinite(rawCount) && rawCount > 0 ? Math.floor(rawCount) : 1;
+}
+
+function getHotspotPlacedCount(card: CardRecord, args: Args): number {
+  const cardId = String(card.id || "").trim();
+  if (!cardId || typeof args.getHotspotPlacedCount !== "function") return 0;
+  const rawPlaced = Number(args.getHotspotPlacedCount(cardId));
+  return Number.isFinite(rawPlaced) && rawPlaced > 0 ? Math.floor(rawPlaced) : 0;
+}
+
+function isHotspotDragRevealReady(card: CardRecord, args: Args): boolean {
+  const targetCount = getHotspotTargetCount(card);
+  const placedCount = getHotspotPlacedCount(card, args);
+  return placedCount >= targetCount;
+}
+
+function buildHotspotQuestionPrompt(card: CardRecord): string {
+  if (getHotspotInteractionModeFromCard(card) === "drag-drop") {
+    return "Drag all labels on to the image.";
+  }
+  const promptLabelValue = (card as unknown as { hotspotPromptLabel?: unknown })?.hotspotPromptLabel;
+  let promptLabel: string;
+  if (typeof promptLabelValue === 'string') {
+    promptLabel = promptLabelValue;
+  } else if (typeof promptLabelValue === 'number' || typeof promptLabelValue === 'boolean') {
+    promptLabel = String(promptLabelValue);
+  } else {
+    promptLabel = "";
+  }
+  promptLabel = promptLabel.trim();
+  return promptLabel ? `Click on ${promptLabel}.` : "Click on image to reveal the answer.";
 }
 
 // --- MCQ option order --------------------------------------------------------
@@ -746,7 +817,7 @@ function renderMcqContent(ctx: CardRenderCtx): void {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (graded) return;
+      if (graded || reveal) return;
       if (multiAnswer) {
         // Toggle selection in-place (no full re-render)
         if (multiSelected.has(origIdx)) {
@@ -1176,6 +1247,7 @@ export function renderSessionMode(args: Args) {
 
   // Title in topbar
   const ioLike = isIoCard(card);
+  const hotspotCard = isHotspotCard(card);
   let displayTitle = card.title || "";
 
   // Remove cloze number suffix (e.g., " • c1", " • c2", etc.) from cloze cards
@@ -1320,6 +1392,18 @@ export function renderSessionMode(args: Args) {
   } else if (ioLike) {
     const reveal = !!graded || !!args.showAnswer;
 
+    if (hotspotCard && !reveal) {
+      const hotspotMode = getHotspotInteractionModeFromCard(card);
+      const shouldShowPrompt = hotspotMode !== "drag-drop" || !isHotspotDragRevealReady(card, args);
+      if (shouldShowPrompt) {
+        const promptText = buildHotspotQuestionPrompt(card);
+        section.appendChild(labelRow("Question"));
+        section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(promptText)));
+      }
+    } else if (hotspotCard && reveal) {
+      section.appendChild(labelRow("Answer"));
+    }
+
     const ioHost = document.createElement("div");
     ioHost.className = "learnkit-io-host";
     ioHost.dataset.sproutIoWidget = "1";
@@ -1396,7 +1480,9 @@ export function renderSessionMode(args: Args) {
 
   const canGradeNow =
     !graded &&
-    ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) && !!args.showAnswer);
+    (((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) && !!args.showAnswer) ||
+      (card.type === "mcq" && args.autoGradeMcq === false && !!args.showAnswer) ||
+      (card.type === "oq" && args.autoGradeOq === false && !!args.showAnswer));
 
   // Grading / next buttons (in center)
   const mainRow = document.createElement("div");
@@ -1405,7 +1491,7 @@ export function renderSessionMode(args: Args) {
 
   // Basic/Cloze/IO: reveal gate
   if (
-    (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) &&
+    (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || (ioLike && !hotspotCard)) &&
     !args.showAnswer &&
     !graded
   ) {
@@ -1446,6 +1532,13 @@ export function renderSessionMode(args: Args) {
           }) ?? undefined
         );
       };
+      const gradeAndContinue = (rating: Rating) => {
+        const usePendingManualGrade = !!args.usePendingManualGrade && !!args.gradePendingRating;
+        const gradePromise = usePendingManualGrade
+          ? args.gradePendingRating!(rating)
+          : args.gradeCurrentRating(rating, {});
+        void gradePromise.then(goNext);
+      };
 
       // Practice mode: single Continue button
       if (practiceMode) {
@@ -1469,7 +1562,7 @@ export function renderSessionMode(args: Args) {
           subtitle: getSubtitle("again"),
           title: "Not recalled easily (1)",
           className: "btn-destructive",
-          onClick: () => void args.gradeCurrentRating("again", {}).then(goNext),
+          onClick: () => gradeAndContinue("again"),
           kbd: "1",
         });
         againBtn.classList.add("learnkit-btn-again", "learnkit-btn-again");
@@ -1481,7 +1574,7 @@ export function renderSessionMode(args: Args) {
             subtitle: getSubtitle("hard"),
             title: "Recalled with difficulty (2)",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("hard", {}).then(goNext),
+            onClick: () => gradeAndContinue("hard"),
             kbd: "2",
           });
           hardBtn.classList.add("learnkit-btn-hard", "learnkit-btn-hard");
@@ -1492,7 +1585,7 @@ export function renderSessionMode(args: Args) {
             subtitle: getSubtitle("good"),
             title: "Recalled with effort (3)",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
+            onClick: () => gradeAndContinue("good"),
             kbd: "3",
           });
           goodBtn.classList.add("learnkit-btn-good", "learnkit-btn-good");
@@ -1503,7 +1596,7 @@ export function renderSessionMode(args: Args) {
             subtitle: getSubtitle("easy"),
             title: "Recalled easily (4)",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("easy", {}).then(goNext),
+            onClick: () => gradeAndContinue("easy"),
             kbd: "4",
           });
           easyBtn.classList.add("learnkit-btn-easy", "learnkit-btn-easy");
@@ -1514,7 +1607,7 @@ export function renderSessionMode(args: Args) {
             subtitle: getSubtitle("good"),
             title: "Recalled easily (2)",
             className: "btn",
-            onClick: () => void args.gradeCurrentRating("good", {}).then(goNext),
+            onClick: () => gradeAndContinue("good"),
             kbd: "2",
           });
           goodBtn.classList.add("learnkit-btn-good", "learnkit-btn-good");
@@ -1564,6 +1657,26 @@ export function renderSessionMode(args: Args) {
           kbd: "↵",
         }),
       );
+      hasMainRowContent = true;
+    } else if (hotspotCard && !args.showAnswer && getHotspotInteractionModeFromCard(card) === "drag-drop") {
+      if (isHotspotDragRevealReady(card, args)) {
+        mainRow.appendChild(
+          makeTextButton({
+            label: "Reveal",
+            className: "learnkit-btn-toolbar",
+            onClick: () => {
+              args.setShowAnswer(true);
+              args.rerender();
+            },
+            kbd: "↵",
+          }),
+        );
+      } else {
+        mainRow.appendChild(h("div", "text-muted-foreground text-sm", buildHotspotQuestionPrompt(card)));
+      }
+      hasMainRowContent = true;
+    } else if (hotspotCard && !args.showAnswer) {
+      mainRow.appendChild(h("div", "text-muted-foreground text-sm", buildHotspotQuestionPrompt(card)));
       hasMainRowContent = true;
     } else if (ioLike && !args.showAnswer) {
       mainRow.appendChild(h("div", "text-muted-foreground text-sm", "Press Enter to reveal the image."));

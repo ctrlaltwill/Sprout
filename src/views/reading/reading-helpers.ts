@@ -85,6 +85,7 @@ function isKnownReadingFieldKey(key: string): boolean {
     normalized === 'O' ||
     normalized === 'G' ||
     normalized === 'IO' ||
+    normalized === 'HQ' ||
     normalized === 'OQ'
   );
 }
@@ -95,7 +96,7 @@ function matchKnownFieldStart(s: string): RegExpMatchArray | null {
   return isKnownReadingFieldKey(m[1] || '') ? m : null;
 }
 
-export type FieldKey = "T" | "Q" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO";
+export type FieldKey = "T" | "Q" | "RQ" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO" | "HQ" | "OQ";
 
 /* -----------------------
    Internal-only helpers
@@ -447,7 +448,7 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
 
 export interface SproutCard {
   anchorId: string;
-  type: "basic" | "reversed" | "cloze" | "mcq" | "io" | "oq";
+  type: "basic" | "reversed" | "cloze" | "mcq" | "io" | "hq" | "oq";
   title: string;
   fields: {
     T?: string | string[];
@@ -461,6 +462,7 @@ export interface SproutCard {
     I?: string | string[];
     G?: string | string[];
     IO?: string | string[];
+    HQ?: string | string[];
   };
 }
 
@@ -539,6 +541,7 @@ export function parseSproutCard(text: string): SproutCard | null {
   let type: SproutCard["type"] = "basic";
   if (fields.CQ) type = "cloze";
   else if (fields.MCQ) type = "mcq";
+  else if (fields.HQ) type = "hq";
   else if (fields.IO) type = "io";
   else if (fields.OQ) type = "oq";
   else if (fields.RQ) type = "reversed";
@@ -615,8 +618,9 @@ export function buildCardContentHTML(card: SproutCard): string {
       }
     }
     contentHTML += buildOQSectionHTML(question, steps);
-  } else if (card.type === "io" && card.fields.IO) {
-    const ioContent = Array.isArray(card.fields.IO) ? card.fields.IO.join('\n') : card.fields.IO;
+  } else if ((card.type === "io" || card.type === "hq") && (card.fields.IO || card.fields.HQ)) {
+    const ioSource = card.type === "hq" ? card.fields.HQ ?? card.fields.IO : card.fields.IO;
+    const ioContent = Array.isArray(ioSource) ? ioSource.join('\n') : String(ioSource || "");
     contentHTML += buildIOSectionHTML(ioContent);
   }
 

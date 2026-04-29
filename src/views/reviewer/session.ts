@@ -287,7 +287,7 @@ export function buildSession(plugin: LearnKitPlugin, scope: Scope, options?: Ses
 /** Returns true for child card types that have siblings. */
 function isChildCard(card: CardRecord): boolean {
   const t = String(card?.type ?? "").toLowerCase();
-  return t === "cloze-child" || t === "io-child" || t === "reversed-child";
+  return t === "cloze-child" || t === "io-child" || t === "hq-child" || t === "reversed-child";
 }
 
 /** Resolves the parent key for a child card. */
@@ -296,6 +296,10 @@ function getParentKey(card: CardRecord): string {
   const id = String(card.id || "");
   const clozeMatch = id.match(/^(.*)::cloze::/);
   if (clozeMatch) return clozeMatch[1];
+  const ioMatch = id.match(/^(.*)::io::/);
+  if (ioMatch) return ioMatch[1];
+  const hqMatch = id.match(/^(.*)::hq::/);
+  if (hqMatch) return hqMatch[1];
   const reversedMatch = id.match(/^(.*)::reversed::/);
   if (reversedMatch) return reversedMatch[1];
   if (card.groupKey) return card.groupKey;

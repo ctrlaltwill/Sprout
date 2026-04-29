@@ -802,6 +802,28 @@ describe("siblingMode", () => {
       expect(session.queue.length).toBe(1);
     });
 
+    it("buries hotspot-child siblings from the same parent", () => {
+      const children = [
+        card("H1::hq::1", "hq-child"),
+        card("H1::hq::2", "hq-child"),
+      ];
+      const states: Record<string, CardState> = {
+        "H1::hq::1": state("H1::hq::1", "review", NOW - 2000),
+        "H1::hq::2": state("H1::hq::2", "review", NOW - 1000),
+      };
+
+      const plugin = makePlugin(
+        children,
+        states,
+        [],
+        { study: { siblingMode: "bury" } },
+      );
+      const session = buildSession(plugin, vaultScope);
+
+      expect(session.queue.length).toBe(1);
+      expect(session.queue[0].id).toBe("H1::hq::1");
+    });
+
     it("is stable across repeated buildSession calls", () => {
       const fam = clozeFamily("P1", 3);
       const states: Record<string, CardState> = {};

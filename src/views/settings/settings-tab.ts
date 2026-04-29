@@ -1670,8 +1670,103 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         });
       });
 
+    new Setting(wrapper).setName(this._tx("ui.settings.sections.hotspot", "Hotspot")).setHeading();
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.cards.hotspot.singleInteraction.name", "Hotspot interaction mode"))
+      .setDesc(this._tx("ui.settings.cards.hotspot.singleInteraction.desc", "Choose how hotspot cards are studied: individually, all together, or smart auto mode."))
+      .then((s) => {
+        const rawMode = String(this.plugin.settings.cards?.hotspotSingleInteractionMode || "smart").trim().toLowerCase();
+        const normalizedMode = rawMode === "click"
+          ? "individual"
+          : rawMode === "drag-drop"
+            ? "all"
+            : rawMode === "individual" || rawMode === "all" || rawMode === "smart"
+              ? rawMode
+              : "smart";
+
+        this._addSimpleSelect(s.controlEl, {
+          options: [
+            {
+              value: "individual",
+              label: this._tx("ui.settings.cards.hotspot.singleInteraction.option.individual", "Individual hotspots"),
+            },
+            {
+              value: "all",
+              label: this._tx("ui.settings.cards.hotspot.singleInteraction.option.all", "All hotspots"),
+            },
+            {
+              value: "smart",
+              label: this._tx("ui.settings.cards.hotspot.singleInteraction.option.smart", "Smart (automatic)"),
+            },
+          ],
+          value: normalizedMode,
+          onChange: (val) => {
+            void (async () => {
+              if (val === "individual" || val === "all" || val === "smart") {
+                this.plugin.settings.cards.hotspotSingleInteractionMode = val;
+                await this.plugin.saveAll();
+                this.refreshReviewerViewsIfPossible();
+                this.queueSettingsNotice(
+                  "cards.hotspotSingleInteractionMode",
+                  this._tx("ui.settings.cards.hotspot.singleInteraction.notice", "Hotspot interaction mode: {mode}", {
+                    mode: val === "individual"
+                      ? this._tx("ui.settings.cards.hotspot.singleInteraction.option.individual", "Individual hotspots")
+                      : val === "all"
+                        ? this._tx("ui.settings.cards.hotspot.singleInteraction.option.all", "All hotspots")
+                        : this._tx("ui.settings.cards.hotspot.singleInteraction.option.smart", "Smart (automatic)"),
+                  }),
+                );
+              }
+            })();
+          },
+        });
+      });
+
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.cards.hotspot.dropHint.name", "Show drop location hint"))
+      .setDesc(this._tx("ui.settings.cards.hotspot.dropHint.desc", "For multiple-hotspot drag-and-drop cards, show the target drop location after answering."))
+      .addToggle((t) => {
+        const cur = this.plugin.settings.cards?.hotspotShowDropLocationHint ?? true;
+        t.setValue(cur);
+        t.onChange(async (v) => {
+          const prev = this.plugin.settings.cards?.hotspotShowDropLocationHint ?? true;
+          this.plugin.settings.cards.hotspotShowDropLocationHint = v;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+          if (prev !== v) {
+            this.queueSettingsNotice(
+              "cards.hotspotShowDropLocationHint",
+              this._tx("ui.settings.cards.hotspot.dropHint.notice", "Hotspot drop location hint: {state}", {
+                state: v ? this._tx("ui.common.on", "On") : this._tx("ui.common.off", "Off"),
+              }),
+            );
+          }
+        });
+      });
+
     // Multiple choice section
     new Setting(wrapper).setName(this._tx("ui.settings.sections.multipleChoice", "Multiple choice")).setHeading();
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.cards.multipleChoice.autoGrade.name", "Auto-grade"))
+      .setDesc(this._tx("ui.settings.cards.multipleChoice.autoGrade.desc", "When enabled, multiple-choice cards are graded as soon as you answer. Turn off to reveal the back first and grade manually."))
+      .addToggle((t) => {
+        const cur = this.plugin.settings.cards?.multipleChoiceAutoGrade ?? true;
+        t.setValue(cur);
+        t.onChange(async (v) => {
+          const prev = this.plugin.settings.cards?.multipleChoiceAutoGrade ?? true;
+          this.plugin.settings.cards.multipleChoiceAutoGrade = v;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+          if (prev !== v) {
+            this.queueSettingsNotice(
+              "cards.multipleChoiceAutoGrade",
+              this._tx("ui.settings.cards.multipleChoice.autoGrade.notice", "Multiple choice auto-grade: {state}", {
+                state: v ? this._tx("ui.common.on", "On") : this._tx("ui.common.off", "Off"),
+              }),
+            );
+          }
+        });
+      });
     new Setting(wrapper)
       .setName(this._tx("ui.settings.cards.multipleChoice.shuffle.name", "Shuffle order"))
       .setDesc(this._tx("ui.settings.cards.multipleChoice.shuffle.desc", "Shuffle answer order in multiple-choice and multi-select questions."))
@@ -1693,6 +1788,27 @@ export class LearnKitSettingsTab extends PluginSettingTab {
 
     // Ordered questions section
     new Setting(wrapper).setName(this._tx("ui.settings.sections.orderedQuestions", "Ordered questions")).setHeading();
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.cards.orderedQuestions.autoGrade.name", "Auto-grade"))
+      .setDesc(this._tx("ui.settings.cards.orderedQuestions.autoGrade.desc", "When enabled, ordered questions are graded as soon as you submit the order. Turn off to reveal the back first and grade manually."))
+      .addToggle((t) => {
+        const cur = this.plugin.settings.cards?.orderedQuestionsAutoGrade ?? true;
+        t.setValue(cur);
+        t.onChange(async (v) => {
+          const prev = this.plugin.settings.cards?.orderedQuestionsAutoGrade ?? true;
+          this.plugin.settings.cards.orderedQuestionsAutoGrade = v;
+          await this.plugin.saveAll();
+          this.refreshReviewerViewsIfPossible();
+          if (prev !== v) {
+            this.queueSettingsNotice(
+              "cards.orderedQuestionsAutoGrade",
+              this._tx("ui.settings.cards.orderedQuestions.autoGrade.notice", "Ordered question auto-grade: {state}", {
+                state: v ? this._tx("ui.common.on", "On") : this._tx("ui.common.off", "Off"),
+              }),
+            );
+          }
+        });
+      });
     new Setting(wrapper)
       .setName(this._tx("ui.settings.cards.orderedQuestions.shuffle.name", "Shuffle order"))
       .setDesc(this._tx("ui.settings.cards.orderedQuestions.shuffle.desc", "Shuffle step order each time the question appears."))
@@ -4528,6 +4644,169 @@ export class LearnKitSettingsTab extends PluginSettingTab {
         });
 
         // Commit on blur (typed value), no per-letter saves
+        inputEl.addEventListener("blur", () => {
+          window.setTimeout(() => {
+            if (suppressBlurCommit) {
+              suppressBlurCommit = false;
+              return;
+            }
+            void commit(inputEl.value || "", false);
+          }, 120);
+        });
+      });
+
+    new Setting(wrapper)
+      .setName(this._tx("ui.settings.storage.hotspotFolder.name", "Hotspot folder"))
+      .setDesc(this._tx("ui.settings.storage.hotspotFolder.desc", "Folder where hotspot images are saved."))
+      .addText((t) => {
+        const allFolders = listVaultFolders(this.app);
+
+        const cur =
+          this.plugin.settings.storage.hotspotFolderPath
+          ?? this.plugin.settings.storage.imageOcclusionFolderPath
+          ?? "Attachments/Image Occlusion/";
+        t.setPlaceholder(this._tx("ui.settings.storage.hotspotFolder.placeholder", "Attachments/hotspots/"));
+        t.setValue(String(cur));
+
+        const inputEl = t.inputEl;
+
+        const suggestWrap = inputEl.parentElement?.createDiv({ cls: "learnkit-folder-suggest learnkit-folder-suggest" }) ?? null;
+
+        let listEl: HTMLDivElement | null = null;
+
+        let activeIdx = -1;
+        let lastCommitted = normaliseFolderPath(String(cur));
+        let suppressBlurCommit = false;
+
+        const ensureListEl = () => {
+          if (!suggestWrap) return null;
+          if (!listEl) {
+            listEl = suggestWrap.createDiv({ cls: "learnkit-folder-suggest-list learnkit-folder-suggest-list" });
+          }
+          return listEl;
+        };
+
+        const hideList = () => {
+          if (!listEl) return;
+          listEl.remove();
+          listEl = null;
+          activeIdx = -1;
+        };
+
+        const commit = async (rawValue: string, fromPick: boolean) => {
+          const prev = String(
+            this.plugin.settings.storage.hotspotFolderPath
+            ?? this.plugin.settings.storage.imageOcclusionFolderPath
+            ?? "",
+          );
+          const next = normaliseFolderPath(
+            rawValue
+            || this.plugin.settings.storage.imageOcclusionFolderPath
+            || "Attachments/Image Occlusion/",
+          );
+
+          inputEl.value = next;
+
+          if (next === lastCommitted && next === normaliseFolderPath(prev)) {
+            hideList();
+            return;
+          }
+
+          this.plugin.settings.storage.hotspotFolderPath = next;
+
+          await this.plugin.saveAll();
+
+          lastCommitted = next;
+          hideList();
+
+          if (prev !== next) {
+            this.queueSettingsNotice(
+              "hq.attachmentFolderPath",
+              this._noticeLines.hotspotAttachmentFolder(next),
+              fromPick ? 0 : 150,
+            );
+          }
+        };
+
+        const renderList = (items: string[]) => {
+          if (!items.length) {
+            hideList();
+            return;
+          }
+
+          const el = ensureListEl();
+          if (!el) return;
+
+          el.empty();
+          activeIdx = -1;
+
+          for (let i = 0; i < items.length; i++) {
+            const p = items[i];
+
+            const btn = el.createEl("button", { cls: "learnkit-folder-suggest-item learnkit-folder-suggest-item", text: p });
+            btn.type = "button";
+
+            btn.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              suppressBlurCommit = true;
+              void commit(p, true);
+            });
+          }
+        };
+
+        const updateSuggestions = () => {
+          const raw = inputEl.value || "";
+          const matches = fuzzyFolderMatches(allFolders, raw, 12);
+          renderList(matches);
+        };
+
+        inputEl.addEventListener("input", () => {
+          updateSuggestions();
+        });
+
+        inputEl.addEventListener("focus", () => {
+          updateSuggestions();
+        });
+
+        inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
+          if (!listEl) return;
+
+          const items = Array.from(listEl.querySelectorAll<HTMLButtonElement>(".learnkit-folder-suggest-item"));
+          if (!items.length) return;
+
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            activeIdx = Math.min(items.length - 1, activeIdx + 1);
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            activeIdx = Math.max(0, activeIdx - 1);
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+
+            if (activeIdx >= 0 && activeIdx < items.length) {
+              const picked = items[activeIdx].textContent || "";
+              suppressBlurCommit = true;
+              void commit(picked, true);
+              return;
+            }
+
+            suppressBlurCommit = true;
+            void commit(inputEl.value || "", false);
+            return;
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            hideList();
+            return;
+          } else {
+            return;
+          }
+
+          items.forEach((b, i) => b.classList.toggle("is-active", i === activeIdx));
+          const active = items[activeIdx];
+          active?.scrollIntoView?.({ block: "nearest" });
+        });
+
         inputEl.addEventListener("blur", () => {
           window.setTimeout(() => {
             if (suppressBlurCommit) {

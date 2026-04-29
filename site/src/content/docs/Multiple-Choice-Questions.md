@@ -74,6 +74,12 @@ Option order can be randomized in:
 
 When enabled, LearnKit keeps one shuffled order for that card during the current session so the answers do not keep moving mid-review.
 
+## Demo
+
+![Multiple choice demo](../../../branding/Demo/Multiple%20Choice.png)
+
+_Multiple choice review with selectable options._
+
 ## Good MCQ design
 
 - make wrong options plausible
@@ -83,4 +89,6 @@ When enabled, LearnKit keeps one shuffled order for that card during the current
 
 If order matters more than selection, use [Ordered Questions](../Ordered-Questions) instead.
 
-Last modified: 30/03/2026
+If location on an image matters more than option selection, use [Hotspot Cards](../Hotspot-Cards).
+
+Last modified: 28/04/2026

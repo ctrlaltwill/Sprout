@@ -266,6 +266,21 @@ export type LearnKitSettings = {
     clozeBgColor: string;
     /** Custom text colour for revealed cloze pills (standard mode only). */
     clozeTextColor: string;
+    /** Grade MCQs immediately after answer selection/submission. */
+    multipleChoiceAutoGrade: boolean;
+    /** Grade ordered questions immediately after submitting the user order. */
+    orderedQuestionsAutoGrade: boolean;
+    /**
+     * Hotspot study style preference.
+     * - individual: always study one hotspot at a time (click)
+     * - all: always study all hotspots together (drag-drop)
+     * - smart: click for single-target cards, drag-drop for multi-target cards
+     *
+     * Legacy values ("click" | "drag-drop") are tolerated for backward compatibility.
+     */
+    hotspotSingleInteractionMode: "individual" | "all" | "smart" | "click" | "drag-drop";
+    /** Show the target drop location hint for multi-hotspot drag-drop cards. */
+    hotspotShowDropLocationHint: boolean;
   };
 
   // Image Occlusion — mask appearance and behavior
@@ -493,6 +508,8 @@ export type LearnKitSettings = {
   storage: {
     /** Vault-relative folder path for IO mask images. */
     imageOcclusionFolderPath: string;
+    /** Vault-relative folder path for hotspot images. Falls back to the IO folder when unset. */
+    hotspotFolderPath: string;
     /** Delete orphaned mask images when their IO cards are removed. */
     deleteOrphanedImages: boolean;
     /** Vault-relative folder path for images pasted into Q/A/Info fields. */

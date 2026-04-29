@@ -224,7 +224,26 @@ export function buildIoMarkdownWithAnchor(params: {
   if (params.title?.trim()) out.push(...formatPipeField("T", params.title.trim()));
   if (params.groups?.trim()) out.push(...formatPipeField("G", params.groups.trim()));
   out.push(...formatPipeField("IO", params.ioEmbed));
-  // O (occlusions) and C (maskMode) are stored in store.io only, not in markdown
+  if (params.info?.trim()) out.push(...formatPipeField("I", params.info.trim()));
+  out.push("");
+  return out;
+}
+
+export function buildHqMarkdownWithAnchor(params: {
+  id: string;
+  title?: string;
+  groups?: string;
+  hqEmbed: string;
+  hqRegionsJson?: string | null;
+  interactionMode?: "click" | "drag-drop" | null;
+  prompt?: string;
+  info?: string;
+}): string[] {
+  const out: string[] = [];
+  if (params.title?.trim()) out.push(...formatPipeField("T", params.title.trim()));
+  if (params.groups?.trim()) out.push(...formatPipeField("G", params.groups.trim()));
+  out.push(...formatPipeField("HQ", params.hqEmbed));
+  if (params.prompt?.trim()) out.push(...formatPipeField("Q", params.prompt.trim()));
   if (params.info?.trim()) out.push(...formatPipeField("I", params.info.trim()));
   out.push("");
   return out;

@@ -41,6 +41,9 @@ export interface ToolbarRefs {
   btnResetMasks: HTMLButtonElement;
   btnTransform: HTMLButtonElement;
   btnRectTool: HTMLButtonElement;
+  btnCircleTool: HTMLButtonElement;
+  btnCustomTool: HTMLButtonElement;
+  btnSmartMaskTool: HTMLButtonElement;
   btnCrop: HTMLButtonElement;
   btnRotateLeft: HTMLButtonElement;
   btnRotateRight: HTMLButtonElement;
@@ -52,7 +55,7 @@ export interface ToolbarCallbacks {
   onRedo(): void;
   onAutoMask(): void;
   onResetMasks(): void;
-  onSetTool(tool: "occlusion-rect" | "occlusion-circle" | "transform" | "text" | "crop"): void;
+  onSetTool(tool: "occlusion-rect" | "occlusion-circle" | "occlusion-freehand" | "occlusion-smart-lasso" | "transform" | "text" | "crop"): void;
   onRotate(dir: "cw" | "ccw"): void;
 }
 
@@ -130,27 +133,43 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
 
   createSep();
 
-  // Rectangle, auto-detect
+  // Drawing tools + auto-detect
   const btnRectTool = createIconBtn(
     toolbarGroup,
     "square",
-    "Add Mask",
+    "Add Rectangle Mask",
     () => cb.onSetTool("occlusion-rect"),
-    { label: "Add Mask" },
+  );
+  const btnCircleTool = createIconBtn(
+    toolbarGroup,
+    "circle",
+    "Add Oval Mask",
+    () => cb.onSetTool("occlusion-circle"),
+  );
+  const btnCustomTool = createIconBtn(
+    toolbarGroup,
+    "pencil",
+    "Add Freeform Mask",
+    () => cb.onSetTool("occlusion-freehand"),
+  );
+  const btnSmartMaskTool = createIconBtn(
+    toolbarGroup,
+    "lasso",
+    "Add Smart Mask",
+    () => cb.onSetTool("occlusion-smart-lasso"),
   );
   const btnAutoMask = createIconBtn(
     toolbarGroup,
     "wand-sparkles",
     findShortcut ? `Auto-Mask (${findShortcut})` : "Auto-Mask",
     () => cb.onAutoMask(),
-    { label: "Auto-Mask" },
   );
   const btnResetMasks = createIconBtn(
     toolbarGroup,
-    "eraser",
-    "Reset Masks",
+    "trash-2",
+    "Clear All Masks",
     () => cb.onResetMasks(),
-    { label: "Reset Masks", disabled: true },
+    { disabled: true },
   );
 
   fileInput.addEventListener("change", (e) => {
@@ -168,6 +187,9 @@ export function buildToolbar(parent: HTMLElement, cb: ToolbarCallbacks): Toolbar
     btnResetMasks,
     btnTransform,
     btnRectTool,
+    btnCircleTool,
+    btnCustomTool,
+    btnSmartMaskTool,
     btnCrop,
     btnRotateLeft,
     btnRotateRight,

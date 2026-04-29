@@ -96,13 +96,16 @@ export function registerEditorContextMenu(params: {
             subItem.setTitle(tx("ui.main.menu.cloze", "Cloze")).setIcon("file-minus").onClick(() => openAddFlashcardModal("cloze"));
           });
           submenu.addItem((subItem: MenuItem) => {
+            subItem.setTitle(tx("ui.main.menu.hotspot", "Hotspot")).setIcon("map-pin").onClick(() => openAddFlashcardModal("hq"));
+          });
+          submenu.addItem((subItem: MenuItem) => {
+            subItem.setTitle(tx("ui.main.menu.imageOcclusion", "Image occlusion")).setIcon("image").onClick(() => openAddFlashcardModal("io"));
+          });
+          submenu.addItem((subItem: MenuItem) => {
             subItem.setTitle(tx("ui.main.menu.multipleChoice", "Multiple choice")).setIcon("list").onClick(() => openAddFlashcardModal("mcq"));
           });
           submenu.addItem((subItem: MenuItem) => {
             subItem.setTitle(tx("ui.main.menu.orderedQuestion", "Ordered question")).setIcon("list-ordered").onClick(() => openAddFlashcardModal("oq"));
-          });
-          submenu.addItem((subItem: MenuItem) => {
-            subItem.setTitle(tx("ui.main.menu.imageOcclusion", "Image occlusion")).setIcon("image").onClick(() => openAddFlashcardModal("io"));
           });
         }
 

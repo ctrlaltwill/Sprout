@@ -289,6 +289,7 @@
 .learnkit .learnkit-io-image-inline {
   max-height: 350px;
   cursor: zoom-in;
+  margin-top: 1rem;
 }
 
 .learnkit .learnkit-io-image-widget {
@@ -305,6 +306,12 @@
   cursor: zoom-out;
 }
 
+.learnkit .learnkit-io-no-zoom,
+.learnkit .learnkit-io-no-zoom img,
+.learnkit .learnkit-io-image.learnkit-io-no-zoom {
+  cursor: default !important;
+}
+
 .learnkit .learnkit-io-overlay {
   position: absolute;
   left: var(--learnkit-io-left, 0);
@@ -317,6 +324,193 @@
   overflow: hidden;
   pointer-events: none;
   z-index: 2;
+}
+
+.learnkit .learnkit-hq-review-overlay {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.learnkit .learnkit-hq-review-pill {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 4;
+  pointer-events: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  backdrop-filter: blur(8px);
+}
+
+.learnkit .learnkit-hotspot-prompt-target {
+  font-weight: 600;
+}
+
+.learnkit .learnkit-hq-drop-tray {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.learnkit .learnkit-hq-drop-button {
+  color: var(--theme-base-95);
+  background-color: var(--theme-base-30);
+  cursor: grab;
+  border-radius: 3px;
+  border: 1px solid var(--theme-base-80);
+  padding: 4px 8px;
+  font-size: 0.67rem;
+  min-height: 0px !important;
+  font-weight: 600;
+}
+
+.learnkit .learnkit-hq-drop-button.is-dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+
+.learnkit .learnkit-hq-drop-button.is-placed,
+.learnkit .learnkit-hq-drop-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-style: solid;
+}
+
+.learnkit .learnkit-hq-drop-preview,
+.learnkit .learnkit-hq-attempt-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.learnkit .learnkit-hq-drop-preview {
+  display: none;
+  max-width: min(48vw, 180px);
+  padding: 4px 8px;
+  border-radius: 3px;
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--theme-base-80) 78%, transparent);
+  background: color-mix(in srgb, var(--theme-base-30) 68%, transparent);
+  font-size: 0.67rem;
+  line-height: 1.25;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.78;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+}
+
+.learnkit .learnkit-hq-drop-preview.is-visible {
+  display: block;
+}
+
+.learnkit .learnkit-hq-drop-preview.is-floating {
+  position: fixed;
+  z-index: 10010;
+}
+
+.learnkit .learnkit-hq-attempt-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.28);
+}
+
+.learnkit .learnkit-hq-attempt-marker.is-correct {
+  background: rgba(34, 197, 94, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+}
+
+.learnkit .learnkit-hq-attempt-marker.is-incorrect {
+  background: rgba(239, 68, 68, 0.92);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+}
+
+.learnkit .learnkit-hq-attempt-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
+  max-width: min(48vw, 180px);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 0.67rem;
+  line-height: 1.25;
+  font-weight: 600;
+  min-height: 0px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+}
+
+.learnkit .learnkit-hq-attempt-label.is-correct {
+  color: color-mix(in srgb, var(--learnkit-good-bg, rgb(34, 197, 94)) 72%, var(--foreground, #fff));
+  border: 1px solid color-mix(in srgb, var(--learnkit-good-bg, rgb(34, 197, 94)) 45%, transparent);
+  background: color-mix(in srgb, var(--learnkit-good-bg, rgb(34, 197, 94)) 16%, var(--background, #0f172a));
+}
+
+.learnkit .learnkit-hq-attempt-label.is-incorrect {
+  color: color-mix(in srgb, var(--destructive, rgb(239, 68, 68)) 72%, var(--foreground, #fff));
+  border: 1px solid color-mix(in srgb, var(--destructive, rgb(239, 68, 68)) 45%, transparent);
+  background: color-mix(in srgb, var(--destructive, rgb(239, 68, 68)) 16%, var(--background, #0f172a));
+}
+
+.learnkit .learnkit-hq-attempt-label.is-pending {
+  color: #fff;
+  border: 1px solid var(--theme-base-95);
+  background: var(--theme-base-90);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 0.67rem;
+  min-height: 0px !important;
+  font-weight: 600;
+  pointer-events: auto;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.learnkit .learnkit-hq-attempt-label.is-pending.is-dragging {
+  cursor: grabbing;
+  opacity: 0.62;
+  z-index: 10009;
+}
+
+.learnkit .learnkit-hq-remove-chip {
+  position: absolute;
+  display: none;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1px solid rgba(239, 68, 68, 0.95);
+  background: rgba(254, 242, 242, 0.98);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  z-index: 6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+}
+
+.learnkit .learnkit-hq-remove-chip.is-visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .learnkit .learnkit-io-mask {
@@ -337,6 +531,11 @@
   justify-content: center;
 }
 
+.learnkit .learnkit-io-mask-hotspot-outline {
+  background: transparent;
+  border: 2px dashed var(--theme-accent, var(--interactive-accent));
+}
+
 .learnkit .learnkit-io-mask-other {
   background: var(--color-base-20);
   border: 0.5px solid var(--color-base-30);
@@ -353,6 +552,86 @@
 
 .learnkit .learnkit-io-mask-rect {
   border-radius: 3px;
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke {
+  position: absolute;
+  left: var(--learnkit-io-x, 0);
+  top: var(--learnkit-io-y, 0);
+  width: var(--learnkit-io-w, 0);
+  height: var(--learnkit-io-h, 0);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.learnkit .learnkit-io-mask-circle-stroke {
+  position: absolute;
+  left: var(--learnkit-io-x, 0);
+  top: var(--learnkit-io-y, 0);
+  width: var(--learnkit-io-w, 0);
+  height: var(--learnkit-io-h, 0);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.learnkit .learnkit-io-mask-rect-stroke {
+  position: absolute;
+  left: var(--learnkit-io-x, 0);
+  top: var(--learnkit-io-y, 0);
+  width: var(--learnkit-io-w, 0);
+  height: var(--learnkit-io-h, 0);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.learnkit .learnkit-io-mask-shape-hit {
+  pointer-events: auto;
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke polygon {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
+.learnkit .learnkit-io-mask-circle-stroke ellipse {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
+.learnkit .learnkit-io-mask-rect-stroke rect {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke.is-target polygon {
+  stroke: var(--color-base-100);
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke.is-other polygon {
+  stroke: var(--color-base-30);
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke.is-hq-correct polygon {
+  stroke: rgba(34, 197, 94, 0.92);
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke.is-hq-incorrect polygon {
+  stroke: rgba(239, 68, 68, 0.94);
+}
+
+.learnkit .learnkit-io-mask-polygon-stroke.is-hint polygon {
+  fill: transparent;
+  stroke: var(--theme-accent, var(--interactive-accent));
+  stroke-dasharray: 6 4;
 }
 
 .learnkit .learnkit-io-mask-hint {

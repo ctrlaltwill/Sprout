@@ -349,6 +349,50 @@ Q | Label the parts |`
   });
 });
 
+describe("HQ cards", () => {
+  it("parses a basic HQ card with image embed", () => {
+    const card = parseOne(`HQ | ![[diagram.png]] |`);
+
+    expect(card.type).toBe("hq");
+    expect(card.hqSrc).toContain("![[diagram.png]]");
+    expect(card.errors).toHaveLength(0);
+  });
+
+  it("parses HQ regions and interaction mode", () => {
+    const card = parseOne(
+      `HQ | ![[diagram.png]] |
+Q | Click on the ulna |
+O | [{"rectId":"r1","x":0.2,"y":0.1,"w":0.15,"h":0.25,"groupKey":"Ulna","shape":"rect"}] |
+M | click |`
+    );
+
+    expect(card.type).toBe("hq");
+    expect(card.prompt).toBe("Click on the ulna");
+    expect(card.interactionMode).toBe("click");
+    expect(card.hqRegions).toEqual([
+      {
+        rectId: "r1",
+        x: 0.2,
+        y: 0.1,
+        w: 0.15,
+        h: 0.25,
+        groupKey: "Ulna",
+        shape: "rect",
+      },
+    ]);
+    expect(card.errors).toHaveLength(0);
+  });
+
+  it("errors when HQ interaction mode is invalid", () => {
+    const card = parseOne(
+      `HQ | ![[diagram.png]] |
+M | tap |`
+    );
+
+    expect(card.errors).toContain('HQ interaction mode must be "click" or "drag-drop".');
+  });
+});
+
 // ── Multiple cards in one block ─────────────────────────────────────────────
 
 describe("multiple cards", () => {

@@ -113,6 +113,7 @@ export function createSettingsNoticeLines(tx: Tx) {
     relearningSteps: (value: number[]) => tx("ui.settings.notice.relearningSteps", "Relearning steps: {value}", { value: fmtSettingValue(value) }),
     requestRetention: (value: number) => tx("ui.settings.notice.requestRetention", "Requested retention: {value}", { value: fmtSettingValue(value) }),
     ioAttachmentFolder: (value: string) => tx("ui.settings.notice.ioAttachmentFolder", "IO attachment folder: {value}", { value: fmtSettingValue(value) }),
+    hotspotAttachmentFolder: (value: string) => tx("ui.settings.notice.hotspotAttachmentFolder", "Hotspot attachment folder: {value}", { value: fmtSettingValue(value) }),
     deleteOrphanedImages: (enabled: boolean) => tx("ui.settings.notice.deleteOrphanedImages", "Delete orphaned images: {state}", {
       state: enabled ? tx("ui.common.on", "On") : tx("ui.common.off", "Off"),
     }),

@@ -2,9 +2,6 @@
 title: "Cloze Flashcards"
 ---
 
-
-Last modified: 24/04/2026
-
 ## Purpose
 
 Cloze flashcards hide words inside a sentence so you recall missing parts in context.
@@ -57,6 +54,20 @@ CQ | The {{c1::heart}} pumps {{c1::blood}} through the body |
 3. Mark text as new cloze or same-number cloze.
 4. Save.
 
+## Demo
+
+![Typed cloze in-progress demo](../../../branding/Demo/Typed%20Cloze%20-%20In%20Progress.png)
+
+_Cloze authoring/review in progress._
+
+![Blank cloze front demo](../../../branding/Demo/Blank%20Cloze%20-%20Front.png)
+
+_Question side with cloze hidden._
+
+![Blank cloze back demo](../../../branding/Demo/Blank%20Cloze%20-%20Back.png)
+
+_Answer side after reveal._
+
 ## Grading
 
 Cloze flashcards use the same manual grading flow as other flashcards.
@@ -73,3 +84,8 @@ See [Grading](../Grading).
 
 - [Creating Flashcards](../Creating-Flashcards)
 - [Reading View](../Reading-View)
+- [Hotspot Cards](../Hotspot-Cards)
+
+---
+
+Last modified: 28/04/2026

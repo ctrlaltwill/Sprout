@@ -56,6 +56,12 @@ The shuffle behavior is controlled in:
 
 If you turn it off, the card will keep the authored order when it appears.
 
+## Demo
+
+![Ordered question demo](../../../branding/Demo/Ordered%20Question.png)
+
+_Ordered-question review with draggable steps._
+
 ## Good ordered-question design
 
 - use this only when order genuinely matters
@@ -65,4 +71,6 @@ If you turn it off, the card will keep the authored order when it appears.
 
 If selection matters more than sequence, use [Multiple Choice Questions](../Multiple-Choice-Questions) instead.
 
-Last modified: 30/03/2026
+If spatial placement matters more than sequence, use [Hotspot Cards](../Hotspot-Cards).
+
+Last modified: 28/04/2026

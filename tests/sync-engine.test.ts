@@ -182,6 +182,59 @@ describe("sync engine", () => {
     expect(content).not.toContain("IO | ![[Attachments/Image Occlusion/example.png|200]] |\n^learnkit-100000000");
   });
 
+  it("syncs an HQ card into parent, child, and hq store data", async () => {
+    const vault = new MemoryVault();
+    await vault.create("Assets/diagram.png", "binary");
+    const file = await vault.create(
+      "Notes/Hq.md",
+      [
+        "HQ | ![[diagram.png]] |",
+        "Q | Click on the ulna |",
+        "O | [{\"rectId\":\"r1\",\"x\":0.2,\"y\":0.1,\"w\":0.15,\"h\":0.25,\"groupKey\":\"Ulna\",\"shape\":\"rect\"}] |",
+        "M | click |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+    setCryptoSequence([0]);
+
+    const res = await syncOneFile(plugin, file);
+
+    expect(res.idsInserted).toBe(1);
+    const parent = plugin.store.data.cards["100000000"];
+    expect(parent).toBeDefined();
+    expect(parent.type).toBe("hq");
+    expect(parent.imageRef).toBe("diagram.png");
+    expect(parent.interactionMode).toBe("click");
+
+    const child = plugin.store.data.cards["100000000::hq::Ulna"];
+    expect(child).toBeDefined();
+    expect(child.type).toBe("hq-child");
+    expect(child.parentId).toBe("100000000");
+    expect(child.groupKey).toBe("Ulna");
+    expect(child.prompt).toBe("Click on Ulna.");
+    expect(child.rectIds).toEqual(["r1"]);
+    expect(plugin.store.data.states["100000000::hq::Ulna"]).toBeDefined();
+
+    expect(plugin.store.data.hq["100000000"]).toEqual({
+      imageRef: "diagram.png",
+      interactionMode: "click",
+      prompt: "Click on the ulna",
+      rects: [
+        {
+          rectId: "r1",
+          x: 0.2,
+          y: 0.1,
+          w: 0.15,
+          h: 0.25,
+          groupKey: "Ulna",
+          label: "Ulna",
+          shape: "rect",
+          points: undefined,
+        },
+      ],
+    });
+  });
+
   it("creates scheduling state for new cards", async () => {
     const vault = new MemoryVault();
     const file = await vault.create("Notes/Test.md", "Q | Q? |\nA | A! |");
