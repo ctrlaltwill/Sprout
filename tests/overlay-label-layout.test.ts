@@ -21,6 +21,25 @@ function mockRect(element: Element, rect: { width: number; height: number }) {
   });
 }
 
+function mockLayoutSize(element: HTMLElement, size: { width: number; height: number }) {
+  Object.defineProperty(element, "clientWidth", {
+    configurable: true,
+    value: size.width,
+  });
+  Object.defineProperty(element, "clientHeight", {
+    configurable: true,
+    value: size.height,
+  });
+  Object.defineProperty(element, "offsetWidth", {
+    configurable: true,
+    value: size.width,
+  });
+  Object.defineProperty(element, "offsetHeight", {
+    configurable: true,
+    value: size.height,
+  });
+}
+
 describe("overlay label layout", () => {
   it("separates overlapping anchored labels inside an overlay", () => {
     const overlay = document.createElement("div");
@@ -129,5 +148,42 @@ describe("overlay label layout", () => {
     const topPx = (Number.parseFloat(nearLeft.style.top) / 100) * 100;
     expect(leftPx - 30).toBeGreaterThanOrEqual(2 - 0.01);
     expect(topPx - 10).toBeGreaterThanOrEqual(2 - 0.01);
+  });
+
+  it("uses layout width when transformed rect width is tiny", () => {
+    const overlay = document.createElement("div");
+    const first = document.createElement("span");
+    const second = document.createElement("span");
+
+    first.className = "label";
+    second.className = "label";
+    first.dataset.labelAnchorX = "0.35";
+    first.dataset.labelAnchorY = "0.5";
+    second.dataset.labelAnchorX = "0.65";
+    second.dataset.labelAnchorY = "0.5";
+    first.style.left = "35%";
+    first.style.top = "50%";
+    second.style.left = "65%";
+    second.style.top = "50%";
+    overlay.append(first, second);
+
+    mockLayoutSize(overlay, { width: 240, height: 120 });
+    mockRect(overlay, { width: 2, height: 120 });
+    mockLayoutSize(first, { width: 80, height: 20 });
+    mockLayoutSize(second, { width: 80, height: 20 });
+    mockRect(first, { width: 80, height: 20 });
+    mockRect(second, { width: 80, height: 20 });
+
+    resolveAnchoredLabelCollisions(overlay, {
+      selector: ".label",
+      anchorXDataKey: "labelAnchorX",
+      anchorYDataKey: "labelAnchorY",
+      maxShiftPx: 28,
+      maxIterations: 10,
+    });
+
+    // Mid-flip transformed width can be tiny; layout width should still keep anchors apart.
+    expect(Number.parseFloat(first.style.left)).toBeLessThan(50);
+    expect(Number.parseFloat(second.style.left)).toBeGreaterThan(50);
   });
 });

@@ -381,6 +381,19 @@ function buildHotspotQuestionPrompt(card: CardRecord): string {
   return promptLabel ? `Click on ${promptLabel}.` : "Click on image to reveal the answer.";
 }
 
+function getHotspotPromptLabelFromCard(card: CardRecord): string {
+  const promptLabelValue = (card as unknown as { hotspotPromptLabel?: unknown })?.hotspotPromptLabel;
+  let promptLabel: string;
+  if (typeof promptLabelValue === "string") {
+    promptLabel = promptLabelValue;
+  } else if (typeof promptLabelValue === "number" || typeof promptLabelValue === "boolean") {
+    promptLabel = String(promptLabelValue);
+  } else {
+    promptLabel = "";
+  }
+  return promptLabel.trim();
+}
+
 // --- MCQ option order --------------------------------------------------------
 
 function ensureMcqOrderMap(session: Session): Record<string, number[]> {
@@ -1391,17 +1404,27 @@ export function renderSessionMode(args: Args) {
     renderOqContent({ section, labelRow, renderMdBlock, setupLinkHandlers, args, card, graded, sourcePath });
   } else if (ioLike) {
     const reveal = !!graded || !!args.showAnswer;
+    const hotspotIndividualMode = hotspotCard && getHotspotInteractionModeFromCard(card) === "click";
+    const hotspotPromptLabel = hotspotIndividualMode ? getHotspotPromptLabelFromCard(card) : "";
 
     if (hotspotCard && !reveal) {
-      const hotspotMode = getHotspotInteractionModeFromCard(card);
-      const shouldShowPrompt = hotspotMode !== "drag-drop" || !isHotspotDragRevealReady(card, args);
-      if (shouldShowPrompt) {
-        const promptText = buildHotspotQuestionPrompt(card);
-        section.appendChild(labelRow("Question"));
-        section.appendChild(renderMdBlock("learnkit-q", convertInlineDisplayMath(promptText)));
+      section.appendChild(labelRow("Hotspot Question"));
+      if (hotspotPromptLabel) {
+        const hotspotPrompt = document.createElement("p");
+        hotspotPrompt.setAttribute("dir", "auto");
+        hotspotPrompt.className = "bc text-sm font-medium";
+        hotspotPrompt.textContent = hotspotPromptLabel;
+        section.appendChild(hotspotPrompt);
       }
     } else if (hotspotCard && reveal) {
-      section.appendChild(labelRow("Answer"));
+      section.appendChild(labelRow("Hotspot Answer"));
+      if (hotspotPromptLabel) {
+        const hotspotAnswer = document.createElement("p");
+        hotspotAnswer.setAttribute("dir", "auto");
+        hotspotAnswer.className = "bc text-sm font-medium";
+        hotspotAnswer.textContent = hotspotPromptLabel;
+        section.appendChild(hotspotAnswer);
+      }
     }
 
     const ioHost = document.createElement("div");
@@ -1416,6 +1439,7 @@ export function renderSessionMode(args: Args) {
       if (md.trim()) void args.renderMarkdownInto(ioHost, md, sourcePath).then(() => setupLinkHandlers(ioHost, sourcePath));
       else ioHost.appendChild(h("div", "text-muted-foreground text-sm", "IO card missing image source."));
     }
+
   }
 
   const infoText = extractInfoField(card);

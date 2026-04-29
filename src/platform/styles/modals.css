@@ -1687,6 +1687,19 @@ body.is-mobile .learnkit .learnkit-edit-modal {
   text-align: left;
 }
 
+/* Keep hotspot label input colors stable while typing in dark themes. */
+.theme-dark .learnkit .learnkit-io-group-input,
+.theme-dark .learnkit .learnkit-io-group-input:focus,
+.theme-dark .learnkit .learnkit-io-group-input:focus-visible,
+.theme-dark .learnkit .learnkit-io-group-input:active,
+.theme-dark .learnkit .learnkit-io-group-input:hover {
+  color: #000;
+  -webkit-text-fill-color: #000;
+  caret-color: #000;
+  background-color: #fffffff2;
+  border-color: #0000004d;
+}
+
 .learnkit .learnkit-io-mask-delete {
 z-index: 11;
     opacity: 0;

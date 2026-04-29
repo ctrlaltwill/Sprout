@@ -11,6 +11,18 @@ function readPercentStyle(value: string): number {
   return Number.isFinite(percent) ? clampUnit(percent / 100) : 0.5;
 }
 
+function readLayoutDimension(
+  element: HTMLElement,
+  axis: "width" | "height",
+  transformedRectValue: number,
+): number {
+  const client = axis === "width" ? element.clientWidth : element.clientHeight;
+  if (client > 0) return client;
+  const offset = axis === "width" ? element.offsetWidth : element.offsetHeight;
+  if (offset > 0) return offset;
+  return transformedRectValue;
+}
+
 export type AnchoredLabelCollisionOptions = {
   selector?: string;
   draggingClass?: string;
@@ -41,8 +53,8 @@ export function resolveAnchoredLabelCollisions(
   if (labels.length === 0) return;
 
   const overlayRect = overlay.getBoundingClientRect();
-  const overlayWidth = overlayRect.width;
-  const overlayHeight = overlayRect.height;
+  const overlayWidth = readLayoutDimension(overlay, "width", overlayRect.width);
+  const overlayHeight = readLayoutDimension(overlay, "height", overlayRect.height);
   if (overlayWidth <= 0 || overlayHeight <= 0) return;
 
   type LabelState = {
@@ -59,8 +71,8 @@ export function resolveAnchoredLabelCollisions(
 
   const states: LabelState[] = labels.map((label) => {
     const rect = label.getBoundingClientRect();
-    const width = Math.max(1, rect.width);
-    const height = Math.max(1, rect.height);
+    const width = Math.max(1, readLayoutDimension(label, "width", rect.width));
+    const height = Math.max(1, readLayoutDimension(label, "height", rect.height));
 
     const rawAnchorX = Number(label.dataset[anchorXDataKey]);
     const rawAnchorY = Number(label.dataset[anchorYDataKey]);

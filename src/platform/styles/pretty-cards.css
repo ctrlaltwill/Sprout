@@ -823,16 +823,16 @@ mjx-container[jax="CHTML"][display="true"] {
 /* ---- IO cards in reading view ---- */
 
 .learnkit-pretty-card .learnkit-io-reading-container {
-  position: relative;
-  display: inline-block;
   vertical-align: top;
+  border: 0.5px solid var(--color-base-35);
+  background: none;
   max-width: 100%;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: var(--learnkit-border-width) solid var(--learnkit-border-color);
-  background: var(--background-secondary);
+  border-radius: 8px !important;
   font-size: 0;
   line-height: 0;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
 }
 
 .learnkit-pretty-card .learnkit-io-reading-img {
@@ -861,6 +861,21 @@ mjx-container[jax="CHTML"][display="true"] {
   justify-content: center;
 }
 
+.learnkit-pretty-card .learnkit-io-reading-mask-stroke {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-stroke :is(rect, ellipse, polygon) {
+  stroke-width: 0.5;
+  stroke-dasharray: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
 .learnkit-pretty-card .learnkit-io-reading-mask-rect {
   border-radius: var(--radius-s);
 }
@@ -876,7 +891,7 @@ mjx-container[jax="CHTML"][display="true"] {
 
 .learnkit-pretty-card .learnkit-io-reading-mask-hotspot-answer {
   background: hsl(var(--accent-h), var(--accent-s), var(--accent-l), .22);
-  border: 1px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .9);
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), var(--accent-l), .9);
 }
 
 .learnkit-pretty-card.theme .learnkit-io-reading-mask-filled {
@@ -906,6 +921,10 @@ mjx-container[jax="CHTML"][display="true"] {
 .learnkit-pretty-card .learnkit-io-reading-mask-no-border.learnkit-io-reading-mask-filled {
   border: 0;
   filter: none;
+}
+
+.learnkit-pretty-card .learnkit-io-reading-mask-hotspot-answer.learnkit-io-reading-mask-no-border.learnkit-io-reading-mask-filled {
+  border: 0.5px solid hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 8%), 0.42);
 }
 
 .learnkit-pretty-card .learnkit-io-reading-mask-hint {

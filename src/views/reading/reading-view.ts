@@ -2470,7 +2470,8 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
       ? (card.fields.HQ ?? card.fields.IO)
       : card.fields.IO;
     addPlainField(questionLabel, toTextField(ioField));
-    addPlainField('Answer', toTextField(card.fields.A));
+    const answerLabel = card.type === 'hq' || card.type === 'hq-child' ? 'Hotspot Answer' : 'Answer';
+    addPlainField(answerLabel, toTextField(card.fields.A));
     addPlainField('Extra Information', toTextField(card.fields.I));
   } else {
     const question = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
@@ -3582,6 +3583,103 @@ function renderIoInReadingCard(
     maskEl.style.background = `hsl(var(--accent-h) var(--accent-s) ${lExpr} / ${alpha})`;
   };
 
+  const clampUnit = (value: number): number => Math.max(0, Math.min(1, value));
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const MASK_STROKE_VIEWBOX = '-1 -1 102 102';
+
+  const normalizePolygonPointsForMask = (rect: StoredIORect): Array<{ x: number; y: number }> | null => {
+    if (!Array.isArray(rect.points) || rect.points.length < 3) return null;
+
+    const width = Number.isFinite(rect.w) ? Number(rect.w) : 0;
+    const height = Number.isFinite(rect.h) ? Number(rect.h) : 0;
+    const originX = Number.isFinite(rect.x) ? Number(rect.x) : 0;
+    const originY = Number.isFinite(rect.y) ? Number(rect.y) : 0;
+    if (width <= 0 || height <= 0) return null;
+
+    const points = rect.points
+      .map((point) => ({ x: Number(point.x), y: Number(point.y) }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (points.length < 3) return null;
+
+    const looksLocal = points.every((point) => point.x >= -0.001 && point.x <= 1.001 && point.y >= -0.001 && point.y <= 1.001);
+
+    return points.map((point) => {
+      if (looksLocal) {
+        return {
+          x: clampUnit(point.x),
+          y: clampUnit(point.y),
+        };
+      }
+      return {
+        x: clampUnit((point.x - originX) / width),
+        y: clampUnit((point.y - originY) / height),
+      };
+    });
+  };
+
+  const appendHotspotMaskStroke = (
+    overlay: HTMLElement,
+    rect: StoredIORect,
+    fallbackIndex: number,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): void => {
+    const stroke = document.createElementNS(SVG_NS, 'svg');
+    stroke.classList.add('learnkit-io-reading-mask-stroke');
+    stroke.setAttribute('viewBox', MASK_STROKE_VIEWBOX);
+    stroke.setAttribute('preserveAspectRatio', 'none');
+    stroke.style.left = `${clampUnit(x) * 100}%`;
+    stroke.style.top = `${clampUnit(y) * 100}%`;
+    stroke.style.width = `${clampUnit(w) * 100}%`;
+    stroke.style.height = `${clampUnit(h) * 100}%`;
+
+    const fillDelta = getMaskToneShift(rect, fallbackIndex);
+    const fillExpr = fillDelta >= 0
+      ? `calc(var(--accent-l) + ${fillDelta}%)`
+      : `calc(var(--accent-l) - ${Math.abs(fillDelta)}%)`;
+    const fillColor = `hsl(var(--accent-h) var(--accent-s) ${fillExpr} / 0.22)`;
+
+    const strokeDelta = fillDelta - 6;
+    const lExpr = strokeDelta >= 0
+      ? `calc(var(--accent-l) + ${strokeDelta}%)`
+      : `calc(var(--accent-l) - ${Math.abs(strokeDelta)}%)`;
+    const strokeColor = `hsl(var(--accent-h) var(--accent-s) ${lExpr} / 0.55)`;
+
+    if (rect.shape === 'circle') {
+      const ellipse = document.createElementNS(SVG_NS, 'ellipse');
+      ellipse.setAttribute('cx', '50');
+      ellipse.setAttribute('cy', '50');
+      ellipse.setAttribute('rx', '50');
+      ellipse.setAttribute('ry', '50');
+      ellipse.setAttribute('fill', fillColor);
+      ellipse.setAttribute('stroke', strokeColor);
+      stroke.appendChild(ellipse);
+    } else if (rect.shape === 'polygon') {
+      const points = normalizePolygonPointsForMask(rect);
+      if (!points || points.length < 3) return;
+      const polygon = document.createElementNS(SVG_NS, 'polygon');
+      polygon.setAttribute('points', points.map((point) => `${point.x * 100},${point.y * 100}`).join(' '));
+      polygon.setAttribute('fill', fillColor);
+      polygon.setAttribute('stroke', strokeColor);
+      stroke.appendChild(polygon);
+    } else {
+      const rectEl = document.createElementNS(SVG_NS, 'rect');
+      rectEl.setAttribute('x', '0');
+      rectEl.setAttribute('y', '0');
+      rectEl.setAttribute('width', '100');
+      rectEl.setAttribute('height', '100');
+      rectEl.setAttribute('rx', '3');
+      rectEl.setAttribute('ry', '3');
+      rectEl.setAttribute('fill', fillColor);
+      rectEl.setAttribute('stroke', strokeColor);
+      stroke.appendChild(rectEl);
+    }
+
+    overlay.appendChild(stroke as unknown as HTMLElement);
+  };
+
   const getPolygonLabelAnchor = (
     rect: StoredIORect,
   ): { xNorm: number; yNorm: number } | null => {
@@ -3875,7 +3973,12 @@ function renderIoInReadingCard(
         setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
         setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
         setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
-        applyMaskTone(mask, rect, index);
+        if (isHotspot) {
+          mask.style.background = 'none';
+          mask.style.border = 'none';
+        } else {
+          applyMaskTone(mask, rect, index);
+        }
 
         const hint = document.createElement('span');
         hint.textContent = '?';
@@ -3883,6 +3986,9 @@ function renderIoInReadingCard(
         mask.appendChild(hint);
 
         overlay.appendChild(mask);
+        if (isHotspot) {
+          appendHotspotMaskStroke(overlay, rect, index, x, y, w, h);
+        }
       });
 
       container.appendChild(overlay);
@@ -3964,7 +4070,8 @@ function renderIoInReadingCard(
         setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
         setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
         setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
-        applyMaskTone(mask, rect, index);
+        mask.style.background = 'none';
+        mask.style.border = 'none';
 
         const rectLabel = (rect as Record<string, unknown>).label;
         let labelStr: string;
@@ -3988,6 +4095,7 @@ function renderIoInReadingCard(
         setCssProps(labelEl, 'top', `${labelY * 100}%`);
 
         overlay.appendChild(mask);
+        appendHotspotMaskStroke(overlay, rect, index, x, y, w, h);
         overlay.appendChild(labelEl);
       });
 

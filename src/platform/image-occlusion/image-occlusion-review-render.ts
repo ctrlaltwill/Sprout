@@ -21,13 +21,8 @@ import { scopeModalToWorkspace } from "../../platform/modals/modal-utils";
 import { t } from "../../platform/translations/translator";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const POLYGON_STROKE_PAD = 1;
-const POLYGON_VIEWBOX_SIZE = 100 + POLYGON_STROKE_PAD * 2;
-
-function polygonCoordForStroke(value: number): number {
-  const v = clampUnit(Number(value));
-  return v * POLYGON_VIEWBOX_SIZE - POLYGON_STROKE_PAD;
-}
+const MASK_STROKE_PAD = 1;
+const MASK_STROKE_VIEWBOX = `${-MASK_STROKE_PAD} ${-MASK_STROKE_PAD} ${100 + MASK_STROKE_PAD * 2} ${100 + MASK_STROKE_PAD * 2}`;
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -252,7 +247,7 @@ function appendHotspotAttemptLabel(
   overlay: HTMLElement,
   attempt: HotspotAttemptResult,
   anchorRect?: StoredIORect | null,
-  opts?: { pending?: boolean; attemptKey?: string; draggable?: boolean },
+  opts?: { pending?: boolean; attemptKey?: string; draggable?: boolean; preserveAttemptAnchor?: boolean },
 ): HTMLElement | null {
   const label = String(attempt.label || "").trim();
   if (!label) {
@@ -260,7 +255,10 @@ function appendHotspotAttemptLabel(
     return null;
   }
 
-  const anchor = anchorRect ? getHotspotRectCenter(anchorRect) : { x: clampUnit(attempt.x), y: clampUnit(attempt.y) };
+  const useAttemptAnchor = !!opts?.preserveAttemptAnchor;
+  const anchor = (anchorRect && !useAttemptAnchor)
+    ? getHotspotRectCenter(anchorRect)
+    : { x: clampUnit(attempt.x), y: clampUnit(attempt.y) };
   const normalizedKey = normalizeHotspotTargetKey(opts?.attemptKey || label);
   let chip: HTMLElement | null = null;
   if (normalizedKey) {
@@ -291,9 +289,116 @@ function appendHotspotAttemptLabel(
   return chip;
 }
 
+function appendHotspotAttemptPairLabel(
+  overlay: HTMLElement,
+  opts: {
+    wrongLabel: string;
+    correctLabel: string;
+    anchor: { x: number; y: number };
+  },
+): HTMLElement {
+  const pair = document.createElement("div");
+  pair.className = "learnkit-hq-attempt-pair";
+  pair.dataset.hotspotAnchorX = String(clampUnit(opts.anchor.x));
+  pair.dataset.hotspotAnchorY = String(clampUnit(opts.anchor.y));
+  pair.style.left = `${clampUnit(opts.anchor.x) * 100}%`;
+  pair.style.top = `${clampUnit(opts.anchor.y) * 100}%`;
+
+  const wrong = document.createElement("span");
+  wrong.className = "learnkit-hq-attempt-pair-item is-incorrect";
+  wrong.textContent = String(opts.wrongLabel || "Wrong guess").trim() || "Wrong guess";
+
+  const correct = document.createElement("span");
+  correct.className = "learnkit-hq-attempt-pair-item is-correct";
+  correct.textContent = String(opts.correctLabel || "Correct label").trim() || "Correct label";
+
+  pair.appendChild(wrong);
+  pair.appendChild(correct);
+  overlay.appendChild(pair);
+  return pair;
+}
+
+function appendHotspotInlineMarkerLabel(
+  overlay: HTMLElement,
+  opts: {
+    x: number;
+    y: number;
+    label: string;
+    tone: "correct" | "incorrect";
+  },
+): HTMLElement {
+  const group = document.createElement("div");
+  group.className = `learnkit-hq-attempt-inline ${opts.tone === "correct" ? "is-correct" : "is-incorrect"}`;
+  group.dataset.hotspotAnchorX = String(clampUnit(opts.x));
+  group.dataset.hotspotAnchorY = String(clampUnit(opts.y));
+  group.style.left = `${clampUnit(opts.x) * 100}%`;
+  group.style.top = `${clampUnit(opts.y) * 100}%`;
+
+  const marker = document.createElement("span");
+  marker.className = `learnkit-hq-attempt-inline-dot ${opts.tone === "correct" ? "is-correct" : "is-incorrect"}`;
+  group.appendChild(marker);
+
+  const text = String(opts.label || "").trim();
+  if (text) {
+    const label = document.createElement("span");
+    label.className = `learnkit-hq-attempt-inline-label is-right ${opts.tone === "correct" ? "is-correct" : "is-incorrect"}`;
+    label.textContent = text;
+    group.appendChild(label);
+  }
+
+  overlay.appendChild(group);
+  return group;
+}
+
+function resolveHotspotInlineLabelPlacements(overlay: HTMLElement): void {
+  const overlayRect = overlay.getBoundingClientRect();
+  const overlayWidth = overlay.clientWidth || overlayRect.width;
+  const overlayHeight = overlay.clientHeight || overlayRect.height;
+  if (!(overlayWidth > 0) || !(overlayHeight > 0)) return;
+
+  const edgePad = 2;
+  const dotRadius = 6;
+  const gap = 8;
+
+  overlay.querySelectorAll<HTMLElement>(".learnkit-hq-attempt-inline").forEach((group) => {
+    const label = group.querySelector<HTMLElement>(".learnkit-hq-attempt-inline-label");
+    if (!label) return;
+
+    const anchorX = clampUnit(Number(group.dataset.hotspotAnchorX || "0.5")) * overlayWidth;
+    const anchorY = clampUnit(Number(group.dataset.hotspotAnchorY || "0.5")) * overlayHeight;
+    const labelWidth = Math.max(1, label.offsetWidth);
+    const labelHeight = Math.max(1, label.offsetHeight);
+
+    const fitsRight = anchorX + dotRadius + gap + labelWidth <= overlayWidth - edgePad;
+    const fitsDown = anchorY + dotRadius + gap + labelHeight <= overlayHeight - edgePad;
+    const fitsLeft = anchorX - dotRadius - gap - labelWidth >= edgePad;
+    const fitsUp = anchorY - dotRadius - gap - labelHeight >= edgePad;
+
+    let placement: "is-right" | "is-down" | "is-left" | "is-up" = "is-right";
+    if (fitsRight) placement = "is-right";
+    else if (fitsDown) placement = "is-down";
+    else if (fitsLeft) placement = "is-left";
+    else if (fitsUp) placement = "is-up";
+    else {
+      const roomRight = Math.max(0, overlayWidth - anchorX);
+      const roomDown = Math.max(0, overlayHeight - anchorY);
+      const roomLeft = Math.max(0, anchorX);
+      const roomUp = Math.max(0, anchorY);
+      const maxRoom = Math.max(roomRight, roomDown, roomLeft, roomUp);
+      if (maxRoom === roomDown) placement = "is-down";
+      else if (maxRoom === roomLeft) placement = "is-left";
+      else if (maxRoom === roomUp) placement = "is-up";
+      else placement = "is-right";
+    }
+
+    label.classList.remove("is-right", "is-down", "is-left", "is-up");
+    label.classList.add(placement);
+  });
+}
+
 function resolveHotspotLabelCollisions(overlay: HTMLElement): void {
   resolveAnchoredLabelCollisions(overlay, {
-    selector: ".learnkit-hq-attempt-label",
+    selector: ".learnkit-hq-attempt-label, .learnkit-hq-attempt-pair",
     draggingClass: "is-dragging",
     anchorXDataKey: "hotspotAnchorX",
     anchorYDataKey: "hotspotAnchorY",
@@ -301,6 +406,15 @@ function resolveHotspotLabelCollisions(overlay: HTMLElement): void {
     marginPx: 1,
     maxShiftPx: 10,
     maxIterations: 8,
+  });
+}
+
+function syncHotspotLabelAnchorsFromStyle(overlay: HTMLElement): void {
+  overlay.querySelectorAll<HTMLElement>(".learnkit-hq-attempt-label, .learnkit-hq-attempt-pair").forEach((chip) => {
+    const left = Number.parseFloat(String(chip.style.left || "").replace("%", ""));
+    const top = Number.parseFloat(String(chip.style.top || "").replace("%", ""));
+    if (Number.isFinite(left)) chip.dataset.hotspotAnchorX = String(clampUnit(left / 100));
+    if (Number.isFinite(top)) chip.dataset.hotspotAnchorY = String(clampUnit(top / 100));
   });
 }
 
@@ -321,20 +435,19 @@ function appendPolygonMaskStroke(
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
-  stroke.setAttribute("viewBox", `${-POLYGON_STROKE_PAD} ${-POLYGON_STROKE_PAD} ${POLYGON_VIEWBOX_SIZE} ${POLYGON_VIEWBOX_SIZE}`);
+  stroke.setAttribute("viewBox", MASK_STROKE_VIEWBOX);
   stroke.setAttribute("preserveAspectRatio", "none");
 
   const polygon = document.createElementNS(SVG_NS, "polygon");
   polygon.setAttribute(
     "points",
     rect.points
-      .map((point) => `${polygonCoordForStroke(point.x)},${polygonCoordForStroke(point.y)}`)
+      .map((point) => `${clampUnit(Number(point.x)) * 100},${clampUnit(Number(point.y)) * 100}`)
       .join(" "),
   );
   if (tone === "hint") {
     polygon.setAttribute("fill", "transparent");
     polygon.setAttribute("stroke", "var(--theme-accent, var(--interactive-accent))");
-    polygon.setAttribute("stroke-dasharray", "6 4");
   } else if (tone === "target") {
     polygon.setAttribute("fill", "var(--color-base-70)");
     polygon.setAttribute("stroke", "var(--color-base-100)");
@@ -342,10 +455,10 @@ function appendPolygonMaskStroke(
     polygon.setAttribute("fill", "var(--color-base-20)");
     polygon.setAttribute("stroke", "var(--color-base-30)");
   } else if (tone === "hq-correct") {
-    polygon.setAttribute("fill", "rgba(34, 197, 94, 0.18)");
+    polygon.setAttribute("fill", "rgba(34, 197, 94, 0.1)");
     polygon.setAttribute("stroke", "rgba(34, 197, 94, 0.92)");
   } else {
-    polygon.setAttribute("fill", "rgba(239, 68, 68, 0.2)");
+    polygon.setAttribute("fill", "rgba(239, 68, 68, 0.1)");
     polygon.setAttribute("stroke", "rgba(239, 68, 68, 0.94)");
   }
   stroke.appendChild(polygon);
@@ -367,7 +480,7 @@ function appendCircleMaskStroke(
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
-  stroke.setAttribute("viewBox", `${-POLYGON_STROKE_PAD} ${-POLYGON_STROKE_PAD} ${POLYGON_VIEWBOX_SIZE} ${POLYGON_VIEWBOX_SIZE}`);
+  stroke.setAttribute("viewBox", MASK_STROKE_VIEWBOX);
   stroke.setAttribute("preserveAspectRatio", "none");
 
   const ellipse = document.createElementNS(SVG_NS, "ellipse");
@@ -378,7 +491,6 @@ function appendCircleMaskStroke(
   if (tone === "hint") {
     ellipse.setAttribute("fill", "transparent");
     ellipse.setAttribute("stroke", "var(--theme-accent, var(--interactive-accent))");
-    ellipse.setAttribute("stroke-dasharray", "6 4");
   } else if (tone === "target") {
     ellipse.setAttribute("fill", "var(--color-base-70)");
     ellipse.setAttribute("stroke", "var(--color-base-100)");
@@ -386,10 +498,10 @@ function appendCircleMaskStroke(
     ellipse.setAttribute("fill", "var(--color-base-20)");
     ellipse.setAttribute("stroke", "var(--color-base-30)");
   } else if (tone === "hq-correct") {
-    ellipse.setAttribute("fill", "rgba(34, 197, 94, 0.18)");
+    ellipse.setAttribute("fill", "rgba(34, 197, 94, 0.1)");
     ellipse.setAttribute("stroke", "rgba(34, 197, 94, 0.92)");
   } else {
-    ellipse.setAttribute("fill", "rgba(239, 68, 68, 0.2)");
+    ellipse.setAttribute("fill", "rgba(239, 68, 68, 0.1)");
     ellipse.setAttribute("stroke", "rgba(239, 68, 68, 0.94)");
   }
   stroke.appendChild(ellipse);
@@ -411,7 +523,7 @@ function appendRectMaskStroke(
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-y", `${Math.max(0, Math.min(1, y)) * 100}%`);
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
   setCssProps(stroke as unknown as HTMLElement, "--learnkit-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
-  stroke.setAttribute("viewBox", `${-POLYGON_STROKE_PAD} ${-POLYGON_STROKE_PAD} ${POLYGON_VIEWBOX_SIZE} ${POLYGON_VIEWBOX_SIZE}`);
+  stroke.setAttribute("viewBox", MASK_STROKE_VIEWBOX);
   stroke.setAttribute("preserveAspectRatio", "none");
 
   const rect = document.createElementNS(SVG_NS, "rect");
@@ -424,7 +536,6 @@ function appendRectMaskStroke(
   if (tone === "hint") {
     rect.setAttribute("fill", "transparent");
     rect.setAttribute("stroke", "var(--theme-accent, var(--interactive-accent))");
-    rect.setAttribute("stroke-dasharray", "6 4");
   } else if (tone === "target") {
     rect.setAttribute("fill", "var(--color-base-70)");
     rect.setAttribute("stroke", "var(--color-base-100)");
@@ -432,10 +543,10 @@ function appendRectMaskStroke(
     rect.setAttribute("fill", "var(--color-base-20)");
     rect.setAttribute("stroke", "var(--color-base-30)");
   } else if (tone === "hq-correct") {
-    rect.setAttribute("fill", "rgba(34, 197, 94, 0.18)");
+    rect.setAttribute("fill", "rgba(34, 197, 94, 0.1)");
     rect.setAttribute("stroke", "rgba(34, 197, 94, 0.92)");
   } else {
-    rect.setAttribute("fill", "rgba(239, 68, 68, 0.2)");
+    rect.setAttribute("fill", "rgba(239, 68, 68, 0.1)");
     rect.setAttribute("stroke", "rgba(239, 68, 68, 0.94)");
   }
   stroke.appendChild(rect);
@@ -843,13 +954,63 @@ export function renderImageOcclusionReviewInto(args: {
     !reveal &&
     hotspotTargets.length > 0 &&
     typeof hotspotReview?.onAttempt === "function";
-  const showDragDropHintMasks = interactiveHotspotFront && hotspotInteractionMode === "drag-drop";
+  const hotspotShowDropLocationHint = hotspotReview?.showDropLocationHint ?? true;
+  const showDragDropHintMasks =
+    interactiveHotspotFront &&
+    hotspotInteractionMode === "drag-drop" &&
+    hotspotShowDropLocationHint;
   const hotspotAttempts = Array.isArray(hotspotReview?.attempts)
     ? hotspotReview?.attempts.filter((attempt): attempt is HotspotAttemptResult => !!attempt)
     : hotspotReview?.attempt
       ? [hotspotReview.attempt]
       : [];
   const hotspotAttempt = hotspotAttempts.length > 0 ? hotspotAttempts[hotspotAttempts.length - 1] : null;
+
+  const resolveHotspotAttemptPairData = (attempt: HotspotAttemptResult): {
+    wrongLabel: string;
+    correctLabel: string;
+    anchor: { x: number; y: number };
+  } | null => {
+    if (!attempt || attempt.correct) return null;
+
+    const attemptRect = findHotspotRectForAttempt(attempt, occlusions);
+    const fallbackCenter = attemptRect ? getHotspotRectCenter(attemptRect) : { x: clampUnit(attempt.x), y: clampUnit(attempt.y) };
+
+    const wrongLabel = String(
+      attempt.label
+      || (attemptRect
+        ? getHotspotRectLabel(attemptRect, Math.max(0, occlusions.indexOf(attemptRect)))
+        : "Wrong guess"),
+    ).trim() || "Wrong guess";
+
+    let correctLabel = "";
+    if (attempt.mode === "click") {
+      correctLabel = String(
+        hotspotPromptLabel
+        || hotspotTargetGroups[0]?.label
+        || "Correct label",
+      ).trim();
+    } else {
+      const destinationRect = findHotspotRectForAttempt(attempt, hotspotTargets);
+      if (!destinationRect) {
+        // Off-mask drag-drop placements don't have a location-derived "right answer".
+        return null;
+      }
+      if (destinationRect) {
+        correctLabel = getHotspotRectLabel(destinationRect, Math.max(0, hotspotTargets.indexOf(destinationRect)));
+      }
+      if (!correctLabel) {
+        correctLabel = String(hotspotTargetGroups[0]?.label || hotspotPromptLabel || "Correct label").trim();
+      }
+    }
+
+    if (!correctLabel) return null;
+    return {
+      wrongLabel,
+      correctLabel,
+      anchor: fallbackCenter,
+    };
+  };
 
   if (!widgetMode && !isHotspot) {
     img.addEventListener("click", (ev) => {
@@ -932,6 +1093,7 @@ export function renderImageOcclusionReviewInto(args: {
       const attemptForRect = isHotspot ? findHotspotAttemptForRect(rect, hotspotRectIndex, hotspotAttempts) : null;
       const hotspotAttemptCorrect = attemptForRect ? !!attemptForRect.correct : false;
       const hotspotDragDropReveal = isHotspot && reveal && hotspotInteractionMode === "drag-drop";
+      const hotspotClickReveal = isHotspot && reveal && hotspotInteractionMode === "click";
       const clickRevealAttemptState =
         isHotspot &&
         reveal &&
@@ -945,6 +1107,12 @@ export function renderImageOcclusionReviewInto(args: {
           : !!hotspotAttempt?.correct;
       const hotspotRevealTone = hotspotDragDropReveal
         ? (hotspotAttemptCorrect ? "hq-correct" : "hq-incorrect")
+        : hotspotClickReveal
+          ? (isTarget
+              ? "hq-correct"
+              : attemptForRect
+                ? (hotspotAttemptCorrect ? "hq-correct" : "hq-incorrect")
+                : "other")
         : hasHotspotRevealState
           ? (hotspotRevealIsCorrect ? "hq-correct" : "hq-incorrect")
           : null;
@@ -958,9 +1126,6 @@ export function renderImageOcclusionReviewInto(args: {
       setCssProps(mask, "--learnkit-io-w", `${Math.max(0, Math.min(1, w)) * 100}%`);
       setCssProps(mask, "--learnkit-io-h", `${Math.max(0, Math.min(1, h)) * 100}%`);
       if (showHotspotOutline) {
-        if (rect.shape !== "polygon" && rect.shape !== "circle") {
-          mask.classList.add("learnkit-io-mask-hotspot-outline", "learnkit-io-mask-hotspot-outline");
-        }
         if (hotspotRectKey) {
           mask.dataset.hotspotMaskKey = normalizeHotspotTargetKey(hotspotRectKey);
           mask.dataset.hotspotCenterX = String(clampUnit(x + w / 2));
@@ -978,11 +1143,11 @@ export function renderImageOcclusionReviewInto(args: {
             setCssProps(mask, "border", "none");
           } else {
             mask.style.background = isCorrectTone
-              ? "rgba(34, 197, 94, 0.18)"
-              : "rgba(239, 68, 68, 0.2)";
+              ? "rgba(34, 197, 94, 0.1)"
+              : "rgba(239, 68, 68, 0.1)";
             mask.style.border = isCorrectTone
-              ? "2px solid rgba(34, 197, 94, 0.9)"
-              : "2px solid rgba(239, 68, 68, 0.92)";
+              ? "1px solid rgba(34, 197, 94, 0.92)"
+              : "1px solid rgba(239, 68, 68, 0.92)";
           }
         } else {
           mask.classList.add("learnkit-io-mask-other", "learnkit-io-mask-other");
@@ -1071,6 +1236,69 @@ export function renderImageOcclusionReviewInto(args: {
     const revealHotspotLabeledKeys = new Set<string>();
     if (isHotspot && hotspotAttempts.length > 0) {
       for (const attempt of hotspotAttempts) {
+        if (reveal && attempt.mode === "click") {
+          const targetRect = hotspotTargets.length > 0 ? hotspotTargets[0] : null;
+          const targetRectIndex = targetRect ? Math.max(0, hotspotTargets.indexOf(targetRect)) : -1;
+          const targetLabel = targetRect && targetRectIndex >= 0
+            ? getHotspotRectLabel(targetRect, targetRectIndex)
+            : String(hotspotPromptLabel || hotspotTargetGroups[0]?.label || "Correct label").trim();
+
+          if (attempt.correct) {
+            appendHotspotInlineMarkerLabel(overlay, {
+              x: clampUnit(attempt.x),
+              y: clampUnit(attempt.y),
+              label: targetLabel,
+              tone: "correct",
+            });
+          } else {
+            const wrongRect = findHotspotRectForAttempt(attempt, occlusions);
+            const wrongRectIndex = wrongRect ? Math.max(0, occlusions.indexOf(wrongRect)) : -1;
+            const wrongLabel = wrongRect && wrongRectIndex >= 0
+              ? getHotspotRectLabel(wrongRect, wrongRectIndex)
+              : "";
+            appendHotspotInlineMarkerLabel(overlay, {
+              x: clampUnit(attempt.x),
+              y: clampUnit(attempt.y),
+              label: wrongLabel,
+              tone: "incorrect",
+            });
+
+            const correctAnchor = targetRect ? getHotspotRectCenter(targetRect) : { x: clampUnit(attempt.x), y: clampUnit(attempt.y) };
+            appendHotspotInlineMarkerLabel(overlay, {
+              x: correctAnchor.x,
+              y: correctAnchor.y,
+              label: targetLabel,
+              tone: "correct",
+            });
+          }
+          continue;
+        }
+
+        if (reveal && !attempt.correct) {
+          if (attempt.mode === "drag-drop" && !findHotspotRectForAttempt(attempt, hotspotTargets)) {
+            const droppedLabel = String(attempt.label || "").trim();
+            if (droppedLabel) {
+              appendHotspotAttemptLabel(
+                overlay,
+                { ...attempt, label: droppedLabel },
+                null,
+                { preserveAttemptAnchor: true },
+              );
+            } else {
+              appendHotspotMarker(overlay, attempt);
+            }
+            continue;
+          }
+
+          const pairData = resolveHotspotAttemptPairData(attempt);
+          if (pairData) {
+            appendHotspotAttemptPairLabel(overlay, pairData);
+          } else {
+            appendHotspotMarker(overlay, attempt);
+          }
+          continue;
+        }
+
         const anchoredRect = findHotspotRectForAttempt(attempt, hotspotTargets);
         const showDragDropPlacement = attempt.mode === "drag-drop" && (reveal || interactiveHotspotFront);
         if (showDragDropPlacement) {
@@ -1103,6 +1331,7 @@ export function renderImageOcclusionReviewInto(args: {
             pending: !reveal && interactiveHotspotFront,
             attemptKey: resolvedAttemptKey,
             draggable: !reveal && interactiveHotspotFront,
+            preserveAttemptAnchor: attempt.mode === "drag-drop",
           });
           if (reveal && chip) {
             const key = String(chip.dataset.hotspotKey || "").trim().toLowerCase();
@@ -1284,6 +1513,7 @@ export function renderImageOcclusionReviewInto(args: {
         let dragging = false;
         let activeDragChip: HTMLElement | null = null;
         let activeDragSourceMaskKey = "";
+        const allowFreeDropPlacement = !hotspotShowDropLocationHint;
         const getMaskKeyForPoint = (x: number, y: number): string => {
           const match = findMatchingHotspot({ x: clampUnit(x), y: clampUnit(y), inside: true }, hotspotTargets, { strict: true });
           if (!match) return "";
@@ -1341,6 +1571,122 @@ export function renderImageOcclusionReviewInto(args: {
           if (!dragging) return;
           setPreview(getImagePoint(img, ev.clientX, ev.clientY), ev.clientX, ev.clientY);
         };
+        const placeTargetOnPoint = (
+          point: ImagePoint,
+          target: HotspotTargetGroup,
+          opts?: {
+            sourceMaskKey?: string;
+            draggedChip?: HTMLElement | null;
+            allowReplaceDestination?: boolean;
+          },
+        ): boolean => {
+          const activeKey = normalizeHotspotTargetKey(target.key);
+          if (!activeKey) return false;
+
+          const match = findMatchingHotspot(point, hotspotTargets, { strict: true });
+          if (!match && !allowFreeDropPlacement) {
+            // Ignore placements outside any actual mask shape (prevents cheating).
+            return false;
+          }
+
+          const matchKey = match ? getHotspotRectKey(match, hotspotTargets.indexOf(match)) : "";
+          const destinationMaskKey = normalizeHotspotTargetKey(matchKey);
+          const destinationRect = destinationMaskKey ? hotspotRectByKey.get(destinationMaskKey) || null : null;
+          const sourceMaskKey = normalizeHotspotTargetKey(opts?.sourceMaskKey);
+          const destinationChip = destinationMaskKey
+            ? findPlacedChipForMaskKey(destinationMaskKey, activeKey)
+            : null;
+          const pendingAttemptUpdates: HotspotAttemptResult[] = [];
+
+          if (destinationChip) {
+            const destinationLabelKey = normalizeHotspotTargetKey(destinationChip.dataset.hotspotKey);
+            if (opts?.allowReplaceDestination === false) {
+              return false;
+            }
+
+            if (sourceMaskKey) {
+              const sourceRect = hotspotRectByKey.get(sourceMaskKey) || null;
+              const destinationTarget = destinationLabelKey ? targetByKey.get(destinationLabelKey) || null : null;
+              if (sourceRect && destinationTarget) {
+                const sourceAnchor = opts?.draggedChip
+                  ? {
+                      x: clampUnit(Number(opts.draggedChip.dataset.hotspotAnchorX || "0.5")),
+                      y: clampUnit(Number(opts.draggedChip.dataset.hotspotAnchorY || "0.5")),
+                    }
+                  : getHotspotRectCenter(sourceRect);
+                const destinationCorrect = sourceMaskKey === destinationLabelKey;
+                appendHotspotAttemptLabel(
+                  overlay,
+                  {
+                    mode: hotspotInteractionMode,
+                    x: sourceAnchor.x,
+                    y: sourceAnchor.y,
+                    correct: destinationCorrect,
+                    label: String(destinationTarget.label || destinationTarget.key || destinationLabelKey).trim(),
+                  },
+                  sourceRect,
+                  {
+                    pending: true,
+                    attemptKey: destinationLabelKey,
+                    draggable: true,
+                    preserveAttemptAnchor: true,
+                  },
+                );
+                pendingAttemptUpdates.push({
+                  mode: hotspotInteractionMode,
+                  x: sourceAnchor.x,
+                  y: sourceAnchor.y,
+                  correct: destinationCorrect,
+                  label: String(destinationTarget.label || destinationTarget.key || destinationLabelKey).trim(),
+                });
+              }
+            } else {
+              removePlacedLabel(destinationLabelKey, destinationChip);
+            }
+          }
+
+          const correct = !!destinationRect && destinationMaskKey === activeKey;
+          const draggedLabel = String(targetByKey.get(activeKey)?.label || target.label || target.key || "").trim();
+          const result: HotspotAttemptResult = {
+            mode: hotspotInteractionMode,
+            x: point.x,
+            y: point.y,
+            correct,
+            label: draggedLabel,
+          };
+
+          appendHotspotAttemptLabel(overlay, result, destinationRect, {
+            pending: true,
+            attemptKey: activeKey,
+            draggable: true,
+            preserveAttemptAnchor: true,
+          });
+          resolveHotspotLabelCollisions(overlay);
+          syncHotspotLabelAnchorsFromStyle(overlay);
+
+          const activeChip = overlay.querySelector<HTMLElement>(`.learnkit-hq-attempt-label[data-hotspot-key="${activeKey}"]`);
+          if (activeChip) {
+            result.x = clampUnit(Number(activeChip.dataset.hotspotAnchorX || String(result.x)));
+            result.y = clampUnit(Number(activeChip.dataset.hotspotAnchorY || String(result.y)));
+          }
+
+          pendingAttemptUpdates.forEach((update) => {
+            const updateKey = normalizeHotspotTargetKey(update.label);
+            const updateChip = updateKey
+              ? overlay.querySelector<HTMLElement>(`.learnkit-hq-attempt-label[data-hotspot-key="${updateKey}"]`)
+              : null;
+            if (updateChip) {
+              update.x = clampUnit(Number(updateChip.dataset.hotspotAnchorX || String(update.x)));
+              update.y = clampUnit(Number(updateChip.dataset.hotspotAnchorY || String(update.y)));
+            }
+            hotspotReview?.onAttempt?.(update);
+          });
+
+          placedTargetKeys.add(activeKey);
+          setButtonPlacedState(activeKey, true);
+          hotspotReview?.onAttempt?.(result);
+          return true;
+        };
         const finishDrag = (ev: PointerEvent) => {
           if (!dragging) return;
           const draggedTarget = activeTarget;
@@ -1381,83 +1727,13 @@ export function renderImageOcclusionReviewInto(args: {
           if (!point?.inside) return;
           ev.preventDefault();
           setRemoveChip(false);
-          const match = findMatchingHotspot(point, hotspotTargets, { strict: true });
-          if (!match) {
-            // Ignore drops outside any actual mask shape (prevents cheating).
-            activeTarget = null;
-            return;
+          if (draggedTarget) {
+            placeTargetOnPoint(point, draggedTarget, {
+              sourceMaskKey,
+              draggedChip,
+              allowReplaceDestination: true,
+            });
           }
-          const matchKey = match
-            ? getHotspotRectKey(match, hotspotTargets.indexOf(match))
-            : "";
-          const destinationMaskKey = normalizeHotspotTargetKey(matchKey);
-          const destinationRect = destinationMaskKey ? hotspotRectByKey.get(destinationMaskKey) || null : null;
-
-          const destinationChip = destinationMaskKey
-            ? findPlacedChipForMaskKey(destinationMaskKey, activeKey)
-            : null;
-          if (destinationChip) {
-            const destinationLabelKey = normalizeHotspotTargetKey(destinationChip.dataset.hotspotKey);
-            if (sourceMaskKey) {
-              const sourceRect = hotspotRectByKey.get(sourceMaskKey) || null;
-              const destinationTarget = destinationLabelKey ? targetByKey.get(destinationLabelKey) || null : null;
-              if (sourceRect && destinationTarget) {
-                const sourceCenter = getHotspotRectCenter(sourceRect);
-                const destinationCorrect = sourceMaskKey === destinationLabelKey;
-                appendHotspotAttemptLabel(
-                  overlay,
-                  {
-                    mode: hotspotInteractionMode,
-                    x: sourceCenter.x,
-                    y: sourceCenter.y,
-                    correct: destinationCorrect,
-                    label: String(destinationTarget.label || destinationTarget.key || destinationLabelKey).trim(),
-                  },
-                  sourceRect,
-                  {
-                    pending: true,
-                    attemptKey: destinationLabelKey,
-                    draggable: true,
-                  },
-                );
-                hotspotReview?.onAttempt?.({
-                  mode: hotspotInteractionMode,
-                  x: sourceCenter.x,
-                  y: sourceCenter.y,
-                  correct: destinationCorrect,
-                  label: String(destinationTarget.label || destinationTarget.key || destinationLabelKey).trim(),
-                });
-              }
-            } else {
-              removePlacedLabel(destinationLabelKey, destinationChip);
-            }
-          }
-
-          const correct = !!destinationRect && !!activeKey && destinationMaskKey === activeKey;
-          const draggedLabel = String(
-            targetByKey.get(activeKey)?.label || draggedTarget?.label || draggedTarget?.key || draggedChip?.textContent || "",
-          ).trim();
-          const result: HotspotAttemptResult = {
-            mode: hotspotInteractionMode,
-            x: point.x,
-            y: point.y,
-            correct,
-            label: draggedLabel,
-          };
-
-          appendHotspotAttemptLabel(overlay, result, destinationRect, {
-            pending: true,
-            attemptKey: activeKey,
-            draggable: true,
-          });
-          resolveHotspotLabelCollisions(overlay);
-
-          if (activeKey) {
-            placedTargetKeys.add(activeKey);
-            setButtonPlacedState(activeKey, true);
-          }
-
-          hotspotReview?.onAttempt?.(result);
           activeTarget = null;
         };
         const startDrag = (target: HotspotTargetGroup, dragButton: HTMLButtonElement) => (ev: PointerEvent) => {
@@ -1532,6 +1808,34 @@ export function renderImageOcclusionReviewInto(args: {
           ev.stopPropagation();
         };
 
+        const onOverlayClick = (ev: MouseEvent) => {
+          if (dragging) return;
+          const targetEl = ev.target as HTMLElement | null;
+          if (!targetEl) return;
+          if (targetEl.closest(".learnkit-hq-remove-chip")) return;
+          if (targetEl.closest(".learnkit-hq-attempt-label")) return;
+
+          const point = getImagePoint(img, ev.clientX, ev.clientY);
+          if (!point?.inside) return;
+
+          const nextTarget = sourceTargets.find((target) => {
+            const key = normalizeHotspotTargetKey(target.key);
+            return !!key && !placedTargetKeys.has(key);
+          });
+          if (!nextTarget) return;
+
+          if (!allowFreeDropPlacement && !findMatchingHotspot(point, hotspotTargets, { strict: true })) return;
+
+          const placed = placeTargetOnPoint(point, nextTarget, {
+            allowReplaceDestination: false,
+          });
+          if (!placed) return;
+
+          setRemoveChip(false);
+          ev.preventDefault();
+          ev.stopPropagation();
+        };
+
         const onRemoveChipClick = (ev: MouseEvent) => {
           const key = normalizeHotspotTargetKey(removeChip.dataset.hotspotKey);
           if (!key) return;
@@ -1560,6 +1864,7 @@ export function renderImageOcclusionReviewInto(args: {
         };
 
         overlay.addEventListener("pointerdown", onOverlayPointerDown);
+        overlay.addEventListener("click", onOverlayClick);
         removeChip.addEventListener("click", onRemoveChipClick);
 
         cleanupHotspotInteraction = () => {
@@ -1573,6 +1878,7 @@ export function renderImageOcclusionReviewInto(args: {
             button.removeEventListener("pointerdown", handler);
           });
           overlay.removeEventListener("pointerdown", onOverlayPointerDown);
+          overlay.removeEventListener("click", onOverlayClick);
           removeChip.removeEventListener("click", onRemoveChipClick);
           document.removeEventListener("pointermove", onPointerMove);
           document.removeEventListener("pointerup", finishDrag);
@@ -1585,6 +1891,7 @@ export function renderImageOcclusionReviewInto(args: {
     function syncOverlay() {
       updateOverlay();
       resolveHotspotLabelCollisions(overlay);
+      resolveHotspotInlineLabelPlacements(overlay);
       if (hintSizeUpdaters.length > 0) {
         hintSizeUpdaters.forEach((fn) => fn());
       }

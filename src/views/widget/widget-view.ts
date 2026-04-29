@@ -276,8 +276,7 @@ export class SproutWidgetView extends ItemView {
                   removed: !!entry.removed,
                 }))
               : undefined,
-            // Inline drag hint is redundant; hotspot hint text is shown in the footer.
-            showDropLocationHint: false,
+            showDropLocationHint: this.plugin.settings?.cards?.hotspotShowDropLocationHint ?? true,
             onAttempt: reveal || !!this.session?.graded?.[cardId]
               ? undefined
               : (attempt) => this.handleHotspotAttempt(card, attempt),
