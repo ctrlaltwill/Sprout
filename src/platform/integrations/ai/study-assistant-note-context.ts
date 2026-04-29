@@ -159,7 +159,7 @@ export function extractStudyAssistantImageRefs(markdown: string): string[] {
   return extractStudyAssistantImageDescriptors(markdown).map((descriptor) => descriptor.ref);
 }
 
-async function filterVisionImageDescriptors(
+function filterVisionImageDescriptors(
   app: App,
   file: TFile,
   descriptors: StudyAssistantImageDescriptor[],
@@ -178,7 +178,7 @@ async function filterVisionImageDescriptors(
     if (out.length >= 4) break;
   }
 
-  return out;
+  return Promise.resolve(out);
 }
 
 export function extractStudyAssistantLinkedRefs(markdown: string): string[] {

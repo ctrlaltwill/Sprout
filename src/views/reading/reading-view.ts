@@ -3974,8 +3974,8 @@ function renderIoInReadingCard(
         setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
         setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
         if (isHotspot) {
-          mask.style.background = 'none';
-          mask.style.border = 'none';
+          setCssProps(mask, 'background', 'none');
+          setCssProps(mask, 'border', 'none');
         } else {
           applyMaskTone(mask, rect, index);
         }
@@ -4070,8 +4070,8 @@ function renderIoInReadingCard(
         setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
         setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
         setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
-        mask.style.background = 'none';
-        mask.style.border = 'none';
+        setCssProps(mask, 'background', 'none');
+        setCssProps(mask, 'border', 'none');
 
         const rectLabel = (rect as Record<string, unknown>).label;
         let labelStr: string;

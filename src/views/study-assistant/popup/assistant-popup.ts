@@ -2412,7 +2412,7 @@ export class SproutAssistantPopup {
     });
   }
 
-  private async resolveVisionImageRefs(file: TFile, refs: string[]): Promise<string[]> {
+  private resolveVisionImageRefs(file: TFile, refs: string[]): string[] {
     if (!Array.isArray(refs) || !refs.length) return [];
 
     const maxImages = 4;
@@ -4395,7 +4395,7 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInFlashcard;
       const embedRefs = this.extractImageRefs(noteContent);
-      const imageRefs = includeImages ? await this.resolveVisionImageRefs(file, embedRefs) : [];
+      const imageRefs = includeImages ? this.resolveVisionImageRefs(file, embedRefs) : [];
       const includeOcrTargets = includeImages && enabledTypes.includes("io");
       const imageDescriptors = await this.buildVisionImageDescriptors(file, noteContent, imageRefs, includeOcrTargets);
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
@@ -4696,7 +4696,7 @@ export class SproutAssistantPopup {
       const settings = this.plugin.settings.studyAssistant;
       const includeImages = !!settings.privacy.includeImagesInFlashcard;
       const embedRefs = this.extractImageRefs(noteContent);
-      const imageRefs = includeImages ? await this.resolveVisionImageRefs(file, embedRefs) : [];
+      const imageRefs = includeImages ? this.resolveVisionImageRefs(file, embedRefs) : [];
       const includeOcrTargets = includeImages && enabledTypes.includes("io");
       const imageDescriptors = await this.buildVisionImageDescriptors(file, noteContent, imageRefs, includeOcrTargets);
       const imageDataUrls = includeImages ? await this.buildVisionImageDataUrls(file, imageRefs) : [];
