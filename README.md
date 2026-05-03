@@ -109,6 +109,8 @@ FSRS scheduling in LearnKit is powered by FSRS-6 via [open-spaced-repetition/ts-
 
 This project also uses Circle Flags assets from [HatScripts/circle-flags](https://github.com/HatScripts/circle-flags), licensed under MIT.
 
+Thanks to everyone who has contributed ideas, bug reports, and feedback. Special thanks to [sevenRevy](https://github.com/sevenRevy) for code contributions.
+
 See [here](NOTICES.md) for additional third-party attributions and license notices.
 
 ### Our Commitment
