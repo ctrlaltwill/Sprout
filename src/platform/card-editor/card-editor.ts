@@ -16,7 +16,7 @@ import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions } from "../../platform/core/store";
 import { getCorrectIndices } from "../../platform/types/card";
 import { buildAnswerOrOptionsFor, escapePipes } from "../../views/reviewer/fields";
-import { COMBO_VARIANT_SEPARATOR } from "../core/delimiter";
+import { COMBO_VARIANT_SEPARATOR, COMBO_ZIP_SEPARATOR } from "../core/delimiter";
 import { escapeDelimiterText, getDelimiter } from "../../platform/core/delimiter";
 import { renderMarkdownPreviewInElement, setCssProps } from "../../platform/core/ui";
 import {
@@ -1000,10 +1000,12 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
       return (card.title || "").split(/\r?\n/)[0] || "";
     case "question":
       if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
-        // For combo (legacy or basic with extensionData), show variants joined by ::.
         const ext = (card.extensionData ?? {});
         const qv: string[] = Array.isArray(ext.qVariants) ? ext.qVariants as string[] : [];
-        if (qv.length > 1) return qv.join(COMBO_VARIANT_SEPARATOR);
+        if (qv.length > 1) {
+          const isZip = ext.comboMode === "zip" || card.comboMode === "zip";
+          return qv.join(isZip ? COMBO_ZIP_SEPARATOR : COMBO_VARIANT_SEPARATOR);
+        }
         return card.q || "";
       }
       if (card.type === "mcq") return card.stem || "";
@@ -1013,7 +1015,10 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
       if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
         const ext2 = (card.extensionData ?? {});
         const av: string[] = Array.isArray(ext2.aVariants) ? ext2.aVariants as string[] : [];
-        if (av.length > 1) return av.join(COMBO_VARIANT_SEPARATOR);
+        if (av.length > 1) {
+          const isZip = ext2.comboMode === "zip" || card.comboMode === "zip";
+          return av.join(isZip ? COMBO_ZIP_SEPARATOR : COMBO_VARIANT_SEPARATOR);
+        }
         return card.a || "";
       }
       if (card.type === "mcq") {

@@ -38,7 +38,7 @@ import {
 import { coerceGroups } from "../../engine/indexing/group-format";
 import { renderMarkdownPreviewInElement, setCssProps } from "../core/ui";
 import { handleTabInTextarea } from "../card-editor/card-editor";
-import { COMBO_VARIANT_SEPARATOR, splitComboVariants } from "../core/delimiter";
+import { COMBO_VARIANT_SEPARATOR, COMBO_ZIP_SEPARATOR, splitComboVariants } from "../core/delimiter";
 
 type GroupPickerFieldFactory = (
   initialValue: string,
@@ -83,12 +83,14 @@ function getSharedEditableFieldValue(cards: CardRecord[], field: EditableField):
     if (field === "title") return String(card.title || "");
     if (field === "question") {
       if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
-        // For combo cards (type "combo" or basic with extensionData), show variants joined by ::.
         const ext = (!card.extensionData || (typeof card.extensionData === "object" && !Array.isArray(card.extensionData)))
           ? (card.extensionData ?? {})
           : {};
         const qv: string[] = Array.isArray(ext.qVariants) ? ext.qVariants as string[] : [];
-        if (qv.length > 1) return qv.join(COMBO_VARIANT_SEPARATOR);
+        if (qv.length > 1) {
+          const isZip = ext.comboMode === "zip" || card.comboMode === "zip";
+          return qv.join(isZip ? COMBO_ZIP_SEPARATOR : COMBO_VARIANT_SEPARATOR);
+        }
         return String(card.q || "");
       }
       if (card.type === "mcq") return String(card.stem || "");
@@ -101,7 +103,10 @@ function getSharedEditableFieldValue(cards: CardRecord[], field: EditableField):
           ? (card.extensionData ?? {})
           : {};
         const av: string[] = Array.isArray(ext.aVariants) ? ext.aVariants as string[] : [];
-        if (av.length > 1) return av.join(COMBO_VARIANT_SEPARATOR);
+        if (av.length > 1) {
+          const isZip = ext.comboMode === "zip" || card.comboMode === "zip";
+          return av.join(isZip ? COMBO_ZIP_SEPARATOR : COMBO_VARIANT_SEPARATOR);
+        }
         return String(card.a || "");
       }
       if (card.type === "mcq") return buildAnswerOrOptionsFor(card);

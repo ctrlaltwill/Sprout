@@ -8,8 +8,8 @@ Basic flashcards show a question first, then an answer.
 Reversed flashcards add a second flashcard automatically so you study both directions.
 
 Combo cards can be used as an extension of basic cards, they are explained further below:
-- Use cross combinations when every combination produces a valid card.
-- Use sequential combinations when cross-pairings would be factually wrong.
+- Use Cross Combo when every combination produces a valid card.
+- Use Sequential Combo when cross-pairings would be factually wrong.
 
 ## Basic Format
 
@@ -24,13 +24,13 @@ G | Geography |
 - Required fields: `Q` and `A`
 - Optional fields: `T`, `I`, `G`
 
-### Modal Steps
+## Modal Steps
 
 1. Right-click in a note.
 2. Choose **Add flashcard -> Basic Card**.
 3. Fill in fields and save.
 
-### Reverse Mode
+## Reverse Mode
 
 With reverse enabled, LearnKit creates:
 
@@ -39,13 +39,13 @@ With reverse enabled, LearnKit creates:
 
 Use the reverse option in the modal to enable this.
 
-### Demo
+## Demo
 
 ![Basic card demo](../../../branding/Demo/Basic%20Card.png)
 
 _Basic card question and answer flow._
 
-### Grading
+## Grading
 
 After revealing the answer, grade your recall:
 
@@ -54,7 +54,7 @@ After revealing the answer, grade your recall:
 
 See [Grading](../Grading).
 
-### Tips
+## Tips
 
 - If `Q` or `A` is missing, the flashcard cannot work correctly.
 - Keep one fact per flashcard for better retention.
