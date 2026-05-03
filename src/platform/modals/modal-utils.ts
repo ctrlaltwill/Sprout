@@ -147,13 +147,31 @@ export function setVisible(el: HTMLElement, visible: boolean) {
 }
 
 /** Human-readable card-type label (for the browser / bulk-edit views). */
-export function typeLabelBrowser(t: string): string {
+export function typeLabelBrowser(
+  t: string,
+  card?: { q?: string | null; a?: string | null; extensionData?: Record<string, unknown> | null } | null,
+): string {
   const ty = String(t ?? "").toLowerCase();
-  if (ty === "basic") return "Basic";
+  if (ty === "basic") {
+    // Detect combo cards that are stored as basic but have :: separator or extensionData variants
+    if (card) {
+      const ext = card.extensionData ?? {};
+      const qVariants: unknown[] = Array.isArray(ext.qVariants) ? ext.qVariants : [];
+      const aVariants: unknown[] = Array.isArray(ext.aVariants) ? ext.aVariants : [];
+      if (qVariants.length > 0 || aVariants.length > 0) return "Basic (Combo)";
+      const qText = String(card.q ?? "");
+      const aText = String(card.a ?? "");
+      if (qText.includes(" :: ") || aText.includes(" :: ")) return "Basic (Combo)";
+    }
+    return "Basic";
+  }
   if (ty === "reversed" || ty === "reversed-child") return "Basic (Reversed)";
   if (ty === "cloze" || ty === "cloze-child") return "Cloze";
   if (ty === "mcq") return "Multiple choice";
   if (ty === "io" || ty === "io-child") return "Image occlusion";
+  if (ty === "hq" || ty === "hq-child") return "Hotspot";
+  if (ty === "oq") return "Ordered question";
+  if (ty === "combo-child") return "Combo";
   return ty;
 }
 
@@ -288,6 +306,8 @@ export type PipeKey =
   | "OQ"
   | "IO"
   | "HQ"
+  | "QX"
+  | "AX"
   | "M"
   | "I"
   | "O"

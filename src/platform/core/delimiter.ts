@@ -210,42 +210,42 @@ const ANCHOR_PREFIX_PATTERN = "(?:learnkit|sprout)";
 function _rebuildRegexes() {
   const d = escapeDelimiterRe(_delim);
 
-  // parser.ts — card start: ^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\s*<d>\s*(.*)$
-  _CARD_START_DELIM_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\\s*${d}\\s*(.*)$`);
+  // parser.ts — card start: ^(RQ|Q|MCQ|CQ|IO|HQ|OQ|QX)\s*<d>\s*(.*)$
+  _CARD_START_DELIM_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|HQ|OQ|QX)\\s*${d}\\s*(.*)$`);
 
-  // parser.ts — field: ^(T|A|O|I|G|C|M|\d{1,2})\s*<d>\s*(.*)$
-  _FIELD_DELIM_RE = new RegExp(`^(T|A|O|I|G|C|M|\\d{1,2})\\s*${d}\\s*(.*)$`);
+  // parser.ts — field: ^(T|A|O|I|G|C|M|AX|\d{1,2})\s*<d>\s*(.*)$
+  _FIELD_DELIM_RE = new RegExp(`^(T|A|O|I|G|C|M|AX|\\d{1,2})\\s*${d}\\s*(.*)$`);
 
   // parser.ts — title outside card: ^T\s*<d>\s*(.*)$
   _TITLE_OUTSIDE_DELIM_RE = new RegExp(`^T\\s*${d}\\s*(.*)$`);
 
-  // parser.ts — any header/anchor: ^(?:.learnkit-\d{9}|(?:RQ|Q|MCQ|CQ|IO|HQ|OQ|T|A|O|I|G|C|M|\d{1,2})\s*<d>)\s*
+  // parser.ts — any header/anchor: ^(?:^learnkit-\d{9}|^sprout-\d{9}|(?:RQ|Q|MCQ|CQ|IO|HQ|OQ|QX|T|A|O|I|G|C|M|AX|\d{1,2})\s*<d>)\s*
   _ANY_HEADER_DELIM_RE = new RegExp(
-    `^(?:\\^${ANCHOR_PREFIX_PATTERN}-\\d{9}|(?:RQ|Q|MCQ|CQ|IO|HQ|OQ|T|A|O|I|G|C|M|\\d{1,2})\\s*${d})\\s*`,
+    `^(?:\\^${ANCHOR_PREFIX_PATTERN}-\\d{9}|(?:RQ|Q|MCQ|CQ|IO|HQ|OQ|QX|T|A|O|I|G|C|M|AX|\\d{1,2})\\s*${d})\\s*`,
   );
 
   // reading-helpers.ts — field start (relaxed): ^([A-Za-z]+|\d{1,2})\s*<d>\s*(.*)$
   _FIELD_START_READING_RE = new RegExp(`^([A-Za-z]+|\\d{1,2})\\s*${d}\\s*(.*)$`);
 
   // settings-utils.ts — card start (also accepts colon for legacy):
-  //   ^(RQ|Q|MCQ|CQ|OQ)\s*(?::|<d>)\s*.*$|^(IO|HQ)\s*<d>\s*.*$
+  //   ^(RQ|Q|MCQ|CQ|OQ|QX)\s*(?::|<d>)\s*.*$|^(IO|HQ)\s*<d>\s*.*$
   _CARD_START_SETTINGS_RE = new RegExp(
-    `^(RQ|Q|MCQ|CQ|OQ)\\s*(?::|${d})\\s*.*$|^(IO|HQ)\\s*${d}\\s*.*$`,
+    `^(RQ|Q|MCQ|CQ|OQ|QX)\\s*(?::|${d})\\s*.*$|^(IO|HQ)\\s*${d}\\s*.*$`,
   );
 
   // settings-utils.ts — field line:
-  //   ^(T|A|I|O|G|M|\d{1,2})\s*(?::|<d>)\s*.*$|^(C|K)\s*(?::|<d>)\s*.*$
+  //   ^(T|A|I|O|G|M|AX|\d{1,2})\s*(?::|<d>)\s*.*$|^(C|K)\s*(?::|<d>)\s*.*$
   _FIELD_LINE_SETTINGS_RE = new RegExp(
-    `^(T|A|I|O|G|M|\\d{1,2})\\s*(?::|${d})\\s*.*$|^(C|K)\\s*(?::|${d})\\s*.*$`,
+    `^(T|A|I|O|G|M|AX|\\d{1,2})\\s*(?::|${d})\\s*.*$|^(C|K)\\s*(?::|${d})\\s*.*$`,
   );
 
   // sync-engine.ts — flashcard header (card types):
-  //   ^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\s*(?::|<d>)\s*
-  _FLASHCARD_HEADER_CARD_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|HQ|OQ)\\s*(?::|${d})\\s*`);
+  //   ^(RQ|Q|MCQ|CQ|IO|HQ|OQ|QX)\s*(?::|<d>)\s*
+  _FLASHCARD_HEADER_CARD_RE = new RegExp(`^(RQ|Q|MCQ|CQ|IO|HQ|OQ|QX)\\s*(?::|${d})\\s*`);
 
   // sync-engine.ts — flashcard header (field types):
-  //   ^(T|A|O|I|G|C|M|K|L|\d{1,2})\s*(?::|<d>)\s*
-  _FLASHCARD_HEADER_FIELD_RE = new RegExp(`^(T|A|O|I|G|C|M|K|L|\\d{1,2})\\s*(?::|${d})\\s*`);
+  //   ^(T|A|O|I|G|C|M|K|L|AX|QX|\d{1,2})\s*(?::|<d>)\s*
+  _FLASHCARD_HEADER_FIELD_RE = new RegExp(`^(T|A|O|I|G|C|M|K|L|AX|QX|\\d{1,2})\\s*(?::|${d})\\s*`);
 }
 
 // Initial build with default delimiter
@@ -358,4 +358,52 @@ export function formatDelimitedField(key: string, value: string): string[] {
   for (let i = 1; i < parts.length - 1; i++) out.push(escapeDelimiterText(parts[i] ?? ""));
   out.push(`${escapeDelimiterText(parts[parts.length - 1] ?? "")} ${d}`);
   return out;
+}
+
+// ── Combo card variant delimiter ────────────────────────────────────
+
+/**
+ * Delimiter used to separate question/answer variants inside QX and AX fields
+ * of combo (Cartesian product) cards.
+ *
+ * Uses `::` (double colon) rather than `||` to avoid escaping conflicts with
+ * the pipe-delimited card format.
+ */
+export const COMBO_VARIANT_SEPARATOR = " :: ";
+
+/**
+ * Delimiter used to separate question/answer variants inside QX and AX fields
+ * of combo (sequential/zip) cards.
+ *
+ * Uses `:::` (triple colon) inside field pipes. Note: the bare-line `:::` shorthand
+ * syntax (e.g. `Question:::Answer`) is parsed before field content is read and
+ * therefore does not conflict.
+ */
+export const COMBO_ZIP_SEPARATOR = " ::: ";
+
+/**
+ * Splits a raw QX/AX field value into individual Cartesian product variants.
+ * Supports both the current `::` delimiter and the legacy `||` delimiter
+ * for backward compatibility with cards written by older plugin versions.
+ *
+ * Note: uses negative lookaheads to avoid matching `::` inside `:::`.
+ */
+export function splitComboVariants(raw: string): string[] {
+  // Split on :: (not preceded or followed by another :) or legacy ||
+  return String(raw ?? "")
+    .split(/(?<!:)::(?!:)|\s*\|\|\s*/)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+}
+
+/**
+ * Splits a raw QX/AX field value into sequential (zip) variants.
+ * Uses `:::` (triple colon) as the separator.
+ * Q and A variant counts must be equal for a valid zip combo card.
+ */
+export function splitZipVariants(raw: string): string[] {
+  return String(raw ?? "")
+    .split(/\s*:::\s*/)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
 }

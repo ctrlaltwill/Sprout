@@ -17,8 +17,8 @@
  *  - extractRawTextFromParagraph — extracts plain text from a paragraph element
  *  - extractTextWithLaTeX        — extracts text preserving inline LaTeX from an element
  *  - extractCardFromSource       — extracts a card's raw source block by anchor ID from a markdown string
- *  - SproutCard                  — interface describing a parsed Sprout card with typed fields
- *  - parseSproutCard             — parses a raw text block into a SproutCard object
+ *  - LearnKitCard                  — interface describing a parsed LearnKit card with typed fields
+ *  - parseLearnKitCard             — parses a raw text block into a LearnKitCard object
  *  - saveField                   — appends a field value to a fields record (handles multi-line)
  *  - renderMathInElement         — triggers MathJax typesetting on a DOM element
  *  - buildCardContentHTML        — builds the full HTML string for a card's content section
@@ -37,8 +37,8 @@
 
 import { log } from "../../platform/core/logger";
 import { queryFirst } from "../../platform/core/ui";
-import { convertInlineDisplayMath, parseClozeTokens } from "../../platform/core/shared-utils";
-import { replaceCircleFlagTokens } from "../../platform/flags/flag-tokens";
+import { parseClozeTokens } from "../../platform/core/shared-utils";
+import { processMarkdownFeatures as _processMarkdownFeatures } from "../widget/view/markdown";
 import {
   FIELD_START_READING_RE,
   unescapeDelimiterText,
@@ -46,6 +46,7 @@ import {
   escapeDelimiterRe,
 } from "../../platform/core/delimiter";
 import { CARD_ANCHOR_INLINE_RE } from "../../platform/core/identity";
+import { splitComboVariants, splitZipVariants } from "../../platform/core/delimiter";
 
 /* -----------------------
    Constants
@@ -86,7 +87,9 @@ function isKnownReadingFieldKey(key: string): boolean {
     normalized === 'G' ||
     normalized === 'IO' ||
     normalized === 'HQ' ||
-    normalized === 'OQ'
+    normalized === 'OQ' ||
+    normalized === 'QX' ||
+    normalized === 'AX'
   );
 }
 
@@ -96,7 +99,7 @@ function matchKnownFieldStart(s: string): RegExpMatchArray | null {
   return isKnownReadingFieldKey(m[1] || '') ? m : null;
 }
 
-export type FieldKey = "T" | "Q" | "RQ" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO" | "HQ" | "OQ";
+export type FieldKey = "T" | "Q" | "RQ" | "A" | "I" | "MCQ" | "CQ" | "O" | "G" | "IO" | "HQ" | "OQ" | "QX" | "AX";
 
 /* -----------------------
    Internal-only helpers
@@ -168,78 +171,19 @@ export function escapeHtml(text: unknown): string {
  * Process wiki links [[Link]], image embeds ![[image]], and inline formatting
  * for reading view.
  *
+ * Delegates to the shared implementation in widget/view/markdown with
+ * image-embed support enabled.
+ *
  * Inline formatting uses standard Obsidian markdown conventions:
  *   **text**   → <strong>   (bold)
  *   *text*     → <em>       (italic)
  *   _text_     → <em>       (italic — same as *text* in Obsidian)
  *   ~~text~~   → <s>        (strikethrough)
  *   ==text==   → <mark>     (highlight)
+ *   `text`     → <code>text</code>
  */
 export function processMarkdownFeatures(text: string): string {
-  if (!text) return '';
-  const source = convertInlineDisplayMath(String(text));
-
-  // ── Extract math blocks before applying markdown formatting ──
-  // LaTeX delimiters contain characters like _ * ^ that conflict with
-  // markdown formatting rules. We replace math blocks with placeholders,
-  // apply markdown formatting to non-math text, then restore the math.
-  const mathPlaceholders: string[] = [];
-  const MATH_PH = "@@SPROUTMATH";
-
-  // Match math blocks: $$...$$, $...$, \(...\), \[...\]
-  const mathBlockRe = /\$\$[\s\S]+?\$\$|(?<!\$)\$(?!\$)[^\s$](?:[^$]*[^\s$])?\$(?!\$)|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]/g;
-  const withPlaceholders = source.replace(mathBlockRe, (match) => {
-    const idx = mathPlaceholders.length;
-    mathPlaceholders.push(match);
-    return `${MATH_PH}${idx}@@`;
-  });
-
-  let result = withPlaceholders;
-
-  // Convert image embeds ![[image.ext]] or ![[path/image.ext|alt]] to placeholder <img> tags
-  // Must come BEFORE [[link]] handling to avoid partial matches
-  result = result.replace(/!\[\[([^\]|]+?)(?:\|([^\]]*?))?\]\]/g, (_match: string, target: string, alt?: string) => {
-    const altText = alt || target.split('/').pop() || target;
-    return `<img class="learnkit-reading-embed-img" data-embed-path="${escapeHtml(target.trim())}" alt="${escapeHtml(altText)}" />`;
-  });
-
-  // Convert wiki links [[Page]] or [[Page|Display]] to HTML links
-  result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match: string, target: string, display?: string) => {
-    const linkText = display || target;
-    // Create a data attribute for Obsidian to handle the click
-    return `<a href="#" class="internal-link" data-href="${escapeHtml(target)}">${escapeHtml(linkText)}</a>`;
-  });
-  
-  // ── Inline formatting (standard Obsidian markdown) ──
-  // Order matters: bold (**) before italic (*)
-
-  // Convert bold **text** to <strong>text</strong>
-  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-  // Convert italic *text* to <em>text</em>  (single asterisk)
-  // Must come AFTER bold to avoid partial matches
-  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-
-  // Convert italic _text_ to <em>text</em>  (underscore — standard Obsidian italic)
-  // Only match underscores at word boundaries to avoid matching things like variable_names
-  result = result.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, '<em>$1</em>');
-
-  // Convert strikethrough ~~text~~ to <s>text</s>
-  result = result.replace(/~~(.+?)~~/g, '<s>$1</s>');
-
-  // Convert highlight ==text== to <mark>text</mark>
-  result = result.replace(/==(.+?)==/g, '<mark>$1</mark>');
-
-  result = replaceCircleFlagTokens(result);
-
-  // ── Restore math blocks ──
-  if (mathPlaceholders.length) {
-    result = result.replace(/@@SPROUTMATH(\d+)@@/g, (_m, idx) => {
-      return mathPlaceholders[Number(idx)] ?? _m;
-    });
-  }
-
-  return result;
+  return _processMarkdownFeatures(text, { imageEmbeds: true });
 }
 
 export function splitAtPipeTerminator(line: string): { content: string; terminated: boolean } {
@@ -446,9 +390,12 @@ export function extractCardFromSource(sourceContent: string, anchorId: string): 
   return cardLines.join('\n');
 }
 
-export interface SproutCard {
+export interface LearnKitCard {
   anchorId: string;
-  type: "basic" | "reversed" | "cloze" | "mcq" | "io" | "hq" | "oq";
+  id?: string;
+  parentId?: string;
+  type: "basic" | "reversed" | "cloze" | "mcq" | "io" | "hq" | "oq" | "combo" | "io-child" | "hq-child";
+  comboMode?: "product" | "zip";
   title: string;
   fields: {
     T?: string | string[];
@@ -463,10 +410,12 @@ export interface SproutCard {
     G?: string | string[];
     IO?: string | string[];
     HQ?: string | string[];
+    QX?: string | string[];
+    AX?: string | string[];
   };
 }
 
-export function parseSproutCard(text: string): SproutCard | null {
+export function parseLearnKitCard(text: string): LearnKitCard | null {
   // Don't filter empty lines - they're significant for multi-line LaTeX blocks
   const lines = text.split('\n').map((l) => clean(l));
   if (lines.every((l) => l.trim().length === 0)) return null;
@@ -538,7 +487,7 @@ export function parseSproutCard(text: string): SproutCard | null {
     }
   });
 
-  let type: SproutCard["type"] = "basic";
+  let type: LearnKitCard["type"] = "basic";
   if (fields.CQ) type = "cloze";
   else if (fields.MCQ) type = "mcq";
   else if (fields.HQ) type = "hq";
@@ -547,6 +496,39 @@ export function parseSproutCard(text: string): SproutCard | null {
   else if (fields.RQ) type = "reversed";
   else if (fields.Q) type = "basic";
 
+  // ── Combo auto-detection ──────────────────────────────────────────
+  // Check ::: (zip/sequential) first, then :: (Cartesian product).
+  let comboMode: "product" | "zip" | undefined;
+  if (type === "basic") {
+    const qRaw = typeof fields.Q === "string" ? fields.Q : "";
+    const aRaw = typeof fields.A === "string" ? fields.A : "";
+
+    const qZip = splitZipVariants(qRaw);
+    const aZip = splitZipVariants(aRaw);
+    const hasQZip = qZip.length > 1;
+    const hasAZip = aZip.length > 1;
+
+    if (hasQZip || hasAZip) {
+      type = "combo";
+      comboMode = "zip";
+      const qVars = hasQZip ? qZip : (qRaw ? [qRaw] : []);
+      const aVars = hasAZip ? aZip : (aRaw ? [aRaw] : []);
+      fields.QX = qVars[0] ?? (qRaw || "");
+      fields.AX = aVars[0] ?? (aRaw || "");
+    } else {
+      const qVariants = splitComboVariants(qRaw);
+      const aVariants = splitComboVariants(aRaw);
+      if (qVariants.length > 1 || aVariants.length > 1) {
+        type = "combo";
+        comboMode = "product";
+        // Store the first variant pair in QX/AX for card rendering.
+        // The full variant arrays are preserved in Q/A for editing.
+        fields.QX = qVariants.length > 0 ? qVariants[0] : (qRaw || "");
+        fields.AX = aVariants.length > 0 ? aVariants[0] : (aRaw || "");
+      }
+    }
+  }
+
   // Only show an explicit title when the card defines a T field.
   let title = "";
   if (fields.T) {
@@ -554,7 +536,7 @@ export function parseSproutCard(text: string): SproutCard | null {
     title = title.trim();
   }
 
-  return { anchorId, type, title, fields };
+  return { anchorId, type, title, fields, comboMode };
 }
 
 export function saveField(fields: Record<string, string | string[]>, fieldName: string, content: string[]) {
@@ -588,7 +570,7 @@ export function renderMathInElement(el: HTMLElement) {
   }
 }
 
-export function buildCardContentHTML(card: SproutCard): string {
+export function buildCardContentHTML(card: LearnKitCard): string {
   let contentHTML = '';
   if (card.type === "cloze" && card.fields.CQ) {
     const clozeContent = Array.isArray(card.fields.CQ) ? card.fields.CQ.join('\n') : card.fields.CQ;
@@ -605,6 +587,10 @@ export function buildCardContentHTML(card: SproutCard): string {
     const question = Array.isArray(qField) ? qField.join('\n') : qField;
     const answer = Array.isArray(card.fields.A) ? card.fields.A.join('\n') : card.fields.A;
     contentHTML += buildBasicSectionHTML(question, answer);
+  } else if (card.type === "combo" && card.fields.Q) {
+    const question = Array.isArray(card.fields.Q) ? card.fields.Q.join('\n') : card.fields.Q;
+    const answer = Array.isArray(card.fields.A) ? card.fields.A.join('\n') : card.fields.A;
+    contentHTML += buildBasicSectionHTML(question, answer ?? '');
   } else if (card.type === "oq" && card.fields.OQ) {
     const question = Array.isArray(card.fields.OQ) ? card.fields.OQ.join('\n') : card.fields.OQ;
     // Collect numbered step fields (1, 2, 3, ...)

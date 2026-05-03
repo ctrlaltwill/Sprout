@@ -176,6 +176,13 @@ mjx-container[jax="CHTML"][display="true"] {
   display: none;
 }
 
+/* Catch hidden elements that land outside card-run wrappers (e.g. raw cloze list
+   siblings rendered after card-run wrapping has already completed). */
+.markdown-preview-section.learnkit-layout-masonry > .learnkit-hidden-important,
+.markdown-preview-section.learnkit-layout-masonry > [data-learnkit-hidden="true"] {
+  display: none;
+}
+
 /* ---- Reading view utilities ---- */
 
 .learnkit .learnkit-reading-chevron-collapsed {
@@ -1089,7 +1096,29 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 .learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-block {
+  white-space: normal;
   padding-inline-start: 2px;
+}
+
+.learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-block > :first-child {
+  margin-top: 0;
+}
+
+.learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-block > :last-child {
+  margin-bottom: 0;
+}
+
+.learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-block :is(li, li > p) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-block > :is(p, ul, ol) + :is(p, ul, ol) {
+  margin-top: 0;
+}
+
+.learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-block ol > li::marker {
+  font-variant-numeric: tabular-nums;
 }
 
 .learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-plain-list {
@@ -1127,6 +1156,7 @@ mjx-container[jax="CHTML"][display="true"] {
   margin-top: 0;
   margin-bottom: 0;
   padding-inline-start: 1.5em;
+  list-style-position: outside;
 }
 
 .learnkit-pretty-card.learnkit-macro-markdown .learnkit-markdown-line .internal-embed.image-embed {

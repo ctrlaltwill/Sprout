@@ -190,7 +190,7 @@ export function resolveWidgetKeyAction(ctx: WidgetKeyContext): WidgetKeyAction {
 
   const isFlip = key === "enter" || key === " " || key === "arrowright";
   const isBasicLike =
-    cardType === "basic" || cardType === "reversed" || cardType === "reversed-child" ||
+    cardType === "basic" || cardType === "reversed" || cardType === "reversed-child" || cardType === "combo-child" ||
     cardType === "cloze" || cardType === "cloze-child" ||
     cardType === "io" || cardType === "io-child" ||
     cardType === "hq" || cardType === "hq-child";

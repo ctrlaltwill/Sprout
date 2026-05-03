@@ -543,6 +543,10 @@ export function processClozeForMath(
   options?: {
     blankClassName?: string;
     useHintText?: boolean;
+    /** Optional wrapper for revealed non-math cloze answers.
+     *  Receives the raw answer text and should return an HTML string.
+     *  When omitted, answers are wrapped in `**…**` (bold) for Markdown rendering. */
+    revealWrapper?: (answer: string) => string;
   },
 ): string {
   const isInsideMath = buildMathRangeChecker(text);
@@ -575,7 +579,13 @@ export function processClozeForMath(
     } else {
       const inMath = isInsideMath(match.index);
       if (reveal) {
-        result += inMath ? `${answer}` : `**${answer}**`;
+        if (inMath) {
+          result += answer;
+        } else if (options?.revealWrapper) {
+          result += options.revealWrapper(answer);
+        } else {
+          result += `**${answer}**`;
+        }
       } else if (hint && useHintText) {
         result += inMath ? stripInlineMarkdownMarkers(hint) : buildBlankHtml(answer, hint);
       } else {

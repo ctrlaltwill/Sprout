@@ -15,6 +15,8 @@ import {
   ANY_HEADER_DELIM_RE,
   BASIC_SHORTHAND_RE,
   CLOZE_SHORTHAND_RE,
+  splitComboVariants,
+  splitZipVariants,
   stripClosingDelimiter,
   unescapeDelimiterText,
   escapeDelimiterRe,
@@ -25,7 +27,7 @@ import { normalizeGroups } from "../indexing/group-format";
 
 const ANCHOR_RE = CARD_ANCHOR_LINE_RE;
 
-type CardType = "basic" | "reversed" | "mcq" | "cloze" | "io" | "hq" | "oq";
+type CardType = "basic" | "reversed" | "mcq" | "cloze" | "io" | "hq" | "oq" | "combo";
 
 export type McqOption = { text: string; isCorrect: boolean };
 
@@ -80,6 +82,14 @@ export type ParsedCard = {
   oqSteps: string[] | null; // ordered list of steps (correct order)
   /** @internal Parser-only: index of the step currently being accumulated. */
   _oqCurrentStepIdx?: number;
+
+  // Combo: Cartesian product cards (QX/AX)
+  /** Question variants split by :: (product) or ::: (zip). */
+  qVariants: string[] | null;
+  /** Answer variants split by :: (product) or ::: (zip). */
+  aVariants: string[] | null;
+  /** How children are expanded: "product" (Cartesian) or "zip" (sequential, paired). */
+  comboMode: "product" | "zip" | null;
 
   // shared
   info: string | null;
@@ -183,10 +193,10 @@ function makeEmptyCard(
   startLine: number,
   pendingId: string | null,
   pendingTitle: string | null,
-  kind: "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "HQ" | "OQ",
+  kind: "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "HQ" | "OQ" | "QX",
 ): ParsedCard {
   const type: CardType =
-    kind === "Q"
+    kind === "Q" || kind === "QX"
       ? "basic"
       : kind === "RQ"
         ? "reversed"
@@ -233,6 +243,10 @@ function makeEmptyCard(
     interactionMode: null,
 
     oqSteps: null,
+
+    qVariants: null,
+    aVariants: null,
+    comboMode: null,
 
     info: null,
 
@@ -315,7 +329,61 @@ export function parseCardsFromText(
 
     current.groups = parseGroups(current.groupsRaw);
 
-    if (current.type === "basic" || current.type === "reversed") {
+    if (current.type === "basic") {
+      // ── Combo auto-detection ──────────────────────────────────────
+      // Check ::: (zip/sequential) first, then :: (Cartesian product).
+      // ::: inside field pipes is distinct from the bare-line `Q:::A` shorthand.
+      const qRaw = String(current.q ?? "").trim();
+      const aRaw = String(current.a ?? "").trim();
+
+      const qZip = qRaw ? splitZipVariants(qRaw) : [];
+      const aZip = aRaw ? splitZipVariants(aRaw) : [];
+      const hasQZip = qZip.length > 1;
+      const hasAZip = aZip.length > 1;
+
+      if (hasQZip || hasAZip) {
+        // Zip mode: variants are paired by position.
+        current.comboMode = "zip";
+        current.qVariants = hasQZip ? qZip : (qRaw ? [qRaw] : []);
+        current.aVariants = hasAZip ? aZip : (aRaw ? [aRaw] : []);
+
+        if (current.qVariants.length < 1) {
+          current.errors.push("Combo card requires at least one question variant. Separate variants with :::.");
+        }
+        if (current.aVariants.length < 1) {
+          current.errors.push("Combo card requires at least one answer variant. Separate variants with :::.");
+        }
+        if (current.qVariants.length > 1 && current.aVariants.length > 1 &&
+            current.qVariants.length !== current.aVariants.length) {
+          current.errors.push(
+            `Sequential combo card has mismatched variant counts: ${current.qVariants.length} questions and ${current.aVariants.length} answers. Counts must be equal.`
+          );
+        }
+      } else {
+        // Product mode: full Cartesian product Q × A.
+        const qVariants = qRaw ? splitComboVariants(qRaw) : [];
+        const aVariants = aRaw ? splitComboVariants(aRaw) : [];
+
+        const hasQVariants = qVariants.length > 1;
+        const hasAVariants = aVariants.length > 1;
+
+        if (hasQVariants || hasAVariants) {
+          current.comboMode = "product";
+          current.qVariants = hasQVariants ? qVariants : (qRaw ? [qRaw] : []);
+          current.aVariants = hasAVariants ? aVariants : (aRaw ? [aRaw] : []);
+
+          if (current.qVariants.length < 1) {
+            current.errors.push("Combo card requires at least one question variant. Separate variants with ::.");
+          }
+          if (current.aVariants.length < 1) {
+            current.errors.push("Combo card requires at least one answer variant. Separate variants with ::.");
+          }
+        }
+      }
+
+      if (!current.q) current.errors.push("Missing Q:");
+      if (!current.a) current.errors.push("Missing A:");
+    } else if (current.type === "reversed") {
       if (!current.q) current.errors.push("Missing Q:");
       if (!current.a) current.errors.push("Missing A:");
     } else if (current.type === "mcq") {
@@ -544,7 +612,7 @@ export function parseCardsFromText(
     if (sp) {
       flush();
 
-      const kind = sp[1] as "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "HQ" | "OQ";
+      const kind = sp[1] as "Q" | "RQ" | "MCQ" | "CQ" | "IO" | "HQ" | "OQ" | "QX";
       const startLine = pendingIdLine !== null ? pendingIdLine : i;
 
       current = makeEmptyCard(notePath, startLine, pendingId, pendingTitle, kind);
@@ -565,6 +633,7 @@ export function parseCardsFromText(
       if (kind === "IO") current.ioSrc = "";
       if (kind === "HQ") current.hqSrc = "";
       if (kind === "OQ") { current.q = ""; current.oqSteps = []; }
+      if (kind === "QX") { current.q = ""; }
 
       const key: CurrentFieldKey =
         kind === "Q" || kind === "RQ" || kind === "OQ"
@@ -575,7 +644,9 @@ export function parseCardsFromText(
               ? "clozeText"
               : kind === "IO"
                 ? "ioSrc"
-                : "hqSrc";
+                : kind === "HQ"
+                  ? "hqSrc"
+                  : "q"; // QX uses "q" field for question variants
 
       appendToField(current, key, first);
 
@@ -771,6 +842,15 @@ export function parseCardsFromText(
           currentField = null;
           continue;
         }
+      }
+
+      // Legacy AX field — mapped to answer (same as A)
+      if (key === "AX") {
+        current.a = null;
+        appendToField(current, "a", chunk);
+        pipeField = closed ? null : "a";
+        currentField = null;
+        continue;
       }
 
       current.errors.push(`Unrecognised field in card: "${key} |"`);

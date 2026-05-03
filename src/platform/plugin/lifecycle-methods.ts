@@ -102,10 +102,11 @@ export function WithLifecycleMethods<T extends Constructor<LearnKitPluginBase>>(
         { id: "add-basic-flashcard", name: "Add basic flashcard to note", type: "basic" },
         { id: "add-basic-reversed-flashcard", name: "Add basic (reversed) flashcard to note", type: "reversed" },
         { id: "add-cloze-flashcard", name: "Add cloze flashcard to note", type: "cloze" },
+        { id: "add-basic-flashcard", name: "Add basic flashcard to note", type: "basic" },
         { id: "add-multiple-choice-flashcard", name: "Add multiple choice flashcard to note", type: "mcq" },
         { id: "add-ordered-question-flashcard", name: "Add ordered question flashcard to note", type: "oq" },
-        { id: "add-image-occlusion-flashcard", name: "Add image occlusion flashcard to note", type: "io" },
         { id: "add-hotspot-flashcard", name: "Add hotspot flashcard to note", type: "hq" },
+        { id: "add-image-occlusion-flashcard", name: "Add image occlusion flashcard to note", type: "io" },
       ];
 
       for (const command of flashcardCommands) {

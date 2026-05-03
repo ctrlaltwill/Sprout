@@ -31,11 +31,11 @@ import {
   extractRawTextFromParagraph,
   extractTextWithLaTeX,
   extractCardFromSource,
-  parseSproutCard,
+  parseLearnKitCard,
   normalizeMathSignature,
   processMarkdownFeatures,
   buildCardContentHTML,
-  type SproutCard,
+  type LearnKitCard,
 } from "./reading-helpers";
 import { getTtsService } from "../../platform/integrations/tts/tts-service";
 import { hasCardAnchorForId } from "../../platform/core/identity";
@@ -51,7 +51,7 @@ let sproutPluginRef: Plugin | null = null;
 type SproutPluginLike = Plugin & {
   store?: { data?: { cards?: Record<string, CardRecord> } };
   settings?: {
-    general?: { prettifyCards?: string; enableReadingStyles?: boolean };
+    general?: { prettifyCards?: string; enableReadingStyles?: boolean; interfaceLanguage?: string };
     cards?: {
       clozeMode?: "standard" | "typed";
       clozeBgColor?: string;
@@ -668,7 +668,13 @@ export function registerReadingViewPrettyCards(plugin: Plugin) {
     const refreshRoot = root ?? document.documentElement;
     resetCardsToNativeReading(refreshRoot);
     clearStaleReadingViewState(refreshRoot);
-    void processCardElements(refreshRoot, undefined, sourceFromEvent);
+    void processCardElements(refreshRoot, undefined, sourceFromEvent)
+      .then(() => {
+        runPostRefreshSpilloverCleanup(refreshRoot);
+      })
+      .catch((err) => {
+        log.swallow("post refresh processCardElements", err);
+      });
 
   }
 
@@ -721,15 +727,112 @@ async function getLiveMarkdownSourceContent(): Promise<string> {
   return '';
 }
 
+async function forceReadingViewRefreshAfterModalSave(
+  plugin: SproutPluginLike,
+  sourcePath: string,
+  sourceContent: string,
+): Promise<void> {
+  const refreshLeaves = (plugin as unknown as {
+    refreshReadingViewMarkdownLeaves?: () => Promise<void> | void;
+  }).refreshReadingViewMarkdownLeaves;
+
+  if (typeof refreshLeaves === "function") {
+    try {
+      await Promise.resolve(refreshLeaves.call(plugin));
+    } catch (e) {
+      log.swallow("refresh reading view markdown leaves (modal save)", e);
+    }
+  }
+
+  const dispatchPayload = { sourceContent, sourcePath };
+  const leaves = plugin.app.workspace
+    .getLeavesOfType("markdown")
+    .filter((leaf) => {
+      const view = leaf.view;
+      if (!(view instanceof MarkdownView)) return false;
+      if (!(view.file instanceof TFile)) return true;
+      return !sourcePath || view.file.path === sourcePath;
+    });
+
+  for (const leaf of leaves) {
+    const view = leaf.view;
+    if (!(view instanceof MarkdownView)) continue;
+
+    const content = queryFirst(
+      view.containerEl,
+      ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
+    );
+    if (!(content instanceof HTMLElement)) continue;
+
+    const dispatchRefresh = () => {
+      try {
+        content.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", {
+          bubbles: true,
+          detail: dispatchPayload,
+        }));
+      } catch (e) {
+        log.swallow("dispatch reading view refresh (modal save)", e);
+      }
+    };
+
+    dispatchRefresh();
+
+    if (view.getMode?.() === "preview") {
+      try {
+        view.previewMode?.rerender?.();
+      } catch (e) {
+        log.swallow("rerender markdown preview (modal save)", e);
+      }
+    }
+
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          dispatchRefresh();
+          void refreshProcessedCards(content, sourceContent);
+          runPostRefreshSpilloverCleanup(content);
+          resolve();
+        });
+      });
+    });
+
+    // Obsidian may append structural list blocks shortly after rerender.
+    // A delayed pass keeps card-owned residue hidden in the same page visit.
+    window.setTimeout(() => {
+      try {
+        void refreshProcessedCards(content, sourceContent);
+        runPostRefreshSpilloverCleanup(content);
+      } catch {
+        // Best-effort cleanup only.
+      }
+    }, 120);
+  }
+}
+
+function runPostRefreshSpilloverCleanup(scope: ParentNode): void {
+  const cards = Array.from((scope as Element).querySelectorAll?.<HTMLElement>(
+    ".learnkit-pretty-card[data-learnkit-processed], .learnkit-pretty-card[data-sprout-processed]",
+  ) ?? []);
+
+  for (const cardEl of cards) {
+    const raw = String(cardEl.getAttribute("data-learnkit-raw-text") || "");
+    hideCardSiblingElements(cardEl, raw || undefined);
+  }
+
+  hideSectionLevelOrphanDelimitedParagraphs(scope);
+}
+
+export function __testRunPostRefreshSpilloverCleanup(scope: ParentNode): void {
+  runPostRefreshSpilloverCleanup(scope);
+}
+
 /* =========================
    Debounced MutationObserver
    ========================= */
 
 let mutationObserver: MutationObserver | null = null;
-let debounceTimer: number | null = null;
-const DEBOUNCE_MS = 120;
+let pendingRafId: number | null = null;
 let viewportReflowTimer: number | null = null;
-const VIEWPORT_REFLOW_DEBOUNCE_MS = 90;
 
 // Registered window listeners (stored for cleanup)
 let registeredWindowListeners: Array<{ event: string; handler: EventListenerOrEventListenerObject; options?: boolean | AddEventListenerOptions }> = [];
@@ -750,12 +853,12 @@ export function teardownReadingView(): void {
     mutationObserver.disconnect();
     mutationObserver = null;
   }
-  if (debounceTimer) {
-    window.clearTimeout(debounceTimer);
-    debounceTimer = null;
+  if (pendingRafId) {
+    window.cancelAnimationFrame(pendingRafId);
+    pendingRafId = null;
   }
   if (viewportReflowTimer) {
-    window.clearTimeout(viewportReflowTimer);
+    window.cancelAnimationFrame(viewportReflowTimer);
     viewportReflowTimer = null;
   }
   // Remove all tracked window listeners
@@ -861,24 +964,31 @@ function setupDebouncedMutationObserver() {
 
     if (dirtyContainers.size === 0) return;
 
-    if (debounceTimer) window.clearTimeout(debounceTimer);
-    // Capture the containers before the timeout (they're DOM nodes, so references stay valid)
+    // Coalesce mutations within a single animation frame so the
+    // first paint of new content happens with cards already
+    // processed (eliminates the "load lag" on tab/leaf open).
     const containers = Array.from(dirtyContainers);
-    debounceTimer = window.setTimeout(() => {
+
+    const processBatch = () => {
+      pendingRafId = null;
       try {
         debugLog('[LearnKit] MutationObserver triggered — processing', containers.length, 'dirty containers');
         for (const container of containers) {
-          // Only process if the container is still in the DOM
           if (container.isConnected) {
             void processCardElements(container, undefined, '');
           }
         }
       } catch (err) {
         log.error('MutationObserver handler error', err);
-      } finally {
-        debounceTimer = null;
       }
-    }, DEBOUNCE_MS);
+    };
+
+    // Cancel already-scheduled rAF so multiple mutations arriving
+    // in the same microtask flush coalesce into one frame callback.
+    if (pendingRafId) {
+      window.cancelAnimationFrame(pendingRafId);
+    }
+    pendingRafId = window.requestAnimationFrame(processBatch);
   });
 
   const body = document.body;
@@ -974,7 +1084,7 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
         }
       }
 
-      const card = parseSproutCard(rawText);
+      const card = parseLearnKitCard(rawText);
       if (!card) continue;
 
       el.dataset.sproutProcessed = 'true';
@@ -1026,7 +1136,7 @@ async function refreshProcessedCards(container: HTMLElement, sourceContent?: str
       }
 
       if (!rawText.trim()) continue;
-      const card = parseSproutCard(rawText);
+      const card = parseLearnKitCard(rawText);
       if (!card) continue;
       enhanceCardElement(el, card, undefined, rawText);
       const section = el.closest<HTMLElement>('.markdown-preview-section');
@@ -1273,6 +1383,12 @@ function wrapContiguousCardRuns(section: HTMLElement) {
   for (const child of children) {
     const isCard = child.classList.contains('learnkit-pretty-card');
     const isHidden = child.classList.contains('learnkit-hidden-important') || child.getAttribute('data-learnkit-hidden') === 'true';
+    // Raw cloze list blocks that contain {{c…}} syntax are never meant to
+    // be visible — treat them as hidden residue and fold into the current
+    // card-run so they don't break the masonry column layout.
+    const isRawClozeList = !isCard && !isHidden && currentRun !== null &&
+      (child.classList.contains('el-ul') || child.classList.contains('el-ol')) &&
+      /\{\{c\d+::/.test((child).innerText || (child).textContent || '');
 
     if (isCard && !isHidden) {
       if (!currentRun) {
@@ -1288,7 +1404,11 @@ function wrapContiguousCardRuns(section: HTMLElement) {
     // should stay inside the current card-run so they don't break the
     // masonry column layout between consecutive visible cards.
     // CSS already hides them via display:none inside the card-run.
-    if (isHidden && currentRun) {
+    if ((isHidden || isRawClozeList) && currentRun) {
+      if (isRawClozeList) {
+        child.classList.add('learnkit-hidden-important', 'learnkit-hidden-important');
+        child.setAttribute('data-learnkit-hidden', 'true');
+      }
       currentRun.appendChild(child);
       continue;
     }
@@ -1375,12 +1495,12 @@ function reflowPrettyCardLayouts(scope: ParentNode = document): void {
 
 function scheduleViewportReflow(): void {
   if (viewportReflowTimer) {
-    window.clearTimeout(viewportReflowTimer);
+    window.cancelAnimationFrame(viewportReflowTimer);
   }
-  viewportReflowTimer = window.setTimeout(() => {
+  viewportReflowTimer = window.requestAnimationFrame(() => {
     viewportReflowTimer = null;
     reflowPrettyCardLayouts(document);
-  }, VIEWPORT_REFLOW_DEBOUNCE_MS);
+  });
 }
 
 /* =========================
@@ -1390,7 +1510,8 @@ function scheduleViewportReflow(): void {
 /**
  * Strip markdown formatting characters so that raw source text and
  * Obsidian-rendered DOM text can be compared reliably.
- * Removes: bold (**), italic (*), cloze delimiters ({{c1:: … }}),
+ * Removes: inline code (`…`), LaTeX delimiters ($…$ / $$…$$),
+ *          bold (**), italic (*), cloze delimiters ({{c1:: … }}),
  *          wiki-link brackets ([[…]]), image embeds (![[…]]),
  *          and normalises whitespace.
  */
@@ -1398,6 +1519,12 @@ function stripMarkdownFormatting(s: string): string {
   let out = s;
   // Remove list markers at line starts so DOM list text can match raw markdown.
   out = out.replace(/^\s*(?:[-+*]|\d+[.)])\s+/gm, "");
+  // Remove inline code backticks (`…`) so DOM-rendered text without <code>
+  // formatting can match the raw source.
+  out = out.replace(/`+/g, "");
+  // Remove LaTeX $ / $$ delimiters so text rendered by MathJax (which
+  // drops $ signs from `innerText`) still matches the card source.
+  out = out.replace(/\$\$?/g, "");
   // Remove cloze wrappers: {{c1:: … }} → content
   out = out.replace(/\{\{c\d+::/g, "");
   out = out.replace(/\}\}/g, "");
@@ -1462,7 +1589,8 @@ function siblingTextBelongsToCard(
         cardTextRaw.includes(line) ||
         cardTextRaw.includes(`- ${line}`) ||
         cardTextRaw.includes(`* ${line}`) ||
-        cardTextRaw.includes(`+ ${line}`),
+        cardTextRaw.includes(`+ ${line}`) ||
+        (cardTextStripped && (cardTextStripped.includes(line) || cardTextStripped.includes(stripMarkdownFormatting(line)))),
       );
       if (allLinesFound) return true;
     }
@@ -1493,8 +1621,13 @@ function siblingTextBelongsToCard(
 }
 
 function isLikelyDanglingCardResidue(siblingText: string, siblingEl: Element): boolean {
-  // Only apply this heuristic to paragraph-like spillover blocks.
-  if (!(siblingEl.classList.contains('el-p') || siblingEl.classList.contains('el-div'))) {
+  // Apply this heuristic to paragraph/list-like spillover blocks.
+  if (!(
+    siblingEl.classList.contains('el-p') ||
+    siblingEl.classList.contains('el-div') ||
+    siblingEl.classList.contains('el-ul') ||
+    siblingEl.classList.contains('el-ol')
+  )) {
     return false;
   }
 
@@ -1509,9 +1642,14 @@ function isLikelyDanglingCardResidue(siblingText: string, siblingEl: Element): b
   const delimEsc = escapeDelimiterRe();
   const fieldStartRe = new RegExp(`^([A-Za-z]+|\\d{1,2})\\s*${delimEsc}\\s*`);
   const trailingDelimRe = new RegExp(`${delimEsc}\\s*$`);
+  const isListBlock =
+    siblingEl.classList.contains('el-ul') ||
+    siblingEl.classList.contains('el-ol');
 
   // If this already looks like a valid card field start, leave it visible.
-  if (lines.some((line) => fieldStartRe.test(line))) return false;
+  // List spillover can contain field-start remnants (e.g. "I | ...") and
+  // should still be considered for hiding.
+  if (!isListBlock && lines.some((line) => fieldStartRe.test(line))) return false;
 
   // Typical orphan residue from malformed/unfinished multiline card fields
   // contains a dangling trailing delimiter line (e.g. "What |", "Lol |").
@@ -1520,11 +1658,17 @@ function isLikelyDanglingCardResidue(siblingText: string, siblingEl: Element): b
   // Restrict to flashcard section context so ordinary prose elsewhere is untouched.
   const section = siblingEl.closest<HTMLElement>('.markdown-preview-section');
   if (section) {
-    const hasFlashcardRun = !!section.querySelector('.learnkit-reading-card-run .learnkit-pretty-card.learnkit-macro-flashcards');
-    if (!hasFlashcardRun) return false;
+    // Vertical clean-markdown layout can render cards directly under the
+    // section without a .learnkit-reading-card-run wrapper.
+    const hasReadingCards = !!section.querySelector('.learnkit-pretty-card[data-learnkit-processed], .learnkit-pretty-card[data-sprout-processed]');
+    if (!hasReadingCards) return false;
   }
 
   return true;
+}
+
+export function __testIsLikelyDanglingCardResidue(siblingText: string, siblingEl: Element): boolean {
+  return isLikelyDanglingCardResidue(siblingText, siblingEl);
 }
 
 /**
@@ -1541,84 +1685,60 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   const cardTextStripped = cardTextRaw ? stripMarkdownFormatting(cardTextRaw) : "";
   const cardMathSig = cardTextNorm ? normalizeMathSignature(cardTextNorm) : "";
 
+  const toHide: Element[] = [];
+
+  // ── Forward scan (next siblings) ──
   // Prefer card-local siblings first. If this is the last card in a run,
   // fall back to the run's next sibling to catch trailing spillover nodes.
   let next = cardEl.nextElementSibling;
   if (!next) {
     const run = cardEl.closest('.learnkit-reading-card-run');
     if (run && cardEl.parentElement === run) {
-      next = run.nextElementSibling;
-    }
-  }
-  const toHide: Element[] = [];
-  
-  while (next) {
-    const classes = next.className || '';
-    
-    // Skip siblings already hidden by a previous run
-    if (next.hasAttribute('data-learnkit-hidden')) {
-      next = next.nextElementSibling;
-      continue;
-    }
-    
-    // Stop if we hit another sprout card (already processed)
-    if (classes.includes('learnkit-pretty-card') || classes.includes('learnkit-reading-card-run') || next.hasAttribute('data-learnkit-processed')) {
-      break;
-    }
-    
-    // Stop if we hit an anchor for the NEXT card (unprocessed .el-p with card anchor)
-    if (classes.includes('el-p') && !classes.includes('learnkit-pretty-card')) {
-      const txt = extractRawTextFromParagraph(next as HTMLElement);
-      const cleanTxt = clean(txt);
-      if (ANCHOR_RE.test(cleanTxt) && !hasCardAnchorForId(cleanTxt, String(cardEl.dataset.sproutId || ""))) {
-        break;
+      // Only scan beyond the card-run wrapper when the next element is
+      // already hidden residue or a list block (card I| spillover is
+      // routinely rendered as .el-ol/.el-ul by Obsidian's parser).
+      // Never scan into arbitrary prose paragraphs that happen to
+      // follow the card-run — those are guarded by collectSiblingsToHide
+      // checking siblingTextBelongsToCard before hiding anything.
+      const candidate = run.nextElementSibling;
+      if (candidate instanceof HTMLElement) {
+        const isHiddenResidue =
+          candidate.classList.contains('learnkit-hidden-important') ||
+          candidate.getAttribute('data-learnkit-hidden') === 'true';
+        const isListSpillover =
+          candidate.classList.contains('el-ul') ||
+          candidate.classList.contains('el-ol');
+        if (isHiddenResidue || isListSpillover) {
+          next = candidate;
+        }
       }
     }
+  }
+  collectSiblingsToHide(next, 'next', toHide, cardEl, cardTextStripped, cardTextNorm, cardTextRaw, cardMathSig);
 
-    // Extract text from the sibling, regardless of its element type
-    let raw = "";
-    if (classes.includes('el-p')) {
-      raw = extractRawTextFromParagraph(next as HTMLElement);
-    } else if (classes.includes('el-div')) {
-      raw = extractTextWithLaTeX(next as HTMLElement);
-    } else if (
-      classes.includes('el-ol') ||
-      classes.includes('el-ul') ||
-      classes.includes('el-blockquote') ||
-      classes.includes('el-table')
-    ) {
-      // For structural elements, check if their text belongs to the card
-      raw = (next as HTMLElement).innerText || (next as HTMLElement).textContent || '';
-    } else if (classes.includes('el-pre')) {
-      // Code blocks — stop unless text is part of card
-      raw = (next as HTMLElement).textContent || '';
-    } else {
-      // Unknown element type — try text content before giving up
-      raw = (next as HTMLElement).textContent || '';
-      if (!raw.trim()) {
-        // Empty unknown elements — safe to hide
-        toHide.push(next);
-        next = next.nextElementSibling;
-        continue;
+  // ── Backward scan (previous siblings) ──
+  // Raw list blocks can sometimes appear before the card in the DOM (e.g. when
+  // Obsidian's renderer injects the <ul> before the anchor paragraph).
+  let prev = cardEl.previousElementSibling;
+  if (!prev) {
+    const run = cardEl.closest('.learnkit-reading-card-run');
+    if (run && cardEl.parentElement === run) {
+      const candidate = run.previousElementSibling;
+      if (candidate instanceof HTMLElement) {
+        const isHiddenResidue =
+          candidate.classList.contains('learnkit-hidden-important') ||
+          candidate.getAttribute('data-learnkit-hidden') === 'true';
+        const isListSpillover =
+          candidate.classList.contains('el-ul') ||
+          candidate.classList.contains('el-ol');
+        if (isHiddenResidue || isListSpillover) {
+          prev = candidate;
+        }
       }
     }
-
-    if (siblingTextBelongsToCard(raw, cardTextStripped, cardTextNorm, cardTextRaw, cardMathSig, next)) {
-      toHide.push(next);
-      next = next.nextElementSibling;
-      continue;
-    }
-
-    if (isLikelyDanglingCardResidue(raw, next)) {
-      toHide.push(next);
-      next = next.nextElementSibling;
-      continue;
-    }
-
-    // No match — stop hiding so normal content can render
-    break;
   }
-  
+  collectSiblingsToHide(prev, 'prev', toHide, cardEl, cardTextStripped, cardTextNorm, cardTextRaw, cardMathSig);
+
   // Hide collected elements with increased specificity
   for (const el of toHide) {
     (el as HTMLElement).classList.add('learnkit-hidden-important', 'learnkit-hidden-important');
@@ -1626,20 +1746,114 @@ function hideCardSiblingElements(cardEl: HTMLElement, cardRawText?: string) {
   }
 }
 
+function collectSiblingsToHide(
+  start: Element | null,
+  direction: 'next' | 'prev',
+  toHide: Element[],
+  cardEl: HTMLElement,
+  cardTextStripped: string,
+  cardTextNorm: string,
+  cardTextRaw: string,
+  cardMathSig: string,
+): void {
+  let sibling = start;
+  while (sibling) {
+    const classes = sibling.className || '';
+
+    // Skip siblings already hidden by a previous run
+    if (sibling.hasAttribute('data-learnkit-hidden')) {
+      sibling = direction === 'next' ? sibling.nextElementSibling : sibling.previousElementSibling;
+      continue;
+    }
+
+    // Stop if we hit another sprout card (already processed)
+    if (classes.includes('learnkit-pretty-card') || classes.includes('learnkit-reading-card-run') || sibling.hasAttribute('data-learnkit-processed')) {
+      break;
+    }
+
+    // Stop if we hit an anchor for another card (unprocessed .el-p with card anchor)
+    if (classes.includes('el-p') && !classes.includes('learnkit-pretty-card')) {
+      const txt = extractRawTextFromParagraph(sibling as HTMLElement);
+      const cleanTxt = clean(txt);
+      if (ANCHOR_RE.test(cleanTxt) && !hasCardAnchorForId(cleanTxt, String(cardEl.dataset.sproutId || ""))) {
+        break;
+      }
+    }
+
+    // Never hide Obsidian's scroll-spacer (markdown-preview-pusher)
+    if (classes.includes('markdown-preview-pusher')) {
+      break;
+    }
+
+    // Never hide footnote paragraphs ([^1]: … rendered by Obsidian)
+    const rawText = (sibling as HTMLElement).innerText || (sibling as HTMLElement).textContent || '';
+    if (/^\[\^.+?\]:/.test(rawText.trim())) {
+      break;
+    }
+
+    // Never hide section headings (.el-h1 through .el-h6) or horizontal rules
+    if (/\bel-h[1-6]\b/.test(classes) || classes.includes('el-hr')) {
+      break;
+    }
+
+    // Extract text from the sibling, regardless of its element type
+    let raw = "";
+    if (classes.includes('el-p')) {
+      raw = extractRawTextFromParagraph(sibling as HTMLElement);
+    } else if (classes.includes('el-div')) {
+      raw = extractTextWithLaTeX(sibling as HTMLElement);
+    } else if (
+      classes.includes('el-ol') ||
+      classes.includes('el-ul') ||
+      classes.includes('el-blockquote') ||
+      classes.includes('el-table')
+    ) {
+      // For structural elements, check if their text belongs to the card
+      raw = (sibling as HTMLElement).innerText || (sibling as HTMLElement).textContent || '';
+    } else if (classes.includes('el-pre')) {
+      // Code blocks — stop unless text is part of card
+      raw = (sibling as HTMLElement).textContent || '';
+    } else {
+      // Unknown element type — try text content before giving up
+      raw = (sibling as HTMLElement).textContent || '';
+      if (!raw.trim()) {
+        // Empty unknown elements — safe to hide
+        toHide.push(sibling);
+        sibling = direction === 'next' ? sibling.nextElementSibling : sibling.previousElementSibling;
+        continue;
+      }
+    }
+
+    if (siblingTextBelongsToCard(raw, cardTextStripped, cardTextNorm, cardTextRaw, cardMathSig, sibling)) {
+      toHide.push(sibling);
+      sibling = direction === 'next' ? sibling.nextElementSibling : sibling.previousElementSibling;
+      continue;
+    }
+
+    if (isLikelyDanglingCardResidue(raw, sibling)) {
+      toHide.push(sibling);
+      sibling = direction === 'next' ? sibling.nextElementSibling : sibling.previousElementSibling;
+      continue;
+    }
+
+    // No match — stop hiding in this direction so normal content can render
+    break;
+  }
+}
+
 function scheduleDeferredSiblingHide(cardEl: HTMLElement, cardRawText?: string) {
-  const run = () => {
+  // Schedule a single deferred pass for structural blocks (lists, tables)
+  // that Obsidian injects after the initial markdown render.  Multiple
+  // staggered passes caused race conditions where stale DOM state led to
+  // hiding legitimate non-card prose (footnotes, headings, etc.) that
+  // happened to follow a card-run wrapper.
+  window.requestAnimationFrame(() => {
     try {
       hideCardSiblingElements(cardEl, cardRawText);
     } catch {
       // Best-effort cleanup only.
     }
-  };
-
-  // Some structural blocks (lists/tables) are injected after the first pass.
-  window.requestAnimationFrame(run);
-  window.setTimeout(run, 0);
-  window.setTimeout(run, 50);
-  window.setTimeout(run, 150);
+  });
 }
 
 function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
@@ -1655,8 +1869,8 @@ function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
   const trailingDelimRe = new RegExp(`${delimEsc}\\s*$`);
 
   for (const section of sections) {
-    const hasFlashcards = !!section.querySelector('.learnkit-reading-card-run .learnkit-pretty-card.learnkit-macro-flashcards');
-    if (!hasFlashcards) continue;
+    const hasReadingCards = !!section.querySelector('.learnkit-pretty-card[data-learnkit-processed], .learnkit-pretty-card[data-sprout-processed]');
+    if (!hasReadingCards) continue;
 
     const children = Array.from(section.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
     for (let i = 0; i < children.length; i++) {
@@ -2329,7 +2543,7 @@ function renderFlashcardTextWithListSupport(value: string): string {
   return parts.join('');
 }
 
-function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeStyle?: CleanMarkdownClozeStyle): string {
+function buildMarkdownModeContent(card: LearnKitCard, showLabels: boolean, clozeStyle?: CleanMarkdownClozeStyle): string {
   const lines: string[] = [];
   const encodeMdSourceAttr = (text: string): string => escapeHtml(encodeURIComponent(String(text ?? '')));
   const shouldRenderMdSource = (text: string): boolean => {
@@ -2338,7 +2552,7 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     if (/\{\{c\d+::/i.test(value)) return false;
     return /\\\(|\\\[|\$\$|(^|[^\\])\$(?!\$)/.test(value);
   };
-  type MarkdownQuestionLabelType = SproutCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child' | 'hq-child';
+  type MarkdownQuestionLabelType = LearnKitCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child' | 'hq-child';
   const questionLabelByType: Partial<Record<MarkdownQuestionLabelType, string>> = {
     basic: 'Basic Question',
     reversed: 'Reversed Question',
@@ -2352,7 +2566,13 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     hq: 'Hotspot Question',
     'hq-child': 'Hotspot Question',
   };
-  const questionLabel = questionLabelByType[card.type] ?? 'Question';
+  const comboLabels: Record<string, string> = {
+    product: 'Cross Combo Question',
+    zip: 'Sequential Combo Question',
+  };
+  const questionLabel = card.type === 'combo'
+    ? (comboLabels[String(card.comboMode ?? '')] ?? 'Combo Question')
+    : (questionLabelByType[card.type] ?? 'Question');
 
   const addPlainField = (label: string, value: string) => {
     const v = String(value ?? '').trim();
@@ -2473,9 +2693,13 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
     const answerLabel = card.type === 'hq' || card.type === 'hq-child' ? 'Hotspot Answer' : 'Answer';
     addPlainField(answerLabel, toTextField(card.fields.A));
     addPlainField('Extra Information', toTextField(card.fields.I));
-  } else {
-    const question = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
-    addPlainField(questionLabel, question);
+  } else if (card.type === 'basic' || card.type === 'reversed') {
+    const questionField = card.type === 'reversed' ? card.fields.RQ : card.fields.Q;
+    addPlainField(questionLabel, toTextField(questionField));
+    addPlainField('Answer', toTextField(card.fields.A));
+    addPlainField('Extra Information', toTextField(card.fields.I));
+  } else if (card.type === 'combo') {
+    addPlainField(questionLabel, toTextField(card.fields.Q));
     addPlainField('Answer', toTextField(card.fields.A));
     addPlainField('Extra Information', toTextField(card.fields.I));
   }
@@ -2484,6 +2708,10 @@ function buildMarkdownModeContent(card: SproutCard, showLabels: boolean, clozeSt
   addGroupsLine(groups);
 
   return `<div class="learnkit-markdown-lines">${lines.join('')}</div>`;
+}
+
+export function __testBuildMarkdownModeContent(card: LearnKitCard, showLabels: boolean, clozeStyle?: CleanMarkdownClozeStyle): string {
+  return buildMarkdownModeContent(card, showLabels, clozeStyle);
 }
 
 function normalizeGroupsForDisplay(groupsField: string | string[] | undefined): string[] {
@@ -2506,7 +2734,7 @@ export function __testBuildFlashcardCloze(text: string, mode: 'front' | 'back'):
   return buildFlashcardCloze(text, mode);
 }
 
-function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerButton: boolean; includeEditButton: boolean }): string {
+function buildFlashcardContentHTML(card: LearnKitCard, options: { includeSpeakerButton: boolean; includeEditButton: boolean }): string {
   const idSeed = Math.random().toString(36).slice(2, 8);
   const encodeMdSourceAttr = (text: string): string => escapeHtml(encodeURIComponent(String(text ?? '')));
   const mdSourceAttr = (text: string): string => {
@@ -2602,6 +2830,11 @@ function buildFlashcardContentHTML(card: SproutCard, options: { includeSpeakerBu
     const oqQuestionHtml = `<div class="learnkit-flashcard-question-text"${mdSourceAttr(q)}>${renderMarkdownTextWithExplicitBreaks(q)}</div>`;
     front = `${oqQuestionHtml}${shuffledSteps.length ? `<ul class="learnkit-flashcard-options learnkit-flashcard-options-list">${shuffledSteps.map((s) => `<li><span${mdSourceAttr(s)}>${renderMarkdownLineWithClozeSpans(s)}</span></li>`).join('')}</ul>` : ''}`;
     back = `${oqQuestionHtml}<ol class="learnkit-flashcard-sequence-list">${steps.map((s) => `<li><span${mdSourceAttr(s)}>${renderMarkdownLineWithClozeSpans(s)}</span></li>`).join('')}</ol>`;
+  } else if (card.type === 'combo') {
+    const qText = toTextField(card.fields.Q);
+    const aText = toTextField(card.fields.A);
+    front = `<div${mdSourceAttr(qText)}>${renderFlashcardTextWithListSupport(qText)}</div>`;
+    back = `<div${mdSourceAttr(aText)}>${renderFlashcardTextWithListSupport(aText)}</div>`;
   } else {
     const q = card.type === 'reversed' ? toTextField(card.fields.RQ) : toTextField(card.fields.Q);
     const a = toTextField(card.fields.A);
@@ -2815,7 +3048,7 @@ function setupFlashcardFlip(el: HTMLElement) {
 
 function enhanceCardElement(
   el: HTMLElement,
-  card: SproutCard,
+  card: LearnKitCard,
   originalContentOverride?: string,
   cardRawText?: string,
   skipSiblingHiding = false,
@@ -3040,33 +3273,14 @@ function enhanceCardElement(
           const updatedSource = lines.join("\n");
 
           await plugin.app.vault.modify(file, updatedSource);
-          await syncOneFile(plugin as unknown as LearnKitPlugin, file, { pruneGlobalOrphans: false });
-          if (typeof plugin.refreshAllViews === "function") {
-            plugin.refreshAllViews();
-          }
+          await syncOneFile(plugin as unknown as LearnKitPlugin, file, {
+            pruneGlobalOrphans: false,
+            sourceTextOverride: updatedSource,
+          });
 
-          // Rebuild reading cards from the updated markdown source so both
-          // front/back faces and hidden spillover siblings stay in sync.
-          const refreshLeaves = (plugin as unknown as {
-            refreshReadingViewMarkdownLeaves?: () => Promise<void> | void;
-          }).refreshReadingViewMarkdownLeaves;
-
-          if (typeof refreshLeaves === "function") {
-            void Promise.resolve(refreshLeaves.call(plugin));
-          } else {
-            setTimeout(() => {
-              document
-                .querySelectorAll<HTMLElement>(
-                  ".markdown-reading-view, .markdown-preview-view, .markdown-rendered, .markdown-preview-sizer, .markdown-preview-section",
-                )
-                .forEach((node) => {
-                  node.dispatchEvent(new CustomEvent("sprout:prettify-cards-refresh", {
-                    bubbles: true,
-                    detail: { sourceContent: updatedSource, sourcePath: file.path },
-                  }));
-                });
-            }, 50);
-          }
+          // Force a deterministic in-place reading refresh after modal saves so
+          // spillover list blocks are rehidded without leaving/reopening the note.
+          await forceReadingViewRefreshAfterModalSave(plugin, file.path, updatedSource);
         } catch (err: unknown) {
           log.error("Failed to update card from reading view", err);
           new Notice(`Failed to update card: ${err instanceof Error ? err.message : String(err)}`);  
@@ -3231,7 +3445,7 @@ function enhanceCardElement(
   void renderMdInElements(el, card);
 }
 
-export function renderReadingViewPreviewCard(el: HTMLElement, card: SproutCard): void {
+export function renderReadingViewPreviewCard(el: HTMLElement, card: LearnKitCard): void {
   el.classList.add("el-p");
   el.setAttribute("data-learnkit-processed", "true");
   enhanceCardElement(el, card, "", undefined, true);
@@ -3254,7 +3468,7 @@ export function renderReadingViewPreviewCard(el: HTMLElement, card: SproutCard):
    Markdown rendering in card elements
    ========================= */
 
-async function renderMdInElements(el: HTMLElement, card: SproutCard) {
+async function renderMdInElements(el: HTMLElement, card: LearnKitCard) {
   const app = window.app;
   if (!app) return;
   
@@ -3444,7 +3658,7 @@ function resolveEmbeddedImages(el: HTMLElement, app: App, sourcePath: string) {
  */
 function renderIoInReadingCard(
   el: HTMLElement,
-  card: SproutCard,
+  card: LearnKitCard,
   plugin: SproutPluginLike,
   sourcePath: string,
 ) {

@@ -30,6 +30,7 @@ import {
 } from "./modal-utils";
 import { t } from "../translations/translator";
 import { txCommon } from "../translations/ui-common";
+import { syncOneFile } from "../integrations/sync/sync-engine";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -212,8 +213,10 @@ export class CardCreatorModal extends Modal {
 
     const typeSel = typeField.createEl("select", { cls: "w-full", attr: { id: typeId } });
     typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.basic", "Basic"), value: "basic" });
+    typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.reversed", "Basic (Reversed)"), value: "reversed" });
     typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.cloze", "Cloze"), value: "cloze" });
     typeSel.createEl("option", { text: this.tx("ui.cardCreator.type.multipleChoice", "Multiple choice"), value: "mcq" });
+    typeSel.createEl("option", { text: "Ordered question", value: "oq" });
 
     let cardEditor: ModalCardEditorResult | null = null;
     let currentType: CardType = this.forcedType || "basic";
@@ -229,7 +232,7 @@ export class CardCreatorModal extends Modal {
     const setType = (next: CardType) => {
       currentType = next;
       if (next === "reversed") typeSel.value = "basic";
-      else typeSel.value = next === "mcq" ? "mcq" : next === "cloze" ? "cloze" : "basic";
+      else typeSel.value = next === "mcq" ? "mcq" : next === "cloze" ? "cloze" : next === "oq" ? "oq" : "basic";
       renderCardEditor();
       syncVisibility();
       updateTypeMenuLabel();
@@ -596,7 +599,7 @@ export class CardCreatorModal extends Modal {
     };
 
     /** Insert text at the editor cursor, or append to file if not in source view. */
-    const insertTextAtCursorOrAppend = async (active: TFile, textToInsert: string, forcePersist = false) => {
+    const insertTextAtCursorOrAppend = async (active: TFile, textToInsert: string, forcePersist = false): Promise<string> => {
       const view = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (view?.file?.path === active.path && view.editor) {
         const ed = view.editor;
@@ -618,10 +621,12 @@ export class CardCreatorModal extends Modal {
             // ignore
           }
         }
+        return typeof ed.getValue === "function" ? ed.getValue() : await this.app.vault.read(active);
       } else {
         const txt = await this.app.vault.read(active);
         const out = (txt.endsWith("\n") ? txt : txt + "\n") + textToInsert;
         await this.app.vault.modify(active, out);
+        return out;
       }
     };
 
@@ -751,7 +756,11 @@ export class CardCreatorModal extends Modal {
           finalContent = await this.savePendingImages(active, finalContent);
         }
 
-        await insertTextAtCursorOrAppend(active, finalContent, true);
+        const syncedSource = await insertTextAtCursorOrAppend(active, finalContent, true);
+        await syncOneFile(this.plugin, active, {
+          pruneGlobalOrphans: false,
+          sourceTextOverride: syncedSource,
+        });
         this.close();
         new Notice(this.tx("ui.cardCreator.notice.flashcardAdded", "Flashcard added"));
       } catch (e: unknown) {

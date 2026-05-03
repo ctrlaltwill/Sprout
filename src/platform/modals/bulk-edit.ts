@@ -38,6 +38,7 @@ import {
 import { coerceGroups } from "../../engine/indexing/group-format";
 import { renderMarkdownPreviewInElement, setCssProps } from "../core/ui";
 import { handleTabInTextarea } from "../card-editor/card-editor";
+import { COMBO_VARIANT_SEPARATOR, splitComboVariants } from "../core/delimiter";
 
 type GroupPickerFieldFactory = (
   initialValue: string,
@@ -81,13 +82,28 @@ function getSharedEditableFieldValue(cards: CardRecord[], field: EditableField):
   const values = cardsForField.map((card) => {
     if (field === "title") return String(card.title || "");
     if (field === "question") {
-      if (card.type === "basic" || card.type === "reversed") return String(card.q || "");
+      if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
+        // For combo cards (type "combo" or basic with extensionData), show variants joined by ::.
+        const ext = (!card.extensionData || (typeof card.extensionData === "object" && !Array.isArray(card.extensionData)))
+          ? (card.extensionData ?? {})
+          : {};
+        const qv: string[] = Array.isArray(ext.qVariants) ? ext.qVariants as string[] : [];
+        if (qv.length > 1) return qv.join(COMBO_VARIANT_SEPARATOR);
+        return String(card.q || "");
+      }
       if (card.type === "mcq") return String(card.stem || "");
       if (card.type === "oq") return String(card.q || "");
       if (card.type === "cloze") return String(card.clozeText || "");
     }
     if (field === "answer") {
-      if (card.type === "basic" || card.type === "reversed") return String(card.a || "");
+      if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
+        const ext = (!card.extensionData || (typeof card.extensionData === "object" && !Array.isArray(card.extensionData)))
+          ? (card.extensionData ?? {})
+          : {};
+        const av: string[] = Array.isArray(ext.aVariants) ? ext.aVariants as string[] : [];
+        if (av.length > 1) return av.join(COMBO_VARIANT_SEPARATOR);
+        return String(card.a || "");
+      }
       if (card.type === "mcq") return buildAnswerOrOptionsFor(card);
     }
     if (field === "info") return String(card.info || "");
@@ -656,7 +672,7 @@ export class BulkEditCardModal extends Modal {
     typeWrapper.appendChild(typeDropdown.element);
     topGrid.appendChild(typeWrapper);
   } else {
-    topGrid.appendChild(createReadonlyField("Type", typeLabelBrowser(card0.type)));
+    topGrid.appendChild(createReadonlyField("Type", typeLabelBrowser(card0.type, card0)));
   }
 
   topGrid.appendChild(createReadonlyField("Stage", stageLabel(String(state0?.stage || "new"))));
@@ -1127,8 +1143,28 @@ export class BulkEditCardModal extends Modal {
         if (updates.title !== undefined) updated.title = updates.title;
 
         if (updates.question !== undefined) {
-          if (updated.type === "basic" || updated.type === "reversed") updated.q = updates.question;
-          else if (updated.type === "mcq") updated.stem = updates.question;
+          if (updated.type === "basic" || updated.type === "reversed") {
+            updated.q = updates.question;
+            // Auto-detect combo variants from :: separator
+            const qVariants = splitComboVariants(updates.question);
+            if (qVariants.length > 1) {
+              const ext = (!updated.extensionData || (typeof updated.extensionData === "object" && !Array.isArray(updated.extensionData)))
+                ? (updated.extensionData ?? {})
+                : {};
+              (updated as Record<string, unknown>).extensionData = { ...ext, qVariants };
+            }
+          } else if (updated.type === "combo") {
+            // Migrate combo → basic
+            updated.type = "basic";
+            updated.q = updates.question;
+            const qVariants = splitComboVariants(updates.question);
+            if (qVariants.length > 1) {
+              const ext = (!updated.extensionData || (typeof updated.extensionData === "object" && !Array.isArray(updated.extensionData)))
+                ? (updated.extensionData ?? {})
+                : {};
+              (updated as Record<string, unknown>).extensionData = { ...ext, qVariants };
+            }
+          } else if (updated.type === "mcq") updated.stem = updates.question;
           else if (updated.type === "oq") updated.q = updates.question;
           else if (updated.type === "cloze") updated.clozeText = updates.question;
         }
@@ -1140,6 +1176,25 @@ export class BulkEditCardModal extends Modal {
         if (updates.answer !== undefined) {
           if (updated.type === "basic" || updated.type === "reversed") {
             updated.a = updates.answer;
+            // Auto-detect combo variants from :: separator
+            const aVariants = splitComboVariants(updates.answer);
+            if (aVariants.length > 1) {
+              const ext = (!updated.extensionData || (typeof updated.extensionData === "object" && !Array.isArray(updated.extensionData)))
+                ? (updated.extensionData ?? {})
+                : {};
+              (updated as Record<string, unknown>).extensionData = { ...ext, aVariants };
+            }
+          } else if (updated.type === "combo") {
+            // Migrate combo → basic
+            updated.type = "basic";
+            updated.a = updates.answer;
+            const aVariants = splitComboVariants(updates.answer);
+            if (aVariants.length > 1) {
+              const ext = (!updated.extensionData || (typeof updated.extensionData === "object" && !Array.isArray(updated.extensionData)))
+                ? (updated.extensionData ?? {})
+                : {};
+              (updated as Record<string, unknown>).extensionData = { ...ext, aVariants };
+            }
           } else if (updated.type === "mcq") {
             const parsed = parseMcqOptionsFromCell(updates.answer);
             updated.options = parsed.options;

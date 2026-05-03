@@ -225,7 +225,7 @@ export function buildPageTableBody(
     tr.appendChild(idTd);
 
     // ── Type cell ──
-    tr.appendChild(tdMuted(isQuarantined ? txFromCtx(ctx, "ui.browser.row.quarantined", "Quarantined") : typeLabelBrowser(card.type), "type"));
+    tr.appendChild(tdMuted(isQuarantined ? txFromCtx(ctx, "ui.browser.row.quarantined", "Quarantined") : typeLabelBrowser(card.type, card), "type"));
 
     // ── Stage cell ──
     const stage = isQuarantined ? "quarantined" : String(state?.stage || "new");

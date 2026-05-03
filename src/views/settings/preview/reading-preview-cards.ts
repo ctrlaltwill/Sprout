@@ -6,11 +6,11 @@
  *  - getReadingPreviewCards
  */
 
-import type { SproutCard } from "../../reading/reading-helpers";
+import type { LearnKitCard } from "../../reading/reading-helpers";
 
 type Tx = (token: string, fallback: string, vars?: Record<string, string | number>) => string;
 
-export function getReadingPreviewCards(tx: Tx): Array<{ label: string; card: SproutCard }> {
+export function getReadingPreviewCards(tx: Tx): Array<{ label: string; card: LearnKitCard }> {
   return [
     {
       label: tx("ui.settings.reading.livePreview.cardType.basic", "Basic"),

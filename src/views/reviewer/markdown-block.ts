@@ -16,6 +16,7 @@ import {
   extractCardAnchorId,
 } from "../../platform/core/identity";
 import { escapePipes } from "./fields";
+import { COMBO_VARIANT_SEPARATOR } from "../../platform/core/delimiter";
 
 /**
  * Canonical marker is ONLY ^sprout-#########.
@@ -141,6 +142,13 @@ export function buildCardBlockMarkdown(id: string, rec: CardRecord): string[] {
       if (correctSet.has(idx)) pushPipeField("A", txt);
       else pushPipeField("O", txt);
     });
+  } else if (rec.type === "combo") {
+    // Write combo as basic Q/A with :: variant separator.
+    const ext = (rec.extensionData ?? {});
+    const qVariants: string[] = Array.isArray(ext.qVariants) ? ext.qVariants as string[] : [];
+    const aVariants: string[] = Array.isArray(ext.aVariants) ? ext.aVariants as string[] : [];
+    if (qVariants.length) pushPipeField("Q", qVariants.join(COMBO_VARIANT_SEPARATOR));
+    if (aVariants.length) pushPipeField("A", aVariants.join(COMBO_VARIANT_SEPARATOR));
   }
 
   const info = (rec.info || "").trim();

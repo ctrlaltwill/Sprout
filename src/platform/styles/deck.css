@@ -413,19 +413,19 @@ body.is-phone .learnkit .learnkit-deck-table-wrap {
 
 /* Deck rows: keep a hidden baseline border so hover border-color can render. */
 .learnkit .learnkit-deck-table tbody td {
-  border-top: 0.5px solid var(--background);
-  border-bottom: 0.5px solid var(--background);
+  border-top: 0.5px solid transparent;
+  border-bottom: 0.5px solid transparent;
   border-left: 0;
   border-right: 0;
   transition: border-color 0.18s ease;
 }
 
 .learnkit .learnkit-deck-table tbody td:first-child {
-  border-left: 0.5px solid var(--background);
+  border-left: 0.5px solid transparent;
 }
 
 .learnkit .learnkit-deck-table tbody td:last-child {
-  border-right: 0.5px solid var(--background);
+  border-right: 0.5px solid transparent;
 }
 
 .learnkit .learnkit-deck-table tbody tr:hover td:first-child {

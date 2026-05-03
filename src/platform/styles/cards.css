@@ -12,6 +12,18 @@
   border: 0.5px solid var(--color-base-35);
 }
 
+/* Inline code styling for reading-view and study-session cards */
+.learnkit .learnkit-pretty-card code,
+.learnkit .lk-review-root[data-lk-review-mode="session"] .lk-session-card code {
+  font-family: var(--font-monospace, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace);
+  background-color: var(--color-base-20);
+  color: var(--color-base-70);
+  border-radius: 4px;
+  border: 1px solid var(--color-base-30) !important;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85em;
+}
+
 /* Small card variant: removes p-4 and applies compact padding */
 .small-card {
   padding: 1.2rem;

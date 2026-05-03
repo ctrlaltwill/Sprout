@@ -47,6 +47,23 @@ export class ItemView {
   containerEl: any = { empty() {}, createDiv() { return {}; } };
 }
 
+export class Modal {
+  app: any = {};
+  containerEl: any = {
+    empty() {},
+    createDiv() { return {}; },
+  };
+  contentEl: any = {
+    empty() {},
+    createDiv() { return {}; },
+  };
+  constructor(app?: any) {
+    this.app = app ?? {};
+  }
+  open() {}
+  close() {}
+}
+
 export class MarkdownRenderer {
   static render() { return Promise.resolve(); }
 }

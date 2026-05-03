@@ -656,9 +656,13 @@ export class SproutCardBrowserView extends ItemView {
     const { start, end } = findCardBlockRangeById(lines, card.id);
     const block = buildCardBlockPipeMarkdown(card.id, card);
     lines.splice(start, end - start, ...block);
+    const updatedSource = lines.join("\n");
 
-    await this.app.vault.modify(file, lines.join("\n"));
-    await syncOneFile(this.plugin, file, { pruneGlobalOrphans: false });
+    await this.app.vault.modify(file, updatedSource);
+    await syncOneFile(this.plugin, file, {
+      pruneGlobalOrphans: false,
+      sourceTextOverride: updatedSource,
+    });
     new Notice(this._tx("ui.browser.notice.saved", "Saved changes to flashcards"));
 
     this.refreshTable();

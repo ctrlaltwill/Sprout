@@ -1352,7 +1352,7 @@ export function renderSessionMode(args: Args) {
     return block;
   };
 
-  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
+  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child") {
     // For reversed-child with direction "back", swap content (A→Q)
     const isBackDirection = card.type === "reversed-child" && (card as unknown as { reversedDirection?: string }).reversedDirection === "back";
     const isOldReversed = card.type === "reversed";
@@ -1445,7 +1445,7 @@ export function renderSessionMode(args: Args) {
   const infoText = extractInfoField(card);
   const isBack = !!graded || !!args.showAnswer;
   const shouldShowInfo =
-    ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") && isBack && !!infoText) || ((args.showInfo || graded) && !!infoText);
+    ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child") && isBack && !!infoText) || ((args.showInfo || graded) && !!infoText);
   if (shouldShowInfo) {
     section.appendChild(labelRow("Extra information"));
     section.appendChild(renderMdBlock("learnkit-info", infoText));
@@ -1504,7 +1504,7 @@ export function renderSessionMode(args: Args) {
 
   const canGradeNow =
     !graded &&
-    (((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) && !!args.showAnswer) ||
+    (((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || card.type === "cloze" || card.type === "cloze-child" || ioLike) && !!args.showAnswer) ||
       (card.type === "mcq" && args.autoGradeMcq === false && !!args.showAnswer) ||
       (card.type === "oq" && args.autoGradeOq === false && !!args.showAnswer));
 
@@ -1515,7 +1515,7 @@ export function renderSessionMode(args: Args) {
 
   // Basic/Cloze/IO: reveal gate
   if (
-    (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "cloze" || card.type === "cloze-child" || (ioLike && !hotspotCard)) &&
+    (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || card.type === "cloze" || card.type === "cloze-child" || (ioLike && !hotspotCard)) &&
     !args.showAnswer &&
     !graded
   ) {

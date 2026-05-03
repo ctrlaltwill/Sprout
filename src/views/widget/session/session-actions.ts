@@ -404,9 +404,9 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
     return;
   }
 
-  // If this is a cloze child or reversed child, edit the parent instead so changes persist
+  // If this is a cloze child, reversed child, or combo child, edit the parent instead so changes persist
   let targetCard = card;
-  if (cardType === "cloze-child" || cardType === "reversed-child") {
+  if (cardType === "cloze-child" || cardType === "reversed-child" || cardType === "combo-child") {
     const parentId = String((card).parentId || "");
     if (!parentId) {
       new Notice(tx(view, "ui.widget.notice.editMissingParent", "Cannot edit {cardType} - missing parent card", { cardType }));
@@ -430,7 +430,7 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
 
       // Update the card in the session if it exists
       if (view.session) {
-        if (cardType !== "cloze-child" && cardType !== "reversed-child") {
+        if (cardType !== "cloze-child" && cardType !== "reversed-child" && cardType !== "combo-child") {
           view.session.queue[view.session.index] = updatedCard;
         }
       }
@@ -445,13 +445,17 @@ export function openEditModalForCurrentCard(view: WidgetViewLike): void {
       const { start, end } = findCardBlockRangeById(lines, updatedCard.id);
       const block = buildCardBlockMarkdown(updatedCard.id, updatedCard);
       lines.splice(start, end - start, ...block);
+      const updatedSource = lines.join("\n");
 
-      await view.app.vault.modify(file, lines.join("\n"));
-      await syncOneFile(view.plugin as unknown as LearnKitPlugin, file, { pruneGlobalOrphans: false });
+      await view.app.vault.modify(file, updatedSource);
+      await syncOneFile(view.plugin as unknown as LearnKitPlugin, file, {
+        pruneGlobalOrphans: false,
+        sourceTextOverride: updatedSource,
+      });
       new Notice(tx(view, "ui.widget.notice.saved", "Saved changes to flashcard"));
 
       if (view.session) {
-        const refreshId = cardType === "cloze-child" || cardType === "reversed-child"
+        const refreshId = cardType === "cloze-child" || cardType === "reversed-child" || cardType === "combo-child"
           ? String(card.id)
           : String(updatedCard.id);
         const refreshed = (view.plugin.store.data.cards || {})[refreshId];

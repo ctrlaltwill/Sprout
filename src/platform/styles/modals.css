@@ -796,6 +796,18 @@ width: min(720px, 100%);
   line-height: 1.75;
 }
 
+/* Inline code within gatekeeper text */
+.learnkit .learnkit-gatekeeper-body code,
+.learnkit .learnkit-gatekeeper-body .learnkit-md-block code,
+.learnkit .learnkit-gatekeeper-body .learnkit-widget-text code {
+  font-family: var(--font-monospace, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace);
+  font-size: 0.85em;
+  background-color: var(--code-background, var(--background-modifier-hover, rgba(128,128,128,0.15)));
+  color: var(--code-normal, var(--text-normal));
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+
 .learnkit .learnkit-gatekeeper-question-block {
   margin: 0;
 }

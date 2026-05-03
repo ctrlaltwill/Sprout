@@ -986,6 +986,18 @@
   opacity: 0.6;
 }
 
+/* Inline code within widget text */
+.learnkit .learnkit-widget-text code,
+.learnkit .learnkit-widget-info code {
+  font-family: var(--font-monospace, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace);
+  background-color: var(--color-base-20);
+  color: var(--color-base-70);
+  border-radius: 4px;
+  border: 1px solid var(--color-base-30) !important;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85em;
+}
+
 .learnkit .sprout-widget-extra-info {
   font-weight: 400;
 }
@@ -1019,7 +1031,7 @@
   margin-top: 0.3rem;
   margin-bottom: 0.3rem;
   padding-inline-start: 1.5em;
-  line-height: 1.15;
+  line-height: 2;
 }
 
 .learnkit .learnkit-widget-text ul,
@@ -1039,7 +1051,7 @@
 .learnkit .learnkit-gatekeeper-body li {
   margin: 0.3rem 0;
   padding: 0;
-  line-height: 1.15;
+  line-height: 2;
 }
 
 .learnkit .learnkit-widget-text li > p,
@@ -1060,7 +1072,7 @@
 .learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol, li),
 .learnkit .learnkit-widget-text .whitespace-pre-wrap.break-words :is(ul, ol, li),
 .learnkit .learnkit-widget-info .whitespace-pre-wrap.break-words :is(ul, ol, li) {
-  line-height: 1.15;
+  line-height: 2;
 }
 
 .learnkit .learnkit-gatekeeper-body .whitespace-pre-wrap.break-words :is(ul, ol),

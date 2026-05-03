@@ -1,6 +1,23 @@
 import { parseClozeTokens, processClozeForMath, resolveNestedClozeAnswers } from "../../platform/core/shared-utils";
 import { escapeHtml, processMarkdownFeatures } from "./reading-helpers";
 
+/** Replace HTML tags with opaque placeholders so processMarkdownFeatures
+ *  (which HTML-escapes its input) doesn't destroy already-generated HTML. */
+function protectHtmlTags(html: string): { text: string; restore: (s: string) => string } {
+  const tags: string[] = [];
+  const PH = "@@SPROUTHTML";
+  const protected_ = html.replace(/<[^>]+>/g, (match) => {
+    const idx = tags.length;
+    tags.push(match);
+    return `${PH}${idx}@@`;
+  });
+  return {
+    text: protected_,
+    restore: (s: string) =>
+      s.replace(new RegExp(`${PH}(\\d+)@@`, "g"), (_m, idx) => tags[Number(idx)] ?? ""),
+  };
+}
+
 function stripInlineMarkdownMarkers(text: string): string {
   return String(text ?? "")
     .replace(/\*\*(.+?)\*\*/g, "$1")
@@ -64,9 +81,16 @@ export function buildReadingFlashcardCloze(text: string, mode: "front" | "back")
   const source = String(text || "");
   if (source.includes("$") || source.includes("\\(") || source.includes("\\[")) {
     const reveal = mode === "back";
-    return processMarkdownFeatures(
-      processClozeForMath(source, reveal, null, { blankClassName: "learnkit-flashcard-blank" }),
-    );
+    const clozeHtml = processClozeForMath(source, reveal, null, {
+      blankClassName: "learnkit-flashcard-blank",
+      revealWrapper: (answer) =>
+        `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${escapeHtml(answer)}</span></span>`,
+    });
+    // processClozeForMath generates HTML (blank spans, hint spans) that
+    // would be destroyed by processMarkdownFeatures' HTML escaping.
+    // Protect those tags, process markdown on the surrounding text, then restore.
+    const { text: protectedHtml, restore } = protectHtmlTags(clozeHtml);
+    return restore(processMarkdownFeatures(protectedHtml));
   }
 
   const clozeMatches = parseClozeTokens(source).tokens;

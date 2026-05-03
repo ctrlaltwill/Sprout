@@ -68,6 +68,7 @@ import { fmtGroups, coerceGroups, normalizeGroups } from "../../engine/indexing/
 import { buildAnswerOrOptionsFor, buildQuestionFor } from "../reviewer/fields";
 import { escapeTextWithCircleFlags } from "../../platform/flags/flag-tokens";
 import {
+  COMBO_VARIANT_SEPARATOR,
   escapeDelimiterText,
   pushDelimitedField,
 } from "../../platform/core/delimiter";
@@ -75,7 +76,7 @@ import { buildPrimaryCardAnchor } from "../../platform/core/identity";
 
 // ─── Filter / column types ──────────────────────────────────────────
 
-export type TypeFilter = "all" | "basic" | "reversed" | "mcq" | "cloze" | "io" | "oq";
+export type TypeFilter = "all" | "basic" | "mcq" | "cloze" | "io" | "hq" | "oq";
 export type StageFilter = "all" | "new" | "learning" | "relearning" | "review" | "suspended" | "quarantined";
 export type DueFilter = "all" | "due" | "today" | "later";
 
@@ -243,6 +244,13 @@ export function buildCardBlockPipeMarkdown(id: string, rec: CardRecord): string[
       const txt = (step || "").trim();
       if (txt) pushPipeField(out, String(idx + 1), txt);
     });
+  } else if (rec.type === "combo") {
+    // Write combo as basic Q/A with :: variant separator.
+    const ext = (rec.extensionData ?? {});
+    const qVariants: string[] = Array.isArray(ext.qVariants) ? ext.qVariants as string[] : [];
+    const aVariants: string[] = Array.isArray(ext.aVariants) ? ext.aVariants as string[] : [];
+    if (qVariants.length) pushPipeField(out, "Q", qVariants.join(COMBO_VARIANT_SEPARATOR));
+    if (aVariants.length) pushPipeField(out, "A", aVariants.join(COMBO_VARIANT_SEPARATOR));
   }
 
   const info = (rec.info || "").trim();
@@ -274,10 +282,26 @@ export function endOfTodayMs(): number {
 // ─── Display helpers ─────────────────────────────────────────────────
 
 /** Browser display label for card type. */
-export function typeLabelBrowser(t: string): string {
+export function typeLabelBrowser(
+  t: string,
+  card?: { q?: string | null; a?: string | null; extensionData?: Record<string, unknown> | null } | null,
+): string {
   const tt = String(t || "").toLowerCase();
-  if (tt === "basic") return "Basic";
-  if (tt === "reversed" || tt === "reversed-child") return "Basic (reversed)";
+  if (tt === "basic") {
+    // Detect combo cards that are stored as basic but have :: separator or extensionData variants
+    if (card) {
+      const ext = card.extensionData ?? {};
+      const qVariants: unknown[] = Array.isArray(ext.qVariants) ? ext.qVariants : [];
+      const aVariants: unknown[] = Array.isArray(ext.aVariants) ? ext.aVariants : [];
+      if (qVariants.length > 0 || aVariants.length > 0) return "Basic (Combo)";
+      const qText = String(card.q ?? "");
+      const aText = String(card.a ?? "");
+      if (qText.includes(" :: ") || aText.includes(" :: ")) return "Basic (Combo)";
+    }
+    return "Basic";
+  }
+  if (tt === "reversed" || tt === "reversed-child") return "Basic (Reversed)";
+  if (tt === "combo" || tt === "combo-child") return "Basic (Combo)";
   if (tt === "mcq") return "Multiple choice";
   if (tt === "cloze" || tt === "cloze-child") return "Cloze";
   if (tt === "io") return "Image occlusion";

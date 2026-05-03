@@ -1441,9 +1441,13 @@ export class SproutReviewerView extends ItemView {
         const { start, end } = findCardBlockRangeById(lines, updatedCard.id);
         const block = buildCardBlockMarkdown(updatedCard.id, updatedCard);
         lines.splice(start, end - start, ...block);
+        const updatedSource = lines.join("\n");
 
-        await this.app.vault.modify(file, lines.join("\n"));
-        await syncOneFile(this.plugin, file, { pruneGlobalOrphans: false });
+        await this.app.vault.modify(file, updatedSource);
+        await syncOneFile(this.plugin, file, {
+          pruneGlobalOrphans: false,
+          sourceTextOverride: updatedSource,
+        });
         new Notice(this.tx("ui.reviewer.notice.saved", "Saved changes to flashcard"));
 
         if (this.session) {
@@ -2269,6 +2273,7 @@ export class SproutReviewerView extends ItemView {
         ((card.type === "basic" ||
           card.type === "reversed" ||
           card.type === "reversed-child" ||
+          card.type === "combo-child" ||
           card.type === "cloze" ||
           card.type === "cloze-child" ||
           isIoRevealableType(card)) &&
@@ -2463,6 +2468,7 @@ export class SproutReviewerView extends ItemView {
       card.type === "basic" ||
       card.type === "reversed" ||
       card.type === "reversed-child" ||
+      card.type === "combo-child" ||
       card.type === "cloze" ||
       card.type === "cloze-child" ||
       isIoRevealableType(card);

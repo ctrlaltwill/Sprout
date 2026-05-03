@@ -446,6 +446,140 @@ describe("sync engine", () => {
     expect(plugin.store.data.states["111111111::cloze::c3"]).toBeDefined();
   });
 
+  it("creates combo-child records from basic Q/A variants using ::", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/Combo.md",
+      [
+        "^learnkit-322817531",
+        "T | Cartesian Test |",
+        "Q | Myocardial :: Infarction |",
+        "A | Interruption of blood supply to a part of the heart, causing cells to die. :: A medical emergency typically characterised by chest pain and shortness of breath. |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+
+    await syncOneFile(plugin, file);
+
+    // Parent stays basic with combo variants persisted in extensionData.
+    expect(plugin.store.data.cards["322817531"]).toBeDefined();
+    expect(plugin.store.data.cards["322817531"].type).toBe("basic");
+
+    const ext = plugin.store.data.cards["322817531"].extensionData as Record<string, unknown>;
+    expect(Array.isArray(ext?.qVariants)).toBe(true);
+    expect(Array.isArray(ext?.aVariants)).toBe(true);
+    expect((ext?.qVariants as unknown[]).length).toBe(2);
+    expect((ext?.aVariants as unknown[]).length).toBe(2);
+
+    // Cartesian product: 2 x 2 = 4 combo children.
+    const comboChildIds = Object.keys(plugin.store.data.cards).filter((id) =>
+      plugin.store.data.cards[id]?.type === "combo-child" && plugin.store.data.cards[id]?.parentId === "322817531",
+    );
+    expect(comboChildIds).toHaveLength(4);
+    for (const id of comboChildIds) {
+      expect(plugin.store.data.states[id]).toBeDefined();
+    }
+  });
+
+  it("backfills missing combo-child records on re-sync for existing combo parent", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/ComboBackfill.md",
+      [
+        "^learnkit-400000001",
+        "T | Backfill Combo |",
+        "Q | Alpha :: Beta |",
+        "A | One :: Two |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+
+    // Existing parent state from an older build: no extensionData, no combo children.
+    plugin.store.upsertCard({
+      id: "400000001",
+      type: "basic",
+      q: "Alpha :: Beta",
+      a: "One :: Two",
+      title: "Backfill Combo",
+      sourceNotePath: "Notes/ComboBackfill.md",
+      sourceStartLine: 0,
+      updatedAt: Date.now(),
+      lastSeenAt: Date.now(),
+    } as any);
+
+    await syncOneFile(plugin, file);
+
+    const comboChildIds = Object.keys(plugin.store.data.cards).filter((id) =>
+      plugin.store.data.cards[id]?.type === "combo-child" && plugin.store.data.cards[id]?.parentId === "400000001",
+    );
+    expect(comboChildIds).toHaveLength(4);
+    for (const id of comboChildIds) {
+      expect(plugin.store.data.states[id]).toBeDefined();
+    }
+  });
+
+  it("creates paired combo-child records from basic Q/A variants using ::: (zip mode)", async () => {
+    const vault = new MemoryVault();
+    const file = await vault.create(
+      "Notes/ComboZip.md",
+      [
+        "^learnkit-500000001",
+        "T | Capitals |",
+        "Q | France ::: Spain ::: Germany |",
+        "A | Paris ::: Madrid ::: Berlin |",
+      ].join("\n"),
+    );
+    const plugin = makePlugin(vault);
+
+    await syncOneFile(plugin, file);
+
+    // Parent stored with zip mode.
+    expect(plugin.store.data.cards["500000001"]).toBeDefined();
+    const ext = plugin.store.data.cards["500000001"].extensionData as Record<string, unknown>;
+    expect(ext?.comboMode).toBe("zip");
+    expect((ext?.qVariants as unknown[]).length).toBe(3);
+    expect((ext?.aVariants as unknown[]).length).toBe(3);
+
+    // Sequential zip: 3 paired cards (not 9).
+    const childIds = Object.keys(plugin.store.data.cards).filter((id) =>
+      plugin.store.data.cards[id]?.type === "combo-child" && plugin.store.data.cards[id]?.parentId === "500000001",
+    );
+    expect(childIds).toHaveLength(3);
+
+    // Verify correct pairing — each child's Q and A should match by position.
+    const children = childIds.map((id) => plugin.store.data.cards[id]);
+    const pairs = children
+      .map((c) => ({ q: c?.q, a: c?.a }))
+      .sort((x, y) => (x.q ?? "").localeCompare(y.q ?? ""));
+    expect(pairs).toEqual(
+      expect.arrayContaining([
+        { q: "France", a: "Paris" },
+        { q: "Spain", a: "Madrid" },
+        { q: "Germany", a: "Berlin" },
+      ]),
+    );
+
+    for (const id of childIds) {
+      expect(plugin.store.data.states[id]).toBeDefined();
+    }
+  });
+
+  it("pushes a validation error for zip combo card with mismatched variant counts", async () => {
+    // 3 Q variants but only 2 A variants — should be caught by the parser.
+    const { parseCardsFromText } = await import("../src/engine/parser/parser");
+    const result = parseCardsFromText(
+      "Notes/Mismatch.md",
+      [
+        "^learnkit-500000099",
+        "Q | France ::: Spain ::: Germany |",
+        "A | Paris ::: Madrid |",
+      ].join("\n"),
+    );
+    const cards = result.cards;
+    expect(cards).toHaveLength(1);
+    expect(cards[0].errors.some((e) => /mismatched/i.test(e))).toBe(true);
+  });
+
   // ── syncOneFile: reversed children ──────────────────────────────────────
 
   it("creates reversed-child records (forward + back)", async () => {

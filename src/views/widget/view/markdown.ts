@@ -11,6 +11,7 @@
 
 import { log } from "../../../platform/core/logger";
 import type { App } from "obsidian";
+import { convertInlineDisplayMath } from "../../../platform/core/shared-utils";
 import { replaceCircleFlagTokens, hydrateCircleFlagsInElement } from "../../../platform/flags/flag-tokens";
 
 /* ------------------------------------------------------------------ */
@@ -47,10 +48,15 @@ export function escapeHtml(s: unknown): string {
  *   _text_     → <em>       (italic — same as *text* in Obsidian)
  *   ~~text~~   → <s>        (strikethrough)
  *   ==text==   → <mark>     (highlight)
+ *   `text`     → <code>text</code>
+ *
+ * @param text  Raw text to process
+ * @param opts  Options: { imageEmbeds?: boolean } — enable ![[image]] → <img> conversion
  */
-export function processMarkdownFeatures(text: string): string {
+export function processMarkdownFeatures(text: string, opts?: { imageEmbeds?: boolean }): string {
   if (!text) return "";
-  const source = String(text);
+  const imageEmbeds = opts?.imageEmbeds === true;
+  const source = convertInlineDisplayMath(String(text));
 
   // ── Extract math blocks before applying markdown formatting ──
   // LaTeX delimiters contain characters like _ * ^ that conflict with
@@ -66,31 +72,48 @@ export function processMarkdownFeatures(text: string): string {
     return `${MATH_PH}${idx}@@`;
   });
 
-  let result = withPlaceholders;
+  // ── HTML-escape all text content BEFORE any tag-generating processing ──
+  // This ensures literal < and > (e.g. "git reset <commit-sha>") survive
+  // innerHTML insertion instead of being silently dropped as unknown tags.
+  let result = escapeHtml(withPlaceholders);
+
+  // ── Image embeds ![[image.ext|alt]] → <img> (reading view only) ──
+  // Must come BEFORE [[link]] handling to avoid partial matches.
+  if (imageEmbeds) {
+    result = result.replace(/!\[\[([^\]|]+?)(?:\|([^\]]*?))?\]\]/g, (_match: string, target: string, alt?: string) => {
+      const altText = alt || target.split("/").pop() || target;
+      // target / altText already HTML-escaped by escapeHtml() above
+      return `<img class="learnkit-reading-embed-img" data-embed-path="${target.trim()}" alt="${altText}" />`;
+    });
+  }
 
   // Convert wiki links [[Page]] or [[Page|Display]] to HTML links
   result = result.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match: string, target: string, display?: string) => {
     const linkText = display || target;
-    return `<a href="#" class="internal-link" data-href="${escapeHtml(target)}">${escapeHtml(linkText)}</a>`;
+    // target / linkText already HTML-escaped by escapeHtml() above
+    return `<a href="#" class="internal-link" data-href="${target}">${linkText}</a>`;
   });
 
   // ── Inline formatting (standard Obsidian markdown) ──
-  // Order matters: bold (**) before italic (*)
+  // Order matters: code before bold, bold before italic
+
+  // Inline code: `text` → <code>text</code>
+  result = result.replace(/`([^`]+)`/g, "<code>$1</code>");
 
   // Bold: **text** → <strong>text</strong>
-  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
   // Italic: *text* → <em>text</em>
-  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
 
   // Italic: _text_ → <em>text</em>  (Obsidian standard)
-  result = result.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, '<em>$1</em>');
+  result = result.replace(/(?<![\w\\])_(.+?)_(?![\w])/g, "<em>$1</em>");
 
   // Strikethrough: ~~text~~ → <s>text</s>
-  result = result.replace(/~~(.+?)~~/g, '<s>$1</s>');
+  result = result.replace(/~~(.+?)~~/g, "<s>$1</s>");
 
   // Highlight: ==text== → <mark>text</mark>
-  result = result.replace(/==(.+?)==/g, '<mark>$1</mark>');
+  result = result.replace(/==(.+?)==/g, "<mark>$1</mark>");
 
   result = replaceCircleFlagTokens(result);
 

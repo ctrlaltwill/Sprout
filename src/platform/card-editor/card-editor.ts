@@ -16,6 +16,7 @@ import type { CardRecord } from "../../platform/core/store";
 import { normalizeCardOptions } from "../../platform/core/store";
 import { getCorrectIndices } from "../../platform/types/card";
 import { buildAnswerOrOptionsFor, escapePipes } from "../../views/reviewer/fields";
+import { COMBO_VARIANT_SEPARATOR } from "../core/delimiter";
 import { escapeDelimiterText, getDelimiter } from "../../platform/core/delimiter";
 import { renderMarkdownPreviewInElement, setCssProps } from "../../platform/core/ui";
 import {
@@ -40,7 +41,7 @@ export type ColKey =
   | "location"
   | "groups";
 
-export type CardType = "basic" | "reversed" | "reversed-child" | "cloze" | "mcq" | "io" | "oq";
+export type CardType = "basic" | "reversed" | "reversed-child" | "cloze" | "combo" | "mcq" | "io" | "oq";
 
 const CLOZE_TOOLTIP =
   "Use cloze syntax to hide text in your prompt.\n{{c1::text}} creates the first blank.\nUse {{c2::text}} for a different blank, or reuse {{c1::text}} to reveal together.\nShortcuts: Cmd/Ctrl+Shift+C (new blank), Cmd/Ctrl+Shift+Alt/Option+C (same blank number).";
@@ -752,6 +753,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
   const hasNonCloze = normalizedTypes.some((type) => type !== "cloze");
   const hasMcq = normalizedTypes.some((type) => type === "mcq");
   const answerLabel = hasMcq ? "Answer / Options" : "Answer";
+  const questionLabel = "Question";
   const isClozeOnly = normalizedTypes.length > 0 && normalizedTypes.every((type) => type === "cloze");
 
   const isSingleMcq = safeCards.length === 1 && normalizedTypes[0] === "mcq";
@@ -778,7 +780,7 @@ export function createCardEditor(config: CardEditorConfig): CardEditorResult {
   // Skip question/answer for IO cards
   const isIoCard = normalizedTypes.length === 1 && normalizedTypes[0] === "io";
   if (!isIoCard) {
-    formFields.push({ key: "question", label: "Question", editable: true });
+    formFields.push({ key: "question", label: questionLabel, editable: true });
     if (hasNonCloze) {
       formFields.push({ key: "answer", label: answerLabel, editable: true });
     }
@@ -997,12 +999,23 @@ function getFieldValue(card: CardRecord, key: ColKey): string {
     case "title":
       return (card.title || "").split(/\r?\n/)[0] || "";
     case "question":
-      if (card.type === "basic" || card.type === "reversed") return card.q || "";
+      if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
+        // For combo (legacy or basic with extensionData), show variants joined by ::.
+        const ext = (card.extensionData ?? {});
+        const qv: string[] = Array.isArray(ext.qVariants) ? ext.qVariants as string[] : [];
+        if (qv.length > 1) return qv.join(COMBO_VARIANT_SEPARATOR);
+        return card.q || "";
+      }
       if (card.type === "mcq") return card.stem || "";
       if (card.type === "oq") return card.q || "";
       return card.clozeText || "";
     case "answer":
-      if (card.type === "basic" || card.type === "reversed") return card.a || "";
+      if (card.type === "basic" || card.type === "reversed" || card.type === "combo") {
+        const ext2 = (card.extensionData ?? {});
+        const av: string[] = Array.isArray(ext2.aVariants) ? ext2.aVariants as string[] : [];
+        if (av.length > 1) return av.join(COMBO_VARIANT_SEPARATOR);
+        return card.a || "";
+      }
       if (card.type === "mcq") {
         const options = normalizeCardOptions(card.options);
         const correct = Number.isFinite(card.correctIndex) ? (card.correctIndex as number) : -1;

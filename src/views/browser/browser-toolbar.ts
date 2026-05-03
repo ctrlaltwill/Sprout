@@ -212,9 +212,9 @@ export function buildBrowserLayout(
     options: [
       { v: "all", label: tx("ui.browser.filter.type.all", "All types") },
       { v: "basic", label: tx("ui.browser.filter.type.basic", "Basic") },
-      { v: "reversed", label: tx("ui.browser.filter.type.reversed", "Basic (reversed)") },
       { v: "cloze", label: tx("ui.browser.filter.type.cloze", "Cloze") },
       { v: "io", label: tx("ui.browser.filter.type.io", "Image occlusion") },
+      { v: "hq", label: tx("ui.browser.filter.type.hq", "Hotspot") },
       { v: "mcq", label: tx("ui.browser.filter.type.mcq", "Multiple choice") },
       { v: "oq", label: tx("ui.browser.filter.type.oq", "Ordered question") },
     ],

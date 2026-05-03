@@ -102,6 +102,14 @@ describe("resolveWidgetKeyAction", () => {
     expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "cloze-child", showingAnswer: true }))).toBe("next");
   });
 
+  it("Enter flips a combo child card", () => {
+    expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "combo-child" }))).toBe("flip");
+  });
+
+  it("Enter advances a combo child card when answer shown", () => {
+    expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "combo-child", showingAnswer: true }))).toBe("next");
+  });
+
   // ── Session — MCQ cards ───────────────────────────────────────────
   it("Enter on MCQ after grading → next", () => {
     expect(resolveWidgetKeyAction(ctx({ key: "enter", cardType: "mcq", isGraded: true }))).toBe("next");
@@ -138,6 +146,10 @@ describe("resolveWidgetKeyAction", () => {
 
   it("number keys ignored when already graded", () => {
     expect(resolveWidgetKeyAction(ctx({ key: "1", showingAnswer: true, isGraded: true }))).toBeNull();
+  });
+
+  it("number keys grade combo child when answer is shown", () => {
+    expect(resolveWidgetKeyAction(ctx({ key: "2", showingAnswer: true, cardType: "combo-child" }))).toBe("grade-hard");
   });
 
   // ── Session — IO card flip/next ───────────────────────────────────

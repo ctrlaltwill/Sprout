@@ -154,7 +154,16 @@ export function computeBrowserRows(
 
   if (!includeQuarantined) rows = rows.filter((r) => !quarantine[String(r.card.id)]);
 
-  if (typeFilter !== "all") rows = rows.filter((r) => String(r.card.type) === typeFilter);
+  if (typeFilter !== "all") {
+    if (typeFilter === "basic") {
+      rows = rows.filter((r) => {
+        const t = String(r.card.type ?? "").toLowerCase();
+        return t === "basic" || t === "reversed" || t === "reversed-child" || t === "combo" || t === "combo-child";
+      });
+    } else {
+      rows = rows.filter((r) => String(r.card.type) === typeFilter);
+    }
+  }
 
   if (typeFiltersFromQuery.length) {
     rows = rows.filter((r) => typeFiltersFromQuery.includes(String(r.card.type || "").toLowerCase()));
@@ -204,7 +213,7 @@ export function browserSortValue(
 ): string | number {
   if (key === "due") return dueMs ?? Number.POSITIVE_INFINITY;
   if (key === "id") return card.id;
-  if (key === "type") return typeLabelBrowser(card.type);
+  if (key === "type") return typeLabelBrowser(card.type, card);
   if (key === "stage") {
     if (plugin.store.isQuarantined(card.id)) return "Quarantined";
     return stageLabel(String(state?.stage || "new"));
@@ -282,7 +291,7 @@ export function applyValueToCard(card: CardRecord, col: ColKey, value: string): 
 /** Read the display value for a given column from a card. */
 export function readCardField(card: CardRecord, col: ColKey, plugin: LearnKitPlugin): string {
   if (col === "id") return String(card.id);
-  if (col === "type") return typeLabelBrowser(card.type);
+  if (col === "type") return typeLabelBrowser(card.type, card);
   if (col === "stage") {
     if (plugin.store.isQuarantined(card.id)) return "Quarantined";
     const st = plugin.store.getState(card.id);

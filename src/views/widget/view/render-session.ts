@@ -183,7 +183,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
     body.appendChild(
       el(
         "div",
-        "text-lg font-semibold text-foreground sprout-widget-session-complete-title",
+        "text-lg font-semibold sprout-widget-session-complete-title",
         tx(view, "ui.widget.sessionComplete", "Session Complete!"),
       ),
     );
@@ -241,7 +241,7 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
   const infoText = String((card)?.info ?? "").trim();
 
   // ---- Card-type–specific content ------------------------------------
-  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
+  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child") {
     renderBasicCard(view, body, card, graded, infoText, applySectionStyles);
   } else if (isClozeLike(card)) {
     renderClozeCard(view, body, card, graded, infoText, applySectionStyles);
@@ -975,7 +975,7 @@ function renderInfoBlock(
 /* ================================================================== */
 
 function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, ioLike: boolean) {
-  if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer) {
+  if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || isClozeLike(card) || ioLike) && !view.showAnswer) {
     const revealBtn = makeTextButton({
       label: tx(view, "ui.widget.showAnswer", "Show Answer"),
       className: "learnkit-btn-toolbar sprout-widget-btn sprout-widget-btn-full",
@@ -1018,7 +1018,7 @@ function renderPracticeFooter(view: WidgetViewLike, footer: HTMLElement, card: C
 
 function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: CardRecord, graded: { rating: ReviewRating; at: number; meta: ReviewMeta | null } | null, ioLike: boolean) {
   // Reveal button (for basic/cloze when hidden)
-  if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
+  if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || isClozeLike(card) || ioLike) && !view.showAnswer && !graded) {
     const revealBtn = makeTextButton({
       label: tx(view, "ui.widget.revealAnswer", "Reveal Answer"),
       title: "Reveal answer",
@@ -1036,7 +1036,7 @@ function renderScheduledFooter(view: WidgetViewLike, footer: HTMLElement, card: 
 
   // Grading buttons row – 2×2 grid layout (Again+Hard, Good+Easy)
   if (!graded) {
-    if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || isClozeLike(card) || ioLike) && view.showAnswer) {
+    if ((card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || isClozeLike(card) || ioLike) && view.showAnswer) {
       const fourButton = !!view.plugin.settings.study.fourButtonMode;
       const showIntervals = !!view.plugin.settings.study.showGradeIntervals;
       const previewNow = Date.now();

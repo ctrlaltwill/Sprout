@@ -493,7 +493,7 @@ export class GatekeeperModal extends Modal {
   private renderQuestionBlock(section: HTMLElement, card: CardRecord) {
     const type = String(card.type || "").toLowerCase();
 
-    if (type === "basic" || type === "reversed" || type === "reversed-child") {
+    if (type === "basic" || type === "reversed" || type === "reversed-child" || type === "combo-child") {
       const isBackDirection = type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
       const isOldReversed = type === "reversed";
       const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
@@ -517,7 +517,7 @@ export class GatekeeperModal extends Modal {
   private renderAnswerBlock(section: HTMLElement, card: CardRecord) {
     const type = String(card.type || "").toLowerCase();
 
-    if (type === "basic" || type === "reversed" || type === "reversed-child") {
+    if (type === "basic" || type === "reversed" || type === "reversed-child" || type === "combo-child") {
       const isBackDirection = type === "reversed-child" && (card as unknown as Record<string, unknown>).reversedDirection === "back";
       const isOldReversed = type === "reversed";
       const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
@@ -610,7 +610,7 @@ export class GatekeeperModal extends Modal {
     const isOldReversed = card.type === "reversed";
     const cid = `${card.id}-${answerSide ? "answer" : "question"}`;
 
-    if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
+    if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child") {
       const questionText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
       const answerText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
       tts.speakBasicCard(answerSide ? answerText : questionText, audio, cid);
