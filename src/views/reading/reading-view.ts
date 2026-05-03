@@ -449,13 +449,32 @@ export function syncReadingViewStyles(): void {
 
   // Ensure hidden source fragments never leak below prettified cards,
   // even when scoped stylesheet transforms miss plain markdown leaves.
-  css += `.markdown-preview-section > [data-learnkit-hidden="true"] {\n`;
+  css += `.markdown-preview-section > :not(.el-ul):not(.el-ol)[data-learnkit-hidden="true"] {\n`;
   css += `  display: none !important;\n`;
   css += `  max-height: 0 !important;\n`;
   css += `  overflow: hidden !important;\n`;
   css += `  margin: 0 !important;\n`;
   css += `  padding: 0 !important;\n`;
   css += `  border: none !important;\n`;
+  css += `}\n`;
+  // In vertical layout, keep hidden list spillover in normal flow so
+  // Obsidian's virtualizer retains correct section height.
+  css += `.markdown-preview-section.learnkit-layout-vertical > .el-ul[data-learnkit-hidden="true"],\n`;
+  css += `.markdown-preview-section.learnkit-layout-vertical > .el-ol[data-learnkit-hidden="true"],\n`;
+  css += `.markdown-preview-section.learnkit-layout-vertical > .el-ul.learnkit-hidden-important,\n`;
+  css += `.markdown-preview-section.learnkit-layout-vertical > .el-ol.learnkit-hidden-important {\n`;
+  css += `  position: absolute !important;\n`;
+  css += `  left: -99999px !important;\n`;
+  css += `  top: auto !important;\n`;
+  css += `  width: 1px !important;\n`;
+  css += `  height: 1px !important;\n`;
+  css += `  overflow: hidden !important;\n`;
+  css += `  margin: 0 !important;\n`;
+  css += `  padding: 0 !important;\n`;
+  css += `  border: none !important;\n`;
+  css += `  opacity: 0 !important;\n`;
+  css += `  user-select: none !important;\n`;
+  css += `  pointer-events: none !important;\n`;
   css += `}\n`;
   css += `.markdown-preview-section > .el-p[data-learnkit-processed] {\n`;
   css += `  opacity: 1;\n`;
@@ -833,6 +852,8 @@ export function __testRunPostRefreshSpilloverCleanup(scope: ParentNode): void {
 let mutationObserver: MutationObserver | null = null;
 let pendingRafId: number | null = null;
 let viewportReflowTimer: number | null = null;
+let flashcardsBootstrapTimer: number | null = null;
+const FLASHCARDS_BOOTSTRAP_ATTR = 'data-learnkit-flashcards-bootstrap';
 
 // Registered window listeners (stored for cleanup)
 let registeredWindowListeners: Array<{ event: string; handler: EventListenerOrEventListenerObject; options?: boolean | AddEventListenerOptions }> = [];
@@ -1006,6 +1027,73 @@ function setupDebouncedMutationObserver() {
   }
 }
 
+function isFlashcardsReadingPresetActive(): boolean {
+  try {
+    const rv = getSproutPlugin()?.settings?.readingView;
+    const macroPreset = normaliseMacroPreset((rv?.activeMacro as string | undefined) ?? rv?.preset);
+    return macroPreset === 'flashcards';
+  } catch {
+    return false;
+  }
+}
+
+function scheduleFlashcardsBootstrapReflow(): void {
+  // Flashcards masonry can require one viewport recalculation pass after
+  // initial reading-view attach (same effect as manual window resize).
+  if (flashcardsBootstrapTimer) {
+    window.clearTimeout(flashcardsBootstrapTimer);
+  }
+  flashcardsBootstrapTimer = window.setTimeout(() => {
+    flashcardsBootstrapTimer = null;
+    const nudgeFlashcardsSections = () => {
+      const sections = Array.from(document.querySelectorAll<HTMLElement>('.markdown-preview-section.learnkit-layout-masonry'));
+      const flashSections = sections.filter((section) => !!section.querySelector('.learnkit-pretty-card.learnkit-macro-flashcards'));
+      for (const section of flashSections) {
+        const previousWidth = section.style.width;
+        section.style.width = 'calc(100% - 1px)';
+        window.requestAnimationFrame(() => {
+          section.style.width = previousWidth;
+        });
+      }
+      try {
+        window.dispatchEvent(new Event('resize'));
+      } catch {
+        // Best-effort trigger only.
+      }
+    };
+
+    scheduleViewportReflow();
+    nudgeFlashcardsSections();
+
+    // Obsidian may append additional virtualized chunks shortly after first paint.
+    // A second one-shot nudge (still startup-only) helps complete initial hydration.
+    window.setTimeout(() => {
+      scheduleViewportReflow();
+      nudgeFlashcardsSections();
+    }, 180);
+  }, 90);
+}
+
+function maybeScheduleFlashcardsBootstrap(scope: ParentNode, allowBootstrap: boolean): void {
+  if (!allowBootstrap) return;
+  if (!isFlashcardsReadingPresetActive()) return;
+
+  const sections = collectSectionsWithPrettyCards(scope);
+  let shouldSchedule = false;
+
+  for (const section of sections) {
+    const hasFlashcards = !!section.querySelector('.learnkit-pretty-card.learnkit-macro-flashcards');
+    if (!hasFlashcards) continue;
+    if (section.hasAttribute(FLASHCARDS_BOOTSTRAP_ATTR)) continue;
+    section.setAttribute(FLASHCARDS_BOOTSTRAP_ATTR, 'true');
+    shouldSchedule = true;
+  }
+
+  if (shouldSchedule) {
+    scheduleFlashcardsBootstrapReflow();
+  }
+}
+
 /* =========================
    Card processing
    ========================= */
@@ -1051,12 +1139,15 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
 
   container.querySelectorAll<HTMLElement>('.el-p:not([data-learnkit-processed])').forEach(el => found.push(el));
 
+  const allowFlashcardsBootstrap = !!_ctx || container === document.documentElement;
+
   if (found.length === 0) {
     debugLog('[LearnKit] No unprocessed .el-p elements found in container');
     // Field-only edits can change card bodies without creating new anchor
     // paragraphs. Rebuild existing processed cards from latest source text.
     void refreshProcessedCards(container, sourceContent);
     applyLayoutForContainer();
+    maybeScheduleFlashcardsBootstrap(container, allowFlashcardsBootstrap);
     hideSectionLevelOrphanDelimitedParagraphs(container);
     return;
   }
@@ -1104,6 +1195,7 @@ async function processCardElements(container: HTMLElement, _ctx?: MarkdownPostPr
   // are attached to the DOM; this final pass ensures card-run wrappers
   // are created after all pending rendering settles.
   scheduleViewportReflow();
+  maybeScheduleFlashcardsBootstrap(container, allowFlashcardsBootstrap);
   hideSectionLevelOrphanDelimitedParagraphs(container);
 
   await Promise.resolve();
@@ -1154,6 +1246,10 @@ async function refreshProcessedCards(container: HTMLElement, sourceContent?: str
   const rvSettings = getSproutPlugin()?.settings?.readingView;
   applyLayoutToSections(touchedSections, rvSettings);
   touchedSections.forEach((section) => hideSectionLevelOrphanDelimitedParagraphs(section));
+}
+
+export async function __testRefreshProcessedCards(container: HTMLElement, sourceContent?: string): Promise<void> {
+  await refreshProcessedCards(container, sourceContent);
 }
 
 function resetCardsToNativeReading(container: HTMLElement) {
@@ -1209,6 +1305,7 @@ function resetCardsToNativeReading(container: HTMLElement) {
   sections.forEach((section) => {
     applySectionCardRunLayout(section, 'vertical');
     section.classList.remove('learnkit-layout-vertical', 'learnkit-layout-vertical', 'learnkit-layout-masonry', 'learnkit-layout-masonry');
+    section.removeAttribute(FLASHCARDS_BOOTSTRAP_ATTR);
   });
 }
 
@@ -1239,6 +1336,7 @@ function clearStaleReadingViewState(container: HTMLElement) {
   sections.forEach((section) => {
     unwrapCardRuns(section);
     section.classList.remove('learnkit-layout-vertical', 'learnkit-layout-vertical', 'learnkit-layout-masonry', 'learnkit-layout-masonry');
+    section.removeAttribute(FLASHCARDS_BOOTSTRAP_ATTR);
   });
 }
 
@@ -1875,10 +1973,14 @@ function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
     const children = Array.from(section.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
     for (let i = 0; i < children.length; i++) {
       const el = children[i];
-      if (!el.classList.contains('el-p')) continue;
-      if (el.hasAttribute('data-learnkit-processed')) continue;
+      const isParagraph = el.classList.contains('el-p');
+      const isListBlock = el.classList.contains('el-ul') || el.classList.contains('el-ol');
+      if (!isParagraph && !isListBlock) continue;
+      if (isParagraph && el.hasAttribute('data-learnkit-processed')) continue;
 
-      const raw = extractRawTextFromParagraph(el);
+      const raw = isParagraph
+        ? extractRawTextFromParagraph(el)
+        : (el.innerText || el.textContent || '');
       const lines = String(raw ?? '')
         .split(/\r?\n/g)
         .map((line) => clean(line).trim())
@@ -1893,7 +1995,17 @@ function hideSectionLevelOrphanDelimitedParagraphs(scope: ParentNode): void {
         !!prev?.classList.contains('learnkit-reading-card-run') ||
         !!next?.classList.contains('learnkit-reading-card-run');
 
-      if (!nearCardRun) continue;
+      const nearProcessedCard =
+        !!prev?.classList.contains('learnkit-pretty-card') ||
+        !!next?.classList.contains('learnkit-pretty-card') ||
+        !!prev?.hasAttribute('data-learnkit-processed') ||
+        !!next?.hasAttribute('data-learnkit-processed');
+
+      if (!nearCardRun && !nearProcessedCard) continue;
+
+      // For list blocks, require residue-like content to avoid touching
+      // legitimate author lists near cards.
+      if (isListBlock && !isLikelyDanglingCardResidue(raw, el)) continue;
 
       el.classList.add('learnkit-hidden-important', 'learnkit-hidden-important');
       el.setAttribute('data-learnkit-hidden', 'true');
@@ -2812,7 +2924,7 @@ function buildFlashcardContentHTML(card: LearnKitCard, options: { includeSpeaker
           const rendered = renderMarkdownLineWithClozeSpans(String(opt));
           const isCorrect = answersLower.has(opt.toLowerCase());
           return isCorrect
-            ? `<li><strong><span${mdSourceAttr(opt)}>${rendered}</span></strong></li>`
+            ? `<li><span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text"${mdSourceAttr(opt)}>${rendered}</span></span></li>`
             : `<li><span${mdSourceAttr(opt)}>${rendered}</span></li>`;
         }).join('')}</ul>`
       : '';
@@ -3053,7 +3165,9 @@ function enhanceCardElement(
   cardRawText?: string,
   skipSiblingHiding = false,
 ) {
-  const originalContent = originalContentOverride ?? el.innerHTML;
+  const originalContent = originalContentOverride
+    ?? el.querySelector<HTMLElement>('.learnkit-original-content')?.innerHTML
+    ?? el.innerHTML;
   el.replaceChildren();
 
   // Determine reading style from plugin instance (Obsidian context)

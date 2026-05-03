@@ -148,6 +148,17 @@ mjx-container[jax="CHTML"][display="true"] {
 /* ---- CSS multi-column masonry layout on preview sections ---- */
 
 /*
+ * Force eager rendering of masonry sections so Obsidian's virtualiser
+ * doesn't skip content below the viewport.  Masonry compresses the
+ * section's scroll-height relative to the raw markdown, which can
+ * confuse scroll-boundary detection and leave cards unrendered until
+ * a viewport resize triggers a full re-render.
+ */
+.markdown-preview-section.learnkit-layout-masonry {
+  content-visibility: visible;
+}
+
+/*
  * True masonry card layout using CSS multi-column.
  * Cards flow top-to-bottom within each column, so shorter cards
  * pack tightly without row-height gaps (unlike CSS Grid).
@@ -181,6 +192,29 @@ mjx-container[jax="CHTML"][display="true"] {
 .markdown-preview-section.learnkit-layout-masonry > .learnkit-hidden-important,
 .markdown-preview-section.learnkit-layout-masonry > [data-learnkit-hidden="true"] {
   display: none;
+}
+
+/* Vertical layout: .el-ul/.el-ol spillover must NOT use display:none
+   because collapsing their height breaks Obsidian's virtualiser scroll
+   calculation.  Keep the element in flow (same height contribution as
+   visible) but make its text transparent so the raw cloze syntax is
+   not visible on screen. */
+.markdown-preview-section.learnkit-layout-vertical > .el-ul[data-learnkit-hidden="true"],
+.markdown-preview-section.learnkit-layout-vertical > .el-ol[data-learnkit-hidden="true"],
+.markdown-preview-section.learnkit-layout-vertical > .el-ul.learnkit-hidden-important,
+.markdown-preview-section.learnkit-layout-vertical > .el-ol.learnkit-hidden-important {
+  position: absolute !important;
+  left: -99999px !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  opacity: 0 !important;
+  user-select: none !important;
+  pointer-events: none !important;
 }
 
 /* ---- Reading view utilities ---- */

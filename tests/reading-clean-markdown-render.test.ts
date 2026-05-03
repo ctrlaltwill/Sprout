@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   __testBuildMarkdownModeContent,
   __testIsLikelyDanglingCardResidue,
+  __testRefreshProcessedCards,
   __testRunPostRefreshSpilloverCleanup,
 } from "../src/views/reading/reading-view";
 
@@ -135,5 +136,69 @@ describe("dangling residue detection", () => {
 
     expect(spill.classList.contains("learnkit-hidden-important")).toBe(true);
     expect(spill.getAttribute("data-learnkit-hidden")).toBe("true");
+  });
+
+  it("hides untagged vertical list spillover adjacent to processed cards", () => {
+    const dom = new JSDOM(`
+      <div class="markdown-preview-section learnkit-layout-vertical">
+        <div
+          class="el-p learnkit-pretty-card learnkit-macro-markdown"
+          data-learnkit-processed="true"
+          data-sprout-processed="true"
+        ></div>
+        <div class="el-ul">
+          <ul>
+            <li>{{c1::Hyperalimentation::H}}</li>
+            <li>{{c1::Saline infusion::S}} |</li>
+            <li>I | The most common causes are diarrhoea. |</li>
+          </ul>
+        </div>
+      </div>
+    `);
+
+    const section = dom.window.document.querySelector(".markdown-preview-section") as HTMLElement;
+    const spill = dom.window.document.querySelector(".el-ul") as HTMLElement;
+
+    expect(spill.classList.contains("learnkit-hidden-important")).toBe(false);
+    expect(spill.getAttribute("data-learnkit-hidden")).toBeNull();
+
+    __testRunPostRefreshSpilloverCleanup(section);
+
+    expect(spill.classList.contains("learnkit-hidden-important")).toBe(true);
+    expect(spill.getAttribute("data-learnkit-hidden")).toBe("true");
+  });
+
+  it("preserves original content when refreshing an already-processed card", async () => {
+    const rawText = [
+      "^learnkit-963469930",
+      "T | Causes of Respiratory Alkalosis |",
+      "CQ | Causes of respiratory alkalosis can be remembered with the mnemonic **CHAMPS**:",
+      "- {{c3::Salicylates (early toxicity)::S}} |",
+      "I | Respiratory alkalosis is defined as pH >7.45 with PaCO2 <35 mmHg. |",
+    ].join("\n");
+
+    const dom = new JSDOM(`
+      <div class="markdown-preview-section learnkit-layout-vertical">
+        <div
+          class="el-p learnkit-pretty-card learnkit-reading-card learnkit-reading-view-wrapper accent learnkit-macro-markdown"
+          data-learnkit-processed="true"
+          data-learnkit-raw-text="${rawText.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}"
+        >
+          <div class="learnkit-card-content learnkit-reading-card-content">rendered card</div>
+          <div class="learnkit-original-content" aria-hidden="true">
+            <p dir="auto">^learnkit-963469930<br>T | Causes of Respiratory Alkalosis |<br>CQ | Causes of respiratory alkalosis can be remembered with the mnemonic <strong>CHAMPS</strong>:</p>
+          </div>
+        </div>
+      </div>
+    `);
+
+    const section = dom.window.document.querySelector(".markdown-preview-section") as HTMLElement;
+    const card = dom.window.document.querySelector(".learnkit-pretty-card") as HTMLElement;
+
+    await __testRefreshProcessedCards(section, rawText);
+
+    const original = card.querySelector(".learnkit-original-content") as HTMLElement;
+    expect(original.innerHTML).not.toContain("learnkit-card-content");
+    expect(card.querySelectorAll(".learnkit-card-content")).toHaveLength(1);
   });
 });
