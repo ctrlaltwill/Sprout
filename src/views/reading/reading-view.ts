@@ -1050,9 +1050,9 @@ function scheduleFlashcardsBootstrapReflow(): void {
       const flashSections = sections.filter((section) => !!section.querySelector('.learnkit-pretty-card.learnkit-macro-flashcards'));
       for (const section of flashSections) {
         const previousWidth = section.style.width;
-        section.style.width = 'calc(100% - 1px)';
+        setCssProps(section, 'width', 'calc(100% - 1px)');
         window.requestAnimationFrame(() => {
-          section.style.width = previousWidth;
+          setCssProps(section, 'width', previousWidth || null);
         });
       }
       try {
