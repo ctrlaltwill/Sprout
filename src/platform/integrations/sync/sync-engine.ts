@@ -1155,11 +1155,11 @@ async function deleteOrphanedIoImages(plugin: LearnKitPlugin): Promise<number> {
 
   // Also collect from the dedicated IO / HQ definition stores
   for (const id of Object.keys(plugin.store.data.io || {})) {
-    const def = plugin.store.data.io![id];
+    const def = plugin.store.data.io?.[id];
     if (def?.imageRef) referencedImagePaths.add(def.imageRef);
   }
   for (const id of Object.keys(plugin.store.data.hq || {})) {
-    const def = plugin.store.data.hq![id];
+    const def = plugin.store.data.hq?.[id];
     if (def?.imageRef) referencedImagePaths.add(def.imageRef);
   }
 

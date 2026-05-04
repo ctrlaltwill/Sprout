@@ -1184,8 +1184,8 @@ export function renderImageOcclusionReviewInto(args: {
         mask.classList.add("learnkit-io-mask-rect", "learnkit-io-mask-rect", "learnkit-io-mask-polygon", "learnkit-io-mask-polygon");
         setCssProps(mask, "clipPath", "");
         // Polygon tones are rendered by SVG; clear any previously applied rect styles.
-        mask.style.background = "transparent";
-        mask.style.border = "none";
+        setCssProps(mask, "background", "transparent");
+        setCssProps(mask, "border", "none");
         // Remove conflicting mask-tone classes so the SVG polygon fill/stroke is visible.
         mask.classList.remove("learnkit-io-mask-target", "learnkit-io-mask-other");
         const polygonStroke = appendPolygonMaskStroke(

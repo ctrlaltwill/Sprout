@@ -1388,7 +1388,7 @@ function sanitizeSuggestion(raw: unknown): StudyAssistantSuggestion | null {
     ioMaskMode: normalizeIoMaskMode(rec.ioMaskMode ?? rec.maskMode ?? rec.mode),
     ioAssessment: normalizeIoAssessment(rec.ioAssessment ?? rec.imageAssessment ?? rec.ioAnalysis),
     noteRows: toStringArray(rec.noteRows),
-    comboMode: (coerceString(rec.comboMode) === "zip" ? "zip" : "product") as "product" | "zip",
+    comboMode: (coerceString(rec.comboMode) === "zip" ? "zip" : "product"),
     qVariants: toStringArray(rec.qVariants),
     aVariants: toStringArray(rec.aVariants),
     rationale: coerceString(rec.rationale),
