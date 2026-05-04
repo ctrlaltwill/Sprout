@@ -100,6 +100,9 @@ export type StudyAssistantSuggestion = {
   }>;
   ioMaskMode?: "solo" | "all";
   ioAssessment?: StudyAssistantIoAssessment;
+  comboMode?: "product" | "zip";
+  qVariants?: string[];
+  aVariants?: string[];
   noteRows?: string[];
   rationale?: string;
   sourceOrigin?: "note" | "external";

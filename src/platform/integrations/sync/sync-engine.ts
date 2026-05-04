@@ -1127,8 +1127,9 @@ function countRemovedGroups(before: Set<string>, after: Set<string>): number {
 }
 
 /**
- * Deletes orphaned IO images from the vault.
- * An image is orphaned if it matches `sprout-io-*` but no IO card references it.
+ * Deletes orphaned IO / HQ images from the vault.
+ * Matches both the legacy `sprout-io-*` pattern and the new
+ * `{page} - LK-(IO|HQ)-NN.*` convention.
  */
 async function deleteOrphanedIoImages(plugin: LearnKitPlugin): Promise<number> {
   if (!plugin.settings?.storage?.deleteOrphanedImages) return 0;
@@ -1136,51 +1137,76 @@ async function deleteOrphanedIoImages(plugin: LearnKitPlugin): Promise<number> {
   const vault = plugin.app.vault;
   const allFiles = vault.getFiles();
 
-  const referencedIoIds = new Set<string>();
-  
-  // Collect IO card IDs and unique file paths containing IO cards
+  // ── Collect all known image references ────────────────────────────────
+  const referencedImagePaths = new Set<string>();
   const ioCardIds = new Set<string>();
   const ioFilePaths = new Set<string>();
-  
+
   for (const id of Object.keys(plugin.store.data.cards || {})) {
     const card = plugin.store.data.cards[id];
-    if (card && String(card.type) === "io") {
+    if (!card) continue;
+    const cardType = String(card.type);
+    if (cardType === "io" || cardType === "hq") {
       ioCardIds.add(String(id));
-      if (card.sourceNotePath) {
-        ioFilePaths.add(card.sourceNotePath);
-      }
+      if (card.sourceNotePath) ioFilePaths.add(card.sourceNotePath);
+      if (card.imageRef) referencedImagePaths.add(card.imageRef);
     }
   }
 
-  // Only scan markdown files that contain IO cards
-  const re = /sprout-io-(\d{9})/g;
-  
+  // Also collect from the dedicated IO / HQ definition stores
+  for (const id of Object.keys(plugin.store.data.io || {})) {
+    const def = plugin.store.data.io![id];
+    if (def?.imageRef) referencedImagePaths.add(def.imageRef);
+  }
+  for (const id of Object.keys(plugin.store.data.hq || {})) {
+    const def = plugin.store.data.hq![id];
+    if (def?.imageRef) referencedImagePaths.add(def.imageRef);
+  }
+
+  // ── Legacy: scan markdown for sprout-io-(\d{9}) references ───────────
+  const oldRe = /sprout-io-(\d{9})/g;
+  const referencedIoIds = new Set<string>();
+
+  // ── New-style: scan markdown for LearnKit image embeds ────────────────
+  const newImgRe = /!\[\[([^\]]*(?:LK-IO|LK-HQ)[^\]]*)\]\]/gi;
+
   for (const filePath of ioFilePaths) {
     const md = vault.getAbstractFileByPath(filePath);
     if (!(md instanceof TFile)) continue;
-    
+
     try {
       const text = await vault.read(md);
       let match: RegExpExecArray | null;
-      while ((match = re.exec(text))) {
+      while ((match = oldRe.exec(text))) {
         if (match[1]) referencedIoIds.add(match[1]);
+      }
+      oldRe.lastIndex = 0;
+      while ((match = newImgRe.exec(text))) {
+        if (match[1]) referencedImagePaths.add(match[1].trim());
       }
     } catch {
       // ignore
     }
-    re.lastIndex = 0;
   }
+
+  // ── Patterns for file names ───────────────────────────────────────────
+  const OLD_IO_RE = /sprout-io-(\d{9})/;
+  const NEW_LK_RE = / - LK-(IO|HQ)-\d{2}\./;
 
   let deleted = 0;
 
   for (const file of allFiles) {
     if (!(file instanceof TFile)) continue;
-    const match = /sprout-io-(\d{9})/.exec(file.name);
-    if (!match) continue;
 
-    const ioId = match[1];
-    if (referencedIoIds.has(ioId)) continue;
-    if (ioCardIds.has(ioId)) continue;
+    const oldMatch = OLD_IO_RE.exec(file.name);
+    if (oldMatch) {
+      const ioId = oldMatch[1];
+      if (referencedIoIds.has(ioId) || ioCardIds.has(ioId)) continue;
+    } else if (NEW_LK_RE.test(file.name)) {
+      if (referencedImagePaths.has(file.path)) continue;
+    } else {
+      continue;
+    }
 
     try {
       await plugin.app.fileManager.trashFile(file);
@@ -1275,6 +1301,19 @@ function syncIoChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number,
         } else {
           rectId = `r-${Math.random().toString(16).slice(2)}`;
         }
+        const shape = rect.shape === "circle" ? "circle" : rect.shape === "polygon" ? "polygon" : "rect";
+        const points = shape === "polygon" && Array.isArray(rect.points)
+          ? rect.points
+              .map((p) => {
+                if (!p || typeof p !== "object") return null;
+                const point = p as Record<string, unknown>;
+                const x = Number(point.x ?? 0);
+                const y = Number(point.y ?? 0);
+                if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+                return { x, y };
+              })
+              .filter((p): p is { x: number; y: number } => !!p)
+          : [];
         rects.push({
           rectId,
           x: Number(rect.x ?? 0),
@@ -1282,7 +1321,8 @@ function syncIoChildren(plugin: LearnKitPlugin, parent: CardRecord, now: number,
           w: Number(rect.w ?? rect.width ?? 0),
           h: Number(rect.h ?? rect.height ?? 0),
           groupKey: normaliseGroupKey(rect.groupKey as string | null),
-          shape: (rect.shape === "circle" ? "circle" : "rect"),
+          shape,
+          points: points.length >= 3 ? points : undefined,
         });
       }
       if (rects.length > 0) {
@@ -1590,10 +1630,10 @@ function hqFieldsFromParsed(
   return { imageRef, hqRegions, interactionMode };
 }
 
-/** Regex to extract a Sprout IO image ID from a filename. */
+/** Regex to extract a Sprout IO card ID from a legacy `sprout-io-NNNNNNNNN` filename. */
 const IO_IMAGE_ID_RE = /sprout-io-(\d{9})/i;
 
-/** Attempts to infer the card ID from an IO card's image reference. */
+/** Attempts to infer the card ID from an IO card's image reference (legacy naming only). */
 function inferIoIdFromCard(c: ParsedCard): string | null {
   if (!c || c.type !== "io") return null;
   const raw = String(c?.ioSrc ?? "");
@@ -1685,7 +1725,7 @@ export async function syncOneFile(
       const rec = plugin.store.data.cards[id];
       if (!rec) continue;
       if (rec.sourceNotePath !== file.path) continue;
-      if (String(rec.type) === "io-child" || String(rec.type) === "hq-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child") continue;
+      if (String(rec.type) === "io-child" || String(rec.type) === "hq-child" || String(rec.type) === "cloze-child" || String(rec.type) === "reversed-child" || String(rec.type) === "combo-child") continue;
       rec.lastSeenAt = 0;
     }
     for (const id of Object.keys(plugin.store.data.quarantine || {})) {

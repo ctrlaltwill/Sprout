@@ -306,6 +306,8 @@ export type UserRequestOverrides = {
   types?: StudyAssistantCardType[];
   perTypeCounts?: Map<StudyAssistantCardType, number>;
   topic?: string;
+  clozeHints?: "always" | "never" | "auto";
+  comboMode?: "product" | "zip" | "auto";
 };
 
 type GenerationIntent = {
@@ -315,6 +317,8 @@ type GenerationIntent = {
   requestedTopic: string;
   allowExternalKnowledge: boolean;
   avoidRepeatingExistingTopics: boolean;
+  clozeHints: "always" | "never" | "auto";
+  comboMode: "product" | "zip" | "auto";
 };
 
 const TYPE_ALIASES: Record<string, StudyAssistantCardType> = {
@@ -345,7 +349,18 @@ const TYPE_ALIASES: Record<string, StudyAssistantCardType> = {
   "image-occlusion": "io",
   "image occlusion card": "io",
   "image-occlusion card": "io",
+  combo: "combo",
+  "combo card": "combo",
+  "combo cards": "combo",
+  "combination card": "combo",
+  "combination cards": "combo",
 };
+
+function wordToNumber(w: string): number {
+  if (/^\d+$/.test(w)) return parseInt(w, 10);
+  if (/\b(one|a|an|single)\b/i.test(w)) return 1;
+  return 0;
+}
 
 export function parseUserRequestOverrides(text: string): UserRequestOverrides {
   const t = String(text || "").toLowerCase().trim();
@@ -353,9 +368,10 @@ export function parseUserRequestOverrides(text: string): UserRequestOverrides {
 
   const result: UserRequestOverrides = {};
 
-  // Match patterns like "3 MCQs", "5 basic cards", "2 cloze questions"
-  const countTypePattern = /\b(\d{1,3})\s+(basic|reversed?|clozes?|mcqs?|multiple[- ]choice(?:\s+questions?)?|oqs?|ordered[- ]questions?|sequences?|ios?|image[- ]occlusions?)\b/gi;
-  const typeOnlyPattern = /\b(basic|reversed?|clozes?|mcqs?|multiple[- ]choice(?:\s+questions?)?|oqs?|ordered[- ]questions?|sequences?|ios?|image[- ]occlusions?)\s*(cards?|questions?|flashcards?)?\b/gi;
+  // Match patterns like "3 MCQs", "one cloze", "a paired combo", "single basic card"
+  // Word numbers (one/a/an/single) are converted to 1; optional combo-mode modifier sits between number and type
+  const countTypePattern = /\b(\d{1,3}|one|a|an|single)\s+(?:paired|sequential|zip|cross|cartesian|cross[- ]product|product|combinatorial)?\s*(basic|reversed?|clozes?|mcqs?|combos?|multiple[- ]choice(?:\s+questions?)?|oqs?|ordered[- ]questions?|sequences?|ios?|image[- ]occlusions?)\b/gi;
+  const typeOnlyPattern = /\b(basic|reversed?|clozes?|mcqs?|combos?|multiple[- ]choice(?:\s+questions?)?|oqs?|ordered[- ]questions?|sequences?|ios?|image[- ]occlusions?)\s*(cards?|questions?|flashcards?)?\b/gi;
   const countOnlyPattern = /\b(\d{1,3})\s+(cards?|questions?|flashcards?)\b/i;
 
   // Extract count+type pairs first
@@ -364,7 +380,8 @@ export function parseUserRequestOverrides(text: string): UserRequestOverrides {
   let match: RegExpExecArray | null;
 
   while ((match = countTypePattern.exec(t)) !== null) {
-    const n = parseInt(match[1], 10);
+    const n = wordToNumber(match[1]);
+    if (n <= 0) continue;
     let typeKey = match[2].toLowerCase().trim();
     if (/^reverses?$/.test(typeKey)) typeKey = "reverse";
     typeKey = typeKey
@@ -416,7 +433,7 @@ export function parseUserRequestOverrides(text: string): UserRequestOverrides {
       result.exactCountRequested = true;
     }
     // Handle singular type-only asks like "a cloze on X" / "single basic"
-    else if (detectedTypes.length > 0 && /\b(a|an|one|single)\s+(basic|reverse(?:d)?|cloze|mcq|multiple[- ]choice|oq|ordered[- ]question|sequence|io|image[- ]occlusion)\b/i.test(t)) {
+    else if (detectedTypes.length > 0 && /\b(a|an|one|single)\s+(basic|reverse(?:d)?|cloze|combo|mcq|multiple[- ]choice|oq|ordered[- ]question|sequence|io|image[- ]occlusion)\b/i.test(t)) {
       result.count = 1;
       result.exactCountRequested = true;
     }
@@ -427,7 +444,38 @@ export function parseUserRequestOverrides(text: string): UserRequestOverrides {
   if (perTypeCounts.size > 0) result.perTypeCounts = perTypeCounts;
   result.topic = extractRequestedTopic(t);
 
+  // Detect cloze hint preference from user request
+  result.clozeHints = detectClozeHintPreference(t);
+
+  // Detect combo mode preference from user request
+  result.comboMode = detectComboModePreference(t);
+
   return result;
+}
+
+function detectClozeHintPreference(text: string): "always" | "never" | "auto" {
+  const t = String(text || "").toLowerCase();
+  // Explicit "with hints" / "include hints" → always
+  if (/\b(with|include|using|has|have)\s+hints?\b/i.test(t)) return "always";
+  if (/\bhints?\s+(included|present|added|enabled)\b/i.test(t)) return "always";
+  // Explicit "no hints" / "without hints" / "don't include hints" → never
+  if (/\b(no|without|don'?t\s+include|never|omit|exclude|skip)\s+hints?\b/i.test(t)) return "never";
+  if (/\bhints?\s+(off|disabled|removed|not|never)\b/i.test(t)) return "never";
+  // Default: let AI decide
+  return "auto";
+}
+
+function detectComboModePreference(text: string): "product" | "zip" | "auto" {
+  const t = String(text || "").toLowerCase();
+  // Sequential / paired / zip
+  if (/\b(sequential|paired|pair|zip|one.to.one|1.to.1|strict)\s+(combo|card|flashcard)s?\b/i.test(t)) return "zip";
+  if (/\b(combo|card|flashcard)s?\s+(sequential|paired|zip)\b/i.test(t)) return "zip";
+  if (/\b(paired|pair|sequential|zip)\s+(combo|card|flashcard)s?\b/i.test(t)) return "zip";
+  // Cross / cartesian / cross-product / product
+  if (/\b(cross|cross.product|cartesian|product|combinatorial|all.combinations?)\s+(combo|card|flashcard)s?\b/i.test(t)) return "product";
+  if (/\b(combo|card|flashcard)s?\s+(cross|cross.product|cartesian|product)\b/i.test(t)) return "product";
+  // Default: let AI decide
+  return "auto";
 }
 
 function extractRequestedTopic(value: string): string {
@@ -475,6 +523,8 @@ function buildGenerationIntent(input: StudyAssistantGeneratorInput, overrides: U
     requestedTopic: String(overrides.topic || "").trim(),
     allowExternalKnowledge: userExplicitlyRequestsExternalKnowledge(input),
     avoidRepeatingExistingTopics: !userExplicitlyAllowsRepeatTopics(input),
+    clozeHints: overrides.clozeHints || "auto",
+    comboMode: overrides.comboMode || "auto",
   };
 }
 
@@ -610,6 +660,7 @@ function complexityScoreForSuggestion(s: StudyAssistantSuggestion): number {
     mcq: 1.3,
     oq: 1.35,
     io: 1.25,
+    combo: 1.15,
   };
 
   return (
@@ -1308,7 +1359,7 @@ function ensureIoMaskRows(
 
 function normalizeType(value: unknown): StudyAssistantCardType | null {
   const t = coerceString(value).toLowerCase();
-  if (t === "basic" || t === "reversed" || t === "cloze" || t === "mcq" || t === "oq" || t === "io") {
+  if (t === "basic" || t === "reversed" || t === "cloze" || t === "mcq" || t === "oq" || t === "io" || t === "combo") {
     return t;
   }
   return null;
@@ -1337,6 +1388,9 @@ function sanitizeSuggestion(raw: unknown): StudyAssistantSuggestion | null {
     ioMaskMode: normalizeIoMaskMode(rec.ioMaskMode ?? rec.maskMode ?? rec.mode),
     ioAssessment: normalizeIoAssessment(rec.ioAssessment ?? rec.imageAssessment ?? rec.ioAnalysis),
     noteRows: toStringArray(rec.noteRows),
+    comboMode: (coerceString(rec.comboMode) === "zip" ? "zip" : "product") as "product" | "zip",
+    qVariants: toStringArray(rec.qVariants),
+    aVariants: toStringArray(rec.aVariants),
     rationale: coerceString(rec.rationale),
     sourceOrigin: coerceString(rec.sourceOrigin) === "external" ? "external" : "note",
   };
@@ -1426,7 +1480,60 @@ function sanitizeSuggestion(raw: unknown): StudyAssistantSuggestion | null {
     }
   }
 
+  if (suggestion.type === "combo") {
+    const qVariants: string[] = suggestion.qVariants || [];
+    const aVariants: string[] = suggestion.aVariants || [];
+    const comboMode: "product" | "zip" = suggestion.comboMode === "zip" ? "zip" : "product";
+
+    // If AI provided explicit noteRows, validate they carry combo delimiters
+    if (hasNoteRows) {
+      const rows = suggestion.noteRows || [];
+      const hasComboDelimiters = rows.some((row) => {
+        const text = String(row || "");
+        return /:{2,3}/.test(text.replace(/^\s*[A-Za-z0-9]+\s*\|/, ""));
+      });
+      if (hasComboDelimiters) return suggestion;
+      // NoteRows exist but lack combo delimiters — try to extract variants from them
+      const qRow = rows.find((r) => /^\s*Q\s*\|/i.test(String(r || "")));
+      const aRow = rows.find((r) => /^\s*A\s*\|/i.test(String(r || "")));
+      if (qRow || aRow) {
+        const qVal = qRow ? String(qRow).replace(/^\s*Q\s*\|/i, "").replace(/\|\s*$/, "").trim() : "";
+        const aVal = aRow ? String(aRow).replace(/^\s*A\s*\|/i, "").replace(/\|\s*$/, "").trim() : "";
+        // Try splitting on semicolons, commas, or newlines
+        const qSplit = qVal ? qVal.split(/\s*[;,]\s*/).filter(Boolean) : [];
+        const aSplit = aVal ? aVal.split(/\s*[;,]\s*/).filter(Boolean) : [];
+        if (qSplit.length >= 2 || aSplit.length >= 2) {
+          const useQ = qSplit.length >= 2 ? qSplit : (qVal ? [qVal] : []);
+          const useA = aSplit.length >= 2 ? aSplit : (aVal ? [aVal] : []);
+          return buildComboNoteRows(suggestion, useQ, useA, comboMode);
+        }
+        // Single Q and A with no internal structure — cannot be a valid combo
+        // Fall through to check qVariants/aVariants
+      }
+    }
+
+    // Require at least 2 variants total across both sides
+    if (qVariants.length < 1 || aVariants.length < 1) return null;
+    if (qVariants.length === 1 && aVariants.length === 1) return null;
+
+    if (comboMode === "zip" && qVariants.length !== aVariants.length) return null;
+
+    return buildComboNoteRows(suggestion, qVariants.slice(0, 4), aVariants.slice(0, 4), comboMode);
+  }
+
   return suggestion;
+}
+
+function buildComboNoteRows(
+  suggestion: StudyAssistantSuggestion,
+  qVariants: string[],
+  aVariants: string[],
+  comboMode: "product" | "zip",
+): StudyAssistantSuggestion {
+  const sep = comboMode === "zip" ? " ::: " : " :: ";
+  const qRow = `Q | ${qVariants.join(sep)} |`;
+  const aRow = `A | ${aVariants.join(sep)} |`;
+  return { ...suggestion, noteRows: [qRow, aRow] };
 }
 
 function parseSuggestions(rawText: string): StudyAssistantSuggestion[] {
@@ -1612,8 +1719,8 @@ function buildSystemPrompt(customInstructions: string, canUseVisionForIo: boolea
     "Include noteRows only when you can guarantee exact parser-safe Sprout row syntax.",
     'Set sourceOrigin to "note" when the card tests content present in the note.',
     'Only use sourceOrigin "external" if the user explicitly asks for external/background knowledge.',
-    "MCQ noteRows format (use A for correct options, O for wrong options, NEVER numbered rows): [\"MCQ | question stem |\", \"A | correct option |\", \"O | wrong option |\", \"O | wrong option |\"]",
-    "OQ noteRows format (use numbered rows for ordered steps, NEVER A/O rows): [\"OQ | question prompt |\", \"1 | first step |\", \"2 | second step |\", \"3 | third step |\"]",
+    "MCQ noteRows format (exactly ONE A row for the correct answer, 3-4 O rows for wrong options, NEVER more than one A row): [\"MCQ | question stem |\", \"A | the single correct option |\", \"O | plausible wrong option |\", \"O | plausible wrong option |\", \"O | plausible wrong option |\"]",
+    "OQ noteRows format — MANDATORY when user asks for ordered/sequence cards (use numbered rows for ordered steps, NEVER A/O rows): [\"OQ | question prompt |\", \"1 | first step |\", \"2 | second step |\", \"3 | third step |\"]",
     "MCQ uses A/O rows only. OQ uses numbered rows only. Do NOT mix these formats.",
     "For type=cloze, every card must include at least one valid {{cN::...}} deletion and use CQ rows (never Q/A rows).",
     "Cloze rows may contain multiple deletions in a single CQ line (e.g. {{c1::...}}, {{c2::...}}, {{c3::...}}).",
@@ -1641,19 +1748,21 @@ function buildSystemPrompt(customInstructions: string, canUseVisionForIo: boolea
     "Flashcard quality rules (apply strictly):",
     "- One concept per card: each card should test a single, clear idea.",
     "- For tightly grouped lists of related items (e.g. 5 symptom clusters, 4 score components, 3 diagnostic criteria), prefer ONE cloze card with multiple deletions ({{c1::...}}, {{c2::...}}, etc.) so the learner sees full context. Only split into separate single-cloze cards if the list is large (>6 items) or cognitively heavy.",
-    "- Each cloze deletion should be 1–4 words. Up to ~6 words is acceptable for multi-word technical terms. Never delete an entire sentence or long phrase.",
+    "- Each cloze deletion should be 1–4 words. Up to ~6 words is acceptable for multi-word technical terms. Never delete an entire sentence or long phrase. HARD CAP: 8 cloze deletions maximum per card. Cards with 9+ clozes will be rejected. If you need more than 8 deletions, split into multiple separate cloze cards.",
     "- For longer definitions or factual prompts, use basic (Q/A) cards rather than cloze.",
     "- Keep answers short and recognisable at a glance: a single term, phrase, or tight list of ≤3 items. Avoid full paragraphs on the answer side.",
     "- Make the tested concept immediately obvious from the question stem — the answer should feel like a clean retrieval, not a summary essay.",
     "- Do not overcrowd: split multi-part answers into separate cards rather than stacking unrelated facts.",
     "- Prioritise high-yield, exam-worthy content: diagnostic criteria, mechanisms, treatment principles, management steps, classifications, prognosis, key values/thresholds, and named processes. De-prioritise low-yield trivia such as historical dates, version numbers, or author names unless the user specifically requests them.",
     "- Distribute cards across different sections and topics of the note rather than clustering on one area, unless the user specifies a particular topic.",
+    "- MCQ rules: Use ONLY positive stems. WRONG (never use): \"Which of the following is NOT...\" CORRECT: \"Which of the following is...\" Mark exactly ONE option as correct with exactly one A row in noteRows. All distractors must be plausible but clearly incorrect to someone who understands the material.",
     "- Choose card type by learning objective: CQ for in-context recall and grouped lists, Q for definitions and stemmed questions, RQ for bidirectional associations and language pairs, MCQ for exam-style discrimination, OQ for ordered sequences/steps only.",
+    "- OQ (ordered question) CARDS ARE MANDATORY WHEN REQUESTED: If the user asks for ordered questions, sequences, or steps, EVERY returned suggestion must be type=oq with numbered step rows. Never substitute cloze or basic cards when ordered questions are explicitly requested.",
     "- Language flag tokens ({{es}}, {{en}}, etc.) are ONLY for language-learning cards. Do not add them to medical, science, history, or general knowledge cards.",
     "- Do not include markdown formatting (bold, italic, etc.) in card content. Use plain text only.",
     "- Always include a rationale field explaining why you chose this card type and what learning objective it serves.",
     "Do not include markdown code fences.",
-    "Avoid duplicate cards.",
+    "- Avoid duplicate cards. Within a single response, do not generate multiple cards that test the same fact or concept from different angles. Each card must cover a unique concept not tested by any other card in this response.",
   ];
 
   const extra = customInstructions.trim();
@@ -1817,9 +1926,9 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
     for (const [type, cnt] of overrides.perTypeCounts) {
       parts.push(`${cnt} ${type}`);
     }
-    countInstruction = `Generate exactly ${parts.join(", ")} (${target} total) high-quality flashcard suggestions from this note.`;
+    countInstruction = `Generate exactly ${parts.join(", ")} (${target} total) high-quality flashcard ${target === 1 ? "suggestion" : "suggestions"} from this note. You MUST return exactly this many — returning fewer is unacceptable. If you cannot produce ${target} quality cards, still return ${target} by including cards from less-covered sections of the note.`;
   } else if (exactTarget != null) {
-    countInstruction = `Generate exactly ${target} high-quality flashcard suggestions from this note.`;
+    countInstruction = `Generate exactly ${target} high-quality flashcard ${target === 1 ? "suggestion" : "suggestions"} from this note. You MUST return exactly this many — returning fewer is unacceptable. If you cannot produce ${target} quality cards, still return ${target} by including cards from less-covered sections of the note.`;
   } else {
     countInstruction = `Generate approximately ${target} high-quality flashcard suggestions from this note (allowed range: ${minCount}-${maxCount}).`;
   }
@@ -1841,6 +1950,16 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
     "For cloze requests, return only true cloze cards with {{cN::...}} deletions and CQ rows.",
     "When the user asks for a single cloze card with multiple deletions, return one CQ row containing all requested deletions, and grouped/shared indices are allowed.",
     ...optionalRowsInstructions,
+    overrides.clozeHints === "always"
+      ? "CLOZE HINT MODE: The user explicitly requested hints on cloze deletions. Every cloze deletion MUST include a hint using {{cN::answer::hint}} syntax. Choose appropriate hint types: category hints for diagnostic/classification answers, first-letter hints for recall prompts, mnemonic-letter hints for mnemonic lists."
+      : overrides.clozeHints === "never"
+        ? "CLOZE HINT MODE: The user explicitly requested NO hints on cloze deletions. Do NOT include any ::hint suffix on cloze deletions."
+        : "CLOZE HINT MODE: Use your judgment for cloze hints. Include {{cN::answer::hint}} hints for long mnemonics, ambiguous categories, or items in known mnemonic lists where a hint genuinely aids recall. Omit hints for straightforward deletions where the answer is obvious from context.",
+    overrides.comboMode === "zip"
+      ? "COMBO MODE: The user requested sequential/paired combos. CRITICAL: zip/paired mode uses ONLY ::: (triple colon) between variants — NEVER use :: (double colon). REQUIRED: populate qVariants[] and aVariants[] arrays with 2-4 items each (equal counts). Each variant must be a short label or phrase (NOT a full sentence question). CORRECT noteRows: [\"Q | Bupivacaine ::: Lignocaine ::: Lignocaine with adrenaline |\", \"A | 3 mg/kg ::: 4.5 mg/kg ::: 7 mg/kg |\"]. WRONG (forbidden — double colon): [\"Q | Bupivacaine :: Lignocaine |\", \"A | 3 mg/kg :: 4.5 mg/kg |\"]. If you can only think of 1 Q and 1 A, use type=basic instead."
+      : overrides.comboMode === "product"
+        ? "COMBO MODE: The user requested cross/cartesian combos. CRITICAL: product/cross mode uses ONLY :: (double colon) between variants — NEVER use ::: (triple colon). REQUIRED: populate qVariants[] and aVariants[] arrays with at least 2 variants total. Each variant must be a short label or phrase (NOT a full sentence question). CORRECT noteRows: [\"Q | Bupivacaine :: Lignocaine :: Lignocaine with adrenaline |\", \"A | 3 mg/kg :: 4.5 mg/kg :: 7 mg/kg |\"]. WRONG (forbidden — triple colon): [\"Q | Bupivacaine ::: Lignocaine |\", \"A | 3 mg/kg ::: 4.5 mg/kg |\"]. If you can only think of 1 Q and 1 A, use type=basic instead."
+        : "COMBO MODE: The user requested combo cards. CRITICAL: choose delimiter carefully — :: (double colon) for cross/product, ::: (triple colon) for paired/zip. REQUIRED: populate qVariants[] and aVariants[] arrays with at least 2 items on one side. Each variant must be a short label or phrase (NOT a full sentence question). MUST NOT emit type=combo with only 1 Q and 1 A — use type=basic instead.",
     "Keep LaTeX and language flags (e.g. {{es}}) unchanged.",
     'Use note content as the default source of truth for all suggestions.',
     'Use sourceOrigin "external" only when the user explicitly asks for external/background knowledge; otherwise use "note".',
@@ -1850,6 +1969,22 @@ function buildUserPrompt(input: StudyAssistantGeneratorInput, canUseVisionForIo:
 
   if (overrides.types?.length) {
     lines.splice(1, 0, `The user specifically requested these card types: ${overrides.types.join(", ")}. Prioritise generating these types even if they are not in the default enabledTypes list.`);
+    if (overrides.types.includes("oq")) {
+      lines.splice(2, 0, `OQ ENFORCEMENT (HARD REQUIREMENT — NOT OPTIONAL): Every single suggestion MUST have type='oq' with numbered step rows. Do NOT include any basic, cloze, mcq, or other card type. Non-oq cards will be rejected. Before outputting, verify ALL suggestions have type='oq'.`);
+    }
+  }
+
+  // Terminal enforcement instructions (recency bias — placed at end of prompt)
+  if (exactTarget != null && overrides.perTypeCounts && overrides.perTypeCounts.size > 1) {
+    const checklist = [...overrides.perTypeCounts].map(([t, n]) => `${n} ${t}`).join(", ");
+    lines.push(`SELF-CHECK BEFORE OUTPUT: Your response must contain exactly ${checklist} (${target} total). Count each type one by one. If any count is wrong, revise before returning JSON.`);
+  }
+  if (overrides.types?.includes("oq")) {
+    lines.push(`OQ FINAL VERIFICATION: Confirm every suggestion in your response has type='oq'. If any suggestion has a different type, you MUST revise before returning JSON.`);
+  }
+  if (exactTarget != null) {
+    const s = target === 1 ? "suggestion" : "suggestions";
+    lines.push(`FINAL COUNT VERIFICATION: You MUST return exactly ${target} ${s} — no more, no fewer. Before outputting, count the elements in your suggestions array. It must equal ${target}. If wrong, revise now.`);
   }
 
   return lines.join("\n\n");

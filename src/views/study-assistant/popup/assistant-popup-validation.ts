@@ -219,11 +219,22 @@ export function validateGeneratedCardBlock(
   }
 
   if (card.type !== suggestion.type) {
-    return tx(
-      "ui.studyAssistant.generator.validation.typeMismatch",
-      "Generated card was rejected by parser validation (type mismatch: expected {expected}, got {actual}).",
-      { expected: suggestion.type, actual: card.type },
-    );
+    // Combo cards are a subtype of basic in the parser — the parser detects
+    // :: / ::: delimiters and sets qVariants/aVariants/comboMode but never
+    // upgrades the card type from "basic" to "combo".
+    const isComboAsBasic =
+      suggestion.type === "combo" &&
+      card.type === "basic" &&
+      Array.isArray(card.qVariants) && card.qVariants.length > 0 &&
+      Array.isArray(card.aVariants) && card.aVariants.length > 0 &&
+      (card.qVariants.length > 1 || card.aVariants.length > 1);
+    if (!isComboAsBasic) {
+      return tx(
+        "ui.studyAssistant.generator.validation.typeMismatch",
+        "Generated card was rejected by parser validation (type mismatch: expected {expected}, got {actual}).",
+        { expected: suggestion.type, actual: card.type },
+      );
+    }
   }
 
   if (suggestion.type === "io") {

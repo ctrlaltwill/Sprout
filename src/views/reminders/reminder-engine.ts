@@ -13,6 +13,7 @@ import {
   VIEW_TYPE_HOME,
   VIEW_TYPE_REVIEWER,
   VIEW_TYPE_SETTINGS,
+  VIEW_TYPE_WIDGET,
 } from "../../platform/core/constants";
 import type LearnKitPlugin from "../../main";
 import { countDueCardsNow, getDueCardsNow } from "./reminder-due-count";
@@ -216,12 +217,26 @@ export class ReminderEngine {
 
       const configuredCount = Math.max(1, Number(cfg.gatekeeperDueQuestionCount) || 1);
       const cards = dueCards.slice(0, configuredCount);
+
+      // Gather hotspot attempts from the active study view (reviewer or widget)
+      // so the gatekeeper can show numbered dots at user click / drop positions.
+      let hotspotAttemptsMap: Map<string, Array<{ mode: string; x: number; y: number; correct: boolean; label?: string; removed?: boolean }>> | undefined;
+      const activeReviewerLeaf = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_REVIEWER)[0];
+      const activeWidgetLeaf = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_WIDGET)[0];
+      const activeStudyView = (activeReviewerLeaf?.view ?? activeWidgetLeaf?.view) as {
+        getPendingHotspotAttempts?: () => Map<string, Array<{ mode: string; x: number; y: number; correct: boolean; label?: string; removed?: boolean }>>;
+      } | null;
+      if (activeStudyView?.getPendingHotspotAttempts) {
+        hotspotAttemptsMap = activeStudyView.getPendingHotspotAttempts();
+      }
+
       const modal = new GatekeeperModal({
         app: this.plugin.app,
         plugin: this.plugin,
         cards,
         allowBypass: !!cfg.gatekeeperAllowSkip,
         scope: cfg.gatekeeperScope ?? "workspace",
+        hotspotAttemptsMap,
       });
 
       const clearRef = () => {

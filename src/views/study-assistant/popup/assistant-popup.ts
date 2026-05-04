@@ -5337,6 +5337,25 @@ export class SproutAssistantPopup {
     } else if (suggestion.type === "io") {
       this.appendSuggestionText(summary, data.ioSrc || this._tx("ui.studyAssistant.generator.io", "Image occlusion card"), "sprout-assistant-popup-suggestion-question");
       if (data.ioSrc) this.renderIoSuggestionPreview(summary, data.ioSrc, suggestion.ioOcclusions);
+    } else if (suggestion.type === "combo") {
+      const qVariants = Array.isArray(suggestion.qVariants) ? suggestion.qVariants : [];
+      const aVariants = Array.isArray(suggestion.aVariants) ? suggestion.aVariants : [];
+      const mode = suggestion.comboMode === "zip" ? "Paired" : "Cross";
+      const totalCards = qVariants.length > 0 && aVariants.length > 0
+        ? (suggestion.comboMode === "zip" ? qVariants.length : qVariants.length * aVariants.length)
+        : 0;
+      const title = String(suggestion.title || "").trim();
+      if (title) {
+        this.appendSuggestionText(summary, `${title} (${mode} · ${totalCards} cards)`, "sprout-assistant-popup-suggestion-question");
+      } else {
+        this.appendSuggestionText(summary, `${mode} combo · ${totalCards} cards`, "sprout-assistant-popup-suggestion-question");
+      }
+      if (qVariants.length) {
+        this.appendSuggestionText(summary, qVariants.join(" ::: "), "sprout-assistant-popup-suggestion-question");
+      }
+      if (aVariants.length) {
+        this.appendSuggestionText(summary, aVariants.join(" ::: "), "sprout-assistant-popup-suggestion-answer");
+      }
     } else {
       const fallback = trimLine(suggestion.question || suggestion.clozeText || suggestion.title || "");
       this.appendSuggestionText(summary, fallback, "sprout-assistant-popup-suggestion-question");
@@ -5985,6 +6004,7 @@ export class SproutAssistantPopup {
             mcq: "Multiple Choice",
             oq: "Ordered Question",
             io: "Image Occlusion",
+            combo: "Combo",
           };
           const typeLabel = typeLabelMap[suggestion.type] ?? String(suggestion.type || "");
 
@@ -6356,6 +6376,7 @@ export class SproutAssistantPopup {
               mcq: "Multiple Choice",
               oq: "Ordered Question",
               io: "Image Occlusion",
+              combo: "Combo",
             };
             const typeLabel = typeLabelMap[suggestion.type] ?? String(suggestion.type || "");
 

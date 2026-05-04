@@ -1435,3 +1435,10 @@ border: 0.5px solid var(--theme-base-35);
   padding: 0;
   flex: 0 0 auto;
 }
+
+/* ---- Widget IO mask strokes: zero-width (no visible outlines) ---- */
+.learnkit [data-sprout-io-widget="1"] .learnkit-io-mask-polygon-stroke polygon,
+.learnkit [data-sprout-io-widget="1"] .learnkit-io-mask-circle-stroke ellipse,
+.learnkit [data-sprout-io-widget="1"] .learnkit-io-mask-rect-stroke rect {
+  stroke-width: 0;
+}

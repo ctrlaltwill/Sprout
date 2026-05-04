@@ -61,9 +61,9 @@ See [Grading](../Grading).
 - Use `I` for hints or references instead of making `A` too long.
 - Use groups to organise by topic.
 
-## Cross Combo Cards (`::`)
+## Cross Combo Cards
 
-Cross Combo cards use ` :: ` (space-colon-colon-space) to separate multiple variants inside the `Q` and/or `A` fields. LearnKit generates the full [Cartesian product](https://en.wikipedia.org/wiki/Cartesian_product) — every possible combination of Q and A variants. **Q count × A count = total cards.**
+Cross Combo cards use ` :: ` (colon-colon) to separate multiple variants inside the `Q` and/or `A` fields. LearnKit generates the full [Cartesian product](https://en.wikipedia.org/wiki/Cartesian_product) — every possible combination of Q and A variants. **Q count × A count = total cards.**
 
 This is useful when every combination produces a *valid* card. Common patterns:
 
@@ -99,16 +99,16 @@ A | Cardioselective beta blocker |
 - Combine with [Reverse Mode](#reverse-mode) to study each combination in both directions.
 - Use Cross Combo when every combination produces a valid card.
 
-## Sequential Combo Cards (`:::`)
+## Sequential Combo Cards
 
-Use ` ::: ` (space-colon-colon-colon-space) to separate variants. LearnKit pairs the *i*‑th Q variant with the *i*‑th A variant in strict one-to-one order. **No cross-combinations are generated.** Q and A must have the same number of variants, or LearnKit will flag a mismatch. This is a good way to create multiple flashcards in the same format without making multiple individual cards.
+Use ` ::: ` (colon-colon-colon) to separate variants. LearnKit pairs the *i*‑th Q variant with the *i*‑th A variant in strict one-to-one order. **No cross-combinations are generated.** Q and A must have the same number of variants, or LearnKit will flag a mismatch. This is a good way to create multiple flashcards in the same format without making multiple individual cards.
 
 This is ideal for **1:1 paired lists** where cross-pairings are incorrect. 
 
 ```
 T | Blood Cell Counts |
 Q | Anaemia ::: Polycythaemia |
-A | Abnormally low red cell count :: Abnormally high red cell count |
+A | Abnormally low red cell count ::: Abnormally high red cell count |
 ```
 
 2 Q + 2 A = **2 cards**:

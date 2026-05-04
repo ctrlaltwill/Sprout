@@ -135,7 +135,7 @@ export function skipCurrentCard(view: SproutReviewerView) {
   if (!card) return;
 
   const type = String(card.type || "");
-  if (type !== "basic" && type !== "reversed" && type !== "reversed-child" && type !== "cloze" && type !== "cloze-child") return;
+  if (type !== "basic" && type !== "reversed" && type !== "reversed-child" && type !== "cloze" && type !== "cloze-child" && type !== "combo-child") return;
 
   const id = String(card.id || "");
   if (!id) return;

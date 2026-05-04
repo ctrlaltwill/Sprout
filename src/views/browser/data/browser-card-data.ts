@@ -122,7 +122,7 @@ export function computeBrowserRows(
   }
 
   baseCards = baseCards.filter(
-    (c) => !["io-child", "cloze-child", "reversed-child"].includes(String(c?.type || "")),
+    (c) => !["io-child", "cloze-child", "reversed-child", "combo-child"].includes(String(c?.type || "")),
   );
 
   if (includeQuarantined && groupFilters.length === 0) {

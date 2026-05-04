@@ -23,7 +23,7 @@ import {
 } from "./io-helpers";
 import {
   extFromMime,
-  bestEffortAttachmentPath,
+  normaliseFolderPath,
   writeBinaryToVault,
   type ClipboardImage,
 } from "../../platform/modals/modal-utils";
@@ -37,6 +37,87 @@ function formatHotspotPrompt(label: string): string {
   const normalized = clean.replace(/\.+$/, "").trim();
   if (!normalized) return "Click on the hotspot location.";
   return `Click on ${normalized}.`;
+}
+
+// ── Image counter helper ───────────────────────────────────────────────────
+
+const LEARNKIT_IO_LABEL = "LK-IO";
+const LEARNKIT_HQ_LABEL = "LK-HQ";
+
+/** Resolve the attachment folder directory for IO or HQ images. */
+function getAttachmentFolderDir(plugin: LearnKitPlugin, isHotspot: boolean): string {
+  const ioFolder = normaliseFolderPath(plugin.settings.storage.imageOcclusionFolderPath ?? "");
+  const hotspotFolder = normaliseFolderPath(plugin.settings.storage.hotspotFolderPath ?? "");
+  const folder = isHotspot ? (hotspotFolder || ioFolder) : ioFolder;
+  return folder;
+}
+
+/**
+ * Scans the attachment folder for existing LearnKit images matching
+ * `{pageName} - LK-{IO|HS}-{NN}.{ext}` and returns the next available counter.
+ */
+function getNextImageCounter(
+  app: App,
+  folderDir: string,
+  pageName: string,
+  label: string,
+  ext: string,
+): number {
+  const folder = app.vault.getAbstractFileByPath(folderDir.replace(/\/$/, ""));
+  const prefix = `${pageName} - ${label}-`;
+  let maxNum = 0;
+
+  if (folder && "children" in folder) {
+    for (const child of (folder as { children: Array<{ name: string }> }).children) {
+      if (child.name.startsWith(prefix) && child.name.endsWith(`.${ext}`)) {
+        const numStr = child.name.slice(prefix.length, -(ext.length + 1));
+        const num = parseInt(numStr, 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    }
+  }
+
+  return maxNum + 1;
+}
+
+/**
+ * Builds the base filename (without folder) for a LearnKit IO/HQ image
+ * using the `{pageName} - LK-{IO|HS}-{NN}.{ext}` convention.
+ */
+function buildLearnKitImageBaseName(
+  app: App,
+  folderDir: string,
+  pageName: string,
+  isHotspot: boolean,
+  ext: string,
+): string {
+  const label = isHotspot ? LEARNKIT_HQ_LABEL : LEARNKIT_IO_LABEL;
+  const counter = getNextImageCounter(app, folderDir, pageName, label, ext);
+  const paddedCounter = String(counter).padStart(2, "0");
+  return `${pageName} - ${label}-${paddedCounter}.${ext}`;
+}
+
+/**
+ * Auto-dismiss any Paste Image Rename modal that may have appeared
+ * after LearnKit wrote an image to the vault. We schedule this after
+ * a microtask so the other plugin's modal has time to render.
+ */
+function dismissPasteImageRenameModal(): void {
+  setTimeout(() => {
+    const modal = document.querySelector<HTMLElement>(".image-rename-modal");
+    if (!modal) return;
+    // Click the Cancel button to dismiss without renaming
+    const buttons = modal.querySelectorAll("button");
+    for (const btn of buttons) {
+      if ((btn.textContent ?? "").trim().toLowerCase() === "cancel") {
+        (btn as HTMLButtonElement).click();
+        return;
+      }
+    }
+    // Fallback: click the close (X) button
+    const closeBtn = modal.querySelector<HTMLElement>(".modal-close-button");
+    if (closeBtn) closeBtn.click();
+  }, 50);
 }
 
 // ── Insert-at-cursor helper ─────────────────────────────────────────────────
@@ -231,16 +312,18 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
     if (imageData) {
       const ext = extFromMime(imageData.mime);
       if (!imagePath) {
-        const baseName = `sprout-${isHotspot ? "hq" : "io"}-${parentId}.${ext}`;
         const srcFile = app.vault.getAbstractFileByPath(String(parent.sourceNotePath || ""));
-        if (srcFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, srcFile, baseName, isHotspot ? "hq" : "io");
-        else {
-          const activeFile = app.workspace.getActiveFile();
-          if (activeFile instanceof TFile) imagePath = bestEffortAttachmentPath(plugin, activeFile, baseName, isHotspot ? "hq" : "io");
+        const noteFile: TFile | null = srcFile instanceof TFile ? srcFile
+          : (app.workspace.getActiveFile() instanceof TFile ? app.workspace.getActiveFile() : null);
+        if (noteFile) {
+          const folderDir = getAttachmentFolderDir(plugin, isHotspot);
+          const baseName = buildLearnKitImageBaseName(app, folderDir, noteFile.basename, isHotspot, ext);
+          imagePath = normaliseVaultPath(`${folderDir}${baseName}`);
         }
       }
       try {
         await writeBinaryToVault(app, imagePath, imageData.data);
+        dismissPasteImageRenameModal();
       } catch (e: unknown) {
         new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
         return false;
@@ -406,11 +489,13 @@ export async function saveIoCard(params: IoSaveParams, maskMode: "all" | "solo")
 
   const id = await reserveNewBcId(plugin, active);
   const ext = extFromMime(imageData.mime);
-  const baseName = `sprout-${isHotspot ? "hq" : "io"}-${id}.${ext}`;
-  const vaultPath = bestEffortAttachmentPath(plugin, active, baseName, isHotspot ? "hq" : "io");
+  const folderDir = getAttachmentFolderDir(plugin, isHotspot);
+  const baseName = buildLearnKitImageBaseName(app, folderDir, active.basename, isHotspot, ext);
+  const vaultPath = normaliseVaultPath(`${folderDir}${baseName}`);
 
   try {
     await writeBinaryToVault(app, vaultPath, imageData.data);
+    dismissPasteImageRenameModal();
   } catch (e: unknown) {
     new Notice(`Failed to save image (${e instanceof Error ? e.message : String(e)})`);
     return false;

@@ -344,6 +344,11 @@ export class SproutWidgetView extends ItemView {
     return attempts;
   }
 
+  /** Public accessor so external consumers (e.g. reminder-engine) can pass attempts to Gatekeeper. */
+  public getPendingHotspotAttempts(): Map<string, HotspotAttemptState[]> {
+    return this._pendingHotspotAttempts;
+  }
+
   private _peekPendingHotspotAttempt(cardId: string): HotspotAttemptState | null {
     const attempts = this._peekPendingHotspotAttempts(cardId);
     return attempts && attempts.length > 0 ? attempts[attempts.length - 1] : null;
@@ -939,12 +944,24 @@ export class SproutWidgetView extends ItemView {
         return;
       }
       if (hotspotCard) {
-        if (graded) {
-          void this.nextCard();
+        if (!this.showAnswer) {
+          this.showAnswer = true;
+          this.render();
+          return;
         }
+        void this.nextCard();
         return;
       }
-      if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || isClozeLike(card) || ioLike) {
+      if (card.type === "io" || card.type === "io-child") {
+        if (!this.showAnswer) {
+          this.showAnswer = true;
+          this.render();
+          return;
+        }
+        void this.nextCard();
+        return;
+      }
+      if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child" || isClozeLike(card)) {
         if (!this.showAnswer) {
           this.showAnswer = true;
           this.render();

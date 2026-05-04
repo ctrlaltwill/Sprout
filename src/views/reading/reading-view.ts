@@ -2664,7 +2664,7 @@ function buildMarkdownModeContent(card: LearnKitCard, showLabels: boolean, cloze
     if (/\{\{c\d+::/i.test(value)) return false;
     return /\\\(|\\\[|\$\$|(^|[^\\])\$(?!\$)/.test(value);
   };
-  type MarkdownQuestionLabelType = LearnKitCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child' | 'hq-child';
+  type MarkdownQuestionLabelType = LearnKitCard['type'] | 'reversed-child' | 'cloze-child' | 'io-child' | 'hq-child' | 'combo-child';
   const questionLabelByType: Partial<Record<MarkdownQuestionLabelType, string>> = {
     basic: 'Basic Question',
     reversed: 'Reversed Question',
@@ -2677,6 +2677,7 @@ function buildMarkdownModeContent(card: LearnKitCard, showLabels: boolean, cloze
     'io-child': 'Image Occlusion Question',
     hq: 'Hotspot Question',
     'hq-child': 'Hotspot Question',
+    'combo-child': 'Combo Question',
   };
   const comboLabels: Record<string, string> = {
     product: 'Cross Combo Question',
@@ -3902,15 +3903,6 @@ function renderIoInReadingCard(
     return shifts[hashString(key) % shifts.length] || 0;
   };
 
-  const applyMaskTone = (maskEl: HTMLElement, rect: StoredIORect, fallbackIndex: number): void => {
-    const delta = getMaskToneShift(rect, fallbackIndex);
-    const alpha = isHotspot ? 0.22 : 0.75;
-    const lExpr = delta >= 0
-      ? `calc(var(--accent-l) + ${delta}%)`
-      : `calc(var(--accent-l) - ${Math.abs(delta)}%)`;
-    maskEl.style.background = `hsl(var(--accent-h) var(--accent-s) ${lExpr} / ${alpha})`;
-  };
-
   const clampUnit = (value: number): number => Math.max(0, Math.min(1, value));
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const MASK_STROKE_VIEWBOX = '-1 -1 102 102';
@@ -4259,6 +4251,15 @@ function renderIoInReadingCard(
         overlay.style.top = `${img.offsetTop}px`;
         overlay.style.width = `${w}px`;
         overlay.style.height = `${h}px`;
+        resolveAnchoredLabelCollisions(overlay, {
+          selector: '.learnkit-io-reading-mask-label-floating',
+          anchorXDataKey: 'labelAnchorX',
+          anchorYDataKey: 'labelAnchorY',
+          edgeMarginPx: 2,
+          marginPx: 1,
+          maxShiftPx: 28,
+          maxIterations: 10,
+        });
       };
 
       const scheduleSync = () => requestAnimationFrame(syncOverlay);
@@ -4280,11 +4281,8 @@ function renderIoInReadingCard(
         const h = Number.isFinite(rect.h) ? Number(rect.h) : 0;
 
         const mask = document.createElement('div');
-        mask.className = 'learnkit-io-reading-mask learnkit-io-reading-mask-filled';
-        if (isHotspot) {
-          // Match answer-side visual treatment on front for hotspot cards.
-          mask.classList.add('learnkit-io-reading-mask-hotspot-answer', 'learnkit-io-reading-mask-no-border');
-        }
+        mask.className = 'learnkit-io-reading-mask learnkit-io-reading-mask-filled learnkit-io-reading-mask-hotspot-answer';
+        mask.classList.add('learnkit-io-reading-mask-no-border');
         if (rect.shape === 'circle') {
           mask.classList.add('learnkit-io-reading-mask-circle');
           setCssProps(mask, { 'clip-path': '', '-webkit-clip-path': '' });
@@ -4301,22 +4299,33 @@ function renderIoInReadingCard(
         setCssProps(mask, 'top', `${Math.max(0, Math.min(1, y)) * 100}%`);
         setCssProps(mask, 'width', `${Math.max(0, Math.min(1, w)) * 100}%`);
         setCssProps(mask, 'height', `${Math.max(0, Math.min(1, h)) * 100}%`);
-        if (isHotspot) {
-          setCssProps(mask, 'background', 'none');
-          setCssProps(mask, 'border', 'none');
-        } else {
-          applyMaskTone(mask, rect, index);
-        }
+        setCssProps(mask, 'background', 'none');
+        setCssProps(mask, 'border', 'none');
 
-        const hint = document.createElement('span');
-        hint.textContent = '?';
-        hint.className = 'learnkit-io-reading-mask-hint';
-        mask.appendChild(hint);
+        const rectLabel = (rect as Record<string, unknown>).label;
+        let labelStr: string;
+        if (typeof rectLabel === 'string') {
+          labelStr = rectLabel;
+        } else if (typeof rectLabel === 'number' || typeof rectLabel === 'boolean') {
+          labelStr = String(rectLabel);
+        } else {
+          labelStr = rect.groupKey ? String(rect.groupKey) : String(index + 1);
+        }
+        const label = labelStr.trim() || String(index + 1);
+        const labelEl = document.createElement('span');
+        labelEl.className = 'learnkit-io-reading-mask-label learnkit-io-reading-mask-label-floating';
+        labelEl.textContent = label;
+        const polygonAnchor = getPolygonLabelAnchor(rect);
+        const labelX = Math.max(0, Math.min(1, polygonAnchor ? polygonAnchor.xNorm : x + w / 2));
+        const labelY = Math.max(0, Math.min(1, polygonAnchor ? polygonAnchor.yNorm : y + h / 2));
+        labelEl.dataset.labelAnchorX = String(labelX);
+        labelEl.dataset.labelAnchorY = String(labelY);
+        setCssProps(labelEl, 'left', `${labelX * 100}%`);
+        setCssProps(labelEl, 'top', `${labelY * 100}%`);
 
         overlay.appendChild(mask);
-        if (isHotspot) {
-          appendHotspotMaskStroke(overlay, rect, index, x, y, w, h);
-        }
+        appendHotspotMaskStroke(overlay, rect, index, x, y, w, h);
+        overlay.appendChild(labelEl);
       });
 
       container.appendChild(overlay);

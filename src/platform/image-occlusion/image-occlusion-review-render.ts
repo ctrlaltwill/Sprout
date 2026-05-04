@@ -325,6 +325,7 @@ function appendHotspotInlineMarkerLabel(
     y: number;
     label: string;
     tone: "correct" | "incorrect";
+    attemptNumber?: number;
   },
 ): HTMLElement {
   const group = document.createElement("div");
@@ -336,6 +337,16 @@ function appendHotspotInlineMarkerLabel(
 
   const marker = document.createElement("span");
   marker.className = `learnkit-hq-attempt-inline-dot ${opts.tone === "correct" ? "is-correct" : "is-incorrect"}`;
+  const attemptNum = typeof opts.attemptNumber === "number" && Number.isFinite(opts.attemptNumber)
+    ? Math.max(1, Math.floor(opts.attemptNumber))
+    : 0;
+  if (attemptNum > 0) {
+    marker.classList.add("learnkit-hq-attempt-inline-dot-numbered");
+    const numSpan = document.createElement("span");
+    numSpan.className = "learnkit-hq-attempt-inline-dot-num";
+    numSpan.textContent = String(attemptNum);
+    marker.appendChild(numSpan);
+  }
   group.appendChild(marker);
 
   const text = String(opts.label || "").trim();
@@ -447,17 +458,10 @@ function appendPolygonMaskStroke(
   );
   if (tone === "hint") {
     polygon.setAttribute("fill", "transparent");
-    polygon.setAttribute("stroke", "var(--theme-accent, var(--interactive-accent))");
-  } else if (tone === "target") {
-    polygon.setAttribute("fill", "var(--color-base-70)");
-    polygon.setAttribute("stroke", "var(--color-base-100)");
-  } else if (tone === "other") {
-    polygon.setAttribute("fill", "var(--color-base-20)");
-    polygon.setAttribute("stroke", "var(--color-base-30)");
   } else if (tone === "hq-correct") {
     polygon.setAttribute("fill", "rgba(34, 197, 94, 0.1)");
     polygon.setAttribute("stroke", "rgba(34, 197, 94, 0.92)");
-  } else {
+  } else if (tone === "hq-incorrect") {
     polygon.setAttribute("fill", "rgba(239, 68, 68, 0.1)");
     polygon.setAttribute("stroke", "rgba(239, 68, 68, 0.94)");
   }
@@ -490,13 +494,6 @@ function appendCircleMaskStroke(
   ellipse.setAttribute("ry", "50");
   if (tone === "hint") {
     ellipse.setAttribute("fill", "transparent");
-    ellipse.setAttribute("stroke", "var(--theme-accent, var(--interactive-accent))");
-  } else if (tone === "target") {
-    ellipse.setAttribute("fill", "var(--color-base-70)");
-    ellipse.setAttribute("stroke", "var(--color-base-100)");
-  } else if (tone === "other") {
-    ellipse.setAttribute("fill", "var(--color-base-20)");
-    ellipse.setAttribute("stroke", "var(--color-base-30)");
   } else if (tone === "hq-correct") {
     ellipse.setAttribute("fill", "rgba(34, 197, 94, 0.1)");
     ellipse.setAttribute("stroke", "rgba(34, 197, 94, 0.92)");
@@ -1187,10 +1184,10 @@ export function renderImageOcclusionReviewInto(args: {
         mask.classList.add("learnkit-io-mask-rect", "learnkit-io-mask-rect", "learnkit-io-mask-polygon", "learnkit-io-mask-polygon");
         setCssProps(mask, "clipPath", "");
         // Polygon tones are rendered by SVG; clear any previously applied rect styles.
-        mask.style.removeProperty("background");
-        mask.style.removeProperty("border");
-        setCssProps(mask, "background", "transparent");
-        setCssProps(mask, "border", "none");
+        mask.style.background = "transparent";
+        mask.style.border = "none";
+        // Remove conflicting mask-tone classes so the SVG polygon fill/stroke is visible.
+        mask.classList.remove("learnkit-io-mask-target", "learnkit-io-mask-other");
         const polygonStroke = appendPolygonMaskStroke(
           overlay,
           rect,
@@ -1235,7 +1232,8 @@ export function renderImageOcclusionReviewInto(args: {
 
     const revealHotspotLabeledKeys = new Set<string>();
     if (isHotspot && hotspotAttempts.length > 0) {
-      for (const attempt of hotspotAttempts) {
+      hotspotAttempts.forEach((attempt, attemptIndex) => {
+        const attemptNum = attemptIndex + 1;
         if (reveal && attempt.mode === "click") {
           const targetRect = hotspotTargets.length > 0 ? hotspotTargets[0] : null;
           const targetRectIndex = targetRect ? Math.max(0, hotspotTargets.indexOf(targetRect)) : -1;
@@ -1249,6 +1247,7 @@ export function renderImageOcclusionReviewInto(args: {
               y: clampUnit(attempt.y),
               label: targetLabel,
               tone: "correct",
+              attemptNumber: attemptNum,
             });
           } else {
             const wrongRect = findHotspotRectForAttempt(attempt, occlusions);
@@ -1261,6 +1260,7 @@ export function renderImageOcclusionReviewInto(args: {
               y: clampUnit(attempt.y),
               label: wrongLabel,
               tone: "incorrect",
+              attemptNumber: attemptNum,
             });
 
             const correctAnchor = targetRect ? getHotspotRectCenter(targetRect) : { x: clampUnit(attempt.x), y: clampUnit(attempt.y) };
@@ -1269,12 +1269,22 @@ export function renderImageOcclusionReviewInto(args: {
               y: correctAnchor.y,
               label: targetLabel,
               tone: "correct",
+              attemptNumber: attemptNum,
             });
           }
-          continue;
+          return;
         }
 
         if (reveal && !attempt.correct) {
+          // Always show a numbered red dot at the user's drop position.
+          appendHotspotInlineMarkerLabel(overlay, {
+            x: clampUnit(attempt.x),
+            y: clampUnit(attempt.y),
+            label: "",
+            tone: "incorrect",
+            attemptNumber: attemptNum,
+          });
+
           if (attempt.mode === "drag-drop" && !findHotspotRectForAttempt(attempt, hotspotTargets)) {
             const droppedLabel = String(attempt.label || "").trim();
             if (droppedLabel) {
@@ -1284,19 +1294,26 @@ export function renderImageOcclusionReviewInto(args: {
                 null,
                 { preserveAttemptAnchor: true },
               );
-            } else {
-              appendHotspotMarker(overlay, attempt);
             }
-            continue;
+            return;
           }
 
           const pairData = resolveHotspotAttemptPairData(attempt);
           if (pairData) {
             appendHotspotAttemptPairLabel(overlay, pairData);
-          } else {
-            appendHotspotMarker(overlay, attempt);
           }
-          continue;
+          return;
+        }
+
+        // Correct drag-drop: green numbered dot at drop position + chip at anchor.
+        if (reveal && attempt.mode === "drag-drop") {
+          appendHotspotInlineMarkerLabel(overlay, {
+            x: clampUnit(attempt.x),
+            y: clampUnit(attempt.y),
+            label: "",
+            tone: "correct",
+            attemptNumber: attemptNum,
+          });
         }
 
         const anchoredRect = findHotspotRectForAttempt(attempt, hotspotTargets);
@@ -1340,7 +1357,7 @@ export function renderImageOcclusionReviewInto(args: {
         } else if (reveal) {
           appendHotspotMarker(overlay, attempt);
         }
-      }
+      });
     }
 
     if (isHotspot && reveal && hotspotInteractionMode === "drag-drop" && hotspotTargets.length > 0) {
@@ -1349,6 +1366,15 @@ export function renderImageOcclusionReviewInto(args: {
         if (!key || revealHotspotLabeledKeys.has(key)) return;
 
         const center = getHotspotRectCenter(rect);
+        // Numbered dot at mask center for unplaced labels.
+        const unplacedNum = hotspotAttempts.length + (index + 1);
+        appendHotspotInlineMarkerLabel(overlay, {
+          x: center.x,
+          y: center.y,
+          label: "",
+          tone: "incorrect",
+          attemptNumber: unplacedNum,
+        });
         appendHotspotAttemptLabel(
           overlay,
           {

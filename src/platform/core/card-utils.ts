@@ -107,6 +107,38 @@ export function isComboChild(card: CardRecord): boolean {
   return String(card?.type ?? "").toLowerCase() === "combo-child";
 }
 
+/** Returns `true` if the card is a reversed child. */
+export function isReversedChild(card: CardRecord): boolean {
+  return String(card?.type ?? "").toLowerCase() === "reversed-child";
+}
+
+/** Returns `true` if the card is a cloze child. */
+export function isClozeChild(card: CardRecord): boolean {
+  return String(card?.type ?? "").toLowerCase() === "cloze-child";
+}
+
+/**
+ * Returns `true` if the card is a text-based child type
+ * (cloze-child, reversed-child, or combo-child).
+ *
+ * These child types share the same edit routing: editing a child
+ * redirects to the parent so changes persist to the source note.
+ * IO/HQ children have their own separate edit flows.
+ */
+export function isTextBasedChildCard(card: CardRecord): boolean {
+  const t = String(card?.type ?? "").toLowerCase();
+  return t === "cloze-child" || t === "reversed-child" || t === "combo-child";
+}
+
+/**
+ * Returns `true` if the card is any known child card type
+ * (cloze-child, reversed-child, combo-child, io-child, hq-child).
+ */
+export function isAnyChildCard(card: CardRecord): boolean {
+  const t = String(card?.type ?? "").toLowerCase();
+  return t === "cloze-child" || t === "reversed-child" || t === "combo-child" || t === "io-child" || t === "hq-child";
+}
+
 /**
  * Returns `true` if the card is any kind of parent card (cloze parent,
  * IO parent, reversed parent, or combo parent). Parent cards are not

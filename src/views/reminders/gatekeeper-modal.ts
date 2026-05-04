@@ -30,12 +30,22 @@ import { getTtsService, bindTtsPlayingState, markTtsButtonActive } from "../../p
 import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay-policy";
 import { t } from "../../platform/translations/translator";
 
+type HotspotAttemptMapEntry = {
+  mode: "click" | "drag-drop";
+  x: number;
+  y: number;
+  correct: boolean;
+  label?: string;
+  removed?: boolean;
+};
+
 type GatekeeperModalArgs = {
   app: App;
   plugin: LearnKitPlugin;
   cards: CardRecord[];
   allowBypass: boolean;
   scope: "workspace" | "current-tab";
+  hotspotAttemptsMap?: Map<string, HotspotAttemptMapEntry[]>;
 };
 
 export class GatekeeperModal extends Modal {
@@ -57,6 +67,7 @@ export class GatekeeperModal extends Modal {
   private _showBypassWarning = false;
   private _frozenModalSize: { width: number; height: number } | null = null;
   private _progressEl: HTMLElement | null = null;
+  private _hotspotAttemptsMap: Map<string, HotspotAttemptMapEntry[]> = new Map();
 
   constructor(args: GatekeeperModalArgs) {
     super(args.app);
@@ -64,6 +75,9 @@ export class GatekeeperModal extends Modal {
     this.cards = args.cards;
     this.allowBypass = args.allowBypass;
     this.modalScope = args.scope;
+    if (args.hotspotAttemptsMap) {
+      this._hotspotAttemptsMap = args.hotspotAttemptsMap;
+    }
   }
 
   override onOpen(): void {
@@ -504,7 +518,7 @@ export class GatekeeperModal extends Modal {
       this.renderMcqCard(section, card);
     } else if (type === "oq") {
       this.renderOqCard(section, card);
-    } else if (type === "io" || type === "io-child") {
+    } else if (type === "io" || type === "io-child" || type === "hq" || type === "hq-child") {
       this.renderIoCard(section, card);
     } else {
       const maybeQuestion = (card as unknown as Record<string, unknown>).q;
@@ -523,8 +537,8 @@ export class GatekeeperModal extends Modal {
       const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
       section.appendChild(this.makeLabelRow("Answer", card, true));
       section.appendChild(this.renderMdBlock("learnkit-a", aText, card));
-    } else if (type === "io" || type === "io-child") {
-      // IO answer is part of the reveal render, handled inside renderIoCard
+    } else if (type === "io" || type === "io-child" || type === "hq" || type === "hq-child") {
+      // IO / HQ answer is part of the reveal render, handled inside renderIoCard
     } else {
       // cloze / mcq / oq answer reveal is handled inline by their own renders
     }
@@ -937,6 +951,13 @@ export class GatekeeperModal extends Modal {
     ioContainer.dataset.sproutIoWidget = "1";
 
     const sourcePath = String(card.sourceNotePath || "");
+    const isHotspot = card.type === "hq" || card.type === "hq-child";
+    const cardId = String(card.id || "");
+    const hotspotAttempts = isHotspot ? (this._hotspotAttemptsMap.get(cardId) ?? null) : null;
+    const hotspotAttempt = hotspotAttempts && hotspotAttempts.length > 0
+      ? hotspotAttempts[hotspotAttempts.length - 1]
+      : null;
+
     renderImageOcclusionReviewInto({
       app: this.app,
       plugin: this.plugin,
@@ -946,13 +967,21 @@ export class GatekeeperModal extends Modal {
       reveal: this.reveal,
       ioModule: IO,
       renderMarkdownInto: (el2, md, sp) => this.renderMarkdownInto(el2, md, sp),
+      hotspotReview: isHotspot
+        ? {
+            attempt: hotspotAttempt,
+            attempts: hotspotAttempts || undefined,
+          }
+        : undefined,
     });
   }
 
   private renderTextBlock(el: HTMLElement, text: string, card: CardRecord) {
     if (this.hasMarkdownTable(text) || this.hasMarkdownList(text) || text.includes("[[") || text.includes("$") || text.includes("\\(") || text.includes("\\[")) {
       const sourcePath = String(card.sourceNotePath || "");
-      void this.renderMarkdownInto(el, convertInlineDisplayMath(text), sourcePath);
+      // Escape HTML so Obsidian's MarkdownRenderer doesn't strip literal <angle> brackets
+      const safe = String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      void this.renderMarkdownInto(el, convertInlineDisplayMath(safe), sourcePath);
       return;
     }
 

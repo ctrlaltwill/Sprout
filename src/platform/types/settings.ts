@@ -125,6 +125,7 @@ export type LearnKitSettings = {
       mcq: boolean;
       oq: boolean;
       io: boolean;
+      combo: boolean;
     };
     /** Approximate number of generated flashcards requested from AI (actual output may vary by +/- 1). */
     generatorTargetCount: number;

@@ -1,6 +1,6 @@
 # Contributing to LearnKit
 
-Thanks for helping to improve LearnKit. Shout-out to [sevenRevy](https://github.com/sevenRevy) for their contributions to this project.
+Thanks for helping to improve LearnKit. 
 
 This document covers two common contribution paths:
 

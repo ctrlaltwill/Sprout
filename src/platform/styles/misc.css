@@ -597,6 +597,25 @@
   background: rgba(239, 68, 68, 0.92);
 }
 
+.learnkit .learnkit-hq-attempt-inline-dot.learnkit-hq-attempt-inline-dot-numbered,
+.learnkit-hq-attempt-inline-dot.learnkit-hq-attempt-inline-dot-numbered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learnkit .learnkit-hq-attempt-inline-dot-num,
+.learnkit-hq-attempt-inline-dot-num {
+  font-size: 7px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .learnkit .learnkit-hq-attempt-inline-label,
 .learnkit-hq-attempt-inline-label {
   position: absolute;
@@ -690,8 +709,8 @@
 }
 
 .learnkit .learnkit-io-mask-target {
-  background: var(--color-base-70);
-  border: 0.5px solid var(--color-base-100);
+  background: var(--theme-accent);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -705,8 +724,8 @@
 }
 
 .learnkit .learnkit-io-mask-other {
-  background: var(--color-base-20);
-  border: 0.5px solid var(--color-base-30);
+  background: var(--color-base-25);
+  border: none;
 }
 
 .learnkit .learnkit-io-mask-hidden {
@@ -797,22 +816,51 @@
 }
 
 .learnkit .learnkit-io-mask-polygon-stroke.is-target polygon {
+  fill: var(--color-base-70);
   stroke: var(--color-base-100);
 }
 
 .learnkit .learnkit-io-mask-polygon-stroke.is-other polygon {
-  stroke: var(--color-base-30);
+  fill: var(--color-base-25);
+  stroke: none;
 }
 
 .learnkit .learnkit-io-mask-polygon-stroke.is-hq-correct polygon {
+  fill: rgba(34, 197, 94, 0.1);
   stroke: rgba(34, 197, 94, 0.92);
 }
 
 .learnkit .learnkit-io-mask-polygon-stroke.is-hq-incorrect polygon {
+  fill: rgba(239, 68, 68, 0.1);
   stroke: rgba(239, 68, 68, 0.94);
 }
 
 .learnkit .learnkit-io-mask-polygon-stroke.is-hint polygon {
+  fill: transparent;
+  stroke: rgba(0, 0, 0, 0.95);
+}
+
+.learnkit .learnkit-io-mask-circle-stroke.is-target ellipse {
+  fill: var(--color-base-70);
+  stroke: var(--color-base-100);
+}
+
+.learnkit .learnkit-io-mask-circle-stroke.is-other ellipse {
+  fill: var(--color-base-20);
+  stroke: var(--color-base-30);
+}
+
+.learnkit .learnkit-io-mask-circle-stroke.is-hq-correct ellipse {
+  fill: rgba(34, 197, 94, 0.1);
+  stroke: rgba(34, 197, 94, 0.92);
+}
+
+.learnkit .learnkit-io-mask-circle-stroke.is-hq-incorrect ellipse {
+  fill: rgba(239, 68, 68, 0.1);
+  stroke: rgba(239, 68, 68, 0.94);
+}
+
+.learnkit .learnkit-io-mask-circle-stroke.is-hint ellipse {
   fill: transparent;
   stroke: rgba(0, 0, 0, 0.95);
 }

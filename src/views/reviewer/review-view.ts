@@ -59,7 +59,7 @@ import { getTtsService, markTtsFieldActive } from "../../platform/integrations/t
 import { shouldSkipBackAutoplay } from "../../platform/integrations/tts/autoplay-policy";
 import { openCardAnchorInNote } from "../../platform/core/open-card-anchor";
 import { t } from "../../platform/translations/translator";
-import { isParentCard } from "../../platform/core/card-utils";
+import { isParentCard, isTextBasedChildCard } from "../../platform/core/card-utils";
 
 import type { CardState } from "../../platform/core/store";
 
@@ -162,8 +162,8 @@ export class SproutReviewerView extends ItemView {
     const first = this.contentEl.querySelector<HTMLElement>(
       'button:not([disabled]), [tabindex="0"]',
     );
-    if (first) first.focus();
-    else this.containerEl.focus();
+    if (first) first.focus({ preventScroll: true });
+    else this.containerEl.focus({ preventScroll: true });
   }
 
   // Add shared header instance
@@ -748,7 +748,7 @@ export class SproutReviewerView extends ItemView {
 
     const cid = `${card.id}-question`;
 
-    if (card.type === "basic" && card.q) {
+    if ((card.type === "basic" || card.type === "combo-child") && card.q) {
       this._ttsLastSpokenKey = key;
       tts.speakBasicCard(card.q, audio, cid);
     } else if ((card.type === "reversed" || card.type === "reversed-child") && (card.q || card.a)) {
@@ -816,7 +816,7 @@ export class SproutReviewerView extends ItemView {
 
     const cid = `${card.id}-answer`;
 
-    if (card.type === "basic" && card.a) {
+    if ((card.type === "basic" || card.type === "combo-child") && card.a) {
       this._ttsLastSpokenKey = key;
       tts.speakBasicCard(card.a, audio, cid);
     } else if ((card.type === "reversed" || card.type === "reversed-child") && (card.q || card.a)) {
@@ -1398,9 +1398,9 @@ export class SproutReviewerView extends ItemView {
       return;
     }
 
-    // If this is a cloze child or reversed child, edit the parent instead so changes persist to the source note
+    // If this is a text-based child card, edit the parent instead so changes persist to the source note
     let targetCard = card;
-    if (cardType === "cloze-child" || cardType === "reversed-child") {
+    if (isTextBasedChildCard(card)) {
       const parentId = String(card.parentId || "");
       if (!parentId) {
         new Notice(this.tx("ui.reviewer.notice.editMissingParent", "Cannot edit {cardType} - missing parent card", { cardType }));
@@ -1416,7 +1416,7 @@ export class SproutReviewerView extends ItemView {
       targetCard = parentCard;
     }
 
-    // Use bulk edit modal for basic, cloze, and MCQ (editing parent for cloze-child)
+    // Use bulk edit modal for basic, cloze, and MCQ (editing parent for cloze / reversed / combo children)
     void openBulkEditModalForCards(this.plugin, [targetCard], async (updatedCards) => {
       if (!updatedCards.length) return;
       
@@ -1425,8 +1425,8 @@ export class SproutReviewerView extends ItemView {
         
         // Update the card in the session if it exists
         if (this.session) {
-          // For cloze-child or reversed-child, defer replacing the child until after sync so we keep the correct child record
-          if (cardType !== "cloze-child" && cardType !== "reversed-child") {
+          // For child cards, defer replacing the child until after sync so we keep the correct child record
+          if (!isTextBasedChildCard(card)) {
             this.session.queue[this.session.index] = updatedCard;
           }
         }
@@ -1451,7 +1451,7 @@ export class SproutReviewerView extends ItemView {
         new Notice(this.tx("ui.reviewer.notice.saved", "Saved changes to flashcard"));
 
         if (this.session) {
-          const refreshId = cardType === "cloze-child" || cardType === "reversed-child"
+          const refreshId = isTextBasedChildCard(card)
             ? String(card.id)
             : String(updatedCard.id);
           const refreshed = (this.plugin.store.data.cards || {})[refreshId];
@@ -1859,6 +1859,11 @@ export class SproutReviewerView extends ItemView {
     const attempts = this._pendingHotspotAttempts.get(String(cardId)) || null;
     if (!attempts || attempts.length === 0) return null;
     return attempts;
+  }
+
+  /** Public accessor so external consumers (e.g. reminder-engine) can pass attempts to Gatekeeper. */
+  public getPendingHotspotAttempts(): Map<string, HotspotAttemptState[]> {
+    return this._pendingHotspotAttempts;
   }
 
   private _peekPendingHotspotAttempt(cardId: string): HotspotAttemptState | null {
@@ -2654,6 +2659,176 @@ export class SproutReviewerView extends ItemView {
     const suppressEntranceAos = this._suppressEntranceAosOnce;
     this._suppressEntranceAosOnce = false;
     const coachShellMode = this._returnToCoach || this._isCoachSession;
+
+    // ---- Lightweight session-card refresh ----
+    // When already in a session (not first render), reuse the existing card wrapper
+    // to avoid tearing down the title strip + shell and triggering scroll jumps.
+    if (this.mode === "session" && this.session && !this._firstSessionRender) {
+      const existingCardEl = root.querySelector<HTMLElement>(".learnkit-session-card");
+      if (existingCardEl) {
+        const activeCard = this.currentCard();
+        if (activeCard) this.noteCardPresented(activeCard);
+
+        const infoPresent = activeCard ? this.hasInfoField(activeCard) : false;
+        const showInfo =
+          !!this.plugin.settings.study.showInfoByDefault || (this.showAnswer && infoPresent);
+        const ttsEnabledForCard = this._canUseTtsForCard(activeCard);
+
+        const practiceMode = this.isPracticeSession();
+        const canStartPractice = !this._isCoachSession && !practiceMode && !activeCard && this.canStartPractice(this.session.scope);
+        const hasCardsInScope = !this._isCoachSession && !practiceMode && !activeCard && this.hasCardsInScope(this.session.scope);
+
+        const buildClozeRenderOptions = (): ClozeRenderOptions => {
+          const clozeSettings = this.plugin.settings?.cards;
+          return {
+            mode: clozeSettings?.clozeMode ?? "standard",
+            clozeBgColor: clozeSettings?.clozeBgColor || "",
+            clozeTextColor: clozeSettings?.clozeTextColor || "",
+            typedAnswers: this._typedClozeAnswers,
+            onTypedInput: (answerKey, _idx, val) => {
+              this._typedClozeAnswers.set(answerKey, val);
+            },
+            onTypedSubmit: () => {
+              if (!this.showAnswer) {
+                this.showAnswer = true;
+                const typedCard = this.currentCard();
+                if (typedCard) this._speakCardBack(typedCard);
+                this.render();
+              }
+            },
+          };
+        };
+
+        renderSessionMode({
+          container: existingCardEl.parentElement!,
+          targetEl: existingCardEl,
+          interfaceLanguage: this.plugin.settings?.general?.interfaceLanguage,
+
+          session: this.session,
+          showAnswer: this.showAnswer,
+          setShowAnswer: (v: boolean) => {
+            this.showAnswer = v;
+            if (v) {
+              const card = this.currentCard();
+              if (card) this._speakCardBack(card);
+            }
+          },
+
+          currentCard: () => this.currentCard(),
+
+          backToDecks: () => this.backToDecks(),
+          nextCard: (userInitiated: boolean) => this.nextCard(userInitiated),
+
+          gradeCurrentRating: (rating: Rating, meta: Record<string, unknown> | null) => this.gradeCurrentRating(rating, meta),
+          answerMcq: (idx: number) => this.answerMcq(idx),
+          answerMcqMulti: (indices: number[]) => this.answerMcqMulti(indices),
+          mcqMultiSelected: this._mcqMultiSelected,
+          mcqMultiCardId: this._mcqMultiCardId,
+          syncMcqMultiSelect: (origIdx: number, selected: boolean) => {
+            const card = this.currentCard();
+            if (!card) return;
+            const id = String(card.id);
+            if (this._mcqMultiCardId !== id) {
+              this._mcqMultiSelected.clear();
+              this._mcqMultiCardId = id;
+            }
+            if (selected) {
+              this._mcqMultiSelected.add(origIdx);
+            } else {
+              this._mcqMultiSelected.delete(origIdx);
+            }
+          },
+          answerOq: (userOrder: number[]) => this.answerOq(userOrder),
+          autoGradeMcq: this.isMcqAutoGradeEnabled(),
+          autoGradeOq: this.isOqAutoGradeEnabled(),
+          gradePendingRating: (rating: Rating) => this._gradePendingManualRating(rating),
+          usePendingManualGrade: !!(activeCard && this._peekPendingManualGradeMeta(String(activeCard.id))),
+
+          enableSkipButton: isSkipEnabled(this.plugin),
+          skipCurrentCard: (meta?: Record<string, unknown>) => this.doSkipCurrentCard(meta),
+
+          canBurySuspend: !practiceMode && !!activeCard && !this.session.graded[String(activeCard?.id ?? "")],
+          buryCurrentCard: () => void this.buryCurrentCard(),
+          suspendCurrentCard: () => void this.suspendCurrentCard(),
+
+          canUndo: this.canUndo(),
+          undoLast: () => void this.undoLastGrade(),
+
+          practiceMode,
+          canStartPractice,
+          hasCardsInScope,
+          startPractice: () => this.startPracticeFromCurrentScope(),
+          coachSessionMode: this._isCoachSession,
+          coachEmptyTitle: this.tx(
+            "ui.reviewer.session.coachDoneTitle",
+            "All due flashcards for your study plan have been reviewed for today.",
+          ),
+          coachBackLabel: this.tx("ui.reviewer.session.backToCoach", "Back to Coach"),
+
+          showInfo,
+          clearTimer: () => this.clearTimer(),
+          clearCountdown: () => this.clearCountdown(),
+          getNextDueInScope: (scope: Scope) => this.getNextDueInScope(scope),
+          startCountdown: (nextDue: number, lineEl: HTMLElement) => this.startCountdown(nextDue, lineEl),
+
+          getClozeRenderOptions: buildClozeRenderOptions,
+
+          renderClozeFront: (text: string, reveal: boolean, targetIndex?: number | null, opts?: ClozeRenderOptions) => {
+            const clozeOpts = {
+              ...buildClozeRenderOptions(),
+              ...opts,
+            };
+            return renderClozeFront(text, reveal, targetIndex, clozeOpts);
+          },
+
+          renderMarkdownInto: (containerEl: HTMLElement, md: string, sourcePath: string) =>
+            this.renderMarkdownInto(containerEl, md, sourcePath),
+
+          renderImageOcclusionInto: (
+            containerEl: HTMLElement,
+            card2: CardRecord,
+            sourcePath2: string,
+            reveal2: boolean,
+          ) => this.renderImageOcclusionInto(containerEl, card2, sourcePath2, reveal2),
+          getHotspotPlacedCount: (cardId: string) => this._getPendingHotspotPlacedCount(cardId),
+
+          randomizeMcqOptions: isMcqOptionRandomisationEnabled(this.plugin),
+          randomizeOqOrder: this.plugin.settings.study?.randomizeOqOrder ?? true,
+
+          fourButtonMode: isFourButtonMode(this.plugin),
+          showGradeIntervals: !!this.plugin.settings.study?.showGradeIntervals,
+          schedulingSettings: this.plugin.settings.scheduling,
+          getCardStateForPreview: (cardId: string, now: number) => this.plugin.store.ensureState(cardId, now),
+
+          openEditModal: () => this.openEditModalForCurrentCard(),
+
+          applyAOS: false,
+          aosDelayMs: 0,
+
+          ttsEnabled: ttsEnabledForCard,
+          ttsReplayFront: () => this._replayFront(),
+          ttsReplayBack: () => this._replayBack(),
+          ttsReplayMcqQuestion: () => this._replayMcqQuestion(),
+          ttsReplayMcqOptions: () => this._replayMcqOptions(),
+          ttsReplayMcqAnswer: () => this._replayMcqAnswer(),
+          ttsReplayOqQuestion: () => this._replayOqQuestion(),
+          ttsReplayOqSteps: () => this._replayOqSteps(),
+          ttsReplayOqAnswer: () => this._replayOqAnswer(),
+
+          hideSessionTopbar: !!this.plugin.settings.study?.hideSessionTopbar,
+
+          rerender: () => this.render(),
+        });
+
+        // TTS: speak front after render
+        if (activeCard && !this.showAnswer) this._speakCardFront(activeCard);
+
+        this._restoreFocus();
+        return;
+      }
+    }
+
+    // ---- Full rebuild (first render, mode change, or no existing card) ----
     this._restoreStudySessionTimerRow(root);
     const preservedCoachStrip = coachShellMode
       ? root.querySelector<HTMLElement>(":scope > .lk-home-title-strip.learnkit-coach-title-strip")

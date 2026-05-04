@@ -275,7 +275,6 @@ export function renderWidgetSession(view: WidgetViewLike, root: HTMLElement): vo
 
   root.appendChild(wrap);
 
-  maybeAutoSpeakWidgetCard(view, card, graded);
   view.armTimer();
 }
 
@@ -292,7 +291,6 @@ function renderBasicCard(
   applySectionStyles: (e: HTMLElement) => void,
 ) {
   const qActions = el("div", "flex items-center justify-end gap-2");
-  appendWidgetTtsReplayButton(view, qActions, card, graded, false);
   if (qActions.childElementCount > 0) body.appendChild(qActions);
 
   const qEl = el("div", "widget-question");
@@ -309,7 +307,9 @@ function renderBasicCard(
     const qContainer = document.createElement("div");
     qContainer.className = "whitespace-pre-wrap break-words";
     const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
-    void view.renderMarkdownInto(qContainer, convertInlineDisplayMath(qText), sourcePath);
+    // Escape HTML so Obsidian's MarkdownRenderer doesn't strip literal <angle> brackets
+    const safeQText = String(qText || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    void view.renderMarkdownInto(qContainer, convertInlineDisplayMath(safeQText), sourcePath);
     qEl.appendChild(qContainer);
   } else {
     const qDiv = document.createElement("div");
@@ -323,7 +323,6 @@ function renderBasicCard(
 
   if (view.showAnswer || graded) {
     const aActions = el("div", "flex items-center justify-end gap-2");
-    appendWidgetTtsReplayButton(view, aActions, card, graded, true);
     if (aActions.childElementCount > 0) body.appendChild(aActions);
 
     const aEl = el("div", "widget-answer");
@@ -338,7 +337,9 @@ function renderBasicCard(
       const aContainer = document.createElement("div");
       aContainer.className = "whitespace-pre-wrap break-words";
       const sourcePath = String(card.sourceNotePath || view.activeFile?.path || "");
-      void view.renderMarkdownInto(aContainer, convertInlineDisplayMath(aText), sourcePath);
+      // Escape HTML so Obsidian's MarkdownRenderer doesn't strip literal <angle> brackets
+      const safeAText = String(aText || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      void view.renderMarkdownInto(aContainer, convertInlineDisplayMath(safeAText), sourcePath);
       aEl.appendChild(aContainer);
     } else {
       const aDiv = document.createElement("div");
@@ -1186,7 +1187,7 @@ function speakWidgetCard(
   const isOldReversed = card.type === "reversed";
   const cid = `${card.id}-${reveal ? "answer" : "question"}`;
 
-  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child") {
+  if (card.type === "basic" || card.type === "reversed" || card.type === "reversed-child" || card.type === "combo-child") {
     const qText = (isBackDirection || isOldReversed) ? (card.a || "") : (card.q || "");
     const aText = (isBackDirection || isOldReversed) ? (card.q || "") : (card.a || "");
     const text = reveal ? aText : qText;

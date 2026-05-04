@@ -198,6 +198,20 @@ export function buildSuggestionMarkdownLines(
       ? suggestion.ioMaskMode
       : null;
     if (ioMaskMode) pushDelimitedField(lines, "C", ioMaskMode);
+  } else if (suggestion.type === "combo") {
+    const qVariants: string[] = Array.isArray(suggestion.qVariants) ? suggestion.qVariants : [];
+    const aVariants: string[] = Array.isArray(suggestion.aVariants) ? suggestion.aVariants : [];
+    const comboMode = suggestion.comboMode === "zip" ? "zip" : "product";
+    const sep = comboMode === "zip" ? " ::: " : " :: ";
+    const qRaw = String(suggestion.question || "").trim();
+    const aRaw = String(suggestion.answer || "").trim();
+    // Prefer qVariants/aVariants arrays; fall back to question/answer fields
+    const qParts = qVariants.length > 0 ? qVariants : (qRaw ? qRaw.split(/\s*:{2,3}\s*/).filter(Boolean) : []);
+    const aParts = aVariants.length > 0 ? aVariants : (aRaw ? aRaw.split(/\s*:{2,3}\s*/).filter(Boolean) : []);
+    if (qParts.length > 0 && aParts.length > 0) {
+      pushDelimitedField(lines, "Q", qParts.join(sep));
+      pushDelimitedField(lines, "A", aParts.join(sep));
+    }
   }
   const info = String(suggestion.info || "").trim();
   if (info && options.includeInfo) {
