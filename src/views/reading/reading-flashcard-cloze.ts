@@ -84,7 +84,7 @@ export function buildReadingFlashcardCloze(text: string, mode: "front" | "back")
     const clozeHtml = processClozeForMath(source, reveal, null, {
       blankClassName: "learnkit-flashcard-blank",
       revealWrapper: (answer) =>
-        `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${escapeHtml(answer)}</span></span>`,
+        `<span class="learnkit-reading-view-cloze"><span class="learnkit-cloze-text">${processMarkdownFeatures(answer)}</span></span>`,
     });
     // processClozeForMath generates HTML (blank spans, hint spans) that
     // would be destroyed by processMarkdownFeatures' HTML escaping.

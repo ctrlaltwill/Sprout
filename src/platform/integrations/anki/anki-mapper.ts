@@ -462,8 +462,9 @@ export function applyInlineMarkdown(el: HTMLElement, text: string): void {
     el.removeChild(el.firstChild);
   }
 
-  type InlineToken = { type: "bold" | "italic" | "strike" | "mark"; regex: RegExp };
+  type InlineToken = { type: "bold" | "italic" | "strike" | "mark" | "code"; regex: RegExp };
   const tokens: InlineToken[] = [
+    { type: "code", regex: /`([^`]+)`/ },
     { type: "bold", regex: /\*\*(.+?)\*\*/ },
     { type: "italic", regex: /(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/ },
     { type: "italic", regex: /(?<![\w\\])_(.+?)_(?![\w])/ },
@@ -504,6 +505,9 @@ export function applyInlineMarkdown(el: HTMLElement, text: string): void {
       const content = nextMatch[1] ?? "";
       let wrapper: HTMLElement;
       switch (nextToken.type) {
+        case "code":
+          wrapper = document.createElement("code");
+          break;
         case "bold":
           wrapper = document.createElement("strong");
           break;
@@ -517,7 +521,12 @@ export function applyInlineMarkdown(el: HTMLElement, text: string): void {
           wrapper = document.createElement("mark");
           break;
       }
-      appendInline(wrapper, content);
+      // Code content is literal — do not recursively process inline formatting
+      if (nextToken.type === "code") {
+        appendText(wrapper, content);
+      } else {
+        appendInline(wrapper, content);
+      }
       parent.appendChild(wrapper);
 
       remaining = remaining.slice(nextIndex + nextMatch[0].length);
